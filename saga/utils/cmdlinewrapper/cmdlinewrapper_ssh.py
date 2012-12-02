@@ -15,19 +15,23 @@ from pxgsissh import SSHConnection
 
 class SSHCommandLineWrapper(object):
 
-    def __init__(self, host, port, username, password, userkey):
+    def __init__(self, host, port, username, password, userkeys):
         ''' Create a new wrapper instance.
         '''
         self.host = host
         self.port = port
         self.password = password
-        self.userkey  = userkey
+        self.userkeys = userkeys
         self.username = username
 
         self._connection = None
 
     def open(self):
-        self._connection = SSHConnection(gsissh=False)
+        ssh_executable = which('ssh')
+        if ssh_executable is None:
+            raise Exception("Couldn't find 'ssh' executable in path.")
+
+        self._connection = SSHConnection(executable=ssh_executable, gsissh=False)
         self._connection.login(hostname=self.host, port=self.port,
                                username=self.username, password=self.password)
 

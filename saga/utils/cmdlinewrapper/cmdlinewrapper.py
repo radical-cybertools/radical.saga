@@ -51,35 +51,35 @@ class CommandWrapperResult(object):
 
 class CommandLineWrapper(object):
 
-    def __init__(self, logger):
+    def __init__(self):
         self._is_open = False
         self._wrapper = None
-        self._logger = logger
     
     @classmethod
-    def init_as_subprocess_wrapper(self, logger):
+    def init_as_subprocess_wrapper(self):
         ''' Return a new SubprocessCommandLineWrapper.
         '''
-        clw = CommandLineWrapper(logger)
+        clw = CommandLineWrapper()
         clw._wrapper = SubprocessCommandLineWrapper()
         return clw
 
     @classmethod
-    def init_as_ssh_wrapper(self, logger, host, port=22, username=None, 
-                            password=None, userkey=None):
+    def init_as_ssh_wrapper(self, host, port=22, username=None, 
+                            password=None, userkeys=[]):
         ''' Return a new SSHCommandLineWrapper.
         '''
-        clw = CommandLineWrapper(logger)
+        clw = CommandLineWrapper()
         clw._wrapper = SSHCommandLineWrapper(host, port, username, password,
-                                             userkey)
+                                             userkeys)
         return clw
 
     @classmethod
-    def init_as_gsissh_wrapper(self, logger):
+    def init_as_gsissh_wrapper(self, host, port=22, username=None, 
+                               userproxies=[]):
         ''' Return a new GSISSHCommandLineWrapper.
         '''
-        clw = CommandLineWrapper(logger)
-        clw._wrapper = GSISSHCommandLineWrapper()
+        clw = CommandLineWrapper()
+        clw._wrapper = GSISSHCommandLineWrapper(host, port, username, userproxies)
         return clw
 
     def open(self):

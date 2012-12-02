@@ -9,16 +9,45 @@ __license__   = "MIT"
     tunneling via a modified pexssh library.
 '''
 
+import time
+from saga.utils.which import which
+from pxgsissh import SSHConnection
+
 class GSISSHCommandLineWrapper(object):
 
-    def __init__(self):
-        raise Exception('Not Implemented.')
+    def __init__(self, host, port, username, userproxies):
+        ''' Create a new wrapper instance.
+        '''
+        self.host = host
+        self.port = port
+        self.userproxies = userproxies
+        self.username = username
+
+        self._connection = None
 
     def open(self):
-        raise Exception('Not Implemented.')
+        gsissh_executable = which('gsissh')
+        if gsissh_executable is None:
+            raise Exception("Couldn't find 'gsissh' executable in path.")
+
+        self._connection = SSHConnection(executable=gsissh_executable, gsissh=True)
+        self._connection.login(hostname=self.host, port=self.port,
+                               username=self.username, password=None)
 
     def close(self):
-        raise Exception('Not Implemented.')
+        self._connection.logout()
 
     def run_sync(self, executable, arguments, environemnt):
-        raise Exception('Not Implemented.')
+        job_error = None
+        job_output = None
+        returncode = None
+
+        cmd = executable
+        for arg in arguments:
+            cmd += " %s " % (arg)
+
+        t1 = time.time()
+        result = self._connection.execute(cmd)
+        tdelta = time.time() - t1
+
+        return (cmd, result['output'], result['exitcode'], tdelta)

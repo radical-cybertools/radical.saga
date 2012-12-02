@@ -76,7 +76,7 @@ class _pxssh (spawn):
             s.login (hostname, username, password)
     """
 
-    def __init__ (self, timeout=30, maxread=2000, searchwindowsize=None, logfile=None, cwd=None, env=None, gsissh=False):
+    def __init__ (self, timeout=30, maxread=2000, searchwindowsize=None, logfile=None, cwd=None, env=None, gsissh=False, executable='ssh'):
         spawn.__init__(self, None, timeout=timeout, maxread=maxread, searchwindowsize=searchwindowsize, logfile=logfile, cwd=cwd, env=env)
 
         self.name = '<pxssh>'
@@ -107,6 +107,7 @@ class _pxssh (spawn):
         self.auto_prompt_reset = True 
 
         self.use_gsissh = gsissh
+        self.executable = executable
 
     def levenshtein_distance(self, a,b):
 
@@ -198,7 +199,14 @@ class _pxssh (spawn):
                 ssh_options = ssh_options + ' ' + self.SSH_OPTS
             if port is not None:
                 ssh_options = ssh_options + ' -p %s'%(str(port))
-            cmd = "gsissh %s -t -l %s %s /bin/bash" % (ssh_options, username, server)
+
+
+            if username is not None:
+                cmd = "%s %s -t -l %s %s /bin/bash" % (self.executable, ssh_options, username, server)
+            else:
+                cmd = "%s %s -t %s /bin/bash" % (self.executable, ssh_options, server)
+
+            print cmd
 
         else:
 
@@ -207,8 +215,11 @@ class _pxssh (spawn):
                 ssh_options = ssh_options + ' ' + self.SSH_OPTS
             if port is not None:
                 ssh_options = ssh_options + ' -p %s'%(str(port))
-            cmd = "ssh %s -t -l %s %s /bin/bash" % (ssh_options, username, server)
 
+            if username is not None: 
+                cmd = "%s %s -t -l %s %s /bin/bash" % (self.executable, ssh_options, username, server)
+            else:
+                cmd = "%s %s -t %s /bin/bash" % (self.executable, ssh_options, server)
 
         # This does not distinguish between a remote server 'password' prompt
         # and a local ssh 'passphrase' prompt (for unlocking a private key).
@@ -341,9 +352,10 @@ class SSHConnection(object):
        tools. It requires the 'pexpect' module.
     '''
 
-    def __init__(self, gsissh=False):
+    def __init__(self, executable, gsissh=False):
+        #elf._executable = executable
         self._use_gsissh=gsissh
-        self._ssh = _pxssh(gsissh=gsissh)
+        self._ssh = _pxssh(executable=executable, gsissh=gsissh)
 
         self._is_connected = False
 
@@ -368,10 +380,10 @@ class SSHConnection(object):
         else:
             self._port = port
  
-        if username == '' or username is None:
-            self._username = getpass.getuser()
-        else:
-            self._username = username
+        #if username == '' or username is None:
+        #    self._username = getpass.getuser()
+        #else:
+        self._username = username
     
         # pxssh is terrible at non-ssh-related error handling. it is 
         # easier to connect manually to the specififed address and 
