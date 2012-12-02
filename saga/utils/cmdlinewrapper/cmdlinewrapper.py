@@ -65,11 +65,13 @@ class CommandLineWrapper(object):
         return clw
 
     @classmethod
-    def init_as_ssh_wrapper(self, logger):
+    def init_as_ssh_wrapper(self, logger, host, port=22, username=None, 
+                            password=None, userkey=None):
         ''' Return a new SSHCommandLineWrapper.
         '''
         clw = CommandLineWrapper(logger)
-        clw._wrapper = SSHCommandLineWrapper()
+        clw._wrapper = SSHCommandLineWrapper(host, port, username, password,
+                                             userkey)
         return clw
 
     @classmethod
@@ -85,24 +87,33 @@ class CommandLineWrapper(object):
             raise CLWException("%s has already been opened." 
                 % self._wrapper.__class__.__name__)
         else:
-            self._is_open = True
-            self._wrapper.open()
+            try:
+                self._is_open = True
+                self._wrapper.open()
+            except Exception, ex:
+                raise CLWException('%s - %s' % (self._wrapper.__class__.__name__, ex))
 
     def close(self):
         if self._is_open is False:
             raise CLWException("%s is not in 'open' state." 
                 % self._wrapper.__class__.__name__)
         else:
-            self._wrapper.close()
-            self._is_open = False
+            try:
+                self._wrapper.close()
+                self._is_open = False
+            except Exception, ex:
+                raise CLWException('%s - %s' % (self._wrapper.__class__.__name__, ex))
 
     def run_sync(self, executable, arguments=[], environemnt={}):
         if self._is_open == False:
             raise CLWException("%s is not in 'open' state." 
                 % self._wrapper.__class__.__name__)
         else:
-            (cmd, stdout, rc, duration) = self._wrapper.run_sync(executable, arguments, environemnt)
-            return CommandWrapperResult(cmd, stdout, rc, duration)
+            try:
+                (cmd, stdout, rc, duration) = self._wrapper.run_sync(executable, arguments, environemnt)
+                return CommandWrapperResult(cmd, stdout, rc, duration)
+            except Exception, ex:
+                raise CLWException('%s - %s' % (self._wrapper.__class__.__name__, ex))
 
     def run_async(self, executable, arguments=[], environemnt={}):
         raise Exception('Not Implemented')
