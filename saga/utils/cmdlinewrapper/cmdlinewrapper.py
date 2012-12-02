@@ -20,12 +20,12 @@ class CLWException(Exception):
 class CommandWrapperResult(object):
     ''' A 3-tuple returned by CommandLineWrapper.run().
     '''
-    def __init__(self, command, stdout=None, returncode=None, duration=-1):
+    def __init__(self, command, stdout=None, returncode=None, ttc=-1):
 
         self._command = command
         self._stdout = stdout
         self._returncode = returncode
-        self._duration = duration
+        self._ttc = ttc
 
     @property
     def command(self):
@@ -40,12 +40,12 @@ class CommandWrapperResult(object):
         return self._returncode
 
     @property
-    def duration(self):
-        return self._duration
+    def ttc(self):
+        return self._ttc
 
     def __str__(self):
-        str = "{'command' : '%s', 'stdout': '%s', 'returncode' : '%s', 'duration' : '%s'}" \
-            % (self.command, self.stdout, self.returncode, self.duration)
+        str = "{'command' : '%s', 'stdout': '%s', 'returncode' : '%s', 'ttc' : '%s'}" \
+            % (self.command, self.stdout, self.returncode, self.ttc)
         return str
 
 
