@@ -9,7 +9,7 @@ __license__   = "MIT"
     colors to distinguish severity levels.
 '''
 
-from logging import StreamHandler, DEBUG, getLogger as realGetLogger, Formatter
+from logging import StreamHandler, DEBUG, getLogger, Formatter
  
 try:
     from colorama import Fore, Back, init, Style
@@ -68,11 +68,11 @@ def _test_():
     :return: Logger instance
     :rtype: Logger
     """
-    log = realGetLogger(name)
+    log = getLogger('testlogger')
     # Only enable colour if support was loaded properly
-    handler = ColourStreamHandler() if has_colour else StreamHandler()
+    handler = ColorStreamHandler() if has_color_stream_handler else StreamHandler()
     handler.setLevel(DEBUG)
-    handler.setFormatter(Formatter(fmt))
+    #handler.setFormatter(Formatter(fmt))
     log.addHandler(handler)
     log.setLevel(DEBUG)
     log.propagate = 0 # Don't bubble up to the root logger
