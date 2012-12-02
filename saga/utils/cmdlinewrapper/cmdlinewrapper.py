@@ -18,7 +18,7 @@ class CLWException(Exception):
     '''
 
 class CommandWrapperResult(object):
-    ''' A 3-tuple returned by CommandLineWrapper.run().
+    ''' A 4-tuple returned by CommandLineWrapper.run().
     '''
     def __init__(self, command, stdout=None, returncode=None, ttc=-1):
 
