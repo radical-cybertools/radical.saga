@@ -13,7 +13,6 @@ import time
 import subprocess 
 
 class SubprocessCommandLineWrapper(object):
-    pass
 
     def __init__(self):
         pass
@@ -26,7 +25,7 @@ class SubprocessCommandLineWrapper(object):
         # no need to close. not a persistent connection
         pass
 
-    def run(self, executable, arguments, environemnt):
+    def run_sync(self, executable, arguments, environemnt):
         job_error = None
         job_output = None
         returncode = None

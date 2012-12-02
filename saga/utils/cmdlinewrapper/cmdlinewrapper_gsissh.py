@@ -10,16 +10,15 @@ __license__   = "MIT"
 '''
 
 class GSISSHCommandLineWrapper(object):
-    pass
 
     def __init__(self):
-        pass
+        raise Exception('Not Implemented.')
 
     def open(self):
-        pass
+        raise Exception('Not Implemented.')
 
     def close(self):
-        pass
+        raise Exception('Not Implemented.')
 
-    def run(self, executable, arguments, environemnt):
-        pass
+    def run_sync(self, executable, arguments, environemnt):
+        raise Exception('Not Implemented.')

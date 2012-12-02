@@ -48,6 +48,7 @@ class CommandWrapperResult(object):
             % (self.command, self.stdout, self.returncode, self.duration)
         return str
 
+
 class CommandLineWrapper(object):
 
     def __init__(self, logger):
@@ -95,12 +96,14 @@ class CommandLineWrapper(object):
             self._wrapper.close()
             self._is_open = False
 
-
-    def run(self, executable, arguments=[], environemnt={}):
+    def run_sync(self, executable, arguments=[], environemnt={}):
         if self._is_open == False:
             raise CLWException("%s is not in 'open' state." 
                 % self._wrapper.__class__.__name__)
         else:
-            (cmd, stdout, rc, duration) = self._wrapper.run(executable, arguments, environemnt)
+            (cmd, stdout, rc, duration) = self._wrapper.run_sync(executable, arguments, environemnt)
             return CommandWrapperResult(cmd, stdout, rc, duration)
+
+    def run_async(self, executable, arguments=[], environemnt={}):
+        raise Exception('Not Implemented')
 
