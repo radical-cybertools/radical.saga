@@ -16,8 +16,8 @@ class Configuration(object):
 
     def _re_eval(self, query_string=None):
         if query_string is not None:
+            # initial eval from query string
             self._query_string = query_string
-
             for param in self._query_string.split('&'):
                 try:
                     (key, value) = param.split("=")
@@ -25,6 +25,9 @@ class Configuration(object):
                 except ValueError:
                     if param != '':
                         self._dictionary[param] = ""
+        else:
+            # re-evaluate
+            pass
 
     def as_query_string(self, subsection_name=None):
         ''' Return the configuration (or a subsection of it) as a URL 
