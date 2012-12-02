@@ -1,4 +1,4 @@
-from cmdlinewrapper import CommandLineWrapper
+from saga.utils.cmdlinewrapper import CommandLineWrapper
 
 clw = CommandLineWrapper.init_as_subprocess_wrapper(None)
 clw.open()
