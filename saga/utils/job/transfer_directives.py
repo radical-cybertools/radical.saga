@@ -40,7 +40,7 @@ class TransferDirectives(object):
         # each line in directives_list should contain one directive
         for directive in directives_list:
             if (directive.count('>') > 2) or (directive.count('<') > 2):
-                raise Exception("'%s' is not a valid transfer directive." % directive)
+                raise InvalidTransferDirective(directive)
             elif '<<' in directive:
                 (remote, local) = directive.split('<<')
                 self._out_append[remote] = local
@@ -54,7 +54,7 @@ class TransferDirectives(object):
                 (local, remote) = directive.split('>')
                 self._in_overwrite[local] = remote
             else:
-                raise Exception("'%s' is not a valid transfer directive." % directive)
+                raise InvalidTransferDirective(directive)
 
     @property
     def in_overwrite(self):
@@ -72,10 +72,18 @@ class TransferDirectives(object):
     def out_append(self):
         return self._out_append
 
+class InvalidTransferDirective(Exception):
+    def __init__(self, directive):
+        self.message = "'%s' is not a valid transfer directive string." % directive
+
+    def __str__(self):
+        return self.message  
+
 def _test_():
-    tdp = TransferDirectives(["a>b","a>c", "c>>d","f<a","g<<h"])
+    tdp = TransferDirectives(["ab","a>c", "c>>d","f<a","g<<h"])
     print tdp.in_append
     print tdp.in_overwrite
     print tdp.out_append
     print tdp.out_overwrite
+
 

@@ -36,7 +36,7 @@ class JobId(object):
             return "[%s]-[%s]" % (self._backend_url, self._native_id)
         def fset(self, value):
             if (value[0] != '[') or (value[-1] != ']') or (value.find("]-[") < 0 ):
-                raise Exception("'%s' is not a valid job id." % value)
+                raise InvalidJobId(value)
             else:
                 (b, n) = value.split("]-[")
                 self._backend_url = b[1:]
@@ -93,6 +93,13 @@ class JobId(object):
         jid.tuple = (backend_url, native_id)
         return jid
 
+class InvalidJobId(Exception):
+    def __init__(self, jobid):
+        self.message = "'%s' is not a valid job id string." % jobid
+
+    def __str__(self):
+        return self.message  
+
 def _test_():
 
     jid = JobId.from_string('[test]-[native]')
@@ -102,5 +109,4 @@ def _test_():
     jid.native_id = 'NNN'
     jid.backend_url = 'BBB'
     print jid
-    #print jid.nat
 
