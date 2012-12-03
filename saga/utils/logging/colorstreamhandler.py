@@ -9,7 +9,7 @@ __license__   = "MIT"
     colors to distinguish severity levels.
 '''
 
-from logging import StreamHandler, DEBUG, getLogger
+from logging import StreamHandler, DEBUG, getLogger, Filter
  
 try:
     from colorama import Fore, Back, init, Style
@@ -71,16 +71,24 @@ def _test_():
     
     from defaultformatter import DefaultFormatter
 
-    log = getLogger('saga')
+    log = getLogger('saga.core')
     # Only enable colour if support was loaded properly
     handler = ColorStreamHandler() if has_color_stream_handler else StreamHandler()
     handler.setLevel(DEBUG)
     handler.setFormatter(DefaultFormatter)
     log.addHandler(handler)
+
+
+
     log.setLevel(DEBUG)
     log.propagate = 0 # Don't bubble up to the root logger
     log.debug('DEBUG')
     log.info('INFO')
     log.warning('WARNING')
+
+    #log = getLogger('saga.adaptor')
+    #f = Filter(name='saga')
+    #log.addFilter(f)
+
     log.error('ERROR')
     log.critical('CRITICAL')
