@@ -8,6 +8,7 @@ __license__   = "MIT"
 ''' Provides a parser class for the file transfer specification as it is
     defined in GFD.90, sction 4.1.3.
 '''
+
 # 4.1.3 File Transfer Specifications
 #
 # The syntax of a file transfer directive for the job description is modeled on 
@@ -29,11 +30,52 @@ __license__   = "MIT"
 #      Appends to the local file if it exists.
 
 class TransferDirectiveParser(object):
+
     def __init__(self, directives_list):
+        self._in_overwrite = dict()
+        self._in_append = dict()
+        self._out_overwrite = dict()
+        self._out_append = dict()
+
         # each line in directives_list should contain one directive
         for directive in directives_list:
-            print directive
+            if (directive.count('>') > 2) or (directive.count('<') > 2):
+                raise Exception("'%s' is not a valid transfer directive." % directive)
+            elif '<<' in directive:
+                (remote, local) = directive.split('<<')
+                self._out_append[remote] = local
+            elif '>>' in directive:
+                (local, remote) = directive.split('>>')
+                self._in_append[local] = remote
+            elif '<' in directive:
+                (remote, local) = directive.split('<')
+                self._out_overwrite[remote] = local
+            elif '>' in directive:
+                (local, remote) = directive.split('>')
+                self._in_overwrite[local] = remote
+            else:
+                raise Exception("'%s' is not a valid transfer directive." % directive)
 
+    @property
+    def in_overwrite(self):
+        return self._in_overwrite
+
+    @property
+    def in_append(self):
+        return self._in_append
+
+    @property
+    def out_overwrite(self):
+        return self._out_overwrite
+
+    @property
+    def out_append(self):
+        return self._out_append
 
 def _test_():
-    tdp = TransferDirectiveParser(["a>b","c>>d","f<a","g<<h"])
+    tdp = TransferDirectiveParser(["a>b","a>c", "c>>d","f<a","g<<h"])
+    print tdp.in_append
+    print tdp.in_overwrite
+    print tdp.out_append
+    print tdp.out_overwrite
+
