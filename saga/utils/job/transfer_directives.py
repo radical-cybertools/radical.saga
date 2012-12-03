@@ -29,7 +29,7 @@ __license__   = "MIT"
 # ’<<’ copies the remote file to the local file after the job finishes. 
 #      Appends to the local file if it exists.
 
-class TransferDirectiveParser(object):
+class TransferDirectives(object):
 
     def __init__(self, directives_list):
         self._in_overwrite = dict()
@@ -73,7 +73,7 @@ class TransferDirectiveParser(object):
         return self._out_append
 
 def _test_():
-    tdp = TransferDirectiveParser(["a>b","a>c", "c>>d","f<a","g<<h"])
+    tdp = TransferDirectives(["a>b","a>c", "c>>d","f<a","g<<h"])
     print tdp.in_append
     print tdp.in_overwrite
     print tdp.out_append
