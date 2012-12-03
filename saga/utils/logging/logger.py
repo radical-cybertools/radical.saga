@@ -15,8 +15,8 @@ from saga.utils.singleton import Singleton
 from saga.utils.logging.colorstreamhandler import *
 from saga.utils.logging.defaultformatter import DefaultFormatter
 
-class _LoggerConfig(object):
-    #__metaclass__ = Singleton
+class Config(object):
+    __metaclass__ = Singleton
 
     def __init__(self):
 
@@ -35,7 +35,6 @@ class _LoggerConfig(object):
                 self._loglevel = WARNING
             # 1 = ERROR ONLY
             elif SAGA_VERBOSE == 1:
-                print 'hey!'
                 self._loglevel = ERROR
             # 0 = No Logging
             else:
@@ -86,12 +85,17 @@ def getLogger(module, obj=None):
 
     handler.setFormatter(DefaultFormatter)
     _logger.addHandler(handler)
-    _logger.setLevel(_LoggerConfig().loglevel)
+    _logger.setLevel(Config().loglevel)
     _logger.propagate = 0 # Don't bubble up to the root logger
 
     return _logger
 
 def _test_():
+
+    lc = Config() 
+    #lc.set_level(DEBUG) 
+    #lc.set_target('/tmp/log.out')#saga.utils.logger.Config()
+
     l1 = getLogger('core')
     l1.debug('debug')
     l1.info('info')
