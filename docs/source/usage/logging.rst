@@ -1,5 +1,3 @@
-.. highlightlang:: none
-
 ##############
 Logging System
 ##############
@@ -92,8 +90,18 @@ executing shell and evaluated by SAGA at program startup.
 Logging API
 -----------
 
-For more involved projects, the SAGA logging system can be controlled directly  
+The SAGA logging system can be controlled directly  
 from within an application using SAGA's logging API. This can come in handy if 
-you want to integrate SAGA log messages with an existing Python logging system 
-re-format the output, etc.
+you want to integrate SAGA log messages with an existing Python logging system, 
+re-format the output or something slightly more involved:: 
+
+   from saga.core.logging import getConfig as getLoggingConfig
+
+   log_config = getLoggingConfig()
+   # get all currently defined configuration options as Python dict
+   print log_config.as_dict()
+
+Also::
+
+   from saga.core.logging import getHandles as getLoggingHandles
 
