@@ -12,7 +12,7 @@ import re
 import sys
 
 PROCESS_TIMEOUT_SEC = 10
-PSFTP_PATH = '''C:\\Program Files\\PuTTY\\psftp.exe'''   
+PSFTP_PATH = '''/usr/bin/sftp'''   
         
 def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
     '''This function will spwan a thread and 
@@ -135,7 +135,7 @@ class SFTP:
         '''
         username_prompt = 'login as:'
         password_prompt = 'password:'
-        cmd_prompt = 'psftp>'
+        cmd_prompt = 'sftp>'
         
         # Wait for the username login prompt
         # --> use timeout on wait4prompt function
