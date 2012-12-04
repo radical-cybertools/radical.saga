@@ -13,7 +13,8 @@ Contents:
 
    usage/index.rst
    adaptors/index.rst
-
+   tutorial/index.rst
+   library/index.rst
 
 Indices and tables
 ==================
