@@ -12,7 +12,9 @@ import os
 from logging import StreamHandler, Filter, getLogger as logging_getLogger
 from logging import INFO, DEBUG, ERROR, WARNING, CRITICAL
 from saga.utils.singleton import Singleton
+from saga.utils.exception import BaseException
 from saga.utils.logging.colorstreamhandler import *
+from saga.utils.logging.filehandler import FileHandler
 from saga.utils.logging.defaultformatter import DefaultFormatter
 
 class Config(object):
@@ -21,8 +23,9 @@ class Config(object):
     def __init__(self):
         
         # the default log level
-        self._loglevel = CRITICAL
+        self._loglevel = CRITICAL # default loglevel
         self._filters = None
+        self._targets = ['STDOUT'] # default log target
 
         SAGA_VERBOSE = os.environ.get('SAGA_VERBOSE')
 
@@ -42,8 +45,10 @@ class Config(object):
                 elif SAGA_VERBOSE == 1:
                     self._loglevel = ERROR
                 # 0 = No Logging
-                else:
+                elif SAGA_VERBOSE == 0:
                     self._loglevel = CRITICAL
+                else:
+                    raise LoggingException('%s is not a valid value for SAGA_VERBOSE.' % SAGA_VERBOSE)
             else:
                 SAGA_VERBOSE_lower = SAGA_VERBOSE.lower()
                 # 4 = DEBUG + INFO + WARNING + ERROR
@@ -59,24 +64,28 @@ class Config(object):
                 elif SAGA_VERBOSE_lower == 'error':
                     self._loglevel = ERROR
                 # 0 = No Logging
-                else:
+                elif SAGA_VERBOSE_lower == 'critical':
                     self._loglevel = CRITICAL
+                else:
+                    raise LoggingException('%s is not a valid value for SAGA_VERBOSE.' % SAGA_VERBOSE)
 
-        SAGA_LOG_FILTER = os.environ.get('SAGA_LOG_FILTER')
-        if SAGA_LOG_FILTER is not None:
-            print SAGA_LOG_FILTER
+        SAGA_LOG_FILTERS = os.environ.get('SAGA_LOG_FILTERS')
+        if SAGA_LOG_FILTERS is not None:
             try:
-                self._filters = list()
-                for x in SAGA_LOG_FILTER.split(','):
-                    self._filters.append(x)
+                self._filters = list() # reset filters
+                for filt in SAGA_LOG_FILTERS.split(','):
+                    self._filters.append(filt)
             except Exception, ex:
-                raise LoggingException('%s is not a valid value for SAGA_LOG_FILTER.' % SAGA_LOG_FILTER)
+                raise LoggingException('%s is not a valid value for SAGA_LOG_FILTERS.' % SAGA_LOG_FILTERS)
 
-        saga_log_target = os.environ.get('SAGA_LOG_TARGET')
-        if saga_log_target is not None:
-            pass
-        else:
-            self._target = 'STDOUT'
+        SAGA_LOG_TARGETS = os.environ.get('SAGA_LOG_TARGETS')
+        if SAGA_LOG_TARGETS is not None:
+            try:
+                self._targets = list() # reset filters
+                for target in SAGA_LOG_TARGETS.split(','):
+                    self._targets.append(target)
+            except Exception, ex:
+                raise LoggingException('%s is not a valid value for SAGA_LOG_TARGETS.' % SAGA_LOG_TARGETS)
 
     @property
     def loglevel(self):
@@ -87,10 +96,10 @@ class Config(object):
         return self._filters
 
     @property
-    def target(self):
-        return self._target
+    def targets(self):
+        return self._targets
 
-class LoggingException(Exception):
+class LoggingException(BaseException):
     pass
 
 class _MultiNameFilter(Filter):
@@ -99,10 +108,9 @@ class _MultiNameFilter(Filter):
         self._names = names
 
     def filter(self, record):
-            if record.name in self._names:
+        for n in self._names:
+            if n in record.name:
                 return True
-            else:
-                return False
 
 def getLogger(module, obj=None):
     ''' Get the SAGA logger.
@@ -111,23 +119,32 @@ def getLogger(module, obj=None):
         _logger = logging_getLogger('saga.%s' % module)
     else:
         _logger = logging_getLogger('saga.%s.%s' % (module, obj))
-    # Only enable colour if support was loaded properly
-    if has_color_stream_handler is True:
-        handler = ColorStreamHandler()
-    else: 
-        handler = StreamHandler()
 
-    if Config().filters is not None:
-        handler.addFilter(_MultiNameFilter(Config().filters))
+    # check how many handlers we need
+    for target in Config().targets:
+        if target.lower() == 'stdout':
+            # create a console stream logger
+            # Only enable colour if support was loaded properly
+            if has_color_stream_handler is True:
+                handler = ColorStreamHandler()
+            else: 
+                handler = StreamHandler()
+        else:
+            # got to be a file logger
+            handler = FileHandler(target)
 
-    handler.setFormatter(DefaultFormatter)
-    _logger.addHandler(handler)
+        handler.setFormatter(DefaultFormatter)
+        if Config().filters is not None:
+            handler.addFilter(_MultiNameFilter(Config().filters))
+
+        _logger.addHandler(handler)
+
     _logger.setLevel(Config().loglevel)
     _logger.propagate = 0 # Don't bubble up to the root logger
 
     return _logger
 
-def _test_():
+def testMe():
 
     lc = Config() 
     #lc.set_level(DEBUG) 
