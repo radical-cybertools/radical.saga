@@ -9,6 +9,8 @@ __license__   = "MIT"
     defined in GFD.90, sction 4.1.3.
 '''
 
+from saga.utils.exception import BaseException
+
 # 4.1.3 File Transfer Specifications (GFD90 p 176-177)
 #
 # The syntax of a file transfer directive for the job description is modeled on 
@@ -72,7 +74,7 @@ class TransferDirectives(object):
     def out_append(self):
         return self._out_append
 
-class InvalidTransferDirective(Exception):
+class InvalidTransferDirective(BaseException):
     def __init__(self, directive):
         self.message = "'%s' is not a valid transfer directive string." % directive
 
