@@ -22,6 +22,7 @@ class Config(object):
         
         # the default log level
         self._loglevel = CRITICAL
+        self._filters = None
 
         SAGA_VERBOSE = os.environ.get('SAGA_VERBOSE')
 
@@ -61,11 +62,15 @@ class Config(object):
                 else:
                     self._loglevel = CRITICAL
 
-        saga_log_filter = os.environ.get('SAGA_LOG_FILTER')
-        if saga_log_filter is not None:
-            pass
-        else:
-            self._filter = None
+        SAGA_LOG_FILTER = os.environ.get('SAGA_LOG_FILTER')
+        if SAGA_LOG_FILTER is not None:
+            print SAGA_LOG_FILTER
+            try:
+                self._filters = list()
+                for x in SAGA_LOG_FILTER.split(','):
+                    self._filters.append(x)
+            except Exception, ex:
+                raise LoggingException('%s is not a valid value for SAGA_LOG_FILTER.' % SAGA_LOG_FILTER)
 
         saga_log_target = os.environ.get('SAGA_LOG_TARGET')
         if saga_log_target is not None:
@@ -78,12 +83,26 @@ class Config(object):
         return self._loglevel
 
     @property
-    def filter(self):
-        return self._filter
+    def filters(self):
+        return self._filters
 
     @property
     def target(self):
         return self._target
+
+class LoggingException(Exception):
+    pass
+
+class _MultiNameFilter(Filter):
+
+    def __init__(self, names):
+        self._names = names
+
+    def filter(self, record):
+            if record.name in self._names:
+                return True
+            else:
+                return False
 
 def getLogger(module, obj=None):
     ''' Get the SAGA logger.
@@ -97,6 +116,9 @@ def getLogger(module, obj=None):
         handler = ColorStreamHandler()
     else: 
         handler = StreamHandler()
+
+    if Config().filters is not None:
+        handler.addFilter(_MultiNameFilter(Config().filters))
 
     handler.setFormatter(DefaultFormatter)
     _logger.addHandler(handler)
@@ -124,4 +146,6 @@ def _test_():
     l2.warning('warning')
     l2.error('error')
     l2.fatal('fatal')
+
+
 
