@@ -19,32 +19,47 @@ class Config(object):
     __metaclass__ = Singleton
 
     def __init__(self):
-
+        
+        # the default log level
         self._loglevel = CRITICAL
-        SAGA_VERBOSE = os.environ.get('SAGA_VERBOSE')
-        if SAGA_VERBOSE is not None:
-            SAGA_VERBOSE = int(SAGA_VERBOSE)
-            # 4 = DEBUG + INFO + WARNING + ERROR
-            if SAGA_VERBOSE >= 4:
-                self._loglevel = DEBUG
-            # 3 = INFO + WARNING + ERROR
-            elif SAGA_VERBOSE == 3:
-                self._loglevel = INFO
-            # 2 = WARNING + ERROR 
-            elif SAGA_VERBOSE == 2:
-                self._loglevel = WARNING
-            # 1 = ERROR ONLY
-            elif SAGA_VERBOSE == 1:
-                self._loglevel = ERROR
-            # 0 = No Logging
-            else:
-                self._loglevel = CRITICAL
 
-        #saga_log_level = os.environ.get('SAGA_LOG_LEVEL')
-        #if saga_log_level is not None:
-        #    pass
-        #else:
-        #    self._loglevel = DEBUG
+        SAGA_VERBOSE = os.environ.get('SAGA_VERBOSE')
+
+        if SAGA_VERBOSE is not None:
+            if SAGA_VERBOSE.isdigit():
+                SAGA_VERBOSE = int(SAGA_VERBOSE)
+                # 4 = DEBUG + INFO + WARNING + ERROR
+                if SAGA_VERBOSE >= 4:
+                    self._loglevel = DEBUG
+                # 3 = INFO + WARNING + ERROR
+                elif SAGA_VERBOSE == 3:
+                    self._loglevel = INFO
+                # 2 = WARNING + ERROR 
+                elif SAGA_VERBOSE == 2:
+                    self._loglevel = WARNING
+                # 1 = ERROR ONLY
+                elif SAGA_VERBOSE == 1:
+                    self._loglevel = ERROR
+                # 0 = No Logging
+                else:
+                    self._loglevel = CRITICAL
+            else:
+                SAGA_VERBOSE_lower = SAGA_VERBOSE.lower()
+                # 4 = DEBUG + INFO + WARNING + ERROR
+                if SAGA_VERBOSE_lower == 'debug':
+                    self._loglevel = DEBUG
+                # 3 = INFO + WARNING + ERROR
+                elif SAGA_VERBOSE_lower == 'info':
+                    self._loglevel = INFO
+                # 2 = WARNING + ERROR 
+                elif SAGA_VERBOSE_lower == 'warning':
+                    self._loglevel = WARNING
+                # 1 = ERROR ONLY
+                elif SAGA_VERBOSE_lower == 'error':
+                    self._loglevel = ERROR
+                # 0 = No Logging
+                else:
+                    self._loglevel = CRITICAL
 
         saga_log_filter = os.environ.get('SAGA_LOG_FILTER')
         if saga_log_filter is not None:
