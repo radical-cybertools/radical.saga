@@ -16,7 +16,7 @@ except:
     RED = ""
     RES = ""
 
-class BaseException(Exception):
+class ExceptionBase(Exception):
     def __init__(self, message):
 
         # Call the base class constructor with the parameters it needs

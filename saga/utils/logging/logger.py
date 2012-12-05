@@ -12,7 +12,7 @@ import os
 from logging import StreamHandler, Filter, getLogger as logging_getLogger
 from logging import INFO, DEBUG, ERROR, WARNING, CRITICAL
 from saga.utils.singleton import Singleton
-from saga.utils.exception import BaseException
+from saga.utils.exception import ExceptionBase
 from saga.utils.logging.colorstreamhandler import *
 from saga.utils.logging.filehandler import FileHandler
 from saga.utils.logging.defaultformatter import DefaultFormatter
@@ -99,7 +99,7 @@ class Config(object):
     def targets(self):
         return self._targets
 
-class LoggingException(BaseException):
+class LoggingException(ExceptionBase):
     pass
 
 class _MultiNameFilter(Filter):
