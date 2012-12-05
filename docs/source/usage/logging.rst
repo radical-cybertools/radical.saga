@@ -6,12 +6,14 @@ In a distributed environment unified error logging and reporting is a crucial
 capability for debugging and monitoring. SAGA has a configurable logging system
 that  captures debug, info, warning and error messages across all of
 its middelware adaptors. The logging system can be controlled in two different
-ways: via :ref:`env_vars` variables and via the :ref:`log_api`.
+ways: via :ref:`env_vars` variables, which should be sufficient in most 
+scenarios, and via the :ref:`log_api`, which provides programmatic access to
+the logging system for advanced use-cases.
 
 
 .. _env_vars:
 
-Environment variables
+Environment Variables
 ---------------------
 
 Several environment variables can be used to control SAGA's logging behavior from 
