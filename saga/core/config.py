@@ -13,16 +13,17 @@ from saga.utils.logging import getLogger
 from saga.utils.singleton import Singleton
 from saga.utils.exception import ExceptionBase
 
-## These are all supported options for saga.core
+####### These are all supported options for saga.core
+##
 _all_core_options = [
 { 
   'category'      : 'saga.core.logging',
   'name'          : 'level', 
   'type'          : type(str), 
-  'default'       : 'DEBUG', 
+  'default'       : 'CRITICAL', 
   'valid_options' : ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
   'documentation' : 'The log level',
-  'env_variable'  : 'SAGA_VERBOSE' # or None
+  'env_variable'  : 'SAGA_VERBOSE'
  },
  { 
   'category'      : 'saga.core.logging',
@@ -31,7 +32,7 @@ _all_core_options = [
   'default'       : None, 
   'valid_options' : None,
   'documentation' : 'The log filters',
-  'env_variable'  : 'SAGA_LOG_FILTER' # or None
+  'env_variable'  : 'SAGA_LOG_FILTER' 
  },
  { 
   'category'      : 'saga.core.logging',
@@ -40,7 +41,7 @@ _all_core_options = [
   'default'       : ['STDOUT'], 
   'valid_options' : None,
   'documentation' : 'The log targets',
-  'env_variable'  : 'SAGA_LOG_TARGETS' # or None
+  'env_variable'  : 'SAGA_LOG_TARGETS' 
  },
  { 
   'category'      : 'saga.core.logging',
@@ -49,12 +50,11 @@ _all_core_options = [
   'default'       : True, 
   'valid_options' : None,
   'documentation' : 'Whether to use colors for console output or not.',
-  'env_variable'  : 'SAGA_LOG_TARGETS' # or None
+  'env_variable'  : None 
  },
-
 ]
 
-class _ConfigOption(object):
+class ConfigOption(object):
 
     def __init__(self, category, name, val_type, default_val, valid_options,
                  documentation, env_var):
@@ -68,7 +68,7 @@ class _ConfigOption(object):
         self._value = None
 
     def __str__(self):
-        return self._value
+        return str({'name':self._name, 'value':self._value})
 
     @property
     def category(self):
@@ -80,8 +80,7 @@ class _ConfigOption(object):
     def get_value(self):
         return self._value
 
-
-class Config(object): 
+class GlobalConfig(object): 
     __metaclass__ = Singleton
 
     def __init__(self):
@@ -104,7 +103,7 @@ class Config(object):
             else:
                 value = option['default']
 
-            self._master_config[cat][option['name']] = _ConfigOption(
+            self._master_config[cat][option['name']] = ConfigOption(
                 option['category'],
                 option['name'],
                 option['type'],
@@ -120,21 +119,36 @@ class Config(object):
         else:
             return self._master_config[category_name]
 
+    def get_option(self, category_name, option_name):
+        if category_name not in self._master_config:
+            raise CategoryNotFound(category_name)
+        else:
+            if option_name not in self._master_config[category_name]:
+                raise OptionNotFound(category_name, option_name)
+            else:
+                return self._master_config[category_name][option_name]
+
 def getConfig():
     ''' Returns a handle to logging system's configuration.
     '''
-    return Config() 
+    return GlobalConfig() 
 
 def tests():
     # make sure singleton works
     assert getConfig() == getConfig()
-    assert getConfig() == Config()
+    assert getConfig() == GlobalConfig()
 
     c = getConfig()
     print c.get_category('saga.core.logging')
+    print c.get_option('saga.core.logging', 'level')
 
 class CategoryNotFound(ExceptionBase):
     def __init__(self, name):
         self.message = "A category with name '%s' could not be found." % name
+
+class OptionNotFound(ExceptionBase):
+    def __init__(self, category_name, option_name):
+        name = "%s.%s" % (category_name, option_name)
+        self.message = "An option with name '%s' could not be found." % (name)
     
 
