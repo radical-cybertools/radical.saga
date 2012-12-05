@@ -31,7 +31,7 @@ executing shell and evaluated by SAGA at program startup.
    | Numeric Value | Log Level           | Type of Messages Displayed         |
    +===============+=====================+====================================+
    | 0             | ``CRITICAL``        | Only fatal events that will cause  |
-   |               |                     | SAGA to abort. (default)           | 
+   | (default)     |                     | SAGA to abort.                     | 
    |               |                     |                                    |
    +---------------+---------------------+------------------------------------+
    | 1             | ``ERROR``           | Errors that will not necessarily   |
@@ -97,13 +97,32 @@ from within an application using SAGA's logging API. This can come in handy if
 you want to integrate SAGA log messages with an existing Python logging system, 
 re-format the output or something slightly more involved:: 
 
+
+
+Module saga.core.logging
+************************
+
+The logging module provides classes and functions to change the behavior of
+SAGA's logging system. The :func:`getConfig` function is used to get a
+:class:`Config` object which can be used to introspect and change configuration
+system options::
+
    from saga.core.logging import getConfig as getLoggingConfig
 
-   log_config = getLoggingConfig()
-   # get all currently defined configuration options as Python dict
-   print log_config.as_dict()
+   log_conf = getLoggingConfig()
+   log_conf.level = "DEBUG" # or 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
 
-Also::
+   # change output channels 
+   if "STDOUT" in log_conf.targets:
+       log_conf.targets.remove('STDOUT')
+       log_conf.targets.add('/tmp/myapp.log')
 
-   from saga.core.logging import getHandles as getLoggingHandles
+   # reset all filters
+   log_conf.filters = set()
+
+   # show all active loggers
+   print log_conf.get_registered_logger_names()
+
+.. automodule:: saga.core.logging
+   :members:
 

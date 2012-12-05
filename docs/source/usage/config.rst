@@ -5,8 +5,8 @@ Configuration
 .. note::
 
    SAGA has been designed as a zero-configuration library. Unless you are 
-   dissatisfied with any of the default configuration settings there's 
-   absolutely no need to create a configuration file for SAGA.
+   experiencing problems with one of the default configuration settings, there's 
+   really no need to create a configuration file for SAGA.
 
 SAGA and its individual middleware adaptors provide various optional
 :ref:`conf_options`. While SAGA tries to provide sensible default values  for
@@ -25,7 +25,7 @@ simplest option is to create a configuration file. During startup, SAGA checks
 in two different locations for the existence of a configuration file:
 
 - ``/etc/saga.conf`` - for a system-wide configuration
-- ``$HOME/.saga.conf`` - for a user-specific configuration (Note: it start with a '.')
+- ``$HOME/.saga.conf`` - for a user-specific configuration (Note that it start with a '.')
 
 If a configuration file is found, it is parsed by SAGA's configuration system.
 If files are present in both locations, SAGA will try to merge both, with the
@@ -48,7 +48,7 @@ use a structure that looks like this::
 Configuration Options
 ---------------------
 
-This should be GENERATED
+.. warning:: This should be generated automatically!
 
 
 .. _conf_api:
@@ -56,4 +56,5 @@ This should be GENERATED
 Configuration API
 -----------------
 
-This should be GENERATED
+.. warning:: This should be generated automatically!
+

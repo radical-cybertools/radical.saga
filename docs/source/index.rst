@@ -10,11 +10,12 @@ Contents:
 
 .. toctree::
    :numbered:
+   :maxdepth: 2
 
    usage/index.rst
    adaptors/index.rst
-   tutorial/index.rst
    library/index.rst
+   tutorial/index.rst
 
 Indices and tables
 ==================

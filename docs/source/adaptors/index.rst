@@ -1,4 +1,3 @@
-.. _using-index:
 
 ######################
 Middleware Adaptors
