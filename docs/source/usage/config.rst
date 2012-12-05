@@ -5,10 +5,10 @@ Configuration
 .. note::
 
    SAGA has been designed as a zero-configuration library. Unless you are 
-   dissatisfied with any of the default configuration settings there's no need  
-   to create a configuration file for SAGA.
+   dissatisfied with any of the default configuration settings there's 
+   absolutely no need to create a configuration file for SAGA.
 
-SAGA as well as its individual middleware adaptors provide various optional
+SAGA and its individual middleware adaptors provide various optional
 :ref:`conf_options`. While SAGA tries to provide sensible default values  for
 the majority of these options (zero-conf), it can sometimes be necessary to
 modify or extend SAGA's configuration. SAGA provides two ways to access and
