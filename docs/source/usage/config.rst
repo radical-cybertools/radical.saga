@@ -56,5 +56,20 @@ Configuration Options
 Configuration API
 -----------------
 
-.. warning:: This should be generated automatically!
+Module saga.core.config
+************************
+
+The config module provides classes and functions to introspect and modify
+SAGA's configuration. The :func:`getConfig` function is used to get the
+:class:`GlobalConfig` object which represents the current configuration 
+of SAGA::
+
+   from saga.core.config import getConfig 
+
+   sagaconf = getConfig()
+   print sagaconf.get_category('saga.core.logging')
+
+.. automodule:: saga.core.config
+   :members:
+
 

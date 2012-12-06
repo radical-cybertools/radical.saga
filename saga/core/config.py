@@ -13,7 +13,7 @@ from saga.utils.logging import getLogger
 from saga.utils.singleton import Singleton
 from saga.utils.exception import ExceptionBase
 
-####### These are all supported options for saga.core
+########### These are all supported options for saga.core #####################
 ##
 _all_core_options = [
 { 
@@ -53,11 +53,16 @@ _all_core_options = [
   'env_variable'  : None 
  },
 ]
+##
+###############################################################################
 
 class ConfigOption(object):
+    """ Represent a (mutable) configuration option.
+    """
 
     def __init__(self, category, name, val_type, default_val, valid_options,
                  documentation, env_var):
+
         self._category = category
         self._name = name
         self._val_type = val_type
@@ -80,7 +85,14 @@ class ConfigOption(object):
     def get_value(self):
         return self._value
 
+
 class GlobalConfig(object): 
+    """ Represents SAGA's global configuration.
+
+        The GlobalConfig class can be used to introspect and modify the
+        configuration options for SAGA and its various middleware adaptors. 
+
+    """    
     __metaclass__ = Singleton
 
     def __init__(self):
@@ -99,6 +111,8 @@ class GlobalConfig(object):
             # check if env variable is set for this option
             ev = os.environ.get(option['env_variable'])
             if ev is not None:
+                getLogger('core').debug("Using environment variable '%s' to set config option '%s.%s' to '%s'." \
+                    % (option['env_variable'], option['category'], option['name'], ev))
                 value = ev
             else:
                 value = option['default']
@@ -111,9 +125,11 @@ class GlobalConfig(object):
                 option['valid_options'],
                 option['documentation'],
                 option['env_variable'])
-            self._master_config[cat][option['name']].set_value(value)
+            self._master_config[cat][option['name']].set_value(value) 
 
     def get_category(self, category_name):
+        """ Return a specific configuration category.
+        """
         if category_name not in self._master_config:
             raise CategoryNotFound(category_name)
         else:
@@ -129,8 +145,8 @@ class GlobalConfig(object):
                 return self._master_config[category_name][option_name]
 
 def getConfig():
-    ''' Returns a handle to logging system's configuration.
-    '''
+    """ Returns a handle to logging system's configuration.
+    """
     return GlobalConfig() 
 
 def tests():

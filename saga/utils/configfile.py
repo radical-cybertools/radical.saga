@@ -9,6 +9,15 @@ __license__    = "MIT"
 '''
 
 from copy import deepcopy
+import ConfigParser, os
+
+class CfgFileParser(object):
+
+    def __init__(self, filename):
+
+        config = ConfigParser.ConfigParser()
+        config.read(filename)
+
 
 class Configuration(object):
     
