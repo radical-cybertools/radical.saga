@@ -11,12 +11,22 @@ __license__    = "MIT"
 from copy import deepcopy
 import ConfigParser, os
 
-class CfgFileParser(object):
+class ConfigFileReader(object):
 
-    def __init__(self, filename):
+    def __init__(self, filenames):
 
-        config = ConfigParser.ConfigParser()
-        config.read(filename)
+        config = ConfigParser.RawConfigParser(allow_no_value=True)
+        config.read(filenames)
+
+        config_dict = dict()
+        
+        for section in config.sections():
+            config_dict[section] = dict()
+            for option in config.options(section):
+                config_dict[section][option] = config.get(section, option)
+
+        print repr(config_dict)
+
 
 
 class Configuration(object):

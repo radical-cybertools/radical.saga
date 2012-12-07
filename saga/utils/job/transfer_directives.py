@@ -34,6 +34,7 @@ from saga.utils.exception import ExceptionBase
 class TransferDirectives(object):
 
     def __init__(self, directives_list):
+
         self._in_overwrite = dict()
         self._in_append = dict()
         self._out_overwrite = dict()
@@ -45,37 +46,58 @@ class TransferDirectives(object):
                 raise InvalidTransferDirective(directive)
             elif '<<' in directive:
                 (remote, local) = directive.split('<<')
-                self._out_append[remote] = local
+                self._out_append[local.strip()] = remote.strip()
             elif '>>' in directive:
                 (local, remote) = directive.split('>>')
-                self._in_append[local] = remote
+                self._in_append[local.strip()] = remote.strip()
             elif '<' in directive:
                 (remote, local) = directive.split('<')
-                self._out_overwrite[remote] = local
+                self._out_overwrite[local.strip()] = remote.strip()
             elif '>' in directive:
                 (local, remote) = directive.split('>')
-                self._in_overwrite[local] = remote
+                self._in_overwrite[local.strip()] = remote.strip()
             else:
                 raise InvalidTransferDirective(directive)
 
+    def _dicts_to_string_list(self):
+        slist = list()
+        for (local, remote) in self._in_overwrite.iteritems():
+            slist.append('%s > %s' % (local, remote))
+        for (local, remote) in self._in_append.iteritems():
+            slist.append('%s >> %s' % (local, remote))
+        for (remote, local) in self._out_overwrite.iteritems():
+            slist.append('%s < %s' % (local, remote))
+        for (remote, local) in self._out_append.iteritems():
+            slist.append('%s << %s' % (local, remote))
+        return slist
+
+    def __str__(self):
+        """ String representation.
+        """
+        return str(self._dicts_to_string_list())
+
     @property
-    def in_overwrite(self):
+    def in_overwrite_dict(self):
         return self._in_overwrite
 
     @property
-    def in_append(self):
+    def in_append_dict(self):
         return self._in_append
 
     @property
-    def out_overwrite(self):
+    def out_overwrite_dict(self):
         return self._out_overwrite
 
     @property
-    def out_append(self):
+    def out_append_dict(self):
         return self._out_append
 
+    @property
+    def string_list(self):
+        return self._dicts_to_string_list()
+
+
 class InvalidTransferDirective(ExceptionBase):
-    pass
     def __init__(self, directive):
         self.message = "'%s' is not a valid transfer directive string." % directive
 

@@ -8,7 +8,7 @@ __license__   = "MIT"
 ''' Provides a convenience class for handling GFD.90-style job ids.
 '''
 
-from saga.utils.exception import BaseException
+from saga.utils.exception import ExceptionBase
 
 # 4.1.5 Job Identifiers (GFD90 p 177-178)
 #
@@ -95,7 +95,7 @@ class JobId(object):
         jid.tuple = (backend_url, native_id)
         return jid
 
-class InvalidJobId(BaseException):
+class InvalidJobId(ExceptionBase):
     def __init__(self, jobid):
         self.message = "'%s' is not a valid job id string." % jobid
 

@@ -16,7 +16,7 @@ import getpass
 import socket
 socket.setdefaulttimeout(20) #default timeout for connect()
 
-from saga.utils.exception import BaseException
+from saga.utils.exception import ExceptionBase
 
 class _pxssh (spawn):
     """This class extends / modifies pxssh. It adds support 
@@ -448,7 +448,7 @@ class SSHConnection(object):
                   % (commandline, str(ose)))
 
 
-class SSHConnectionException(BaseException):
+class SSHConnectionException(ExceptionBase):
     '''Raised for SSHConnection exceptions.
     '''
 

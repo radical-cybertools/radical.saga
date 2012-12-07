@@ -9,13 +9,13 @@ __license__   = "MIT"
     wrapper, like GSISSH and SSH. 
 '''
 
-from saga.utils.exception import BaseException
+from saga.utils.exception import ExceptionBase
 
 from cmdlinewrapper_subprocess import SubprocessCommandLineWrapper
 from cmdlinewrapper_gsissh import GSISSHCommandLineWrapper
 from cmdlinewrapper_ssh import SSHCommandLineWrapper
 
-class CLWException(BaseException):
+class CLWException(ExceptionBase):
     ''' Raised for CommandLineWrapper exceptions.
     '''
 
