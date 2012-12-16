@@ -14,20 +14,18 @@ import ConfigParser, os
 class ConfigFileReader(object):
 
     def __init__(self, filenames):
-
         config = ConfigParser.RawConfigParser(allow_no_value=True)
         config.read(filenames)
 
-        config_dict = dict()
+        self.config_dict = dict()
         
         for section in config.sections():
-            config_dict[section] = dict()
+            self.config_dict[section] = dict()
             for option in config.options(section):
-                config_dict[section][option] = config.get(section, option)
+                self.config_dict[section][option] = config.get(section, option)
 
-        print repr(config_dict)
-
-
+    def get_config_dict(self):
+        return self.config_dict
 
 class Configuration(object):
     

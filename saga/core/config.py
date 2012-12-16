@@ -124,6 +124,10 @@ class GlobalConfig(object):
                 cfg_files.append(usr_cfg)
 
         cfr = ConfigFileReader(cfg_files)
+    
+        # cfg_file_dict holds all configuration variables that 
+        # were read from either a system-wide or user configuration file.
+        cfg_file_dict = cfr.get_config_dict()
 
         # load valid options and add them to the configuration
         for option in _all_core_options:
@@ -132,9 +136,27 @@ class GlobalConfig(object):
                 # first occurrence - add new category key
                 self._master_config[cat] = dict()
 
-            # check if env variable is set for this option
             ev = os.environ.get(option['env_variable'])
-            if ev is not None:
+
+            if (option['category'] in cfg_file_dict) and \
+              option['name'] in cfg_file_dict[option['category']]:
+                # found entry in configuration file -- use it
+                tmp_value = cfg_file_dict[option['category']][option['name']]
+                # some list types need type conversion
+                if option['type'] == list:
+                    value = tmp_value.split(",")
+                elif option['type'] == bool:
+                    if tmp_value.lower() == 'true':
+                      value = True
+                    elif tmp_value.lower() == 'false':
+                      value = False 
+                    else:
+                      raise ValueTypeError(option['category'], option['name'],
+                          tmp_value, option['type'])
+                else:
+                    value = tmp_value
+
+            elif ev is not None:
                 getLogger('core').debug("Using environment variable '%s' to set config option '%s.%s' to '%s'." \
                     % (option['env_variable'], option['category'], option['name'], ev))
                 value = ev
@@ -149,7 +171,10 @@ class GlobalConfig(object):
                 option['valid_options'],
                 option['documentation'],
                 option['env_variable'])
+
             self._master_config[cat][option['name']].set_value(value) 
+
+        # next, we need to parse adaptor se
 
     def get_category(self, category_name):
         """ Return a specific configuration category.
@@ -248,14 +273,14 @@ def test_env_vars():
 def test_valid_config_file():
     # Generate a configuration file
     import tempfile
-    tmpfile = open('/tmp/saga.conf', 'w+')
-    
     import ConfigParser
+
+    tmpfile = open('/tmp/saga.conf', 'w+')
     config = ConfigParser.RawConfigParser()
 
     config.add_section('saga.core.logging')
     config.set('saga.core.logging', 'ttycolor', False)
-    config.set('saga.core.logging', 'filters', ['saga', 'saga.adaptor.pbs'])
+    config.set('saga.core.logging', 'filters', 'saga,saga.adaptor.pbs')
     config.write(tmpfile)
     tmpfile.close()
 
@@ -265,13 +290,76 @@ def test_valid_config_file():
     cfg._initialize(tmpfile.name)
 
     # make sure values appear in GlobalConfig as set in the config file
-    print getConfig().get_option('saga.core.logging', 'filters').get_value()
     assert(getConfig().get_option('saga.core.logging', 'filters').get_value()
       == ['saga', 'saga.adaptor.pbs'])
 
+    # make sure a signgle-element list works as well
+
+    tmpfile = open('/tmp/saga.conf', 'w+')
+    config = ConfigParser.RawConfigParser()
+
+    config.add_section('saga.core.logging')
+    config.set('saga.core.logging', 'ttycolor', False)
+    config.set('saga.core.logging', 'filters', 'justonefilter')
+    config.write(tmpfile)
+    tmpfile.close()
+
+    # for this test, we call the private _initialize() method again to read
+    # an alternative (generated) config file.
+    cfg = getConfig()
+    cfg._initialize(tmpfile.name)
+
+    # make sure values appear in GlobalConfig as set in the config file
+    assert(getConfig().get_option('saga.core.logging', 'filters').get_value()
+      == ['justonefilter'])
+
+    # make sure a zero-elemnt list works as well
+    tmpfile = open('/tmp/saga.conf', 'w+')
     
+    config = ConfigParser.RawConfigParser()
+
+    config.add_section('saga.core.logging')
+    config.set('saga.core.logging', 'ttycolor', False)
+    config.write(tmpfile)
+    tmpfile.close()
+
+    # for this test, we call the private _initialize() method again to read
+    # an alternative (generated) config file.
+    cfg = getConfig()
+    cfg._initialize(tmpfile.name)
+
+    # make sure values appear in GlobalConfig as set in the config file
+    assert(getConfig().get_option('saga.core.logging', 'filters').get_value()
+      == [])
+    assert(getConfig().get_option('saga.core.logging', 'ttycolor').get_value()
+      == False)
+        
 
 def test_invalid_config_file():
-  pass
+    import tempfile
+    import ConfigParser
+
+    tmpfile = open('/tmp/saga.conf', 'w+')
+    config = ConfigParser.RawConfigParser()
+
+    config.add_section('saga.core.logging')
+    config.set('saga.core.logging', 'ttycolor', 'invalid')
+    config.write(tmpfile)
+    tmpfile.close()
+
+    # for this test, we call the private _initialize() method again to read
+    # an alternative (generated) config file.
+    try: 
+        cfg = getConfig()
+        cfg._initialize(tmpfile.name)
+        assert False
+    except ValueTypeError:
+        assert True
+
+    # make sure values appear in GlobalConfig as set in the config file
+    #assert(getConfig().get_option('saga.core.logging', 'filters').get_value()
+    #  == [])
+    #assert(getConfig().get_option('saga.core.logging', 'ttycolor').get_value()
+    #  == False)
 ##
 ############################## END UNIT TESTS #################################
