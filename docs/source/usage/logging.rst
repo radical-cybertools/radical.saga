@@ -95,8 +95,7 @@ Logging API
 The SAGA logging system can be controlled directly  
 from within an application using SAGA's logging API. This can come in handy if 
 you want to integrate SAGA log messages with an existing Python logging system, 
-re-format the output or something slightly more involved:: 
-
+re-format the output or something slightly more involved.
 
 
 Module saga.core.logging
