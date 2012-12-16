@@ -146,8 +146,13 @@ class GlobalConfig(object):
                 if option['type'] == list:
                     value = tmp_value.split(",")
                 elif option['type'] == bool:
-                    value = bool(tmp_value)
-                    print "BOOL: %s " % value
+                    if tmp_value.lower() == 'true':
+                      value = True
+                    elif tmp_value.lower() == 'false':
+                      value = False 
+                    else:
+                      raise ValueTypeError(option['category'], option['name'],
+                          tmp_value, option['type'])
                 else:
                     value = tmp_value
 
@@ -166,6 +171,7 @@ class GlobalConfig(object):
                 option['valid_options'],
                 option['documentation'],
                 option['env_variable'])
+
             self._master_config[cat][option['name']].set_value(value) 
 
         # next, we need to parse adaptor se
@@ -270,7 +276,6 @@ def test_valid_config_file():
     import ConfigParser
 
     tmpfile = open('/tmp/saga.conf', 'w+')
-    
     config = ConfigParser.RawConfigParser()
 
     config.add_section('saga.core.logging')
@@ -291,7 +296,6 @@ def test_valid_config_file():
     # make sure a signgle-element list works as well
 
     tmpfile = open('/tmp/saga.conf', 'w+')
-    
     config = ConfigParser.RawConfigParser()
 
     config.add_section('saga.core.logging')
@@ -327,12 +331,35 @@ def test_valid_config_file():
     # make sure values appear in GlobalConfig as set in the config file
     assert(getConfig().get_option('saga.core.logging', 'filters').get_value()
       == [])
-    print getConfig().get_option('saga.core.logging', 'ttycolor').get_value()
     assert(getConfig().get_option('saga.core.logging', 'ttycolor').get_value()
       == False)
         
 
 def test_invalid_config_file():
-  pass
+    import tempfile
+    import ConfigParser
+
+    tmpfile = open('/tmp/saga.conf', 'w+')
+    config = ConfigParser.RawConfigParser()
+
+    config.add_section('saga.core.logging')
+    config.set('saga.core.logging', 'ttycolor', 'invalid')
+    config.write(tmpfile)
+    tmpfile.close()
+
+    # for this test, we call the private _initialize() method again to read
+    # an alternative (generated) config file.
+    try: 
+        cfg = getConfig()
+        cfg._initialize(tmpfile.name)
+        assert False
+    except ValueTypeError:
+        assert True
+
+    # make sure values appear in GlobalConfig as set in the config file
+    #assert(getConfig().get_option('saga.core.logging', 'filters').get_value()
+    #  == [])
+    #assert(getConfig().get_option('saga.core.logging', 'ttycolor').get_value()
+    #  == False)
 ##
 ############################## END UNIT TESTS #################################
