@@ -116,7 +116,7 @@ except ImportError:
     pass
 else:
     setup_args['install_requires'] = [
-        'pexpect'
+      #  'pexpect'
     ]
     
 
