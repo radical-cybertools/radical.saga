@@ -5,23 +5,15 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-''' Provides API handles for SAGA's runtime.
-'''
+''' Provides API handles for SAGA's runtime. '''
 
-from saga.utils.singleton import Singleton
-from saga.engine.config   import Configurable, Configuration, getConfig
-from saga.engine.logger   import Logger, getLogger
-from saga.engine.registry import adaptor_registry
-
-import os
-import re
-import sys
 import pprint
-import string
-import inspect
 import collections
 
-import saga
+from saga.utils.singleton import Singleton
+from saga.engine.config   import Configurable, getConfig
+from saga.engine.logger   import Logger, getLogger
+from saga.engine.registry import adaptor_registry
 
 ############# These are all supported options for saga.engine ####################
 ##
@@ -154,7 +146,7 @@ class Engine(Configurable):
 
     def _load_adaptors(self):
 
-        global_config = saga.engine.getConfig()
+        global_config = getConfig()
 
         for module_name in adaptor_registry :
 
@@ -206,7 +198,7 @@ class Engine(Configurable):
 
 
             except Exception as e :
-                self._logger.error("load adaptor " + module_name + " -- failed: " + str(e))
+                self._logger.warn("load adaptor " + module_name + " -- failed: " + str(e))
 
 
     def get_adaptor (self, type, schema) :
