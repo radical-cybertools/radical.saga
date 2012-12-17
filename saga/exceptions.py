@@ -33,6 +33,9 @@ class SagaException(ExceptionBase):
     def get_all_messages (self) :
         return [] # FIXME
 
+    def __str__ (self) :
+        return self._message
+
 
     message    = property (get_message)         # string
     object     = property (get_object)          # object type
