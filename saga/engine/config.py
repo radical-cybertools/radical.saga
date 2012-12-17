@@ -9,7 +9,6 @@ __license__   = "MIT"
 '''
 
 import os
-import pprint
 
 from saga.utils.singleton  import Singleton
 from saga.utils.exception  import ExceptionBase

@@ -24,16 +24,3 @@ class ExceptionBase(Exception):
 
     def __str__(self):
         return RED+self.message+RES
-
-################################## UNIT TESTS ##################################
-
-def test_ExceptionBase():
-    try:
-        raise ExceptionBase('message')
-        assert False
-    except ExceptionBase, eb:
-        if eb.message != 'message':
-            assert False
-        else:
-            assert str(eb) == '%smessage%s' % (RED, RES)
-            assert True
