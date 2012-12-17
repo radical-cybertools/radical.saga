@@ -225,17 +225,17 @@ class Engine(Configurable):
 
         for adaptor_class in self._adaptors[ctype][schema] :
             try :
-                adaptor_class_instance = adaptor_class (*args, **kwargs)
+                adaptor_class_instance = adaptor_class ()
+                adaptor_class_instance._init_sync (*args, **kwargs)
+
+                # successfully bound to adaptor
+                self._logger.info("select adaptor " + str(adaptor_class) + " -- success")
+                return adaptor_class_instance
 
             except Exception as e :
                 # adaptor class initialization failed?
                 self._logger.info("select adaptor " + str(adaptor_class) + " -- failed: " + str(e))
                 continue
-
-            else :
-                # successfully bound to adaptor
-                self._logger.info("select adaptor " + str(adaptor_class) + " -- success")
-                return
 
 
     def list_loaded_adaptors(self):

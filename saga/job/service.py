@@ -1,14 +1,28 @@
 
-from saga.Url    import Url
-from saga.Object import Object 
-from saga.Task   import Async
+# from saga.Url    import Url
+# from saga.Object import Object 
+# from saga.Task   import Async
 
-class Service (Object, Async) :
+from saga.engine.logger import getLogger
+from saga.engine.engine import getEngine
 
-    def __init__   (self, rm=None, session=None)             : pass 
-    #   rm:        saga.Url
-    #   session:   saga.Session
-    #   ret:       obj
+# class Service (Object, Async) :
+class Service (object) :
+
+    def __init__ (self, rm=None, session=None) : 
+        '''
+        rm:        saga.Url
+        session:   saga.Session
+        ret:       obj
+        '''
+
+        self._logger = getLogger ('saga.job.Job')
+        self._logger.debug ("saga.job.Job.__init__(%s)" % id)
+
+        self._engine = getEngine ()
+
+        self._adaptor = self._engine.get_adaptor ('saga.job.Service', 'fork', rm, session)
+
 
     def create     (self, rm=None, session=None, ttype=None) : pass 
     #   rm:        saga.Url
@@ -30,6 +44,14 @@ class Service (Object, Async) :
     def list       (self,                  ttype=None)       : pass 
     #   ttype:     saga.task.type enum
     #   ret:       list [string] / saga.Task
+
+    def get_url    (self, ttype=None) :
+        '''
+        ttype:     saga.task.type enum
+        ret:       saga.job.Job / saga.Task
+        '''
+        return self._adaptor.get_url (ttype)
+
 
     def get_job    (self, job_id,          ttype=None)       : pass 
     #   job_id:    string

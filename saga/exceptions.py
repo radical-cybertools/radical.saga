@@ -41,7 +41,7 @@ class SagaException(ExceptionBase):
     object     = property (get_object)          # object type
     traceback  = property (get_traceback)       # string
     exceptions = property (get_all_exceptions)  # list [Exception]
-    messages   = property (get_all_message)     # list [string]
+    messages   = property (get_all_messages)    # list [string]
 
 
 class NotImplemented       (SagaException)   : pass

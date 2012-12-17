@@ -1,5 +1,5 @@
 
-import saga.engine
+import saga
 
 e = saga.engine.Engine ()
 
@@ -10,4 +10,7 @@ a2 = e.get_adaptor ('saga.job.Service', 'fork', 'fork://localhost/')
 
 a3 = e.get_adaptor ('saga.job.Job',     'oops')
 a4 = e.get_adaptor ('saga.job.Service', 'oops', 'oops://localhost/')
+
+js = saga.job.Service ("fork://localhost")
+print js.get_url ()
 

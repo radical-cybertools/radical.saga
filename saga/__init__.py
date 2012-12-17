@@ -29,6 +29,10 @@ except IOError:
     except OSError:
         pass
 
+import saga.engine
+import saga.exceptions
+import saga.job
+import saga.cpi
 
 #from url import (
 #    Url

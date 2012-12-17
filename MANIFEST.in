@@ -2,6 +2,11 @@ include *.py
 
 include saga/*.py
 
+include saga/job/*.py
+
+include saga/cpi/*.py
+include saga/cpi/job/*.py
+
 include saga/engine/*.py
 
 include saga/utils/*.py
