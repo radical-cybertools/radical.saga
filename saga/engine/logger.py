@@ -65,6 +65,14 @@ _all_logging_options = [
 class Logger(Configurable):
     __metaclass__ = Singleton
 
+    class _MultiNameFilter(Filter):
+        def __init__(self, names):
+            self._names = names
+        def filter(self, record):
+            for n in self._names:
+                if n in record.name:
+                    return True
+
     def __init__(self):
         
         Configurable.__init__(self, 'saga.engine.logging', _all_logging_options)    
@@ -73,6 +81,8 @@ class Logger(Configurable):
         self._loglevel = cfg['level'].get_value()
         self._filters  = cfg['filters'].get_value()
         self._targets  = cfg['targets'].get_value()
+
+        self._handlers = list()
 
         SAGA_VERBOSE = self._loglevel
 
@@ -116,6 +126,26 @@ class Logger(Configurable):
                 else:
                     raise LoggingException('%s is not a valid value for SAGA_VERBOSE.' % SAGA_VERBOSE)
 
+        # create the  handler
+        # check how many handlers we need
+        for target in self._targets:
+            if target.lower() == 'stdout':
+                # create a console stream logger
+                # Only enable colour if support was loaded properly
+                if has_color_stream_handler is True:
+                    handler = ColorStreamHandler()
+                else: 
+                    handler = StreamHandler()
+            else:
+                # got to be a file logger
+                handler = FileHandler(target)
+
+            handler.setFormatter(DefaultFormatter)
+
+            if self._filters != []:
+                handler.addFilter(_MultiNameFilter(Logger().filters))
+            self._handlers.append(handler)
+
     @property
     def loglevel(self):
         return self._loglevel
@@ -128,6 +158,9 @@ class Logger(Configurable):
     def targets(self):
         return self._targets
 
+    @property
+    def handlers(self):
+        return self._handlers
 
 ################################################################################
 ##
@@ -147,31 +180,14 @@ def getLogger(module, obj=None):
     else:
         _logger = logging_getLogger('saga.%s.%s' % (module, obj))
 
-    # check how many handlers we need
-    for target in Logger().targets:
-        if target.lower() == 'stdout':
-            # create a console stream logger
-            # Only enable colour if support was loaded properly
-            if has_color_stream_handler is True:
-                handler = ColorStreamHandler()
-            else: 
-                handler = StreamHandler()
-        else:
-            # got to be a file logger
-            handler = FileHandler(target)
-
-        handler.setFormatter(DefaultFormatter)
-
-        if Logger().filters != []:
-            handler.addFilter(_MultiNameFilter(Logger().filters))
-
-        _logger.addHandler(handler)
-
     _logger.setLevel(Logger().loglevel)
     _logger.propagate = 0 # Don't bubble up to the root logger
 
-    return _logger
+    if _logger.handlers == []:
+        for handler in Logger().handlers:
+            _logger.addHandler(handler)
 
+    return _logger
 
 ################################################################################
 ##
@@ -198,6 +214,8 @@ def test_configurable():
 
 def test_logger():
     cl = getLogger('engine')
+    cl = getLogger('engine')
+    
     assert cl is not None
     cl.debug('debug')
     cl.info('info')
