@@ -5,18 +5,18 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-''' Provides API handles for SAGA's core runtime.
+''' Provides API handles for SAGA's runtime.
 '''
 
 from saga.utils.singleton import Singleton
 from saga.engine.config import Configurable, Configuration, getConfig
 from saga.engine.logger import Logger, getLogger
 
-############# These are all supported options for saga.core ####################
+############# These are all supported options for saga.engine ####################
 ##
-_all_core_config_options = [
+_all_engine_config_options = [
     { 
-    'category'      : 'saga.core',
+    'category'      : 'saga.engine',
     'name'          : 'foo', 
     'type'          : str, 
     'default'       : 'bar', 
@@ -30,7 +30,7 @@ _all_core_config_options = [
 ################################################################################
 ##
 def getEngine():
-    """ Returns a handle to the Core object.
+    """ Returns a handle to the Engine object.
     """
     return Engine() 
 
@@ -38,10 +38,10 @@ def getEngine():
 ################################################################################
 ##
 class Engine(Configurable): 
-    ''' Represents the SAGA core runtime system.
+    ''' Represents the SAGA engine runtime system.
 
-        The Core class is a singleton class that takes care of 
-        configuration, logging and adaptor management. Core is 
+        The Engine class is a singleton class that takes care of 
+        configuration, logging and adaptor management. Engine is 
         instantiated implicitly as soon as SAGA is imported into
         Python. It can be used to introspect the current state of
         a SAGA instance.
@@ -50,7 +50,7 @@ class Engine(Configurable):
 
     def __init__(self):
         # set the configuration options for this object
-        Configurable.__init__(self, 'saga.core', _all_core_config_options)
+        Configurable.__init__(self, 'saga.engine', _all_engine_config_options)
         # initialize logging
         self._initializeLogging()
 
