@@ -9,8 +9,10 @@ __license__   = "MIT"
 '''
 
 import os
-from saga.utils.singleton import Singleton
-from saga.utils.exception import ExceptionBase
+import pprint
+
+from saga.utils.singleton  import Singleton
+from saga.utils.exception  import ExceptionBase
 from saga.utils.configfile import ConfigFileReader
 
 ################################################################################
@@ -114,10 +116,12 @@ class Configuration(object):
                 # first occurrence - add new category key
                 self._master_config[cat] = dict()
 
-            ev = os.environ.get(option['env_variable'])
+            ev = None
+            if option['env_variable'] :
+                ev = os.environ.get(option['env_variable'])
 
             if (option['category'] in cfg_file_dict) and \
-              option['name'] in cfg_file_dict[option['category']]:
+                option['name']     in cfg_file_dict[option['category']]:
                 # found entry in configuration file -- use it
                 tmp_value = cfg_file_dict[option['category']][option['name']]
                 # some list types need type conversion
@@ -151,6 +155,50 @@ class Configuration(object):
                 option['env_variable'])
 
             self._master_config[cat][option['name']].set_value(value) 
+
+
+        # now walk through the cfg_file_dict -- for all entries not yet handled
+        # (i.e. which have not been registered before), use default
+        # ConfigOptions:
+        #       category       : from cfg_file_dict
+        #       name           : from cfg_file_dict
+        #       value          : from cfg_file_dict
+        #       type           : string
+        #       default        : ""
+        #       valid_options  : None
+        #       documentation  : ""
+        #       env_variable   : None
+        #
+        # If later initialize_ is called again, and that option has been
+        # registered meanwhile, this entry will be overwritten.
+
+        for section in cfg_file_dict.keys () :
+            for name in cfg_file_dict[section].keys () :
+                value = cfg_file_dict[section][name]
+                print " -- %s -- %s -- %s "  %  (section, name, value)
+
+                # check if this is a registered entry
+                exists = False
+                if section in self._master_config :
+                    if name in self._master_config[section] :
+                        exists = True
+                else :
+                    # section does not exist - create it, and add option
+                    self._master_config[section] = {}
+
+                # if not, add it with default ConfigOptions
+                if not exists :
+                    self._master_config[section][name] = ConfigOption(
+                        section   , # category
+                        name      , # name
+                        str       , # type
+                        ""        , # default
+                        None      , # valid_options
+                        ""        , # documentation
+                        None      ) # env_variable
+
+                    self._master_config[section][name].set_value(value)
+
 
         # next, we need to parse adaptor se
 
