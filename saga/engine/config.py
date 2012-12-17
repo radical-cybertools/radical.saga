@@ -154,6 +154,14 @@ class Configuration(object):
 
         # next, we need to parse adaptor se
 
+    def has_category(self, category_name):
+        """ Check for a specific configuration category.
+        """
+        if category_name not in self._master_config:
+            return False
+        else:
+            return True
+
     def get_category(self, category_name):
         """ Return a specific configuration category.
         """
