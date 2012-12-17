@@ -14,7 +14,7 @@ import ConfigParser, os
 class ConfigFileReader(object):
 
     def __init__(self, filenames):
-        config = ConfigParser.RawConfigParser(allow_no_value=True)
+        config = ConfigParser.RawConfigParser()
         config.read(filenames)
 
         self.config_dict = dict()

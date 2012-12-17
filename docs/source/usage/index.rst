@@ -14,4 +14,5 @@ and configuration of SAGA and things that make working with SAGA easier.
 
    install.rst
    config.rst
-   logging.rst
+   logger.rst
+

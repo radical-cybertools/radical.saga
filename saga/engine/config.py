@@ -135,7 +135,7 @@ class Configuration(object):
                     value = tmp_value
 
             elif ev is not None:
-                #getLogger('core').debug("Using environment variable '%s' to set config option '%s.%s' to '%s'." \
+                #getLogger('engine').debug("Using environment variable '%s' to set config option '%s.%s' to '%s'." \
                 #    % (option['env_variable'], option['category'], option['name'], ev))
                 value = ev
             else:

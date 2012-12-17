@@ -33,10 +33,10 @@ user-level  configuration (``$HOME/.saga.conf``) always having precedence over
 the  system-wide configuration (``$HOME/.saga.conf``). SAGA configuration files 
 use a structure that looks like this::
 
-    [saga.core]
+    [saga.engine]
         option = value
 
-    [saga.logging]
+    [saga.logger]
         option = value
         
     [saga.adaptor.name]
@@ -56,20 +56,20 @@ Configuration Options
 Configuration API
 -----------------
 
-Module saga.core.config
-************************
+Module saga.engine.config
+*************************
 
 The config module provides classes and functions to introspect and modify
 SAGA's configuration. The :func:`getConfig` function is used to get the
 :class:`GlobalConfig` object which represents the current configuration 
 of SAGA::
 
-   from saga.core.config import getConfig 
+   from saga.engine.config import getConfig 
 
    sagaconf = getConfig()
-   print sagaconf.get_category('saga.core.logging')
+   print sagaconf.get_category('saga.engine.logger')
 
-.. automodule:: saga.core.config
+.. automodule:: saga.engine.config
    :members:
 
 

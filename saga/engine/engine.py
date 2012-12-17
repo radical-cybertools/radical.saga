@@ -45,6 +45,45 @@ class Engine(Configurable):
         instantiated implicitly as soon as SAGA is imported into
         Python. It can be used to introspect the current state of
         a SAGA instance.
+
+        While loading adaptors, the Engine builds up a registry of 
+        adaptor classes, hierarchically sorted like this::
+
+          _adaptors = 
+          { 
+              'job' : 
+              { 
+                  'gram' : [<gram job  adaptor class>]
+                  'ssh'  : [<ssh  job  adaptor class>]
+                  'http' : [<aws  job  adaptor class>,
+                            <occi job  adaptor class>]
+                  ...
+              },
+              'file' : 
+              { 
+                  'ftp'  : <ftp  file adaptor class>
+                  'scp'  : <scp  file adaptor class>
+                  ...
+              },
+              ...
+          }
+
+        to enable simple lookup operations when binding an API object to an
+        adaptor class instance.  For example, a 
+        'saga.job.Service('http://remote.host.net/')' constructor would use
+        (simplified)::
+
+          def __init__ (self, url, session=None) :
+              
+              for adaptor_class in self._engine._adaptors {'job'}{'http'}
+                  try :
+                      self._adaptor = adaptor_class (url, session}
+                  except saga.Exception e :
+                      # adaptor could not handle the URL, handle e
+                  else :
+                      # successfully bound to adaptor
+                      return
+        '
     '''
     __metaclass__ = Singleton
 
@@ -52,15 +91,16 @@ class Engine(Configurable):
         # set the configuration options for this object
         Configurable.__init__(self, 'saga.engine', _all_engine_config_options)
         # initialize logging
-        self._initializeLogging()
+        self._initialize_logging()
+        self._load_adaptors()
 
-    def _initializeLogging(self):
+    def _initialize_logging(self):
         Logger()
 
-    def _loadAdaptors(self):
+    def _load_adaptors(self):
         pass
 
-    def listLoadedAdaptors(self):
+    def list_loaded_adaptors(self):
         pass
 
 
@@ -76,3 +116,4 @@ def test_configurable():
     assert Engine().get_config()['foo'].get_value() == 'bar'  
 ##
 ############################## END UNIT TESTS #################################
+

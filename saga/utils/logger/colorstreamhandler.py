@@ -71,7 +71,7 @@ def _test_():
     
     from defaultformatter import DefaultFormatter
 
-    log = getLogger('saga.core')
+    log = getLogger('saga.engine')
     # Only enable colour if support was loaded properly
     handler = ColorStreamHandler() if has_color_stream_handler else StreamHandler()
     handler.setLevel(DEBUG)

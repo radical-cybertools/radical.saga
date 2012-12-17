@@ -23,7 +23,7 @@ from saga.engine.config import Configurable
 ##
 _all_logging_options = [
     { 
-    'category'      : 'saga.core.logging',
+    'category'      : 'saga.engine.logging',
     'name'          : 'level', 
     'type'          : str, 
     'default'       : 'CRITICAL', 
@@ -32,7 +32,7 @@ _all_logging_options = [
     'env_variable'  : 'SAGA_VERBOSE'
     },
     { 
-    'category'      : 'saga.core.logging',
+    'category'      : 'saga.engine.logging',
     'name'          : 'filters', 
     'type'          : list, 
     'default'       : [], 
@@ -41,7 +41,7 @@ _all_logging_options = [
     'env_variable'  : 'SAGA_LOG_FILTER' 
     },
     { 
-    'category'      : 'saga.core.logging',
+    'category'      : 'saga.engine.logging',
     'name'          : 'targets', 
     'type'          : list, 
     'default'       : ['STDOUT'], 
@@ -50,7 +50,7 @@ _all_logging_options = [
     'env_variable'  : 'SAGA_LOG_TARGETS' 
     },
     { 
-    'category'      : 'saga.core.logging',
+    'category'      : 'saga.engine.logging',
     'name'          : 'ttycolor', 
     'type'          : bool, 
     'default'       : True, 
@@ -67,7 +67,7 @@ class Logger(Configurable):
 
     def __init__(self):
         
-        Configurable.__init__(self, 'saga.core.logging', _all_logging_options)    
+        Configurable.__init__(self, 'saga.engine.logging', _all_logging_options)    
         cfg = self.get_config()
 
         self._loglevel = cfg['level'].get_value()
@@ -184,7 +184,7 @@ def test_singleton():
     # make sure singleton works
     #assert(getLogger() == getLogger())
     assert Logger() == Logger() 
-    assert getLogger('core') == getLogger('core')
+    assert getLogger('engine') == getLogger('engine')
 
 def test_configurable():
     # make sure singleton works
@@ -196,7 +196,7 @@ def test_configurable():
     assert c['targets'].get_value() == ['STDOUT']
 
 def test_logger():
-    cl = getLogger('core')
+    cl = getLogger('engine')
     assert cl is not None
     cl.debug('debug')
     cl.info('info')
