@@ -11,23 +11,70 @@ __license__   = "MIT"
 import os
 from logging import StreamHandler, Filter, getLogger as logging_getLogger
 from logging import INFO, DEBUG, ERROR, WARNING, CRITICAL
+from saga.utils.logger.colorstreamhandler import *
+from saga.utils.logger.filehandler import FileHandler
+from saga.utils.logger.defaultformatter import DefaultFormatter
 from saga.utils.singleton import Singleton
 from saga.utils.exception import ExceptionBase
-from saga.utils.logging.colorstreamhandler import *
-from saga.utils.logging.filehandler import FileHandler
-from saga.utils.logging.defaultformatter import DefaultFormatter
 
-class Config(object):
+from saga.core.config import Configurable
+
+########### These are all supported options for saga.logging ##################
+##
+_all_logging_options = [
+{ 
+  'category'      : 'saga.core.logging',
+  'name'          : 'level', 
+  'type'          : str, 
+  'default'       : 'CRITICAL', 
+  'valid_options' : ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+  'documentation' : 'The log level',
+  'env_variable'  : 'SAGA_VERBOSE'
+ },
+ { 
+  'category'      : 'saga.core.logging',
+  'name'          : 'filters', 
+  'type'          : list, 
+  'default'       : [], 
+  'valid_options' : None,
+  'documentation' : 'The log filters',
+  'env_variable'  : 'SAGA_LOG_FILTER' 
+ },
+ { 
+  'category'      : 'saga.core.logging',
+  'name'          : 'targets', 
+  'type'          : list, 
+  'default'       : ['STDOUT'], 
+  'valid_options' : None,
+  'documentation' : 'The log targets',
+  'env_variable'  : 'SAGA_LOG_TARGETS' 
+ },
+ { 
+  'category'      : 'saga.core.logging',
+  'name'          : 'ttycolor', 
+  'type'          : bool, 
+  'default'       : True, 
+  'valid_options' : None,
+  'documentation' : 'Whether to use colors for console output or not.',
+  'env_variable'  : None 
+ },
+]
+##
+################################################################################
+
+class Logger(Configurable):
     __metaclass__ = Singleton
 
     def __init__(self):
         
-        # the default log level
-        self._loglevel = CRITICAL # default loglevel
-        self._filters = None
-        self._targets = ['STDOUT'] # default log target
+        Configurable.__init__(self, 'saga.core.logging', _all_logging_options)    
+        cfg = self.getConfig()
 
-        SAGA_VERBOSE = os.environ.get('SAGA_VERBOSE')
+        self._loglevel = cfg['level'].get_value()
+        self._filters  = cfg['filters'].get_value()
+        self._targets  = cfg['targets'].get_value()
+
+        SAGA_VERBOSE = self._loglevel
 
         if SAGA_VERBOSE is not None:
             if SAGA_VERBOSE.isdigit():
@@ -69,24 +116,6 @@ class Config(object):
                 else:
                     raise LoggingException('%s is not a valid value for SAGA_VERBOSE.' % SAGA_VERBOSE)
 
-        SAGA_LOG_FILTERS = os.environ.get('SAGA_LOG_FILTERS')
-        if SAGA_LOG_FILTERS is not None:
-            try:
-                self._filters = list() # reset filters
-                for filt in SAGA_LOG_FILTERS.split(','):
-                    self._filters.append(filt)
-            except Exception, ex:
-                raise LoggingException('%s is not a valid value for SAGA_LOG_FILTERS.' % SAGA_LOG_FILTERS)
-
-        SAGA_LOG_TARGETS = os.environ.get('SAGA_LOG_TARGETS')
-        if SAGA_LOG_TARGETS is not None:
-            try:
-                self._targets = list() # reset filters
-                for target in SAGA_LOG_TARGETS.split(','):
-                    self._targets.append(target)
-            except Exception, ex:
-                raise LoggingException('%s is not a valid value for SAGA_LOG_TARGETS.' % SAGA_LOG_TARGETS)
-
     @property
     def loglevel(self):
         return self._loglevel
@@ -99,8 +128,10 @@ class Config(object):
     def targets(self):
         return self._targets
 
+
 class LoggingException(ExceptionBase):
     pass
+
 
 class _MultiNameFilter(Filter):
 
@@ -112,6 +143,7 @@ class _MultiNameFilter(Filter):
             if n in record.name:
                 return True
 
+
 def getLogger(module, obj=None):
     ''' Get the SAGA logger.
     '''
@@ -121,7 +153,7 @@ def getLogger(module, obj=None):
         _logger = logging_getLogger('saga.%s.%s' % (module, obj))
 
     # check how many handlers we need
-    for target in Config().targets:
+    for target in Logger().targets:
         if target.lower() == 'stdout':
             # create a console stream logger
             # Only enable colour if support was loaded properly
@@ -134,35 +166,40 @@ def getLogger(module, obj=None):
             handler = FileHandler(target)
 
         handler.setFormatter(DefaultFormatter)
-        if Config().filters is not None:
-            handler.addFilter(_MultiNameFilter(Config().filters))
+        if Logger().filters is not None:
+            handler.addFilter(_MultiNameFilter(Logger().filters))
 
         _logger.addHandler(handler)
 
-    _logger.setLevel(Config().loglevel)
+    _logger.setLevel(Logger().loglevel)
     _logger.propagate = 0 # Don't bubble up to the root logger
 
     return _logger
 
-def testMe():
+############################# BEGIN UNIT TESTS ################################
+##
+def test_singleton():
+    # make sure singleton works
+    #assert(getLogger() == getLogger())
+    assert Logger() == Logger() 
+    assert getLogger('core') == getLogger('core')
 
-    lc = Config() 
-    #lc.set_level(DEBUG) 
-    #lc.set_target('/tmp/log.out')#saga.utils.logger.Config()
+def test_configurable():
+    # make sure singleton works
+    c = Logger().getConfig()
+    
+    assert c['ttycolor'].get_value() == True
+    assert c['filters'].get_value() == []
+    #assert c['level'].get_value() == 'CRITICAL'
+    assert c['targets'].get_value() == ['STDOUT']
 
-    l1 = getLogger('core')
-    l1.debug('debug')
-    l1.info('info')
-    l1.warning('warning')
-    l1.error('error')
-    l1.fatal('fatal')
-
-    l2 = getLogger('adaptor', 'pbs')    
-    l2.debug('debug')
-    l2.info('info')
-    l2.warning('warning')
-    l2.error('error')
-    l2.fatal('fatal')
-
-
-
+def test_logger():
+    cl = getLogger('core')
+    assert cl is not None
+    cl.debug('debug')
+    cl.info('info')
+    cl.warning('warning')
+    cl.error('error')
+    cl.fatal('fatal')
+##
+############################## END UNIT TESTS #################################

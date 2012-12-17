@@ -5,4 +5,25 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-from config import GlobalConfig, ConfigOption, getConfig
+## SAGA Config
+#
+from saga.core.config import (
+    Configuration, 
+    Configurable,
+    ConfigOption, 
+    getConfig
+)
+
+## SAGA Logging
+#
+from saga.core.logger import (
+    Logger,
+    getLogger
+)    
+
+## SAGA Core 
+#
+from saga.core.core import (
+    Core,
+    getCore
+)
