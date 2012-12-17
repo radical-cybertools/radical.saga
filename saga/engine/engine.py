@@ -231,6 +231,6 @@ class Engine(Configurable):
 
     def list_loaded_adaptors(self):
 
-        pprint.pprint (dict(self._adaptors))
+        print (dict(self._adaptors))
 
         pass
