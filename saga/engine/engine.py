@@ -7,8 +7,6 @@ __license__   = "MIT"
 
 ''' Provides API handles for SAGA's runtime. '''
 
-import pprint
-
 from saga.utils.singleton import Singleton
 from saga.engine.config   import Configurable, getConfig
 from saga.engine.logger   import Logger, getLogger
@@ -236,22 +234,3 @@ class Engine(Configurable):
         pprint.pprint (dict(self._adaptors))
 
         pass
-
-
-############################# BEGIN UNIT TESTS ################################
-##
-def test_singleton():
-    # make sure singleton works
-    assert(getEngine() == getEngine())
-    assert(getEngine() == Engine())
-
-    e1 = Engine()
-    e2 = Engine()
-    assert(e1 == e2)
-
-def test_configurable():
-    # make sure singleton works
-    assert Engine().get_config()['foo'].get_value() == 'bar'  
-##
-############################## END UNIT TESTS #################################
-
