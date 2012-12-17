@@ -186,10 +186,8 @@ class Configurable(object):
 
         ## register a new 'configurable' object
         getConfig()._update(namespace, self._valid_options)
-        print 'added configurable for %s' % namespace
 
     def get_config(self):
-        print 'about to get config for %s' % self._namespace
         return getConfig().get_category(self._namespace)
 
 

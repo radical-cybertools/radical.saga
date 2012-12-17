@@ -161,7 +161,8 @@ def getLogger(module, obj=None):
             handler = FileHandler(target)
 
         handler.setFormatter(DefaultFormatter)
-        if Logger().filters is not None:
+
+        if Logger().filters != []:
             handler.addFilter(_MultiNameFilter(Logger().filters))
 
         _logger.addHandler(handler)
