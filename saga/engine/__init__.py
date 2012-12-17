@@ -23,7 +23,7 @@ from saga.engine.logger import (
 
 ## SAGA Core ###################################################################
 #
-from saga.engine.core import (
-    Core,
-    getCore
+from saga.engine.engine import (
+    Engine,
+    getEngine
 )
