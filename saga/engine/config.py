@@ -175,7 +175,6 @@ class Configuration(object):
         for section in cfg_file_dict.keys () :
             for name in cfg_file_dict[section].keys () :
                 value = cfg_file_dict[section][name]
-                print " -- %s -- %s -- %s "  %  (section, name, value)
 
                 # check if this is a registered entry
                 exists = False
