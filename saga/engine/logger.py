@@ -215,6 +215,7 @@ def test_configurable():
 def test_logger():
     cl = getLogger('engine')
     cl = getLogger('engine')
+    
     assert cl is not None
     cl.debug('debug')
     cl.info('info')
