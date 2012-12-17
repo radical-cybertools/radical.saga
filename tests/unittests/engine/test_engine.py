@@ -26,3 +26,4 @@ def test_configurable():
     assert Engine().get_config()['foo'].get_value() == 'bar'  
 ##
 ############################## END UNIT TESTS #################################
+
