@@ -5,7 +5,7 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-''' SAGA Exception Class.
+''' SAGA Exception Classes.
 '''
 
 from saga.utils.exception  import ExceptionBase
