@@ -197,7 +197,6 @@ class CategoryNotFound(ExceptionBase):
     def __init__(self, name):
         self.message = "A category with name '%s' could not be found." % name
 
-
 class OptionNotFound(ExceptionBase):
     def __init__(self, category_name, option_name):
         name = "%s.%s" % (category_name, option_name)

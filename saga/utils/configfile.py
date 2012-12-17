@@ -27,7 +27,7 @@ class ConfigFileReader(object):
     def get_config_dict(self):
         return self.config_dict
 
-class Configuration(object):
+class BaseConfig(object):
     
     def __init__(self):
         self._query_string = ""
@@ -85,13 +85,13 @@ class Configuration(object):
         del self._dictionary[key]
         self._re_eval
 
-class ConfigFile(Configuration):
+class ConfigFile(BaseConfig):
     ''' Read and parse a saga configuration from a local file. 
     '''
     def __init__(self, file_path):
         Configuration.__init__(self)
 
-class ConfigQuery(Configuration):
+class ConfigQuery(BaseConfig):
     ''' Parse a saga configuration from a URL query string.
     '''
     def __init__(self, query_string):
