@@ -53,7 +53,7 @@ class local_job (Configurable) :
 class local_job_service (Configurable) :
 
     def __init__ (self, url) :
-        print "local job service adaptor init";
+        print "local job service adaptor init: " + str(url);
 
         # keep initialization state
         self._url = url

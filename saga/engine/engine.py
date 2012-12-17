@@ -8,7 +8,6 @@ __license__   = "MIT"
 ''' Provides API handles for SAGA's runtime. '''
 
 import pprint
-import collections
 
 from saga.utils.singleton import Singleton
 from saga.engine.config   import Configurable, getConfig
@@ -127,7 +126,7 @@ class Engine(Configurable):
     def __init__(self):
         
         # Engine manages adaptors
-        self._adaptors = collections.defaultdict (dict)
+        self._adaptors = {}
 
         # set the configuration options for this object
         Configurable.__init__(self, 'saga.engine', _all_engine_config_options)
@@ -150,7 +149,7 @@ class Engine(Configurable):
 
         for module_name in adaptor_registry :
 
-            self._logger.info("load adaptor " + module_name)
+            self._logger.info("load  adaptor " + module_name)
 
             try :
                 adaptor_module = __import__ (module_name, fromlist=['register'])
@@ -162,7 +161,7 @@ class Engine(Configurable):
                 if adaptor_infos is None :
                     # adaptor does not want to be registered -- probably did not
                     # pass some sanity check
-                    self._logger.info("load adaptor " + module_name + " -- aborted")
+                    self._logger.info("load  adaptor " + module_name + " -- aborted")
                     continue
 
                 # we got an adaptor info struct
@@ -182,39 +181,52 @@ class Engine(Configurable):
                         adaptor_config  = global_config.get_category (module_name)
                         adaptor_enabled = adaptor_config['enabled'].get_value ()
                     except Exception as e :
-                        self._logger.info("load adaptor " + adaptor_fullname + " -- no config options: " + str(e))
+                        self._logger.info("load  adaptor " + adaptor_fullname + " -- no config options: " + str(e))
 
                     # only load adaptor if it is not disabled via config files
                     if adaptor_enabled in ["False", False] :
-                        self._logger.info("load adaptor " + adaptor_fullname + " -- disabled")
+                        self._logger.info("load  adaptor " + adaptor_fullname + " -- disabled")
                         continue
                     else :
-                        self._logger.info("load adaptor " + adaptor_fullname + " -- enabled")
+                        self._logger.info("load  adaptor " + adaptor_fullname + " -- enabled")
 
                     # register adaptor class for the listed URL schemas
                     for adaptor_schema in adaptor_schemas :
                         adp_class = getattr (adaptor_module, adaptor_class)
-                        self._adaptors[adaptor_type][adaptor_schema] = adp_class
+
+                        if not adaptor_type in self._adaptors :
+                            self._adaptors[adaptor_type] = {}
+
+                        if not adaptor_schema in self._adaptors[adaptor_type] :
+                            self._adaptors[adaptor_type][adaptor_schema] = []
+
+                        self._adaptors[adaptor_type][adaptor_schema].append (adp_class)
 
 
             except Exception as e :
-                self._logger.warn("load adaptor " + module_name + " -- failed: " + str(e))
+                self._logger.warn("load  adaptor " + module_name + " -- failed: " + str(e))
 
 
-    def get_adaptor (self, type, schema) :
+    def init_adaptor (self, ctype, schema, *args, **kwargs) :
         '''
         Sift through the self._adaptors registry, and try to fund an adaptor
         which can successfully be instantiated for 
         '''
 
-        for adaptor_class in self._engine._adaptors['job']['http'] :
+        self._logger.info("select adaptor: " + ctype + " - " + schema)
+
+        for adaptor_class in self._adaptors[ctype][schema] :
             try :
-                self._adaptor = adaptor_class (url, session)
-            except saga.Exception as e :
-                pass
-                # adaptor could not handle the URL, handle e
+                self._adaptor = adaptor_class (*args, **kwargs)
+
+            except Exception as e :
+                # adaptor class initialization failed?
+                self._logger.info("select adaptor " + str(adaptor_class) + " -- failed: " + str(e))
+                continue
+
             else :
                 # successfully bound to adaptor
+                self._logger.info("select adaptor " + str(adaptor_class) + " -- success")
                 return
 
 
