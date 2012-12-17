@@ -34,15 +34,6 @@ _all_engine_config_options = [
     'valid_options' : None,
     'documentation' : 'dummy config option for unit test.',
     'env_variable'  : None
-    },
-    { 
-    'category'      : 'saga.engine',
-    'name'          : 'adaptor_paths', 
-    'type'          : str, 
-    'default'       : None, 
-    'valid_options' : None,
-    'documentation' : 'additional adaptor search paths.',
-    'env_variable'  : None
     }
 ]
 
@@ -135,7 +126,8 @@ class Engine(Configurable):
 
     def _load_adaptors(self):
 
-        # global_conf = saga.engine.getConfig()
+        global_conf = saga.engine.getConfig()
+        pprint.pprint (global_conf._master_config)
 
         for module_name in adaptor_registry :
 
