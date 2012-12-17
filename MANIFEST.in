@@ -2,7 +2,7 @@ include *.py
 
 include saga/*.py
 
-include saga/core/*.py
+include saga/engine/*.py
 
 include saga/utils/*.py
 include saga/utils/logger/*.py

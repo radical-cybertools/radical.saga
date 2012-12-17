@@ -17,7 +17,7 @@ from saga.utils.logger.defaultformatter import DefaultFormatter
 from saga.utils.singleton import Singleton
 from saga.utils.exception import ExceptionBase
 
-from saga.core.config import Configurable
+from saga.engine.config import Configurable
 
 ############# These are all supported options for saga.logging #################
 ##

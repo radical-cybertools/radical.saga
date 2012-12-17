@@ -9,8 +9,8 @@ __license__   = "MIT"
 '''
 
 from saga.utils.singleton import Singleton
-from saga.core.config import Configurable, Configuration, getConfig
-from saga.core.logger import Logger, getLogger
+from saga.engine.config import Configurable, Configuration, getConfig
+from saga.engine.logger import Logger, getLogger
 
 ############# These are all supported options for saga.core ####################
 ##
