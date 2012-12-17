@@ -1,18 +1,16 @@
+# -*- coding: utf-8 -*-
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
+__author__    = "Ole Christian Weidner"
+__copyright__ = "Copyright 2012, The SAGA Project"
+__license__   = "MIT"
+
+''' Provides API handles for SAGA's runtime. '''
 
 from saga.utils.singleton import Singleton
-from saga.engine.config   import Configurable, Configuration, getConfig
+from saga.engine.config   import Configurable, getConfig
 from saga.engine.logger   import Logger, getLogger
 from saga.engine.registry import adaptor_registry
-
-import os
-import re
-import sys
-import pprint
-import string
-import inspect
-import collections
-
-import saga
 
 ############# These are all supported options for saga.engine ####################
 ##
@@ -48,8 +46,31 @@ class Engine(Configurable):
         Python. It can be used to introspect the current state of
         a SAGA instance.
 
-        While loading adaptors, the Engine builds up a registry of 
-        adaptor classes, hierarchically sorted like this::
+        The Engine singleton will, on creation, load all available 
+        adaptors.  Adaptors modules MUST implement a register() 
+        function which returns a list of dicts like this::
+
+          [
+            { 
+              'name'    : _adaptor_name,
+              'type'    : 'saga.job.Job',
+              'class'   : 'local_job',
+              'schemas' : ['fork', 'local']
+            }, 
+            { 
+              'name'    : _adaptor_name,
+              'type'    : 'saga.job.Service',
+              'class'   : 'local_job_service',
+              'schemas' : ['fork', 'local']
+            } 
+          ]
+
+        where 'class' points to the actual adaptor classes, 
+        and 'schemas' lists the URL schemas for which those 
+        adaptor classes should be considered.
+
+        While loading adaptors, the Engine builds up a registry 
+        of adaptor classes, hierarchically sorted like this::
 
           _adaptors = 
           { 
@@ -94,12 +115,16 @@ class Engine(Configurable):
         paths in the specified order).
         '
     '''
+    
+    
     __metaclass__ = Singleton
+
+
 
     def __init__(self):
         
         # Engine manages adaptors
-        self._adaptors = collections.defaultdict (dict)
+        self._adaptors = {}
 
         # set the configuration options for this object
         Configurable.__init__(self, 'saga.engine', _all_engine_config_options)
@@ -113,15 +138,16 @@ class Engine(Configurable):
 
     def _initialize_logging(self):
         Logger()
+        self._logger = getLogger('engine')
 
 
     def _load_adaptors(self):
 
-        global_conf = saga.engine.getConfig()
+        global_config = getConfig()
 
         for module_name in adaptor_registry :
 
-            print "engine: load adaptor  : " + module_name
+            self._logger.info("load  adaptor " + module_name)
 
             try :
                 adaptor_module = __import__ (module_name, fromlist=['register'])
@@ -130,27 +156,76 @@ class Engine(Configurable):
                 # which returns a info dict for all implemented CPI classes
                 adaptor_infos = adaptor_module.register ()
 
-                pprint.pprint (adaptor_infos)
+                if adaptor_infos is None :
+                    # adaptor does not want to be registered -- probably did not
+                    # pass some sanity check
+                    self._logger.info("load  adaptor " + module_name + " -- aborted")
+                    continue
 
+                # we got an adaptor info struct
                 for adaptor_info in adaptor_infos :
-                    adaptor_name    = adaptor_info['name']
-                    adaptor_type    = adaptor_info['type']
-                    adaptor_class   = adaptor_info['class']
-                    adaptor_schemas = adaptor_info['schemas']
 
-                    # check if adaptor is disabled via config
-                    disabled = self.get_config()['foo'].get_value() == 'bar'  
+                    # dig adaptor information from registry. Missing keys are
+                    # rightly expected to raise an exception
+                    adaptor_name     = adaptor_info['name']
+                    adaptor_type     = adaptor_info['type']
+                    adaptor_class    = adaptor_info['class']
+                    adaptor_schemas  = adaptor_info['schemas']
+                    adaptor_enabled  = True  # default
+                    adaptor_fullname = module_name + '.' + adaptor_class
 
+                    # try to find an 'enabled' option in the adaptor's config section
+                    try :
+                        adaptor_config  = global_config.get_category (module_name)
+                        adaptor_enabled = adaptor_config['enabled'].get_value ()
+                    except Exception as e :
+                        self._logger.info("load  adaptor " + adaptor_fullname + " -- no config options: " + str(e))
+
+                    # only load adaptor if it is not disabled via config files
+                    if adaptor_enabled in ["False", False] :
+                        self._logger.info("load  adaptor " + adaptor_fullname + " -- disabled")
+                        continue
+                    else :
+                        self._logger.info("load  adaptor " + adaptor_fullname + " -- enabled")
+
+                    # register adaptor class for the listed URL schemas
                     for adaptor_schema in adaptor_schemas :
-
                         adp_class = getattr (adaptor_module, adaptor_class)
-                        self._adaptors[adaptor_type][adaptor_schema] = adp_class
 
-                pprint.pprint (dict(self._adaptors))
+                        if not adaptor_type in self._adaptors :
+                            self._adaptors[adaptor_type] = {}
+
+                        if not adaptor_schema in self._adaptors[adaptor_type] :
+                            self._adaptors[adaptor_type][adaptor_schema] = []
+
+                        self._adaptors[adaptor_type][adaptor_schema].append (adp_class)
+
 
             except Exception as e :
-                print "engine: loading failed: " + module_name
-                print str (e)
+                self._logger.warn("load  adaptor " + module_name + " -- failed: " + str(e))
+
+
+    def init_adaptor (self, ctype, schema, *args, **kwargs) :
+        '''
+        Sift through the self._adaptors registry, and try to fund an adaptor
+        which can successfully be instantiated for 
+        '''
+
+        self._logger.info("select adaptor: " + ctype + " - " + schema)
+
+        for adaptor_class in self._adaptors[ctype][schema] :
+            try :
+                self._adaptor = adaptor_class (*args, **kwargs)
+
+            except Exception as e :
+                # adaptor class initialization failed?
+                self._logger.info("select adaptor " + str(adaptor_class) + " -- failed: " + str(e))
+                continue
+
+            else :
+                # successfully bound to adaptor
+                self._logger.info("select adaptor " + str(adaptor_class) + " -- success")
+                return
 
 
     def list_loaded_adaptors(self):

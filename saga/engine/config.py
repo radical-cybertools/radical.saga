@@ -217,6 +217,15 @@ class Configuration(object):
         else:
             return self._master_config[category_name]
 
+    def has_option(self, category_name, option_name):
+        if category_name not in self._master_config:
+            return False
+        else:
+            if option_name not in self._master_config[category_name]:
+                return False
+            else:
+                return True
+
     def get_option(self, category_name, option_name):
         if category_name not in self._master_config:
             raise CategoryNotFound(category_name)
