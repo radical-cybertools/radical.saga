@@ -11,9 +11,17 @@ __license__   = "MIT"
 from saga.utils.singleton import Singleton
 from saga.engine.config   import Configurable, Configuration, getConfig
 from saga.engine.logger   import Logger, getLogger
+from saga.engine.registry import adaptor_registry
 
 import os
+import re
+import sys
+import pprint
+import string
 import inspect
+import collections
+
+import saga
 
 ############# These are all supported options for saga.engine ####################
 ##
@@ -30,8 +38,8 @@ _all_engine_config_options = [
     { 
     'category'      : 'saga.engine',
     'name'          : 'adaptor_paths', 
-    'type'          : list, 
-    'default'       : [], 
+    'type'          : str, 
+    'default'       : None, 
     'valid_options' : None,
     'documentation' : 'additional adaptor search paths.',
     'env_variable'  : None
@@ -107,13 +115,15 @@ class Engine(Configurable):
     __metaclass__ = Singleton
 
     def __init__(self):
+        
+        # Engine manages adaptors
+        self._adaptors = collections.defaultdict (dict)
+
         # set the configuration options for this object
         Configurable.__init__(self, 'saga.engine', _all_engine_config_options)
 
         # initialize logging
         self._initialize_logging()
-
-        getLogger('engine').debug("Hello Engine")
 
         # load adaptors
         self._load_adaptors()
@@ -122,20 +132,49 @@ class Engine(Configurable):
     def _initialize_logging(self):
         Logger()
 
+
     def _load_adaptors(self):
-        adaptor_paths = []  # paths to search for adaptors
 
-        # <saga module paths>/adaptors is the first path to search through
-        adaptor_paths.append (os.path.dirname (inspect.getfile (Engine)))
+        # global_conf = saga.engine.getConfig()
 
-        # then search through configured paths
-        adaptor_paths.append (self.get_config()['adaptor_paths'].get_value())
+        for module_name in adaptor_registry :
 
-        getLogger('engine').debug("%s"  %  str(adaptor_paths))
+            print "engine: load adaptor  : " + module_name
 
+            try :
+                adaptor_module = __import__ (module_name, fromlist=['register'])
+
+                # we expect the module to have an 'register' method implemented,
+                # which returns a info dict for all implemented CPI classes
+                adaptor_infos = adaptor_module.register ()
+
+                pprint.pprint (adaptor_infos)
+
+                for adaptor_info in adaptor_infos :
+                    adaptor_name    = adaptor_info['name']
+                    adaptor_type    = adaptor_info['type']
+                    adaptor_class   = adaptor_info['class']
+                    adaptor_schemas = adaptor_info['schemas']
+
+                    # check if adaptor is disabled via config
+                    disabled = self.get_config()['foo'].get_value() == 'bar'  
+
+                    for adaptor_schema in adaptor_schemas :
+
+                        adp_class = getattr (adaptor_module, adaptor_class)
+                        self._adaptors[adaptor_type][adaptor_schema] = adp_class
+
+                pprint.pprint (dict(self._adaptors))
+
+            except Exception as e :
+                print "engine: loading failed: " + module_name
+                print str (e)
 
 
     def list_loaded_adaptors(self):
+
+        pprint.pprint (dict(self._adaptors))
+
         pass
 
 
