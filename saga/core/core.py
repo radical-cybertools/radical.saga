@@ -12,18 +12,22 @@ from saga.utils.singleton import Singleton
 from saga.core.config import Configurable, Configuration, getConfig
 from saga.core.logger import Logger, getLogger
 
+############# These are all supported options for saga.core ####################
+##
 _all_core_config_options = [
-{ 
-  'category'      : 'saga.core',
-  'name'          : 'foo', 
-  'type'          : str, 
-  'default'       : 'bar', 
-  'valid_options' : None,
-  'documentation' : 'A sample configuration option. Does nothing.',
-  'env_variable'  : None
- }
- ]
+    { 
+    'category'      : 'saga.core',
+    'name'          : 'foo', 
+    'type'          : str, 
+    'default'       : 'bar', 
+    'valid_options' : None,
+    'documentation' : 'A sample configuration option. Does nothing.',
+    'env_variable'  : None
+    }
+]
 
+################################################################################
+##
 class Core(Configurable): 
     ''' Represents the SAGA core runtime system.
 
@@ -64,7 +68,7 @@ def test_singleton():
 
 def test_configurable():
     # make sure singleton works
-    c = Core().getConfig()
-    print c
+    assert Core().get_config()['foo'].get_value() == 'bar'
+    
 ##
 ############################## END UNIT TESTS #################################

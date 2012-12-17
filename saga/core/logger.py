@@ -19,56 +19,56 @@ from saga.utils.exception import ExceptionBase
 
 from saga.core.config import Configurable
 
-########### These are all supported options for saga.logging ##################
+############# These are all supported options for saga.logging #################
 ##
 _all_logging_options = [
-{ 
-  'category'      : 'saga.core.logging',
-  'name'          : 'level', 
-  'type'          : str, 
-  'default'       : 'CRITICAL', 
-  'valid_options' : ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-  'documentation' : 'The log level',
-  'env_variable'  : 'SAGA_VERBOSE'
- },
- { 
-  'category'      : 'saga.core.logging',
-  'name'          : 'filters', 
-  'type'          : list, 
-  'default'       : [], 
-  'valid_options' : None,
-  'documentation' : 'The log filters',
-  'env_variable'  : 'SAGA_LOG_FILTER' 
- },
- { 
-  'category'      : 'saga.core.logging',
-  'name'          : 'targets', 
-  'type'          : list, 
-  'default'       : ['STDOUT'], 
-  'valid_options' : None,
-  'documentation' : 'The log targets',
-  'env_variable'  : 'SAGA_LOG_TARGETS' 
- },
- { 
-  'category'      : 'saga.core.logging',
-  'name'          : 'ttycolor', 
-  'type'          : bool, 
-  'default'       : True, 
-  'valid_options' : None,
-  'documentation' : 'Whether to use colors for console output or not.',
-  'env_variable'  : None 
- },
+    { 
+    'category'      : 'saga.core.logging',
+    'name'          : 'level', 
+    'type'          : str, 
+    'default'       : 'CRITICAL', 
+    'valid_options' : ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+    'documentation' : 'The log level',
+    'env_variable'  : 'SAGA_VERBOSE'
+    },
+    { 
+    'category'      : 'saga.core.logging',
+    'name'          : 'filters', 
+    'type'          : list, 
+    'default'       : [], 
+    'valid_options' : None,
+    'documentation' : 'The log filters',
+    'env_variable'  : 'SAGA_LOG_FILTER' 
+    },
+    { 
+    'category'      : 'saga.core.logging',
+    'name'          : 'targets', 
+    'type'          : list, 
+    'default'       : ['STDOUT'], 
+    'valid_options' : None,
+    'documentation' : 'The log targets',
+    'env_variable'  : 'SAGA_LOG_TARGETS' 
+    },
+    { 
+    'category'      : 'saga.core.logging',
+    'name'          : 'ttycolor', 
+    'type'          : bool, 
+    'default'       : True, 
+    'valid_options' : None,
+    'documentation' : 'Whether to use colors for console output or not.',
+    'env_variable'  : None 
+    },
 ]
-##
-################################################################################
 
+################################################################################
+##
 class Logger(Configurable):
     __metaclass__ = Singleton
 
     def __init__(self):
         
         Configurable.__init__(self, 'saga.core.logging', _all_logging_options)    
-        cfg = self.getConfig()
+        cfg = self.get_config()
 
         self._loglevel = cfg['level'].get_value()
         self._filters  = cfg['filters'].get_value()
@@ -129,24 +129,19 @@ class Logger(Configurable):
         return self._targets
 
 
-class LoggingException(ExceptionBase):
-    pass
-
-
-class _MultiNameFilter(Filter):
-
-    def __init__(self, names):
-        self._names = names
-
-    def filter(self, record):
-        for n in self._names:
-            if n in record.name:
-                return True
-
-
+################################################################################
+##
 def getLogger(module, obj=None):
     ''' Get the SAGA logger.
     '''
+    class _MultiNameFilter(Filter):
+        def __init__(self, names):
+            self._names = names
+        def filter(self, record):
+            for n in self._names:
+                if n in record.name:
+                    return True
+
     if obj is None:
         _logger = logging_getLogger('saga.%s' % module)
     else:
@@ -176,6 +171,13 @@ def getLogger(module, obj=None):
 
     return _logger
 
+
+################################################################################
+##
+class LoggingException(ExceptionBase):
+    pass
+
+
 ############################# BEGIN UNIT TESTS ################################
 ##
 def test_singleton():
@@ -186,7 +188,7 @@ def test_singleton():
 
 def test_configurable():
     # make sure singleton works
-    c = Logger().getConfig()
+    c = Logger().get_config()
     
     assert c['ttycolor'].get_value() == True
     assert c['filters'].get_value() == []

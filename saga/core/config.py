@@ -13,6 +13,15 @@ from saga.utils.singleton import Singleton
 from saga.utils.exception import ExceptionBase
 from saga.utils.configfile import ConfigFileReader
 
+################################################################################
+##
+def getConfig():
+    """ Returns a handle to the global configuration object.
+    """
+    return Configuration() 
+
+################################################################################
+##
 class ConfigOption(object):
     """ Represent a (mutable) configuration option.
     """
@@ -47,7 +56,8 @@ class ConfigOption(object):
     def get_value(self):
         return self._value
 
-
+################################################################################
+##
 class Configuration(object): 
     """ Represents SAGA's global configuration.
 
@@ -161,12 +171,9 @@ class Configuration(object):
             else:
                 return self._master_config[category_name][option_name]
 
-def getConfig():
-    """ Returns a handle to the global configuration object.
-    """
-    return Configuration() 
 
-
+################################################################################
+##
 class Configurable(object):
     """ This class provides an interface for all configurable 
         SAGA objects.
@@ -181,11 +188,13 @@ class Configurable(object):
         getConfig()._update(namespace, self._valid_options)
         print 'added configurable for %s' % namespace
 
-    def getConfig(self):
+    def get_config(self):
         print 'about to get config for %s' % self._namespace
         return getConfig().get_category(self._namespace)
 
 
+################################################################################
+##
 class CategoryNotFound(ExceptionBase):
     def __init__(self, name):
         self.message = "A category with name '%s' could not be found." % name

@@ -5,7 +5,7 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-## SAGA Config
+## SAGA Config #################################################################
 #
 from saga.core.config import (
     Configuration, 
@@ -14,14 +14,14 @@ from saga.core.config import (
     getConfig
 )
 
-## SAGA Logging
+## SAGA Logging ################################################################
 #
 from saga.core.logger import (
     Logger,
     getLogger
 )    
 
-## SAGA Core 
+## SAGA Core ###################################################################
 #
 from saga.core.core import (
     Core,
