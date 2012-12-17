@@ -7,13 +7,49 @@ __license__   = "MIT"
 
 ''' SAGA Exception Class.
 '''
+import traceback
 
 from saga.utils.exception  import ExceptionBase
 
 class SagaException(ExceptionBase):
-    pass
 
-class NotImplemented(SagaException):
-    pass
+    def __init__  (self, message, object=None) :
+        self._message   = message
+        self._object    = object
+        self._traceback = repr (traceback.format_stack ())
 
+    def get_message (self) :
+        return self._message
+
+    def get_object (self) :
+        return self._object
+
+    def get_traceback (self) :
+        return self._traceback
+
+    def get_all_exceptions (self) :
+        return [] # FIXME
+
+    def get_all_messages (self) :
+        return [] # FIXME
+
+
+    message    = property (get_message)         # string
+    object     = property (get_object)          # object type
+    traceback  = property (get_traceback)       # string
+    exceptions = property (get_all_exceptions)  # list [Exception]
+    messages   = property (get_all_message)     # list [string]
+
+
+class NotImplemented       (SagaException)   : pass
+class IncorrectURL         (SagaException)   : pass
+class BadParameter         (SagaException)   : pass
+class AlreadyExists        (SagaException)   : pass
+class DoesNotExist         (SagaException)   : pass
+class IncorrectState       (SagaException)   : pass
+class PermissionDenied     (SagaException)   : pass
+class AuthorizationFailed  (SagaException)   : pass
+class AuthenticationFailed (SagaException)   : pass
+class Timeout              (SagaException)   : pass
+class NoSuccess            (SagaException)   : pass
 
