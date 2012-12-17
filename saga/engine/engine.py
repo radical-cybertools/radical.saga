@@ -205,7 +205,7 @@ class Engine(Configurable):
                 self._logger.warn("load  adaptor " + module_name + " -- failed: " + str(e))
 
 
-    def init_adaptor (self, ctype, schema, *args, **kwargs) :
+    def get_adaptor (self, ctype, schema, *args, **kwargs) :
         '''
         Sift through the self._adaptors registry, and try to find an adaptor
         which can successfully be instantiated for the given API object type and
@@ -214,9 +214,18 @@ class Engine(Configurable):
 
         self._logger.info("select adaptor: " + ctype + " - " + schema)
 
+        if not ctype in self._adaptors :
+            self._logger.info("select adaptor: '%s' - '%s' failed: unknown ctype '%s'" % (ctype, schema, ctype))
+            return None
+
+        if not schema in self._adaptors[ctype] :
+            self._logger.info("select adaptor: '%s' - '%s' failed: unknown schema '%s'" % (ctype, schema, schema))
+            return None
+
+
         for adaptor_class in self._adaptors[ctype][schema] :
             try :
-                self._adaptor = adaptor_class (*args, **kwargs)
+                adaptor_class_instance = adaptor_class (*args, **kwargs)
 
             except Exception as e :
                 # adaptor class initialization failed?
@@ -231,6 +240,13 @@ class Engine(Configurable):
 
     def list_loaded_adaptors(self):
 
-        print (dict(self._adaptors))
+        print " ----------------------------------------- "
+        print " loaded adaptors: "
+        for ctype in self._adaptors.keys () :
+            for schema in self._adaptors[ctype].keys () :
+                for adp_class in self._adaptors[ctype][schema] :
+                    print " %-20s : %-10s : %s" % (ctype, schema, adp_class)
+
+        print " ----------------------------------------- "
 
         pass
