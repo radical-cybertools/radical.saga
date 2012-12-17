@@ -209,8 +209,9 @@ class Engine(Configurable):
 
     def init_adaptor (self, ctype, schema, *args, **kwargs) :
         '''
-        Sift through the self._adaptors registry, and try to fund an adaptor
-        which can successfully be instantiated for 
+        Sift through the self._adaptors registry, and try to find an adaptor
+        which can successfully be instantiated for the given API object type and
+        it's __init__ parameters.
         '''
 
         self._logger.info("select adaptor: " + ctype + " - " + schema)
