@@ -90,7 +90,7 @@ setup_args = {
         "saga.core",
         "saga.utils",
         "saga.utils.cmdlinewrapper",
-        "saga.utils.logging"
+        "saga.utils.logger"
     ],
     'scripts': scripts,
     # mention data_files, even if empty, so install_data is called and
@@ -116,7 +116,7 @@ except ImportError:
     pass
 else:
     setup_args['install_requires'] = [
-      #  'pexpect'
+        'pexpect', 'colorama'
     ]
     
 
