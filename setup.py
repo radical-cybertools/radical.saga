@@ -87,7 +87,7 @@ setup_args = {
 
     'packages': [
         "saga",
-        "saga.core",
+        "saga.engine",
         "saga.utils",
         "saga.utils.cmdlinewrapper",
         "saga.utils.logger"

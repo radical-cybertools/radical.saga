@@ -7,7 +7,7 @@ __license__   = "MIT"
 
 ## SAGA Config #################################################################
 #
-from saga.core.config import (
+from saga.engine.config import (
     Configuration, 
     Configurable,
     ConfigOption, 
@@ -16,14 +16,14 @@ from saga.core.config import (
 
 ## SAGA Logging ################################################################
 #
-from saga.core.logger import (
+from saga.engine.logger import (
     Logger,
     getLogger
 )    
 
 ## SAGA Core ###################################################################
 #
-from saga.core.core import (
-    Core,
-    getCore
+from saga.engine.engine import (
+    Engine,
+    getEngine
 )

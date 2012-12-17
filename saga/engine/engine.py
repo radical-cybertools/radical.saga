@@ -9,8 +9,8 @@ __license__   = "MIT"
 '''
 
 from saga.utils.singleton import Singleton
-from saga.core.config import Configurable, Configuration, getConfig
-from saga.core.logger import Logger, getLogger
+from saga.engine.config import Configurable, Configuration, getConfig
+from saga.engine.logger import Logger, getLogger
 
 ############# These are all supported options for saga.core ####################
 ##
@@ -26,9 +26,18 @@ _all_core_config_options = [
     }
 ]
 
+
 ################################################################################
 ##
-class Core(Configurable): 
+def getEngine():
+    """ Returns a handle to the Core object.
+    """
+    return Engine() 
+
+
+################################################################################
+##
+class Engine(Configurable): 
     ''' Represents the SAGA core runtime system.
 
         The Core class is a singleton class that takes care of 
@@ -54,21 +63,16 @@ class Core(Configurable):
     def listLoadedAdaptors(self):
         pass
 
-def getCore():
-    """ Returns a handle to the Core object.
-    """
-    return Core() 
 
 ############################# BEGIN UNIT TESTS ################################
 ##
 def test_singleton():
     # make sure singleton works
-    assert(getCore() == getCore())
-    assert(getCore() == Core())
+    assert(getEngine() == getEngine())
+    assert(getEngine() == Engine())
 
 def test_configurable():
     # make sure singleton works
-    assert Core().get_config()['foo'].get_value() == 'bar'
-    
+    assert Engine().get_config()['foo'].get_value() == 'bar'  
 ##
 ############################## END UNIT TESTS #################################
