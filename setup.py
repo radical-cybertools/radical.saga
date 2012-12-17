@@ -91,6 +91,7 @@ setup_args = {
         "saga.utils",
         "saga.utils.cmdlinewrapper",
         "saga.utils.logger",
+        "saga.adaptors",
         "saga.adaptors.local"
     ],
     'scripts': scripts,
