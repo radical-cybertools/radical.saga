@@ -44,13 +44,13 @@ class local_job (saga.cpi.job.Job) :
 
 
     def init_instance (self, id, session) :
-        print "local job adaptor init sync"
+        print "local job adaptor init sync %s" % id
         self._id      = id
         self._session = session
 
 
     def get_id (self) :
-        return id (self)
+        return self._id
 
 
 ######################################################################
@@ -68,7 +68,6 @@ class local_job_service (saga.cpi.job.Service) :
         print "local job service adaptor init sync: %s"  %  rm 
         self._rm      = rm
         self._session = session
-
 
         # for testing:
         # raise saga.exceptions.BadParameter ("Cannot handle rm %s"  %  rm)
