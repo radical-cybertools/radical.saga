@@ -5,8 +5,8 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-''' Unit tests for saga.engine.config.py
-'''
+""" Unit tests for saga.engine.config.py
+"""
 
 from saga.engine.config import *
 
@@ -14,50 +14,52 @@ from saga.engine.config import *
 ##
 
 class _TestConfigurable(Configurable):
-
+    """ A mock-class to test the Configurable interface.
+    """
     _valid_options = [
-    { 
-      'category'      : 'saga.test',
-      'name'          : 'level', 
-      'type'          : str, 
-      'default'       : 'CRITICAL', 
-      'valid_options' : ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-      'documentation' : 'The log level',
-      'env_variable'  : 'SAGA_VERBOSE'
-     },
-     { 
-      'category'      : 'saga.test',
-      'name'          : 'filters', 
-      'type'          : list, 
-      'default'       : [], 
-      'valid_options' : None,
-      'documentation' : 'The log filters',
-      'env_variable'  : 'SAGA_LOG_FILTER' 
-     },
-     { 
-      'category'      : 'saga.test',
-      'name'          : 'targets', 
-      'type'          : list, 
-      'default'       : ['STDOUT'], 
-      'valid_options' : None,
-      'documentation' : 'The log targets',
-      'env_variable'  : 'SAGA_LOG_TARGETS' 
-     },
-     { 
-      'category'      : 'saga.test',
-      'name'          : 'ttycolor', 
-      'type'          : bool, 
-      'default'       : True, 
-      'valid_options' : None,
-      'documentation' : 'Whether to use colors for console output or not.',
-      'env_variable'  : None 
-     },
-    ]
+        { 
+        'category'      : 'saga.test',
+        'name'          : 'level', 
+        'type'          : str, 
+        'default'       : 'CRITICAL', 
+        'valid_options' : ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        'documentation' : 'The log level',
+        'env_variable'  : 'SAGA_VERBOSE'
+        },
+        { 
+        'category'      : 'saga.test',
+        'name'          : 'filters', 
+        'type'          : list, 
+        'default'       : [], 
+        'valid_options' : None,
+        'documentation' : 'The log filters',
+        'env_variable'  : 'SAGA_LOG_FILTER' 
+       },
+       { 
+        'category'      : 'saga.test',
+        'name'          : 'targets', 
+        'type'          : list, 
+        'default'       : ['STDOUT'], 
+        'valid_options' : None,
+        'documentation' : 'The log targets',
+        'env_variable'  : 'SAGA_LOG_TARGETS' 
+       },
+       { 
+        'category'      : 'saga.test',
+        'name'          : 'ttycolor', 
+        'type'          : bool, 
+        'default'       : True, 
+        'valid_options' : None,
+        'documentation' : 'Whether to use colors for console output or not.',
+        'env_variable'  : None 
+       }]
 
     def __init__(self):
         Configurable.__init__(self, 'saga.test', _TestConfigurable._valid_options)
 
 def test_singleton():
+    """ Test that the object behaves like a singleton.
+    """
     # make sure singleton works
     assert(getConfig() == getConfig())
     assert(getConfig() == Configuration())
@@ -71,6 +73,8 @@ def test_singleton():
       Configuration().get_option('saga.test', 'level'))
 
 def test_CategoryNotFound_exceptions():
+    """ Test if CategoryNotFound exceptions are thrown as expected.
+    """
     try:
         getConfig().get_category('nonexistent')
         assert False
@@ -78,13 +82,27 @@ def test_CategoryNotFound_exceptions():
         assert True
 
 def test_OptionNotFound_exceptions():
+    """ Test if OptionNotFound exceptions are thrown as expected.
+    """
     try:
         getConfig().get_option('saga.test', 'nonexistent')
         assert False
     except OptionNotFound:
         assert True
 
+def test_ValueTypeError_exception():
+    """ Test if ValueTypeError exceptions are thrown as expected.
+    """
+    try:
+        # try to set wrong type
+        getConfig().get_option('saga.test', 'ttycolor').set_value('yes')
+        assert False
+    except ValueTypeError:
+        assert True
+
 def test_get_set_value():
+    """ Test if get/set value works as expected.
+    """
     getConfig().get_option('saga.test', 'ttycolor').set_value(False)
     assert(getConfig().get_option('saga.test', 'ttycolor').get_value()
       == False)
@@ -93,15 +111,9 @@ def test_get_set_value():
     assert(getConfig().get_option('saga.test', 'ttycolor').get_value()
       == True)
 
-def test_ValueTypeError_exception():
-    try:
-        # try to set wrong type
-        getConfig().get_option('saga.test', 'ttycolor').set_value('yes')
-        assert False
-    except ValueTypeError:
-        assert True
-
 def test_env_vars():
+    """ Test if environment variables are handled properly. 
+    """
     # for this test, we call the private _initialize() method again to make
     # sure Configuration reads the environment variables again.
 
@@ -120,6 +132,8 @@ def test_env_vars():
         os.environ['SAGA_VERBOSE'] = tmp_ev
 
 def test_valid_config_file():
+    """ Test if a valid config file can be parsed properly.
+    """
     # Generate a configuration file
     import tempfile
     import ConfigParser
@@ -185,6 +199,8 @@ def test_valid_config_file():
         
 
 def test_invalid_config_file():
+    """ Test if an invalid config file is handled properly.
+    """
     import tempfile
     import ConfigParser
 

@@ -157,7 +157,7 @@ class Engine(Configurable):
 
         for module_name in registry:
 
-            self._logger.info("Found entry for adaptor module %s in registry"  %  module_name)
+            self._logger.info("Found entry for adaptor module '%s' in registry"  %  module_name)
 
             try :
                 adaptor_module = __import__ (module_name, fromlist=['register'])
