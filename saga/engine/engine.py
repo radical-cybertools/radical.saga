@@ -16,6 +16,11 @@ import saga.engine.registry
 import saga.task
 import saga.exceptions
 
+
+##################################################################################
+# a define to make get_adaptor more readable
+ANY_ADAPTOR = None
+
 ############# These are all supported options for saga.engine ####################
 ##
 _all_engine_config_options = [
@@ -219,7 +224,7 @@ class Engine(Configurable):
                         self._logger.info("Successfully loaded %s from module %s" \
                           % (adaptor_class, module_name))
 
-                    # register adaptor class for the listed URL schemas
+                    # register adaptor class for the listed URL schemas (once)
                     for adaptor_schema in adaptor_schemas :
                         adp_class = getattr (adaptor_module, adaptor_class)
 
@@ -229,7 +234,9 @@ class Engine(Configurable):
                         if not adaptor_schema in self._adaptors[adaptor_type] :
                             self._adaptors[adaptor_type][adaptor_schema] = []
 
-                        self._adaptors[adaptor_type][adaptor_schema].append (adp_class)
+                        if not adp_class in self._adaptors[adaptor_type][adaptor_schema] :
+                            self._adaptors[adaptor_type][adaptor_schema].append (adp_class)
+                        
 
             except Exception as e:
                 self._logger.warn("Loading %s failed: %s" % (module_name, str(e)))
@@ -237,7 +244,7 @@ class Engine(Configurable):
 
     #-----------------------------------------------------------------
     # 
-    def get_adaptor (self, ctype, schema, ttype, requested_name=None, *args, **kwargs) :
+    def get_adaptor (self, ctype, schema, ttype, requested_name, *args, **kwargs) :
         '''
         just as get_adaptor, look for a suitable adaptor for bind -- but only
         consider adaptors with matching name.  This method is used to force
@@ -271,44 +278,44 @@ class Engine(Configurable):
         for adaptor_class in self._adaptors[ctype][schema] :
 
             adaptor_name = ""
-            #   try :
-            # instantiate adaptor
-            adaptor_instance = adaptor_class ()
-            adaptor_name     = adaptor_instance._get_name ()
+            try :
+                # instantiate adaptor
+                adaptor_instance = adaptor_class ()
+                adaptor_name     = adaptor_instance._get_name ()
 
-            if requested_name != None     and \
-               requested_name != adaptor_name :
-                # ignore this adaptor
-                self._logger.debug("get_adaptor %s -- ignore %s != %s" \
-                                % (str(adaptor_class), requested_name, adaptor_name))
-                return adaptor_instance
+                if requested_name != None     and \
+                   requested_name != adaptor_name :
+                    # ignore this adaptor
+                    self._logger.debug("get_adaptor %s -- ignore %s != %s" \
+                                    % (str(adaptor_class), requested_name, adaptor_name))
+                    return adaptor_instance
+                    continue
+
+                if ttype == None or ttype == saga.task.SYNC :
+                    # run the sync constructor for sync construction, and return
+                    # the adaptor_instance to bind to the API instance.
+                    adaptor_instance.init_instance  (*args, **kwargs)
+
+                    self._logger.debug("get_adaptor %s -- success"  %  str(adaptor_class))
+                    return adaptor_instance
+
+                else :
+                    # the async constructor will return a task, which we pass
+                    # back to the caller (instead of the adaptor instance). That 
+                    # task is responsible for binding the adaptor to the later 
+                    # returned API instance.
+                    self._logger.debug("get_adaptor %s -- async task creation"  %  str(adaptor_class))
+
+                    task = adaptor_instance.init_instance_async (ttype, *args, **kwargs)
+                    return task
+
+
+            except Exception as e :
+                # adaptor class initialization failed - try next one
+                self._logger.info("get_adaptor %s -- failed: %s"  \
+                               % (str(adaptor_class), str(e)))
+                msg += "\n  %s: %s"  %  (adaptor_name, str(e))
                 continue
-
-            if ttype == None or ttype == saga.task.SYNC :
-
-                # run the sync constructor for sync construction, and return
-                # the adaptor_instance to bind to the API instance.
-                adaptor_instance.init_instance  (*args, **kwargs)
-
-                self._logger.debug("get_adaptor %s -- success"  %  str(adaptor_class))
-                return adaptor_instance
-
-            else :
-
-                # the async constructor will return a task, which we pass
-                # back to the caller (instead of the adaptor instance). That 
-                # task is responsible for binding the adaptor to the later 
-                # returned API instance.
-                self._logger.debug("get_adaptor %s -- async task creation"  %  str(adaptor_class))
-                return adaptor_instance.init_instance_async (ttype, *args, **kwargs)
-
-
-                # except Exception as e :
-                #     # adaptor class initialization failed - try next one
-                #     self._logger.info("get_adaptor %s -- failed: %s"  \
-                #                    % (str(adaptor_class), str(e)))
-                #     msg += "\n  %s: %s"  %  (adaptor_name, str(e))
-                #     continue
 
         raise saga.exceptions.NotImplemented ("no suitable adaptor found: %s" %  msg)
 

@@ -6,7 +6,7 @@
 # from saga.Attributes    import Attributes
 
 from saga.engine.logger import getLogger
-from saga.engine.engine import getEngine
+from saga.engine.engine import getEngine, ANY_ADAPTOR
 
 def create_job (id=None, session=None, ttype=None) :
     '''
@@ -25,7 +25,7 @@ def create_job (id=None, session=None, ttype=None) :
     # attempt to find a suitable adaptor, which will call 
     # init_instance_async(), which returns a task as expected.
     return engine.get_adaptor ('saga.job.Job', 'fork', \
-                               ttype, None, id, session)
+                               ttype, ANY_ADAPTOR, id, session)
 
 def _create_job_from_adaptor (id, session, schema, adaptor_name) :
     '''
@@ -44,15 +44,17 @@ def _create_job_from_adaptor (id, session, schema, adaptor_name) :
 
     # attempt to find a suitable adaptor, which will call 
     # init_instance_sync(), resulting in 
-    return engine.get_adaptor ('saga.job.Job', 'fork', None, 
-                               adaptor_name, id, session)
+    adaptor = engine.get_adaptor ('saga.job.Job', 'fork', None, 
+                                  adaptor_name, id, session)
+
+    return Job (id, _adaptor=adaptor)
 
 
 
 # class Job (Object, Async, Attributes, Permissions) :
 class Job (object) :
     
-    def __init__(self, id=None):
+    def __init__(self, id=None, _adaptor=None):
     
         # # set attribute interface properties
         # self._attributes_extensible  (False)
@@ -76,8 +78,22 @@ class Job (object) :
 
         self._engine = getEngine ()
 
-        self._adaptor = self._engine.get_adaptor ('saga.job.Job', 'local', id)
+        if _adaptor :
+            # created from adaptor
+            self._adaptor = _adaptor
+        else :
+            # create from API -- create and bind adaptor
+            self._adaptor = self._engine.get_adaptor ('saga.job.Job', 'local',
+                                                      None, ANY_ADAPTOR, id)
 
+
+
+    def get_id (self, ttype=None) :
+        '''
+        ttype:     saga.task.type enum
+        ret:       String / saga.Task  
+        '''
+        return self._adaptor.get_id (ttype=ttype)
 
 
     def get_description (self, ttype=None) :
@@ -85,7 +101,7 @@ class Job (object) :
         ttype:     saga.task.type enum
         ret:       saga.job.Description / saga.Task  
         '''
-        return self._adaptor.get_description (ttype)
+        return self._adaptor.get_description (ttype=ttype)
 
 
     def get_stdin (self, ttype=None) :
@@ -93,7 +109,7 @@ class Job (object) :
         ttype:     saga.task.type enum
         ret:       os.File / saga.Task
         '''
-        return self._adaptor.get_stdin (ttype)
+        return self._adaptor.get_stdin (ttype=ttype)
 
 
     def get_stdout (self, ttype=None) :
@@ -101,7 +117,7 @@ class Job (object) :
         ttype:     saga.task.type enum
         ret:       os.File / saga.Task
         '''
-        return self._adaptor.get_stdout (ttype)
+        return self._adaptor.get_stdout (ttype=ttype)
 
 
     def get_stderr (self, ttype=None) :
@@ -109,7 +125,7 @@ class Job (object) :
         ttype:     saga.task.type enum
         ret:       os.File / saga.Task
         '''
-        return self._adaptor.get_stderr (ttype)
+        return self._adaptor.get_stderr (ttype=ttype)
 
 
     def suspend (self, ttype=None) :
@@ -117,7 +133,7 @@ class Job (object) :
         ttype:     saga.task.type enum
         ret:       None / saga.Task
         '''
-        return self._adaptor.suspend (ttype)
+        return self._adaptor.suspend (ttype=ttype)
 
 
     def resume (self, ttype=None) :
@@ -125,7 +141,7 @@ class Job (object) :
         ttype:     saga.task.type enum
         ret:       None / saga.Task
         '''
-        return self._adaptor.resume (ttype)
+        return self._adaptor.resume (ttype=ttype)
 
 
     def checkpoint (self, ttype=None) :
@@ -133,7 +149,7 @@ class Job (object) :
         ttype:     saga.task.type enum
         ret:       None / saga.Task
         '''
-        return self._adaptor.checkpoint (ttype)
+        return self._adaptor.checkpoint (ttype=ttype)
 
 
     def migrate (self, jd, ttype=None) :
@@ -142,7 +158,7 @@ class Job (object) :
         ttype:     saga.task.type enum
         ret:       None / saga.Task
         '''
-        return self._adaptor.migrate (jd, ttype)
+        return self._adaptor.migrate (jd, ttype=ttype)
 
 
     def signal (self, signum, ttype=None) :
@@ -151,7 +167,7 @@ class Job (object) :
         ttype:     saga.task.type enum
         ret:       None / saga.Task
         '''
-        return self._adaptor.signal (signum, ttype)
+        return self._adaptor.signal (signum, ttype=ttype)
 
 
     description = property (get_description)  # Description
@@ -168,7 +184,7 @@ class Job (object) :
         '''
         ret:        None
         '''
-        return self._adaptor.run (ttype)
+        return self._adaptor.run (ttype=ttype)
 
 
     def cancel (self, timeout=None, ttype=None) :
@@ -176,7 +192,7 @@ class Job (object) :
         timeout:    float
         ret:        None
         '''
-        return self._adaptor.cancel (timeout, ttype)
+        return self._adaptor.cancel (timeout, ttype=ttype)
 
 
     def wait (self, timeout=-1, ttype=None) :
@@ -184,14 +200,14 @@ class Job (object) :
         timeout:    float 
         ret:        None
         '''
-        return self._adaptor.wait (timeout, ttype)
+        return self._adaptor.wait (timeout, ttype=ttype)
 
 
     def get_state (self, ttype=None) :
         '''
         ret:        Task/Job state enum
         '''
-        return self._adaptor.get_state (ttype)
+        return self._adaptor.get_state (ttype=ttype)
 
 
     def get_result (self, ttype=None) :
@@ -199,7 +215,7 @@ class Job (object) :
         ret:        <result type>
         note:       this will always return None for a job.
         '''
-        return self._adaptor.get_result (ttype)
+        return self._adaptor.get_result (ttype=ttype)
 
 
     def get_object (self, ttype=None) :
@@ -207,7 +223,7 @@ class Job (object) :
         ret:        <object type>
         note:       this will return the job_service which created the job.
         '''
-        return self._adaptor.get_object (ttype)
+        return self._adaptor.get_object (ttype=ttype)
 
 
     def re_raise (self, ttype=None) :
@@ -216,7 +232,7 @@ class Job (object) :
         note:       if job failed, that will re-raise an exception describing 
                     why, if that exists.  Otherwise, the call does nothing.
         '''
-        return self._adaptor.re_raise (ttype)
+        return self._adaptor.re_raise (ttype=ttype)
 
 
     state     = property (get_state)       # state enum
@@ -241,8 +257,7 @@ def create_self (session=None, ttype=None) :
 
     # attempt to find a suitable adaptor, which will call 
     # init_instance_async(), which returns a task as expected.
-    return engine.get_adaptor ('saga.job.Self', 'fork', \
-                               ttype, None, session)
+    return engine.get_adaptor ('saga.job.Self', 'fork', ttype, ANY_ADAPTOR, session)
 
 
 # class Self (Job, monitoring.Steerable) :
@@ -261,5 +276,5 @@ class Self (Job) :
         self._engine = getEngine ()
 
         self._adaptor = self._engine.get_adaptor ('saga.job.Self', 'fork', \
-                                                  SYNC, None, session)
+                                                  SYNC, ANY_ADAPTOR, session)
 

@@ -44,12 +44,18 @@ class local_job (saga.cpi.job.Job) :
 
 
     def init_instance (self, id, session) :
-        print "local job adaptor init sync %s" % id
+        print "local job adaptor instance init sync %s" % id
         self._id      = id
         self._session = session
 
 
+    @saga.cpi.base.sync
     def get_id (self) :
+        print "sync get_id"
+        return self._id
+
+    def get_id_async (self, ttype) :
+        print "async get_id"
         return self._id
 
 
