@@ -97,7 +97,3 @@ class Task (saga.attributes.Attributes) :
     def cancel (self) :
         self._set_state (CANCELED)
 
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
->>>>>>> a5bfc9ba6f84168b2a1f9601c1fdf9bccc8363fe
-
