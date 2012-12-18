@@ -12,12 +12,12 @@ ASYNC = saga.cpi.base.async
 _adaptor_name     =    'saga.adaptor.localjob'
 _adaptor_registry = [{ 'name'    : _adaptor_name,
                        'type'    : 'saga.job.Job',
-                       'class'   : 'local_job',
+                       'class'   : 'LocalJob',
                        'schemas' : ['fork', 'local']
                      }, 
                      { 'name'    : _adaptor_name,
                        'type'    : 'saga.job.Service',
-                       'class'   : 'local_job_service',
+                       'class'   : 'LocalJobService',
                        'schemas' : ['fork', 'local']
                      }]
 
@@ -36,16 +36,16 @@ def register () :
 #
 # job adaptor class
 #
-class local_job (saga.cpi.job.Job) :
+class LocalJob (saga.cpi.job.Job) :
 
     def __init__ (self) :
         saga.cpi.Base.__init__ (self, _adaptor_name)
-        print "local job adaptor init";
+        # print "local job adaptor init";
 
 
     @SYNC
     def init_instance (self, id, session) :
-        print "local job adaptor instance init sync %s" % id
+        # print "local job adaptor instance init sync %s" % id
         self._id      = id
         self._session = session
 
@@ -66,16 +66,16 @@ class local_job (saga.cpi.job.Job) :
 #
 # job service adaptor class
 #
-class LocalJobAdaptor (saga.cpi.job.Service) :
+class LocalJobService (saga.cpi.job.Service) :
 
     def __init__ (self) :
         saga.cpi.Base.__init__ (self, _adaptor_name)
-        print "local job service adaptor init"
+        # print "local job service adaptor init"
 
 
     @SYNC
     def init_instance (self, rm, session) :
-        print "local job service adaptor init sync: %s"  %  rm 
+        # print "local job service adaptor init sync: %s"  %  rm 
         self._rm      = rm
         self._session = session
 
@@ -85,7 +85,7 @@ class LocalJobAdaptor (saga.cpi.job.Service) :
 
     @ASYNC
     def init_instance_async (self, rm, session, ttype) :
-        print "local job service adaptor init async: %s"  %  rm 
+        # print "local job service adaptor init async: %s"  %  rm 
         self._rm      = rm
         self._session = session
 
@@ -105,7 +105,7 @@ class LocalJobAdaptor (saga.cpi.job.Service) :
 
     @SYNC
     def create_job (self, jd) :
-        print jd._attributes_dump ()
+        # print jd._attributes_dump ()
         j = saga.job._create_job_from_adaptor ("my_id", self._session, "fork", _adaptor_name)
         return j
 
