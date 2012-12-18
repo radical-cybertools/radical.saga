@@ -12,6 +12,8 @@ from saga.engine.config   import Configurable, getConfig
 from saga.engine.logger   import Logger, getLogger
 from saga.engine.registry import adaptor_registry
 
+import saga.exceptions
+
 ############# These are all supported options for saga.engine ####################
 ##
 _all_engine_config_options = [
@@ -182,6 +184,7 @@ class Engine(Configurable):
                             opts.append(v.as_dict())
                         self._logger.info('Found config options for %s: %s' % (module_name, opts))
                         adaptor_enabled = adaptor_config['enabled'].get_value ()
+
                     except Exception as e :
                         pass
                         #self._logger.info("load  adaptor %s -- no config options: %s " 
@@ -213,7 +216,7 @@ class Engine(Configurable):
                                % (module_name, str(e)))
 
 
-    def get_adaptor (self, ctype, schema, *args, **kwargs) :
+    def get_adaptor (self, ctype, schema, ttype, *args, **kwargs) :
         '''
         Sift through the self._adaptors registry, and try to find an adaptor
         which can successfully be instantiated for the given API object type and
@@ -233,20 +236,41 @@ class Engine(Configurable):
             return None
 
 
+        # cycle through all applicable adaptors, and try to instantiate them.
+        # If that works, and ttype signals a sync object construction, call the 
+        # _init_instance(), which effectively performs the semantics of the API
+        # level object constructor.  For asynchronous object instantiation (via
+        # create factory methods), the init_instance_async will be called from
+        # API level -- but at that point will not be able to abort the adaptor
+        # binding if the constructor semantics signals a problem (i.e. cannot
+        # handle URL after all).
+        msg = ""
         for adaptor_class in self._adaptors[ctype][schema] :
-            try :
-                adaptor_class_instance = adaptor_class ()
-                adaptor_class_instance._init_sync (*args, **kwargs)
 
-                # successfully bound to adaptor
+            adaptor_name = ""
+            try :
+                # instantiate adaptor
+                adaptor_class_instance = adaptor_class ()
+                adaptor_name           = adaptor_class_instance._get_name ()
+
+                # run the constructor for sync construction
+                if ttype == None or ttype == saga.task.SYNC :
+                    adaptor_class_instance._init_instance  (*args, **kwargs)
+
                 self._logger.info("select adaptor %s -- success"  %  str(adaptor_class))
+
+                # selected / created / initialized adaptor instance - return
                 return adaptor_class_instance
 
             except Exception as e :
-                # adaptor class initialization failed?
+                # adaptor class initialization failed - try next one
                 self._logger.info("select adaptor %s -- failed: %s"  \
                                % (str(adaptor_class), str(e)))
+                msg += "\n  %s: %s"  %  (adaptor_name, str(e))
                 continue
+
+        raise saga.exceptions.NotImplemented ("no suitable adaptor found: %s" %  msg)
+
 
 
     def list_loaded_adaptors(self):
