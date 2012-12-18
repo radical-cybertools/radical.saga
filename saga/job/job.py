@@ -34,21 +34,21 @@ class Job (object) :
     def __init__(self, id=None):
     
         # # set attribute interface properties
-        # self.attributes_extensible_  (False)
-        # self.attributes_camelcasing_ (True)
+        # self._attributes_extensible  (False)
+        # self._attributes_camelcasing (True)
 
         # # register properties with the attribute interface 
-        # self.attributes_register_   ('State',      self.Unknown, self.Enum,   self.Scalar, self.ReadOnly)
-        # self.attributes_register_   ('Exitcode',   None,         self.Int,    self.Scalar, self.ReadOnly)
-        # self.attributes_register_   ('JobID',      None,         self.String, self.Scalar, self.ReadOnly)
-        # self.attributes_register_   ('ServiceURL', None,         self.Url,    self.Scalar, self.ReadOnly)
+        # self._attributes_register   ('State',      self.Unknown, self.Enum,   self.Scalar, self.ReadOnly)
+        # self._attributes_register   ('Exitcode',   None,         self.Int,    self.Scalar, self.ReadOnly)
+        # self._attributes_register   ('JobID',      None,         self.String, self.Scalar, self.ReadOnly)
+        # self._attributes_register   ('ServiceURL', None,         self.Url,    self.Scalar, self.ReadOnly)
 
-        # self.attributes_set_enums_  ('State',   [UNKNOWN, NEW, RUNNING, DONE,
+        # self._attributes_set_enums  ('State',   [UNKNOWN, NEW, RUNNING, DONE,
         #                                          FAILED,  CANCELED, SUSPENDED])
 
-        # self.attributes_set_getter_ ('State',    self.get_state)
-        # self.attributes_set_getter_ ('jobID',    self.get_job_id)
-        # self.attributes_set_getter_ ('Exitcode', self.get_exitcode_)
+        # self._attributes_set_getter ('State',    self.get_state)
+        # self._attributes_set_getter ('jobID',    self.get_job_id)
+        # self._attributes_set_getter ('Exitcode', self._get_exitcode)
 
         self._logger = getLogger ('saga.job.Job')
         self._logger.debug ("saga.job.Job.__init__(%s)" % id)
@@ -229,8 +229,8 @@ class Self (Job) :
     def __init__(self, session=None):
     
         # # set attribute interface properties
-        # self.attributes_extensible_  (False)
-        # self.attributes_camelcasing_ (True)
+        # self._attributes_extensible  (False)
+        # self._attributes_camelcasing (True)
 
         self._logger = getLogger ('saga.job.Self')
         self._logger.debug ("saga.job.Self.__init__ (%s, %s)"  \
