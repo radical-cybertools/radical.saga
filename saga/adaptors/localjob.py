@@ -43,7 +43,7 @@ class local_job (saga.cpi.job.Job) :
         print "local job adaptor init";
 
 
-    def _init_instance (self) :
+    def init_instance (self) :
         print "local job adaptor init sync"
 
 
@@ -63,7 +63,7 @@ class local_job_service (saga.cpi.job.Service) :
         print "local job service adaptor init"
 
 
-    def _init_instance (self, rm, session) :
+    def init_instance (self, rm, session) :
         print "local job service adaptor init sync: %s"  %  rm 
         self._rm      = rm
         self._session = session
@@ -71,6 +71,19 @@ class local_job_service (saga.cpi.job.Service) :
 
         # for testing:
         # raise saga.exceptions.BadParameter ("Cannot handle rm %s"  %  rm)
+
+
+    def init_instance_async (self, ttype, rm, session) :
+        print "local job service adaptor init async: %s"  %  rm 
+        self._rm      = rm
+        self._session = session
+
+        # for testing:
+        # raise saga.exceptions.BadParameter ("Cannot handle rm %s"  %  rm)
+
+        # FIXME: we need to return a saga.task.Task instance here
+        t = saga.task.Task ()
+        return t
 
 
     def create (self, rm, session, ttype) :

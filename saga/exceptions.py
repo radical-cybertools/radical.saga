@@ -25,7 +25,7 @@ class SagaException(ExceptionBase):
     def __init__  (self, message, object=None) :
         self._message   = message
         self._object    = object
-        self._traceback = repr (traceback.format_stack ())
+        self._traceback = traceback.format_exc ()
 
     def get_message (self) :
         """ Return the exception message as a string.
