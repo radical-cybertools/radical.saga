@@ -1,5 +1,5 @@
 
-# from saga.cpi.Base      import CPIBase
+from saga.cpi.base import Base
 
 # from saga.cpi import Object      as CPIObject
 # from saga.cpi import Async       as CPIAsync 
@@ -9,7 +9,7 @@
 import saga.exceptions
 
 # class Job (CPIBase) : # CPIObject, CPIAsync, CPIAttributes, CPIPermissions) :
-class Job (object) :
+class Job (Base) :
     
     def __init__        (self, id                 ) :
         raise saga.exceptions.NotImplemented

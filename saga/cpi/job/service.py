@@ -1,4 +1,6 @@
 
+from saga.cpi.base import Base
+
 # from saga.Url           import Url
 # from saga.Object        import Object 
 # from saga.Task          import Async
@@ -8,7 +10,7 @@
 import saga.exceptions
 
 # class Service (Object, Async, Configurable) :
-class Service (object) :
+class Service (Base) :
 
     def __init__   (self) : 
         raise saga.exceptions.NotImplemented ("method not implemented")

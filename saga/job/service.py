@@ -5,6 +5,7 @@
 
 from saga.engine.logger import getLogger
 from saga.engine.engine import getEngine
+from saga.task          import SYNC, ASYNC, TASK
 
 # class Service (Object, Async) :
 class Service (object) :
@@ -21,7 +22,8 @@ class Service (object) :
 
         self._engine = getEngine ()
 
-        self._adaptor = self._engine.get_adaptor ('saga.job.Service', 'fork', rm, session)
+        self._adaptor = self._engine.get_adaptor ('saga.job.Service', 'fork', \
+                                                  SYNC, rm, session)
 
 
     def create     (self, rm=None, session=None, ttype=None) : pass 

@@ -31,6 +31,7 @@ except IOError:
 
 import saga.engine
 import saga.exceptions
+import saga.task
 import saga.job
 import saga.cpi
 

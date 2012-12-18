@@ -1,4 +1,5 @@
 
+import saga.cpi.base
 import saga.cpi.job
 
 ######################################################################
@@ -38,16 +39,16 @@ def register () :
 class local_job (saga.cpi.job.Job) :
 
     def __init__ (self) :
+        saga.cpi.Base.__init__ (self, _adaptor_name)
         print "local job adaptor init";
 
 
-    def _init_sync (self) :
+    def _init_instance (self) :
         print "local job adaptor init sync"
 
 
 
     def get_id (self) :
-
         return id (self)
 
 
@@ -58,13 +59,18 @@ class local_job (saga.cpi.job.Job) :
 class local_job_service (saga.cpi.job.Service) :
 
     def __init__ (self) :
+        saga.cpi.Base.__init__ (self, _adaptor_name)
         print "local job service adaptor init"
 
 
-    def _init_sync (self, rm, session) :
+    def _init_instance (self, rm, session) :
         print "local job service adaptor init sync: %s"  %  rm 
         self._rm      = rm
         self._session = session
+
+
+        # for testing:
+        # raise saga.exceptions.BadParameter ("Cannot handle rm %s"  %  rm)
 
 
     def create (self, rm, session, ttype) :
