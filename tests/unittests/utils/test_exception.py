@@ -15,8 +15,8 @@ def test_ExceptionBase():
         raise ExceptionBase('message')
         assert False
     except ExceptionBase, eb:
-        if eb.message != 'message':
+        if str(eb) != 'message':
             assert False
         else:
-            assert str(eb) == '%smessage%s' % (RED, RES)
+            assert str(eb) == 'message'
             assert True
