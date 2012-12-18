@@ -10,8 +10,8 @@ __license__   = "MIT"
 from saga.utils.singleton import Singleton
 from saga.engine.config   import Configurable, getConfig
 from saga.engine.logger   import Logger, getLogger
-from saga.engine.registry import adaptor_registry
 
+import saga.engine.registry 
 import saga.exceptions
 
 ############# These are all supported options for saga.engine ####################
@@ -135,15 +135,27 @@ class Engine(Configurable):
 
 
     def _initialize_logging(self):
+        """ Initialize the logging facilites. 
+        """
         Logger()
         self._logger = getLogger('engine')
 
 
-    def _load_adaptors(self):
+    def _load_adaptors(self, inject_registry=False):
+        """ Try to load all adaptors that are registered in 
+            saga.engine.registry.py. This method is called from the constructor. 
 
+            :param inject_registry: Inject a fake registry. *For unit tests only*.
+        """
         global_config = getConfig()
 
-        for module_name in adaptor_registry :
+        if inject_registry is False:
+            registry = saga.engine.registry.adaptor_registry
+        else:
+            self._adaptors = {} # reset adaptor list
+            registry = inject_registry
+
+        for module_name in registry:
 
             self._logger.info("Found entry for adaptor module %s in registry"  %  module_name)
 
@@ -271,17 +283,6 @@ class Engine(Configurable):
 
         raise saga.exceptions.NotImplemented ("no suitable adaptor found: %s" %  msg)
 
+    def loaded_adaptors(self):
+        return self._adaptors
 
-
-    def list_loaded_adaptors(self):
-
-        print " ----------------------------------------- "
-        print " loaded adaptors: "
-        for ctype in self._adaptors.keys () :
-            for schema in self._adaptors[ctype].keys () :
-                for adp_class in self._adaptors[ctype][schema] :
-                    print " %-20s : %-10s : %s" % (ctype, schema, adp_class)
-
-        print " ----------------------------------------- "
-
-        pass
