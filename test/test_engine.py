@@ -10,11 +10,17 @@ try :
   # a_3 = e.get_adaptor ('saga.job.Job',     'oops', saga.task.SYNC)
   # a_4 = e.get_adaptor ('saga.job.Service', 'oops', saga.task.SYNC, 'oops://localhost/')
   
+  jd     = saga.job.Description ()
+  jd.executable = '/bin/date'
+
+
   task_1 = saga.job.create_service ("local://localhost", ttype=saga.task.TASK)
   print str(task_1)
 
   js_1   = saga.job.Service ("fork://localhost")
   print js_1.get_url ()
+
+  j_1    = js_1.create_job (jd) 
 
 except saga.exceptions.SagaException as e :
   print "Exception: ==========\n%s"  %  e.get_message ()

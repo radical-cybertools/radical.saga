@@ -29,7 +29,7 @@ def test_configurable():
     # make sure singleton works
     assert Engine().get_config()['foo'].get_value() == 'bar'  
 
-def test_emtpy_regsitry():
+def test_emtpy_registry():
     """ Test that an empty adaptor registry is handled properly.
     """
     Engine()._load_adaptors([])

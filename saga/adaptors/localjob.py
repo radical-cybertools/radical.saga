@@ -86,12 +86,12 @@ class local_job_service (saga.cpi.job.Service) :
         return t
 
 
-    def create (self, rm, session, ttype) :
-        pass
-
-
     def get_url (self, ttype) :
 
         return self._rm
 
+
+    def create_job (self, jd, ttype) :
+        print jd._attributes_dump ()
+        return saga.job.Job ()
 
