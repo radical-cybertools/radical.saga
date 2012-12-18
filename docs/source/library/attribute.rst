@@ -1,7 +1,18 @@
-Attribute Interface
-*******************
+Attributes and Callbacks
+************************
 
 .. todo:: Intro to SAGA attribute interface.
 
-.. automodule:: saga.attributes
-   :members: Callback, Attributes
+
+Callbacks -- :class:`saga.Callback`
+-----------------------------------
+
+.. autoclass:: saga.attributes.Callback
+   :members:
+
+
+Attribute -- :class:`saga.Attributes`
+-------------------------------------
+
+.. autoclass:: saga.attributes.Attributes
+   :members:
