@@ -5,7 +5,7 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-''' Provides the default logging formatter for SAGA.
+''' Provides the default log output formatter for SAGA.
 '''
 
 from logging import Formatter

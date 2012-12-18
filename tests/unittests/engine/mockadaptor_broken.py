@@ -13,10 +13,15 @@ import saga.cpi.job
 
 _adaptor_info = [{'name'    : 'saga.adaptor.mock',
                   'type'    : 'saga.job.Job',
-                  'class'   : 'local_job',
+                  'class'   : 'MockJob',
                   'schemas' : ['fork', 'local']
                  }]
 
-def register () :
+def register():
     return _adaptor_info
+
+class MockJob(saga.cpi.job.Job):
+    def __init__ (self) :
+        saga.cpi.Base.__init__ (self, _adaptor_info['name'])
+        print "local job adaptor init";
 
