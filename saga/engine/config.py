@@ -42,6 +42,9 @@ class ConfigOption(object):
     def __str__(self):
         return str({'name':self._name, 'value':self._value})
 
+    def as_dict(self):
+        return {self._name:self._value}
+
     @property
     def category(self):
         return self._category
