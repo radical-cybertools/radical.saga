@@ -2,14 +2,10 @@
 import saga
 
 try :
-  e = saga.engine.Engine ()
-  
-  # a_1 = e.get_adaptor ('saga.job.Job',     'fork', saga.task.SYNC)
-  # a_2 = e.get_adaptor ('saga.job.Service', 'fork', saga.task.SYNC, 'fork://localhost/')
-  # 
-  # a_3 = e.get_adaptor ('saga.job.Job',     'oops', saga.task.SYNC)
-  # a_4 = e.get_adaptor ('saga.job.Service', 'oops', saga.task.SYNC, 'oops://localhost/')
-  
+
+  c = saga.Context ('UserPass')
+
+
   jd     = saga.job.Description ()
   jd.executable = '/bin/date'
 
@@ -25,6 +21,7 @@ try :
 
   t_2    = j_1.get_id (ttype=saga.task.TASK)
   print str(t_2)
+  print t_2.get_state ()
 
 
 

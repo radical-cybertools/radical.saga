@@ -269,9 +269,9 @@ class Attributes (_AttributesBase) :
     ALIAS       = 'alias'      # variable is deprecated, and alias'ed to
                                # a different variable.
 
-    # extensible enum
-    EXTENDED    = True         # new attributes can be added on the fly
-    NOTEXTENDED = False        # setting new attributes will raise an exception
+    # attrib extensions
+    EXTENDED    = 'extended'   # attribute added as extension
+    PRIVATE     = 'private'    # attribute added as private
 
     # flavor enums
     SCALAR      = 'scalar'     # the attribute value is a single data element
@@ -337,6 +337,7 @@ class Attributes (_AttributesBase) :
             # need to initialize -- any exceptions in the code below should fall through
             d['_attributes']  = {}
             d['_extensible']  = True
+            d['_private']     = True
             d['_camelcasing'] = False
             d['lister']       = None
             d['recursion']    = False
@@ -362,7 +363,7 @@ class Attributes (_AttributesBase) :
         aliased.  
         
         If the does not yet exist, the validity check is performed, and allows
-        to limit dynamically added attribute names (for 'extensible' sets).
+        to limit dynamically added attribute names.
         
         if the key does exist, the alias check triggers a deprecation warning,
         and returns the aliased key for transparent operation.
@@ -822,16 +823,23 @@ class Attributes (_AttributesBase) :
 
         # if the key is not known
         if not key in d['_attributes'] :
-            if not d['_extensible'] :
-                # we cannot add new keys on non-extensible sets
-                raise IncorrectState ("attribute set is not extensible (key %s)" %  key)
-            else :
+            if key[0] == '_' and d['_private'] :
+                # if the set is private, we can register the new key.  It
+                # won't have any callbacks at this point.
+                self._attributes_register (key, None, self.ANY, self.SCALAR, self.WRITABLE, self.PRIVATE)
+
+            elif d['_extensible'] :
                 # if the set is extensible, we can register the new key.  It
                 # won't have any callbacks at this point.
                 self._attributes_register (key, None, self.ANY, self.SCALAR, self.WRITABLE, self.EXTENDED)
 
+            else :
+                # we cannot add new keys on non-extensible / non-private sets
+                raise IncorrectState ("attribute set is not extensible/private (key %s)" %  key)
+
+
         # known attribute - attempt to set its value
-        else:
+        else :
 
             # check if we are allowed to change the attribute - complain if not.
             # Also, simply ignore write attempts to finalized keys.
@@ -920,7 +928,7 @@ class Attributes (_AttributesBase) :
         for key in sorted(d['_attributes'].iterkeys()) :
             if d['_attributes'][key]['mode'] != self.ALIAS :
                 if d['_attributes'][key]['exists'] :
-                    if ext or not d['_attributes'][key]['extended'] :
+                    if ext and d['_attributes'][key]['extended'] :
                         ret.append (key)
 
         return ret
@@ -1173,10 +1181,11 @@ class Attributes (_AttributesBase) :
 
         Register a new attribute.
 
-        This function ignores extensible, final and readonly flags.  It can also
-        be used to re-register an existing attribute with new properties -- the
-        old attribute value, callbacks etc. will be lost though.  Using this
-        call that way may result in confusing behaviour on the public API level.
+        This function ignores extensible, private, final and readonly flags.  It
+        can also be used to re-register an existing attribute with new
+        properties -- the old attribute value, callbacks etc. will be lost
+        though.  Using this call that way may result in confusing behaviour on
+        the public API level.
         """
         # FIXME: check for valid mode and flavor settings
 
@@ -1201,7 +1210,7 @@ class Attributes (_AttributesBase) :
         d['_attributes'][us_key]['exists']       = False   # no value set, yet
         d['_attributes'][us_key]['flavor']       = flavor  # scalar / vector
         d['_attributes'][us_key]['mode']         = mode    # readonly / writable / final
-        d['_attributes'][us_key]['extended']     = ext     # True if added on the fly
+        d['_attributes'][us_key]['extended']     = ext     # false/extended/private
         d['_attributes'][us_key]['camelcase']    = key     # keep original key name
         d['_attributes'][us_key]['underscore']   = us_key  # keep under_scored name
         d['_attributes'][us_key]['enums']        = []      # list of valid enum values
@@ -1314,8 +1323,9 @@ class Attributes (_AttributesBase) :
 
         Unregister an attribute.
 
-        This function ignores the extensible, final and readonly flag, and is
-        supposed to be used by derived classes, not by the consumer of the API.
+        This function ignores the extensible, private, final and readonly flag,
+        and is supposed to be used by derived classes, not by the consumer of
+        the API.
 
         Note that unregistering is different from setting the value to 'None' --
         all meta information about the attribute will be removed.  Further
@@ -1386,6 +1396,23 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
+    def _attributes_allow_private (self, p=True) :
+        """
+        This interface method is not part of the public consumer API, but can
+        safely be called from within derived classes.
+
+        Allow (or forbid) the on-the-fly creation of private attributes
+        (starting with underscore).  Note that this method also allows to
+        *remove* the respective flag -- that leaves any previously created
+        private attributes untouched, but just prevents the creation of new
+        private attributes.
+        """
+
+        d = self._attributes_t_init ()
+        d['_private'] = e
+
+
+    ####################################
     def _attributes_camelcasing (self, c=True) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1422,10 +1449,10 @@ class Attributes (_AttributesBase) :
 
         # for some reason, deep copy won't work on the '_attributes' dict, so we
         # do it manually.  Use the list copy c'tor to copy list elements.
-        other_d['_extensible']  = d['_extensible']
         other_d['_camelcasing'] = d['_camelcasing']
         other_d['_attributes']  = d['_attributes'] 
         other_d['_extensible']  = d['_extensible'] 
+        other_d['_private']     = d['_private']
         other_d['_camelcasing'] = d['_camelcasing']
         other_d['recursion']    = d['recursion']    
         other_d['lister']       = d['lister']    
@@ -1485,6 +1512,7 @@ class Attributes (_AttributesBase) :
 
         print "---------------------------------------"
         print " %-30s : %s"  %  ("Extensible"  , d['_extensible'])
+        print " %-30s : %s"  %  ("Private"     , d['_private'])
         print " %-30s : %s"  %  ("CamelCasing" , d['_camelcasing'])
         print "---------------------------------------"
 
@@ -1674,7 +1702,7 @@ class Attributes (_AttributesBase) :
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
 
-        See documentation of L{_attributes_set_setter } for details.
+        See documentation of L{_attributes_set_getter } for details.
         """
 
         # make sure interface is ready to use
@@ -1691,7 +1719,7 @@ class Attributes (_AttributesBase) :
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
 
-        See documentation of L{_attributes_set_setter } for details.
+        See documentation of L{_attributes_set_getter } for details.
         """
 
         # make sure interface is ready to use
@@ -1716,10 +1744,10 @@ class Attributes (_AttributesBase) :
 
         This method sets the value of the specified attribute.  If that
         attribute does not exist, DoesNotExist is raised -- unless the attribute
-        set is marked 'extensible'.  In that case, the attribute is created and
-        set on the fly (defaulting to mode=Writable, flavor=Scalar, type=ANY,
-        default=None).  A value of 'None' may reset the attribute to its default
-        value, if such one exists (see documentation).
+        set is marked 'extensible' or 'private'.  In that case, the attribute is
+        created and set on the fly (defaulting to mode=Writable, flavor=Scalar,
+        type=ANY, default=None).  A value of 'None' may reset the attribute to
+        its default value, if such one exists (see documentation).
 
         Note that this method is performing a number of checks and conversions,
         to match the value type to the attribute properties (type, mode, flavor).

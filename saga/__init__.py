@@ -30,7 +30,8 @@ except IOError:
         pass
 
 from   saga.exceptions import *
-from   saga.attributes import Attributes
+from   saga.attributes import *
+from   saga.context    import *
 from   saga.task       import *
 
 import saga.engine

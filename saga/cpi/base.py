@@ -24,7 +24,7 @@ class Base (saga_config.Configurable) :
 # ------------------------------------
 # decorator, which switches method to 
 # _async version if ttype is set and !None
-def async (sync_function) :
+def sync (sync_function) :
     
     def wrap_function (self, *args, **kwargs) :
 
@@ -49,7 +49,7 @@ def async (sync_function) :
 
             else :
                 # 'self' not needed, getattr() returns member function
-                print " ----------------> async "
+                # print " ----------------> async "
                 return async_function (*args, **kwargs)
         
         # no ttype, or ttype==None -- make sure it's gone, and call default sync
@@ -57,15 +57,15 @@ def async (sync_function) :
         if 'ttype' in kwargs : 
             del kwargs['ttype']
 
-        print " ----------------> sync "
+        # print " ----------------> sync "
         return sync_function (self, *args, **kwargs)
 
     return wrap_function
 
 
 # ------------------------------------
-# same decorator, different name
-def sync (sync_function) :
-    return async (sync_function)
+# we assume that async calls want to call, aehm, async methods...
+def async (async_function) :
+    return async_function
 
 
