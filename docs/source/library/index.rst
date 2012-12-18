@@ -5,3 +5,4 @@ Library Reference
    :numbered:
 
    exceptions.rst
+   attribute.rst
