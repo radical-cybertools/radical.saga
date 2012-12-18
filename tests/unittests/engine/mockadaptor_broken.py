@@ -23,5 +23,4 @@ def register():
 class MockJob(saga.cpi.job.Job):
     def __init__ (self) :
         saga.cpi.Base.__init__ (self, _adaptor_info['name'])
-        print "local job adaptor init";
 

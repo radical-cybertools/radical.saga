@@ -35,18 +35,18 @@ class context_userpass (saga.cpi.Context) :
 
     def __init__ (self) :
         saga.cpi.Base.__init__ (self, _adaptor_name)
-        print "userpass context adaptor init"
+        # print "userpass context adaptor init"
 
 
     @SYNC
     def init_instance (self, type) :
-        print "userpass context adaptor instance init sync %s" % id
+        # print "userpass context adaptor instance init sync %s" % id
         self._type = type
 
 
     @SYNC
     def set_default (self) :
-        print "sync set_defaults"
+        # print "sync set_defaults"
         pass
 
 

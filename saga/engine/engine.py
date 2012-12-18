@@ -62,13 +62,13 @@ class Engine(Configurable):
             { 
               'name'    : _adaptor_name,
               'type'    : 'saga.job.Job',
-              'class'   : 'local_job',
+              'class'   : 'LocalJob',
               'schemas' : ['fork', 'local']
             }, 
             { 
               'name'    : _adaptor_name,
               'type'    : 'saga.job.Service',
-              'class'   : 'local_job_service',
+              'class'   : 'LocalJobService',
               'schemas' : ['fork', 'local']
             } 
           ]
