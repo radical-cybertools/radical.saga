@@ -8,6 +8,8 @@ __license__   = "MIT"
 from saga.utils.which import *
 
 def test_which():
+    """ Test if 'which' can find things
+    """
     assert which('doesnotexistatall') is None
     if os.path.isfile('/usr/bin/date'):
         assert which('date') == '/usr/bin/date'

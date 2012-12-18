@@ -5,12 +5,14 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-''' Unit tests for saga.utils.exception.py
-'''
+""" Unit tests for saga.utils.exception.py
+"""
 
 from saga.utils.exception import *
 
 def test_ExceptionBase():
+    """ Test if ExceptionBase works properly
+    """
     try:
         raise ExceptionBase('message')
         assert False

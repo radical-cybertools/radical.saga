@@ -5,8 +5,8 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-''' Provides exception handling utilities and base classes.
-'''
+""" Provides exception handling utilities and base classes.
+"""
 
 class ExceptionBase(Exception):
     def __init__(self, message):

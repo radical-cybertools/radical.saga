@@ -13,12 +13,16 @@ from saga.engine.logger import *
 ############################# BEGIN UNIT TESTS ################################
 ##
 def test_singleton():
+    """ Test if the logger behaves like a singleton
+    """
     # make sure singleton works
     #assert(getLogger() == getLogger())
     assert Logger() == Logger() 
     assert getLogger('engine') == getLogger('engine')
 
 def test_configurable():
+    """ Test if the logger config options work
+    """
     # make sure singleton works
     c = Logger().get_config()
     
@@ -28,6 +32,8 @@ def test_configurable():
     assert c['targets'].get_value() == ['STDOUT']
 
 def test_logger():
+    """ Print out some messages with different log levels
+    """
     cl = getLogger('engine')
     cl = getLogger('engine')
     
