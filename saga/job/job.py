@@ -87,7 +87,6 @@ class Job (object) :
                                                       None, ANY_ADAPTOR, id)
 
 
-
     def get_id (self, ttype=None) :
         '''
         ttype:     saga.task.type enum

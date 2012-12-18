@@ -8,5 +8,6 @@ __license__   = "MIT"
 """ List of all registered SAGA adaptors. 
 """
 
-adaptor_registry = ["saga.adaptors.localjob"]
+adaptor_registry = ["saga.adaptors.localjob", 
+                    "saga.adaptors.saga_adaptor_context_userpass"]
 
