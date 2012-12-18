@@ -24,7 +24,7 @@ def create_service (rm=None, session=None, ttype=None) :
     # attempt to find a suitable adaptor, which will call 
     # init_instance_async(), which returns a task as expected.
     return engine.get_adaptor ('saga.job.Service', 'fork', \
-                               ttype, rm, session)
+                               ttype, None, rm, session)
 
 
 # class Service (Object, Async) :
@@ -44,7 +44,7 @@ class Service (object) :
         self._engine = getEngine ()
 
         self._adaptor = self._engine.get_adaptor ('saga.job.Service', 'fork', \
-                                                  SYNC, rm, session)
+                                                  SYNC, None, rm, session)
 
 
     def create_job (self, jd, ttype=None) :

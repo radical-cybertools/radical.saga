@@ -51,7 +51,7 @@ MEMORY_USE            = 'MemoryUse'
 VMEMORY_USE           = 'VmemoryUse'
 PERFORMANCE           = 'Performance'
 
-from saga.job.job         import Job,     create_job
+from saga.job.job         import Job,     create_job, _create_job_from_adaptor
 from saga.job.job         import Self,    create_self
 from saga.job.service     import Service, create_service
 from saga.job.description import Description

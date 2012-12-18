@@ -43,9 +43,10 @@ class local_job (saga.cpi.job.Job) :
         print "local job adaptor init";
 
 
-    def init_instance (self) :
+    def init_instance (self, id, session) :
         print "local job adaptor init sync"
-
+        self._id      = id
+        self._session = session
 
 
     def get_id (self) :
@@ -93,5 +94,6 @@ class local_job_service (saga.cpi.job.Service) :
 
     def create_job (self, jd, ttype) :
         print jd._attributes_dump ()
-        return saga.job.Job ()
+        j = saga.job._create_job_from_adaptor ("my_id", self._session, "fork", _adaptor_name)
+        return j
 

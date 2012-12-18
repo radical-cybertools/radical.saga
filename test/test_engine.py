@@ -21,6 +21,9 @@ try :
   print js_1.get_url ()
 
   j_1    = js_1.create_job (jd) 
+  print str(j_1)
+  print j_1.get_id ()
+
 
 except saga.exceptions.SagaException as e :
   print "Exception: ==========\n%s"  %  e.get_message ()

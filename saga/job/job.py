@@ -25,7 +25,28 @@ def create_job (id=None, session=None, ttype=None) :
     # attempt to find a suitable adaptor, which will call 
     # init_instance_async(), which returns a task as expected.
     return engine.get_adaptor ('saga.job.Job', 'fork', \
-                               ttype, id, session)
+                               ttype, None, id, session)
+
+def _create_job_from_adaptor (id, session, schema, adaptor_name) :
+    '''
+    id:           String
+    session:      saga.Session
+    schema:       String
+    adaptor_name: String
+    ret:          saga.job.Job (bound to a specific adaptor)
+    '''
+
+    logger = getLogger ('saga.job._create_job_from_adaptor')
+    logger.debug ("saga.job._create_job_from_adaptor (%s, %s, %s,  %s)"  \
+               % (id, str(session), schema, adaptor_name))
+
+    engine = getEngine ()
+
+    # attempt to find a suitable adaptor, which will call 
+    # init_instance_sync(), resulting in 
+    return engine.get_adaptor ('saga.job.Job', 'fork', None, 
+                               adaptor_name, id, session)
+
 
 
 # class Job (Object, Async, Attributes, Permissions) :
@@ -56,6 +77,7 @@ class Job (object) :
         self._engine = getEngine ()
 
         self._adaptor = self._engine.get_adaptor ('saga.job.Job', 'local', id)
+
 
 
     def get_description (self, ttype=None) :
@@ -220,7 +242,7 @@ def create_self (session=None, ttype=None) :
     # attempt to find a suitable adaptor, which will call 
     # init_instance_async(), which returns a task as expected.
     return engine.get_adaptor ('saga.job.Self', 'fork', \
-                               ttype, session)
+                               ttype, None, session)
 
 
 # class Self (Job, monitoring.Steerable) :
@@ -239,5 +261,5 @@ class Self (Job) :
         self._engine = getEngine ()
 
         self._adaptor = self._engine.get_adaptor ('saga.job.Self', 'fork', \
-                                                  SYNC, session)
+                                                  SYNC, None, session)
 
