@@ -5,11 +5,8 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-""" List of all registered SAGA adaptors. """
+""" List of all registered SAGA adaptors. 
+"""
 
-adaptor_registry = ["saga.adaptors.localjob"  ,
-                    "saga.adaptors.job"       ,
-                    "saga.adaptors.sftpfile"  ,
-                    "saga.adaptors.sgesshjob" ,
-                    "saga.adaptors.PBsshjob"  ]
+adaptor_registry = ["saga.adaptors.localjob"]
 

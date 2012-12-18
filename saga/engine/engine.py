@@ -231,8 +231,7 @@ class Engine(Configurable):
 
                         self._adaptors[adaptor_type][adaptor_schema].append (adp_class)
 
-
-            except Exception as e :
+            except Exception as e:
                 self._logger.warn("Loading %s failed: %s" % (module_name, str(e)))
 
 

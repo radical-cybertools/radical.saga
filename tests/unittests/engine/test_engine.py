@@ -8,9 +8,8 @@ __license__   = "MIT"
 """ Unit tests for saga.engine.engine.py
 """
 
+import os, sys
 from saga.engine import *
-
-
 
 def test_singleton():
     """ Test that the object behaves like a singleton.
@@ -35,8 +34,8 @@ def test_emtpy_regsitry():
     Engine()._load_adaptors([])
     assert Engine().loaded_adaptors() == {}
 
-def test_load_nonexisting_module():
-    """ Test that an attemt to load a non-existing adaptor 
+def test_broken_registry():
+    """ Test that an attemt to load from a broken registry 
         is handled properly.
     """
     try:
@@ -45,7 +44,34 @@ def test_load_nonexisting_module():
     except TypeError:
         assert True
 
-    Engine()._load_adaptors([".mockadaptor"])
-    assert Engine().loaded_adaptors() == {}
+def test_load_adaptor():
+    """ Test that an attempt to load an adaptor is handled properly.
+    """
+    old_sys_path = sys.path
+    path = os.path.split(os.path.abspath(__file__))[0]
+    sys.path.append(path)
+
+    Engine()._load_adaptors(["mockadaptor_ok"])
+    assert len(Engine().loaded_adaptors()) == 1
+    for (key, value) in Engine().loaded_adaptors().iteritems():
+        assert key == 'saga.job.Job'
+
+    #reset sys path
+    sys.path = old_sys_path
+
+def test_load_disabled_adaptor():
+    """ Test that an attempt to load a disabled adaptor is handled properly.
+    """
+    old_sys_path = sys.path
+    path = os.path.split(os.path.abspath(__file__))[0]
+    sys.path.append(path)
+
+    Engine()._load_adaptors(["mockadaptor_disabled"])
+    assert len(Engine().loaded_adaptors()) == 1
+    for (key, value) in Engine().loaded_adaptors().iteritems():
+        assert key == 'saga.job.Job'
+
+    #reset sys path
+    sys.path = old_sys_path
 
 

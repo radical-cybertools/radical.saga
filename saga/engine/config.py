@@ -91,8 +91,12 @@ class Configuration(object):
         self._initialize()
 
     def _initialize(self, inject_cfg_file=None):
-        # inject_cfg_file is used *only* for testing purposes and overwrites /
-        # ignores the regular config file locations /etc/saga.cfg & $HOME/.saga.cfg
+        """ Initialize the global configuration.
+
+            :param inject_cfg_file: is used *only* for testing purposes 
+             and overwrites / ignores the regular config file locations 
+             /etc/saga.cfg & $HOME/.saga.cfg
+        """
         cfg_files = list()
         if inject_cfg_file is not None:
             cfg_files.append(inject_cfg_file)
