@@ -116,7 +116,8 @@ def test_env_vars():
       == 'INFO')
 
     # reset SAGA_VERBOSE
-    os.environ['SAGA_VERBOSE'] = tmp_ev
+    if tmp_ev is not None:
+        os.environ['SAGA_VERBOSE'] = tmp_ev
 
 def test_valid_config_file():
     # Generate a configuration file
