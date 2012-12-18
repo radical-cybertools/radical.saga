@@ -147,7 +147,7 @@ class Engine(Configurable):
 
         for module_name in adaptor_registry :
 
-            self._logger.info("load  adaptor " + module_name)
+            self._logger.info("load  adaptor %s"  %  module_name)
 
             try :
                 adaptor_module = __import__ (module_name, fromlist=['register'])
@@ -159,7 +159,7 @@ class Engine(Configurable):
                 if adaptor_infos is None :
                     # adaptor does not want to be registered -- probably did not
                     # pass some sanity check
-                    self._logger.info("load  adaptor " + module_name + " -- aborted")
+                    self._logger.info("load  adaptor %s -- aborted" % module_name)
                     continue
 
                 # we got an adaptor info struct
@@ -172,21 +172,22 @@ class Engine(Configurable):
                     adaptor_class    = adaptor_info['class']
                     adaptor_schemas  = adaptor_info['schemas']
                     adaptor_enabled  = True  # default
-                    adaptor_fullname = module_name + '.' + adaptor_class
+                    adaptor_fullname = "%s.%s"  %  (module_name, adaptor_class)
 
                     # try to find an 'enabled' option in the adaptor's config section
                     try :
                         adaptor_config  = global_config.get_category (module_name)
                         adaptor_enabled = adaptor_config['enabled'].get_value ()
                     except Exception as e :
-                        self._logger.info("load  adaptor " + adaptor_fullname + " -- no config options: " + str(e))
+                        self._logger.info("load  adaptor %s -- no config options: %s " 
+                                       % (adaptor_fullname, str(e)))
 
                     # only load adaptor if it is not disabled via config files
                     if adaptor_enabled in ["False", False] :
-                        self._logger.info("load  adaptor " + adaptor_fullname + " -- disabled")
+                        self._logger.info("load  adaptor %s -- disabled"  %  adaptor_fullname )
                         continue
                     else :
-                        self._logger.info("load  adaptor " + adaptor_fullname + " -- enabled")
+                        self._logger.info("load  adaptor %s -- enabled"  %  adaptor_fullname )
 
                     # register adaptor class for the listed URL schemas
                     for adaptor_schema in adaptor_schemas :
@@ -202,7 +203,8 @@ class Engine(Configurable):
 
 
             except Exception as e :
-                self._logger.warn("load  adaptor " + module_name + " -- failed: " + str(e))
+                self._logger.warn("load  adaptor %s -- failed: %s" \
+                               % (module_name, str(e)))
 
 
     def get_adaptor (self, ctype, schema, *args, **kwargs) :
@@ -212,14 +214,16 @@ class Engine(Configurable):
         it's __init__ parameters.
         '''
 
-        self._logger.info("select adaptor: " + ctype + " - " + schema)
+        self._logger.info("select adaptor: %s - %s"  %  (ctype, schema))
 
         if not ctype in self._adaptors :
-            self._logger.info("select adaptor: '%s' - '%s' failed: unknown ctype '%s'" % (ctype, schema, ctype))
+            self._logger.info("select adaptor: '%s' - '%s' failed: unknown ctype '%s'" \
+                           % (ctype, schema, ctype))
             return None
 
         if not schema in self._adaptors[ctype] :
-            self._logger.info("select adaptor: '%s' - '%s' failed: unknown schema '%s'" % (ctype, schema, schema))
+            self._logger.info("select adaptor: '%s' - '%s' failed: unknown schema '%s'" \
+                           % (ctype, schema, schema))
             return None
 
 
@@ -229,12 +233,13 @@ class Engine(Configurable):
                 adaptor_class_instance._init_sync (*args, **kwargs)
 
                 # successfully bound to adaptor
-                self._logger.info("select adaptor " + str(adaptor_class) + " -- success")
+                self._logger.info("select adaptor %s -- success"  %  str(adaptor_class))
                 return adaptor_class_instance
 
             except Exception as e :
                 # adaptor class initialization failed?
-                self._logger.info("select adaptor " + str(adaptor_class) + " -- failed: " + str(e))
+                self._logger.info("select adaptor %s -- failed: %s"  \
+                               % (str(adaptor_class), str(e)))
                 continue
 
 
