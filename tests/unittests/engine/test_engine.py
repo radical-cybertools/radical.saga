@@ -10,8 +10,6 @@ __license__   = "MIT"
 
 from saga.engine import *
 
-############################# BEGIN UNIT TESTS ################################
-##
 def test_singleton():
     # make sure singleton works
     assert(getEngine() == getEngine())
@@ -24,6 +22,8 @@ def test_singleton():
 def test_configurable():
     # make sure singleton works
     assert Engine().get_config()['foo'].get_value() == 'bar'  
-##
-############################## END UNIT TESTS #################################
 
+
+def test_emtpy_regsitry():
+    Engine()._load_adaptors([])
+    assert Engine().loaded_adaptors() == {}
