@@ -5,7 +5,7 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-''' Provides API handles for SAGA's runtime. '''
+""" Provides the SAGA runtime. """
 
 from saga.utils.singleton import Singleton
 from saga.engine.config   import Configurable, getConfig
@@ -26,11 +26,10 @@ _all_engine_config_options = [
     }
 ]
 
-
 ################################################################################
 ##
 def getEngine():
-    """ Returns a handle to the Engine object.
+    """ Return a handle to the Engine object.
     """
     return Engine() 
 
@@ -38,7 +37,7 @@ def getEngine():
 ################################################################################
 ##
 class Engine(Configurable): 
-    ''' Represents the SAGA engine runtime system.
+    """ Represents the SAGA engine runtime system.
 
         The Engine class is a singleton class that takes care of 
         configuration, logging and adaptor management. Engine is 
@@ -114,11 +113,8 @@ class Engine(Configurable):
         in any of the specified paths (default path first, then configured 
         paths in the specified order).
         '
-    '''
-    
-    
+    """
     __metaclass__ = Singleton
-
 
 
     def __init__(self):
@@ -147,20 +143,24 @@ class Engine(Configurable):
 
         for module_name in adaptor_registry :
 
-            self._logger.info("load  adaptor %s"  %  module_name)
+            self._logger.info("Trying to load %s ..."  %  module_name)
 
             try :
                 adaptor_module = __import__ (module_name, fromlist=['register'])
 
                 # we expect the module to have an 'register' method implemented,
                 # which returns a info dict for all implemented CPI classes
-                adaptor_infos = adaptor_module.register ()
+                adaptor_infos = None
+                try: 
+                    adaptor_infos = adaptor_module.register ()
+                except Exception, ex:
+                    self._logger.warning("Loading %s failed: %s" % module_name, str(ex))
+                    continue # skip to next adaptor
 
+                # No exception, but adaptor_infos is empty
                 if adaptor_infos is None :
-                    # adaptor does not want to be registered -- probably did not
-                    # pass some sanity check
-                    self._logger.info("load  adaptor %s -- aborted" % module_name)
-                    continue
+                    self._logger.warning("Loading %s failed: register() returned no usable adaptor info." % module_name)
+                    continue # skip to next adaptor
 
                 # we got an adaptor info struct
                 for adaptor_info in adaptor_infos :
@@ -177,17 +177,23 @@ class Engine(Configurable):
                     # try to find an 'enabled' option in the adaptor's config section
                     try :
                         adaptor_config  = global_config.get_category (module_name)
+                        opts = list()
+                        for (k,v) in adaptor_config.iteritems():
+                            opts.append(v.as_dict())
+                        self._logger.info('Found config options for %s: %s' % (module_name, opts))
                         adaptor_enabled = adaptor_config['enabled'].get_value ()
                     except Exception as e :
-                        self._logger.info("load  adaptor %s -- no config options: %s " 
-                                       % (adaptor_fullname, str(e)))
+                        pass
+                        #self._logger.info("load  adaptor %s -- no config options: %s " 
+                        #               % (adaptor_fullname, str(e)))
 
                     # only load adaptor if it is not disabled via config files
                     if adaptor_enabled in ["False", False] :
-                        self._logger.info("load  adaptor %s -- disabled"  %  adaptor_fullname )
+                        self._logger.info("Loading %s failed: 'enabled' option set to 'False'."  %  adaptor_fullname )
                         continue
                     else :
-                        self._logger.info("load  adaptor %s -- enabled"  %  adaptor_fullname )
+                        pass
+                        #self._logger.info("load  adaptor %s -- enabled"  %  adaptor_fullname )
 
                     # register adaptor class for the listed URL schemas
                     for adaptor_schema in adaptor_schemas :
@@ -203,7 +209,7 @@ class Engine(Configurable):
 
 
             except Exception as e :
-                self._logger.warn("load  adaptor %s -- failed: %s" \
+                self._logger.warn("Loading %s failed: %s" \
                                % (module_name, str(e)))
 
 
