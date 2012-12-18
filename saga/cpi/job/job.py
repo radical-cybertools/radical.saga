@@ -14,9 +14,6 @@ class Job (Base) :
     def __init__        (self, id                 ) :
         raise saga.exceptions.NotImplemented
 
-    def create          (self, id,           ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
-
     def get_description (self,               ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 

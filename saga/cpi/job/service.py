@@ -18,9 +18,6 @@ class Service (Base) :
     def init_instance (self, rm, session) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def create (self, rm, session, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
-
     def create_job (self, jd, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
