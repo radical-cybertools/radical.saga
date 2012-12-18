@@ -176,7 +176,7 @@ class Engine(Configurable):
                 try: 
                     adaptor_infos = adaptor_module.register ()
                 except Exception, ex:
-                    self._logger.warning("Loading %s failed: %s" % module_name, str(ex))
+                    self._logger.warning("Loading %s failed: %s" % (module_name, str(ex)))
                     continue # skip to next adaptor
 
                 # No exception, but adaptor_infos is empty

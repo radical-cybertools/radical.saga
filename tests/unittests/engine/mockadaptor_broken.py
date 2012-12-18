@@ -5,20 +5,20 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-""" Unit tests for saga.engine.engine.py
+""" Unit test mock adaptor for saga.engine.engine.py
 """
 
 import saga.cpi.base
 import saga.cpi.job
 
-_adaptor_info = [{'name'    : 'saga.adaptor.mock',
+_adaptor_info = [{'name'    : 'saga.adaptor.mock_broken',
                   'type'    : 'saga.job.Job',
                   'class'   : 'MockJob',
                   'schemas' : ['fork', 'local']
                  }]
 
 def register():
-    return _adaptor_info
+    raise Exception("CRAP! Well, actually this is supposed to happen... ;-)")
 
 class MockJob(saga.cpi.job.Job):
     def __init__ (self) :

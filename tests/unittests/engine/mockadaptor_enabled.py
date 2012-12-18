@@ -5,7 +5,7 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-""" Unit tests for saga.engine.engine.py
+""" Unit test mock adaptor for saga.engine.engine.py
 """
 
 import saga.cpi.base
@@ -34,7 +34,6 @@ def register():
 
 class MockJob(saga.cpi.job.Job):
     def __init__ (self) :
-        saga.cpi.Base.__init__ (self, adaptor_name=_adaptor_info['name'],
+        saga.cpi.Base.__init__ (self, adaptor_name='saga.adaptor.mock',
                                       config_options=_adaptor_config_options)
-        print "local job adaptor init";
 
