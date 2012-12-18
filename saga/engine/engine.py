@@ -145,7 +145,7 @@ class Engine(Configurable):
 
         for module_name in adaptor_registry :
 
-            self._logger.info("Trying to load %s ..."  %  module_name)
+            self._logger.info("Found entry for adaptor module %s in registry"  %  module_name)
 
             try :
                 adaptor_module = __import__ (module_name, fromlist=['register'])
@@ -161,7 +161,7 @@ class Engine(Configurable):
 
                 # No exception, but adaptor_infos is empty
                 if adaptor_infos is None :
-                    self._logger.warning("Loading %s failed: register() returned no usable adaptor info." % module_name)
+                    self._logger.warning("Loading %s failed: register() returned no usable adaptor info" % module_name)
                     continue # skip to next adaptor
 
                 # we got an adaptor info struct
@@ -177,26 +177,27 @@ class Engine(Configurable):
                     adaptor_fullname = "%s.%s"  %  (module_name, adaptor_class)
 
                     # try to find an 'enabled' option in the adaptor's config section
+                    adaptor_opts = list()
                     try :
                         adaptor_config  = global_config.get_category (module_name)
-                        opts = list()
                         for (k,v) in adaptor_config.iteritems():
-                            opts.append(v.as_dict())
-                        self._logger.info('Found config options for %s: %s' % (module_name, opts))
+                            adaptor_opts.append(v.as_dict())
+
                         adaptor_enabled = adaptor_config['enabled'].get_value ()
 
                     except Exception as e :
                         pass
-                        #self._logger.info("load  adaptor %s -- no config options: %s " 
-                        #               % (adaptor_fullname, str(e)))
+                    self._logger.info('Config options for %s: %s' % (module_name, adaptor_opts))
 
                     # only load adaptor if it is not disabled via config files
                     if adaptor_enabled in ["False", False] :
-                        self._logger.info("Loading %s failed: 'enabled' option set to 'False'."  %  adaptor_fullname )
+                        self._logger.info("Not loading %s from module %s: 'enabled' set to False" \
+                          % (adaptor_class, module_name))
                         continue
                     else :
                         pass
-                        #self._logger.info("load  adaptor %s -- enabled"  %  adaptor_fullname )
+                        self._logger.info("Successfully loaded %s from module %s" \
+                          % (adaptor_class, module_name))
 
                     # register adaptor class for the listed URL schemas
                     for adaptor_schema in adaptor_schemas :
@@ -212,8 +213,7 @@ class Engine(Configurable):
 
 
             except Exception as e :
-                self._logger.warn("Loading %s failed: %s" \
-                               % (module_name, str(e)))
+                self._logger.warn("Loading %s failed: %s" % (module_name, str(e)))
 
 
     def get_adaptor (self, ctype, schema, ttype, *args, **kwargs) :

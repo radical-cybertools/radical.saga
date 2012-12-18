@@ -105,12 +105,18 @@ def test_env_vars():
     # for this test, we call the private _initialize() method again to make
     # sure Configuration reads the environment variables again.
 
+    # save SAGA_VERBOSE state
+    tmp_ev = os.environ.get('SAGA_VERBOSE')
+
     os.environ['SAGA_VERBOSE'] = 'INFO'
     cfg = getConfig()
     cfg._initialize()
 
     assert(getConfig().get_option('saga.test', 'level').get_value()
       == 'INFO')
+
+    # reset SAGA_VERBOSE
+    os.environ['SAGA_VERBOSE'] = tmp_ev
 
 def test_valid_config_file():
     # Generate a configuration file
