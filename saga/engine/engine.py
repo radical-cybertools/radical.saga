@@ -7,11 +7,13 @@ __license__   = "MIT"
 
 """ Provides the SAGA runtime. """
 
-from saga.utils.singleton import Singleton
-from saga.engine.config   import Configurable, getConfig
-from saga.engine.logger   import Logger, getLogger
+
+from   saga.utils.singleton import Singleton
+from   saga.engine.config   import Configurable, getConfig
+from   saga.engine.logger   import Logger,       getLogger
 
 import saga.engine.registry 
+import saga.task
 import saga.exceptions
 
 ############# These are all supported options for saga.engine ####################
@@ -119,6 +121,8 @@ class Engine(Configurable):
     __metaclass__ = Singleton
 
 
+    #-----------------------------------------------------------------
+    # 
     def __init__(self):
         
         # Engine manages adaptors
@@ -134,6 +138,8 @@ class Engine(Configurable):
         self._load_adaptors()
 
 
+    #-----------------------------------------------------------------
+    # 
     def _initialize_logging(self):
         """ Initialize the logging facilites. 
         """
@@ -141,6 +147,8 @@ class Engine(Configurable):
         self._logger = getLogger('engine')
 
 
+    #-----------------------------------------------------------------
+    # 
     def _load_adaptors(self, inject_registry=False):
         """ Try to load all adaptors that are registered in 
             saga.engine.registry.py. This method is called from the constructor. 
@@ -228,6 +236,8 @@ class Engine(Configurable):
                 self._logger.warn("Loading %s failed: %s" % (module_name, str(e)))
 
 
+    #-----------------------------------------------------------------
+    # 
     def get_adaptor (self, ctype, schema, ttype, *args, **kwargs) :
         '''
         Sift through the self._adaptors registry, and try to find an adaptor
@@ -235,22 +245,22 @@ class Engine(Configurable):
         it's __init__ parameters.
         '''
 
-        self._logger.info("select adaptor: %s - %s"  %  (ctype, schema))
+        self._logger.debug("get_adaptor: %s - %s"  %  (ctype, schema))
 
         if not ctype in self._adaptors :
-            self._logger.info("select adaptor: '%s' - '%s' failed: unknown ctype '%s'" \
+            self._logger.warn("get_adaptor: '%s' - '%s' failed: unknown ctype '%s'" \
                            % (ctype, schema, ctype))
             return None
 
         if not schema in self._adaptors[ctype] :
-            self._logger.info("select adaptor: '%s' - '%s' failed: unknown schema '%s'" \
+            self._logger.warn("get_adaptor: '%s' - '%s' failed: unknown schema '%s'" \
                            % (ctype, schema, schema))
             return None
 
 
         # cycle through all applicable adaptors, and try to instantiate them.
         # If that works, and ttype signals a sync object construction, call the 
-        # _init_instance(), which effectively performs the semantics of the API
+        # init_instance(), which effectively performs the semantics of the API
         # level object constructor.  For asynchronous object instantiation (via
         # create factory methods), the init_instance_async will be called from
         # API level -- but at that point will not be able to abort the adaptor
@@ -262,21 +272,31 @@ class Engine(Configurable):
             adaptor_name = ""
             try :
                 # instantiate adaptor
-                adaptor_class_instance = adaptor_class ()
-                adaptor_name           = adaptor_class_instance._get_name ()
+                adaptor_instance = adaptor_class ()
+                adaptor_name     = adaptor_instance._get_name ()
 
-                # run the constructor for sync construction
                 if ttype == None or ttype == saga.task.SYNC :
-                    adaptor_class_instance._init_instance  (*args, **kwargs)
 
-                self._logger.info("select adaptor %s -- success"  %  str(adaptor_class))
+                    # run the sync constructor for sync construction, and return
+                    # the adaptor_instance to bind to the API instance.
+                    adaptor_instance.init_instance  (*args, **kwargs)
 
-                # selected / created / initialized adaptor instance - return
-                return adaptor_class_instance
+                    self._logger.debug("get_adaptor %s -- success"  %  str(adaptor_class))
+                    return adaptor_instance
+
+                else :
+
+                    # the async constructor will return a task, which we pass
+                    # back to the caller (instead of the adaptor instance). That 
+                    # task is responsible for binding the adaptor to the later 
+                    # returned API instance.
+                    self._logger.debug("get_adaptor %s -- async task creation"  %  str(adaptor_class))
+                    return adaptor_instance.init_instance_async (ttype, *args, **kwargs)
+
 
             except Exception as e :
                 # adaptor class initialization failed - try next one
-                self._logger.info("select adaptor %s -- failed: %s"  \
+                self._logger.info("get_adaptor %s -- failed: %s"  \
                                % (str(adaptor_class), str(e)))
                 msg += "\n  %s: %s"  %  (adaptor_name, str(e))
                 continue

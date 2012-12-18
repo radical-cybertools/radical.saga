@@ -8,6 +8,13 @@
 from saga.engine.logger import getLogger
 from saga.engine.engine import getEngine
 
+def create_job (id=None, session=None, ttype=None) :
+    #   id:        string
+    #   session:   saga.Session
+    #   ttype:     saga.task.type enum
+    #   ret:       saga.Task
+    pass
+
 # class Job (Object, Async, Attributes, Permissions) :
 class Job (object) :
     
@@ -125,6 +132,13 @@ class Job (object) :
     object    = property (get_object)      # object type    (job_service)
     exception = property (re_raise)        # exception type
 
+
+
+def create_self (session=None, ttype=None) :
+    #   session:   saga.Session
+    #   ttype:     saga.task.type enum
+    #   ret:       saga.Task
+    pass
 
 
 # class Self (Job, monitoring.Steerable) :

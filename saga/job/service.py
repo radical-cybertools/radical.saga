@@ -7,6 +7,26 @@ from saga.engine.logger import getLogger
 from saga.engine.engine import getEngine
 from saga.task          import SYNC, ASYNC, TASK
 
+def create_service (rm=None, session=None, ttype=None) :
+    #   rm:        saga.Url
+    #   session:   saga.Session
+    #   ttype:     saga.task.type enum
+    #   ret:       saga.Task
+
+    logger = getLogger ('saga.job.create_service')
+    logger.debug ("saga.job.create_service (%s, %s, %s)"  \
+               % (str(rm), str(session), str(ttype)))
+
+    engine = getEngine ()
+
+    # attempt to find a suitable adaptor, and call 
+    # init_instance_async(), which returns a task as expected.
+    # The task is responsible for binding the adaptor to the returned API
+    # instance.
+    return engine.get_adaptor ('saga.job.Service', 'fork', \
+                               ttype, rm, session)
+
+
 # class Service (Object, Async) :
 class Service (object) :
 
@@ -17,8 +37,9 @@ class Service (object) :
         ret:       obj
         '''
 
-        self._logger = getLogger ('saga.job.Job')
-        self._logger.debug ("saga.job.Job.__init__(%s)" % id)
+        self._logger = getLogger ('saga.job.Service')
+        self._logger.debug ("saga.job.Service.__init__ (%s, %s)"  \
+                         % (str(rm), str(session)))
 
         self._engine = getEngine ()
 
@@ -26,11 +47,6 @@ class Service (object) :
                                                   SYNC, rm, session)
 
 
-    def create     (self, rm=None, session=None, ttype=None) : pass 
-    #   rm:        saga.Url
-    #   session:   saga.Session
-    #   ttype:     saga.task.type enum
-    #   ret:       saga.Task
 
     def create_job (self, jd,              ttype=None)       : pass 
     #   jd:        saga.job.Description

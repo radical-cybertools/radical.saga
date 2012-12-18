@@ -15,7 +15,7 @@ class Service (Base) :
     def __init__   (self) : 
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def _init_sync (self, rm, session) :
+    def init_instance (self, rm, session) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
     def create (self, rm, session, ttype) :
