@@ -44,34 +44,43 @@ def test_broken_registry():
     except TypeError:
         assert True
 
+def test_load_nonexistent_adaptor():
+    """ Test that an attempt to load a non-existent adaptor is handled properly.
+    """
+    Engine()._load_adaptors(["nonexsitent"])
+    assert len(Engine().loaded_adaptors()) == 0
+
+
 def test_load_adaptor():
     """ Test that an attempt to load an adaptor is handled properly.
     """
+    # store old sys.path
     old_sys_path = sys.path
     path = os.path.split(os.path.abspath(__file__))[0]
     sys.path.append(path)
 
-    Engine()._load_adaptors(["mockadaptor_ok"])
+    Engine()._load_adaptors(["mockadaptor_enabled"])
     assert len(Engine().loaded_adaptors()) == 1
     for (key, value) in Engine().loaded_adaptors().iteritems():
         assert key == 'saga.job.Job'
+        # make sure the configuration gets passed through
+        assert value['mock'][0]().get_config()["foo"].as_dict() == {'foo': 'bar'}
 
-    #reset sys path
+    # restore sys.path
     sys.path = old_sys_path
 
-def test_load_disabled_adaptor():
-    """ Test that an attempt to load a disabled adaptor is handled properly.
+def test_load_broken_adaptor():
+    """ Test that an expection in the adaptor register() method is handled properly.
     """
+    # store old sys.path
     old_sys_path = sys.path
     path = os.path.split(os.path.abspath(__file__))[0]
     sys.path.append(path)
 
-    Engine()._load_adaptors(["mockadaptor_disabled"])
-    assert len(Engine().loaded_adaptors()) == 1
-    for (key, value) in Engine().loaded_adaptors().iteritems():
-        assert key == 'saga.job.Job'
+    Engine()._load_adaptors(["mockadaptor_broken"])
+    assert len(Engine().loaded_adaptors()) == 0
 
-    #reset sys path
+    # restore sys.path
     sys.path = old_sys_path
 
 

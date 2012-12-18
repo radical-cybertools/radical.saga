@@ -16,7 +16,6 @@ class Base (Configurable) :
 
         Configurable.__init__ (self, adaptor_name, config_options)
 
-
     def _get_name (self) :
         return self._adaptor_name
 
