@@ -10,5 +10,5 @@ __license__   = "MIT"
 
 from logging import Formatter
 
-DefaultFormatter = Formatter(fmt='%(asctime)s %(name)s: [%(levelname)s] %(message)s', 
+DefaultFormatter = Formatter(fmt='%(asctime)s %(name)s: [%(levelname)-8s] %(message)s', 
                              datefmt='%m/%d/%Y %I:%M:%S %p')
