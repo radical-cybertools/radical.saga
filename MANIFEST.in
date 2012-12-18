@@ -13,6 +13,8 @@ include saga/utils/*.py
 include saga/utils/logger/*.py
 include saga/utils/cmdlinewrapper/*.py
 
+include saga/contrib/*.py
+
 include saga/adaptors/*.py
 
 include MANIFEST.in README.md LICENSE.md CHANGES.md

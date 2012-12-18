@@ -91,6 +91,7 @@ setup_args = {
         "saga.cpi",
         "saga.cpi.job",
         "saga.job",
+        "saga.contrib",
         "saga.utils",
         "saga.utils.cmdlinewrapper",
         "saga.utils.logger",

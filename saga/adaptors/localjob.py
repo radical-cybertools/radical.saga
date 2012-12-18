@@ -66,7 +66,7 @@ class local_job (saga.cpi.job.Job) :
 #
 # job service adaptor class
 #
-class local_job_service (saga.cpi.job.Service) :
+class LocalJobAdaptor (saga.cpi.job.Service) :
 
     def __init__ (self) :
         saga.cpi.Base.__init__ (self, _adaptor_name)
