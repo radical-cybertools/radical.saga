@@ -50,7 +50,6 @@ def test_load_nonexistent_adaptor():
     Engine()._load_adaptors(["nonexsitent"])
     assert len(Engine().loaded_adaptors()) == 0
 
-
 def test_load_adaptor():
     """ Test that an attempt to load an adaptor is handled properly.
     """
@@ -60,11 +59,29 @@ def test_load_adaptor():
     sys.path.append(path)
 
     Engine()._load_adaptors(["mockadaptor_enabled"])
-    assert len(Engine().loaded_adaptors()) == 1
-    for (key, value) in Engine().loaded_adaptors().iteritems():
-        assert key == 'saga.job.Job'
-        # make sure the configuration gets passed through
-        assert value['mock'][0]().get_config()["foo"].as_dict() == {'foo': 'bar'}
+    # make sure the adapor is in the list
+    assert len(Engine().loaded_adaptors()['saga.job.Job']['mock']) == 1
+
+    # make sure the configuration gets passed through
+    assert Engine().loaded_adaptors()['saga.job.Job']['mock'][0]().get_config()["foo"].as_dict() == {'foo': 'bar'}
+
+    # restore sys.path
+    sys.path = old_sys_path
+
+def test_load_adaptor_twice():
+    """ Test that an attempt to load the same adaptor twice doesn't 
+        cause trouble.
+    """
+    # store old sys.path
+    old_sys_path = sys.path
+    path = os.path.split(os.path.abspath(__file__))[0]
+    sys.path.append(path)
+
+    Engine()._load_adaptors(["mockadaptor_enabled", "mockadaptor_enabled"])
+    assert len(Engine().loaded_adaptors()['saga.job.Job']['mock']) == 1
+
+    # make sure the configuration gets passed through
+    assert Engine().loaded_adaptors()['saga.job.Job']['mock'][0]().get_config()["foo"].as_dict() == {'foo': 'bar'}
 
     # restore sys.path
     sys.path = old_sys_path
