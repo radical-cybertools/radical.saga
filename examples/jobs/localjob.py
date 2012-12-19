@@ -33,13 +33,13 @@ def main():
         # create the job (state: New)
         catjob = js.create_job(jd)
 
-        print "Job ID    : %s" % (catjob.id)
+        print "Job ID    : %s" % (catjob.job_id)
         print "Job State : %s" % (catjob.state)
 
         print "\n...starting job...\n"
         catjob.run()
 
-        print "Job ID    : %s" % (catjob.jobid)
+        print "Job ID    : %s" % (catjob.job_id)
         print "Job State : %s" % (catjob.state)
 
         print "\n...waiting for job...\n"
@@ -50,7 +50,7 @@ def main():
         print "Exitcode  : %s" % (catjob.exitcode)
 
     except saga.SagaException, ex:
-        print "An error occured during job execution: %s" % (str(ex))
+        print "An exception occured during job execution: %s" % (str(ex))
         sys.exit(-1)
 
 if __name__ == "__main__":
