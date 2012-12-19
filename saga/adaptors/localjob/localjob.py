@@ -1,61 +1,63 @@
+#!/usr/bin/env python
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
-import pprint
+__author__    = "Ole Christian Weidner"
+__copyright__ = "Copyright 2011-2012, The SAGA Project"
+__license__   = "MIT"
 
-import saga.utils.singleton
+""" Local job adaptor implementation 
+"""
+
+from saga.utils import Singleton
+
 import saga.cpi.base
 import saga.cpi.job
 
 SYNC  = saga.cpi.base.sync
 ASYNC = saga.cpi.base.async
 
-######################################################################
+###############################################################################
 #
-# adaptor meta data
-#
-class _adaptor_singleton (object) :
-    __metaclass__ = saga.utils.singleton.Singleton
+class _SharedData(object) :
+    """ This class is shared between all adaptor instances. 
+        We use it to share information and data.
+    """
+    __metaclass__ = Singleton
 
     def __init__ (self) :
         self.dict = {}
         self.dict['services'] = {}
         self.dict['jobs']     = {}
 
-    def dump (self) :
-        # print "========== adaptor state (%s) ============= "  %  _adaptor_name
-        # pprint.pprint (_adaptor_state.dict)
-        # print "============================================================== "
-        pass
 
-######################################################################
-#
-# adaptor meta data
-#
-_adaptor_name     =    'saga.adaptor.localjob'
-_adaptor_state    = _adaptor_singleton ()
-_adaptor_registry = [{ 'name'    : _adaptor_name,
-                       'type'    : 'saga.job.Service',
-                       'class'   : 'LocalJobService',
-                       'schemas' : ['fork', 'local']
-                     }, 
-                     { 'name'    : _adaptor_name,
-                       'type'    : 'saga.job.Job',
-                       'class'   : 'LocalJob',
-                       'schemas' : ['fork', 'local']
-                     }]
+_adaptor_name   = 'saga.adaptor.LocalJob'
+_adaptor_info   = [{ 'name'    : _adaptor_name,
+                     'type'    : 'saga.job.Service',
+                     'class'   : 'LocalJobService',
+                     'schemas' : ['fork', 'local']
+                   }, 
+                   { 'name'    : _adaptor_name,
+                     'type'    : 'saga.job.Job',
+                     'class'   : 'LocalJob',
+                     'schemas' : ['fork', 'local']
+                   }]
 
-######################################################################
-#
-# adaptor registration
+###############################################################################
 #
 def register () :
+    """ Adaptor registration function. The engine calls this during startup. 
+
+        We usually do sanity checks here and throw and exception if we think
+        the adaptor won't work in a given context. In that case, the engine
+        won't add it to it's internal list of adaptors. If everything is ok,
+        we return the adaptor info.
+    """
 
     # perform some sanity checks, like check if dependencies are met
-    return _adaptor_registry
+    return _adaptor_info
 
 
-######################################################################
-#
-# job service adaptor class
+###############################################################################
 #
 class LocalJobService (saga.cpi.job.Service) :
 
@@ -69,8 +71,8 @@ class LocalJobService (saga.cpi.job.Service) :
         # print "local job service adaptor init sync: %s"  %  rm 
         self._rm      = rm
         self._session = session
-        _adaptor_state.dict['services'][self._rm] = self
-        _adaptor_state.dump ()
+        _SharedData().dict['services'][self._rm] = self
+        #_adaptor_state.dump ()
 
         # for testing:
         # raise saga.exceptions.BadParameter ("Cannot handle rm %s"  %  rm)
@@ -118,8 +120,8 @@ class LocalJob (saga.cpi.job.Job) :
         # print "local job adaptor instance init sync %s" % id
         self._id      = id
         self._session = session
-        _adaptor_state.dict['jobs'][self._id] = self
-        _adaptor_state.dump ()
+        _SharedData().dict['jobs'][self._id] = self
+        #_adaptor_state.dump ()
 
 
     @SYNC
