@@ -75,7 +75,8 @@ class Engine(Configurable):
 
         where 'class' points to the actual adaptor classes, 
         and 'schemas' lists the URL schemas for which those 
-        adaptor classes should be considered.
+        adaptor classes should be considered.  Note that 
+        schemas are case insensitive.
 
         While loading adaptors, the Engine builds up a registry 
         of adaptor classes, hierarchically sorted like this::
@@ -226,6 +227,9 @@ class Engine(Configurable):
 
                     # register adaptor class for the listed URL schemas (once)
                     for adaptor_schema in adaptor_schemas :
+
+                        adaptor_schema = adaptor_schema.lower ()
+
                         adp_class = getattr (adaptor_module, adaptor_class)
 
                         if not adaptor_type in self._adaptors :
@@ -251,6 +255,8 @@ class Engine(Configurable):
         binding to a specific adaptor, for example when a job.Service adaptor
         creates a job.Job instance, and wants it bound to the same adaptor.
         '''
+
+        schema = schema.lower ()
 
         self._logger.debug("get_adaptor: %s - %s - %s"  %  (ctype, schema, requested_name))
 
