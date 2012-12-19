@@ -1,4 +1,6 @@
 
+.. _middleware_adaptors:
+
 ######################
 Middleware Adaptors
 ######################

@@ -1,0 +1,25 @@
+job.Decription
+  * remove 'Interactive'
+  
+job.Job
+  * add 'state' as parameter to wait()
+  * @completesaga re_raise / exception
+  * @completesaga get_object
+  * @completesaga get_object
+  * @completesaga 'create'
+
+job.States
+  * add 'Pending'
+
+job.Service
+  * @completesaga 'self' / get_self
+
+job.Metrics
+  * @completesaga ??
+
+
+Adaptors need to document:
+--------------------------
+
+  * which jd attributes are supported and how they map to the backend
+  * if / which metrics are supported
