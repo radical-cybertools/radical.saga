@@ -14,7 +14,7 @@ from   saga.engine.logger   import Logger,       getLogger
 
 import saga.engine.registry 
 import saga.task
-import saga.exceptions
+import saga.utils.exception
 
 
 ##################################################################################
@@ -183,7 +183,7 @@ class Engine(Configurable):
                     adaptor_infos = adaptor_module.register ()
                 except Exception, ex:
                     self._logger.warning("Loading %s failed: %s" % (module_name, str(ex)))
-                    self._logger.debug(saga.exceptions._get_traceback ())
+                    self._logger.debug(saga.utils.exceptions.get_traceback ())
                     continue # skip to next adaptor
 
                 # No exception, but adaptor_infos is empty
@@ -246,7 +246,7 @@ class Engine(Configurable):
 
             except Exception as e:
                 self._logger.warn("Loading %s failed: %s" % (module_name, str(e)))
-                self._logger.debug(saga.exceptions._get_traceback ())
+                self._logger.debug(saga.utils.exception.get_traceback())
 
 
     #-----------------------------------------------------------------
