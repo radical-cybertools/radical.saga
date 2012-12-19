@@ -25,8 +25,10 @@ class Base (saga_config.Configurable) :
 
         saga_config.Configurable.__init__ (self, adaptor_name, config_options)
 
+
     def _get_name (self) :
         return self._adaptor_name
+
 
     def _get_api (self) :
         return self._api

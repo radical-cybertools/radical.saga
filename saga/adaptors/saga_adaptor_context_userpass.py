@@ -44,7 +44,7 @@ class ContextUserPass (saga.cpi.Context) :
         
         if type.lower () != _adaptor_schema.lower () :
             raise saga.exceptions.BadParameter \
-                    ("the x509 context adaptor only handles x509 contexts - duh!")
+                    ("the UserPass context adaptor only handles UserPass contexts - duh!")
 
         self._type = type
 

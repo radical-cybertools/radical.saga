@@ -47,7 +47,7 @@ class ContextMyProxy (saga.cpi.Context) :
 
         if type.lower () != _adaptor_schema.lower () :
             raise saga.exceptions.BadParameter \
-                    ("the myproxy context adaptor only handles myproxy contexts - duh!")
+                    ("the MyProxy context adaptor only handles MyProxy contexts - duh!")
 
         self._api.type = type
 
@@ -117,8 +117,6 @@ class ContextMyProxy (saga.cpi.Context) :
         new_ctx.life_time  = api.lifetime
 
         session.add_context (new_ctx)
-
-    
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
