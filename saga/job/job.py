@@ -67,7 +67,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
     
     
     @classmethod
-    def _create_from_adaptor (self, session, schema, adaptor_name) :
+    def _create_from_adaptor (self, job_description, session, schema, adaptor_name) :
         '''
         session:      saga.Session
         schema:       String
@@ -85,7 +85,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         # init_instance_sync(), resulting in 
         # FIXME: self is not an instance here, but the class object...
         adaptor = engine.get_adaptor (self, 'saga.job.Job', schema, None, 
-                                      adaptor_name, session)
+                                      adaptor_name, job_description, session)
     
         self._created_from_adaptor = True
         return self (_adaptor=adaptor)

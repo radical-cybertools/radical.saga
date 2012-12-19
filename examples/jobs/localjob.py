@@ -19,11 +19,10 @@ def main():
 
         # describe our job
         jd = saga.job.Description()
-        # resource requirements
-        jd.total_cpu_count  = 1     
+
         # environment, executable & arguments
-        jd.environment = {'CATME':'Hello from SAGA'}       
-        jd.executable  = '/bin/cat'
+        jd.environment = {'CATME':'10'}       
+        jd.executable  = '/bin/sleep'
         jd.arguments   = ['$CATME']
         
         # output options (will be just empty files for /bin/sleep)
@@ -47,7 +46,7 @@ def main():
         catjob.wait()
 
         print "Job State : %s" % (catjob.state)
-        print "Exitcode  : %s" % (catjob.exitcode)
+        #print "Exitcode  : %s" % (catjob.exitcode)
 
     except saga.SagaException, ex:
         print "An exception occured during job execution: %s (%s)" % ((str(ex)), ex.object )
