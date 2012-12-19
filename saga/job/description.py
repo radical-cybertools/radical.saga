@@ -1,12 +1,19 @@
+# -*- coding: utf-8 -*-
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
-# import saga.attributes
-# import saga.job
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012, The SAGA Project"
+__license__   = "MIT"
+
+""" SAGA job description class
+"""
 
 import saga
 
 # class Description(Object, Attributes) :
 class Description (saga.Attributes) :
-
+    """ The job description class.
+    """
     def __init__(self):
 
         # set attribute interface properties
@@ -14,6 +21,7 @@ class Description (saga.Attributes) :
         self._attributes_camelcasing (True)
 
         # register properties with the attribute interface
+        
         self._attributes_register  (saga.job.EXECUTABLE           , None, self.STRING, self.SCALAR, self.WRITABLE)
         self._attributes_register  (saga.job.ARGUMENTS            , None, self.STRING, self.VECTOR, self.WRITABLE)
         self._attributes_register  (saga.job.ENVIRONMENT          , None, self.ANY,    self.SCALAR, self.WRITABLE)

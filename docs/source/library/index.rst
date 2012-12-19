@@ -7,3 +7,4 @@ Library Reference
    exceptions.rst
    attribute.rst
    url.rst
+   job/index.rst

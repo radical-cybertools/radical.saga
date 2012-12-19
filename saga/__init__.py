@@ -33,6 +33,7 @@ from   saga.exceptions import *
 from   saga.attributes import *
 from   saga.context    import *
 from   saga.task       import *
+from   saga.url        import *
 
 import saga.engine
 import saga.job

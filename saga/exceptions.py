@@ -64,68 +64,68 @@ class SagaException(ExceptionBase):
 
 class NotImplemented(SagaException):
     """ The NotImplemented exception is raised when...
-        This exception inherits from :class:`SagaException`.
+        
     """
     pass
 
 class IncorrectURL(SagaException): 
     """ The IncorrectURL exception is raised when...
-        This exception inherits from :class:`SagaException`.
+        
     """
     pass
 
 class BadParameter(SagaException): 
     """ The BadParameter exception is raised when...
-        This exception inherits from :class:`SagaException`.
+        
     """
     pass
 
 class AlreadyExists(SagaException): 
     """ The AlreadyExists exception is raised when...
-        This exception inherits from :class:`SagaException`.
+        
 
     """
     pass
 
 class DoesNotExist(SagaException):
     """ The DoesNotExist exception is raised when...
-        This exception inherits from :class:`SagaException`.
+        
     """
     pass
 
 class IncorrectState(SagaException): 
     """ The IncorrectState exception is raised when...
-        This exception inherits from :class:`SagaException`.
+        
     """
     pass
 
 class PermissionDenied(SagaException): 
     """ The PermissionDenied exception is raised when...
-        This exception inherits from :class:`SagaException`.
+        
     """
     pass
 
 class AuthorizationFailed(SagaException): 
     """ The AuthorizationFailed exception is raised when...
-        This exception inherits from :class:`SagaException`.
+        
     """
     pass
 
 class AuthenticationFailed(SagaException): 
     """ The AuthenticationFailed exception is raised when...
-        This exception inherits from :class:`SagaException`.
+        
     """
     pass
 
 class Timeout(SagaException): 
     """ The Timeout exception is raised when...
-        This exception inherits from :class:`SagaException`.
+        
     """
     pass
 
 class NoSuccess(SagaException): 
     """ The NoSuccess exception is raised when...
-        This exception inherits from :class:`SagaException`.
+        
     """
     pass
 

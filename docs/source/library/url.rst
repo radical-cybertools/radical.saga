@@ -1,7 +1,11 @@
-Url
-***
+Url Handling
+************
 
 .. todo:: Intro to SAGA Urls
 
-.. automodule:: saga.url
-   :members: Url
+
+Url -- :class:`saga.Url`
+------------------------
+
+.. autoclass:: saga.Url
+   :members:
