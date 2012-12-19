@@ -183,11 +183,13 @@ class Engine(Configurable):
                     adaptor_infos = adaptor_module.register ()
                 except Exception, ex:
                     self._logger.warning("Loading %s failed: %s" % (module_name, str(ex)))
+                    self._logger.debug(saga.exceptions._get_traceback ())
                     continue # skip to next adaptor
 
                 # No exception, but adaptor_infos is empty
                 if adaptor_infos is None :
                     self._logger.warning("Loading %s failed: register() returned no usable adaptor info" % module_name)
+                    self._logger.debug(saga.exceptions._get_traceback ())
                     continue # skip to next adaptor
 
                 # we got an adaptor info struct
@@ -243,12 +245,8 @@ class Engine(Configurable):
                         
 
             except Exception as e:
-                import traceback, StringIO
-                output = StringIO.StringIO()
-                traceback.print_exc(file=output)
                 self._logger.warn("Loading %s failed: %s" % (module_name, str(e)))
-                self._logger.debug(output.getvalue())
-                output.close()
+                self._logger.debug(saga.exceptions._get_traceback ())
 
 
     #-----------------------------------------------------------------

@@ -12,6 +12,15 @@ import traceback
 
 from saga.utils.exception  import ExceptionBase
 
+def _get_traceback () :
+    import traceback, StringIO
+    output = StringIO.StringIO()
+    traceback.print_exc (file=output)
+    ret = output.getvalue ()
+    output.close ()
+    return ret
+
+
 class SagaException(ExceptionBase):
     """ The SAGA base exception class. All other SAGA exceptions inherit from 
         this base class and can hence be caught via it. For example::

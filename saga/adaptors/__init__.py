@@ -1,2 +1,3 @@
 
-from localjob import *
+import localjob
+
