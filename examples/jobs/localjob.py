@@ -15,7 +15,7 @@ def main():
     
     try:
         # create a job service for the local machine
-        js = saga.job.Service("fork://localhost")
+        js = saga.job.Service("xyz://locaslhost")
 
         # describe our job
         jd = saga.job.Description()
@@ -50,7 +50,7 @@ def main():
         print "Exitcode  : %s" % (catjob.exitcode)
 
     except saga.SagaException, ex:
-        print "An exception occured during job execution: %s" % (str(ex))
+        print "An exception occured during job execution: %s (%s)" % ((str(ex)), ex.object )
         print ex.traceback
         sys.exit(-1)
 

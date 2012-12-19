@@ -28,7 +28,7 @@ class Service (object) :
         self._logger.debug ("saga.job.Service.__init__ (%s, %s)"  \
                          % (str(rm_url), str(session)))
 
-        self._adaptor = self._engine.get_adaptor (self, 'saga.job.Service', 'fork', \
+        self._adaptor = self._engine.get_adaptor (self, 'saga.job.Service', rm_url.scheme, \
                                                   SYNC, ANY_ADAPTOR, rm_url, session)
 
 
@@ -50,7 +50,7 @@ class Service (object) :
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_async(), which returns a task as expected.
-        return engine.get_adaptor (self, 'saga.job.Service', 'fork', \
+        return engine.get_adaptor (self, 'saga.job.Service', rm_url.scheme, \
                                    ttype, ANY_ADAPTOR, rm_url, session)
 
 

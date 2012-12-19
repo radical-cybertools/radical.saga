@@ -259,12 +259,14 @@ class Engine(Configurable):
         creates a job.Job instance, and wants it bound to the same adaptor.
         '''
 
+        print "%s;%s;%s;%s;%s" % (api, ctype, schema, ttype, requested_name)
+
         schema = schema.lower ()
 
-        self._logger.debug("get_adaptor: '%s - %s - %s' "  %  (ctype, schema, requested_name))
+        #self._logger.debug(": '%s - %s - %s' "  %  (ctype, schema, requested_name))
 
         if not ctype in self._adaptors :
-            raise saga.exceptions.NotImplemented ("no adaptor found for '%s'" %  ctype)
+            raise saga.exceptions.NotImplemented ("No adaptor found for '%s' and URL schema %s://" % (ctype, schema))
 
         if not schema in self._adaptors[ctype] :
             raise saga.exceptions.NotImplemented ("no '%s' adaptor found for '%s'" %  (ctype, schema))
