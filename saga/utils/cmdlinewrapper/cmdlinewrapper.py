@@ -9,7 +9,7 @@ __license__   = "MIT"
     wrapper, like GSISSH and SSH. 
 '''
 
-from saga.utils.exception import ExceptionBase
+from saga.utils.exception import ExceptionBase, get_traceback
 
 from cmdlinewrapper_subprocess import SubprocessCommandLineWrapper
 from cmdlinewrapper_gsissh import GSISSHCommandLineWrapper
@@ -22,10 +22,11 @@ class CLWException(ExceptionBase):
 class CommandWrapperResult(object):
     ''' A 4-tuple returned by CommandLineWrapper.run().
     '''
-    def __init__(self, command, stdout=None, returncode=None, ttc=-1):
+    def __init__(self, command, stdout=None, stderr=None, returncode=None, ttc=-1):
 
         self._command = command
         self._stdout = stdout
+        self._stderr = stderr
         self._returncode = returncode
         self._ttc = ttc
 
@@ -38,6 +39,10 @@ class CommandWrapperResult(object):
         return self._stdout
 
     @property
+    def stderr(self):
+        return self._stderr
+
+    @property
     def returncode(self):
         return self._returncode
 
@@ -46,8 +51,8 @@ class CommandWrapperResult(object):
         return self._ttc
 
     def __str__(self):
-        str = "{'command' : '%s', 'stdout': '%s', 'returncode' : '%s', 'ttc' : '%s'}" \
-            % (self.command, self.stdout, self.returncode, self.ttc)
+        str = "{'command' : '%s', 'stdout': '%s', 'stderr' : %s, 'returncode' : '%s', 'ttc' : '%s'}" \
+            % (self.command, self.stdout, self.stderr, self.returncode, self.ttc)
         return str
 
 
@@ -112,9 +117,10 @@ class CommandLineWrapper(object):
                 % self._wrapper.__class__.__name__)
         else:
             try:
-                (cmd, stdout, rc, duration) = self._wrapper.run_sync(executable, arguments, environemnt)
-                return CommandWrapperResult(cmd, stdout, rc, duration)
+                (cmd, stdout, stderr, rc, duration) = self._wrapper.run_sync(executable, arguments, environemnt)
+                return CommandWrapperResult(cmd, stdout, stderr, rc, duration)
             except Exception, ex:
+                print get_traceback ()
                 raise CLWException('%s - %s' % (self._wrapper.__class__.__name__, ex))
 
     def run_async(self, executable, arguments=[], environemnt={}):
