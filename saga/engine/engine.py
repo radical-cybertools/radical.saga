@@ -150,7 +150,7 @@ class Engine(Configurable):
         """ Initialize the logging facilites. 
         """
         Logger()
-        self._logger = getLogger('engine')
+        self._logger = getLogger('saga.engine')
 
 
     #-----------------------------------------------------------------

@@ -176,9 +176,9 @@ def getLogger(module, obj=None):
                     return True
 
     if obj is None:
-        _logger = logging_getLogger('saga.%s' % module)
+        _logger = logging_getLogger('%-20s' % module)
     else:
-        _logger = logging_getLogger('saga.%s.%s' % (module, obj))
+        _logger = logging_getLogger('%s.%s' % (module, obj))
 
     _logger.setLevel(Logger().loglevel)
     _logger.propagate = 0 # Don't bubble up to the root logger
