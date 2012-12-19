@@ -80,6 +80,11 @@ class Job (Base) :
         raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
 
 
+    #-----------------------------------------------------------------
+    # attribute getters
+    def get_exit_code (self, ttype) :
+        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+
 
 # class Self (Job, monitoring.Steerable) :
 class Self (Job) :

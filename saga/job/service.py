@@ -29,7 +29,7 @@ class Service (object) :
                          % (str(rm_url), str(session)))
 
         self._adaptor = self._engine.get_adaptor (self, 'saga.job.Service', rm_url.scheme, \
-                                                  SYNC, ANY_ADAPTOR, rm_url, session)
+                                                  None, ANY_ADAPTOR, rm_url, session)
 
 
     @classmethod

@@ -91,11 +91,6 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         return self (_adaptor=adaptor)
 
 
-
-    def _get_exit_code (self) :
-        return self.exit_code
-
-
     def get_id (self, ttype=None) :
         '''
         ttype:     saga.task.type enum
@@ -266,7 +261,7 @@ class Self (Job) :
         self._engine = getEngine ()
 
         self._adaptor = self._engine.get_adaptor (self, 'saga.job.Self', 'fork', \
-                                                  SYNC, ANY_ADAPTOR, session)
+                                                  None, ANY_ADAPTOR, session)
 
 
     @classmethod
@@ -287,4 +282,9 @@ class Self (Job) :
         # init_instance_async(), which returns a task as expected.
         return engine.get_adaptor (self, 'saga.job.Self', 'fork', ttype, ANY_ADAPTOR, session)
 
+
+    # ----------------------------------------------------------------
+    # attribute getters
+    def _get_exit_code (self) :
+        return self._adaptor.get_exit_code (ttype=ttype)
 
