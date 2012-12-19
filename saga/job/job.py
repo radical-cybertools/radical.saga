@@ -14,7 +14,10 @@ import saga.task
 # class Job (Object, Async, Attributes, Permissions) :
 class Job (saga.attributes.Attributes, saga.task.Async) :
     
-    def __init__(self, _adaptor=None):
+    def __init__(self, _adaptor=None) :
+
+        if not self._created_from_adaptor :
+            raise saga.exceptions.IncorrectState ("saga.job.Job constructor is private")
     
         # set attribute interface properties
         self._attributes_allow_private (True)
@@ -45,10 +48,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         if _adaptor :
             # created from adaptor
             self._adaptor = _adaptor
-        else :
-            # create from API -- create and bind adaptor
-            self._adaptor = self._engine.get_adaptor (self, 'saga.job.Job', 'local',
-                                                      None, ANY_ADAPTOR)
+
 
     @classmethod
     def create (self, session=None, ttype=None) :
@@ -58,15 +58,12 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         ret:       saga.Task
         '''
     
-        engine = getEngine ()
-        logger = getLogger ('saga.job.Job')
-        logger.debug ("saga.job.Job.create (%s, %s)"  \
-                   % (str(session), str(ttype)))
-    
-        # attempt to find a suitable adaptor, which will call 
-        # init_instance_async(), which returns a task as expected.
-        return engine.get_adaptor (self, 'saga.job.Job', 'fork', \
-                                   ttype, ANY_ADAPTOR, session)
+        t = saga.task.Task ()
+
+        t._set_exception = saga.exceptions.IncorrectState ("saga.job.Job constructor is private")
+        t._set_state     = saga.task.Failed
+
+        return t
     
     
     @classmethod
@@ -87,9 +84,10 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         # attempt to find a suitable adaptor, which will call 
         # init_instance_sync(), resulting in 
         # FIXME: self is not an instance here, but the class object...
-        adaptor = engine.get_adaptor (self, 'saga.job.Job', 'fork', None, 
+        adaptor = engine.get_adaptor (self, 'saga.job.Job', schema, None, 
                                       adaptor_name, session)
     
+        self._created_from_adaptor = True
         return self (_adaptor=adaptor)
 
 

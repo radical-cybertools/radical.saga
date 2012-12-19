@@ -105,3 +105,11 @@ class Task (saga.attributes.Attributes) :
     def cancel (self) :
         self._set_state (CANCELED)
 
+
+    def _set_exception (self, e) :
+        self._attributes_i_set (self._attributes_t_underscore (EXCEPTION), e, force=True)
+
+    def re_raise () :
+        if self.exception :
+            raise self.exception
+
