@@ -1,5 +1,13 @@
+from   saga.engine.logger import getLogger
+from   saga.engine.engine import getEngine, ANY_ADAPTOR
 
-class Directory (namespace.Directory, task.Async) :
+import saga.exceptions
+import saga.attributes
+import saga.task
+
+from saga.filesystem import READ, START
+
+class Directory (object) :
 
   def get_size  (self, name, flags=None,  ttype=None) : pass 
   #   name:     saga.Url

@@ -7,11 +7,12 @@ import saga.exceptions
 import saga.attributes
 import saga.task
 
+from saga.filesystem import READ, START
 
 # permissions.Permissions, task.Async
 class File (object) :
 
-    def __init__ (self, url=None, flags=saga.filesystem.READ, session=None) : 
+    def __init__ (self, url=None, flags=READ, session=None) : 
         '''
         url:       saga.Url
         flags:     flags enum
@@ -31,7 +32,7 @@ class File (object) :
 
 
     @classmethod
-    def create (self, url=None, flags=saga.filesystem.READ, ttype=None) :
+    def create (self, url=None, flags=READ, ttype=None) :
         '''
         url:       saga.Url
         flags:     saga.filesystem.flags enum
