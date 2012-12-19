@@ -60,7 +60,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         '''
     
         engine = getEngine ()
-        logger = getLogger ('saga.job.Job.create')
+        logger = getLogger ('saga.job.Job')
         logger.debug ("saga.job.Job.create (%s, %s, %s)"  \
                    % (str(id), str(session), str(ttype)))
     
@@ -81,7 +81,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         '''
     
         engine = getEngine ()
-        logger = getLogger ('saga.job.Job._create_from_adaptor')
+        logger = getLogger ('saga.job.Job')
         logger.debug ("saga.job.Job._create_from_adaptor (%s, %s, %s,  %s)"  \
                    % (id, str(session), schema, adaptor_name))
     
@@ -263,7 +263,7 @@ class Self (Job) :
         # self._attributes_extensible  (False)
         # self._attributes_camelcasing (True)
 
-        self._logger = getLogger ('saga.job.Self')
+        self._logger = getLogger ('saga.job.Job')
         self._logger.debug ("saga.job.Self.__init__ (%s, %s)"  \
                          % (str(session)))
 
@@ -281,7 +281,7 @@ class Self (Job) :
         ret:       saga.Task
         '''
     
-        logger = getLogger ('saga.job.Self.create')
+        logger = getLogger ('saga.job.Job')
         logger.debug ("saga.job.Self.create (%s, %s)"  \
                    % (str(session), str(ttype)))
     
