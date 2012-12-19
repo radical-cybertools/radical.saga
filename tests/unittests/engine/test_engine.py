@@ -63,7 +63,7 @@ def test_load_adaptor():
     assert len(Engine().loaded_adaptors()['saga.job.Job']['mock']) == 1
 
     # make sure the configuration gets passed through
-    assert Engine().loaded_adaptors()['saga.job.Job']['mock'][0]().get_config()["foo"].as_dict() == {'foo': 'bar'}
+    assert Engine().loaded_adaptors()['saga.job.Job']['mock'][0](None).get_config()["foo"].as_dict() == {'foo': 'bar'}
 
     # restore sys.path
     sys.path = old_sys_path
@@ -81,7 +81,7 @@ def test_load_adaptor_twice():
     assert len(Engine().loaded_adaptors()['saga.job.Job']['mock']) == 1
 
     # make sure the configuration gets passed through
-    assert Engine().loaded_adaptors()['saga.job.Job']['mock'][0]().get_config()["foo"].as_dict() == {'foo': 'bar'}
+    assert Engine().loaded_adaptors()['saga.job.Job']['mock'][0](None).get_config()["foo"].as_dict() == {'foo': 'bar'}
 
     # restore sys.path
     sys.path = old_sys_path
