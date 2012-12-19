@@ -4,8 +4,6 @@ import os
 import saga.cpi.base
 import saga.cpi.context
 
-from   saga.engine.logger import getLogger
-
 SYNC  = saga.cpi.base.sync
 ASYNC = saga.cpi.base.async
 
@@ -14,12 +12,12 @@ ASYNC = saga.cpi.base.async
 #
 # adaptor meta data
 #
-_adaptor_type     =    'X509'
+_adaptor_schema   =    'X509'
 _adaptor_name     =    'saga_adaptor_context_x509'
 _adaptor_registry = [{ 'name'    : _adaptor_name,
                        'type'    : 'saga.Context',
                        'class'   : 'ContextX509',
-                       'schemas' : ['X509']
+                       'schemas' : [_adaptor_schema]
                      }]
 
 
@@ -42,13 +40,11 @@ class ContextX509 (saga.cpi.Context) :
     def __init__ (self, api) :
         saga.cpi.Base.__init__ (self, api, _adaptor_name)
 
-        self._logger = getLogger (_adaptor_name)
-
 
     @SYNC
     def init_instance (self, type) :
 
-        if type.lower () != _adaptor_type.lower () :
+        if type.lower () != _adaptor_schema.lower () :
             raise saga.exceptions.BadParameter \
                     ("the x509 context adaptor only handles x509 contexts - duh!")
 

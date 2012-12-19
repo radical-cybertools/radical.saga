@@ -5,7 +5,7 @@ import saga.exceptions
 import saga.attributes
 import saga.task
 
-from saga.filesystem import READ, START
+from saga.filesystem import *
 
 class Directory (object) :
 

@@ -5,8 +5,6 @@ import subprocess
 import saga.cpi.base
 import saga.cpi.context
 
-from   saga.engine.logger import getLogger
-
 SYNC  = saga.cpi.base.sync
 ASYNC = saga.cpi.base.async
 
@@ -14,12 +12,12 @@ ASYNC = saga.cpi.base.async
 #
 # adaptor meta data
 #
-_adaptor_type     =    'MyProxy'
+_adaptor_schema   =    'MyProxy'
 _adaptor_name     =    'saga_adaptor_context_myproxy'
 _adaptor_registry = [{ 'name'    : _adaptor_name,
                        'type'    : 'saga.Context',
                        'class'   : 'ContextMyProxy',
-                       'schemas' : ['MyProxy']
+                       'schemas' : [_adaptor_schema]
                      }]
 
 
@@ -42,13 +40,12 @@ class ContextMyProxy (saga.cpi.Context) :
     def __init__ (self, api) :
         saga.cpi.Base.__init__ (self, api, _adaptor_name)
 
-        self._logger = getLogger (_adaptor_name)
 
 
     @SYNC
     def init_instance (self, type) :
 
-        if type.lower () != _adaptor_type.lower () :
+        if type.lower () != _adaptor_schema.lower () :
             raise saga.exceptions.BadParameter \
                     ("the myproxy context adaptor only handles myproxy contexts - duh!")
 
@@ -89,13 +86,12 @@ class ContextMyProxy (saga.cpi.Context) :
 
         cmd += " --out %s"  %  proxy_location
 
-
-        print "type:   %s"  %  api.type
-        print "user:   %s"  %  api.user_id
-        print "pass:   %s"  %  api.user_pass
-        print "server: %s"  %  api.server
-        print "ttl:    %s"  %  api.life_time
-        print "cmd:    %s"  %  cmd
+        # print "type:   %s"  %  api.type
+        # print "user:   %s"  %  api.user_id
+        # print "pass:   %s"  %  api.user_pass
+        # print "server: %s"  %  api.server
+        # print "ttl:    %s"  %  api.life_time
+        # print "cmd:    %s"  %  cmd
 
         expected_result  = "A credential has been received for user %s in %s.\n" \
                          %  (api.user_id, proxy_location)
@@ -105,18 +101,20 @@ class ContextMyProxy (saga.cpi.Context) :
                                              stderr=subprocess.PIPE)
         (stdout, stderr) = process.communicate ()
 
-        print "stderr: '%s'"  %  str(stderr)
-        print "stdout: '%s'"  %  str(stdout)
-        print "expect: '%s'"  %  str(expected_result)
+        # print "stderr: '%s'"  %  str(stderr)
+        # print "stdout: '%s'"  %  str(stdout)
+        # print "expect: '%s'"  %  str(expected_result)
 
         if expected_result == stdout :
             self._logger.info (stdout)
         else :
             self._logger.info (stderr)
+            raise saga.exceptions.BadParameter ("could not evaluate myproxy context: %s"  %  stderr)
 
         new_ctx = saga.Context ('X509')
+
         new_ctx.user_proxy = proxy_location
-        new_ctx.life_time = 1000
+        new_ctx.life_time  = api.lifetime
 
         session.add_context (new_ctx)
 

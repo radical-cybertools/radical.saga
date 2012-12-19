@@ -21,9 +21,10 @@ class _adaptor_singleton (object) :
         self.dict['jobs']     = {}
 
     def dump (self) :
-        print "========== adaptor state (%s) ============= "  %  _adaptor_name
-        pprint.pprint (_adaptor_state.dict)
-        print "============================================================== "
+        # print "========== adaptor state (%s) ============= "  %  _adaptor_name
+        # pprint.pprint (_adaptor_state.dict)
+        # print "============================================================== "
+        pass
 
 ######################################################################
 #

@@ -7,6 +7,7 @@ __license__   = "MIT"
 
 """ Provides the SAGA runtime. """
 
+import saga.engine.logger as saga_logger
 import saga.engine.config as saga_config
 import saga.exceptions
 import saga.task
@@ -17,8 +18,10 @@ import saga.task
 class Base (saga_config.Configurable) :
 
     def __init__ (self, api, adaptor_name, config_options={}) :
+
         self._api          = api
         self._adaptor_name = adaptor_name
+        self._logger       = saga_logger.getLogger (adaptor_name)
 
         saga_config.Configurable.__init__ (self, adaptor_name, config_options)
 
