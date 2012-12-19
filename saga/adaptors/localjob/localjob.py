@@ -43,6 +43,15 @@ _adaptor_info   = [{ 'name'    : _adaptor_name,
                      'class'   : 'LocalJob',
                      'schemas' : ['fork', 'local']
                    }]
+_adaptor_capabilities = {'jd_attributes' : [saga.job.EXECUTABLE,
+                                            saga.job.ARGUMENTS,
+                                            saga.job.ENVIRONMENT,
+                                            saga.job.WORKING_DIRECTORY,
+                                            saga.job.INPUT,
+                                            saga.job.OUTPUT,
+                                            saga.job.ERROR],
+                         'metrics'       : [saga.job.STATE]
+                        }
 
 ###############################################################################
 #
@@ -62,9 +71,10 @@ def register () :
 ###############################################################################
 #
 class LocalJobService (saga.cpi.job.Service) :
-
+    """ Implements saga.cpi.job.Serivce
+    """
     def __init__ (self, api) :
-        """ Creates a new local job service.
+        """ Implements saga.cpi.job.Serivce.__init__
         """
         saga.cpi.Base.__init__ (self, api, _adaptor_name)
 
@@ -72,27 +82,34 @@ class LocalJobService (saga.cpi.job.Service) :
     def init_instance (self, rm_url, session) :
         """ Service instance constructor
         """
-        if rm_url.host != 'localhost' and rm_url.host != socket.gethostname():
-            raise saga.BadParameter(message='ss') 
+        fqhn = socket.gethostname()
+        if rm_url.host != 'localhost' and rm_url.host != fqhn:
+            message = "Only 'localhost' and '%s' hostnames supported byt this adaptor'" % (fqhn)
+            self._logger.warning(message)
+            raise saga.BadParameter(message=message) 
 
         self._rm      = rm_url
         self._session = session
+
         _SharedData().dict['services'][self._rm] = self
-
-
-
 
     @SYNC
     def get_url (self) :
-
+        """ Implements saga.cpi.job.Serivce.get_url()
+        """
         return self._rm
-
 
     @SYNC
     def create_job (self, jd) :
-        # print jd._attributes_dump ()
-        j = saga.job.Job._create_from_adaptor ("my_id", self._session, "fork", _adaptor_name)
-        return j
+        """ Implements saga.cpi.job.Serivce.get_url()
+        """
+        # check that only supported attributes are provided
+        for attribute in jd.list_attributes():
+            if attribute not in _adaptor_capabilities:
+                raise saga.BadParameter('JobDescription.%s is not supported by this adaptor' % attribute)
+        
+        new_job = saga.job.Job._create_from_adaptor ("my_id", self._session, "fork", _adaptor_name)
+        return new_job
 
 
 ######################################################################

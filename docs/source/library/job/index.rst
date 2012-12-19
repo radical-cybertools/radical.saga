@@ -39,6 +39,7 @@ SAGA defines the following constants as valid job description attributes:
 .. autodata:: ARGUMENTS
 .. autodata:: ENVIRONMENT
 .. autodata:: WORKING_DIRECTORY
+.. autodata:: FILE_TRANSFER
 .. autodata:: INPUT
 .. autodata:: OUTPUT
 .. autodata:: ERROR
@@ -50,10 +51,6 @@ SAGA defines the following constants as valid job description attributes:
 .. autodata:: PROCESSES_PER_HOST
 .. autodata:: THREADS_PER_PROCESS
 .. autodata:: INTERACTIVE
-.. autodata:: INPUT
-.. autodata:: OUTPUT
-.. autodata:: ERROR
-.. autodata:: FILE_TRANSFER
 .. autodata:: CLEANUP
 .. autodata:: JOB_START_TIME
 .. autodata:: TOTAL_CPU_TIME

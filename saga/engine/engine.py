@@ -258,18 +258,15 @@ class Engine(Configurable):
         binding to a specific adaptor, for example when a job.Service adaptor
         creates a job.Job instance, and wants it bound to the same adaptor.
         '''
-
-        print "%s;%s;%s;%s;%s" % (api, ctype, schema, ttype, requested_name)
-
         schema = schema.lower ()
 
         #self._logger.debug(": '%s - %s - %s' "  %  (ctype, schema, requested_name))
 
         if not ctype in self._adaptors :
-            raise saga.exceptions.NotImplemented ("No adaptor found for '%s' and URL schema %s://" % (ctype, schema))
+            raise saga.exceptions.NotImplemented ("No adaptor found for '%s' and URL scheme %s://" % (ctype, schema))
 
         if not schema in self._adaptors[ctype] :
-            raise saga.exceptions.NotImplemented ("no '%s' adaptor found for '%s'" %  (ctype, schema))
+            raise saga.exceptions.NotImplemented ("No adaptor found for '%s' and URL scheme %s://" %  (ctype, schema))
 
 
         # cycle through all applicable adaptors, and try to instantiate the ones
@@ -324,7 +321,8 @@ class Engine(Configurable):
                 msg += "\n  %s: %s"  %  (adaptor_name, str(e))
                 continue
 
-        raise saga.exceptions.NotImplemented ("no suitable adaptor found: %s" %  msg)
+        self._logger.error("No suitable adaptor found for '%s' and URL scheme %s://" %  (ctype, schema))
+        raise saga.exceptions.NotImplemented ("No suitable adaptor found: %s" %  msg)
 
 
     #-----------------------------------------------------------------

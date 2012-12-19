@@ -15,7 +15,7 @@ def main():
     
     try:
         # create a job service for the local machine
-        js = saga.job.Service("xyz://locaslhost")
+        js = saga.job.Service("fork://localhost")
 
         # describe our job
         jd = saga.job.Description()
