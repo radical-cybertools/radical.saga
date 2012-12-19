@@ -9,7 +9,7 @@ try :
   jd     = saga.job.Description ()
   jd.executable = '/bin/date'
 
-  t_1    = saga.job.create_service ("local://localhost", ttype=saga.task.TASK)
+  t_1    = saga.job.Service.create ("local://localhost", ttype=saga.task.TASK)
   print str(t_1)
 
   js_1   = saga.job.Service ("fork://localhost")

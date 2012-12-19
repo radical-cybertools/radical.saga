@@ -11,15 +11,24 @@ import saga.engine.config as saga_config
 import saga.exceptions
 import saga.task
 
+# ------------------------------------
+# CPI base class
+#
 class Base (saga_config.Configurable) :
 
-    def __init__ (self, adaptor_name, config_options={}) :
+    def __init__ (self, api, adaptor_name, config_options={}) :
+        self._api          = api
         self._adaptor_name = adaptor_name
 
         saga_config.Configurable.__init__ (self, adaptor_name, config_options)
 
     def _get_name (self) :
         return self._adaptor_name
+
+    def _get_api (self) :
+        return self._api
+
+
 
 # ------------------------------------
 # decorator, which switches method to 

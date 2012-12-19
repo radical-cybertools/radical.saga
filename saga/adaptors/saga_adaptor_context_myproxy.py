@@ -9,11 +9,11 @@ ASYNC = saga.cpi.base.async
 #
 # adaptor meta data
 #
-_adaptor_name     =    'saga.adaptor.saga_adaptor_context_userpass'
+_adaptor_name     =    'saga.adaptor.saga_adaptor_context_myproxy'
 _adaptor_registry = [{ 'name'    : _adaptor_name,
                        'type'    : 'saga.Context',
-                       'class'   : 'ContextUserPass',
-                       'schemas' : ['UserPass']
+                       'class'   : 'ContextMyProxy',
+                       'schemas' : ['MyProxy']
                      }]
 
 
@@ -31,16 +31,16 @@ def register () :
 #
 # job adaptor class
 #
-class ContextUserPass (saga.cpi.Context) :
+class ContextMyProxy (saga.cpi.Context) :
 
     def __init__ (self, api) :
         saga.cpi.Base.__init__ (self, api, _adaptor_name)
-        # print "userpass context adaptor init"
+        # print "myproxy context adaptor init"
 
 
     @SYNC
     def init_instance (self, type) :
-        # print "userpass context adaptor instance init sync %s" % id
+        # print "myproxy context adaptor instance init sync %s" % id
         self._type = type
 
 

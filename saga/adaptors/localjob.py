@@ -1,4 +1,7 @@
 
+import pprint
+
+import saga.utils.singleton
 import saga.cpi.base
 import saga.cpi.job
 
@@ -9,18 +12,35 @@ ASYNC = saga.cpi.base.async
 #
 # adaptor meta data
 #
+class _adaptor_singleton (object) :
+    __metaclass__ = saga.utils.singleton.Singleton
+
+    def __init__ (self) :
+        self.dict = {}
+        self.dict['services'] = {}
+        self.dict['jobs']     = {}
+
+    def dump (self) :
+        print "========== adaptor state (%s) ============= "  %  _adaptor_name
+        pprint.pprint (_adaptor_state.dict)
+        print "============================================================== "
+
+######################################################################
+#
+# adaptor meta data
+#
 _adaptor_name     =    'saga.adaptor.localjob'
+_adaptor_state    = _adaptor_singleton ()
 _adaptor_registry = [{ 'name'    : _adaptor_name,
-                       'type'    : 'saga.job.Job',
-                       'class'   : 'LocalJob',
-                       'schemas' : ['fork', 'local']
-                     }, 
-                     { 'name'    : _adaptor_name,
                        'type'    : 'saga.job.Service',
                        'class'   : 'LocalJobService',
                        'schemas' : ['fork', 'local']
+                     }, 
+                     { 'name'    : _adaptor_name,
+                       'type'    : 'saga.job.Job',
+                       'class'   : 'LocalJob',
+                       'schemas' : ['fork', 'local']
                      }]
-
 
 ######################################################################
 #
@@ -34,42 +54,12 @@ def register () :
 
 ######################################################################
 #
-# job adaptor class
-#
-class LocalJob (saga.cpi.job.Job) :
-
-    def __init__ (self) :
-        saga.cpi.Base.__init__ (self, _adaptor_name)
-        # print "local job adaptor init";
-
-
-    @SYNC
-    def init_instance (self, id, session) :
-        # print "local job adaptor instance init sync %s" % id
-        self._id      = id
-        self._session = session
-
-
-    @SYNC
-    def get_id (self) :
-        # print "sync get_id"
-        return self._id
-
-    @ASYNC
-    def get_id_async (self, ttype) :
-        # print "async get_id"
-        t = saga.task.Task ()
-        return t
-
-
-######################################################################
-#
 # job service adaptor class
 #
 class LocalJobService (saga.cpi.job.Service) :
 
-    def __init__ (self) :
-        saga.cpi.Base.__init__ (self, _adaptor_name)
+    def __init__ (self, api) :
+        saga.cpi.Base.__init__ (self, api, _adaptor_name)
         # print "local job service adaptor init"
 
 
@@ -78,6 +68,8 @@ class LocalJobService (saga.cpi.job.Service) :
         # print "local job service adaptor init sync: %s"  %  rm 
         self._rm      = rm
         self._session = session
+        _adaptor_state.dict['services'][self._rm] = self
+        _adaptor_state.dump ()
 
         # for testing:
         # raise saga.exceptions.BadParameter ("Cannot handle rm %s"  %  rm)
@@ -106,6 +98,37 @@ class LocalJobService (saga.cpi.job.Service) :
     @SYNC
     def create_job (self, jd) :
         # print jd._attributes_dump ()
-        j = saga.job._create_job_from_adaptor ("my_id", self._session, "fork", _adaptor_name)
+        j = saga.job.Job._create_from_adaptor ("my_id", self._session, "fork", _adaptor_name)
         return j
+
+######################################################################
+#
+# job adaptor class
+#
+class LocalJob (saga.cpi.job.Job) :
+
+    def __init__ (self, api) :
+        saga.cpi.Base.__init__ (self, api, _adaptor_name)
+        # print "local job adaptor init";
+
+    @SYNC
+    def init_instance (self, id, session) :
+        # print "local job adaptor instance init sync %s" % id
+        self._id      = id
+        self._session = session
+        _adaptor_state.dict['jobs'][self._id] = self
+        _adaptor_state.dump ()
+
+
+    @SYNC
+    def get_id (self) :
+        # print "sync get_id"
+        return self._id
+
+    @ASYNC
+    def get_id_async (self, ttype) :
+        # print "async get_id"
+        t = saga.task.Task ()
+        return t
+
 

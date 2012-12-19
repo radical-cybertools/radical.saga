@@ -30,6 +30,14 @@ STATE    = 'State'
 RESULT   = 'Result'
 
 
+
+class Async :
+    '''
+    tagging interface for SAGA classes which implement asynchronous methods.
+    '''
+    pass
+
+
 class Task (saga.attributes.Attributes) :
 
 

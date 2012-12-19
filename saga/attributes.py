@@ -357,6 +357,7 @@ class Attributes (_AttributesBase) :
         # check if we know about the given attribute
         if key :
             if not key in d['_attributes'] :
+                traceback.print_stack ()
                 raise DoesNotExist ("attribute key is invalid: %s"  %  (key))
 
         # all is well
@@ -1418,7 +1419,7 @@ class Attributes (_AttributesBase) :
         """
 
         d = self._attributes_t_init ()
-        d['_private'] = e
+        d['_private'] = p
 
 
     ####################################
@@ -1771,7 +1772,7 @@ class Attributes (_AttributesBase) :
         set a 'readonly' attribute will result in an IncorrectState exception
         being raised.
 
-        Note that _attributes_i_set() will trigger callbacks, if a new value
+        Note that set_attribute() will trigger callbacks, if a new value
         (different from the old value) is given.  
         """
 

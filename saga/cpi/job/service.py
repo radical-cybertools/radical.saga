@@ -12,10 +12,13 @@ import saga.exceptions
 # class Service (Object, Async, Configurable) :
 class Service (Base) :
 
-    def __init__   (self) : 
+    def __init__ (self, api) : 
         raise saga.exceptions.NotImplemented ("method not implemented")
 
     def init_instance (self, rm, session) :
+        raise saga.exceptions.NotImplemented ("method not implemented")
+
+    def init_instance_async (self, rm, session, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
     def create_job (self, jd, ttype) :

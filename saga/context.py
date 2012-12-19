@@ -57,7 +57,7 @@ class Context (saga.Attributes) :
             self._adaptor = _adaptor
         else :
             # create from API -- create and bind adaptor
-            self._adaptor = self._engine.get_adaptor ('saga.Context', type,
+            self._adaptor = self._engine.get_adaptor (self, 'saga.Context', type,
                                                       None, ANY_ADAPTOR, type)
 
 

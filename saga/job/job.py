@@ -8,70 +8,36 @@
 from saga.engine.logger import getLogger
 from saga.engine.engine import getEngine, ANY_ADAPTOR
 
-def create_job (id=None, session=None, ttype=None) :
-    '''
-    id:        string
-    session:   saga.Session
-    ttype:     saga.task.type enum
-    ret:       saga.Task
-    '''
-
-    logger = getLogger ('saga.job.create_job')
-    logger.debug ("saga.job.create_job (%s, %s, %s)"  \
-               % (str(id), str(session), str(ttype)))
-
-    engine = getEngine ()
-
-    # attempt to find a suitable adaptor, which will call 
-    # init_instance_async(), which returns a task as expected.
-    return engine.get_adaptor ('saga.job.Job', 'fork', \
-                               ttype, ANY_ADAPTOR, id, session)
-
-def _create_job_from_adaptor (id, session, schema, adaptor_name) :
-    '''
-    id:           String
-    session:      saga.Session
-    schema:       String
-    adaptor_name: String
-    ret:          saga.job.Job (bound to a specific adaptor)
-    '''
-
-    logger = getLogger ('saga.job._create_job_from_adaptor')
-    logger.debug ("saga.job._create_job_from_adaptor (%s, %s, %s,  %s)"  \
-               % (id, str(session), schema, adaptor_name))
-
-    engine = getEngine ()
-
-    # attempt to find a suitable adaptor, which will call 
-    # init_instance_sync(), resulting in 
-    adaptor = engine.get_adaptor ('saga.job.Job', 'fork', None, 
-                                  adaptor_name, id, session)
-
-    return Job (id, _adaptor=adaptor)
-
-
+import saga.exceptions
+import saga.attributes
+import saga.task
 
 # class Job (Object, Async, Attributes, Permissions) :
-class Job (object) :
+class Job (saga.attributes.Attributes, saga.task.Async) :
     
     def __init__(self, id=None, _adaptor=None):
     
-        # # set attribute interface properties
-        # self._attributes_extensible  (False)
-        # self._attributes_camelcasing (True)
+        # set attribute interface properties
+        self._attributes_allow_private (True)
+        self._attributes_extensible    (False)
+        self._attributes_camelcasing   (True)
 
-        # # register properties with the attribute interface 
-        # self._attributes_register   ('State',      self.Unknown, self.Enum,   self.Scalar, self.ReadOnly)
-        # self._attributes_register   ('Exitcode',   None,         self.Int,    self.Scalar, self.ReadOnly)
-        # self._attributes_register   ('JobID',      None,         self.String, self.Scalar, self.ReadOnly)
-        # self._attributes_register   ('ServiceURL', None,         self.Url,    self.Scalar, self.ReadOnly)
+        # register properties with the attribute interface 
+        self._attributes_register   ('State',      saga.job.UNKNOWN, self.ENUM,   self.SCALAR, self.READONLY)
+        self._attributes_register   ('ExitCode',   None,             self.INT,    self.SCALAR, self.READONLY)
+        self._attributes_register   ('JobID',      None,             self.STRING, self.SCALAR, self.READONLY)
+        self._attributes_register   ('ServiceURL', None,             self.URL,    self.SCALAR, self.READONLY)
 
-        # self._attributes_set_enums  ('State',   [UNKNOWN, NEW, RUNNING, DONE,
-        #                                          FAILED,  CANCELED, SUSPENDED])
+        self._attributes_set_enums  ('State',   [saga.job.UNKNOWN, 
+                                                 saga.job.NEW, saga.job.RUNNING,
+                                                 saga.job.DONE,
+                                                 saga.job.FAILED,  
+                                                 saga.job.CANCELED, 
+                                                 saga.job.SUSPENDED])
 
-        # self._attributes_set_getter ('State',    self.get_state)
-        # self._attributes_set_getter ('jobID',    self.get_job_id)
-        # self._attributes_set_getter ('Exitcode', self._get_exitcode)
+        self._attributes_set_getter ('State',    self.get_state)
+        self._attributes_set_getter ('jobID',    self.get_id)
+        self._attributes_set_getter ('ExitCode', self._get_exit_code)
 
         self._logger = getLogger ('saga.job.Job')
         self._logger.debug ("saga.job.Job.__init__(%s)" % id)
@@ -83,8 +49,58 @@ class Job (object) :
             self._adaptor = _adaptor
         else :
             # create from API -- create and bind adaptor
-            self._adaptor = self._engine.get_adaptor ('saga.job.Job', 'local',
+            self._adaptor = self._engine.get_adaptor (self, 'saga.job.Job', 'local',
                                                       None, ANY_ADAPTOR, id)
+
+    @classmethod
+    def create (self, id=None, session=None, ttype=None) :
+        '''
+        id:        string
+        session:   saga.Session
+        ttype:     saga.task.type enum
+        ret:       saga.Task
+        '''
+    
+        logger = getLogger ('saga.job.Job.create')
+        logger.debug ("saga.job.Job.create (%s, %s, %s)"  \
+                   % (str(id), str(session), str(ttype)))
+    
+        engine = getEngine ()
+    
+        # attempt to find a suitable adaptor, which will call 
+        # init_instance_async(), which returns a task as expected.
+        return engine.get_adaptor (self, 'saga.job.Job', 'fork', \
+                                   ttype, ANY_ADAPTOR, id, session)
+    
+    
+    @classmethod
+    def _create_from_adaptor (self, id, session, schema, adaptor_name) :
+        '''
+        id:           String
+        session:      saga.Session
+        schema:       String
+        adaptor_name: String
+        ret:          saga.job.Job (bound to a specific adaptor)
+        '''
+    
+        logger = getLogger ('saga.job.Job._create_from_adaptor')
+        logger.debug ("saga.job.Job._create_from_adaptor (%s, %s, %s,  %s)"  \
+                   % (id, str(session), schema, adaptor_name))
+    
+        engine = getEngine ()
+    
+        # attempt to find a suitable adaptor, which will call 
+        # init_instance_sync(), resulting in 
+        # FIXME: self is not an instance here, but the class object...
+        adaptor = engine.get_adaptor (self, 'saga.job.Job', 'fork', None, 
+                                      adaptor_name, id, session)
+    
+        return self (id, _adaptor=adaptor)
+
+
+
+    def _get_exit_code (self) :
+        return self.exit_code
 
 
     def get_id (self, ttype=None) :
@@ -241,24 +257,6 @@ class Job (object) :
 
 
 
-def create_self (session=None, ttype=None) :
-    '''
-    session:   saga.Session
-    ttype:     saga.task.type enum
-    ret:       saga.Task
-    '''
-
-    logger = getLogger ('saga.job.create_self')
-    logger.debug ("saga.job.create_self (%s, %s)"  \
-               % (str(session), str(ttype)))
-
-    engine = getEngine ()
-
-    # attempt to find a suitable adaptor, which will call 
-    # init_instance_async(), which returns a task as expected.
-    return engine.get_adaptor ('saga.job.Self', 'fork', ttype, ANY_ADAPTOR, session)
-
-
 # class Self (Job, monitoring.Steerable) :
 class Self (Job) :
 
@@ -274,6 +272,26 @@ class Self (Job) :
 
         self._engine = getEngine ()
 
-        self._adaptor = self._engine.get_adaptor ('saga.job.Self', 'fork', \
+        self._adaptor = self._engine.get_adaptor (self, 'saga.job.Self', 'fork', \
                                                   SYNC, ANY_ADAPTOR, session)
+
+
+    @classmethod
+    def create (self, session=None, ttype=None) :
+        '''
+        session:   saga.Session
+        ttype:     saga.task.type enum
+        ret:       saga.Task
+        '''
+    
+        logger = getLogger ('saga.job.Self.create')
+        logger.debug ("saga.job.Self.create (%s, %s)"  \
+                   % (str(session), str(ttype)))
+    
+        engine = getEngine ()
+    
+        # attempt to find a suitable adaptor, which will call 
+        # init_instance_async(), which returns a task as expected.
+        return engine.get_adaptor (self, 'saga.job.Self', 'fork', ttype, ANY_ADAPTOR, session)
+
 

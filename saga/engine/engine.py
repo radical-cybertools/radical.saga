@@ -109,7 +109,7 @@ class Engine(Configurable):
               
               for adaptor_class in self._engine._adaptors{'job'}{'http'}
                   try :
-                      self._adaptor = adaptor_class (url, session}
+                      self._adaptor = adaptor_class (self, url, session}
                   except saga.Exception e :
                       # adaptor could not handle the URL, handle e
                   else :
@@ -248,7 +248,7 @@ class Engine(Configurable):
 
     #-----------------------------------------------------------------
     # 
-    def get_adaptor (self, ctype, schema, ttype, requested_name, *args, **kwargs) :
+    def get_adaptor (self, api, ctype, schema, ttype, requested_name, *args, **kwargs) :
         '''
         just as get_adaptor, look for a suitable adaptor for bind -- but only
         consider adaptors with matching name.  This method is used to force
@@ -286,7 +286,7 @@ class Engine(Configurable):
             adaptor_name = ""
             try :
                 # instantiate adaptor
-                adaptor_instance = adaptor_class ()
+                adaptor_instance = adaptor_class (api)
                 adaptor_name     = adaptor_instance._get_name ()
 
                 if requested_name != None     and \

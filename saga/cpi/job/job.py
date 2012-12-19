@@ -11,61 +11,67 @@ import saga.exceptions
 # class Job (CPIBase) : # CPIObject, CPIAsync, CPIAttributes, CPIPermissions) :
 class Job (Base) :
     
-    def __init__        (self, id                 ) :
+    def __init__ (self, api                ) :
         raise saga.exceptions.NotImplemented
 
-    def get_id          (self,               ttype) :
+    def init_instance (self, id                   ) :
+        raise saga.exceptions.NotImplemented
+
+    def init_instance_async (self, id, ttype) :
+        raise saga.exceptions.NotImplemented
+
+    def get_id (self, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def get_description (self,               ttype) :
+    def get_description (self, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def get_stdin       (self,               ttype) :
+    def get_stdin (self, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def get_stdout      (self,               ttype) :
+    def get_stdout (self, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def get_stderr      (self,               ttype) :
+    def get_stderr (self, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def suspend         (self,               ttype) :
+    def suspend (self, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def resume          (self,               ttype) :
+    def resume (self, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def checkpoint      (self,               ttype) :
+    def checkpoint (self, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def migrate         (self, jd,           ttype) :
+    def migrate (self, jd, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def signal          (self, signum,       ttype) :
+    def signal (self, signum, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
 
     #-----------------------------------------------------------------
     # task methods flattened into job :-/
-    def run             (self,               ttype) :
+    def run (self, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def cancel          (self, timeout,      ttype) :
+    def cancel (self, timeout, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def wait            (self, timeout,      ttype) :
+    def wait (self, timeout, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def get_state       (self,               ttype) :
+    def get_state (self, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def get_result      (self,               ttype) :
+    def get_result (self, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def get_object      (self,               ttype) :
+    def get_object (self, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def re_raise        (self,               ttype) :
+    def re_raise (self, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
 

@@ -7,24 +7,6 @@ from saga.engine.logger import getLogger
 from saga.engine.engine import getEngine, ANY_ADAPTOR
 from saga.task          import SYNC, ASYNC, TASK
 
-def create_service (rm=None, session=None, ttype=None) :
-    '''
-    rm:        saga.Url
-    session:   saga.Session
-    ttype:     saga.task.type enum
-    ret:       saga.Task
-    '''
-
-    logger = getLogger ('saga.job.create_service')
-    logger.debug ("saga.job.create_service (%s, %s, %s)"  \
-               % (str(rm), str(session), str(ttype)))
-
-    engine = getEngine ()
-
-    # attempt to find a suitable adaptor, which will call 
-    # init_instance_async(), which returns a task as expected.
-    return engine.get_adaptor ('saga.job.Service', 'fork', \
-                               ttype, ANY_ADAPTOR, rm, session)
 
 
 # class Service (Object, Async) :
@@ -43,8 +25,29 @@ class Service (object) :
 
         self._engine = getEngine ()
 
-        self._adaptor = self._engine.get_adaptor ('saga.job.Service', 'fork', \
+        self._adaptor = self._engine.get_adaptor (self, 'saga.job.Service', 'fork', \
                                                   SYNC, ANY_ADAPTOR, rm, session)
+
+
+    @classmethod
+    def create (self, rm=None, session=None, ttype=None) :
+        '''
+        rm:        saga.Url
+        session:   saga.Session
+        ttype:     saga.task.type enum
+        ret:       saga.Task
+        '''
+    
+        logger = getLogger ('saga.job.Service.create')
+        logger.debug ("saga.job.Service.create(%s, %s, %s)"  \
+                   % (str(rm), str(session), str(ttype)))
+    
+        engine = getEngine ()
+    
+        # attempt to find a suitable adaptor, which will call 
+        # init_instance_async(), which returns a task as expected.
+        return engine.get_adaptor (self, 'saga.job.Service', 'fork', \
+                                   ttype, ANY_ADAPTOR, rm, session)
 
 
     def create_job (self, jd, ttype=None) :
