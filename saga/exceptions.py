@@ -8,18 +8,7 @@ __license__   = "MIT"
 """ SAGA exception classes
 """
 
-import traceback
-
 from saga.utils.exception  import ExceptionBase
-
-def _get_traceback () :
-    import traceback, StringIO
-    output = StringIO.StringIO()
-    traceback.print_exc (file=output)
-    ret = output.getvalue ()
-    output.close ()
-    return ret
-
 
 class SagaException(ExceptionBase):
     """ The SAGA base exception class. All other SAGA exceptions inherit from 
@@ -38,9 +27,10 @@ class SagaException(ExceptionBase):
             :param message: The exception message.
             :param object: The object that has caused the exception.
         """
+        ExceptionBase.__init__(self, message)
+
         self._message   = message
         self._object    = object
-        self._traceback = traceback.format_exc ()
 
     def get_message (self) :
         """ Return the exception message as a string.
@@ -51,11 +41,6 @@ class SagaException(ExceptionBase):
         """ Return the object that raised this exception.
         """
         return self._object
-
-    def get_traceback (self) :
-        """ Return the full traceback for this exception.
-        """
-        return self._traceback
 
     def get_all_exceptions (self) :
         return [] # FIXME
@@ -68,7 +53,6 @@ class SagaException(ExceptionBase):
 
     message    = property (get_message)         # string
     object     = property (get_object)          # object type
-    traceback  = property (get_traceback)       # string
     exceptions = property (get_all_exceptions)  # list [Exception]
     messages   = property (get_all_messages)    # list [string]
 

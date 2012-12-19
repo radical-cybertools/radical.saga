@@ -8,9 +8,29 @@ __license__   = "MIT"
 """ Provides exception handling utilities and base classes.
 """
 
-class ExceptionBase(Exception):
-    def __init__(self, message):
+import traceback
 
-        # Call the base class constructor with the parameters it needs
+def get_traceback () :
+    """ Returns the current tracback as string.
+    """
+    import traceback, StringIO
+    output = StringIO.StringIO()
+    traceback.print_exc (file=output)
+    ret = output.getvalue ()
+    output.close ()
+    return ret
+
+class ExceptionBase(Exception):
+    """ Base exception class. 
+    """
+    def __init__(self, message):
         Exception.__init__(self, message)
+        self._traceback = get_traceback()
+
+    def get_traceback (self) :
+        """ Return the full traceback for this exception.
+        """
+        return self._traceback
+
+    traceback  = property (get_traceback) 
 
