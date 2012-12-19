@@ -836,7 +836,7 @@ class Attributes (_AttributesBase) :
             if key[0] == '_' and d['_private'] :
                 # if the set is private, we can register the new key.  It
                 # won't have any callbacks at this point.
-                self._attributes_register (key, None, self.ANY, self.SCALAR, self.WRITABLE, self.PRIVATE)
+                self._attributes_register (key, None, self.ANY, self.SCALAR, self.WRITABLE, self.EXTENDED)
 
             elif d['_extensible'] :
                 # if the set is extensible, we can register the new key.  It
@@ -916,7 +916,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_i_list (self, ext=True) :
+    def _attributes_i_list (self, ext=True, priv=False) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -935,11 +935,24 @@ class Attributes (_AttributesBase) :
 
         ret = []
 
+
         for key in sorted(d['_attributes'].iterkeys()) :
             if d['_attributes'][key]['mode'] != self.ALIAS :
                 if d['_attributes'][key]['exists'] :
-                    if ext and d['_attributes'][key]['extended'] :
-                        ret.append (key)
+
+                    e = d['_attributes'][key]['extended'] 
+                    p = d['_attributes'][key]['private'] 
+
+                    if e and ext :
+                        if p and priv :
+                            ret.append (key)
+                        elif not p :
+                            ret.append (key)
+                    elif not e :
+                        if p and priv :
+                            ret.append (key)
+                        elif not p :
+                            ret.append (key)
 
         return ret
 
@@ -1037,6 +1050,24 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init (key)
 
         return d['_attributes'][key]['extended']
+
+
+    ####################################
+    def _attributes_i_is_private (self, key) :
+        """
+        This internal method should not be explicitly called by consumers of
+        this API, but is indirectly used via the different public interfaces.
+
+        This method will check if the given key is private, i.e. starts with an
+        underscore and 'allow_private' is enabled.
+
+        This method is not used by, and not exposed via the public API, yet.
+        """
+
+        # make sure interface is ready to use
+        d = self._attributes_t_init (key)
+
+        return d['_attributes'][key]['private']
 
 
     ####################################
@@ -1202,6 +1233,10 @@ class Attributes (_AttributesBase) :
         # make sure interface is ready to use
         d = self._attributes_t_init ()
 
+        priv = False
+        if d['_private'] and key[0] == '_' :
+            priv = True
+
         # we expect keys to be registered as CamelCase (in those cases where
         # that matters).  But we store attributes in 'under_score' version.
         us_key = self._attributes_t_underscore (key)
@@ -1220,7 +1255,8 @@ class Attributes (_AttributesBase) :
         d['_attributes'][us_key]['exists']       = False   # no value set, yet
         d['_attributes'][us_key]['flavor']       = flavor  # scalar / vector
         d['_attributes'][us_key]['mode']         = mode    # readonly / writable / final
-        d['_attributes'][us_key]['extended']     = ext     # false/extended/private
+        d['_attributes'][us_key]['extended']     = ext     # is an extended attribute 
+        d['_attributes'][us_key]['private']      = priv    # is a  private attribute
         d['_attributes'][us_key]['camelcase']    = key     # keep original key name
         d['_attributes'][us_key]['underscore']   = us_key  # keep under_scored name
         d['_attributes'][us_key]['enums']        = []      # list of valid enum values
@@ -1361,8 +1397,8 @@ class Attributes (_AttributesBase) :
 
         Remove an extended an attribute.
 
-        This function allows to safely remove any attribute which is 'extended'
-        and has write permissions.
+        This function allows to safely remove any attribute which is 'private'
+        or 'extended' and has write permissions.
         """
 
         # make sure interface is ready to use
