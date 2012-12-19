@@ -3,9 +3,11 @@ include *.py
 include saga/*.py
 
 include saga/job/*.py
+include saga/filesystem/*.py
 
 include saga/cpi/*.py
 include saga/cpi/job/*.py
+include saga/cpi/filesystem/*.py
 
 include saga/engine/*.py
 
@@ -18,3 +20,4 @@ include saga/contrib/*.py
 include saga/adaptors/*.py
 
 include MANIFEST.in README.md LICENSE.md CHANGES.md
+

@@ -32,11 +32,12 @@ except IOError:
 from   saga.exceptions import *
 from   saga.attributes import *
 from   saga.context    import *
+from   saga.session    import *
 from   saga.task       import *
 from   saga.url        import *
 
+import saga.cpi
 import saga.engine
 import saga.job
-import saga.cpi
-
+import saga.filesystem
 

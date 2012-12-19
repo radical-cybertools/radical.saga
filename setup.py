@@ -87,15 +87,17 @@ setup_args = {
 
     'packages': [
         "saga",
-        "saga.engine",
+        "saga.job",
+        "saga.filesystem",
         "saga.cpi",
         "saga.cpi.job",
-        "saga.job",
+        "saga.cpi.filesystem",
+        "saga.adaptors",
+        "saga.engine",
         "saga.contrib",
         "saga.utils",
         "saga.utils.cmdlinewrapper",
-        "saga.utils.logger",
-        "saga.adaptors"
+        "saga.utils.logger"
     ],
     'scripts': scripts,
     # mention data_files, even if empty, so install_data is called and

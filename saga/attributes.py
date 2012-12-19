@@ -7,7 +7,6 @@ __license__   = "MIT"
 
 """ SAGA attribute interface
 """
-import pprint
 
 from saga.exceptions import *
 

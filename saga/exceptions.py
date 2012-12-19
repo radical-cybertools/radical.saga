@@ -9,6 +9,7 @@ __license__   = "MIT"
 """
 
 import traceback
+
 from saga.utils.exception  import ExceptionBase
 
 class SagaException(ExceptionBase):

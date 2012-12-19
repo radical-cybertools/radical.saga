@@ -6,6 +6,8 @@
 from saga.engine.logger import getLogger
 from saga.engine.engine import getEngine, ANY_ADAPTOR
 from saga.task          import SYNC, ASYNC, TASK
+from saga.url           import Url
+
 
 
 
@@ -19,14 +21,15 @@ class Service (object) :
         ret:       obj
         '''
 
-        self._logger = getLogger ('saga.job.Service')
-        self._logger.debug ("saga.job.Service.__init__ (%s, %s)"  \
-                         % (str(rm), str(session)))
+        rm_url = Url (rm)
 
-        self._engine = getEngine ()
+        self._engine  = getEngine ()
+        self._logger  = getLogger ('saga.job.Service')
+        self._logger.debug ("saga.job.Service.__init__ (%s, %s)"  \
+                         % (str(rm_url), str(session)))
 
         self._adaptor = self._engine.get_adaptor (self, 'saga.job.Service', 'fork', \
-                                                  SYNC, ANY_ADAPTOR, rm, session)
+                                                  SYNC, ANY_ADAPTOR, rm_url, session)
 
 
     @classmethod
@@ -38,16 +41,17 @@ class Service (object) :
         ret:       saga.Task
         '''
     
+        rm_url = Url (rm)
+
+        engine = getEngine ()
         logger = getLogger ('saga.job.Service.create')
         logger.debug ("saga.job.Service.create(%s, %s, %s)"  \
-                   % (str(rm), str(session), str(ttype)))
-    
-        engine = getEngine ()
+                   % (str(rm_url), str(session), str(ttype)))
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_async(), which returns a task as expected.
         return engine.get_adaptor (self, 'saga.job.Service', 'fork', \
-                                   ttype, ANY_ADAPTOR, rm, session)
+                                   ttype, ANY_ADAPTOR, rm_url, session)
 
 
     def create_job (self, jd, ttype=None) :

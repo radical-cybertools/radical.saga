@@ -45,8 +45,8 @@ class ContextUserPass (saga.cpi.Context) :
 
 
     @SYNC
-    def set_default (self) :
-        # print "sync set_defaults"
+    def _initialize (self, session) :
+        # print "sync _initialize"
         pass
 
 

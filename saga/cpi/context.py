@@ -13,6 +13,6 @@ class Context (Base) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
 
-    def set_defaults (self) :
+    def _initialize (self, session) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 

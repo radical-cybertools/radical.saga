@@ -20,13 +20,18 @@ try :
   print str(t_2)
   print t_2.get_state ()
 
+  s = saga.Session ()
 
   c = saga.Context ('MyProxy')
   c.user_id   = 'merzky'
   c.user_pass = 'secret'
   c.life_time = 1000
   c.server    = 'myproxy.teragrid.org:7514'
-  c.set_defaults ()
+
+  s.add_context (c)
+
+  for ctx in s.contexts :
+    print ctx._attributes_dump()
 
 
 

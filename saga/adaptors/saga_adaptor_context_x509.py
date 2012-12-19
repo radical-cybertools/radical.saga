@@ -9,6 +9,7 @@ from   saga.engine.logger import getLogger
 SYNC  = saga.cpi.base.sync
 ASYNC = saga.cpi.base.async
 
+
 ######################################################################
 #
 # adaptor meta data

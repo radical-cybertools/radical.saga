@@ -1,12 +1,11 @@
 
-
 # from saga.Object        import Object
 # from saga.Task          import Async 
 # from saga.Permissions   import Permissions
 # from saga.Attributes    import Attributes
 
-from saga.engine.logger import getLogger
-from saga.engine.engine import getEngine, ANY_ADAPTOR
+from   saga.engine.logger import getLogger
+from   saga.engine.engine import getEngine, ANY_ADAPTOR
 
 import saga.exceptions
 import saga.attributes
@@ -39,10 +38,9 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         self._attributes_set_getter ('jobID',    self.get_id)
         self._attributes_set_getter ('ExitCode', self._get_exit_code)
 
+        self._engine = getEngine ()
         self._logger = getLogger ('saga.job.Job')
         self._logger.debug ("saga.job.Job.__init__(%s)" % id)
-
-        self._engine = getEngine ()
 
         if _adaptor :
             # created from adaptor
@@ -61,11 +59,10 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         ret:       saga.Task
         '''
     
+        engine = getEngine ()
         logger = getLogger ('saga.job.Job.create')
         logger.debug ("saga.job.Job.create (%s, %s, %s)"  \
                    % (str(id), str(session), str(ttype)))
-    
-        engine = getEngine ()
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_async(), which returns a task as expected.
@@ -83,11 +80,11 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         ret:          saga.job.Job (bound to a specific adaptor)
         '''
     
+        engine = getEngine ()
         logger = getLogger ('saga.job.Job._create_from_adaptor')
         logger.debug ("saga.job.Job._create_from_adaptor (%s, %s, %s,  %s)"  \
                    % (id, str(session), schema, adaptor_name))
     
-        engine = getEngine ()
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_sync(), resulting in 

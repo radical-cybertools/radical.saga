@@ -48,7 +48,7 @@ class Context (saga.Attributes) :
         self._attributes_register  (REMOTE_PORT,     None, self.STRING, self.VECTOR, self.WRITABLE)
      
         self._logger = getLogger ('saga.Context')
-        self._logger.debug ("saga.Context.__init__(%s)" % id)
+        self._logger.debug ("saga.Context.__init__(%s)" % type)
 
         self._engine = getEngine ()
 
@@ -60,12 +60,11 @@ class Context (saga.Attributes) :
             self._adaptor = self._engine.get_adaptor (self, 'saga.Context', type,
                                                       None, ANY_ADAPTOR, type)
 
-
-    def set_defaults (self) :
+    def _initialize (self, session) :
         '''
         ret:  None
         '''
-        return self._adaptor.set_defaults ()
+        return self._adaptor._initialize (session)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
