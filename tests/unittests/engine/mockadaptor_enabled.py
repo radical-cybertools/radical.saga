@@ -33,7 +33,7 @@ def register():
     return _adaptor_info
 
 class MockJob(saga.cpi.job.Job):
-    def __init__ (self) :
-        saga.cpi.Base.__init__ (self, adaptor_name='saga.adaptor.mock',
+    def __init__ (self, api) :
+        saga.cpi.Base.__init__ (self, api, adaptor_name='saga.adaptor.mock',
                                       config_options=_adaptor_config_options)
 

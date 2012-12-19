@@ -21,6 +21,6 @@ def register():
     raise Exception("CRAP! Well, actually this is supposed to happen... ;-)")
 
 class MockJob(saga.cpi.job.Job):
-    def __init__ (self) :
-        saga.cpi.Base.__init__ (self, _adaptor_info['name'])
+    def __init__ (self, api) :
+        saga.cpi.Base.__init__ (self, api, _adaptor_info['name'])
 

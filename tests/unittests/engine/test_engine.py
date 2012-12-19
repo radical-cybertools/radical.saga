@@ -100,4 +100,3 @@ def test_load_broken_adaptor():
     # restore sys.path
     sys.path = old_sys_path
 
-
