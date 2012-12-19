@@ -238,6 +238,12 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         return self._adaptor.re_raise (ttype=ttype)
 
 
+    # ----------------------------------------------------------------
+    # attribute getters
+    def _get_exit_code (self) :
+        return self._adaptor.get_exit_code (ttype=ttype)
+
+
     state     = property (get_state)       # state enum
     result    = property (get_result)      # result type    (None)
     object    = property (get_object)      # object type    (job_service)
@@ -282,9 +288,4 @@ class Self (Job) :
         # init_instance_async(), which returns a task as expected.
         return engine.get_adaptor (self, 'saga.job.Self', 'fork', ttype, ANY_ADAPTOR, session)
 
-
-    # ----------------------------------------------------------------
-    # attribute getters
-    def _get_exit_code (self) :
-        return self._adaptor.get_exit_code (ttype=ttype)
 
