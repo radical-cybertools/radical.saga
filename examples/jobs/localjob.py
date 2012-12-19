@@ -51,6 +51,7 @@ def main():
 
     except saga.SagaException, ex:
         print "An exception occured during job execution: %s" % (str(ex))
+        print ex.traceback
         sys.exit(-1)
 
 if __name__ == "__main__":
