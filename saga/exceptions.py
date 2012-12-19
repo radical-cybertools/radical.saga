@@ -21,7 +21,7 @@ class SagaException(ExceptionBase):
               print ex.traceback
     """
 
-    def __init__  (self, message, object=None) :
+    def __init__  (self, message, api_object=None) :
         """ Create a new exception object.
 
             :param message: The exception message.
@@ -30,7 +30,7 @@ class SagaException(ExceptionBase):
         ExceptionBase.__init__(self, message)
 
         self._message   = message
-        self._object    = object
+        self._object    = api_object
 
     def get_message (self) :
         """ Return the exception message as a string.

@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
@@ -72,17 +72,13 @@ class LocalJobService (saga.cpi.job.Service) :
     def init_instance (self, rm_url, session) :
         """ Service instance constructor
         """
-        print socket.gethostname()
         if rm_url.host != 'localhost' and rm_url.host != socket.gethostname():
-            print 
+            raise saga.BadParameter(message='ss') 
 
         self._rm      = rm_url
         self._session = session
         _SharedData().dict['services'][self._rm] = self
-        #_adaptor_state.dump ()
 
-        # for testing:
-        # raise saga.exceptions.BadParameter ("Cannot handle rm %s"  %  rm)
 
 
 
