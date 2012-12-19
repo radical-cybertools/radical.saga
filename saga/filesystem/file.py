@@ -56,7 +56,7 @@ class File (object) :
 
     # ----------------------------------------------------------------
     #
-    # namespace methods
+    # namespace entry methods
     #
     def get_url (self, ttype=None) :
         '''
