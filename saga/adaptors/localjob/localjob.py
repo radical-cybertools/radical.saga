@@ -108,7 +108,7 @@ class LocalJobService (saga.cpi.job.Service) :
             if attribute not in _adaptor_capabilities:
                 raise saga.BadParameter('JobDescription.%s is not supported by this adaptor' % attribute)
         
-        new_job = saga.job.Job._create_from_adaptor ("my_id", self._session, "fork", _adaptor_name)
+        new_job = saga.job.Job._create_from_adaptor (self._session, "fork", _adaptor_name)
         return new_job
 
 
@@ -123,11 +123,10 @@ class LocalJob (saga.cpi.job.Job) :
         # print "local job adaptor init";
 
     @SYNC
-    def init_instance (self, id, session) :
-        # print "local job adaptor instance init sync %s" % id
-        self._id      = id
+    def init_instance (self, session) :
+        self._id      = None
         self._session = session
-        _SharedData().dict['jobs'][self._id] = self
+        _SharedData().dict['jobs'][self] = "hi"
         #_adaptor_state.dump ()
 
 
@@ -138,7 +137,6 @@ class LocalJob (saga.cpi.job.Job) :
 
     @ASYNC
     def get_id_async (self, ttype) :
-        # print "async get_id"
         t = saga.task.Task ()
         return t
 

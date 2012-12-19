@@ -19,10 +19,10 @@ class Job (Base) :
     def __init__ (self, api) :
         raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
 
-    def init_instance (self, id) :
+    def init_instance (self) :
         raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
 
-    def init_instance_async (self, id, ttype) :
+    def init_instance_async (self, ttype) :
         raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
 
     def get_id (self, ttype) :

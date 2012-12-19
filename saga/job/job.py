@@ -14,7 +14,7 @@ import saga.task
 # class Job (Object, Async, Attributes, Permissions) :
 class Job (saga.attributes.Attributes, saga.task.Async) :
     
-    def __init__(self, id=None, _adaptor=None):
+    def __init__(self, _adaptor=None):
     
         # set attribute interface properties
         self._attributes_allow_private (True)
@@ -40,7 +40,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
 
         self._engine = getEngine ()
         self._logger = getLogger ('saga.job.Job')
-        self._logger.debug ("saga.job.Job.__init__(%s)" % id)
+        self._logger.debug ("saga.job.Job.__init__()")
 
         if _adaptor :
             # created from adaptor
@@ -48,12 +48,11 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         else :
             # create from API -- create and bind adaptor
             self._adaptor = self._engine.get_adaptor (self, 'saga.job.Job', 'local',
-                                                      None, ANY_ADAPTOR, id)
+                                                      None, ANY_ADAPTOR)
 
     @classmethod
-    def create (self, id=None, session=None, ttype=None) :
+    def create (self, session=None, ttype=None) :
         '''
-        id:        string
         session:   saga.Session
         ttype:     saga.task.type enum
         ret:       saga.Task
@@ -61,19 +60,18 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
     
         engine = getEngine ()
         logger = getLogger ('saga.job.Job')
-        logger.debug ("saga.job.Job.create (%s, %s, %s)"  \
-                   % (str(id), str(session), str(ttype)))
+        logger.debug ("saga.job.Job.create (%s, %s)"  \
+                   % (str(session), str(ttype)))
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_async(), which returns a task as expected.
         return engine.get_adaptor (self, 'saga.job.Job', 'fork', \
-                                   ttype, ANY_ADAPTOR, id, session)
+                                   ttype, ANY_ADAPTOR, session)
     
     
     @classmethod
-    def _create_from_adaptor (self, id, session, schema, adaptor_name) :
+    def _create_from_adaptor (self, session, schema, adaptor_name) :
         '''
-        id:           String
         session:      saga.Session
         schema:       String
         adaptor_name: String
@@ -82,17 +80,17 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
     
         engine = getEngine ()
         logger = getLogger ('saga.job.Job')
-        logger.debug ("saga.job.Job._create_from_adaptor (%s, %s, %s,  %s)"  \
-                   % (id, str(session), schema, adaptor_name))
+        logger.debug ("saga.job.Job._create_from_adaptor (%s, %s,  %s)"  \
+                   % (str(session), schema, adaptor_name))
     
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_sync(), resulting in 
         # FIXME: self is not an instance here, but the class object...
         adaptor = engine.get_adaptor (self, 'saga.job.Job', 'fork', None, 
-                                      adaptor_name, id, session)
+                                      adaptor_name, session)
     
-        return self (id, _adaptor=adaptor)
+        return self (_adaptor=adaptor)
 
 
 
