@@ -258,17 +258,13 @@ class Engine(Configurable):
 
         schema = schema.lower ()
 
-        self._logger.debug("get_adaptor: %s - %s - %s"  %  (ctype, schema, requested_name))
+        self._logger.debug("get_adaptor: '%s - %s - %s' "  %  (ctype, schema, requested_name))
 
         if not ctype in self._adaptors :
-            self._logger.warn("get_adaptor: %s - %s - %s failed: unknown ctype '%s'" \
-                           % (ctype, schema, requested_name, ctype))
-            return None
+            raise saga.exceptions.NotImplemented ("no adaptor found for '%s'" %  ctype)
 
         if not schema in self._adaptors[ctype] :
-            self._logger.warn("get_adaptor: %s - %s - %s failed: unknown schema '%s'" \
-                           % (ctype, schema, requested_name, schema))
-            return None
+            raise saga.exceptions.NotImplemented ("no '%s' adaptor found for '%s'" %  (ctype, schema))
 
 
         # cycle through all applicable adaptors, and try to instantiate the ones
