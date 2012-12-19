@@ -916,7 +916,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_i_list (self, ext=True, priv=False) :
+    def _attributes_i_list (self, ext=True, priv=False, CamelCase=True) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -942,17 +942,21 @@ class Attributes (_AttributesBase) :
 
                     e = d['_attributes'][key]['extended'] 
                     p = d['_attributes'][key]['private'] 
+                    k = key
+
+                    if CamelCase :
+                        k = d['_attributes'][key]['camelcase']
 
                     if e and ext :
                         if p and priv :
-                            ret.append (key)
+                            ret.append (k)
                         elif not p :
-                            ret.append (key)
+                            ret.append (k)
                     elif not e :
                         if p and priv :
-                            ret.append (key)
+                            ret.append (k)
                         elif not p :
-                            ret.append (key)
+                            ret.append (k)
 
         return ret
 
