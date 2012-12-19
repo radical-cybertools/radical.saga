@@ -300,7 +300,7 @@ class Engine(Configurable):
                     # the adaptor_instance to bind to the API instance.
                     adaptor_instance.init_instance  (*args, **kwargs)
 
-                    self._logger.debug("get_adaptor %s -- success"  %  str(adaptor_class))
+                    self._logger.debug("BOUND get_adaptor %s -- success"  %  str(adaptor_class))
                     return adaptor_instance
 
                 else :

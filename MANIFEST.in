@@ -12,6 +12,7 @@ include saga/cpi/filesystem/*.py
 include saga/engine/*.py
 
 include saga/utils/*.py
+include saga/utils/job/*.py
 include saga/utils/logger/*.py
 include saga/utils/cmdlinewrapper/*.py
 
