@@ -3,9 +3,6 @@ import saga
 
 try :
 
-  c = saga.Context ('UserPass')
-
-
   jd     = saga.job.Description ()
   jd.executable = '/bin/date'
 
@@ -22,6 +19,14 @@ try :
   t_2    = j_1.get_id (ttype=saga.task.TASK)
   print str(t_2)
   print t_2.get_state ()
+
+
+  c = saga.Context ('MyProxy')
+  c.user_id   = 'merzky'
+  c.user_pass = 'secret'
+  c.life_time = 1000
+  c.server    = 'myproxy.teragrid.org:7514'
+  c.set_defaults ()
 
 
 

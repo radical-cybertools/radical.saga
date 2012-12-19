@@ -101,6 +101,7 @@ class LocalJobService (saga.cpi.job.Service) :
         j = saga.job.Job._create_from_adaptor ("my_id", self._session, "fork", _adaptor_name)
         return j
 
+
 ######################################################################
 #
 # job adaptor class

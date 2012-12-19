@@ -7,6 +7,7 @@ __license__   = "MIT"
 
 """ SAGA attribute interface
 """
+import pprint
 
 from saga.exceptions import *
 
@@ -583,12 +584,12 @@ class Attributes (_AttributesBase) :
         # make sure interface is ready to use
         d = self._attributes_t_init ()
 
-        # _camel_case_regex_1 = re.compile('(.)([A-Z][a-z]+)')
-        # _camel_case_regex_2 = re.compile('([a-z0-9])([A-Z])')
+        _camel_case_regex_1 = re.compile('(.)([A-Z][a-z]+)')
+        _camel_case_regex_2 = re.compile('([a-z0-9])([A-Z])')
 
         if d['_camelcasing'] :
-            temp = Attributes._camel_case_regex_1.sub(r'\_1\2', key)
-            return Attributes._camel_case_regex_2.sub(r'\_1\2', temp).lower()
+            temp = Attributes._camel_case_regex_1.sub(r'\1_\2', key)
+            return Attributes._camel_case_regex_2.sub(r'\1_\2', temp).lower()
         else :
             return key
 

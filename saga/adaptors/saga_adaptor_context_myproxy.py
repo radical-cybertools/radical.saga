@@ -41,12 +41,20 @@ class ContextMyProxy (saga.cpi.Context) :
     @SYNC
     def init_instance (self, type) :
         # print "myproxy context adaptor instance init sync %s" % id
-        self._type = type
+        self._api.type = type
 
 
     @SYNC
-    def set_default (self) :
-        # print "sync set_defaults"
+    def set_defaults (self) :
+
+        # make sure we have server, username, password
+        api = self._get_api ()
+
+        print "type:   %s"  %  api.type
+        print "user:   %s"  %  api.user_id
+        print "pass:   %s"  %  api.user_pass
+        print "server: %s"  %  api.server
+        print "ttl:    %s"  %  api.life_time
         pass
 
 
