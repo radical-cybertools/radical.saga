@@ -243,7 +243,12 @@ class Engine(Configurable):
                         
 
             except Exception as e:
+                import traceback, StringIO
+                output = StringIO.StringIO()
+                traceback.print_exc(file=output)
                 self._logger.warn("Loading %s failed: %s" % (module_name, str(e)))
+                self._logger.debug(output.getvalue())
+                output.close()
 
 
     #-----------------------------------------------------------------
