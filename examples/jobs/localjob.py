@@ -22,8 +22,8 @@ def main():
 
         # environment, executable & arguments
         jd.environment = {'CATME':'10'}       
-        jd.executable  = '/bin/sleep'
-        jd.arguments   = ['$CATME']
+        jd.executable  = '/usr/bin/false'
+        #jd.arguments   = ['$CATME']
         
         # output options (will be just empty files for /bin/sleep)
         jd.output = "saga_localjob.stdout"
@@ -42,11 +42,11 @@ def main():
         print "Job State : %s" % (catjob.state)
 
         print "\n...waiting for job...\n"
-        # wait for the job to either finish or fail
+
         catjob.wait()
 
         print "Job State : %s" % (catjob.state)
-        #print "Exitcode  : %s" % (catjob.exitcode)
+        print "Exitcode  : %s" % (catjob.exit_code)
 
     except saga.SagaException, ex:
         print "An exception occured during job execution: %s (%s)" % ((str(ex)), ex.object )

@@ -154,7 +154,6 @@ class LocalJob (saga.cpi.job.Job) :
                     self._state = saga.job.FAILED
                 else:
                     self._state = saga.job.DONE
-
         return self._state
 
     @SYNC
@@ -186,7 +185,6 @@ class LocalJob (saga.cpi.job.Job) :
     def run(self): 
         """ Implements saga.cpi.job.Job.run()
         """
-
         # lots of attribute checking and such 
         executable  = self._jd.executable
         arguments   = self._jd.arguments
@@ -265,10 +263,8 @@ class LocalJob (saga.cpi.job.Job) :
             jid = JobId()
             jid.native_id = self._pid
             jid.backend_url = 'fff'
-
             self._id = str(jid)
+
         except Exception, ex:
             raise saga.NoSuccess(str(ex))
-
-
 
