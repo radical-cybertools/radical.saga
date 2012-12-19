@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
@@ -7,8 +7,6 @@ __license__   = "MIT"
 
 """ Local job adaptor implementation 
 """
-
-import socket
 
 from saga.utils import Singleton
 
@@ -64,19 +62,14 @@ def register () :
 class LocalJobService (saga.cpi.job.Service) :
 
     def __init__ (self, api) :
-        """ Creates a new local job service.
-        """
         saga.cpi.Base.__init__ (self, api, _adaptor_name)
+        # print "local job service adaptor init"
+
 
     @SYNC
-    def init_instance (self, rm_url, session) :
-        """ Service instance constructor
-        """
-        print socket.gethostname()
-        if rm_url.host != 'localhost' and rm_url.host != socket.gethostname():
-            print 
-
-        self._rm      = rm_url
+    def init_instance (self, rm, session) :
+        # print "local job service adaptor init sync: %s"  %  rm 
+        self._rm      = rm
         self._session = session
         _SharedData().dict['services'][self._rm] = self
         #_adaptor_state.dump ()
@@ -84,6 +77,19 @@ class LocalJobService (saga.cpi.job.Service) :
         # for testing:
         # raise saga.exceptions.BadParameter ("Cannot handle rm %s"  %  rm)
 
+
+    @ASYNC
+    def init_instance_async (self, rm, session, ttype) :
+        # print "local job service adaptor init async: %s"  %  rm 
+        self._rm      = rm
+        self._session = session
+
+        # for testing:
+        # raise saga.exceptions.BadParameter ("Cannot handle rm %s"  %  rm)
+
+        # FIXME: we need to return a saga.task.Task instance here
+        t = saga.task.Task ()
+        return t
 
 
     @SYNC

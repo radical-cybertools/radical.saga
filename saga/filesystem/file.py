@@ -2,10 +2,11 @@
 
 from   saga.engine.logger import getLogger
 from   saga.engine.engine import getEngine, ANY_ADAPTOR
+from   saga.task          import SYNC, ASYNC, TASK
+from   saga.url           import Url
 
 import saga.exceptions
 import saga.attributes
-import saga.task
 
 from saga.filesystem import *
 

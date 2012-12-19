@@ -44,7 +44,7 @@ class Service (object) :
         rm_url = Url (rm)
 
         engine = getEngine ()
-        logger = getLogger ('saga.job.Service.create')
+        logger = getLogger ('saga.job.Service')
         logger.debug ("saga.job.Service.create(%s, %s, %s)"  \
                    % (str(rm_url), str(session), str(ttype)))
     
