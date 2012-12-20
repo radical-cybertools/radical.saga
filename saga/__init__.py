@@ -29,12 +29,12 @@ except IOError:
     except OSError:
         pass
 
-from   saga.exceptions import *
-from   saga.attributes import *
-from   saga.context    import *
-from   saga.session    import *
-from   saga.task       import *
-from   saga.url        import *
+from   saga.exceptions     import *
+from   saga.attributes     import *
+from   saga.context        import *
+from   saga.session        import *
+from   saga.task           import *
+from   saga.url            import *
 
 import saga.cpi
 import saga.engine
