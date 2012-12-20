@@ -165,10 +165,18 @@ class LocalJobService (saga.cpi.job.Service) :
         return job
 
     @SYNC
-    def get_job (self, job_id):
+    def get_job (self, jobid):
         """ Implements saga.cpi.job.Serivce.get_url()
         """
-        return None
+        if jobid not in self._jobs.values():
+            message = "This Serivce instance doesn't know a Job with ID '%s'" % (jobid)
+            self._logger.error(message)
+            raise saga.BadParameter(message=message) 
+        else:
+            for (job_obj, job_id) in self._jobs.iteritems():
+                if job_id == jobid:
+                    return job_obj._api
+
 
 ###############################################################################
 #
