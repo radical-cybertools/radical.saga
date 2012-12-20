@@ -186,7 +186,11 @@ class LocalJobService (saga.cpi.job.Service) :
 
     def container_wait (self, result_queue, jobs, mode) :
         self._logger.debug("container wait: %s"  %  str(jobs))
-        raise saga.NoSuccess("Ole is lazy...");
+
+
+
+
+        result_queue.put(saga.NoSuccess("Ole is lazy..."))
 
 
     def container_cancel (self, result_queue, jobs) :
