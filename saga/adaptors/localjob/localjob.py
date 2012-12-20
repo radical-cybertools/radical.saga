@@ -142,9 +142,12 @@ class LocalJobService (saga.cpi.job.Service) :
                 raise saga.BadParameter('JobDescription.%s is not supported by this adaptor' % attribute)
         
         # create and return the new job
-        new_job = saga.job.Job._create_from_adaptor (jd, self._session, 
-                                                     self._rm.scheme, 
-                                                     _adaptor_name)
+        job_info = { 'job_service'     : self._api, 
+                     'job_description' : jd, 
+                     'session'         : self_session }
+        new_job  = saga.job.Job._create_from_adaptor (job_info,
+                                                      self._rm.scheme, 
+                                                      _adaptor_name)
         self._jobs.append(new_job)
         return new_job
 
@@ -160,7 +163,7 @@ class LocalJob (saga.cpi.job.Job) :
         saga.cpi.Base.__init__ (self, api, _adaptor_name)
 
     @SYNC
-    def init_instance (self, job_description, service, session):
+    def init_instance (self, info, session):
         """ Implements saga.cpi.job.Job.init_instance()
         """
         self._session    = session

@@ -14,7 +14,7 @@ import saga.task
 # class Job (Object, Async, Attributes, Permissions) :
 class Job (saga.attributes.Attributes, saga.task.Async) :
     
-    def __init__(self, _adaptor=None) :
+    def __init__(self, _adaptor=None, ) :
 
         if not self._created_from_adaptor :
             raise saga.exceptions.IncorrectState ("saga.job.Job constructor is private")
@@ -67,7 +67,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
     
     
     @classmethod
-    def _create_from_adaptor (self, job_description, session, schema, adaptor_name) :
+    def _create_from_adaptor (self, info, schema, adaptor_name) :
         '''
         session:      saga.Session
         schema:       String
@@ -84,7 +84,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         # init_instance_sync(), resulting in 
         # FIXME: self is not an instance here, but the class object...
         adaptor = engine.get_adaptor (self, 'saga.job.Job', schema, None, 
-                                      adaptor_name, job_description, session)
+                                      adaptor_name, info)
     
         self._created_from_adaptor = True
         return self (_adaptor=adaptor)
