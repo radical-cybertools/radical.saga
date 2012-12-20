@@ -331,7 +331,7 @@ class Container (saga.attributes.Attributes) :
                     # put it into the fallback list
                     buckets['tasks'].append (t)
 
-        pprint.pprint (buckets)
+        # pprint.pprint (buckets)
 
         return buckets
 
