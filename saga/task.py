@@ -16,8 +16,7 @@ import Queue
 import saga.exceptions
 import saga.attributes
 
-import saga.utils.threads as su_threads
-
+from   saga.utils.threads import Thread
 from   saga.engine.logger import getLogger
 
 
@@ -189,20 +188,12 @@ class Container (saga.attributes.Attributes) :
         for container in buckets['containers'] :
 
             tasks  = buckets['containers'][container]
-            queue  = Queue.Queue ()
-            thread = su_threads.wrap (container.container_run, (queue, tasks))
-
-            threads.append (thread)
-            queues[thread] = queue
+            threads.append (Thread (container.container_run, tasks))
 
 
         for task in buckets['tasks'] :
 
-            queue  = Queue.Queue ()
-            thread = su_threads.wrap (task.run, (queue, timeout))
-
-            threads.append (thread)
-            queues[thread] = queue
+            threads.append (Thread (task.run, timeout))
             
 
         # wait for all threads to finish
@@ -232,20 +223,12 @@ class Container (saga.attributes.Attributes) :
         for container in buckets['containers'] :
 
             tasks  = buckets['containers'][container]
-            queue  = Queue.Queue ()
-            thread = su_threads.wrap (container.container_wait, (queue, tasks, mode))
-
-            threads.append (thread)
-            queues[thread] = queue
+            threads.append (Thread (container.container_wait, tasks, mode))
 
         
         for task in buckets['tasks'] :
 
-            queue  = Queue.Queue ()
-            thread = su_threads.wrap (task.wait, (queue, timeout))
-
-            threads.append (thread)
-            queues[thread] = queue
+            threads.append (Thread (task.wait, timeout))
             
 
         if mode == ALL :
@@ -272,8 +255,7 @@ class Container (saga.attributes.Attributes) :
                 if not thread.isAlive :
                     # thread indeed finished -- dig return value from this
                     # threads queue
-                    queue  = queues[thread]
-                    result = queue.get ()
+                    result = thread.get_result ()
 
                     # ignore other threads, and simply declare success
                     return result
@@ -344,20 +326,12 @@ class Container (saga.attributes.Attributes) :
         for container in buckets['containers'] :
 
             tasks  = buckets['containers'][container]
-            queue  = Queue.Queue ()
-            thread = su_threads.wrap (container.container_get_states, (queue, tasks))
-
-            threads.append (thread)
-            queues[thread] = queue
+            threads.append (su_threads.Thread (container.container_get_states, tasks))
 
 
         for task in buckets['tasks'] :
 
-            queue  = Queue.Queue ()
-            thread = su_threads.wrap (task.get_states, (queue, timeout))
-
-            threads.append (thread)
-            queues[thread] = queue
+            threads.append (su_threads.Thread (task.get_states, timeout))
             
 
         # wait for all threads to finish
