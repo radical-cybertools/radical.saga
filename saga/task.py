@@ -224,7 +224,7 @@ class Container (saga.attributes.Attributes) :
 
             # easy - just wait for all threads to finish
             for thread in threads :
-                thread.wait ()
+                thread.join ()
 
             # all done - return first task (i.e. random task)
             return self.tasks[0]
