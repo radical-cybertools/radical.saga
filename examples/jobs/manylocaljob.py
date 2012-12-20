@@ -13,7 +13,7 @@ import sys, saga
 
 def main():
 
-    num_services = 1
+    num_services = 2
     num_jobs     = 10
     job_runtime  = 10 # seconds
     

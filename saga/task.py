@@ -8,11 +8,17 @@ __license__   = "MIT"
 """ SAGA task interface
 """
 
+import pprint
 import time
 import traceback
+import Queue
 
 import saga.exceptions
 import saga.attributes
+
+import saga.utils.threads as su_threads
+
+from   saga.engine.logger import getLogger
 
 
 SYNC     = 'Sync'
@@ -148,6 +154,10 @@ class Container (saga.attributes.Attributes) :
 
         self._attributes_set_enums  (STATES,  [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED])
 
+        # cache for created container instances
+        self._containers = {}
+
+        self._logger = getLogger ('saga.task.Container')
 
 
     def add (self, t) :
@@ -172,12 +182,75 @@ class Container (saga.attributes.Attributes) :
 
 
     
-    def wait (self, mode=ALL) :
+    def wait (self, mode=ALL, timeout=-1) :
 
-        # this needs to do bulk ops!
-        # FIXME: resepct mode = ALL, ANY
-        for t in self.tasks :
-            t.wait ()
+        if not mode in [ANY, ALL] :
+            raise saga.exceptions.BadParameter \
+                    ("wait mode must be saga.task.ANY or saga.task.ALL")
+
+        if type (timeout) not in [int, long, float] : 
+            raise saga.exceptions.BadParameter \
+                    ("wait timeout must be a floating point number (or integer)")
+
+        if not len (self.tasks) :
+            # nothing to do
+            return None
+
+
+        buckets = self._get_buckets ()
+        threads = []  # threads running container ops
+        queues  = {}
+
+        for container in buckets['containers'] :
+
+            tasks  = buckets['containers'][container]
+            queue  = Queue.Queue ()
+            thread = su_threads.wrap (container.container_wait, (queue, tasks, mode))
+
+            threads.append (thread)
+            queues[thread] = queue
+
+        
+        for task in buckets['tasks'] :
+
+            queue  = Queue.Queue ()
+            thread = su_threads.wrap (task.wait, (queue, timeout))
+
+            threads.append (thread)
+            queues[thread] = queue
+            
+
+        if mode == ALL :
+
+            # easy - just wait for all threads to finish
+            for thread in threads :
+                tread.wait ()
+
+            # all done - return first task (i.e. random task)
+            return self.tasks[0]
+
+        else :
+
+            # mode == ANY: we need to watch our threads, and whenever one
+            # returns, and declare success.  Note that we still need to get the
+            # finished task from the 'winner'-thread -- we do that via a Queue
+            # object.  Note also that looser threads are not canceled, but left
+            # running (FIXME: consider sending a signal at least)
+            timeout = 0.01 # seconds
+            done    = False
+
+            for thread in threads :
+                thread.join (timeout)
+                if not thread.isAlive :
+                    # thread indeed finished -- dig return value from this
+                    # threads queue
+                    queue  = queues[thread]
+                    result = queue.get ()
+
+                    # ignore other threads, and simply declare success
+                    return result
+
+
 
 
 
@@ -203,4 +276,62 @@ class Container (saga.attributes.Attributes) :
             states.append (t.state)
 
         return states
+
+
+    def _get_buckets (self) :
+        # collective container ops: walk through the task list, and sort into
+        # buckets of tasks which have (a) the same task._container, or if that
+        # is not set, the same class type (for which one container instance is
+        # created).  All tasks were neither is available are handled one-by-one
+
+        buckets = {}
+        buckets['tasks']      = {} # no container adaptor for these [tasks]
+        buckets['containers'] = {} # dict  of container adaptors : [tasks]
+
+        for t in self.tasks :
+
+            if hasattr (t._adaptor, '_container') and t._adaptor._container :
+                # the task's adaptor has a associated container class which can
+                # handle the container ops - great!
+                c = t._adaptor._container
+                if not c in buckets['containers'] :
+                    buckets['containers'][c] = []
+                buckets['containers'][c].append (t)
+
+            else :
+
+                # we do not have a container -- so we use the class information
+                # to create a new instance of the task, and assume that this can
+                # act as container class.  We cache that instance for future
+                # uses.  Note that this will call the adaptor ctor, but will
+                # *not* initialize the adaptor -- the bulk ops need to make sure
+                # to get the respective state from the task objects on their
+                # own...
+                c  = None
+                cc = t._adaptor.__class__ 
+
+                if cc in self._containers :
+                    # we created a container class instance in the past, and can
+                    # reuse it.
+                    c = self._containers[cc]
+                else :
+                    try :
+                        c = cc ()
+                    except Exception as e :
+                        self._logger.warn ("Cannot create container class: %s" %  str(e))
+                        
+                if c :
+                    # we got a container, use it just as above
+                    if not c in buckets['container_classes'] :
+                        buckets['container_classes'][c] = []
+                    buckets['container_classes'][c].append (t)
+
+                else :
+                    # we ultimately have no container to handle this task -- so
+                    # put it into the fallback list
+                    buckets['tasks'].append (t)
+
+        pprint.pprint (buckets)
+
+        return buckets
 
