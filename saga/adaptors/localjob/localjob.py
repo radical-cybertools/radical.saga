@@ -144,7 +144,7 @@ class LocalJobService (saga.cpi.job.Service) :
         # create and return the new job
         job_info = { 'job_service'     : self._api, 
                      'job_description' : jd, 
-                     'session'         : self_session }
+                     'session'         : self_ssession }
         new_job  = saga.job.Job._create_from_adaptor (job_info,
                                                       self._rm.scheme, 
                                                       _adaptor_name)

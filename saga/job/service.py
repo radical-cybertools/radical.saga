@@ -1,7 +1,13 @@
+# -*- coding: utf-8 -*-
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
-# from saga.Url    import Url
-# from saga.Object import Object 
-# from saga.Task   import Async
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012, The SAGA Project"
+__license__   = "MIT"
+
+""" SAGA job service interface
+"""
+
 
 from saga.engine.logger import getLogger
 from saga.engine.engine import getEngine, ANY_ADAPTOR
@@ -13,7 +19,10 @@ from saga.url           import Url
 
 # class Service (Object, Async) :
 class Service (object) :
+    """ The job_service represents a resource management backend, and as 
+        such allows the creation, submision and management of jobs.
 
+    """
     def __init__ (self, rm=None, session=None) : 
         '''
         rm:        saga.Url
@@ -34,12 +43,13 @@ class Service (object) :
 
     @classmethod
     def create (self, rm=None, session=None, ttype=None) :
-        '''
+        """ Create a new job intance asynchronously.
+
         rm:        saga.Url
         session:   saga.Session
         ttype:     saga.task.type enum
         ret:       saga.Task
-        '''
+        """
     
         rm_url = Url (rm)
 
