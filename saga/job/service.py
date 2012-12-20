@@ -9,11 +9,12 @@ __license__   = "MIT"
 """
 
 
-from saga.engine.logger import getLogger
-from saga.engine.engine import getEngine, ANY_ADAPTOR
-from saga.task          import SYNC, ASYNC, TASK
-from saga.url           import Url
+from saga.engine.logger   import getLogger
+from saga.engine.engine   import getEngine, ANY_ADAPTOR
+from saga.task            import SYNC, ASYNC, TASK
+from saga.url             import Url
 
+from saga.job.description import Description
 
 
 
@@ -79,7 +80,8 @@ class Service (object) :
             :param ttype: |param_ttype|
             :rtype:       :class:`saga.job.Job` or |rtype_ttype|
         """
-        jd_copy = jd._attributes_deep_copy ()
+        jd_copy = Description()
+        job_desc._attributes_deep_copy (jd_copy)
 
         return self._adaptor.create_job (jd_copy, ttype=ttype)
 

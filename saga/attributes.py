@@ -1516,6 +1516,7 @@ class Attributes (_AttributesBase) :
             other_d['_attributes'][key]['flavor']       =       d['_attributes'][key]['flavor']    
             other_d['_attributes'][key]['mode']         =       d['_attributes'][key]['mode']      
             other_d['_attributes'][key]['extended']     =       d['_attributes'][key]['extended']  
+            other_d['_attributes'][key]['private']      =       d['_attributes'][key]['private']  
             other_d['_attributes'][key]['camelcase']    =       d['_attributes'][key]['camelcase'] 
             other_d['_attributes'][key]['underscore']   =       d['_attributes'][key]['underscore']
             other_d['_attributes'][key]['enums']        = list (d['_attributes'][key]['enums'])
