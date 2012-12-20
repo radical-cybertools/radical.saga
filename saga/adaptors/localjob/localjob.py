@@ -10,9 +10,10 @@ __license__   = "MIT"
 
 import os, time, socket, signal, subprocess
 
-from saga.utils.singleton import Singleton
-from saga.utils.job.jobid import JobId
-from saga.utils.which import which
+from   saga.utils.singleton import Singleton
+from   saga.engine.engine   import getEngine, ANY_ADAPTOR
+from   saga.utils.job.jobid import JobId
+from   saga.utils.which     import which
 
 import saga.cpi.base
 import saga.cpi.job
@@ -188,14 +189,19 @@ class LocalJobService (saga.cpi.job.Service) :
                 raise saga.BadParameter('JobDescription.%s is not supported by this adaptor' % attribute)
         
         # create and return the new job
-        job_info = { 'job_service'     : self, 
-                     'job_description' : jd, 
-                     'session'         : self._session,
-                     'container'       : self }
+        engine       = getEngine ()
+        cpi_instance = engine.get_adaptor (self, 'saga.job.Job', self._rm.scheme, 
+                                           None, _adaptor_name)
 
-        job  = saga.job.Job._create_from_adaptor(job_info,
-                                                 self._rm.scheme, 
-                                                 _adaptor_name)
+        cpi_instance._session        = self._session
+        cpi_instance._jd             = jd
+        cpi_instance._parent_service = self
+        cpi_instance._container      = self
+
+        cpi_instance.init_instance ()
+
+        job = saga.job.Job (_cpi_instance=cpi_instance)
+
         return job
 
     @SYNC
@@ -248,17 +254,9 @@ class LocalJob (saga.cpi.job.Job) :
         saga.cpi.Base.__init__ (self, api, adaptor, 'LocalJob')
 
     @SYNC
-    def init_instance (self, job_info):
+    def init_instance (self):
         """ Implements saga.cpi.job.Job.init_instance()
         """
-        self._session        = job_info['session']
-        self._jd             = job_info['job_description']
-        self._parent_service = job_info['job_service'] 
-
-        if 'container' in job_info :
-            self._container = job_info['container']
-        else :
-            self._container = None
 
         self._id         = None
         self._state      = saga.job.NEW
@@ -269,7 +267,7 @@ class LocalJob (saga.cpi.job.Job) :
 
         # register ourselves with the parent service
         # our job id is still None at this point
-        self._parent_service._update_jobid(self, None)
+        self._parent_service._update_jobid (self, None)
 
 
     @SYNC

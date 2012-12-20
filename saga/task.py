@@ -193,7 +193,7 @@ class Container (saga.attributes.Attributes) :
 
         for task in buckets['tasks'] :
 
-            threads.append (Thread (task.run, timeout))
+            threads.append (Thread (task.run))
             
 
         # wait for all threads to finish
@@ -366,7 +366,7 @@ class Container (saga.attributes.Attributes) :
         # created).  All tasks were neither is available are handled one-by-one
 
         buckets = {}
-        buckets['tasks']      = {} # no container adaptor for these [tasks]
+        buckets['tasks']      = [] # no container adaptor for these [tasks]
         buckets['containers'] = {} # dict  of container adaptors : [tasks]
 
         for t in self.tasks :
