@@ -13,7 +13,6 @@ from saga.engine.logger   import getLogger
 from saga.engine.engine   import getEngine, ANY_ADAPTOR
 from saga.task            import SYNC, ASYNC, TASK
 from saga.url             import Url
-
 from saga.job.description import Description
 
 

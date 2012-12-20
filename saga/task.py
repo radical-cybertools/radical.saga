@@ -190,7 +190,7 @@ class Container (saga.attributes.Attributes) :
 
             tasks  = buckets['containers'][container]
             queue  = Queue.Queue ()
-            thread = su_threads.wrap (container.container_run, (queue, tasks, mode))
+            thread = su_threads.wrap (container.container_run, (queue, tasks))
 
             threads.append (thread)
             queues[thread] = queue
@@ -295,7 +295,7 @@ class Container (saga.attributes.Attributes) :
 
             tasks  = buckets['containers'][container]
             queue  = Queue.Queue ()
-            thread = su_threads.wrap (container.container_cancel, (queue, tasks, mode))
+            thread = su_threads.wrap (container.container_cancel, (queue, tasks))
 
             threads.append (thread)
             queues[thread] = queue
@@ -330,14 +330,50 @@ class Container (saga.attributes.Attributes) :
 
     def get_states (self) :
 
-        # this needs to do bulk ops!
+
+        if not len (self.tasks) :
+            # nothing to do
+            return None
+
+
+        buckets = self._get_buckets ()
+        threads = []  # threads running container ops
+        queues  = {}
+
+
+        for container in buckets['containers'] :
+
+            tasks  = buckets['containers'][container]
+            queue  = Queue.Queue ()
+            thread = su_threads.wrap (container.container_get_states, (queue, tasks))
+
+            threads.append (thread)
+            queues[thread] = queue
+
+
+        for task in buckets['tasks'] :
+
+            queue  = Queue.Queue ()
+            thread = su_threads.wrap (task.get_states, (queue, timeout))
+
+            threads.append (thread)
+            queues[thread] = queue
+            
+
+        # wait for all threads to finish
+        for thread in threads :
+            thread.join ()
+
 
         states = []
-
-        for t in self.tasks :
-            states.append (t.state)
+        for queue in queues :
+            result = queue.get ()
+            
+            # FIXME: check if this was an exception
+            states.append (result)
 
         return states
+
 
 
     def _get_buckets (self) :
