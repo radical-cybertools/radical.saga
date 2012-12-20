@@ -58,6 +58,7 @@ SAGA defines the following constants as valid job description attributes:
 .. autodata:: CANDIDATE_HOSTS
 .. autodata:: JOB_CONTACT
 
+.. _job_job:
 
 Jobs -- :class:`saga.job.Job`
 -----------------------------
@@ -114,6 +115,19 @@ SAGA defines the following constants as job states:
 .. autodata:: CANCELED
 .. autodata:: FAILED
 .. autodata:: SUSPENDED
+
+.. _job_job:
+
+Job Containers -- :class:`saga.job.Container`
+--------------------------------------------
+
+:todo: Describe how to work with job containers.
+
+.. autoclass:: saga.job.Container
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 .. _job_metrics:
 
