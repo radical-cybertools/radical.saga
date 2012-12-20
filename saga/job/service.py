@@ -79,7 +79,9 @@ class Service (object) :
             :param ttype: |param_ttype|
             :rtype:       :class:`saga.job.Job` or |rtype_ttype|
         """
-        return self._adaptor.create_job (job_desc, ttype=ttype)
+        jd_copy = jd._attributes_deep_copy ()
+
+        return self._adaptor.create_job (jd_copy, ttype=ttype)
 
 
     def run_job (self, cmd, host="", ttype=None) :
