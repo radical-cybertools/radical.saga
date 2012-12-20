@@ -79,13 +79,13 @@ class Service (object) :
             :param ttype: |param_ttype|
             :rtype:       :class:`saga.job.Job` or |rtype_ttype|
         """
-        return self._adaptor.create_job (jd, ttype=ttype)
+        return self._adaptor.create_job (job_desc, ttype=ttype)
 
 
     def run_job (self, cmd, host="", ttype=None) :
         '''
         ** NOT IMPLEMENTED**
-        
+
         cmd:       string
         host:      string
         ttype:     saga.task.type enum
