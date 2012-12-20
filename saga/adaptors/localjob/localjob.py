@@ -32,7 +32,7 @@ ASYNC = saga.cpi.base.async
 # - supported metrics
 # - supported contexts
 
-_adaptor_name           = 'saga.adaptor.LocalJob'
+_adaptor_name           = 'saga.adaptor.localjob'
 
 _adaptor_options = [
     { 
@@ -92,8 +92,8 @@ _adaptor_info   = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.cpi.base.AdaptorBase) :
-    ''' 
+class Adaptor (saga.cpi.base.AdaptorBase):
+    """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
@@ -101,7 +101,7 @@ class Adaptor (saga.cpi.base.AdaptorBase) :
     We only need one instance of this adaptor per process (actually per engine,
     but engine is a singleton, too...) -- the engine will though create new CPI
     implementation instances as needed (one per SAGA API object).
-    '''
+    """
 
     __metaclass__ = Singleton
 

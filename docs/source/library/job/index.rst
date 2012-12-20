@@ -1,7 +1,39 @@
 Job Management
 **************
 
-.. todo:: Intro to SAGA job package, etc., including a comprehensive example.
+SAGA's job management module is central to the API. It
+represents an application/executable running under the management of a resource 
+manager. A resrouce manager can be anything from the local machine to a remote
+HPC queing system to grid and cloud computing services.
+
+The basic usage of the job module is as follows::
+
+  # A job.Description object describes the executable/application and its requirements 
+  job_desc = saga.job.Description()
+  job_desc.executable  = '/bin/sleep'
+  job_desc.arguments   = ['10']
+  job_desc.output      = 'myjob.out'
+  job_desc.error       = 'myjob.err'
+
+  # A job.Service object represents the resource manager. In this example we use the 'local' adaptor to represent the local machine
+  service = saga.job.Service('local://localhost')
+
+  # A job is created on a service (resource manager) using the job description
+  job = service.create_job(job_desc)
+  
+
+
+Like all SAGA modules, the job module relies on  middleware adaptors 
+to provide bindings to a specific resource manager. Adaptors are implicitly 
+selected via the `scheme` part of the URL, e.g., ``local://`` in the example 
+above selects the `local` job adaptor. The :ref:`job_serivce` explains this 
+in detail.
+
+.. contents:: Table of Contents
+   :local:
+
+.. #############################################################################
+.. _job_service:
 
 Job Service -- :class:`saga.job.Service`
 ----------------------------------------
@@ -23,7 +55,6 @@ Job Description -- :class:`saga.job.Description`
              exception. Please refer to the :ref:`middleware_adaptors` 
              documentation for more details and adaptor-specific lists of 
              supported attributes.
-
 
 .. autoclass:: saga.job.Description
    :members:
@@ -72,8 +103,8 @@ Jobs -- :class:`saga.job.Job`
 
 .. _job_attributes:
 
-Job Attributes 
-^^^^^^^^^^^^^^
+Attributes 
+^^^^^^^^^^
 
 :todo: Explain how to use job attributes
 
@@ -87,8 +118,8 @@ Job Attributes
 
 .. _job_states:
 
-Job States
-^^^^^^^^^^
+States
+^^^^^^
 
 The job state constants defined describe the possible
 states a job can be in. The constants can be used to check / compare the state 
@@ -116,23 +147,11 @@ SAGA defines the following constants as job states:
 .. autodata:: FAILED
 .. autodata:: SUSPENDED
 
-.. _job_job:
-
-Job Containers -- :class:`saga.job.Container`
---------------------------------------------
-
-:todo: Describe how to work with job containers.
-
-.. autoclass:: saga.job.Container
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 
 .. _job_metrics:
 
-Job Metrics
------------
+Metrics
+^^^^^^^
 
 Job metrics provide a way to attach callback functions to a job object. The
 registered callback functions are triggered whenever a job metric changes.
@@ -167,3 +186,26 @@ SAGA defines the following constants as job metrics:
 .. currentmodule:: saga.job
 .. autodata:: STATE
 .. autodata:: STATE_DETAIL
+
+.. #############################################################################
+.. _job_container:
+
+Job Containers -- :class:`saga.job.Container`
+---------------------------------------------
+
+:todo: Describe how to work with job containers.
+
+.. autoclass:: saga.job.Container
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+
+
+.. _examples:
+
+Examples
+--------
+
+:todo: example scripts with download (link to example dir)
