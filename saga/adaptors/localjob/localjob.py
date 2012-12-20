@@ -32,10 +32,9 @@ ASYNC = saga.cpi.base.async
 # - supported metrics
 # - supported contexts
 
-# the adaptor name
-_adaptor_name   = 'saga.adaptor.LocalJob'
+_adaptor_name           = 'saga.adaptor.LocalJob'
 
-_adaptor_config_options = [
+_adaptor_options = [
     { 
     'category'      : _adaptor_name,
     'name'          : 'foo', 
@@ -47,7 +46,7 @@ _adaptor_config_options = [
     }
 ]
 
-_adaptor_capabilities = {
+_adaptor_capabilities   = {
     'jd_attributes' : [saga.job.EXECUTABLE,
                        saga.job.ARGUMENTS,
                        saga.job.ENVIRONMENT,
@@ -61,87 +60,80 @@ _adaptor_capabilities = {
     'contexts'      : {}  # {context type : how it is used}
 }
 
-_adaptor_doc = {
+_adaptor_doc    = {
     'name'          : _adaptor_name,
     'description'   : """ The local job adaptor. This adaptor uses subprocesses to run jobs on the local machine
                       """,
     'details'       : """ A more elaborate description....
                       """,
     'schemas'       : {'fork':'desc', 'local':'same as fork'},
-    'cfg_options'   : _adaptor_config_options,
+    'cfg_options'   : _adaptor_options,
     'capabilites'   : _adaptor_capabilities,
 
-                }
+                  }
 
-
-_adaptor_info   = [{ 'name'    : _adaptor_name,
-                     'type'    : 'saga.job.Service',
-                     'class'   : 'LocalJobService',
-                     'schemas' : ['fork', 'local']
-                   }, 
-                   { 'name'    : _adaptor_name,
-                     'type'    : 'saga.job.Job',
-                     'class'   : 'LocalJob',
-                     'schemas' : ['fork', 'local']
-                   }]
-
-
-###############################################################################
-#
-def register () :
-    """ Adaptor registration function. The engine calls this during startup. 
-
-        We usually do sanity checks here and throw and exception if we think
-        the adaptor won't work in a given context. In that case, the engine
-        won't add it to it's internal list of adaptors. If everything is ok,
-        we return the adaptor info.
-    """
-
-    # perform some sanity checks, like check if dependencies are met
-    return _adaptor_info
+_adaptor_info   = {
+    'name'          : _adaptor_name,
+    'cpis'          : [
+        { 
+        'type'      : 'saga.job.Service',
+        'class'     : 'LocalJobService',
+        'schemas'   : ['fork', 'local']
+        }, 
+        { 
+        'type'      : 'saga.job.Job',
+        'class'     : 'LocalJob',
+        'schemas'   : ['fork', 'local']
+        }
+    ]
+}
 
 
 ###############################################################################
-#
-class _SharedData(object) :
-    """ This class is shared between all adaptor instances. 
-        We use it to share information and data.
-    """
+# The adaptor class
+
+class Adaptor (saga.cpi.base.AdaptorBase) :
+    ''' 
+    This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
+    SAGA engine), and which registers the CPI implementation classes which
+    provide the adaptor's functionality.
+
+    We only need one instance of this adaptor per process (actually per engine,
+    but engine is a singleton, too...) -- the engine will though create new CPI
+    implementation instances as needed (one per SAGA API object).
+    '''
+
     __metaclass__ = Singleton
 
+
     def __init__ (self) :
-        self._services = dict()
 
-    def add_service_instance(self, service_obj):
-        """ Adds a new service object to the list of known
-            services.
-        """
-        self._services[service_obj] = {'url':str(service_obj.get_url()), 
-                                       'known_jobs':{'1':'<obj>'}}
+        saga.cpi.base.AdaptorBase.__init__ (self, _adaptor_name, _adaptor_options)
 
-    def get_known_job_ids(self, service_obj):
-        """ Returns a list of job ids that are known
-            by a particular serivce.
-        """
-        job_ids = list()
-        for (serviceobj, data) in self._services.iteritems():
-            for (jobid, jobobj) in data['known_jobs'].iteritems():
-                job_ids.append(jobid)
 
-    def _dump(self):
-        """ Dumps the content of _SharedData to stdout. This can
-            be useful for debugging.
+    def register (self) :
+        """ Adaptor registration function. The engine calls this during startup. 
+    
+            We usually do sanity checks here and throw and exception if we think
+            the adaptor won't work in a given environment. In that case, the
+            engine won't add it to it's internal list of adaptors. If everything
+            is ok, we return the adaptor info.
         """
+    
+        return _adaptor_info
+
 
 ###############################################################################
 #
 class LocalJobService (saga.cpi.job.Service) :
-    """ Implements saga.cpi.job.Serivce
+    """ Implements saga.cpi.job.Service
     """
-    def __init__ (self, api) :
-        """ Implements saga.cpi.job.Serivce.__init__
+    def __init__ (self, api, adaptor) :
+
+        """ Implements saga.cpi.job.Service.__init__
         """
-        saga.cpi.Base.__init__ (self, api, _adaptor_name)
+        saga.cpi.Base.__init__ (self, api, adaptor, 'LocalJobService')
+
 
     @SYNC
     def init_instance (self, rm_url, session) :
@@ -160,10 +152,6 @@ class LocalJobService (saga.cpi.job.Service) :
         # holds the jobs that were started via this instance
         self._jobs = dict() # {job_obj:id, ...}
 
-        # add this service to the list of known services which is 
-        # accessible from all local service/job instances. 
-        # entries are in the form: fork://localhost -> instance 
-        _SharedData().add_service_instance(self)
 
     def _update_jobid(self, job_obj, job_id):
         """ Update the job id for a job object registered 
@@ -176,13 +164,13 @@ class LocalJobService (saga.cpi.job.Service) :
 
     @SYNC
     def get_url (self) :
-        """ Implements saga.cpi.job.Serivce.get_url()
+        """ Implements saga.cpi.job.Service.get_url()
         """
         return self._rm
 
     @SYNC
     def list(self):
-        """ Implements saga.cpi.job.Serivce.list()
+        """ Implements saga.cpi.job.Service.list()
         """
         jobids = list()
         for (job_obj, job_id) in self._jobs.iteritems():
@@ -192,7 +180,7 @@ class LocalJobService (saga.cpi.job.Service) :
 
     @SYNC
     def create_job (self, jd) :
-        """ Implements saga.cpi.job.Serivce.get_url()
+        """ Implements saga.cpi.job.Service.get_url()
         """
         # check that only supported attributes are provided
         for attribute in jd.list_attributes():
@@ -254,10 +242,10 @@ class LocalJobService (saga.cpi.job.Service) :
 class LocalJob (saga.cpi.job.Job) :
     """ Implements saga.cpi.job.Job
     """
-    def __init__ (self, api) :
+    def __init__ (self, api, adaptor) :
         """ Implements saga.cpi.job.Job.__init__()
         """
-        saga.cpi.Base.__init__ (self, api, _adaptor_name)
+        saga.cpi.Base.__init__ (self, api, adaptor, 'LocalJob')
 
     @SYNC
     def init_instance (self, job_info):

@@ -32,7 +32,7 @@ def test_emtpy_registry():
     """ Test that an empty adaptor registry is handled properly
     """
     Engine()._load_adaptors([])
-    assert Engine().loaded_adaptors() == {}
+    assert Engine().loaded_cpis() == {}
 
 def test_broken_registry():
     """ Test that an attemt to load from a broken registry 
@@ -48,7 +48,7 @@ def test_load_nonexistent_adaptor():
     """ Test that an attempt to load a non-existent adaptor is handled properly
     """
     Engine()._load_adaptors(["nonexsitent"])
-    assert len(Engine().loaded_adaptors()) == 0
+    assert len(Engine().loaded_cpis()) == 0
 
 def test_load_adaptor():
     """ Test that an attempt to load an adaptor is handled properly
@@ -60,10 +60,10 @@ def test_load_adaptor():
 
     Engine()._load_adaptors(["mockadaptor_enabled"])
     # make sure the adapor is in the list
-    assert len(Engine().loaded_adaptors()['saga.job.Job']['mock']) == 1
+    assert len(Engine().loaded_cpis()['saga.job.Job']['mock']) == 1
 
     # make sure the configuration gets passed through
-    assert Engine().loaded_adaptors()['saga.job.Job']['mock'][0](None).get_config()["foo"].as_dict() == {'foo': 'bar'}
+    assert Engine().loaded_cpis()['saga.job.Job']['mock'][0](None).get_config()["foo"].as_dict() == {'foo': 'bar'}
 
     # restore sys.path
     sys.path = old_sys_path
@@ -78,10 +78,10 @@ def test_load_adaptor_twice():
     sys.path.append(path)
 
     Engine()._load_adaptors(["mockadaptor_enabled", "mockadaptor_enabled"])
-    assert len(Engine().loaded_adaptors()['saga.job.Job']['mock']) == 1
+    assert len(Engine().loaded_cpis()['saga.job.Job']['mock']) == 1
 
     # make sure the configuration gets passed through
-    assert Engine().loaded_adaptors()['saga.job.Job']['mock'][0](None).get_config()["foo"].as_dict() == {'foo': 'bar'}
+    assert Engine().loaded_cpis()['saga.job.Job']['mock'][0](None).get_config()["foo"].as_dict() == {'foo': 'bar'}
 
     # restore sys.path
     sys.path = old_sys_path
@@ -95,7 +95,7 @@ def test_load_broken_adaptor():
     sys.path.append(path)
 
     Engine()._load_adaptors(["mockadaptor_broken"])
-    assert len(Engine().loaded_adaptors()) == 0
+    assert len(Engine().loaded_cpis()) == 0
 
     # restore sys.path
     sys.path = old_sys_path

@@ -8,10 +8,10 @@ __license__   = "MIT"
 """ List of all registered SAGA adaptors. 
 """
 
-adaptor_registry = ["saga.adaptors.localjob.localjob", 
-                    "saga.adaptors.context.myproxy",
-                    "saga.adaptors.context.x509",
-                    "saga.adaptors.context.userpass",
-                    "saga.adaptors.saga_adaptor_filesystem_local"
-                    ]
+adaptor_registry = ["saga.adaptors.localjob.localjob", ]
+#                   "saga.adaptors.context.myproxy",
+#                   "saga.adaptors.context.x509",
+#                   "saga.adaptors.context.userpass",
+#                   "saga.adaptors.saga_adaptor_filesystem_local"
+#                   ]
 

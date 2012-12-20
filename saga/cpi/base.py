@@ -9,29 +9,47 @@ __license__   = "MIT"
 
 import saga.engine.logger as saga_logger
 import saga.engine.config as saga_config
+
 import saga.exceptions
 import saga.task
+
+# ------------------------------------
+# adaptor base class
+#
+class AdaptorBase (saga_config.Configurable) :
+
+    def __init__ (self, adaptor_name, config_options={}) :
+
+        self._logger  = saga_logger.getLogger (adaptor_name)
+        self._name    = adaptor_name
+
+        saga_config.Configurable.__init__ (self, adaptor_name, config_options)
+
+
+    def get_name (self) :
+        return self._name
+
 
 # ------------------------------------
 # CPI base class
 #
 class Base (saga_config.Configurable) :
 
-    def __init__ (self, api, adaptor_name, config_options={}) :
+    def __init__ (self, api, adaptor, name) :
 
-        self._api          = api
-        self._adaptor_name = adaptor_name
-        self._logger       = saga_logger.getLogger (adaptor_name)
-
-        saga_config.Configurable.__init__ (self, adaptor_name, config_options)
-
-
-    def _get_name (self) :
-        return self._adaptor_name
+        self._api      = api
+        self._adaptor  = adaptor
+        self._name     = name
+        self._logger   = saga_logger.getLogger (name)
 
 
-    def _get_api (self) :
-        return self._api
+    def get_name (self) :
+        return self._name
+
+
+    def get_adaptor_name (self) :
+        return self._adaptor.get_name ()
+
 
 
 
