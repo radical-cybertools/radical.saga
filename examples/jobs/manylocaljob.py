@@ -37,7 +37,7 @@ def main():
                 job = service.create_job(jd)
                 job.run()
 
-        tc = saga.task.Container()
+        tc = saga.job.Container()
 
         for service in services:
             print "Serivce: %s" % service  
@@ -45,13 +45,14 @@ def main():
                 job = service.get_job(job_id)
                 tc.add(job)
                 print " * ID: %s State: %s RC: %s" % (job.id, job.state, job.exit_code)
+                job.cancel()
 
         tc.wait()
 
 
 
-        import time
-        time.sleep(11)
+        #import time
+        #time.sleep(11)
 
 
         for service in services:
@@ -59,6 +60,7 @@ def main():
             for job_id in service.list():
                 job = service.get_job(job_id)
                 print " * ID: %s State: %s RC: %s" % (job.id, job.state, job.exit_code)
+        
 
 
     except saga.SagaException, ex:

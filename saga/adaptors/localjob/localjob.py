@@ -8,7 +8,7 @@ __license__   = "MIT"
 """ Local job adaptor implementation 
 """
 
-import os, time, socket, subprocess
+import os, time, socket, signal, subprocess
 
 from saga.utils.singleton import Singleton
 from saga.utils.job.jobid import JobId
@@ -251,8 +251,13 @@ class LocalJob (saga.cpi.job.Job) :
         return self._returncode
 
     @SYNC
-    def cancel():
+    def cancel(self, timeout):
+        try:
             os.killpg(self._process.pid, signal.SIGTERM)
+            self._returncode = self._process.wait() # should return with the rc
+            self._state = saga.job.CANCELED
+        except OSError, ex:
+            raise saga.IncorrectState("Couldn't cancel job %s: %s" % (self._id, ex))
 
 
     @SYNC
