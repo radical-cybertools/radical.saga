@@ -205,7 +205,7 @@ class Container (saga.attributes.Attributes) :
 
             tasks  = buckets['containers'][container]
             queue  = Queue.Queue ()
-            thread = su_threads.wrap (container._container_wait, (queue, tasks, mode))
+            thread = su_threads.wrap (container.container_wait, (queue, tasks, mode))
 
             threads.append (thread)
             queues[thread] = queue
