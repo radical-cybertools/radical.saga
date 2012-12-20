@@ -176,12 +176,40 @@ class Container (saga.attributes.Attributes) :
 
     def run (self) :
 
-        # this needs to do bulk ops!
-        for t in self.tasks :
-            t.run ()
+        if not len (self.tasks) :
+            # nothing to do
+            return None
 
 
-    
+        buckets = self._get_buckets ()
+        threads = []  # threads running container ops
+        queues  = {}
+
+
+        for container in buckets['containers'] :
+
+            tasks  = buckets['containers'][container]
+            queue  = Queue.Queue ()
+            thread = su_threads.wrap (container.container_run, (queue, tasks, mode))
+
+            threads.append (thread)
+            queues[thread] = queue
+
+
+        for task in buckets['tasks'] :
+
+            queue  = Queue.Queue ()
+            thread = su_threads.wrap (task.run, (queue, timeout))
+
+            threads.append (thread)
+            queues[thread] = queue
+            
+
+        # wait for all threads to finish
+        for thread in threads :
+            thread.join ()
+
+
     def wait (self, mode=ALL, timeout=-1) :
 
         if not mode in [ANY, ALL] :
@@ -251,6 +279,42 @@ class Container (saga.attributes.Attributes) :
                     return result
 
 
+    def cancel (self) :
+
+        if not len (self.tasks) :
+            # nothing to do
+            return None
+
+
+        buckets = self._get_buckets ()
+        threads = []  # threads running container ops
+        queues  = {}
+
+
+        for container in buckets['containers'] :
+
+            tasks  = buckets['containers'][container]
+            queue  = Queue.Queue ()
+            thread = su_threads.wrap (container.container_cancel, (queue, tasks, mode))
+
+            threads.append (thread)
+            queues[thread] = queue
+
+
+        for task in buckets['tasks'] :
+
+            queue  = Queue.Queue ()
+            thread = su_threads.wrap (task.cancel, (queue, timeout))
+
+            threads.append (thread)
+            queues[thread] = queue
+            
+
+        # wait for all threads to finish
+        for thread in threads :
+            thread.join ()
+
+    
 
 
 
@@ -259,11 +323,9 @@ class Container (saga.attributes.Attributes) :
         return len(self.tasks)
 
 
-
     def get_tasks (self) :
 
         return self.tasks
-
 
 
     def get_states (self) :
