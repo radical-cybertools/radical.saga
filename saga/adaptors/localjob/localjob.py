@@ -224,9 +224,6 @@ class LocalJob (saga.cpi.job.Job) :
 
     @SYNC
     def wait(self, timeout):
-        if self.get_state() != saga.job.RUNNING:
-            raise SagaException('not in running state')
-
         if timeout == -1:
             self._returncode = self._process.wait()
         else:
@@ -252,6 +249,11 @@ class LocalJob (saga.cpi.job.Job) :
         """ Implements saga.cpi.job.Job.get_exit_code()
         """        
         return self._returncode
+
+    @SYNC
+    def cancel():
+            os.killpg(self._process.pid, signal.SIGTERM)
+
 
     @SYNC
     def run(self): 
@@ -328,7 +330,8 @@ class LocalJob (saga.cpi.job.Job) :
                                              stderr=self._job_error, 
                                              stdout=self._job_output, 
                                              env=environment,
-                                             cwd=cwd)
+                                             cwd=cwd,
+                                             preexec_fn=os.setsid)
             self._pid = self._process.pid
             self._state = saga.job.RUNNING
 
