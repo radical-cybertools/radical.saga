@@ -22,8 +22,8 @@ def main():
 
         # environment, executable & arguments
         jd.environment = {'CATME':'10'}       
-        jd.executable  = '/usr/bin/false'
-        #jd.arguments   = ['$CATME']
+        jd.executable  = '/bin/sleep'
+        jd.arguments   = ['$CATME']
         
         # output options (will be just empty files for /bin/sleep)
         jd.output = "saga_localjob.stdout"
@@ -41,6 +41,9 @@ def main():
         print "Job ID    : %s" % (catjob.job_id)
         print "Job State : %s" % (catjob.state)
 
+        print "\nListing jobs: "
+        print js.list()
+
         print "\n...waiting for job...\n"
 
         catjob.wait()
@@ -49,8 +52,9 @@ def main():
         print "Exitcode  : %s" % (catjob.exit_code)
 
     except saga.SagaException, ex:
-        print "An exception occured during job execution: %s (%s)" % ((str(ex)), ex.object )
-        print ex.traceback
+        print "An exception occured: %s " % ((str(ex)))
+        # get the whole traceback - this might be helpful
+        print " *** %s" % saga.utils.exception.get_traceback()
         sys.exit(-1)
 
 if __name__ == "__main__":
