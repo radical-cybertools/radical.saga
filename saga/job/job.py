@@ -19,9 +19,9 @@ import saga.task
 # class Job (Object, Async, Attributes, Permissions) :
 class Job (saga.attributes.Attributes, saga.task.Async) :
     
-    def __init__(self, _cpi_instance=None) :
+    def __init__(self, _adaptor_name="", _adaptor_schema="", _info={}) :
 
-        if not _cpi_instance :
+        if not _adaptor_name :
             raise saga.exceptions.IncorrectState ("saga.job.Job constructor is private")
     
         # set attribute interface properties
@@ -48,13 +48,17 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
 
         self._engine = getEngine ()
         self._logger = getLogger ('saga.job.Job')
-        self._logger.debug       ("saga.job.Job.__init__()")
+        self._logger.debug ("saga.job.Job.__init__()")
 
         # attempt to find a suitable adaptor, which will call 
         # init_instance_sync(), resulting in 
         # FIXME: self is not an instance here, but the class object...
+        engine  = getEngine ()
+        adaptor = engine.get_adaptor (self, 'saga.job.Job', _adaptor_schema, None, 
+                                      _adaptor_name, _info)
     
-        self._adaptor = _cpi_instance
+        self._adaptor    = adaptor
+        self._adaptor.init_instance (_info)
 
 
     @classmethod
@@ -73,6 +77,22 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         return t
     
     
+    @classmethod
+    def _create_from_adaptor (self, info, schema, adaptor_name) :
+        '''
+        session:      saga.Session
+        schema:       String
+        adaptor_name: String
+        ret:          saga.job.Job (bound to a specific adaptor)
+        '''
+    
+        logger = getLogger ('saga.job.Job')
+        logger.debug ("saga.job.Job._create_from_adaptor (%s, %s)"  \
+                   % (schema, adaptor_name))
+    
+        return self (_adaptor_name=adaptor_name, _adaptor_schema=schema, _info=info)
+
+
     def get_id (self, ttype=None) :
         '''
         ttype:     saga.task.type enum
