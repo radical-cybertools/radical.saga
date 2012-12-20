@@ -231,6 +231,11 @@ class LocalJobService (saga.cpi.job.Service) :
         self._logger.debug("container wait: %s"  %  str(jobs))
 
         for ajob in jobs:
+            print " ------- 1 "
+            print str(jobs)
+            print " ------- 2 "
+            print str(ajob)
+            print " ------- 3 "
             ajob.wait()
 
 

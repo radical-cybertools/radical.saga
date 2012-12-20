@@ -16,7 +16,7 @@ import Queue
 import saga.exceptions
 import saga.attributes
 
-from   saga.utils.threads import Thread
+from   saga.utils.threads import Thread, NEW, RUNNING, DONE, FAILED
 from   saga.engine.logger import getLogger
 
 
@@ -237,8 +237,13 @@ class Container (saga.attributes.Attributes) :
             for thread in threads :
                 thread.join ()
 
+                if thread.get_state () == FAILED :
+                    raise saga.NoSuccess ("thread exception: %s\n%s" \
+                            %  (str(thread.get_exception ()),
+                                str(thread.get_traceback ())))
             # all done - return first task (i.e. random task)
             return self.tasks[0]
+
 
         else :
 
@@ -252,6 +257,10 @@ class Container (saga.attributes.Attributes) :
 
             for thread in threads :
                 thread.join (timeout)
+
+                if thread.get_state () == FAILED :
+                    raise thread.get_exception ()
+
                 if not thread.isAlive :
                     # thread indeed finished -- dig return value from this
                     # threads queue
