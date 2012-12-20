@@ -181,7 +181,7 @@ class Container (saga.attributes.Attributes) :
 
 
 
-    def size (self) :
+    def get_size (self) :
 
         return len(self.tasks)
 
