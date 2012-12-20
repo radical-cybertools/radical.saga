@@ -144,7 +144,8 @@ class LocalJobService (saga.cpi.job.Service) :
         # create and return the new job
         job_info = { 'job_service'     : self._api, 
                      'job_description' : jd, 
-                     'session'         : self_ssession }
+                     'session'         : self._session }
+811
         new_job  = saga.job.Job._create_from_adaptor (job_info,
                                                       self._rm.scheme, 
                                                       _adaptor_name)
@@ -163,11 +164,11 @@ class LocalJob (saga.cpi.job.Job) :
         saga.cpi.Base.__init__ (self, api, _adaptor_name)
 
     @SYNC
-    def init_instance (self, info, session):
+    def init_instance (self, job_info):
         """ Implements saga.cpi.job.Job.init_instance()
         """
-        self._session    = session
-        self._jd         = job_description
+        self._session    = job_info['session']
+        self._jd         = job_info['job_description']
 
         self._id         = None
         self._state      = saga.job.NEW

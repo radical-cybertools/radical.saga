@@ -19,9 +19,9 @@ import saga.task
 # class Job (Object, Async, Attributes, Permissions) :
 class Job (saga.attributes.Attributes, saga.task.Async) :
     
-    def __init__(self, _adaptor=None, ) :
+    def __init__(self, _adaptor=None, _info={}) :
 
-        if not self._created_from_adaptor :
+        if not self._created_from_adaptor or not _adaptor :
             raise saga.exceptions.IncorrectState ("saga.job.Job constructor is private")
     
         # set attribute interface properties
@@ -53,6 +53,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         if _adaptor :
             # created from adaptor
             self._adaptor = _adaptor
+            self._adaptor.init_instance (_info)
 
 
     @classmethod
@@ -82,8 +83,8 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
     
         engine = getEngine ()
         logger = getLogger ('saga.job.Job')
-        logger.debug ("saga.job.Job._create_from_adaptor (%s, %s,  %s)"  \
-                   % (str(session), schema, adaptor_name))
+        logger.debug ("saga.job.Job._create_from_adaptor (%s, %s)"  \
+                   % (schema, adaptor_name))
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_sync(), resulting in 
@@ -92,7 +93,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
                                       adaptor_name, info)
     
         self._created_from_adaptor = True
-        return self (_adaptor=adaptor)
+        return self (_adaptor=adaptor, _info=info)
 
 
     def get_id (self, ttype=None) :
