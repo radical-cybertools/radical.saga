@@ -32,7 +32,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         # register properties with the attribute interface 
         self._attributes_register   ('State',      saga.job.UNKNOWN, self.ENUM,   self.SCALAR, self.READONLY)
         self._attributes_register   ('ExitCode',   None,             self.INT,    self.SCALAR, self.READONLY)
-        self._attributes_register   ('JobID',      None,             self.STRING, self.SCALAR, self.READONLY)
+        self._attributes_register   ('ID',         None,             self.STRING, self.SCALAR, self.READONLY)
         self._attributes_register   ('ServiceURL', None,             self.URL,    self.SCALAR, self.READONLY)
 
         self._attributes_set_enums  ('State',   [saga.job.UNKNOWN, 
@@ -43,7 +43,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
                                                  saga.job.SUSPENDED])
 
         self._attributes_set_getter ('State',    self.get_state)
-        self._attributes_set_getter ('jobID',    self.get_id)
+        self._attributes_set_getter ('ID',       self.get_id)
         self._attributes_set_getter ('ExitCode', self._get_exit_code)
 
         self._engine = getEngine ()
