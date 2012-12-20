@@ -147,7 +147,7 @@ JOB_CONTACT           = 'JobContact'
 
 ################################################################################
 # Job attributes:
-JOB_ID                = 'JobID'
+ID                    = 'ID'
 """ :todo: docstring
 """
 
