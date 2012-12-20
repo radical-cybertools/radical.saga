@@ -41,8 +41,9 @@ def main():
         print "Job ID    : %s" % (catjob.job_id)
         print "Job State : %s" % (catjob.state)
 
-        print "\nListing jobs: "
-        print js.list()
+        print "\nListing active jobs: "
+        for job in js.list():
+            print " * %s" % job
 
         print "\n...waiting for job...\n"
 

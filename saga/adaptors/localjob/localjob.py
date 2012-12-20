@@ -113,12 +113,21 @@ class LocalJobService (saga.cpi.job.Service) :
         self._session = session
 
         # holds the jobs that were started via this instance
-        self._jobs = list()
+        self._jobs = dict() # {job_obj:id, ...}
 
         # add this service to the list of known services which is 
         # accessible from all local service/job instances. 
         # entries are in the form: fork://localhost -> instance 
         _SharedData().add_service_instance(self)
+
+    def _update_jobid(self, job_obj, job_id):
+        """ Update the job id for a job object registered 
+            with this service instance.
+
+            This is a convenince method and not part of the CPI.
+        """
+        self._jobs[job_obj] = job_id 
+
 
     @SYNC
     def get_url (self) :
@@ -130,7 +139,11 @@ class LocalJobService (saga.cpi.job.Service) :
     def list(self):
         """ Implements saga.cpi.job.Serivce.list()
         """
-        return _SharedData().get_known_job_ids(self)
+        jobids = list()
+        for (job_obj, job_id) in self._jobs.iteritems():
+            if job_id is not None:
+                jobids.append(job_id)
+        return jobids
 
     @SYNC
     def create_job (self, jd) :
@@ -142,16 +155,20 @@ class LocalJobService (saga.cpi.job.Service) :
                 raise saga.BadParameter('JobDescription.%s is not supported by this adaptor' % attribute)
         
         # create and return the new job
-        job_info = { 'job_service'     : self._api, 
+        job_info = { 'job_service'     : self, 
                      'job_description' : jd, 
                      'session'         : self._session }
 
-        new_job  = saga.job.Job._create_from_adaptor (job_info,
-                                                      self._rm.scheme, 
-                                                      _adaptor_name)
-        self._jobs.append(new_job)
-        return new_job
+        job  = saga.job.Job._create_from_adaptor(job_info,
+                                                 self._rm.scheme, 
+                                                 _adaptor_name)
+        return job
 
+    @SYNC
+    def get_job (self, job_id):
+        """ Implements saga.cpi.job.Serivce.get_url()
+        """
+        return None
 
 ###############################################################################
 #
@@ -167,8 +184,9 @@ class LocalJob (saga.cpi.job.Job) :
     def init_instance (self, job_info):
         """ Implements saga.cpi.job.Job.init_instance()
         """
-        self._session    = job_info['session']
-        self._jd         = job_info['job_description']
+        self._session        = job_info['session']
+        self._jd             = job_info['job_description']
+        self._parent_service = job_info['job_service'] 
 
         self._id         = None
         self._state      = saga.job.NEW
@@ -177,10 +195,10 @@ class LocalJob (saga.cpi.job.Job) :
         # The subprocess handle
         self._process    = None
 
-        # add this job to the list of known jobs which is 
-        # accessible from all local service/job instances. 
-        # 
-        #_SharedData().dict['known_jobs'][self] = "hi"
+        # register ourselves with the parent service
+        # our job id is still None at this point
+        self._parent_service._update_jobid(self, None)
+
 
     @SYNC
     def get_state(self):
@@ -308,8 +326,9 @@ class LocalJob (saga.cpi.job.Job) :
 
             jid = JobId()
             jid.native_id = self._pid
-            jid.backend_url = 'fff'
+            jid.backend_url = str(self._parent_service.get_url())
             self._id = str(jid)
+            self._parent_service._update_jobid(self, self._id)
 
         except Exception, ex:
             raise saga.NoSuccess(str(ex))

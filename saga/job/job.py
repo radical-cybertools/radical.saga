@@ -1,8 +1,13 @@
+# -*- coding: utf-8 -*-
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
-# from saga.Object        import Object
-# from saga.Task          import Async 
-# from saga.Permissions   import Permissions
-# from saga.Attributes    import Attributes
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012, The SAGA Project"
+__license__   = "MIT"
+
+""" SAGA job interface
+"""
+
 
 from   saga.engine.logger import getLogger
 from   saga.engine.engine import getEngine, ANY_ADAPTOR

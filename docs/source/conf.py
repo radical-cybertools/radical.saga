@@ -37,6 +37,12 @@ templates_path = ['_templates']
 # The suffix of source filenames.
 source_suffix = '.rst'
 
+rst_epilog = """
+.. |param_ttype| replace:: Type of operation. Default (None) is synchronous.
+.. |rtype_ttype| replace:: :class:`saga.Task` if the operation is asynchronous.
+.. |not_implemented| replace:: **CURRENTLY NOT IMPLEMENTED / SUPPORTED** 
+"""
+
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
 

@@ -5,7 +5,7 @@ __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-""" SAGA job description class
+""" SAGA job description interface
 """
 
 import saga

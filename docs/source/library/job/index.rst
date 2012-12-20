@@ -11,8 +11,6 @@ Job Service -- :class:`saga.job.Service`
 .. autoclass:: saga.job.Service
    :members:
    :undoc-members:
-   :show-inheritance:
-
 
 Job Description -- :class:`saga.job.Description`
 ------------------------------------------------
