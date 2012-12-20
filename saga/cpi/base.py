@@ -63,7 +63,6 @@ def sync (sync_function) :
 
             else :
                 # 'self' not needed, getattr() returns member function
-                # print " ----------------> async "
                 return async_function (*args, **kwargs)
         
         # no ttype, or ttype==None -- make sure it's gone, and call default sync
@@ -71,7 +70,6 @@ def sync (sync_function) :
         if 'ttype' in kwargs : 
             del kwargs['ttype']
 
-        # print " ----------------> sync "
         return sync_function (self, *args, **kwargs)
 
     return wrap_function
