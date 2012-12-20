@@ -93,6 +93,7 @@ setup_args = {
         "saga.cpi.job",
         "saga.cpi.filesystem",
         "saga.adaptors",
+        "saga.adaptors.context",
         "saga.adaptors.localjob",
         "saga.engine",
         "saga.contrib",

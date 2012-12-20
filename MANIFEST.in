@@ -19,6 +19,7 @@ include saga/utils/cmdlinewrapper/*.py
 include saga/contrib/*.py
 
 include saga/adaptors/*.py
+include saga/adaptors/context/*.py
 include saga/adaptors/localjob/*.py
 
 include MANIFEST.in README.md LICENSE.md CHANGES.md

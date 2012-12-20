@@ -25,43 +25,32 @@ def main():
         jd.executable  = '/bin/sleep'
         jd.arguments   = ['$RUNTIME']
 
+        # container holds all the jobs -- we can call 'bulk'
+        # operation on the container object
+        jc = saga.job.Container()
+
         # create job service(s)
         services = list()
         for s in range(0, num_services):
-            services.append(saga.job.Service("fork://localhost"))
-            print "New job service: %s" % s
-
-        # launch 'num_jobs' per service
-        for service in services:
+            service = saga.job.Service("fork://localhost")
+            services.append(service)
             for j in range(0, num_jobs):
                 job = service.create_job(jd)
-                job.run()
+                jc.add(job)
 
-        tc = saga.job.Container()
+        # submit / run all jobs
+        jc.run()
 
-        for service in services:
-            print "Serivce: %s" % service  
-            for job_id in service.list():
-                job = service.get_job(job_id)
-                tc.add(job)
-                print " * ID: %s State: %s RC: %s" % (job.id, job.state, job.exit_code)
-                #job.cancel()
+        # wait for all jobs to finish
+        jc.wait()
 
-        tc.wait()
-
-
-
-        #import time
-        #time.sleep(11)
-
-
+        # list all jobs, their states and return codes
         for service in services:
             print "Serivce: %s" % service  
             for job_id in service.list():
                 job = service.get_job(job_id)
                 print " * ID: %s State: %s RC: %s" % (job.id, job.state, job.exit_code)
-        
-
+           
 
     except saga.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))

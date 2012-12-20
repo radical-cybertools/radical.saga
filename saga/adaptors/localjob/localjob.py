@@ -21,6 +21,85 @@ SYNC  = saga.cpi.base.sync
 ASYNC = saga.cpi.base.async
 
 ###############################################################################
+# Adaptor capabilites and documentaton.
+#
+# - name
+# - description
+# - detailed description
+# - supported schemas (& what they do)
+# - supported config options -- Configurable
+# - supported job descrption attributes
+# - supported metrics
+# - supported contexts
+
+# the adaptor name
+_adaptor_name   = 'saga.adaptor.LocalJob'
+
+_adaptor_config_options = [
+    { 
+    'category'      : _adaptor_name,
+    'name'          : 'foo', 
+    'type'          : str, 
+    'default'       : 'bar', 
+    'valid_options' : None,
+    'documentation' : 'dummy config option for unit test.',
+    'env_variable'  : None
+    }
+]
+
+_adaptor_capabilities = {
+    'jd_attributes' : [saga.job.EXECUTABLE,
+                       saga.job.ARGUMENTS,
+                       saga.job.ENVIRONMENT,
+                       saga.job.WORKING_DIRECTORY,
+                       saga.job.INPUT,
+                       saga.job.OUTPUT,
+                       saga.job.ERROR,
+                       saga.job.SPMD_VARIATIONS,
+                       saga.job.NUMBER_OF_PROCESSES],
+    'metrics'       : [saga.job.STATE],
+    'contexts'      : {}  # {context type : how it is used}
+}
+
+_adaptor_doc = {
+    'name'        : '',
+    'description' : '',
+    'details'     : '',
+    'schemas'     : {'fork':'desc', 'local':'same as fork'},
+    'cfg_options' : _adaptor_config_options,
+    'capabilites' : _adaptor_capabilites,
+
+                }
+
+
+_adaptor_info   = [{ 'name'    : _adaptor_name,
+                     'type'    : 'saga.job.Service',
+                     'class'   : 'LocalJobService',
+                     'schemas' : ['fork', 'local']
+                   }, 
+                   { 'name'    : _adaptor_name,
+                     'type'    : 'saga.job.Job',
+                     'class'   : 'LocalJob',
+                     'schemas' : ['fork', 'local']
+                   }]
+
+
+###############################################################################
+#
+def register () :
+    """ Adaptor registration function. The engine calls this during startup. 
+
+        We usually do sanity checks here and throw and exception if we think
+        the adaptor won't work in a given context. In that case, the engine
+        won't add it to it's internal list of adaptors. If everything is ok,
+        we return the adaptor info.
+    """
+
+    # perform some sanity checks, like check if dependencies are met
+    return _adaptor_info
+
+
+###############################################################################
 #
 class _SharedData(object) :
     """ This class is shared between all adaptor instances. 
@@ -51,42 +130,6 @@ class _SharedData(object) :
         """ Dumps the content of _SharedData to stdout. This can
             be useful for debugging.
         """
-
-_adaptor_name   = 'saga.adaptor.LocalJob'
-_adaptor_info   = [{ 'name'    : _adaptor_name,
-                     'type'    : 'saga.job.Service',
-                     'class'   : 'LocalJobService',
-                     'schemas' : ['fork', 'local']
-                   }, 
-                   { 'name'    : _adaptor_name,
-                     'type'    : 'saga.job.Job',
-                     'class'   : 'LocalJob',
-                     'schemas' : ['fork', 'local']
-                   }]
-_adaptor_capabilities = {'jd_attributes' : [saga.job.EXECUTABLE,
-                                            saga.job.ARGUMENTS,
-                                            saga.job.ENVIRONMENT,
-                                            saga.job.WORKING_DIRECTORY,
-                                            saga.job.INPUT,
-                                            saga.job.OUTPUT,
-                                            saga.job.ERROR],
-                         'metrics'       : [saga.job.STATE]
-                        }
-
-###############################################################################
-#
-def register () :
-    """ Adaptor registration function. The engine calls this during startup. 
-
-        We usually do sanity checks here and throw and exception if we think
-        the adaptor won't work in a given context. In that case, the engine
-        won't add it to it's internal list of adaptors. If everything is ok,
-        we return the adaptor info.
-    """
-
-    # perform some sanity checks, like check if dependencies are met
-    return _adaptor_info
-
 
 ###############################################################################
 #
@@ -181,16 +224,17 @@ class LocalJobService (saga.cpi.job.Service) :
 
     def container_run (self, result_queue, jobs) :
         self._logger.debug("container run: %s"  %  str(jobs))
-        raise saga.NoSuccess("Ole is lazy...")
+        #raise saga.NoSuccess("Ole is lazy...")
 
 
     def container_wait (self, result_queue, jobs, mode) :
         self._logger.debug("container wait: %s"  %  str(jobs))
 
+        for ajob in jobs:
+            ajob.wait()
 
 
-
-        result_queue.put(saga.NoSuccess("Ole is lazy..."))
+        #raise saga.NoSuccess("Ole is lazy...")
 
 
     def container_cancel (self, result_queue, jobs) :
@@ -198,9 +242,9 @@ class LocalJobService (saga.cpi.job.Service) :
         raise saga.NoSuccess("Ole is lazy...");
 
 
-    def container_get_states (self, result_queue, jobs) :
-        self._logger.debug("container get_states: %s"  %  str(jobs))
-        raise saga.NoSuccess("Ole is lazy...");
+    #def container_get_states (self, result_queue, jobs) :
+    #    self._logger.debug("container get_states: %s"  %  str(jobs))
+    #    raise saga.NoSuccess("Ole is lazy...");
 
 
 ###############################################################################
@@ -225,8 +269,6 @@ class LocalJob (saga.cpi.job.Job) :
             self._container = job_info['container']
         else :
             self._container = None
-
-
 
         self._id         = None
         self._state      = saga.job.NEW
@@ -256,6 +298,10 @@ class LocalJob (saga.cpi.job.Job) :
 
     @SYNC
     def wait(self, timeout):
+        if self._process is None:
+            message = "Can't wait for job. Job has not been started"
+            self._logger.warning(message)
+            raise saga.IncorrectState(message)
         if timeout == -1:
             self._returncode = self._process.wait()
         else:

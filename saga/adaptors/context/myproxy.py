@@ -13,7 +13,7 @@ ASYNC = saga.cpi.base.async
 # adaptor meta data
 #
 _adaptor_schema   =    'MyProxy'
-_adaptor_name     =    'saga_adaptor_context_myproxy'
+_adaptor_name     =    'saga.adaptor.myproxy'
 _adaptor_registry = [{ 'name'    : _adaptor_name,
                        'type'    : 'saga.Context',
                        'class'   : 'ContextMyProxy',
