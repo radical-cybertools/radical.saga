@@ -13,7 +13,7 @@ import sys, saga
 
 def main():
 
-    num_services = 2 
+    num_services = 1
     num_jobs     = 10
     job_runtime  = 10 # seconds
     
@@ -37,12 +37,28 @@ def main():
                 job = service.create_job(jd)
                 job.run()
 
+        tc = saga.task.Container()
+
         for service in services:
             print "Serivce: %s" % service  
             for job_id in service.list():
                 job = service.get_job(job_id)
-                print " * %s" % job
+                tc.add(job)
+                print " * ID: %s State: %s RC: %s" % (job.id, job.state, job.exit_code)
 
+        tc.wait()
+
+
+
+        import time
+        time.sleep(11)
+
+
+        for service in services:
+            print "Serivce: %s" % service  
+            for job_id in service.list():
+                job = service.get_job(job_id)
+                print " * ID: %s State: %s RC: %s" % (job.id, job.state, job.exit_code)
 
 
     except saga.SagaException, ex:

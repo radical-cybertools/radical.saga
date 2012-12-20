@@ -172,7 +172,7 @@ class Container (saga.attributes.Attributes) :
 
 
     
-    def wait (self, mode) :
+    def wait (self, mode=ALL) :
 
         # this needs to do bulk ops!
         # FIXME: resepct mode = ALL, ANY
