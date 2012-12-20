@@ -57,7 +57,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         adaptor = engine.get_adaptor (self, 'saga.job.Job', _adaptor_schema, None, 
                                       _adaptor_name, _info)
     
-        self._adaptor = adaptor
+        self._adaptor    = adaptor
         self._adaptor.init_instance (_info)
 
 

@@ -3,11 +3,29 @@ import saga
 
 try :
 
-  # e = saga.engine.Engine ()
-  # e._dump ()
+  e = saga.engine.Engine ()
+  e._dump ()
 
-  d = saga.filesystem.Directory ('file://localhost/etc/passwd')
+  d = saga.filesystem.Directory ('file://localhost/tmp/test1/test1/',
+                                 saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS)
+  print d.get_url ()
   f = d.open ('passwd')
+  print f.get_size_self ()
+  t = f.get_size_self (saga.task.ASYNC)
+  print t.state
+  print t.result
+
+  t = saga.filesystem.Directory.create ('file://localhost/tmp/test1/test1/',
+                                 saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS, saga.task.ASYNC)
+  print t
+  print t.state
+  d2 = t.get_result ()
+  print d2
+
+
+
+
+
 
   # jd     = saga.job.Description ()
   # jd.executable = '/bin/date'

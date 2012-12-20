@@ -287,15 +287,17 @@ class Engine(Configurable):
                 adaptor_instance = adaptor_class (api)
                 adaptor_name     = adaptor_instance._get_name ()
 
-                if requested_name != None     and \
-                   requested_name != adaptor_name :
+                if requested_name != None :
+                    if requested_name == adaptor_name :
+                        return adaptor_instance
+
                     # ignore this adaptor
-                    self._logger.debug("get_adaptor %s -- ignore %s != %s" \
-                                    % (str(adaptor_class), requested_name, adaptor_name))
-                    return adaptor_instance
+                    self._logger.debug ("get_adaptor %s -- ignore %s != %s" \
+                                          % (str(adaptor_class), requested_name, adaptor_name))
                     continue
 
-                if ttype == None or ttype == saga.task.SYNC :
+
+                if ttype == None :
                     # run the sync constructor for sync construction, and return
                     # the adaptor_instance to bind to the API instance.
                     adaptor_instance.init_instance  (*args, **kwargs)
@@ -321,7 +323,7 @@ class Engine(Configurable):
                 msg += "\n  %s: %s"  %  (adaptor_name, str(e))
                 continue
 
-        self._logger.error("No suitable adaptor found for '%s' and URL scheme %s://" %  (ctype, schema))
+        self._logger.error("No suitable adaptor found for '%s' and URL scheme '%s'" %  (ctype, schema))
         raise saga.exceptions.NotImplemented ("No suitable adaptor found: %s" %  msg)
 
 
@@ -329,4 +331,11 @@ class Engine(Configurable):
     # 
     def loaded_adaptors(self):
         return self._adaptors
+
+
+    #-----------------------------------------------------------------
+    # 
+    def _dump (self) :
+        import pprint
+        pprint.pprint (self._adaptors)
 

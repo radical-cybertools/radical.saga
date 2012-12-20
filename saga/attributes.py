@@ -357,7 +357,6 @@ class Attributes (_AttributesBase) :
         # check if we know about the given attribute
         if key :
             if not key in d['_attributes'] :
-                traceback.print_stack ()
                 raise DoesNotExist ("attribute key is invalid: %s"  %  (key))
 
         # all is well
