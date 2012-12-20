@@ -36,7 +36,6 @@ class ContextUserPass (saga.cpi.Context) :
 
     def __init__ (self, api) :
         saga.cpi.Base.__init__ (self, api, _adaptor_name)
-        # print "userpass context adaptor init"
 
 
     @SYNC
@@ -51,7 +50,6 @@ class ContextUserPass (saga.cpi.Context) :
 
     @SYNC
     def _initialize (self, session) :
-        # print "sync _initialize"
         pass
 
 

@@ -157,7 +157,8 @@ class LocalJobService (saga.cpi.job.Service) :
         # create and return the new job
         job_info = { 'job_service'     : self, 
                      'job_description' : jd, 
-                     'session'         : self._session }
+                     'session'         : self._session,
+                     'container'       : self }
 
         job  = saga.job.Job._create_from_adaptor(job_info,
                                                  self._rm.scheme, 
@@ -166,10 +167,10 @@ class LocalJobService (saga.cpi.job.Service) :
 
     @SYNC
     def get_job (self, jobid):
-        """ Implements saga.cpi.job.Serivce.get_url()
+        """ Implements saga.cpi.job.Service.get_url()
         """
         if jobid not in self._jobs.values():
-            message = "This Serivce instance doesn't know a Job with ID '%s'" % (jobid)
+            message = "This Service instance doesn't know a Job with ID '%s'" % (jobid)
             self._logger.error(message)
             raise saga.BadParameter(message=message) 
         else:
@@ -195,6 +196,13 @@ class LocalJob (saga.cpi.job.Job) :
         self._session        = job_info['session']
         self._jd             = job_info['job_description']
         self._parent_service = job_info['job_service'] 
+
+        if 'container' in job_info :
+            self._container = job_info['container']
+        else :
+            self._container = None
+
+
 
         self._id         = None
         self._state      = saga.job.NEW
