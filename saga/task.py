@@ -29,6 +29,8 @@ CANCELED = 'Canceled'
 STATE    = 'State'
 RESULT   = 'Result'
 
+ALL      = 'All'
+ANY      = 'Any'
 
 
 class Async :
@@ -67,18 +69,18 @@ class Task (saga.attributes.Attributes) :
 
     def get_result (self) :
         
-        if not state in [DONE, FAILED, CANCELED] :
-            wait ()
+        if not self.state in [DONE, FAILED, CANCELED] :
+            self.wait ()
         
-        if state == FAILED :
-            re_raise ()
+        if self.state == FAILED :
+            self.re_raise ()
             return
 
-        if state == CANCELED :
+        if self.state == CANCELED :
             raise saga.exceptions.IncorrectState \
                     ("task.get_result() cannot be called on cancelled tasks")
 
-        if state == DONE :
+        if self.state == DONE :
             return self.result
 
 
@@ -94,7 +96,7 @@ class Task (saga.attributes.Attributes) :
 
     def wait (self, timeout=-1) :
         # FIXME: implement timeout, more fine grained wait, attribute notification
-        while self_.state not in [DONE, FAILED, CANCELED] :
+        while self.state not in [DONE, FAILED, CANCELED] :
             time.sleep (1)
 
 
