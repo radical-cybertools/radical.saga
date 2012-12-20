@@ -45,7 +45,7 @@ def main():
                 job = service.get_job(job_id)
                 tc.add(job)
                 print " * ID: %s State: %s RC: %s" % (job.id, job.state, job.exit_code)
-                job.cancel()
+                #job.cancel()
 
         tc.wait()
 

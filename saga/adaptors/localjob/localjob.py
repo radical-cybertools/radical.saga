@@ -179,22 +179,26 @@ class LocalJobService (saga.cpi.job.Service) :
                     return job_obj._api
 
 
-    def _container_run (self, result_queue, jobs) :
+    def container_run (self, result_queue, jobs) :
         self._logger.debug("container run: %s"  %  str(jobs))
         raise saga.NoSuccess("Ole is lazy...")
 
 
-    def _container_wait (self, result_queue, jobs, mode) :
+    def container_wait (self, result_queue, jobs, mode) :
         self._logger.debug("container wait: %s"  %  str(jobs))
-        raise saga.NoSuccess("Ole is lazy...");
 
 
-    def _container_cancel (self, result_queue, jobs) :
+
+
+        result_queue.put(saga.NoSuccess("Ole is lazy..."))
+
+
+    def container_cancel (self, result_queue, jobs) :
         self._logger.debug("container cancel: %s"  %  str(jobs))
         raise saga.NoSuccess("Ole is lazy...");
 
 
-    def _container_get_states (self, result_queue, jobs) :
+    def container_get_states (self, result_queue, jobs) :
         self._logger.debug("container get_states: %s"  %  str(jobs))
         raise saga.NoSuccess("Ole is lazy...");
 
