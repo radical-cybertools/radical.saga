@@ -55,7 +55,7 @@ _adaptor_capabilities = {
                        saga.job.INPUT,
                        saga.job.OUTPUT,
                        saga.job.ERROR,
-                       saga.job.SPMD_VARIATIONS,
+                       saga.job.SPMD_VARIATION,
                        saga.job.NUMBER_OF_PROCESSES],
     'metrics'       : [saga.job.STATE],
     'contexts'      : {}  # {context type : how it is used}
@@ -67,7 +67,7 @@ _adaptor_doc = {
     'details'     : '',
     'schemas'     : {'fork':'desc', 'local':'same as fork'},
     'cfg_options' : _adaptor_config_options,
-    'capabilites' : _adaptor_capabilites,
+    'capabilites' : _adaptor_capabilities,
 
                 }
 

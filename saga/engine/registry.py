@@ -10,7 +10,7 @@ __license__   = "MIT"
 
 adaptor_registry = ["saga.adaptors.localjob.localjob", 
                     "saga.adaptors.context.myproxy",
-                    "saga.adaptors.contex.x509",
+                    "saga.adaptors.context.x509",
                     "saga.adaptors.context.userpass",
                     "saga.adaptors.saga_adaptor_filesystem_local"
                     ]
