@@ -62,12 +62,14 @@ _adaptor_capabilities = {
 }
 
 _adaptor_doc = {
-    'name'        : '',
-    'description' : '',
-    'details'     : '',
-    'schemas'     : {'fork':'desc', 'local':'same as fork'},
-    'cfg_options' : _adaptor_config_options,
-    'capabilites' : _adaptor_capabilities,
+    'name'          : _adaptor_name,
+    'description'   : """ The local job adaptor. This adaptor uses subprocesses to run jobs on the local machine
+                      """,
+    'details'       : """ A more elaborate description....
+                      """,
+    'schemas'       : {'fork':'desc', 'local':'same as fork'},
+    'cfg_options'   : _adaptor_config_options,
+    'capabilites'   : _adaptor_capabilities,
 
                 }
 
