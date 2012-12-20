@@ -21,13 +21,25 @@ The basic usage of the job module is as follows::
   # A job is created on a service (resource manager) using the job description
   job = service.create_job(job_desc)
   
+  # Run the job and wait for it to finish
+  job.run()
+  print "Job ID    : %s" % (job.job_id)
+  job.wait()
 
+  # Get some info about the job
+  print "Job State : %s" % (job.state)
+  print "Exitcode  : %s" % (job.exit_code)
 
 Like all SAGA modules, the job module relies on  middleware adaptors 
 to provide bindings to a specific resource manager. Adaptors are implicitly 
 selected via the `scheme` part of the URL, e.g., ``local://`` in the example 
-above selects the `local` job adaptor. The :ref:`job_serivce` explains this 
-in detail.
+above selects the `local` job adaptor. The :ref:`job_service` section explains 
+this in more detail.
+
+.. note:: A list of available adaptors and supported resource managers can be 
+          found in the :ref:`middleware_adaptors` part of this documentation.
+
+The rest of this section is structured as follows:
 
 .. contents:: Table of Contents
    :local:
