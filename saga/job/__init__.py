@@ -9,35 +9,41 @@ __license__   = "MIT"
 #
 # Job States
 UNKNOWN               = 'Unknown'
-""" :todo: docstring
+""" The state of the job could not be determined.
 """
 
 NEW                   = 'New'
-""" :todo: docstring
+""" This state identifies a newly constructed job instance which has not 
+    yet been submitted / started to run.
 """
 
 PENDING               = 'Pending'
-""" :todo: docstring
+""" This state identifies a job instance which has been submitted / started 
+    but is not yet executing on the resource.
 """
 
 RUNNING               = 'Running'
-""" :todo: docstring
+""" This state identifies a job instance which has been submitted and is 
+    currently running.
 """
 
 DONE                  = 'Done'
-""" :todo: docstring
+""" The job has finished succesfully.
+    This state is final.
 """
 
 CANCELED              = 'Canceled'
-""" :todo: docstring
+""" The job has been canceled either by the user or by job service.
+    This state is final.
 """
 
 FAILED                = 'Failed'
-""" :todo: docstring
+""" The job has finished unsuccessfully / with an error. 
+    This state is final.
 """
 
 SUSPENDED             = 'Suspended'
-""" :todo: docstring
+""" The job has been suspended by the job service.
 """
 
 ################################################################################
@@ -172,11 +178,20 @@ TERMSIG               = 'Termsig'
 ################################################################################
 # Job metrics:
 STATE                 = 'State'
-""" :todo: docstring
+""" Subscribable job state information. This metric gets triggered whenever
+    the state of the job changes.
 """
 
 STATE_DETAIL          = 'StateDetail'
-""" :todo: docstring
+""" Allows to get information about the native (backend) job state. For some 
+    applications, access to the native backend state model can be important,
+    however, it is not guaranteed to be supported by all middleware adaptors.
+    Generally, state details is supposed to be formatted as follows::
+
+      ’<model>:<state>’=value
+
+    The STATE_DETAIL metric gets triggered whenever the backend state
+    information of the job changes.
 """
 
 SIGNAL                = 'Signal'

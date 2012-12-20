@@ -29,10 +29,28 @@ class _SharedData(object) :
     __metaclass__ = Singleton
 
     def __init__ (self) :
-        self.dict = {}
-        self.dict['services'] = {}
-        self.dict['jobs']     = {}
+        self._services = dict()
 
+    def add_service_instance(self, service_obj):
+        """ Adds a new service object to the list of known
+            services.
+        """
+        self._services[service_obj] = {'url':str(service_obj.get_url()), 
+                                       'known_jobs':{'1':'<obj>'}}
+
+    def get_known_job_ids(self, service_obj):
+        """ Returns a list of job ids that are known
+            by a particular serivce.
+        """
+        job_ids = list()
+        for (serviceobj, data) in self._services.iteritems():
+            for (jobid, jobobj) in data['known_jobs'].iteritems():
+                job_ids.append(jobid)
+
+    def _dump(self):
+        """ Dumps the content of _SharedData to stdout. This can
+            be useful for debugging.
+        """
 
 _adaptor_name   = 'saga.adaptor.LocalJob'
 _adaptor_info   = [{ 'name'    : _adaptor_name,
@@ -84,22 +102,35 @@ class LocalJobService (saga.cpi.job.Service) :
     def init_instance (self, rm_url, session) :
         """ Service instance constructor
         """
+        # check that the hostname is supported
         fqhn = socket.gethostname()
         if rm_url.host != 'localhost' and rm_url.host != fqhn:
-            message = "Only 'localhost' and '%s' hostnames supported byt this adaptor'" % (fqhn)
+            message = "Only 'localhost' and '%s' hostnames supported by this adaptor'" % (fqhn)
             self._logger.warning(message)
             raise saga.BadParameter(message=message) 
 
         self._rm      = rm_url
         self._session = session
 
-        _SharedData().dict['services'][self._rm] = self
+        # holds the jobs that were started via this instance
+        self._jobs = list()
+
+        # add this service to the list of known services which is 
+        # accessible from all local service/job instances. 
+        # entries are in the form: fork://localhost -> instance 
+        _SharedData().add_service_instance(self)
 
     @SYNC
     def get_url (self) :
         """ Implements saga.cpi.job.Serivce.get_url()
         """
         return self._rm
+
+    @SYNC
+    def list(self):
+        """ Implements saga.cpi.job.Serivce.list()
+        """
+        return _SharedData().get_known_job_ids(self)
 
     @SYNC
     def create_job (self, jd) :
@@ -110,9 +141,11 @@ class LocalJobService (saga.cpi.job.Service) :
             if attribute not in _adaptor_capabilities['jd_attributes']:
                 raise saga.BadParameter('JobDescription.%s is not supported by this adaptor' % attribute)
         
+        # create and return the new job
         new_job = saga.job.Job._create_from_adaptor (jd, self._session, 
                                                      self._rm.scheme, 
                                                      _adaptor_name)
+        self._jobs.append(new_job)
         return new_job
 
 
@@ -127,7 +160,7 @@ class LocalJob (saga.cpi.job.Job) :
         saga.cpi.Base.__init__ (self, api, _adaptor_name)
 
     @SYNC
-    def init_instance (self, job_description, session):
+    def init_instance (self, job_description, service, session):
         """ Implements saga.cpi.job.Job.init_instance()
         """
         self._session    = session
@@ -140,7 +173,10 @@ class LocalJob (saga.cpi.job.Job) :
         # The subprocess handle
         self._process    = None
 
-        _SharedData().dict['jobs'][self] = "hi"
+        # add this job to the list of known jobs which is 
+        # accessible from all local service/job instances. 
+        # 
+        #_SharedData().dict['known_jobs'][self] = "hi"
 
     @SYNC
     def get_state(self):
@@ -182,6 +218,12 @@ class LocalJob (saga.cpi.job.Job) :
         return self._id
 
     @SYNC
+    def get_exit_code(self) :
+        """ Implements saga.cpi.job.Job.get_exit_code()
+        """        
+        return self._returncode
+
+    @SYNC
     def run(self): 
         """ Implements saga.cpi.job.Job.run()
         """
@@ -217,7 +259,7 @@ class LocalJob (saga.cpi.job.Job) :
 
         # check if we want to execute via mpirun
         if self._jd.spmd_variation is not None:
-            if jd.spmd_variation == "MPI":
+            if jd.spmd_variation.lower() == "mpi":
                 if self._jd.number_of_processes is not None:
                     self.number_of_processes = self._jd.number_of_processes
                     use_mpirun = True
@@ -237,7 +279,7 @@ class LocalJob (saga.cpi.job.Job) :
         if use_mpirun is True:
             which('mpirun')
             if mpirun == None:
-                message = "Can't find 'mpirun' in the path."
+                message = "SPMDVariation=MPI set, but can't find 'mpirun' executable."
                 self._logger.error(message)        
                 raise saga.BadParameter(message) 
             else:

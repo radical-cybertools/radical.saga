@@ -80,7 +80,6 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         logger.debug ("saga.job.Job._create_from_adaptor (%s, %s,  %s)"  \
                    % (str(session), schema, adaptor_name))
     
-    
         # attempt to find a suitable adaptor, which will call 
         # init_instance_sync(), resulting in 
         # FIXME: self is not an instance here, but the class object...
