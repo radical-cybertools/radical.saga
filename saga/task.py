@@ -205,7 +205,7 @@ class Container (saga.attributes.Attributes) :
 
             tasks  = buckets['containers'][container]
             queue  = Queue.Queue ()
-            thread = su_threads.wrap (container.container_wait, (queue, tasks, mode))
+            thread = su_threads.wrap (container._container_wait, (queue, tasks, mode))
 
             threads.append (thread)
             queues[thread] = queue
@@ -224,7 +224,7 @@ class Container (saga.attributes.Attributes) :
 
             # easy - just wait for all threads to finish
             for thread in threads :
-                tread.wait ()
+                thread.wait ()
 
             # all done - return first task (i.e. random task)
             return self.tasks[0]
