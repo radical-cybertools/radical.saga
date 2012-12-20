@@ -42,15 +42,15 @@ class Service (Base) :
     def get_self (self, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def container_run (self, result_queue, jobs) :
+    def container_run (self, jobs) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def container_wait (self, result_queue, jobs, mode) :
+    def container_wait (self, jobs, mode) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def container_cancel (self, result_queue, jobs) :
+    def container_cancel (self, jobs) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def container_get_states (self, result_queue, jobs) :
+    def container_get_states (self, jobs) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
