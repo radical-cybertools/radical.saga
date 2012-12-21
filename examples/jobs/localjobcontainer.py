@@ -27,9 +27,9 @@ import sys, random, saga
 def main():
 
     # number of job 'groups' / containers
-    num_job_groups = 1
+    num_job_groups = 4
     # number of jobs per container
-    jobs_per_group = 5
+    jobs_per_group = 32
     
     try:
         # all jobs in this example are running on the same job service
@@ -55,23 +55,12 @@ def main():
             print 'Starting container %s ... ' % c
             containers[c].run()
             containers[c].wait()
-            print containers[c].jobs
 
             # at this point, all jobs in the container
             # have finished running. we can now print some statistics 
             for job in containers[c].jobs:
                 print "  * Job id=%s state=%s rc=%s exec_host=%s start_time=%s end_time=%s" \
                   % (job.id, job.state, job.exit_code, job.execution_hosts, job.started, job.finished)
-
-
-
-        # list all jobs, their states and return codes
-        #for service in services:
-        #    print "Serivce: %s" % service  
-        #    for job_id in service.list():
-        #        job = service.get_job(job_id)
-        #        print " * ID: %s State: %s RC: %s" % (job.id, job.state, job.exit_code)
-           
 
     except saga.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))

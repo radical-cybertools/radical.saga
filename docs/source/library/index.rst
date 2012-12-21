@@ -1,5 +1,10 @@
+.. _chapter_library_reference:
+
+*****************
 Library Reference
 *****************
+
+Intro library reference... 
 
 .. toctree::
    :numbered:

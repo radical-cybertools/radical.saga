@@ -1,12 +1,10 @@
+.. _chapter_middleware_adaptors:
 
-.. _middleware_adaptors:
-
-######################
+*******************
 Middleware Adaptors
-######################
+*******************
 
-
-Intro...
+Intro to adaptors. Auto-generated content
 
 .. toctree::
    :numbered:
