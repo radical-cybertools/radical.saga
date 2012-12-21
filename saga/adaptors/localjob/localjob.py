@@ -21,59 +21,55 @@ import saga.cpi.job
 SYNC  = saga.cpi.base.sync
 ASYNC = saga.cpi.base.async
 
-###############################################################################
-# Adaptor capabilites and documentaton.
-#
-# - name
-# - description
-# - detailed description
-# - supported schemas (& what they do)
-# - supported config options -- Configurable
-# - supported job descrption attributes
-# - supported metrics
-# - supported contexts
+################################################################################
+## the adaptor name                                                           ## 
+##                                                                            ##
+_ADAPTOR_NAME = 'saga.adaptor.localjob'
 
-_adaptor_name    = 'saga.adaptor.localjob'
-_adaptor_options = [
-    { 
-    'category'      : _adaptor_name,
-    'name'          : 'foo', 
-    'type'          : str, 
-    'default'       : 'bar', 
-    'valid_options' : None,
-    'documentation' : 'dummy config option for unit test.',
-    'env_variable'  : None
-    }
-]
-
-_adaptor_capabilities   = {
-    'jd_attributes' : [saga.job.EXECUTABLE,
-                       saga.job.ARGUMENTS,
-                       saga.job.ENVIRONMENT,
-                       saga.job.WORKING_DIRECTORY,
-                       saga.job.INPUT,
-                       saga.job.OUTPUT,
-                       saga.job.ERROR,
-                       saga.job.SPMD_VARIATION,
-                       saga.job.NUMBER_OF_PROCESSES],
-    'metrics'       : [saga.job.STATE],
-    'contexts'      : {}  # {context type : how it is used}
+################################################################################
+## the adaptor capabilites & supported attributes                             ##
+##                                                                            ##
+_ADAPTOR_CAPABILITES   = {
+    'desc_attributes'  : [saga.job.EXECUTABLE,
+                          saga.job.ARGUMENTS,
+                          saga.job.ENVIRONMENT,
+                          saga.job.WORKING_DIRECTORY,
+                          saga.job.INPUT,
+                          saga.job.OUTPUT,
+                          saga.job.ERROR,
+                          saga.job.SPMD_VARIATION,
+                          saga.job.NUMBER_OF_PROCESSES],
+    'job_attributes'   : [saga.job.EXIT_CODE,
+                          saga.job.EXECUTION_HOSTS,
+                          saga.job.CREATED,
+                          saga.job.STARTED,
+                          saga.job.FINISHED],
+    'metrics'          : [saga.job.STATE],
+    'contexts'         : {} # {context type : how it is used}
 }
 
-_adaptor_doc    = {
-    'name'          : _adaptor_name,
-    'description'   : """ The local job adaptor. This adaptor uses subprocesses to run jobs on the local machine
-                      """,
-    'details'       : """ A more elaborate description....
-                      """,
-    'schemas'       : {'fork':'desc', 'local':'same as fork'},
-    'cfg_options'   : _adaptor_options,
-    'capabilites'   : _adaptor_capabilities,
+################################################################################
+## the adaptor documentation                                                  ##
+##                                                                            ##
+_ADAPTOR_DOC    = {
+    'name'             : _ADAPTOR_NAME,
+    'cfg_options'      : {},#_adaptor_options,
+    'capabilites'      : _ADAPTOR_CAPABILITES,
+    'description'      : """ 
+    The local job adaptor. This adaptor uses subprocesses to run jobs on the 
+    local machine.
+    """,
+    'details'          : """ A more elaborate description....
+                         """,
+    'schemas'          : {'fork'  :'desc', 
+                          'local' :'same as fork'},
+}
 
-                  }
-
-_adaptor_info   = {
-    'name'          : _adaptor_name,
+################################################################################
+## the adaptor info is used to register the adaptor with SAGA                 ##
+##                                                                            ##
+_ADAPTOR_INFO   = {
+    'name'          : _ADAPTOR_NAME,
     'cpis'          : [
         { 
         'type'      : 'saga.job.Service',
@@ -87,7 +83,6 @@ _adaptor_info   = {
         }
     ]
 }
-
 
 ###############################################################################
 # The adaptor class
@@ -108,7 +103,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _adaptor_name, _adaptor_options)
+        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_NAME, {}) # options
 
         # we only need to call gethostname once 
         self.hostname = socket.gethostname()
@@ -123,7 +118,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
             is ok, we return the adaptor info.
         """
     
-        return _adaptor_info
+        return _ADAPTOR_INFO
 
 
 ###############################################################################
@@ -186,7 +181,7 @@ class LocalJobService (saga.cpi.job.Service) :
         """
         # check that only supported attributes are provided
         for attribute in jd.list_attributes():
-            if attribute not in _adaptor_capabilities['jd_attributes']:
+            if attribute not in _ADAPTOR_CAPABILITES['desc_attributes']:
                 msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
                 log_error_and_raise(self._logger, msg, saga.BadParameter)
 
@@ -200,7 +195,7 @@ class LocalJobService (saga.cpi.job.Service) :
 
         job  = saga.job.Job._create_from_adaptor (job_info,
                                                   self._rm.scheme, 
-                                                  _adaptor_name)
+                                                  _ADAPTOR_NAME)
         return job
 
     @SYNC
@@ -286,6 +281,9 @@ class LocalJob (saga.cpi.job.Job) :
                     self._state = saga.job.FAILED
                 else:
                     self._state = saga.job.DONE
+                # TODO: this is not accurate -- job could have terminated 
+                # before 'wait' was called
+                self._finished = time.time() 
         return self._state
 
     @SYNC
@@ -318,6 +316,14 @@ class LocalJob (saga.cpi.job.Job) :
         """ Implements saga.cpi.job.Job.get_exit_code()
         """        
         return self._exit_code
+
+    @SYNC
+    def get_created(self) :
+        """ Implements saga.cpi.job.Job.get_started()
+        """     
+        # for local jobs started == created. for other adaptors 
+        # this is not necessarily true   
+        return self._started
 
     @SYNC
     def get_started(self) :
@@ -438,5 +444,6 @@ class LocalJob (saga.cpi.job.Job) :
             self._logger.debug("Starting process '%s' was successful." % cmdline) 
 
         except Exception, ex:
+            self._state = saga.job.FAILED
             msg = "Starting process: '%s' failed: %s" % (cmdline, str(ex))
             log_error_and_raise(self._logger, msg, saga.NoSuccess)
