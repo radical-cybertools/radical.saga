@@ -46,7 +46,7 @@ def main():
                 # interesting, we give each job a random runtime (1-60s)
                 jd = saga.job.Description()
                 jd.environment = {'RUNTIME':random.randrange(1,60,1)}       
-                #jd.executable  = '/bin/sleep'
+                jd.executable  = '/bin/sleep'
                 jd.arguments   = ['$RUNTIME']
                 containers[c].add(service.create_job(jd))
 

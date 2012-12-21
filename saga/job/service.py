@@ -91,10 +91,7 @@ class Service (object) :
 
         # convert environment to string
         for (key, value) in jd_copy.environment.iteritems():
-            print "%s - %s" % (key, value)
             jd_copy.environment[key] = str(value)
-
-
 
         return self._adaptor.create_job (jd_copy, ttype=ttype)
 
