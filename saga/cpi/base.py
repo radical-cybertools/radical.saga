@@ -43,7 +43,7 @@ class Base (saga_config.Configurable) :
         self._logger   = saga_logger.getLogger (name)
 
 
-    def get_name (self) :
+    def get_cpi_name (self) :
         return self._name
 
 

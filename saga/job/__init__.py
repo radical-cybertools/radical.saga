@@ -175,6 +175,10 @@ TERMSIG               = 'Termsig'
 """ :todo: docstring
 """
 
+SERVICE_URL           = 'ServiceUrl'
+""" :todo: docstring
+"""
+
 ################################################################################
 # Job metrics:
 STATE                 = 'State'
@@ -219,5 +223,4 @@ from saga.job.job         import Self
 from saga.job.service     import Service
 from saga.job.container   import Container
 from saga.job.description import Description
-
 

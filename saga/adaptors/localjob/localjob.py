@@ -13,7 +13,7 @@ import os, time, socket, signal, subprocess
 from saga.utils.singleton import Singleton
 from saga.utils.exception import log_error_and_raise
 from saga.utils.job.jobid import JobId
-from saga.utils.which import which
+from saga.utils.which     import which
 
 import saga.cpi.base
 import saga.cpi.job
@@ -33,8 +33,7 @@ ASYNC = saga.cpi.base.async
 # - supported metrics
 # - supported contexts
 
-_adaptor_name           = 'saga.adaptor.localjob'
-
+_adaptor_name    = 'saga.adaptor.localjob'
 _adaptor_options = [
     { 
     'category'      : _adaptor_name,
@@ -224,7 +223,7 @@ class LocalJobService (saga.cpi.job.Service) :
             job.run()
 
 
-    def container_wait (self, jobs, mode) :
+    def container_wait (self, jobs, mode, timeout) :
         self._logger.debug("container wait: %s"  %  str(jobs))
         # TODO: this is not optimized yet
         for job in jobs:

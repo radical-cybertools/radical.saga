@@ -45,7 +45,7 @@ class Service (Base) :
     def container_run (self, jobs) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
-    def container_wait (self, jobs, mode) :
+    def container_wait (self, jobs, mode, timeout) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
     def container_cancel (self, jobs) :

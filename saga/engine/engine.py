@@ -7,6 +7,8 @@ __license__   = "MIT"
 
 """ Provides the SAGA runtime. """
 
+import signal
+import sys
 
 from   saga.utils.singleton import Singleton
 from   saga.engine.config   import Configurable, getConfig
@@ -31,6 +33,15 @@ _all_engine_config_options = [
     'default'       : 'bar', 
     'valid_options' : None,
     'documentation' : 'dummy config option for unit test.',
+    'env_variable'  : None
+    },
+    { 
+    'category'      : 'saga.engine',
+    'name'          : 'enable_ctrl_c', 
+    'type'          : bool, 
+    'default'       : True,
+    'valid_options' : [True, False],
+    'documentation' : 'install SIGINT signal handler to abort application.',
     'env_variable'  : None
     }
 ]
@@ -136,21 +147,30 @@ class Engine(Configurable):
 
         # set the configuration options for this object
         Configurable.__init__(self, 'saga.engine', _all_engine_config_options)
+        self._cfg = self.get_config()
 
-        # initialize logging
-        self._initialize_logging()
+
+        # Initialize the logging
+        Logger()
+        self._logger = getLogger ('saga.engine')
+
+
+        # install signal handler, if requested
+        if self._cfg['enable_ctrl_c'].get_value () :
+
+            self._logger.debug ("installing signal handler for SIGKILL")
+
+            def signal_handler(signal, frame):
+                print 'abort!  abort!'
+                sys.exit(0)
+
+            signal.signal(signal.SIGINT, signal_handler)
+
 
         # load adaptors
         self._load_adaptors()
 
 
-    #-----------------------------------------------------------------
-    # 
-    def _initialize_logging(self):
-        """ Initialize the logging facilites. 
-        """
-        Logger()
-        self._logger = getLogger('saga.engine')
 
 
     #-----------------------------------------------------------------
@@ -256,7 +276,7 @@ class Engine(Configurable):
                 self._logger.warn("Loading %s failed: %s" % (module_name, str(e)))
                 self._logger.debug(saga.utils.exception.get_traceback())
 
-        self._dump()
+        # self._dump()
 
 
     #-----------------------------------------------------------------
@@ -294,12 +314,12 @@ class Engine(Configurable):
 
             cpi_class        = info['cpi_class']
             adaptor_instance = info['adaptor_instance']
+            adaptor_name     = adaptor_instance.get_name ()
 
             try :
                 # instantiate cpi
                 cpi_instance = cpi_class (api_instance, adaptor_instance)
-                cpi_name     = cpi_instance.get_name ()
-                adaptor_name = cpi_instance.get_adaptor_name ()
+                cpi_name     = cpi_instance.get_cpi_name ()
 
                 if requested_name != None :
                     if requested_name == adaptor_name :
@@ -333,7 +353,7 @@ class Engine(Configurable):
 
             except Exception as e :
                 # adaptor class initialization failed - try next one
-                m    = "%s.%s: %s"  %  (adaptor_name, cpi_name, str(e))
+                m    = "%s.%s: %s"  %  (adaptor_name, cpi_class, str(e))
                 msg += "\n  %s" % m
                 self._logger.info("get_adaptor %s", m)
                 continue
