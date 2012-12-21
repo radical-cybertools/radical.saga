@@ -232,19 +232,19 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
 
 
     def get_object (self, ttype=None) :
-        '''
-        ret:        <object type>
-        note:       this will return the job_service which created the job.
-        '''
+        """ :todo: describe me
+            :note: this will return the job_service which created the job.
+        """
         return self._adaptor.get_object (ttype=ttype)
 
 
     def re_raise (self, ttype=None) :
-        '''
-        ret:        <exception type>
-        note:       if job failed, that will re-raise an exception describing 
-                    why, if that exists.  Otherwise, the call does nothing.
-        '''
+        """ :todo: describe me
+
+            :note: if job failed, that will re-raise an exception describing 
+                   why, if that exists.  Otherwise, the call does nothing.
+
+        """
         return self._adaptor.re_raise (ttype=ttype)
 
 

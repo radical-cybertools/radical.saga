@@ -45,7 +45,7 @@ def main():
                 # add jobs to container. to make things a bit more 
                 # interesting, we give each job a random runtime (1-60s)
                 jd = saga.job.Description()
-                jd.environment = {'RUNTIME':str(random.randrange(1,60,1))}       
+                jd.environment = {'RUNTIME':'1'} # str(random.randrange(1,60,1))}       
                 jd.executable  = '/bin/sleep'
                 jd.arguments   = ['$RUNTIME']
                 containers[c].add(service.create_job(jd))
@@ -55,7 +55,10 @@ def main():
             print 'Running container %s ... ' % c
             containers[c].run()
             containers[c].wait()
-            print containers[c].list()
+
+            print containers[c].jobs
+
+
             # at this point, all jobs in the container
             # have finished running. we can now print some statistics 
 
