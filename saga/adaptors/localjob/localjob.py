@@ -315,6 +315,12 @@ class LocalJob (saga.cpi.job.Job) :
         return self._id
 
     @SYNC
+    def get_exit_code(self) :
+        """ Implements saga.cpi.job.Job.get_exit_code()
+        """        
+        return self._exit_code
+
+    @SYNC
     def get_started(self) :
         """ Implements saga.cpi.job.Job.get_started()
         """        
@@ -325,7 +331,7 @@ class LocalJob (saga.cpi.job.Job) :
         """ Implements saga.cpi.job.Job.get_finished()
         """        
         return self._finished
-
+    
     @SYNC
     def get_execution_hosts(self) :
         """ Implements saga.cpi.job.Job.get_execution_hosts()
@@ -420,12 +426,15 @@ class LocalJob (saga.cpi.job.Job) :
                                              cwd=cwd,
                                              preexec_fn=os.setsid)
             self._pid = self._process.pid
-            self._state = saga.job.RUNNING
 
             jid = JobId()
-            jid.native_id = self._pid
+            jid.native_id   = self._pid
             jid.backend_url = str(self._parent_service.get_url())
-            self._id = str(jid)
+
+            self._state   = saga.job.RUNNING
+            self._started = time.time()
+            self._id      = str(jid)
+
             self._parent_service._update_jobid(self, self._id)
             self._logger.debug("Starting process '%s' was successful." % cmdline) 
 

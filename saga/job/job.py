@@ -100,7 +100,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
     
         return self (_adaptor_name=adaptor_name, _adaptor_schema=schema, _info=info)
 
-
+    
     def get_id (self, ttype=None) :
         '''
         ttype:     saga.task.type enum
