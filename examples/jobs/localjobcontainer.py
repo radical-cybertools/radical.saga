@@ -27,9 +27,9 @@ import sys, random, saga
 def main():
 
     # number of job 'groups' / containers
-    num_job_groups = 1
+    num_job_groups = 4
     # number of jobs per container
-    jobs_per_group = 1
+    jobs_per_group = 32
     
     try:
         # all jobs in this example are running on the same job service
