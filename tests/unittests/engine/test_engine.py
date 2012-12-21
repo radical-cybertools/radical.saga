@@ -63,25 +63,33 @@ def test_load_adaptor():
     assert len(Engine().loaded_cpis()['saga.job.Job']['mock']) == 1
 
     # make sure the configuration gets passed through
-    assert Engine().loaded_cpis()['saga.job.Job']['mock'][0]['cpi_class'](None).get_config()["foo"].as_dict() == {'foo': 'bar'}
+    cpis         = Engine().loaded_cpis()
+    adaptor      = cpis['saga.job.Job']['mock'][0]['adaptor_instance']
+    cfg          = adaptor.get_config()
+    foo_dict     = cfg["foo"].as_dict()
+    assert foo_dict == {'foo': 'bar'}
 
     # restore sys.path
     sys.path = old_sys_path
 
 def test_load_adaptor_twice():
-    """ Test that an attempt to load the same adaptor twice doesn't 
-        cause trouble
-    """
+    """ Test that an attempt to load the same adaptor twice doesn't cause trouble """
     # store old sys.path
     old_sys_path = sys.path
     path = os.path.split(os.path.abspath(__file__))[0]
     sys.path.append(path)
 
     Engine()._load_adaptors(["mockadaptor_enabled", "mockadaptor_enabled"])
-    assert len(Engine().loaded_cpis()['saga.job.Job']['mock']) == 1
+    cpis  = Engine().loaded_cpis()
+    mocks = cpis['saga.job.Job']['mock']
+    assert len(mocks) == 1
 
     # make sure the configuration gets passed through
-    assert Engine().loaded_cpis()['saga.job.Job']['mock'][0](None).get_config()["foo"].as_dict() == {'foo': 'bar'}
+    cpis         = Engine().loaded_cpis()
+    adaptor      = cpis['saga.job.Job']['mock'][0]['adaptor_instance']
+    cfg          = adaptor.get_config()
+    foo_dict     = cfg["foo"].as_dict()
+    assert foo_dict == {'foo': 'bar'}
 
     # restore sys.path
     sys.path = old_sys_path

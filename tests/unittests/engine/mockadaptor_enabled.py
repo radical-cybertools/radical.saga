@@ -23,12 +23,24 @@ _adaptor_info   = {
     ]
 }
 
+_config_options = [
+    {
+    'category'      : 'saga.adaptor.mock',
+    'name'          : 'foo',
+    'type'          : str,
+    'default'       : 'bar',
+    'valid_options' : None,
+    'documentation' : 'dummy config option for unit test.',
+    'env_variable'  : None
+    }
+]
+
 class Adaptor (saga.cpi.base.AdaptorBase):
     __metaclass__ = Singleton
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _adaptor_info['name'], {}) 
+        saga.cpi.base.AdaptorBase.__init__ (self, _adaptor_info['name'], _config_options) 
 
     def register (self) :
         """ Adaptor registration function. The engine calls this during startup. 

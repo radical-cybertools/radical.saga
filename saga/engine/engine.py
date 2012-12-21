@@ -266,9 +266,9 @@ class Engine(Configurable):
                         if not cpi_schema in self._cpis[cpi_type] :
                             self._cpis[cpi_type][cpi_schema] = []
 
-                        if not cpi_class in self._cpis[cpi_type][cpi_schema] :
-                            info = {'cpi_class'        : cpi_class, 
-                                    'adaptor_instance' : adaptor_instance}
+                        info = {'cpi_class'        : cpi_class, 
+                                'adaptor_instance' : adaptor_instance}
+                        if not info in self._cpis[cpi_type][cpi_schema] :
                             self._cpis[cpi_type][cpi_schema].append (info)
 
 
