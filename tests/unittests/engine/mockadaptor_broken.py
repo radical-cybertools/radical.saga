@@ -15,6 +15,7 @@ import saga.cpi.job
 
 _adaptor_info = {
     'name'          : 'saga.adaptor.mock',
+    'version'       : '1.0',
     'cpis'          : [
         { 
         'type'      : 'saga.job.Job',

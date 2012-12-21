@@ -26,7 +26,7 @@ _adaptor_options = []
 _adaptor_schemas = ['dummy', 'local']
 _adaptor_info    = {
     'name'        : _adaptor_name,
-    'version'     : 'beta',
+    'version'     : 'v0.1beta',
     'cpis'        : [{
         'type'    : 'saga.filesystem.Directory',
         'class'   : 'DummyDirectory',

@@ -8,6 +8,7 @@ __license__   = "MIT"
 """ Provides the SAGA runtime. """
 
 import signal
+import string
 import sys
 
 from   saga.utils.singleton import Singleton
@@ -192,6 +193,10 @@ class Engine(Configurable):
         """
         global_config = getConfig()
 
+        # check if we support alpha/beta adaptos
+        allow_betas = self._cfg['load_beta_adaptors'].get_value ()
+
+
         if inject_registry is False:
             registry = saga.engine.registry.adaptor_registry
         else:
@@ -222,12 +227,23 @@ class Engine(Configurable):
                     self._logger.debug(saga.util.exception._get_traceback ())
                     continue # skip to next adaptor
 
-                adaptor_name = adaptor_info['name']
+                adaptor_name    = adaptor_info['name']
+                adaptor_version = adaptor_info['version']
 
+                adaptor_enabled = True 
+
+                # default to 'disabled' if adaptor ids alpha or beta, and config
+                # does disable those
+                if 'alpha' in adaptor_version.lower() or \
+                   'beta'  in adaptor_version.lower()    :
+
+                    if not allow_betas :
+                        self._logger.info ("Not loading adaptor %s[%s] from module %s: beta versions are disabled" \
+                                        % (adaptor_name, adaptor_version, module_name))
+                        continue
 
                 # try to find an 'enabled' option in the adaptor's config
                 # section, default to True
-                adaptor_enabled = True 
                 try :
                     adaptor_config  = global_config.get_category (adaptor_name)
                     adaptor_enabled = adaptor_config['enabled'].get_value ()
@@ -243,8 +259,8 @@ class Engine(Configurable):
                     continue
                 else :
                     pass
-                    self._logger.info("Successfully loaded %s from module %s" \
-                      % (adaptor_name, module_name))
+                    self._logger.info("Successfully loaded %s[%s] from module %s" \
+                      % (adaptor_name, adaptor_version, module_name))
 
 
                 # we got an adaptor info struct
