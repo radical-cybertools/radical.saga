@@ -200,6 +200,11 @@ class Container (saga.attributes.Attributes) :
         for thread in threads :
             thread.join ()
 
+            if thread.get_state () == FAILED :
+                raise saga.NoSuccess ("thread exception: %s\n%s" \
+                        %  (str(thread.get_exception ()),
+                            str(thread.get_traceback ())))
+
 
     def wait (self, mode=ALL, timeout=-1) :
 
@@ -241,6 +246,7 @@ class Container (saga.attributes.Attributes) :
                     raise saga.NoSuccess ("thread exception: %s\n%s" \
                             %  (str(thread.get_exception ()),
                                 str(thread.get_traceback ())))
+
             # all done - return first task (i.e. random task)
             return self.tasks[0]
 
@@ -305,6 +311,11 @@ class Container (saga.attributes.Attributes) :
         for thread in threads :
             thread.join ()
 
+            if thread.get_state () == FAILED :
+                raise saga.NoSuccess ("thread exception: %s\n%s" \
+                        %  (str(thread.get_exception ()),
+                            str(thread.get_traceback ())))
+
     
 
 
@@ -346,6 +357,11 @@ class Container (saga.attributes.Attributes) :
         # wait for all threads to finish
         for thread in threads :
             thread.join ()
+
+            if thread.get_state () == FAILED :
+                raise saga.NoSuccess ("thread exception: %s\n%s" \
+                        %  (str(thread.get_exception ()),
+                            str(thread.get_traceback ())))
 
 
         states = []
