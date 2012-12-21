@@ -14,7 +14,7 @@ USER_KEY        = "UserKey"
 USER_ID         = "UserID"
 USER_PASS       = "UserPass"
 USER_VO         = "UserVO"
-LIFETIME        = "LifeTime"
+LIFE_TIME       = "LifeTime"
 REMOTE_ID       = "RemoteID"
 REMOTE_HOST     = "RemoteID"
 REMOTE_PORT     = "RemotePort"
@@ -42,7 +42,7 @@ class Context (saga.Attributes) :
         self._attributes_register  (USER_ID,         None, self.STRING, self.SCALAR, self.WRITABLE)
         self._attributes_register  (USER_PASS,       None, self.STRING, self.SCALAR, self.WRITABLE)
         self._attributes_register  (USER_VO,         None, self.STRING, self.SCALAR, self.WRITABLE)
-        self._attributes_register  (LIFETIME,        -1,   self.INT,    self.SCALAR, self.WRITABLE)
+        self._attributes_register  (LIFE_TIME,       -1,   self.INT,    self.SCALAR, self.WRITABLE)
         self._attributes_register  (REMOTE_ID,       None, self.STRING, self.SCALAR, self.WRITABLE)
         self._attributes_register  (REMOTE_HOST,     None, self.STRING, self.SCALAR, self.WRITABLE)
         self._attributes_register  (REMOTE_PORT,     None, self.STRING, self.VECTOR, self.WRITABLE)

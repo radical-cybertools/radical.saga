@@ -21,21 +21,37 @@ ASYNC = saga.cpi.base.async
 # adaptor info
 #
 
-_adaptor_name    = 'saga.adaptor.dummysystem.local'
-_adaptor_options = []
-_adaptor_schemas = ['dummy', 'local']
-_adaptor_info    = {
-    'name'        : _adaptor_name,
-    'version'     : 'v0.1beta',
-    'cpis'        : [{
-        'type'    : 'saga.filesystem.Directory',
-        'class'   : 'DummyDirectory',
-        'schemas' : _adaptor_schemas
+_ADAPTOR_NAME          = 'saga.adaptor.dummysystem.local'
+_ADAPTOR_OPTIONS       = {}
+_ADAPTOR_CAPABILITES   = {}
+_ADAPTOR_SCHEMAS       = ['dummy']
+
+_ADAPTOR_DOC           = {
+    'name'             : _ADAPTOR_NAME,
+    'cfg_options'      : _ADAPTOR_OPTIONS, 
+    'capabilites'      : _ADAPTOR_CAPABILITES,
+    'description'      : 'The local filesystem adaptor.',
+    'details'          : """This adaptor interacts with local filesystem, by
+                            using the (POSIX like) os and shutil Python packages.
+                            It is named 'dummy', as this adaptor is only used
+                            for testing and debugging -- it is *not* good for
+                            production.
+                            """,
+    'schemas'          : {'dummy' : 'an invented schema.'},
+}
+
+_ADAPTOR_REGISTRY      = {
+    'name'             : _ADAPTOR_NAME,
+    'version'          : 'v0.1beta',
+    'cpis'             : [{
+        'type'         : 'saga.filesystem.Directory',
+        'class'        : 'DummyDirectory',
+        'schemas'      : _ADAPTOR_SCHEMAS
         }, 
         {
-        'type'    : 'saga.filesystem.File',
-        'class'   : 'DummyFile',
-        'schemas' : _adaptor_schemas
+        'type'         : 'saga.filesystem.File',
+        'class'        : 'DummyFile',
+        'schemas'      : _ADAPTOR_SCHEMAS
         }
     ]
 }
@@ -60,7 +76,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _adaptor_name, _adaptor_options)
+        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_NAME, _ADAPTOR_OPTIONS)
 
 
     def register (self) :
@@ -72,7 +88,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
             is ok, we return the adaptor info.
         """
     
-        return _adaptor_info
+        return _ADAPTOR_REGISTRY
 
 
 ###############################################################################
@@ -105,7 +121,7 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
         t = saga.task.Task ()
 
         t._set_result (saga.dummysystem.Directory._create_from_adaptor \
-                       (url, flags, session, _adaptor_name))
+                       (url, flags, session, _ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -170,7 +186,7 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
             url = saga.url.Url (str(self._url) + '/' + str(url))
 
         f = saga.dummysystem.File._create_from_adaptor (url, flags, self._session, 
-                                                       _adaptor_name)
+                                                       _ADAPTOR_NAME)
         return f
 
 
@@ -206,7 +222,7 @@ class DummyFile (saga.cpi.filesystem.File) :
         t = saga.task.Task ()
 
         t._set_result (saga.dummysystem.File._create_from_adaptor \
-                       (url, flags, session, _adaptor_name))
+                       (url, flags, session, _ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -306,7 +322,7 @@ class DummyFile (saga.cpi.filesystem.File) :
         src     = self._url.path
 
         if tgt_url.schema :
-            if not tgt_url.schema in _adaptor_schemas :
+            if not tgt_url.schema in _ADAPTOR_SCHEMAS :
                 raise saga.exceptions.BadParameter ("Cannot handle url %s (unknown schema)" %  target)
 
         if tgt[0] != '/' :

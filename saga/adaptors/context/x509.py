@@ -3,6 +3,7 @@ import os
 
 from   saga.utils.singleton import Singleton
 
+import saga.context
 import saga.cpi.base
 import saga.cpi.context
 
@@ -14,16 +15,35 @@ ASYNC = saga.cpi.base.async
 #
 # adaptor meta data
 #
-_adaptor_schemas  = ['X509']
-_adaptor_name     = 'saga.adaptor.x509'
-_adaptor_options  = []
-_adaptor_info     = {
-    'name'        : _adaptor_name,
-    'version'     : 'v0.1',
-    'cpis'        : [{ 
-        'type'    : 'saga.Context',
-        'class'   : 'ContextX509',
-        'schemas' : _adaptor_schemas
+_ADAPTOR_NAME          = 'saga.adaptor.x509'
+_ADAPTOR_OPTIONS       = {}
+_ADAPTOR_SCHEMAS       = ['X509']
+
+# FIXME: complete attribute list
+_ADAPTOR_CAPABILITES   = {
+    'attributes'       : [saga.context.TYPE,
+                          saga.context.USER_PROXY,
+                          saga.context.LIFE_TIME]
+}
+
+_ADAPTOR_DOC           = {
+    'name'             : _ADAPTOR_NAME,
+    'cfg_options'      : _ADAPTOR_OPTIONS, 
+    'capabilites'      : _ADAPTOR_CAPABILITES,
+    'description'      : 'The X509 context adaptor.',
+    'details'          : """This adaptor points to a X509 proxy, or certificate,
+                            be used for backend connections.  Note that this
+                            context can be created by a MyProxy context instance.""",
+    'schemas'          : {'x509' : 'x509 token information.'},
+}
+
+_ADAPTOR_REGISTRY      = {
+    'name'             : _ADAPTOR_NAME,
+    'version'          : 'v0.1',
+    'cpis'             : [{ 
+        'type'         : 'saga.Context',
+        'class'        : 'ContextX509',
+        'schemas'      : _ADAPTOR_SCHEMAS
         }
     ]
 }
@@ -48,7 +68,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _adaptor_name, _adaptor_options)
+        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_NAME, _ADAPTOR_OPTIONS)
 
 
     def register (self) :
@@ -60,7 +80,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
             is ok, we return the adaptor info.
         """
     
-        return _adaptor_info
+        return _ADAPTOR_REGISTRY
 
 
 ######################################################################
@@ -76,7 +96,7 @@ class ContextX509 (saga.cpi.Context) :
     @SYNC
     def init_instance (self, type) :
 
-        if not type.lower () in (schema.lower() for schema in _adaptor_schemas) :
+        if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
             raise saga.exceptions.BadParameter \
                     ("the x509 context adaptor only handles x509 contexts - duh!")
 

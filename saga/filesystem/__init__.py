@@ -1,22 +1,4 @@
 
-# Job attributes:
-JOB_ID                = 'JobID'
-EXECUTION_HOSTS       = 'ExecutionHosts'
-CREATED               = 'Created'
-STARTED               = 'Started'
-FINISHED              = 'Finished'
-EXIT_CODE             = 'ExitCode'
-TERMSIG               = 'Termsig'
-
-# Job metrics:
-STATE                 = 'State'
-STATE_DETAIL          = 'StateDetail'
-SIGNAL                = 'Signal'
-CPU_TIME              = 'CPUTime'
-MEMORY_USE            = 'MemoryUse'
-VMEMORY_USE           = 'VmemoryUse'
-PERFORMANCE           = 'Performance'
-
 # filesystem flags enum:
 OVERWRITE      =    1
 RECURSIVE      =    2
