@@ -161,7 +161,7 @@ class Engine(Configurable):
             self._logger.debug ("installing signal handler for SIGKILL")
 
             def signal_handler(signal, frame):
-                print 'abort!  abort!'
+                sys.stderr.write("Ctrl+C caught. Exiting...")
                 sys.exit(0)
 
             signal.signal(signal.SIGINT, signal_handler)
