@@ -65,8 +65,8 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 #
 class ContextUserPass (saga.cpi.Context) :
 
-    def __init__ (self, api) :
-        saga.cpi.Base.__init__ (self, api, _adaptor_name)
+    def __init__ (self, api, adaptor) :
+        saga.cpi.Base.__init__ (self, api, adaptor, 'ContextUserPass')
 
 
     @SYNC

@@ -88,8 +88,8 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 #
 class LocalDirectory (saga.cpi.filesystem.Directory) :
 
-    def __init__ (self, api) :
-        saga.cpi.Base.__init__ (self, api, _adaptor_name)
+    def __init__ (self, api, adaptor) :
+        saga.cpi.Base.__init__ (self, api, adaptor, 'LocalDirectory')
 
 
     @SYNC
@@ -189,8 +189,8 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
 #
 class LocalFile (saga.cpi.filesystem.File) :
 
-    def __init__ (self, api) :
-        saga.cpi.Base.__init__ (self, api, _adaptor_name)
+    def __init__ (self, api, adaptor) :
+        saga.cpi.Base.__init__ (self, api, adaptor, 'LocalFile')
 
 
     @SYNC
