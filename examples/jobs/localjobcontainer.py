@@ -45,7 +45,7 @@ def main():
                 # add jobs to container. to make things a bit more 
                 # interesting, we give each job a random runtime (1-60s)
                 jd = saga.job.Description()
-                jd.environment = {'RUNTIME':1} #random.randrange(1,60,1)}       
+                jd.environment = {'RUNTIME':random.randrange(1,60,1)}       
                 jd.executable  = '/bin/sleep'
                 jd.arguments   = ['$RUNTIME']
                 containers[c].add(service.create_job(jd))
@@ -62,16 +62,6 @@ def main():
             for job in containers[c].jobs:
                 print "  * Job id=%s state=%s rc=%s exec_host=%s start_time=%s end_time=%s" \
                   % (job.id, job.state, job.exit_code, job.execution_hosts, job.started, job.finished)
-
-
-
-        # list all jobs, their states and return codes
-        #for service in services:
-        #    print "Serivce: %s" % service  
-        #    for job_id in service.list():
-        #        job = service.get_job(job_id)
-        #        print " * ID: %s State: %s RC: %s" % (job.id, job.state, job.exit_code)
-           
 
     except saga.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))

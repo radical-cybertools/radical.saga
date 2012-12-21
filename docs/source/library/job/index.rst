@@ -1,5 +1,7 @@
+.. _job_managemen:
+
 Job Management
-**************
+==============
 
 SAGA's job management module is central to the API. It
 represents an application/executable running under the management of a resource 
@@ -8,27 +10,31 @@ HPC queing system to grid and cloud computing services.
 
 The basic usage of the job module is as follows::
 
-  # A job.Description object describes the executable/application and its requirements 
-  job_desc = saga.job.Description()
-  job_desc.executable  = '/bin/sleep'
-  job_desc.arguments   = ['10']
-  job_desc.output      = 'myjob.out'
-  job_desc.error       = 'myjob.err'
+   # A job.Description object describes the executable/application and its requirements 
+   job_desc = saga.job.Description()
+   job_desc.executable  = '/bin/sleep'
+   job_desc.arguments   = ['10']
+   job_desc.output      = 'myjob.out'
+   job_desc.error       = 'myjob.err'
 
-  # A job.Service object represents the resource manager. In this example we use the 'local' adaptor to represent the local machine
-  service = saga.job.Service('local://localhost')
+   # A job.Service object represents the resource manager. In this example we use the 'local' adaptor to represent the local machine
+   service = saga.job.Service('local://localhost')
 
-  # A job is created on a service (resource manager) using the job description
-  job = service.create_job(job_desc)
+   # A job is created on a service (resource manager) using the job description
+   job = service.create_job(job_desc)
   
-  # Run the job and wait for it to finish
-  job.run()
-  print "Job ID    : %s" % (job.job_id)
-  job.wait()
+   # Run the job and wait for it to finish
+   job.run()
+   print "Job ID    : %s" % (job.job_id)
+   job.wait()
 
-  # Get some info about the job
-  print "Job State : %s" % (job.state)
-  print "Exitcode  : %s" % (job.exit_code)
+   # Get some info about the job
+   print "Job State : %s" % (job.state)
+   print "Exitcode  : %s" % (job.exit_code)
+
+.. seealso:: More examples on how to use the SAGA job module can be found in 
+             the :ref:`code_examples_job` section of the 
+             :ref:`chapter_code_examples` chapter.
 
 Like all SAGA modules, the job module relies on  middleware adaptors 
 to provide bindings to a specific resource manager. Adaptors are implicitly 
@@ -37,7 +43,7 @@ above selects the `local` job adaptor. The :ref:`job_service` section explains
 this in more detail.
 
 .. note:: A list of available adaptors and supported resource managers can be 
-          found in the :ref:`middleware_adaptors` part of this documentation.
+          found in the :ref:`chapter_middleware_adaptors` part of this documentation.
 
 The rest of this section is structured as follows:
 
@@ -64,7 +70,7 @@ Job Description -- :class:`saga.job.Description`
 .. warning:: There is no guarantee that all middleware adaptors implement 
              all job description attributes. In case a specific attribute
              is not supported, the :meth:`~saga.job.Service.create_job` will throw an 
-             exception. Please refer to the :ref:`middleware_adaptors` 
+             exception. Please refer to the :ref:`chapter_middleware_adaptors` 
              documentation for more details and adaptor-specific lists of 
              supported attributes.
 
@@ -189,7 +195,7 @@ Callback functions are attached to a job object via the
 .. warning:: There is no guarantee that all middleware adaptors implement 
              these metrics. In case they are not implemented, you can still 
              subscribe to them, but you won't receive any callbacks. Please
-             refer to the :ref:`middleware_adaptors` documentation 
+             refer to the :ref:`chapter_middleware_adaptors` documentation 
              for more details and adaptor-specific lists of supported metrics.
 
 
@@ -207,17 +213,11 @@ Job Containers -- :class:`saga.job.Container`
 
 :todo: Describe how to work with job containers.
 
+.. seealso:: More examples on how to use job containers can be found in 
+             the :ref:`code_examples_job` section of the 
+             :ref:`chapter_code_examples` chapter.
+
 .. autoclass:: saga.job.Container
    :members:
    :undoc-members:
    :show-inheritance:
-
-
-
-
-.. _examples:
-
-Examples
---------
-
-:todo: example scripts with download (link to example dir)
