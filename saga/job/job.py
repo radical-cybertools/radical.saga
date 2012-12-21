@@ -16,6 +16,9 @@ import saga.exceptions
 import saga.attributes
 import saga.task
 
+from saga.job import *
+
+
 # class Job (Object, Async, Attributes, Permissions) :
 class Job (saga.attributes.Attributes, saga.task.Async) :
     
@@ -30,29 +33,27 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface 
-        self._attributes_register   ('State',            saga.job.UNKNOWN, self.ENUM,   self.SCALAR, self.READONLY)
-        self._attributes_register   ('ExitCode',         None,             self.INT,    self.SCALAR, self.READONLY)
-        self._attributes_register   ('Started',          None,             self.INT,    self.SCALAR, self.READONLY)
-        self._attributes_register   ('Finished',         None,             self.INT,    self.SCALAR, self.READONLY)
-        self._attributes_register   ('ExecutionHosts',   None,             self.STRING, self.VECTOR, self.READONLY)
+        self._attributes_register   (STATE,            saga.job.UNKNOWN, self.ENUM,   self.SCALAR, self.READONLY)
+        self._attributes_register   (EXIT_CODE,        None,             self.INT,    self.SCALAR, self.READONLY)
+        self._attributes_register   (STARTED,          None,             self.INT,    self.SCALAR, self.READONLY)
+        self._attributes_register   (FINISHED,         None,             self.INT,    self.SCALAR, self.READONLY)
+        self._attributes_register   (EXECUTION_HOSTS,  None,             self.STRING, self.VECTOR, self.READONLY)
+        self._attributes_register   (ID,               None,             self.STRING, self.SCALAR, self.READONLY)
+        self._attributes_register   (SERVICE_URL,      None,             self.URL,    self.SCALAR, self.READONLY)
 
+        self._attributes_set_enums  (STATE,   [saga.job.UNKNOWN, 
+                                               saga.job.NEW, saga.job.RUNNING,
+                                               saga.job.DONE,
+                                               saga.job.FAILED,  
+                                               saga.job.CANCELED, 
+                                               saga.job.SUSPENDED])
 
-        self._attributes_register   ('ID',         None,             self.STRING, self.SCALAR, self.READONLY)
-        self._attributes_register   ('ServiceURL', None,             self.URL,    self.SCALAR, self.READONLY)
-
-        self._attributes_set_enums  ('State',   [saga.job.UNKNOWN, 
-                                                 saga.job.NEW, saga.job.RUNNING,
-                                                 saga.job.DONE,
-                                                 saga.job.FAILED,  
-                                                 saga.job.CANCELED, 
-                                                 saga.job.SUSPENDED])
-
-        self._attributes_set_getter ('State',           self.get_state)
-        self._attributes_set_getter ('ID',              self.get_id)
-        self._attributes_set_getter ('ExitCode',        self._get_exit_code)
-        self._attributes_set_getter ('Started',         self._get_started)
-        self._attributes_set_getter ('Finished',        self._get_finished)
-        self._attributes_set_getter ('ExecutionHosts',  self._get_execution_hosts)
+        self._attributes_set_getter (STATE,           self.get_state)
+        self._attributes_set_getter (ID,              self.get_id)
+        self._attributes_set_getter (EXIT_CODE,       self._get_exit_code)
+        self._attributes_set_getter (STARTED,         self._get_started)
+        self._attributes_set_getter (FINISHED,        self._get_finished)
+        self._attributes_set_getter (EXECUTION_HOSTS, self._get_execution_hosts)
 
         self._engine = getEngine ()
         self._logger = getLogger ('saga.job.Job')

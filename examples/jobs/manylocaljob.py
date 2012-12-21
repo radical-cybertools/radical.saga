@@ -29,7 +29,7 @@ def main():
     # number of job 'groups' / containers
     num_job_groups = 1
     # number of jobs per container
-    jobs_per_group = 1
+    jobs_per_group = 5
     
     try:
         # all jobs in this example are running on the same job service
@@ -55,10 +55,7 @@ def main():
             print 'Running container %s ... ' % c
             containers[c].run()
             containers[c].wait()
-
             print containers[c].jobs
-
-
             # at this point, all jobs in the container
             # have finished running. we can now print some statistics 
 

@@ -39,6 +39,7 @@ class Thread (threading.Thread) :
         self._result    = None
         self._exception = None
 
+        self.daemon     = True
         self.start ()
 
 

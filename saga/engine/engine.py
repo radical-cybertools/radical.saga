@@ -7,6 +7,8 @@ __license__   = "MIT"
 
 """ Provides the SAGA runtime. """
 
+import signal
+import sys
 
 from   saga.utils.singleton import Singleton
 from   saga.engine.config   import Configurable, getConfig
@@ -31,6 +33,15 @@ _all_engine_config_options = [
     'default'       : 'bar', 
     'valid_options' : None,
     'documentation' : 'dummy config option for unit test.',
+    'env_variable'  : None
+    },
+    { 
+    'category'      : 'saga.engine',
+    'name'          : 'enable_ctrl_c', 
+    'type'          : bool, 
+    'default'       : True,
+    'valid_options' : [True, False],
+    'documentation' : 'install SIGINT signal handler to abort application.',
     'env_variable'  : None
     }
 ]
@@ -136,12 +147,25 @@ class Engine(Configurable):
 
         # set the configuration options for this object
         Configurable.__init__(self, 'saga.engine', _all_engine_config_options)
+        self._cfg = self.get_config()
+
+
+        # install signal handler, if requested
+        if self._cfg['enable_ctrl_c'].get_value () :
+            print "installing signal handler for SIGKILL"
+            def signal_handler(signal, frame):
+                print 'abort!  abort!'
+                sys.exit(0)
+            signal.signal(signal.SIGINT, signal_handler)
+
 
         # initialize logging
         self._initialize_logging()
 
         # load adaptors
         self._load_adaptors()
+
+
 
 
     #-----------------------------------------------------------------

@@ -175,6 +175,10 @@ TERMSIG               = 'Termsig'
 """ :todo: docstring
 """
 
+SERVICE_URL           = 'ServiceUrl'
+""" :todo: docstring
+"""
+
 ################################################################################
 # Job metrics:
 STATE                 = 'State'
@@ -220,4 +224,11 @@ from saga.job.service     import Service
 from saga.job.container   import Container
 from saga.job.description import Description
 
+
+# 'forward' declaration of job.Container
+from saga.task import Container as TaskContainer
+class Container(TaskContainer):
+    """ :todo: document me
+    """
+    pass
 

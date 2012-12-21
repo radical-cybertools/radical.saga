@@ -1,10 +1,10 @@
 
+import sys
 import saga
 
 try :
 
   e = saga.engine.Engine ()
-  e._dump ()
 
   d = saga.filesystem.Directory ('file://localhost/tmp/test1/test1/',
                                  saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS)
