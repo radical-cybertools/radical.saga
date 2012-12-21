@@ -30,8 +30,13 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface 
-        self._attributes_register   ('State',      saga.job.UNKNOWN, self.ENUM,   self.SCALAR, self.READONLY)
-        self._attributes_register   ('ExitCode',   None,             self.INT,    self.SCALAR, self.READONLY)
+        self._attributes_register   ('State',            saga.job.UNKNOWN, self.ENUM,   self.SCALAR, self.READONLY)
+        self._attributes_register   ('ExitCode',         None,             self.INT,    self.SCALAR, self.READONLY)
+        self._attributes_register   ('Started',          None,             self.INT,    self.SCALAR, self.READONLY)
+        self._attributes_register   ('Finished',         None,             self.INT,    self.SCALAR, self.READONLY)
+        self._attributes_register   ('ExecutionHosts',   None,             self.STRING, self.VECTOR, self.READONLY)
+
+
         self._attributes_register   ('ID',         None,             self.STRING, self.SCALAR, self.READONLY)
         self._attributes_register   ('ServiceURL', None,             self.URL,    self.SCALAR, self.READONLY)
 
@@ -42,9 +47,12 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
                                                  saga.job.CANCELED, 
                                                  saga.job.SUSPENDED])
 
-        self._attributes_set_getter ('State',    self.get_state)
-        self._attributes_set_getter ('ID',       self.get_id)
-        self._attributes_set_getter ('ExitCode', self._get_exit_code)
+        self._attributes_set_getter ('State',           self.get_state)
+        self._attributes_set_getter ('ID',              self.get_id)
+        self._attributes_set_getter ('ExitCode',        self._get_exit_code)
+        self._attributes_set_getter ('Started',         self._get_started)
+        self._attributes_set_getter ('Finished',        self._get_finished)
+        self._attributes_set_getter ('ExecutionHosts',  self._get_execution_hosts)
 
         self._engine = getEngine ()
         self._logger = getLogger ('saga.job.Job')
@@ -245,6 +253,14 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
     def _get_exit_code (self, ttype=None) :
         return self._adaptor.get_exit_code (ttype=ttype)
 
+    def _get_started (self, ttype=None) :
+        return self._adaptor.get_started (ttype=ttype)
+
+    def _get_finished (self, ttype=None) :
+        return self._adaptor.get_finished (ttype=ttype)
+
+    def _get_execution_hosts (self, ttype=None) :
+        return self._adaptor.get_execution_hosts (ttype=ttype)
 
     state     = property (get_state)       # state enum
     result    = property (get_result)      # result type    (None)
