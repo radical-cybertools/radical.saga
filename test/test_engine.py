@@ -5,6 +5,7 @@ import saga
 try :
 
   e = saga.engine.Engine ()
+  e._dump()
 
   d = saga.filesystem.Directory ('file://localhost/tmp/test1/test1/',
                                  saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS)
@@ -14,6 +15,9 @@ try :
   t = f.get_size_self (saga.task.ASYNC)
   print t.state
   print t.result
+
+  # f.copy_self ('passwd.bak') 
+  f.copy_self ('dummy://boskop/tmp/') 
 
   t = saga.filesystem.Directory.create ('file://localhost/tmp/test1/test1/',
                                  saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS, saga.task.ASYNC)

@@ -281,6 +281,34 @@ class Engine(Configurable):
 
     #-----------------------------------------------------------------
     # 
+    def find_adaptors (self, ctype, schema) :
+        '''
+        Look for a suitable cpi class serving a particular schema
+        '''
+
+        adaptor_names = []
+
+        schema = schema.lower ()
+
+        if not ctype in self._cpis :
+            return []
+
+        if not schema in self._cpis[ctype] :
+            return []
+
+
+        for info in self._cpis[ctype][schema] :
+
+            adaptor_instance = info['adaptor_instance']
+            adaptor_name     = adaptor_instance.get_name ()
+            adaptor_names.append (adaptor_name)
+
+        return adaptor_names
+
+
+
+    #-----------------------------------------------------------------
+    # 
     def get_adaptor (self, api_instance, ctype, schema, ttype, requested_name, *args, **kwargs) :
         '''
         Look for a suitable cpi class for bind, and instantiate it.

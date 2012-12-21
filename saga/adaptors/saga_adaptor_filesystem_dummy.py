@@ -1,7 +1,7 @@
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
-""" Local filesystem adaptor implementation """
+""" dummy filesystem adaptor implementation """
 
 import os
 import shutil
@@ -17,35 +17,35 @@ SYNC  = saga.cpi.base.sync
 ASYNC = saga.cpi.base.async
 
 
-_adaptor_name   = 'saga_adaptor_filesystem_local'
+_adaptor_name   = 'saga_adaptor_filesystem_dummyl'
 _adaptor_info   = [{ 'name'    : _adaptor_name,
                      'type'    : 'saga.filesystem.Directory',
-                     'class'   : 'LocalDirectory',
-                     'schemas' : ['file', 'local']
+                     'class'   : 'DummyDirectory',
+                     'schemas' : ['dummy']
                    }, 
                    { 'name'    : _adaptor_name,
                      'type'    : 'saga.filesystem.File',
-                     'class'   : 'LocalFile',
-                     'schemas' : ['file', 'local']
+                     'class'   : 'DummyFile',
+                     'schemas' : ['dummy']
                    }]
 
 ###############################################################################
 # adaptor info
 #
 
-_adaptor_name    = 'saga.adaptor.filesystem.local'
+_adaptor_name    = 'saga.adaptor.dummysystem.local'
 _adaptor_options = []
-_adaptor_schemas = ['file', 'local']
+_adaptor_schemas = ['dummy', 'local']
 _adaptor_info    = {
     'name'          : _adaptor_name,
     'cpis'          : [{
         'type'    : 'saga.filesystem.Directory',
-        'class'   : 'LocalDirectory',
+        'class'   : 'DummyDirectory',
         'schemas' : _adaptor_schemas
         }, 
         {
         'type'    : 'saga.filesystem.File',
-        'class'   : 'LocalFile',
+        'class'   : 'DummyFile',
         'schemas' : _adaptor_schemas
         }
     ]
@@ -88,10 +88,10 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
 ###############################################################################
 #
-class LocalDirectory (saga.cpi.filesystem.Directory) :
+class DummyDirectory (saga.cpi.filesystem.Directory) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.Base.__init__ (self, api, adaptor, 'LocalDirectory')
+        saga.cpi.Base.__init__ (self, api, adaptor, 'DummyDirectory')
 
 
     @SYNC
@@ -115,7 +115,7 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         
         t = saga.task.Task ()
 
-        t._set_result (saga.filesystem.Directory._create_from_adaptor \
+        t._set_result (saga.dummysystem.Directory._create_from_adaptor \
                        (url, flags, session, _adaptor_name))
         t._set_state  (saga.task.DONE)
 
@@ -145,8 +145,8 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
 
         if not os.path.exists (path) :
 
-            if saga.filesystem.CREATE & flags :
-                if saga.filesystem.CREATE_PARENTS & flags :
+            if saga.dummysystem.CREATE & flags :
+                if saga.dummysystem.CREATE_PARENTS & flags :
                     try :
                         os.makedirs (path)
                     except Exception as e :
@@ -180,7 +180,7 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         if not url.scheme and not url.host : 
             url = saga.url.Url (str(self._url) + '/' + str(url))
 
-        f = saga.filesystem.File._create_from_adaptor (url, flags, self._session, 
+        f = saga.dummysystem.File._create_from_adaptor (url, flags, self._session, 
                                                        _adaptor_name)
         return f
 
@@ -189,10 +189,10 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
 #
 # file adaptor class
 #
-class LocalFile (saga.cpi.filesystem.File) :
+class DummyFile (saga.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.Base.__init__ (self, api, adaptor, 'LocalFile')
+        saga.cpi.Base.__init__ (self, api, adaptor, 'DummyFile')
 
 
     @SYNC
@@ -216,7 +216,7 @@ class LocalFile (saga.cpi.filesystem.File) :
         
         t = saga.task.Task ()
 
-        t._set_result (saga.filesystem.File._create_from_adaptor \
+        t._set_result (saga.dummysystem.File._create_from_adaptor \
                        (url, flags, session, _adaptor_name))
         t._set_state  (saga.task.DONE)
 
@@ -318,10 +318,7 @@ class LocalFile (saga.cpi.filesystem.File) :
 
         if tgt_url.schema :
             if not tgt_url.schema in _adaptor_schemas :
-                raise saga.exceptions.BadParameter ("Cannot handle url %s (not local)" %  target)
-
-        if not saga.utils.misc.url_is_local (tgt_url) :
-            raise saga.exceptions.BadParameter ("Cannot handle url %s (not local)"     %  target)
+                raise saga.exceptions.BadParameter ("Cannot handle url %s (unknown schema)" %  target)
 
         if tgt[0] != '/' :
             tgt = "%s/%s"   % (os.path.dirname (src), tgt)

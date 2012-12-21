@@ -105,6 +105,7 @@ class Url(object):
         return self._urlobj.scheme
 
     scheme=property(get_scheme, set_scheme)
+    schema=scheme  # alias, as both terms are used...
     """ The scheme component.
     """
 
