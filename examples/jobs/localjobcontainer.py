@@ -55,7 +55,6 @@ def main():
             print 'Starting container %s ... ' % c
             containers[c].run()
             containers[c].wait()
-            print containers[c].jobs
 
             # at this point, all jobs in the container
             # have finished running. we can now print some statistics 
