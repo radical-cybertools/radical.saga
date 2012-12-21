@@ -85,6 +85,9 @@ class Job (Base) :
     def get_exit_code (self, ttype) :
         raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
 
+    def get_created (self, ttype) :
+        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+
     def get_started (self, ttype) :
         raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
 

@@ -35,6 +35,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         # register properties with the attribute interface 
         self._attributes_register   (STATE,            saga.job.UNKNOWN, self.ENUM,   self.SCALAR, self.READONLY)
         self._attributes_register   (EXIT_CODE,        None,             self.INT,    self.SCALAR, self.READONLY)
+        self._attributes_register   (CREATED,          None,             self.INT,    self.SCALAR, self.READONLY)
         self._attributes_register   (STARTED,          None,             self.INT,    self.SCALAR, self.READONLY)
         self._attributes_register   (FINISHED,         None,             self.INT,    self.SCALAR, self.READONLY)
         self._attributes_register   (EXECUTION_HOSTS,  None,             self.STRING, self.VECTOR, self.READONLY)
@@ -51,6 +52,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         self._attributes_set_getter (STATE,           self.get_state)
         self._attributes_set_getter (ID,              self.get_id)
         self._attributes_set_getter (EXIT_CODE,       self._get_exit_code)
+        self._attributes_set_getter (CREATED,         self._get_created)
         self._attributes_set_getter (STARTED,         self._get_started)
         self._attributes_set_getter (FINISHED,        self._get_finished)
         self._attributes_set_getter (EXECUTION_HOSTS, self._get_execution_hosts)
@@ -253,6 +255,9 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
     # attribute getters
     def _get_exit_code (self, ttype=None) :
         return self._adaptor.get_exit_code (ttype=ttype)
+
+    def _get_created (self, ttype=None) :
+        return self._adaptor.get_created (ttype=ttype)
 
     def _get_started (self, ttype=None) :
         return self._adaptor.get_started (ttype=ttype)
