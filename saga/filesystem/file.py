@@ -13,6 +13,7 @@ from saga.filesystem import *
 # permissions.Permissions, task.Async
 class File (object) :
 
+
     def __init__ (self, url=None, flags=READ, session=None, _adaptor=None) : 
         '''
         url:       saga.Url
@@ -23,6 +24,9 @@ class File (object) :
 
         file_url = Url (url)
 
+        self._is_recursive = False # recursion guard (NOTE: NOT THREAD SAFE)
+
+        self._session = session
         self._engine  = getEngine ()
         self._logger  = getLogger ('saga.filesystem.File')
         self._logger.debug ("saga.filesystem.File.__init__ (%s, %s)"  \
@@ -151,7 +155,82 @@ class File (object) :
         ttype:         saga.task.type enum
         ret:           None / saga.Task
         '''
-        return self._adaptor.copy_self (tgt, flags, ttype=ttype)
+
+        # ------------------------------------------------------------
+        # parameter checks
+        tgt_url = Url (tgt)  # ensure valid and typed Url
+
+
+        # async ops don't deserve a fallback (yet)
+        if ttype != None :
+            return self._adaptor.copy_self (tgt_url, flags, ttype=ttype)
+
+
+        try :
+            # we have only sync calls here - attempt a normal call to the bound
+            # adaptor first (doh!)
+            ret = self._adaptor.copy_self (tgt_url, flags, ttype=ttype)
+        
+        except saga.exceptions.SagaException as e :
+            # if we don't have a scheme for tgt, all is in vain (adaptor
+            # should have handled a relative path...)
+            if not tgt_url.scheme :
+                raise e
+
+            # So, the adaptor bound to the src URL did not manage to copy the file.
+            # If the tgt has a scheme set, we try again with other matching file 
+            # adaptors,  by setting (a copy of) the *src* URL to the same scheme,
+            # in the hope that other adaptors can copy from localhost.
+            #
+            # In principle that mechanism can also be used for remote copies, but
+            # URL translation is way more fragile in those cases...
+            
+            # check recursion guard
+            if self._is_recursive :
+                self._logger.debug("fallback recursion detected - abort")
+              
+            else :
+                # activate recursion guard
+                self._is_recursive += 1
+
+                # find applicable adaptors we could fall back to, i.e. which
+                # support the tgt schema
+                adaptor_names = self._engine.find_adaptors ('saga.filesystem.File', tgt_url.scheme)
+
+                self._logger.debug("try fallback copy to these adaptors: %s" % adaptor_names)
+
+                # build a new src url, by switching to the target schema
+                tmp_url        = self.get_url ()
+                tmp_url.scheme = tgt_url.scheme
+
+                for adaptor_name in adaptor_names :
+                  
+                    try :
+                        self._logger.info("try fallback copy to %s" % adaptor_name)
+
+                        # get an tgt-scheme'd adaptor for the new src url, and try copy again
+                        adaptor = self._engine.get_adaptor (self, 'saga.filesystem.File', tgt_url.scheme, None, adaptor_name)
+                        tmp     = saga.filesystem.File (tmp_url, READ, self._session, _adaptor=adaptor)
+
+                        ret = tmp.copy_self (tgt_url, flags)
+
+                        # release recursion guard
+                        self._is_recursive -= 1
+
+                        # if nothing raised an exception so far, we are done.
+                        return 
+
+
+                    except saga.exceptions.SagaException as e :
+
+                        self._logger.info("fallback failed: %s" % e)
+
+                        # didn't work, ignore this adaptor
+                        pass
+
+            # if all was in vain, we rethrow the original exception
+            self._is_recursive -= 1
+            raise e
   
     
     def link_self (self, tgt, flags=None, ttype=None) :
