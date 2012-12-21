@@ -34,3 +34,6 @@ class ExceptionBase(Exception):
 
     traceback  = property (get_traceback) 
 
+def log_error_and_raise(logger, message, exception_type):
+    logger.error(message)
+    raise exception_type(message)

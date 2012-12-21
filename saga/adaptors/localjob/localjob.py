@@ -11,6 +11,7 @@ __license__   = "MIT"
 import os, time, socket, signal, subprocess
 
 from saga.utils.singleton import Singleton
+from saga.utils.exception import log_error_and_raise
 from saga.utils.job.jobid import JobId
 from saga.utils.which import which
 
@@ -110,6 +111,9 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
         saga.cpi.base.AdaptorBase.__init__ (self, _adaptor_name, _adaptor_options)
 
+        # we only need to call gethostname once 
+        self.hostname = socket.gethostname()
+
 
     def register (self) :
         """ Adaptor registration function. The engine calls this during startup. 
@@ -140,11 +144,10 @@ class LocalJobService (saga.cpi.job.Service) :
         """ Service instance constructor
         """
         # check that the hostname is supported
-        fqhn = socket.gethostname()
+        fqhn = Adaptor().hostname
         if rm_url.host != 'localhost' and rm_url.host != fqhn:
-            message = "Only 'localhost' and '%s' hostnames supported by this adaptor'" % (fqhn)
-            self._logger.warning(message)
-            raise saga.BadParameter(message=message) 
+            msg = "Only 'localhost' and '%s' hostnames supported by this adaptor'" % (fqhn)
+            log_error_and_raise(self._logger, msg, saga.BadParameter)
 
         self._rm      = rm_url
         self._session = session
@@ -185,9 +188,12 @@ class LocalJobService (saga.cpi.job.Service) :
         # check that only supported attributes are provided
         for attribute in jd.list_attributes():
             if attribute not in _adaptor_capabilities['jd_attributes']:
-                raise saga.BadParameter('JobDescription.%s is not supported by this adaptor' % attribute)
+                msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
+                log_error_and_raise(self._logger, msg, saga.BadParameter)
+
         
-        # create and return the new job
+        # this is the dictionary we pass on to the job constructor
+        # you can pyt arbitrary data into it -- whatever you think you'll need
         job_info = { 'job_service'     : self, 
                      'job_description' : jd, 
                      'session'         : self._session,
@@ -203,9 +209,8 @@ class LocalJobService (saga.cpi.job.Service) :
         """ Implements saga.cpi.job.Service.get_url()
         """
         if jobid not in self._jobs.values():
-            message = "This Service instance doesn't know a Job with ID '%s'" % (jobid)
-            self._logger.error(message)
-            raise saga.BadParameter(message=message) 
+            msg = "Service instance doesn't know a Job with ID '%s'" % (jobid)
+            log_error_and_raise(self._logger, msg, saga.BadParameter)
         else:
             for (job_obj, job_id) in self._jobs.iteritems():
                 if job_id == jobid:
@@ -214,27 +219,21 @@ class LocalJobService (saga.cpi.job.Service) :
 
     def container_run (self, jobs) :
         self._logger.debug("container run: %s"  %  str(jobs))
-        #raise saga.NoSuccess("Ole is lazy...")
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.run()
 
 
     def container_wait (self, jobs, mode) :
         self._logger.debug("container wait: %s"  %  str(jobs))
-
-        for ajob in jobs:
-            ajob.wait()
-
-
-        #raise saga.NoSuccess("Ole is lazy...")
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.wait()
 
 
-    def container_cancel (self, jobs) :
-        self._logger.debug("container cancel: %s"  %  str(jobs))
-        raise saga.NoSuccess("Ole is lazy...");
-
-
-    #def container_get_states (self, jobs) :
-    #    self._logger.debug("container get_states: %s"  %  str(jobs))
-    #    raise saga.NoSuccess("Ole is lazy...");
+    #def container_cancel (self, jobs) :
+    #    self._logger.debug("container cancel: %s"  %  str(jobs))
+    #    raise saga.NoSuccess("Not Implemented");
 
 
 ###############################################################################
@@ -262,7 +261,11 @@ class LocalJob (saga.cpi.job.Job) :
 
         self._id         = None
         self._state      = saga.job.NEW
-        self._returncode = None
+
+        self._exit_code       = None
+        self._started         = None
+        self._finished        = None
+        self._execution_hosts = [Adaptor().hostname]
         
         # The subprocess handle
         self._process    = None
@@ -278,9 +281,9 @@ class LocalJob (saga.cpi.job.Job) :
         """
         if self._state == saga.job.RUNNING:
             # only update if still running 
-            self._returncode = self._process.poll() 
-            if self._returncode is not None:
-                if self._returncode != 0:
+            self._exit_code = self._process.poll() 
+            if self._exit_code is not None:
+                if self._exit_code != 0:
                     self._state = saga.job.FAILED
                 else:
                     self._state = saga.job.DONE
@@ -289,17 +292,16 @@ class LocalJob (saga.cpi.job.Job) :
     @SYNC
     def wait(self, timeout):
         if self._process is None:
-            message = "Can't wait for job. Job has not been started"
-            self._logger.warning(message)
-            raise saga.IncorrectState(message)
+            msg = "Can't wait for job that has not been started"
+            log_error_and_raise(self._logger, msg, saga.IncorrectState)
         if timeout == -1:
-            self._returncode = self._process.wait()
+            self._exit_code = self._process.wait()
         else:
             t_beginning = time.time()
             seconds_passed = 0
             while True:
-                self._returncode = self._process.poll()
-                if self._returncode is not None:
+                self._exit_code = self._process.poll()
+                if self._exit_code is not None:
                     break
                 seconds_passed = time.time() - t_beginning
                 if timeout and seconds_passed > timeout:
@@ -313,19 +315,32 @@ class LocalJob (saga.cpi.job.Job) :
         return self._id
 
     @SYNC
-    def get_exit_code(self) :
-        """ Implements saga.cpi.job.Job.get_exit_code()
+    def get_started(self) :
+        """ Implements saga.cpi.job.Job.get_started()
         """        
-        return self._returncode
+        return self._started
+
+    @SYNC
+    def get_finished(self) :
+        """ Implements saga.cpi.job.Job.get_finished()
+        """        
+        return self._finished
+
+    @SYNC
+    def get_execution_hosts(self) :
+        """ Implements saga.cpi.job.Job.get_execution_hosts()
+        """        
+        return self._execution_hosts
 
     @SYNC
     def cancel(self, timeout):
         try:
             os.killpg(self._process.pid, signal.SIGTERM)
-            self._returncode = self._process.wait() # should return with the rc
+            self._exit_code = self._process.wait() # should return with the rc
             self._state = saga.job.CANCELED
         except OSError, ex:
-            raise saga.IncorrectState("Couldn't cancel job %s: %s" % (self._id, ex))
+            msg = "Couldn't cancel job %s: %s" % (self._id, ex)
+            log_error_and_raise(self._logger, msg, saga.IncorrectState)
 
 
     @SYNC
@@ -398,7 +413,6 @@ class LocalJob (saga.cpi.job.Job) :
 
         # now we can finally try to run the job via subprocess
         try:
-            self._logger.debug("Trying to execute: %s" % cmdline) 
             self._process = subprocess.Popen(cmdline, shell=True, 
                                              stderr=self._job_error, 
                                              stdout=self._job_output, 
@@ -413,7 +427,8 @@ class LocalJob (saga.cpi.job.Job) :
             jid.backend_url = str(self._parent_service.get_url())
             self._id = str(jid)
             self._parent_service._update_jobid(self, self._id)
+            self._logger.debug("Starting process '%s' was successful." % cmdline) 
 
         except Exception, ex:
-            raise saga.NoSuccess(str(ex))
-
+            msg = "Starting process: '%s' failed: %s" % (cmdline, str(ex))
+            log_error_and_raise(self._logger, msg, saga.NoSuccess)

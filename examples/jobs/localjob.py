@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
-""" This examples shows how to execute a job to the local machine
-    via the local job adaptor.
+""" This examples shows how to run a job on the local machine
+    using the 'local' job adaptor. 
 """
 
 __author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2011-2012, The SAGA Project"
+__copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
 import sys, saga
@@ -14,7 +14,8 @@ import sys, saga
 def main():
     
     try:
-        # create a job service for the local machine
+        # create a job service for the local machine. both, 'fork' and 
+        # 'local' schemes trigger the local job adaptor. 
         js = saga.job.Service("fork://localhost")
 
         # describe our job
@@ -25,28 +26,29 @@ def main():
         jd.executable  = '/bin/sleep'
         jd.arguments   = ['$CATME']
         
-        # output options (will be just empty files for /bin/sleep)
+        # output options (will just be empty files for /bin/sleep)
         jd.output = "saga_localjob.stdout"
         jd.error  = "saga_localjob.stderr"
 
         # create the job (state: New)
         catjob = js.create_job(jd)
 
-        print "Job ID    : %s" % (catjob.job_id)
+        # check our job's id and state
+        print "Job ID    : %s" % (catjob.id)
         print "Job State : %s" % (catjob.state)
 
         print "\n...starting job...\n"
         catjob.run()
 
-        print "Job ID    : %s" % (catjob.job_id)
+        print "Job ID    : %s" % (catjob.id)
         print "Job State : %s" % (catjob.state)
 
         print "\nListing active jobs: "
         for job in js.list():
             print " * %s" % job
 
+        # wait for our job to complete
         print "\n...waiting for job...\n"
-
         catjob.wait()
 
         print "Job State : %s" % (catjob.state)
@@ -54,7 +56,8 @@ def main():
 
     except saga.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))
-        # get the whole traceback - this might be helpful
+        # get the whole traceback in case of an exception - 
+        # this can be helpful for debugging the problem
         print " *** %s" % saga.utils.exception.get_traceback()
         sys.exit(-1)
 
