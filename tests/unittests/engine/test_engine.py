@@ -63,7 +63,7 @@ def test_load_adaptor():
     assert len(Engine().loaded_cpis()['saga.job.Job']['mock']) == 1
 
     # make sure the configuration gets passed through
-    assert Engine().loaded_cpis()['saga.job.Job']['mock'][0](None).get_config()["foo"].as_dict() == {'foo': 'bar'}
+    assert Engine().loaded_cpis()['saga.job.Job']['mock'][0]['cpi_class'](None).get_config()["foo"].as_dict() == {'foo': 'bar'}
 
     # restore sys.path
     sys.path = old_sys_path

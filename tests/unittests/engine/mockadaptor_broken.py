@@ -43,8 +43,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
 
 class MockJob(saga.cpi.job.Job):
-    def __init__ (self, api) :
-        saga.cpi.Base.__init__ (self, api, adaptor_name='saga.adaptor.mock',
-                                      config_options=_adaptor_config_options)
+    def __init__ (self, api, adaptor) :
+        saga.cpi.Base.__init__ (self, api, adaptor, 'MockJob')
 
 
