@@ -121,7 +121,7 @@ Attributes
 :todo: Explain how to use job attributes
 
 .. currentmodule:: saga.job
-.. autodata:: JOB_ID
+.. autodata:: ID
 .. autodata:: EXECUTION_HOSTS
 .. autodata:: CREATED
 .. autodata:: STARTED
