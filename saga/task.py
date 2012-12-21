@@ -220,6 +220,13 @@ class Container (saga.attributes.Attributes) :
             # nothing to do
             return None
 
+        if mode == ALL :
+            return self._wait_all (timeout)
+        else : 
+            return self._wait_any (timeout)
+
+
+    def _wait_any (self, timeout) :
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
@@ -228,30 +235,13 @@ class Container (saga.attributes.Attributes) :
         for container in buckets['containers'] :
 
             tasks  = buckets['containers'][container]
-            threads.append (Thread (container.container_wait, tasks, mode))
+            threads.append (Thread (container.container_wait, tasks, mode, timeout))
 
         
         for task in buckets['tasks'] :
 
             threads.append (Thread (task.wait, timeout))
             
-
-        if mode == ALL :
-
-            # easy - just wait for all threads to finish
-            for thread in threads :
-                thread.join ()
-
-                if thread.get_state () == FAILED :
-                    raise saga.NoSuccess ("thread exception: %s\n%s" \
-                            %  (str(thread.get_exception ()),
-                                str(thread.get_traceback ())))
-
-            # all done - return first task (i.e. random task)
-            return self.tasks[0]
-
-
-        else :
 
             # mode == ANY: we need to watch our threads, and whenever one
             # returns, and declare success.  Note that we still need to get the
@@ -274,6 +264,23 @@ class Container (saga.attributes.Attributes) :
 
                     # ignore other threads, and simply declare success
                     return result
+
+
+
+    def _wait_all (self, timeout) :
+
+        buckets = self._get_buckets ()
+        ret     = None
+
+        for container in buckets['containers'] :
+
+            tasks  = buckets['containers'][container]
+            container.container_wait (tasks, ALL, timeout)
+            ret    = tasks[0]
+ 
+        # all done - return random task
+        return ret
+
 
 
     def cancel (self) :

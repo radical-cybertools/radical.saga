@@ -5,8 +5,8 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-from   saga.engine.logger import getLogger
-from saga.task import Container as TaskContainer
+from saga.engine.logger import getLogger
+from saga.task          import Container as TaskContainer
 
 # 'forward' declaration of job.Container
 class Container(TaskContainer):

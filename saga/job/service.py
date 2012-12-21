@@ -14,6 +14,7 @@ from saga.engine.engine   import getEngine, ANY_ADAPTOR
 from saga.task            import SYNC, ASYNC, TASK
 from saga.url             import Url
 from saga.job.description import Description
+from saga.exceptions      import BadParameter
 
 
 
@@ -81,6 +82,16 @@ class Service (object) :
         """
         jd_copy = Description()
         job_desc._attributes_deep_copy (jd_copy)
+
+        # do some sanity checks:
+
+        # make sure at least 'executable' is defined
+        if jd_copy.executable is None:
+            raise BadParameter("No executable defined")
+
+        # convert environment to string
+        for (key, value) in jd_copy.environment.iteritems():
+            jd_copy.environment[key] = str(value)
 
         return self._adaptor.create_job (jd_copy, ttype=ttype)
 
