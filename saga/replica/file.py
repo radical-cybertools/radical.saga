@@ -4,14 +4,14 @@ from   saga.engine.logger import getLogger
 from   saga.engine.engine import getEngine, ANY_ADAPTOR
 from   saga.task          import SYNC, ASYNC, TASK
 from   saga.url           import Url
-from   saga.filesystem    import *
+from   saga.replica       import *
 
 import saga.exceptions
 import saga.attributes
 
 
 # permissions.Permissions, task.Async
-class File (object) :
+class LogicalFile (object) :
 
 
     def __init__ (self, url=None, flags=READ, session=None, _adaptor=None) : 
@@ -28,8 +28,8 @@ class File (object) :
 
         self._session = session
         self._engine  = getEngine ()
-        self._logger  = getLogger ('saga.filesystem.File')
-        self._logger.debug ("saga.filesystem.File.__init__ (%s, %s)"  \
+        self._logger  = getLogger ('saga.replica.LogicalFile')
+        self._logger.debug ("saga.replica.LogicalFile.__init__ (%s, %s)"  \
                          % (str(file_url), str(session)))
 
         if _adaptor :
@@ -37,7 +37,7 @@ class File (object) :
             self._adaptor = _adaptor
             self._adaptor.init_instance (url, flags, session)
         else :
-            self._adaptor = self._engine.get_adaptor (self, 'saga.filesystem.File', file_url.scheme, \
+            self._adaptor = self._engine.get_adaptor (self, 'saga.replica.LogicalFile', file_url.scheme, \
                                                       None, ANY_ADAPTOR, file_url, flags, session)
 
 
@@ -45,7 +45,7 @@ class File (object) :
     def create (self, url=None, flags=READ, ttype=None) :
         '''
         url:       saga.Url
-        flags:     saga.filesystem.flags enum
+        flags:     saga.replica.flags enum
         session:   saga.Session
         ttype:     saga.task.type enum
         ret:       saga.Task
@@ -54,13 +54,13 @@ class File (object) :
         file_url = Url (url)
     
         engine = getEngine ()
-        logger = getLogger ('saga.filesystem.File.create')
-        logger.debug ("saga.filesystem.File.create(%s, %s, %s)"  \
+        logger = getLogger ('saga.replica.LogicalFile.create')
+        logger.debug ("saga.replica.LogicalFile.create(%s, %s, %s)"  \
                    % (str(file_url), str(session), str(ttype)))
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_async(), which returns a task as expected.
-        return engine.get_adaptor (self, 'saga.filesystem.File', file_url.scheme, \
+        return engine.get_adaptor (self, 'saga.replica.LogicalFile', file_url.scheme, \
                                    ttype, ANY_ADAPTOR, file_url, session)
 
 
@@ -68,22 +68,22 @@ class File (object) :
     def _create_from_adaptor (self, url, flags, session, adaptor_name) :
         '''
         url:          saga.Url
-        flags:        saga.filesystem.flags enum
+        flags:        saga.replica.flags enum
         session:      saga.Session
         adaptor_name: String
-        ret:          saga.filesystem.File (bound to a specific adaptor)
+        ret:          saga.replica.LogicalFile (bound to a specific adaptor)
         '''
 
         engine = getEngine ()
-        logger = getLogger ('saga.filesystem.File')
-        logger.debug ("saga.filesystem.File._create_from_adaptor (%s, %s, %s)"  \
+        logger = getLogger ('saga.replica.LogicalFile')
+        logger.debug ("saga.replica.LogicalFile._create_from_adaptor (%s, %s, %s)"  \
                    % (url, flags, adaptor_name))
     
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_sync(), resulting in 
         # FIXME: self is not an instance here, but the class object...
-        adaptor = engine.get_adaptor (self, 'saga.filesystem.File', url.scheme, None, adaptor_name)
+        adaptor = engine.get_adaptor (self, 'saga.replica.LogicalFile', url.scheme, None, adaptor_name)
     
         return self (url, flags, session, _adaptor=adaptor)
 
@@ -195,7 +195,8 @@ class File (object) :
 
                 # find applicable adaptors we could fall back to, i.e. which
                 # support the tgt schema
-                adaptor_names = self._engine.find_adaptors ('saga.filesystem.File', tgt_url.scheme)
+                adaptor_names = self._engine.find_adaptors
+                ('saga.replica.LogicalFile', tgt_url.scheme)
 
                 self._logger.debug("try fallback copy to these adaptors: %s" % adaptor_names)
 
@@ -209,8 +210,9 @@ class File (object) :
                         self._logger.info("try fallback copy to %s" % adaptor_name)
 
                         # get an tgt-scheme'd adaptor for the new src url, and try copy again
-                        adaptor = self._engine.get_adaptor (self, 'saga.filesystem.File', tgt_url.scheme, None, adaptor_name)
-                        tmp     = saga.filesystem.File (tmp_url, READ, self._session, _adaptor=adaptor)
+                        adaptor = self._engine.get_adaptor (self, 'saga.replica.LogicalFile', \
+                                                            tgt_url.scheme, None, adaptor_name)
+                        tmp     = saga.replica.LogicalFile (tmp_url, READ, self._session, _adaptor=adaptor)
 
                         ret = tmp.copy_self (tgt_url, flags)
 
@@ -301,7 +303,7 @@ class File (object) :
 
     # ----------------------------------------------------------------
     #
-    # filesystem methods
+    # replica methods
     #
     def is_file_self (self, ttype=None) :
         '''

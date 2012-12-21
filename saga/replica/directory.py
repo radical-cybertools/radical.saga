@@ -3,14 +3,14 @@ from   saga.engine.logger import getLogger
 from   saga.engine.engine import getEngine, ANY_ADAPTOR
 from   saga.task          import SYNC, ASYNC, TASK
 from   saga.url           import Url
-from   saga.filesystem    import *
+from   saga.replica       import *
 
 import saga.exceptions
 import saga.attributes
 
 
 # permissions.Permissions, task.Async
-class Directory (object) :
+class LogicalDirectory (object) :
 
     def __init__ (self, url=None, flags=READ, session=None, _adaptor=None) : 
         '''
@@ -23,15 +23,16 @@ class Directory (object) :
         dir_url = Url (url)
 
         self._engine  = getEngine ()
-        self._logger  = getLogger ('saga.filesystem.Directory')
-        self._logger.debug ("saga.filesystem.Directory.__init__ (%s, %s)"  \
+        self._logger  = getLogger ('saga.replica.LogicalDirectory')
+        self._logger.debug ("saga.replica.LogicalDirectory.__init__ (%s, %s)"  \
                          % (str(dir_url), str(session)))
 
         if _adaptor :
             # created from adaptor
             self._adaptor = _adaptor
         else :
-            self._adaptor = self._engine.get_adaptor (self, 'saga.filesystem.Directory', dir_url.scheme, \
+            self._adaptor = self._engine.get_adaptor (self,
+                'saga.replica.LogicalDirectory', dir_url.scheme, \
                                                       None, ANY_ADAPTOR, dir_url, flags, session)
 
 
@@ -39,7 +40,7 @@ class Directory (object) :
     def create (self, url=None, flags=READ, session=None, ttype=saga.task.SYNC) :
         '''
         url:       saga.Url
-        flags:     saga.filesystem.flags enum
+        flags:     saga.replica.flags enum
         session:   saga.Session
         ttype:     saga.task.type enum
         ret:       saga.Task
@@ -48,13 +49,13 @@ class Directory (object) :
         dir_url = Url (url)
     
         engine = getEngine ()
-        logger = getLogger ('saga.filesystem.Directory.create')
-        logger.debug ("saga.filesystem.Directory.create(%s, %s, %s)"  \
+        logger = getLogger ('saga.replica.LogicalDirectory.create')
+        logger.debug ("saga.replica.LogicalDirectory.create(%s, %s, %s)"  \
                    % (str(dir_url), str(session), str(ttype)))
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_async(), which returns a task as expected.
-        return engine.get_adaptor (self, 'saga.filesystem.Directory', dir_url.scheme, \
+        return engine.get_adaptor (self, 'saga.replica.LogicalDirectory', dir_url.scheme, \
                                    ttype, ANY_ADAPTOR, dir_url, flags, session)
 
 
@@ -62,22 +63,22 @@ class Directory (object) :
     def _create_from_adaptor (self, url, flags, session, adaptor_name) :
         '''
         url:          saga.Url
-        flags:        saga.filesystem.flags enum
+        flags:        saga.replica.flags enum
         session:      saga.Session
         adaptor_name: String
-        ret:          saga.filesystem.Directory (bound to a specific adaptor)
+        ret:          saga.replica.LogicalDirectory (bound to a specific adaptor)
         '''
 
         engine = getEngine ()
-        logger = getLogger ('saga.filesystem.Directory')
-        logger.debug ("saga.filesystem.Directory._create_from_adaptor (%s, %s, %s)"  \
+        logger = getLogger ('saga.replica.LogicalDirectory')
+        logger.debug ("saga.replica.LogicalDirectory._create_from_adaptor (%s, %s, %s)"  \
                    % (url, flags, adaptor_name))
     
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_sync(), resulting in 
         # FIXME: self is not an instance here, but the class object...
-        adaptor = engine.get_adaptor (self, 'saga.filesystem.Directory', url.scheme, None, adaptor_name)
+        adaptor = engine.get_adaptor (self, 'saga.replica.LogicalDirectory', url.scheme, None, adaptor_name)
     
         return self (url, flags, session, _adaptor=adaptor)
 
@@ -86,7 +87,7 @@ class Directory (object) :
 
     # ----------------------------------------------------------------
     #
-    # filesystem directory methods
+    # replica directory methods
     #
     def get_size (self, name, flags=None, ttype=None) :
         '''
@@ -112,7 +113,7 @@ class Directory (object) :
         name:     saga.Url
         flags:    saga.namespace.flags enum
         ttype:    saga.task.type enum
-        ret:      saga.filesystem.Directory / saga.Task
+        ret:      saga.replica.LogicalDirectory / saga.Task
         '''
         return self._adaptor.open_dir (name, flags, ttype=ttype)
 
@@ -122,7 +123,7 @@ class Directory (object) :
         name:     saga.Url
         flags:    saga.namespace.flags enum
         ttype:    saga.task.type enum
-        ret:      saga.filesystem.File / saga.Task
+        ret:      saga.replica.LogicalFile / saga.Task
         '''
         url = Url(name)
         return self._adaptor.open (url, flags, ttype=ttype)
