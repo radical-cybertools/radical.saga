@@ -17,18 +17,6 @@ SYNC  = saga.cpi.base.sync
 ASYNC = saga.cpi.base.async
 
 
-_adaptor_name   = 'saga_adaptor_filesystem_local'
-_adaptor_info   = [{ 'name'    : _adaptor_name,
-                     'type'    : 'saga.filesystem.Directory',
-                     'class'   : 'LocalDirectory',
-                     'schemas' : ['file', 'local']
-                   }, 
-                   { 'name'    : _adaptor_name,
-                     'type'    : 'saga.filesystem.File',
-                     'class'   : 'LocalFile',
-                     'schemas' : ['file', 'local']
-                   }]
-
 ###############################################################################
 # adaptor info
 #
@@ -37,8 +25,9 @@ _adaptor_name    = 'saga.adaptor.filesystem.local'
 _adaptor_options = []
 _adaptor_schemas = ['file', 'local']
 _adaptor_info    = {
-    'name'          : _adaptor_name,
-    'cpis'          : [{
+    'name'        : _adaptor_name,
+    'version'     : '0.2',
+    'cpis'        : [{
         'type'    : 'saga.filesystem.Directory',
         'class'   : 'LocalDirectory',
         'schemas' : _adaptor_schemas

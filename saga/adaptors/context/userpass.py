@@ -11,15 +11,16 @@ ASYNC = saga.cpi.base.async
 #
 # adaptor meta data
 #
-_adaptor_schema   = 'UserPass'
+_adaptor_schemas  = ['UserPass']
 _adaptor_name     = 'saga.adaptor.userpass'
 _adaptor_options  = []
 _adaptor_info     = {
     'name'        : _adaptor_name,
+    'version'     : 'v0.1',
     'cpis'        : [{ 
         'type'    : 'saga.Context',
         'class'   : 'ContextUserPass',
-        'schemas' : [_adaptor_schema]
+        'schemas' : _adaptor_schemas
         }
     ]
 }
@@ -72,7 +73,7 @@ class ContextUserPass (saga.cpi.Context) :
     @SYNC
     def init_instance (self, type) :
         
-        if type.lower () != _adaptor_schema.lower () :
+        if not type.lower () in (schema.lower() for schema in _adaptor_schemas) :
             raise saga.exceptions.BadParameter \
                     ("the UserPass context adaptor only handles UserPass contexts - duh!")
 

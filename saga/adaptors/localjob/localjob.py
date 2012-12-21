@@ -70,6 +70,7 @@ _ADAPTOR_DOC    = {
 ##                                                                            ##
 _ADAPTOR_INFO   = {
     'name'          : _ADAPTOR_NAME,
+    'version'       : 'v0.1',
     'cpis'          : [
         { 
         'type'      : 'saga.job.Service',

@@ -14,15 +14,16 @@ ASYNC = saga.cpi.base.async
 #
 # adaptor meta data
 #
-_adaptor_schema   = 'MyProxy'
+_adaptor_schemas  = ['MyProxy']
 _adaptor_name     = 'saga.adaptor.myproxy'
 _adaptor_options  = []
 _adaptor_info     = {
     'name'        : _adaptor_name,
+    'version'     : 'v0.1',
     'cpis'        : [{ 
         'type'    : 'saga.Context',
         'class'   : 'ContextMyProxy',
-        'schemas' : [_adaptor_schema]
+        'schemas' : _adaptor_schemas
         }
     ]
 }
@@ -76,7 +77,7 @@ class ContextMyProxy (saga.cpi.Context) :
     @SYNC
     def init_instance (self, type) :
 
-        if type.lower () != _adaptor_schema.lower () :
+        if not type.lower () in (schema.lower() for schema in _adaptor_schemas) :
             raise saga.exceptions.BadParameter \
                     ("the MyProxy context adaptor only handles MyProxy contexts - duh!")
 
@@ -87,7 +88,7 @@ class ContextMyProxy (saga.cpi.Context) :
     def _initialize (self, session) :
 
         # make sure we have server, username, password
-        api = self._get_api ()
+        api = self._api
 
 
         # set up the myproxy command
@@ -134,7 +135,7 @@ class ContextMyProxy (saga.cpi.Context) :
         new_ctx = saga.Context ('X509')
 
         new_ctx.user_proxy = proxy_location
-        new_ctx.life_time  = api.lifetime
+        new_ctx.life_time  = api.life_time
 
         session.add_context (new_ctx)
 

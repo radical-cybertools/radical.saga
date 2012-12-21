@@ -14,15 +14,16 @@ ASYNC = saga.cpi.base.async
 #
 # adaptor meta data
 #
-_adaptor_schema   = 'X509'
+_adaptor_schemas  = ['X509']
 _adaptor_name     = 'saga.adaptor.x509'
 _adaptor_options  = []
 _adaptor_info     = {
     'name'        : _adaptor_name,
+    'version'     : 'v0.1',
     'cpis'        : [{ 
         'type'    : 'saga.Context',
         'class'   : 'ContextX509',
-        'schemas' : [_adaptor_schema]
+        'schemas' : _adaptor_schemas
         }
     ]
 }
@@ -75,7 +76,7 @@ class ContextX509 (saga.cpi.Context) :
     @SYNC
     def init_instance (self, type) :
 
-        if type.lower () != _adaptor_schema.lower () :
+        if not type.lower () in (schema.lower() for schema in _adaptor_schemas) :
             raise saga.exceptions.BadParameter \
                     ("the x509 context adaptor only handles x509 contexts - duh!")
 
@@ -86,7 +87,7 @@ class ContextX509 (saga.cpi.Context) :
     def _initialize (self, session) :
 
         # make sure we have can access the proxy
-        api = self._get_api ()
+        api = self._api
 
         if api.user_proxy :
             if not os.path.exists (api.user_proxy) or \

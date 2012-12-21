@@ -25,7 +25,7 @@ ANY_ADAPTOR = None
 
 ############# These are all supported options for saga.engine ####################
 ##
-_all_engine_config_options = [
+_config_options = [
     { 
     'category'      : 'saga.engine',
     'name'          : 'foo', 
@@ -42,6 +42,15 @@ _all_engine_config_options = [
     'default'       : True,
     'valid_options' : [True, False],
     'documentation' : 'install SIGINT signal handler to abort application.',
+    'env_variable'  : None
+    },
+    { 
+    'category'      : 'saga.engine',
+    'name'          : 'load_beta_adaptors', 
+    'type'          : bool, 
+    'default'       : False,
+    'valid_options' : [True, False],
+    'documentation' : 'load adaptors which are marked as beta (i.e. not released).',
     'env_variable'  : None
     }
 ]
@@ -146,7 +155,7 @@ class Engine(Configurable):
         self._cpis     = {}
 
         # set the configuration options for this object
-        Configurable.__init__(self, 'saga.engine', _all_engine_config_options)
+        Configurable.__init__(self, 'saga.engine', _config_options)
         self._cfg = self.get_config()
 
 

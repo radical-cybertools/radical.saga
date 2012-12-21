@@ -16,6 +16,7 @@ import datetime
 import traceback
 import inspect
 import re
+import pprint
 
 # FIXME: add a tagging 'Monitorable' interface, which enables callbacks.
 
@@ -1550,8 +1551,9 @@ class Attributes (_AttributesBase) :
         # make sure interface is ready to use
         d = self._attributes_t_init ()
 
+
         keys_all   = sorted (d['_attributes'].iterkeys ())
-        keys_exist = sorted (self._attributes_i_list   ())
+        keys_exist = (key.lower for key in sorted (self._attributes_i_list ()))
 
         print "---------------------------------------"
         print str (type (self))

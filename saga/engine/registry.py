@@ -12,8 +12,6 @@ adaptor_registry = ["saga.adaptors.localjob.localjob",
                     "saga.adaptors.context.myproxy",
                     "saga.adaptors.context.x509",
                     "saga.adaptors.context.userpass",
-                    "saga.adaptors.mockadaptor_enabled",
-                    "saga.adaptors.mockadaptor_broken",
                     "saga.adaptors.saga_adaptor_filesystem_local",
                     "saga.adaptors.saga_adaptor_filesystem_dummy"
                    ]
