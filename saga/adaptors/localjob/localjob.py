@@ -24,8 +24,9 @@ ASYNC = saga.cpi.base.async
 ################################################################################
 ## the adaptor name                                                           ## 
 ##                                                                            ##
-_ADAPTOR_NAME = 'saga.adaptor.localjob'
-
+_ADAPTOR_NAME          = 'saga.adaptor.localjob'
+_ADAPTOR_OPTIONS       = {}
+_ADAPTOR_SCHEMAS       = ['fork', 'local']
 ################################################################################
 ## the adaptor capabilites & supported attributes                             ##
 ##                                                                            ##
@@ -45,7 +46,9 @@ _ADAPTOR_CAPABILITES   = {
                           saga.job.STARTED,
                           saga.job.FINISHED],
     'metrics'          : [saga.job.STATE],
-    'contexts'         : {} # {context type : how it is used}
+    'contexts'         : {'None' : """this adaptor works in the same security
+                                      context as the application process itself."""
+    }                  # {context type : how it is used}
 }
 
 ################################################################################
@@ -53,14 +56,15 @@ _ADAPTOR_CAPABILITES   = {
 ##                                                                            ##
 _ADAPTOR_DOC    = {
     'name'             : _ADAPTOR_NAME,
-    'cfg_options'      : {},#_adaptor_options,
+    'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilites'      : _ADAPTOR_CAPABILITES,
     'description'      : """ 
-    The local job adaptor. This adaptor uses subprocesses to run jobs on the 
-    local machine.
-    """,
-    'details'          : """ A more elaborate description....
-                         """,
+        The local job adaptor. This adaptor uses subprocesses to run jobs on the 
+        local machine.
+        """,
+    'details'          : """ 
+        A more elaborate description....
+        """,
     'schemas'          : {'fork'  :'desc', 
                           'local' :'same as fork'},
 }
@@ -75,12 +79,12 @@ _ADAPTOR_INFO   = {
         { 
         'type'      : 'saga.job.Service',
         'class'     : 'LocalJobService',
-        'schemas'   : ['fork', 'local']
+        'schemas'   : _ADAPTOR_SCHEMAS
         }, 
         { 
         'type'      : 'saga.job.Job',
         'class'     : 'LocalJob',
-        'schemas'   : ['fork', 'local']
+        'schemas'   : _ADAPTOR_SCHEMAS
         }
     ]
 }

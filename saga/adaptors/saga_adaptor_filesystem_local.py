@@ -21,25 +21,38 @@ ASYNC = saga.cpi.base.async
 # adaptor info
 #
 
-_adaptor_name    = 'saga.adaptor.filesystem.local'
-_adaptor_options = []
-_adaptor_schemas = ['file', 'local']
-_adaptor_info    = {
-    'name'        : _adaptor_name,
-    'version'     : 'v0.2',
-    'cpis'        : [{
-        'type'    : 'saga.filesystem.Directory',
-        'class'   : 'LocalDirectory',
-        'schemas' : _adaptor_schemas
+_ADAPTOR_NAME          = 'saga.adaptor.filesystem.local'
+_ADAPTOR_OPTIONS       = {}
+_ADAPTOR_CAPABILITES   = {}
+_ADAPTOR_SCHEMAS       = ['file', 'local']
+
+_ADAPTOR_DOC           = {
+    'name'             : _ADAPTOR_NAME,
+    'cfg_options'      : _ADAPTOR_OPTIONS, 
+    'capabilites'      : _ADAPTOR_CAPABILITES,
+    'description'      : 'The local filesystem adaptor.',
+    'details'          : """This adaptor interacts with local filesystem, by
+                            using the (POSIX like) os and shutil Python packages.""",
+    'schemas'          : {'file'  : 'local filesystem.', 
+                          'local' : 'alias for *file*' 
+    },
+}
+
+_ADAPTOR_REGISTRY      = {
+    'name'             : _ADAPTOR_NAME,
+    'version'          : 'v0.2',
+    'cpis'             : [{
+        'type'         : 'saga.filesystem.Directory',
+        'class'        : 'LocalDirectory',
+        'schemas'      : _ADAPTOR_SCHEMAS
         }, 
         {
-        'type'    : 'saga.filesystem.File',
-        'class'   : 'LocalFile',
-        'schemas' : _adaptor_schemas
+        'type'         : 'saga.filesystem.File',
+        'class'        : 'LocalFile',
+        'schemas'      : _ADAPTOR_SCHEMAS
         }
     ]
 }
-
 
 ###############################################################################
 # The adaptor class
@@ -60,7 +73,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _adaptor_name, _adaptor_options)
+        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_NAME, _ADAPTOR_OPTIONS)
 
 
     def register (self) :
@@ -72,7 +85,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
             is ok, we return the adaptor info.
         """
     
-        return _adaptor_info
+        return _ADAPTOR_REGISTRY
 
 
 ###############################################################################
@@ -105,7 +118,7 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         t = saga.task.Task ()
 
         t._set_result (saga.filesystem.Directory._create_from_adaptor \
-                       (url, flags, session, _adaptor_name))
+                       (url, flags, session, _ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -170,7 +183,7 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
             url = saga.url.Url (str(self._url) + '/' + str(url))
 
         f = saga.filesystem.File._create_from_adaptor (url, flags, self._session, 
-                                                       _adaptor_name)
+                                                       _ADAPTOR_NAME)
         return f
 
 
@@ -206,7 +219,7 @@ class LocalFile (saga.cpi.filesystem.File) :
         t = saga.task.Task ()
 
         t._set_result (saga.filesystem.File._create_from_adaptor \
-                       (url, flags, session, _adaptor_name))
+                       (url, flags, session, _ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -306,7 +319,7 @@ class LocalFile (saga.cpi.filesystem.File) :
         src     = self._url.path
 
         if tgt_url.schema :
-            if not tgt_url.schema in _adaptor_schemas :
+            if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :
                 raise saga.exceptions.BadParameter ("Cannot handle url %s (not local)" %  target)
 
         if not saga.utils.misc.url_is_local (tgt_url) :

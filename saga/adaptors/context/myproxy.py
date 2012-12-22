@@ -4,6 +4,7 @@ import subprocess
 
 from   saga.utils.singleton import Singleton
 
+import saga.context
 import saga.cpi.base
 import saga.cpi.context
 
@@ -14,16 +15,35 @@ ASYNC = saga.cpi.base.async
 #
 # adaptor meta data
 #
-_adaptor_schemas  = ['MyProxy']
-_adaptor_name     = 'saga.adaptor.myproxy'
-_adaptor_options  = []
-_adaptor_info     = {
-    'name'        : _adaptor_name,
-    'version'     : 'v0.1',
-    'cpis'        : [{ 
-        'type'    : 'saga.Context',
-        'class'   : 'ContextMyProxy',
-        'schemas' : _adaptor_schemas
+_ADAPTOR_NAME          = 'saga.adaptor.myproxy'
+_ADAPTOR_OPTIONS       = {}
+_ADAPTOR_SCHEMAS       = ['MyProxy']
+
+_ADAPTOR_CAPABILITES   = {
+    'attributes'       : [saga.context.TYPE,
+                          saga.context.SERVER,
+                          saga.context.USER_ID,
+                          saga.context.USER_PASS,
+                          saga.context.LIFE_TIME]
+}
+
+_ADAPTOR_DOC           = {
+    'name'             : _ADAPTOR_NAME,
+    'cfg_options'      : _ADAPTOR_OPTIONS, 
+    'capabilites'      : _ADAPTOR_CAPABILITES,
+    'description'      : 'The MyProxy context adaptor.',
+    'details'          : """This adaptor fetches an X509 proxy from
+                            MyProxy when it is added to a saga.Session.""",
+    'schemas'          : {'myproxy' : 'this adaptor can only interact with myproxy backends'},
+}
+
+_ADAPTOR_REGISTRY      = {
+    'name'             : _ADAPTOR_NAME,
+    'version'          : 'v0.1',
+    'cpis'             : [{ 
+        'type'         : 'saga.Context',
+        'class'        : 'ContextMyProxy',
+        'schemas'      : _ADAPTOR_SCHEMAS
         }
     ]
 }
@@ -48,7 +68,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _adaptor_name, _adaptor_options)
+        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_NAME, _ADAPTOR_OPTIONS)
 
 
     def register (self) :
@@ -60,7 +80,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
             is ok, we return the adaptor info.
         """
     
-        return _adaptor_info
+        return _ADAPTOR_REGISTRY
 
 
 ######################################################################
@@ -77,7 +97,7 @@ class ContextMyProxy (saga.cpi.Context) :
     @SYNC
     def init_instance (self, type) :
 
-        if not type.lower () in (schema.lower() for schema in _adaptor_schemas) :
+        if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
             raise saga.exceptions.BadParameter \
                     ("the MyProxy context adaptor only handles MyProxy contexts - duh!")
 
