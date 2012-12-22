@@ -40,7 +40,7 @@ source_suffix = '.rst'
 rst_epilog = """
 .. |param_ttype| replace:: Type of operation. Default (None) is synchronous.
 .. |rtype_ttype| replace:: :class:`saga.Task` if the operation is asynchronous.
-.. |not_implemented| replace:: **CURRENTLY NOT IMPLEMENTED / SUPPORTED** 
+.. |not_implemented| replace:: CURRENTLY NOT IMPLEMENTED / SUPPORTED
 """
 
 # The encoding of source files.

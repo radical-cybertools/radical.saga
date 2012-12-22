@@ -97,50 +97,52 @@ class Service (object) :
 
 
     def run_job (self, cmd, host="", ttype=None) :
-        '''
-        ** NOT IMPLEMENTED**
-
-        cmd:       string
-        host:      string
-        ttype:     saga.task.type enum
-        ret:       saga.job.Job / saga.Task
-        '''
+        """ .. warning:: |not_implemented|
+        """
         return self._adaptor.run_job (cmd, host, ttype=ttype)
 
 
     def list (self, ttype=None) :
-        '''
-        ttype:     saga.task.type enum
-        ret:       list [string] / saga.Task
-        '''
+        """ Return a list of the jobs that are managed by this Service 
+            instance. 
+
+            .. seealso:: 
+               The :data:`~saga.job.Service.jobs` property and the
+               :meth:`~saga.job.Service.list` method are semantically 
+               equivalent and only duplicated for convenience.
+
+            :ttype: |param_ttype|
+            :rtype: list of :class:`saga.job.Job`
+        """
         return self._adaptor.list (ttype=ttype)
+
+    jobs = property (list)    
 
 
     def get_url (self, ttype=None) :
-        '''
-        ttype:     saga.task.type enum
-        ret:       saga.job.Job / saga.Task
-        '''
+        """ Return the URL this Service instance was created with.
+
+            .. seealso:: 
+               The :data:`~saga.job.Service.url` property and the
+               :meth:`~saga.job.Service.get_url` method are semantically 
+               equivalent and only duplicated for convenience.
+
+
+
+            :ttype: |param_ttype|
+            :rtype: list of :class:`saga.job.Url`
+        """
         return self._adaptor.get_url (ttype=ttype)
+
+    url = property (get_url) 
 
 
     def get_job (self, job_id, ttype=None) :
-        '''
-        job_id:    string
-        ttype:     saga.task.type enum
-        ret:       saga.job.Job / saga.Task
-        '''
+        """ Return the job object for a given job id.
+
+            :param job_id: The id of the job to retrieve
+            :rtype:     :class:`saga.job.Job`
+        """
         return self._adaptor.get_job (job_id, ttype=ttype)
 
-
-    def get_self (self,ttype=None) :
-        '''
-        ttype:     saga.task.type enum
-        ret:       saga.job.Self / saga.Task
-        '''
-        return self._adaptor.get_self (ttype=ttype)
-
-
-    jobs = property (list)      # list [saga.job.Job]    # FIXME: dict {string id : saga.job.Job} ?
-    self = property (get_self)  # saga.job.Self
 
