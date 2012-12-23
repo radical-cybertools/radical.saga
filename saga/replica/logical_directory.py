@@ -437,3 +437,55 @@ class LogicalDirectory (object) :
 
 
 
+    # ----------------------------------------------------------------
+    #
+    # replica methods
+    #
+    def is_file (self, tgt, ttype=None) :
+        '''
+        tgt:      Url
+        ttype:    saga.task.type enum
+        ret:      bool / saga.Task
+        '''
+        return self._adaptor.is_file (tgt, ttype=ttype)
+
+  
+    def is_file_self (self, ttype=None) :
+        '''
+        ttype:    saga.task.type enum
+        ret:      bool / saga.Task
+        '''
+        return self._adaptor.is_file_self (ttype=ttype)
+
+  
+    def open_dir (self, name, flags=READ, ttype=None) :
+        '''
+        name:           saga.url
+        flags:          flags enum
+        ttype:          saga.task.type enum
+        ret:            Directory / saga.Task
+        '''
+        return self._adaptor.open_dir (name, flags, ttype=ttype)
+
+
+    def open (self, name, flags=READ, ttype=None) :
+        '''
+        name:           saga.Url
+        flags:          flags enum
+        ttype:          saga.task.type enum
+        ret:            LogicalFile / saga.Task
+        '''
+        return self._adaptor.open (name, flags, ttype=ttype)
+
+
+    def find (self, name_pattern, attr_pattern, flags=RECURSIVE, ttype=None) :
+        '''
+        name_pattern:   string 
+        attr_pattern:   string
+        flags:          flags enum
+        ttype:          saga.task.type enum
+        ret:            list [saga.Url] / saga.Task
+        '''
+        return self._adaptor.find (name_pattern, attr_pattern, flags, ttype=ttype)
+
+    

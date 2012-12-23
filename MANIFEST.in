@@ -4,10 +4,12 @@ include saga/*.py
 
 include saga/job/*.py
 include saga/filesystem/*.py
+include saga/replica/*.py
 
 include saga/cpi/*.py
 include saga/cpi/job/*.py
 include saga/cpi/filesystem/*.py
+include saga/cpi/replica/*.py
 
 include saga/engine/*.py
 

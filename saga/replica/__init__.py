@@ -7,11 +7,15 @@ CREATE         =    8
 EXCLUSIVE      =   16
 LOCK           =   32
 CREATE_PARENTS =   64
+#                 128 # reserved for TRUNCATE
+#                 256 # reserved for APPEND
 READ           =  512
 WRITE          = 1024
 READ_WRITE     = 1536
+#                2048 # reserved for BINARY
 
 
-from saga.replica.file       import LogicalFile
-from saga.replica.directory  import LogicalDirectory
+
+from saga.replica.logical_file       import LogicalFile
+from saga.replica.logical_directory  import LogicalDirectory
 

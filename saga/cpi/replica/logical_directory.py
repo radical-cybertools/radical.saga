@@ -156,3 +156,27 @@ class LogicalDirectory (Base) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
 
+    # ----------------------------------------------------------------
+    #
+    # replica methods
+    #
+    def is_file (self, tgt, ttype) :
+        raise saga.exceptions.NotImplemented ("method not implemented")
+
+  
+    def is_file_self (self, ttype) :
+        raise saga.exceptions.NotImplemented ("method not implemented")
+
+  
+    def open_dir (self, name, flags, ttype) :
+        raise saga.exceptions.NotImplemented ("method not implemented")
+
+
+    def open (self, name, flags, ttype) :
+        raise saga.exceptions.NotImplemented ("method not implemented")
+
+
+    def find (self, name_pattern, attr_pattern, flags, ttype) :
+        raise saga.exceptions.NotImplemented ("method not implemented")
+
+    

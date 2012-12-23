@@ -40,4 +40,5 @@ import saga.cpi
 import saga.engine
 import saga.job
 import saga.filesystem
+import saga.replica
 

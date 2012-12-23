@@ -128,3 +128,40 @@ class LogicalFile (Base) :
     def write_e (self, emode, spec, data, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
   
+
+    # ----------------------------------------------------------------
+    #
+    # replica methods
+    #
+    def is_file_self (self, ttype) :
+        raise saga.exceptions.NotImplemented ("method not implemented")
+
+  
+    def add_location (self, name, ttype) :
+        raise saga.exceptions.NotImplemented ("method not implemented")
+
+
+    def remove_location (self, name, ttype) :
+        raise saga.exceptions.NotImplemented ("method not implemented")
+
+
+    def update_location (self, old, new, ttype) :
+        raise saga.exceptions.NotImplemented ("method not implemented")
+
+
+    def list_locations (self, ttype) :
+        raise saga.exceptions.NotImplemented ("method not implemented")
+
+
+    def replicate (self, name, flags, ttype) :
+        raise saga.exceptions.NotImplemented ("method not implemented")
+    
+
+    def upload (self, name, tgt, flags, ttype) :
+        raise saga.exceptions.NotImplemented ("method not implemented")
+    
+  
+    def download (self, name, src, flags, ttype) :
+        raise saga.exceptions.NotImplemented ("method not implemented")
+    
+  

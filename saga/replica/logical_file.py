@@ -179,7 +179,7 @@ class LogicalFile (object) :
 
             # So, the adaptor bound to the src URL did not manage to copy the file.
             # If the tgt has a scheme set, we try again with other matching file 
-            # adaptors,  by setting (a copy of) the *src* URL to the same scheme,
+            # adaptors, by setting (a copy of) the *src* URL to the same scheme,
             # in the hope that other adaptors can copy from localhost.
             #
             # In principle that mechanism can also be used for remote copies, but
@@ -313,128 +313,71 @@ class LogicalFile (object) :
         return self._adaptor.is_file_self (ttype=ttype)
 
   
-    def get_size_self (self, ttype=None) :
+    def add_location (self, name, ttype=None) :
         '''
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
+        name:           saga.Url
+        ttype:          saga.task.type enum
+        ret:            None / saga.Task
         '''
-        return self._adaptor.get_size_self (ttype=ttype)
+        return self._adaptor.add_location (name, ttype=ttype)
 
-  
-    def read (self, size=-1, ttype=None) :
-        '''
-        size :    int
-        ttype:    saga.task.type enum
-        ret:      string / bytearray / saga.Task
-        '''
-        return self._adaptor.read (size, ttype=ttype)
 
-  
-    def write (self, data, ttype=None) :
+    def remove_location (self, name, ttype=None) :
         '''
-        data :    string / bytearray
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
+        name:           saga.Url
+        ttype:          saga.task.type enum
+        ret:            None / saga.Task
         '''
-        return self._adaptor.write (data, ttype=ttype)
+        return self._adaptor.remove_location (name, ttype=ttype)
 
-  
-    def seek (self, off, whence=START, ttype=None) :
-        '''
-        off :     int
-        whence:   seek_mode enum
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
-        '''
-        return self._adaptor.seek (off, whence, ttype=ttype)
 
-  
-    def read_v (self, iovecs, ttype=None) :
+    def update_location (self, old, new, ttype=None) :
         '''
-        iovecs:   list [tuple (int, int)]
-        ttype:    saga.task.type enum
-        ret:      list [bytearray] / saga.Task
+        old:            saga.Url
+        new:            saga.Url 
+        ttype:          saga.task.type enum
+        ret:            None / saga.Task
         '''
-        return self._adaptor.read_v (iovecs, ttype=ttype)
+        return self._adaptor.update_location (old, new, ttype=ttype)
 
-  
-    def write_v (self, data, ttype=None) :
-        '''
-        data:     list [tuple (int, string / bytearray)]
-        ttype:    saga.task.type enum
-        ret:      list [int] / saga.Task
-        '''
-        return self._adaptor.write_v (data, ttype=ttype)
 
-  
-    def size_p (self, pattern, ttype=None) :
+    def list_locations (self, ttype=None) :
         '''
-        pattern:  string 
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
+        ttype:          saga.task.type enum
+        ret:            list [saga.Url] / saga.Task
         '''
-        return self._adaptor.size_p (pattern, ttype=ttype)
-  
+        return self._adaptor.list_locations (ttype=ttype)
 
-    def read_p (self, pattern, ttype=None) :
-        '''
-        pattern:  string
-        ttype:    saga.task.type enum
-        ret:      string / bytearray / saga.Task
-        '''
-        return self._adaptor.read_p (pattern, ttype=ttype)
 
-  
-    def write_p (self, pattern, data, ttype=None) :
+    def replicate (self, name, flags=None, ttype=None) :
         '''
-        pattern:  string
-        data:     string / bytearray
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
+        name:           saga.Url
+        flags:          flags enum
+        ttype:          saga.task.type enum
+        ret:            None / saga.Task
         '''
-        return self._adaptor.write_p (pattern, data, ttype=ttype)
+        return self._adaptor.replicate (name, flags, ttype=ttype)
+    
 
+    def upload (self, name, tgt="", flags=None, ttype=None) :
+        '''
+        name:           saga.Url
+        tgt:            saga.Url
+        flags:          flags enum
+        ttype:          saga.task.type enum
+        ret:            None / saga.Task
+        '''
+        return self._adaptor.replicate (name, flags, ttype=ttype)
+    
   
-    def modes_e (self, ttype=None) :
+    def download (self, name, src="", flags=None, ttype=None) :
         '''
-        ttype:    saga.task.type enum
-        ret:      list [string] / saga.Task
+        name:           saga.Url
+        src:            saga.Url
+        flags:          flags enum
+        ttype:          saga.task.type enum
+        ret:            None / saga.Task
         '''
-        return self._adaptor.modes_e (ttype=ttype)
-
-  
-    def size_e (self, emode, spec, ttype=None) :
-        '''
-        emode:    string
-        spec:     string
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
-        '''
-        return self._adaptor.size_e (emode, spec, ttype=ttype)
-
-  
-    def read_e (self, emode, spec, ttype=None) :
-        '''
-        emode:    string
-        spec:     string
-        ttype:    saga.task.type enum
-        ret:      bytearray / saga.Task
-        '''
-        return self._adaptor.read_e (emode, spec, ttype=ttype)
-
-  
-    def write_e (self, emode, spec, data, ttype=None) :
-        '''
-        emode:    string
-        spec:     string
-        data:     string / bytearray
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
-        '''
-        return self._adaptor.read_e (emode, spec, data, ttype=ttype)
-
-  
-    size  = property (get_size_self)  # int
-    modes = property (modes_e)  # int
-  
+        return self._adaptor.replicate (name, flags, ttype=ttype)
+    
   
