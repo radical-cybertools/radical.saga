@@ -20,6 +20,16 @@ from   saga.utils.singleton import Singleton
 SYNC  = saga.cpi.base.sync
 ASYNC = saga.cpi.base.async
 
+class CommandWrapper () : 
+    def __init__ (self) :
+        pass
+
+    @classmethod
+    def initAsLocalWrapper (self, logger):
+        return self ()
+
+    def connect (self) : pass
+
 
 ###############################################################################
 # adaptor info
@@ -105,7 +115,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
             if result.returncode != 0:
                 raise Exception("sanity check error")
         except Exception, ex:
-            raise No Success ("Disabling iRODS plugin - could not access iRODS "+\
+            raise saga.NoSuccess ("Disabling iRODS plugin - could not access iRODS "+\
                               "filesystem through ils.  Check your iRODS "+\
                               "environment and certificates.")
 
@@ -135,7 +145,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
     
             # make sure we ran ok
             if cw_result.returncode != 0:
-                raise NoSuccess ("Could not open directory %s, errorcode %s: %s"\
+                raise saga.NoSuccess ("Could not open directory %s, errorcode %s: %s"\
                                         % (dir, str(cw_result.returncode),
                                            cw_result))
     
@@ -192,7 +202,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
             return final_list
     
         except Exception, e:
-            raise NoSuccess ("Couldn't get directory listing: %s " % (str(e)))
+            raise saga.NoSuccess ("Couldn't get directory listing: %s " % (str(e)))
     
         return result
 
@@ -280,12 +290,12 @@ class Adaptor (saga.cpi.base.AdaptorBase):
                 # for some reason, we're at a line which we have no idea how to handle
                 # this is bad -- throw an error
                 else:
-                    raise NoSuccess ("Error parsing iRODS ilsresc -l information!")
+                    raise saga.NoSuccess ("Error parsing iRODS ilsresc -l information!")
                     
             return result
     
         except Exception, e:
-            raise NoSuccess ("Couldn't get resource listing: %s " % (str(e)))
+            raise saga.NoSuccess ("Couldn't get resource listing: %s " % (str(e)))
 
 
 
@@ -414,7 +424,7 @@ class IRODSDirectory (saga.cpi.replica.LogicalDirectory) :
 
 
         if not os.path.isdir (path) :
-            raise saga.exceptions.BadParameter ("Cannot handle url %s (is not a Logicaldirectory)"  \
+            raise saga.BadParameter ("Cannot handle url %s (is not a Logicaldirectory)"  \
                                                %  path)
         
         # TODO: "stat" the file
@@ -456,17 +466,17 @@ class IRODSDirectory (saga.cpi.replica.LogicalDirectory) :
             cw_result = self._cw.run("imkdir %s" % complete_path)
 
             if cw_result.returncode != 0:
-                raise NoSuccess ("Could not create directory %s, errorcode %s: %s"\
+                raise saga.NoSuccess ("Could not create directory %s, errorcode %s: %s"\
                                     % (complete_path, str(cw_result.returncode),
                                        cw_result))
 
         except Exception, ex:
             # did the directory already exist?
             if "CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME" in str(ex):
-                raise AlreadyExists ("Directory already exists.")
+                raise saga.AlreadyExists ("Directory already exists.")
 
             # couldn't create for unspecificed reason
-            raise NoSuccess ("Couldn't create directory.")
+            raise saga.NoSuccess ("Couldn't create directory.")
 
         return
 
@@ -484,17 +494,17 @@ class IRODSDirectory (saga.cpi.replica.LogicalDirectory) :
             cw_result = self._cw.run("irm -r %s" % complete_path)
 
             if cw_result.returncode != 0:
-                raise NoSuccess ("Could not remove directory %s, errorcode %s: %s"\
+                raise saga.NoSuccess ("Could not remove directory %s, errorcode %s: %s"\
                                     % (complete_path, str(cw_result.returncode),
                                        cw_result))
 
         except Exception, ex:
             # was there no directory to delete?
             if "does not exist" in str(ex):
-                raise DoesNotExist ("Directory %s does not exist." % (complete_path) )
+                raise saga.DoesNotExist ("Directory %s does not exist." % (complete_path) )
 
             # couldn't delete for unspecificed reason
-            raise NoSuccess ("Couldn't delete directory %s" % (complete_path))
+            raise saga.NoSuccess ("Couldn't delete directory %s" % (complete_path))
 
         return
 
@@ -530,7 +540,7 @@ class IRODSDirectory (saga.cpi.replica.LogicalDirectory) :
                     result.append(item)
 
         except Exception, ex:
-            raise NoSuccess ("Couldn't list directory: %s " % (str(ex)))
+            raise saga.NoSuccess ("Couldn't list directory: %s " % (str(ex)))
 
         return result
 
@@ -603,13 +613,13 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
         flags = self._flags 
 
         if url.port :
-            raise saga.exceptions.BadParameter ("Cannot handle url %s (has fragment)"  %  url)
+            raise saga.BadParameter ("Cannot handle url %s (has fragment)"  %  url)
         if url.query :
-            raise saga.exceptions.BadParameter ("Cannot handle url %s (has query)"     %  url)
+            raise saga.BadParameter ("Cannot handle url %s (has query)"     %  url)
         if url.username :
-            raise saga.exceptions.BadParameter ("Cannot handle url %s (has username)"  %  url)
+            raise saga.BadParameter ("Cannot handle url %s (has username)"  %  url)
         if url.password :
-            raise saga.exceptions.BadParameter ("Cannot handle url %s (has password)"  %  url)
+            raise saga.BadParameter ("Cannot handle url %s (has password)"  %  url)
 
         self._path = url.path
         path       = url.path
@@ -619,7 +629,7 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
             (dirname, filename) = os.path.split (path)
 
             if not filename :
-                raise saga.exceptions.BadParameter ("Cannot handle url %s (names directory)"  \
+                raise saga.BadParameter ("Cannot handle url %s (names directory)"  \
                                                  %  path)
 
             if not os.path.exists (dirname) :
@@ -627,10 +637,10 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
                     try :
                         os.makedirs (path)
                     except Exception as e :
-                        raise saga.exceptions.NoSuccess ("Could not 'mkdir -p %s': %s)"  \
+                        raise saga.NoSuccess ("Could not 'mkdir -p %s': %s)"  \
                                                         % (path, str(e)))
                 else :
-                    raise saga.exceptions.BadParameter ("Cannot handle url %s (parent dir does not exist)"  \
+                    raise saga.BadParameter ("Cannot handle url %s (parent dir does not exist)"  \
                                                      %  path)
         
             if not os.path.exists (filename) :
@@ -638,14 +648,14 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
                     try :
                         open (path, 'w').close () # touch
                     except Exception as e :
-                        raise saga.exceptions.NoSuccess ("Could not 'touch %s': %s)"  \
+                        raise saga.NoSuccess ("Could not 'touch %s': %s)"  \
                                                         % (path, str(e)))
                 else :
-                    raise saga.exceptions.BadParameter ("Cannot handle url %s (Logicalfile does not exist)"  \
+                    raise saga.BadParameter ("Cannot handle url %s (Logicalfile does not exist)"  \
                                                      %  path)
         
         if not os.path.isfile (path) :
-            raise saga.exceptions.BadParameter ("Cannot handle url %s (is not a Logicalfile)"  \
+            raise saga.BadParameter ("Cannot handle url %s (is not a Logicalfile)"  \
                                                %  path)
 
     # ----------------------------------------------------------------
@@ -709,7 +719,7 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
 
         if tgt_url.schema :
             if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :
-                raise saga.exceptions.BadParameter ("Cannot handle url schema for %s" %  target)
+                raise saga.BadParameter ("Cannot handle url schema for %s" %  target)
 
         if tgt[0] != '/' :
             tgt = "%s/%s"   % (os.path.dirname (src), tgt)
@@ -721,15 +731,15 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
     # ----------------------------------------------------------------
     #
     #
-   def logicalfile_list_locations(self, logicalfile_obj):
-        '''This method is called upon logicaldir.list_locations()
-        '''
-        #return a list of all replica locations for a file
-        path = logicalfile_obj._url.get_path()
-        self.log_debug("Attempting to get a list of replica locations for %s" \
-                           % path)
-        listing = irods_get_directory_listing(self, path)
-        return listing[0].locations
+    def logicalfile_list_locations (self, logicalfile_obj) :
+         '''This method is called upon logicaldir.list_locations()
+         '''
+         #return a list of all replica locations for a file
+         path = logicalfile_obj._url.get_path()
+         self.log_debug("Attempting to get a list of replica locations for %s" \
+                            % path)
+         listing = irods_get_directory_listing(self, path)
+         return listing[0].locations
 
 
     # ----------------------------------------------------------------
@@ -738,7 +748,7 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
     def logicalfile_remove_location(self, logicalfile_obj, location):
         '''This method is called upon logicaldir.remove_locations()
         '''     
-        self.log_error_and_raise(SAGAError.NotImplemented, "Not implemented")
+        raise saga.NotImplemented._log (self._logger, "Not implemented")
         return
 
 
@@ -765,8 +775,7 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
                                        cw_result))
 
         except Exception, ex:
-            self.log_error_and_raise(bliss.saga.Error.NoSuccess,
-                                     "Couldn't replicate file.")
+            raise saga.NoSuccess._log (self._logger, "Couldn't replicate file.")
         return
 
 
@@ -787,12 +796,12 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
             cw_result = self._cw.run("imv %s %s" % (source_path, dest_path) )
 
             if cw_result.returncode != 0:
-                raise NoSuccess ("Could not move logical file %s to location %s, errorcode %s: %s"\
+                raise saga.NoSuccess ("Could not move logical file %s to location %s, errorcode %s: %s"\
                                     % (source_path, dest_path, str(cw_result.returncode),
                                        cw_result))
 
         except Exception, ex:
-            raise NoSuccess ("Couldn't move file.")
+            raise saga.NoSuccess ("Couldn't move file.")
 
         return
 
@@ -815,13 +824,13 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
             cw_result = self._cw.run("irm %s" % complete_path)
 
             if cw_result.returncode != 0:
-                raise NoSuccess ("Could not remove file %s, errorcode %s: %s"\
+                raise saga.NoSuccess ("Could not remove file %s, errorcode %s: %s"\
                                     % (complete_path, str(cw_result.returncode),
                                        cw_result))
 
         except Exception, ex:
             # couldn't delete for unspecificed reason
-            raise NoSuccess ("Couldn't delete file %s" % (complete_path))
+            raise saga.NoSuccess ("Couldn't delete file %s" % (complete_path))
 
         return
 
@@ -890,13 +899,13 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
 
             # check our result
             if cw_result.returncode != 0:
-                raise NoSuccess ("Could not upload file %s, errorcode %s: %s"\
+                raise saga.NoSuccess ("Could not upload file %s, errorcode %s: %s"\
                                     % (complete_path, str(cw_result.returncode),
                                        cw_result))
 
         except Exception, ex:
             # couldn't upload for unspecificed reason
-            raise NoSuccess ("Couldn't upload file.")
+            raise saga.NoSuccess ("Couldn't upload file.")
 
         return
 
@@ -950,13 +959,13 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
 
             # check our result
             if cw_result.returncode != 0:
-                raise NoSuccess ("Could not download file %s, errorcode %s: %s"\
+                raise saga.NoSuccess ("Could not download file %s, errorcode %s: %s"\
                                     % (logical_path, str(cw_result.returncode),
                                        cw_result))
 
         except Exception, ex:
             # couldn't download for unspecificed reason
-            raise NoSuccess ("Couldn't download file.")
+            raise saga.NoSuccess ("Couldn't download file.")
 
         return
 

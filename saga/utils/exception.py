@@ -34,6 +34,34 @@ class ExceptionBase(Exception):
 
     traceback  = property (get_traceback) 
 
-def log_error_and_raise(logger, message, exception_type):
-    logger.error(message)
-    raise exception_type(message)
+    @classmethod
+    def _log (self, logger, message, level='error'):
+        """ this class method allows to log the exception message while
+            constructing a SAGA exception, like::
+
+              # raise an exception, no logging
+              raise saga.IncorrectState ("File is not open")
+
+              # raise an exception, log as error event (error level is default)
+              raise saga.IncorrectState._log (self._logger, "File is not open")
+
+              # raise an exception, log as warning event
+              raise saga.IncorrectState._log (self._logger, "File is not open", level=warning)
+              raise saga.IncorrectState._log (self._logger, "File is not open", warning) # same
+
+            This way, the 'raise' remains clearly in the code, as that is the
+            dominating semantics of the call.
+        """
+
+        log_method = logger.error
+
+        try :
+            log_method = getattr (logger, level)
+        except :
+            sys.stderr.write ("unknown log level '%s'"  %  level)
+
+        log_method (message)
+
+        return self (message)
+
+

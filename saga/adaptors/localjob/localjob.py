@@ -11,7 +11,6 @@ __license__   = "MIT"
 import os, time, socket, signal, subprocess
 
 from saga.utils.singleton import Singleton
-from saga.utils.exception import log_error_and_raise
 from saga.utils.job.jobid import JobId
 from saga.utils.which     import which
 
@@ -146,7 +145,7 @@ class LocalJobService (saga.cpi.job.Service) :
         fqhn = Adaptor().hostname
         if rm_url.host != 'localhost' and rm_url.host != fqhn:
             msg = "Only 'localhost' and '%s' hostnames supported by this adaptor'" % (fqhn)
-            log_error_and_raise(self._logger, msg, saga.BadParameter)
+            raise saga.BadParameter._log (self._logger, msg)
 
         self._rm      = rm_url
         self._session = session
@@ -188,7 +187,7 @@ class LocalJobService (saga.cpi.job.Service) :
         for attribute in jd.list_attributes():
             if attribute not in _ADAPTOR_CAPABILITES['desc_attributes']:
                 msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
-                log_error_and_raise(self._logger, msg, saga.BadParameter)
+                raise saga.BadParameter._log (self._logger, msg)
 
         
         # this is the dictionary we pass on to the job constructor
@@ -209,7 +208,7 @@ class LocalJobService (saga.cpi.job.Service) :
         """
         if jobid not in self._jobs.values():
             msg = "Service instance doesn't know a Job with ID '%s'" % (jobid)
-            log_error_and_raise(self._logger, msg, saga.BadParameter)
+            raise saga.BadParameter._log (self._logger, msg)
         else:
             for (job_obj, job_id) in self._jobs.iteritems():
                 if job_id == jobid:
@@ -295,7 +294,7 @@ class LocalJob (saga.cpi.job.Job) :
     def wait(self, timeout):
         if self._process is None:
             msg = "Can't wait for job that has not been started"
-            log_error_and_raise(self._logger, msg, saga.IncorrectState)
+            raise saga.IncorrectState._log (self._logger, msg)
         if timeout == -1:
             self._exit_code = self._process.wait()
         else:
@@ -356,7 +355,7 @@ class LocalJob (saga.cpi.job.Job) :
             self._state = saga.job.CANCELED
         except OSError, ex:
             msg = "Couldn't cancel job %s: %s" % (self._id, ex)
-            log_error_and_raise(self._logger, msg, saga.IncorrectState)
+            raise saga.IncorrectState._log (self._logger, msg)
 
 
     @SYNC
@@ -451,4 +450,5 @@ class LocalJob (saga.cpi.job.Job) :
         except Exception, ex:
             self._state = saga.job.FAILED
             msg = "Starting process: '%s' failed: %s" % (cmdline, str(ex))
-            log_error_and_raise(self._logger, msg, saga.NoSuccess)
+            raise saga.NoSuccess._log (self._logger, msg)
+
