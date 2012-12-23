@@ -50,23 +50,24 @@ SUSPENDED             = 'Suspended'
 #
 # JobDescription attributes:
 EXECUTABLE            = 'Executable'
-""" :todo: docstring
+""" The path to the executable. 
 """
 
+
 ARGUMENTS             = 'Arguments'
-""" :todo: docstring
+""" The arguments for to the executable. 
 """
 
 SPMD_VARIATION        = 'SPMDVariation'
-""" :todo: docstring
+""" The type of parallelism required by this job 
 """
 
 TOTAL_CPU_COUNT       = 'TotalCPUCount'
-""" :todo: docstring
+""" The number of CPUs required by this job. 
 """
 
 NUMBER_OF_PROCESSES   = 'NumberOfProcesses'
-""" :todo: docstring
+""" Number of instances of 
 """
 
 PROCESSES_PER_HOST    = 'ProcessesPerHost'
@@ -117,7 +118,7 @@ JOB_START_TIME        = 'JobStartTime'
 """ :todo: docstring
 """
 
-TOTAL_CPU_TIME        = 'TotalCPUTime'
+WALL_TIME_LIMIT       = 'WallTimeLimit'
 """ :todo: docstring
 """
 

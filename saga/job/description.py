@@ -38,7 +38,7 @@ class Description (saga.Attributes) :
         self._attributes_register  (saga.job.FILE_TRANSFER        , None, self.STRING, self.VECTOR, self.WRITABLE)
         self._attributes_register  (saga.job.CLEANUP              , None, self.BOOL,   self.SCALAR, self.WRITABLE)
         self._attributes_register  (saga.job.JOB_START_TIME       , None, self.TIME,   self.SCALAR, self.WRITABLE)
-        self._attributes_register  (saga.job.TOTAL_CPU_TIME       , None, self.TIME,   self.SCALAR, self.WRITABLE)
+        self._attributes_register  (saga.job.WALL_TIME_LIMIT      , None, self.INT,    self.SCALAR, self.WRITABLE)
         self._attributes_register  (saga.job.TOTAL_PHYSICAL_MEMORY, None, self.STRING, self.SCALAR, self.WRITABLE)
         self._attributes_register  (saga.job.CPU_ARCHITECTURE     , None, self.ENUM,   self.SCALAR, self.WRITABLE)
         self._attributes_register  (saga.job.OPERATING_SYSTEM_TYPE, None, self.ENUM,   self.SCALAR, self.WRITABLE)

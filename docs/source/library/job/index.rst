@@ -43,7 +43,8 @@ above selects the `local` job adaptor. The :ref:`job_service` section explains
 this in more detail.
 
 .. note:: A list of available adaptors and supported resource managers can be 
-          found in the :ref:`chapter_middleware_adaptors` part of this documentation.
+          found in the :ref:`chapter_middleware_adaptors` part of this 
+          documentation.
 
 The rest of this section is structured as follows:
 
@@ -69,10 +70,10 @@ Job Description -- :class:`saga.job.Description`
 
 .. warning:: There is no guarantee that all middleware adaptors implement 
              all job description attributes. In case a specific attribute
-             is not supported, the :meth:`~saga.job.Service.create_job` will throw an 
-             exception. Please refer to the :ref:`chapter_middleware_adaptors` 
-             documentation for more details and adaptor-specific lists of 
-             supported attributes.
+             is not supported, the :meth:`~saga.job.Service.create_job` will 
+             throw an exception. Please refer to the 
+             :ref:`chapter_middleware_adaptors` documentation for more 
+             details and adaptor-specific lists of supported attributes.
 
 .. autoclass:: saga.job.Description
    :members:
@@ -83,29 +84,157 @@ SAGA defines the following constants as valid job description attributes:
 
 .. currentmodule:: saga.job
 .. autodata:: EXECUTABLE
+.. data:: executable 
+
+   (Property) Same as attribute :data:`~saga.job.EXECUTABLE`.
+
+   :type: str
+
 .. autodata:: ARGUMENTS
+.. data:: arguments 
+
+   (Property) Same as attribute :data:`~saga.job.ARGUMENTS`.
+
+   :type: list()
+
 .. autodata:: ENVIRONMENT
+.. data:: environment 
+
+   (Property) Same as attribute :data:`~saga.job.ENVIRONMENT`.
+
+   :type: dict()
+
 .. autodata:: WORKING_DIRECTORY
+.. data:: working_directory 
+
+   (Property) Same as attribute :data:`~saga.job.WORKING_DIRECTORY`.
+
+   :type: str()
+
 .. autodata:: FILE_TRANSFER
+.. data:: file_transfer 
+
+   (Property) Same as attribute :data:`~saga.job.FILE_TRANSFER`.
+
+   :type: list()
+
 .. autodata:: INPUT
+.. data:: input 
+
+   (Property) Same as attribute :data:`~saga.job.INPUT`.
+
+   :type: str()
+
 .. autodata:: OUTPUT
+.. data:: output 
+
+   (Property) Same as attribute :data:`~saga.job.OUTPUT`.
+
+   :type: str()
+
 .. autodata:: ERROR
+.. data:: error 
+
+   (Property) Same as attribute :data:`~saga.job.ERROR`.
+
+   :type: str()
+
 .. autodata:: QUEUE
+.. data:: queue 
+
+   (Property) Same as attribute :data:`~saga.job.QUEUE`.
+
+   :type: str()
+
 .. autodata:: PROJECT
+.. data:: project 
+
+   (Property) Same as attribute :data:`~saga.job.PROJECT`.
+
+   :type: str()
+
 .. autodata:: SPMD_VARIATION
+.. data:: spmd_variation 
+
+   (Property) Same as attribute :data:`~saga.job.SPMD_VARIATION`.
+
+   :type: str()
+   :Valid Options: Single (default), MPI or OpenMP
+
 .. autodata:: TOTAL_CPU_COUNT
+.. data:: total_cpu_count 
+
+   (Property) Same as attribute :data:`~saga.job.TOTAL_CPU_COUNT`.
+
+   :type: int() or str()
+
 .. autodata:: NUMBER_OF_PROCESSES
-.. autodata:: PROCESSES_PER_HOST
+.. data:: number_of_processes 
+
+   (Property) Same as attribute :data:`~saga.job.NUMBER_OF_PROCESSES`.
+
+   :type: int() or str()
+
+.. autodata:: PROCESSES_PER_HOST 
+.. data:: processes_per_host 
+
+   (Property) Same as attribute :data:`~saga.job.PROCESSES_PER_HOST`.
+
+   :type: int() or str()
+
 .. autodata:: THREADS_PER_PROCESS
-.. autodata:: INTERACTIVE
+.. data:: threads_per_process 
+
+   (Property) Same as attribute :data:`~saga.job.THREADS_PER_PROCESS`.
+
+   :type: int() or str()
+
+# NOT IMPLEMENTED.. autodata:: INTERACTIVE
+
 .. autodata:: CLEANUP
+.. data:: cleanup 
+
+   (Property) Same as attribute :data:`~saga.job.CLEANUP`.
+
+   :type: bool()
+
 .. autodata:: JOB_START_TIME
-.. autodata:: TOTAL_CPU_TIME
+.. data:: job_start_time 
+
+   (Property) Same as attribute :data:`~saga.job.JOB_START_TIME`.
+
+   :type: UNIX timestamp
+
+.. autodata:: WALL_TIME_LIMIT
+.. data:: wall_time_limit 
+
+   (Property) Same as attribute :data:`~saga.job.WALL_TIME_LIMIT`.
+
 .. autodata:: TOTAL_PHYSICAL_MEMORY
+.. data:: total_physical_memory 
+
+   (Property) Same as attribute :data:`~saga.job.TOTAL_PHYSICAL_MEMORY`.
+
 .. autodata:: CPU_ARCHITECTURE
+.. data:: cpu_architecture 
+
+   (Property) Same as attribute :data:`~saga.job.CPU_ARCHITECTURE`.
+
 .. autodata:: OPERATING_SYSTEM_TYPE
+.. data:: operating_system_type 
+
+   (Property) Same as attribute :data:`~saga.job.OPERATIN_SYSTEM_TYPE`.
+
 .. autodata:: CANDIDATE_HOSTS
+.. data:: candidate_hosts 
+
+   (Property) Same as attribute :data:`~saga.job.CANDIDATE_HOSTS`.
+
 .. autodata:: JOB_CONTACT
+.. data:: job_contact 
+
+   (Property) Same as attribute :data:`~saga.job.JOB_CONTACT`.
+
 
 .. _job_job:
 

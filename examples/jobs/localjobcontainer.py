@@ -27,14 +27,15 @@ import sys, random, saga
 def main():
 
     # number of job 'groups' / containers
-    num_job_groups = 4
+    num_job_groups = 1
     # number of jobs per container
-    jobs_per_group = 32
+    jobs_per_group = 1
     
     try:
         # all jobs in this example are running on the same job service
         # this is not a requirement though. s
         service = saga.job.Service("fork://localhost")
+        print service.url
 
         # create and populate our containers
         containers = list()
