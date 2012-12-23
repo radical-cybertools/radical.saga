@@ -13,6 +13,7 @@ adaptor_registry = ["saga.adaptors.localjob.localjob",
                     "saga.adaptors.context.x509",
                     "saga.adaptors.context.userpass",
                     "saga.adaptors.saga_adaptor_filesystem_local",
-                    "saga.adaptors.saga_adaptor_filesystem_dummy"
+                    "saga.adaptors.saga_adaptor_filesystem_dummy",
+                    "saga.adaptors.saga_adaptor_replica_irods"
                    ]
 
