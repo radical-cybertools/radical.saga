@@ -107,22 +107,17 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_NAME, {}) # options
+        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_NAME,
+                                            _ADAPTOR_OPTIONS,
+                                            _ADAPTOR_INFO)
 
         # we only need to call gethostname once 
         self.hostname = socket.gethostname()
 
 
-    def register (self) :
-        """ Adaptor registration function. The engine calls this during startup. 
-    
-            We usually do sanity checks here and throw and exception if we think
-            the adaptor won't work in a given environment. In that case, the
-            engine won't add it to it's internal list of adaptors. If everything
-            is ok, we return the adaptor info.
-        """
-    
-        return _ADAPTOR_INFO
+
+    def sanity_check (self) :
+        pass
 
 
 ###############################################################################

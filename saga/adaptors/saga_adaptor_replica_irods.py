@@ -52,7 +52,7 @@ _ADAPTOR_DOC           = {
     },
 }
 
-_ADAPTOR_REGISTRY      = {
+_ADAPTOR_INFO          = {
     'name'             : _ADAPTOR_NAME,
     'version'          : 'v0.1',
     'cpis'             : [{
@@ -90,20 +90,13 @@ class Adaptor (saga.cpi.base.AdaptorBase):
     #
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_NAME, _ADAPTOR_OPTIONS)
+        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_NAME, 
+                                            _ADAPTOR_OPTIONS, 
+                                            _ADAPTOR_INFO)
 
 
-    # ----------------------------------------------------------------
-    #
-    #
-    def register (self) :
-        """ Adaptor registration function. The engine calls this during startup. 
-    
-            We usually do sanity checks here and throw and exception if we think
-            the adaptor won't work in a given environment. In that case, the
-            engine won't add it to it's internal list of adaptors. If everything
-            is ok, we return the adaptor info.
-        """
+
+    def sanity_check (self) :
 
         cw = CommandWrapper.initAsLocalWrapper(logger=self)
         cw.connect()
@@ -121,8 +114,6 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
         # try ienv or imiscsvrinfo later? ( check for error messages )
 
-    
-        return _ADAPTOR_REGISTRY
 
 
     # ----------------------------------------------------------------

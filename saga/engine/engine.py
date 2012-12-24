@@ -411,7 +411,7 @@ class Engine(Configurable):
                 self._logger.info("get_adaptor %s", m)
                 continue
 
-        self._logger.error("No suitable adaptor found for '%s' and URL scheme '%s'" %  (ctype, schema))
+        self._logger.error ("No suitable adaptor found for '%s' and URL scheme '%s'" %  (ctype, schema))
         raise saga.exceptions.NotImplemented ("No suitable adaptor found: %s" %  msg)
 
 

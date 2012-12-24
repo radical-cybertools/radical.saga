@@ -18,12 +18,42 @@ import saga.task
 #
 class AdaptorBase (saga_config.Configurable) :
 
-    def __init__ (self, adaptor_name, config_options={}) :
+    def __init__ (self, adaptor_name, adaptor_options, adaptor_info) :
 
         self._logger  = saga_logger.getLogger (adaptor_name)
         self._name    = adaptor_name
+        self._opts    = adaptor_options
+        self._info    = adaptor_info
 
-        saga_config.Configurable.__init__ (self, adaptor_name, config_options)
+        saga_config.Configurable.__init__ (self, adaptor_name, adaptor_options)
+
+
+    # ----------------------------------------------------------------
+    #
+    #
+    # if sanity_check() is commented out here, then we will only load adaptors
+    # which implement the method themselves.
+    #
+    # def sanity_check (self) :
+    #     """ This method can be overloaded by adaptors to check runtime
+    #         conditions on adaptor load time.  The adaptor should raise an
+    #         exception if it will not be able to function properly in the given
+    #         environment, e.g. due to missing dependencies etc.
+    #     """
+    #     pass
+
+    def register (self) :
+        """ Adaptor registration function. The engine calls this during startup. 
+    
+            We call the sanity checks here which raise an exception if the
+            adaptor won't work in a given environment. In that case, the engine
+            won't add it to it's internal list of adaptors. If everything is ok,
+            we return the adaptor info.
+        """
+
+        self.sanity_check ()
+
+        return self._info
 
 
     def get_name (self) :
