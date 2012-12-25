@@ -26,6 +26,25 @@ class AdaptorBase (saga_config.Configurable) :
 
         self._logger = saga_logger.getLogger (self._name)
 
+        has_enabled = False
+        for option in self._opts :
+            if option['name'] == 'enabled' :
+                has_enabled = True
+
+        if not has_enabled :
+            # *every* adaptor needs an 'enabled' option!
+            self._opts.append ({ 
+                'category'         : self._name,
+                'name'             : 'enabled', 
+                'type'             : bool, 
+                'default'          : True, 
+                'valid_options'    : [True, False],
+                'documentation'    : "enable / disable %s adaptor"  % self._name,
+                'env_variable'     : None
+                }
+            )
+
+
         saga_config.Configurable.__init__ (self, self._name, self._opts)
 
 

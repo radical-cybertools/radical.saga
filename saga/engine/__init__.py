@@ -5,25 +5,31 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-## SAGA Config #################################################################
-#
-from saga.engine.config import (
-    Configuration, 
-    Configurable,
-    ConfigOption, 
-    getConfig
-)
 
-## SAGA Logging ################################################################
-#
-from saga.engine.logger import (
-    Logger,
-    getLogger
-)    
+# Note AM: we don't actually want to export any of these into the SAGA namespace
+# -- apps and modules which need these components can import them directly (so
+# far only done in tests).
 
-## SAGA Core ###################################################################
+
+# ## SAGA Config #################################################################
+# #
+# from saga.engine.config import (
+#     Configurable,
+#     getConfig
+# )
 #
-from saga.engine.engine import (
-    Engine,
-    getEngine
-)
+# ## SAGA Logging ################################################################
+# #
+# from saga.engine.logger import (
+#     Logger,
+#     getLogger
+# )    
+#
+# ## SAGA Core ###################################################################
+# #
+# from saga.engine.engine import (
+#     Engine,
+#     getEngine,
+#     ANY_ADAPTOR
+# )
+

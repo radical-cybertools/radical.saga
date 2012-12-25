@@ -25,16 +25,8 @@ ASYNC = saga.cpi.base.async
 ##                                                                            ##
 _ADAPTOR_NAME          = 'saga.adaptor.localjob'
 _ADAPTOR_SCHEMAS       = ['fork', 'local']
-_ADAPTOR_OPTIONS       = [{ 
-    'category'         : _ADAPTOR_NAME,
-    'name'             : 'enabled', 
-    'type'             : bool, 
-    'default'          : True, 
-    'valid_options'    : [True, False],
-    'documentation'    : "enable / disable %s adaptor"  % _ADAPTOR_NAME,
-    'env_variable'     : None
-    }
-]
+_ADAPTOR_OPTIONS       = []
+
 ################################################################################
 ## the adaptor capabilites & supported attributes                             ##
 ##                                                                            ##
@@ -62,7 +54,7 @@ _ADAPTOR_CAPABILITES   = {
 ################################################################################
 ## the adaptor documentation                                                  ##
 ##                                                                            ##
-_ADAPTOR_DOC    = {
+_ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilites'      : _ADAPTOR_CAPABILITES,
@@ -80,7 +72,7 @@ _ADAPTOR_DOC    = {
 ################################################################################
 ## the adaptor info is used to register the adaptor with SAGA                 ##
 ##                                                                            ##
-_ADAPTOR_INFO   = {
+_ADAPTOR_INFO       = {
     'name'          : _ADAPTOR_NAME,
     'version'       : 'v0.1',
     'cpis'          : [

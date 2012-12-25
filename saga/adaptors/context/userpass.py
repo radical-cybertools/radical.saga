@@ -14,16 +14,7 @@ ASYNC = saga.cpi.base.async
 #
 _ADAPTOR_NAME          = 'saga.adaptor.userpass'
 _ADAPTOR_SCHEMAS       = ['UserPass']
-_ADAPTOR_OPTIONS       = [{ 
-    'category'         : _ADAPTOR_NAME,
-    'name'             : 'enabled', 
-    'type'             : bool, 
-    'default'          : True, 
-    'valid_options'    : [True, False],
-    'documentation'    : "enable / disable %s adaptor"  % _ADAPTOR_NAME,
-    'env_variable'     : None
-    }
-]
+_ADAPTOR_OPTIONS       = []
 
 _ADAPTOR_CAPABILITES   = {
     'attributes'       : [saga.context.TYPE,

@@ -9,15 +9,32 @@ __license__   = "MIT"
 '''
 
 import os
-from logging import StreamHandler, Filter, getLogger as logging_getLogger
-from logging import INFO, DEBUG, ERROR, WARNING, CRITICAL
-from saga.utils.logger.colorstreamhandler import *
-from saga.utils.logger.filehandler import FileHandler
-from saga.utils.logger.defaultformatter import DefaultFormatter
-from saga.utils.singleton import Singleton
-from saga.utils.exception import ExceptionBase
+from   logging import StreamHandler, Filter, getLogger as logging_getLogger
+from   logging import INFO, DEBUG, ERROR, WARNING, CRITICAL
 
-from saga.engine.config import Configurable
+from   saga.utils.logger.colorstreamhandler import *
+from   saga.utils.logger.filehandler        import FileHandler
+from   saga.utils.logger.defaultformatter   import DefaultFormatter
+from   saga.utils.singleton                 import Singleton
+from   saga.utils.exception                 import ExceptionBase
+from   saga.utils.exception                 import get_traceback as get_tb
+
+from   saga.engine.config                   import Configurable
+
+############# forward call to exception util's get_traceback() #################
+##
+def get_traceback () :
+    """ 
+    :todo: it would be nice to get the following to work::
+
+      self.logger = getLogger()
+      self.logger.debug (self.logger.traceback)
+
+    Alas, as we don't inherit the system logger, we can't (easily) add
+    properties or methods...
+    """
+    return get_tb ()
+
 
 ############# These are all supported options for saga.logging #################
 ##
@@ -54,7 +71,7 @@ _all_logging_options = [
     'name'          : 'ttycolor', 
     'type'          : bool, 
     'default'       : True, 
-    'valid_options' : None,
+    'valid_options' : [True, False],
     'documentation' : 'Whether to use colors for console output or not.',
     'env_variable'  : None 
     },
@@ -63,6 +80,11 @@ _all_logging_options = [
 ################################################################################
 ##
 class Logger(Configurable):
+    """
+    :todo: documentation.  Also, documentation of options are insufficient
+    (like, what are valid options for 'target'?)
+    """
+
     __metaclass__ = Singleton
 
     class _MultiNameFilter(Filter):
@@ -74,7 +96,7 @@ class Logger(Configurable):
                     return True
 
     def __init__(self):
-        
+
         Configurable.__init__(self, 'saga.engine.logging', _all_logging_options)    
         cfg = self.get_config()
 
@@ -146,6 +168,7 @@ class Logger(Configurable):
                 handler.addFilter(_MultiNameFilter(Logger().filters))
             self._handlers.append(handler)
 
+
     @property
     def loglevel(self):
         return self._loglevel
@@ -167,6 +190,7 @@ class Logger(Configurable):
 def getLogger(module, obj=None):
     ''' Get the SAGA logger.
     '''
+
     class _MultiNameFilter(Filter):
         def __init__(self, names):
             self._names = names
@@ -174,6 +198,8 @@ def getLogger(module, obj=None):
             for n in self._names:
                 if n in record.name:
                     return True
+
+    Logger ()
 
     if obj is None:
         _logger = logging_getLogger('%-20s' % module)

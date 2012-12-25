@@ -9,7 +9,7 @@ __license__   = "MIT"
 """
 
 import os, sys
-from saga.engine import *
+from   saga.engine.engine import Engine, getEngine, ANY_ADAPTOR
 
 def test_singleton():
     """ Test that the object behaves like a singleton
@@ -26,7 +26,7 @@ def test_configurable():
     """ Test the object's Configurable interface
     """
     # make sure singleton works
-    assert Engine().get_config()['foo'].get_value() == 'bar'  
+    assert Engine().get_config()['load_beta_adaptors'].get_value() == False
 
 def test_emtpy_registry():
     """ Test that an empty adaptor registry is handled properly
@@ -47,7 +47,7 @@ def test_broken_registry():
 def test_load_nonexistent_adaptor():
     """ Test that an attempt to load a non-existent adaptor is handled properly
     """
-    Engine()._load_adaptors(["nonexsitent"])
+    Engine()._load_adaptors(["nonexistent"])
     assert len(Engine().loaded_cpis()) == 0
 
 def test_load_adaptor():

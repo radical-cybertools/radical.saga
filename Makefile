@@ -9,4 +9,5 @@ docs:
 clean:
 	-rm -rf build
 	make -C docs clean
+	find . -name \*.pyc -exec rm -f {} \;
 

@@ -13,52 +13,47 @@ from   saga.utils.singleton import Singleton
 import saga.cpi.base
 import saga.cpi.job
 
-_adaptor_info = {
-    'name'          : 'saga.adaptor.mock',
-    'version'       : '1.0',
-    'cpis'          : [
-        { 
-        'type'      : 'saga.job.Job',
-        'class'     : 'MockJob',
-        'schemas'   : ['mock']
+
+_ADAPTOR_NAME        = 'saga.adaptor.mock'
+_ADAPTOR_SCHEMAS     = ['mock']
+_ADAPTOR_DOC         = {}
+_ADAPTOR_CAPABILITES = {}
+_ADAPTOR_OPTIONS     = [] 
+_ADAPTOR_INFO        = {
+    'name'           : _ADAPTOR_NAME,
+    'version'        : '1.0',
+    'cpis'           : [{ 
+        'type'       : 'saga.job.Job',
+        'class'      : 'MockJob',
+        'schemas'    : _ADAPTOR_SCHEMAS
         }
     ]
 }
 
-_config_options = [
-    {
-    'category'      : 'saga.adaptor.mock',
-    'name'          : 'foo',
-    'type'          : str,
-    'default'       : 'bar',
-    'valid_options' : None,
-    'documentation' : 'dummy config option for unit test.',
-    'env_variable'  : None
-    }
-]
-
 
 class Adaptor (saga.cpi.base.AdaptorBase):
+
     __metaclass__ = Singleton
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _adaptor_info['name'], _config_options) 
+        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS) 
 
-    def register (self) :
-        """ Adaptor registration function. The engine calls this during startup. 
-    
-            We usually do sanity checks here and throw and exception if we think
+
+    def sanity_check (self) :
+        """ We do sanity checks here and throw and exception if we think
             the adaptor won't work in a given environment. In that case, the
-            engine won't add it to it's internal list of adaptors. If everything
-            is ok, we return the adaptor info.
+            engine won't add it to it's internal list of adaptors. 
         """
     
         raise Exception("CRAP! Well, actually this is supposed to happen... ;-)")
 
 
-class MockJob(saga.cpi.job.Job):
+
+class MockJob (saga.cpi.job.Job) :
+
     def __init__ (self, api, adaptor) :
-        saga.cpi.Base.__init__ (self, api, adaptor, 'MockJob')
+
+        saga.cpi.Base.__init__ (self, api, adaptor)
 
 
