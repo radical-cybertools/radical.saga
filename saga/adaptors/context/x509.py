@@ -16,8 +16,17 @@ ASYNC = saga.cpi.base.async
 # adaptor meta data
 #
 _ADAPTOR_NAME          = 'saga.adaptor.x509'
-_ADAPTOR_OPTIONS       = {}
 _ADAPTOR_SCHEMAS       = ['X509']
+_ADAPTOR_OPTIONS       = [{ 
+    'category'         : _ADAPTOR_NAME,
+    'name'             : 'enabled', 
+    'type'             : bool, 
+    'default'          : True, 
+    'valid_options'    : [True, False],
+    'documentation'    : "enable / disable %s adaptor"  % _ADAPTOR_NAME,
+    'env_variable'     : None
+    }
+]
 
 # FIXME: complete attribute list
 _ADAPTOR_CAPABILITES   = {
@@ -68,9 +77,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_NAME,
-                                            _ADAPTOR_OPTIONS, 
-                                            _ADAPTOR_INFO)
+        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
 
     def sanity_check (self) :

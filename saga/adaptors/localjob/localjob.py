@@ -24,8 +24,17 @@ ASYNC = saga.cpi.base.async
 ## the adaptor name                                                           ## 
 ##                                                                            ##
 _ADAPTOR_NAME          = 'saga.adaptor.localjob'
-_ADAPTOR_OPTIONS       = {}
 _ADAPTOR_SCHEMAS       = ['fork', 'local']
+_ADAPTOR_OPTIONS       = [{ 
+    'category'         : _ADAPTOR_NAME,
+    'name'             : 'enabled', 
+    'type'             : bool, 
+    'default'          : True, 
+    'valid_options'    : [True, False],
+    'documentation'    : "enable / disable %s adaptor"  % _ADAPTOR_NAME,
+    'env_variable'     : None
+    }
+]
 ################################################################################
 ## the adaptor capabilites & supported attributes                             ##
 ##                                                                            ##
@@ -107,17 +116,15 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_NAME,
-                                            _ADAPTOR_OPTIONS,
-                                            _ADAPTOR_INFO)
+        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # we only need to call gethostname once 
         self.hostname = socket.gethostname()
 
 
-
     def sanity_check (self) :
         pass
+
 
 
 ###############################################################################

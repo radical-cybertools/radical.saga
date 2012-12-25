@@ -36,9 +36,19 @@ class CommandWrapper () :
 #
 
 _ADAPTOR_NAME          = 'saga.adaptor.replica.irods'
-_ADAPTOR_OPTIONS       = {}
-_ADAPTOR_CAPABILITES   = {}
 _ADAPTOR_SCHEMAS       = ['irods']
+_ADAPTOR_OPTIONS       = [{ 
+    'category'         : _ADAPTOR_NAME,
+    'name'             : 'enabled', 
+    'type'             : bool, 
+    'default'          : True, 
+    'valid_options'    : [True, False],
+    'documentation'    : "enable / disable %s adaptor"  % _ADAPTOR_NAME,
+    'env_variable'     : None
+    }
+]
+
+_ADAPTOR_CAPABILITES   = {}
 
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
@@ -90,10 +100,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
     #
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_NAME, 
-                                            _ADAPTOR_OPTIONS, 
-                                            _ADAPTOR_INFO)
-
+        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
 
     def sanity_check (self) :

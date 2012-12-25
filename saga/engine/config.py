@@ -52,6 +52,8 @@ class ConfigOption(object):
     def set_value(self, value):
         # make sure we got the right value type
         if type(value) != self._val_type:
+            print str(type(value))
+            print str(self._val_type)
             raise ValueTypeError(self._category, self._name, 
               type(value), self._val_type)
 

@@ -18,14 +18,15 @@ import saga.task
 #
 class AdaptorBase (saga_config.Configurable) :
 
-    def __init__ (self, adaptor_name, adaptor_options, adaptor_info) :
+    def __init__ (self, adaptor_info, adaptor_options=[]) :
 
-        self._logger  = saga_logger.getLogger (adaptor_name)
-        self._name    = adaptor_name
-        self._opts    = adaptor_options
-        self._info    = adaptor_info
+        self._info   = adaptor_info
+        self._opts   = adaptor_options
+        self._name   = adaptor_info['name']
 
-        saga_config.Configurable.__init__ (self, adaptor_name, adaptor_options)
+        self._logger = saga_logger.getLogger (self._name)
+
+        saga_config.Configurable.__init__ (self, self._name, self._opts)
 
 
     # ----------------------------------------------------------------
