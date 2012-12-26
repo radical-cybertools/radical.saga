@@ -81,16 +81,16 @@ class AdaptorBase (saga_config.Configurable) :
 #
 class Base (saga_config.Configurable) :
 
-    def __init__ (self, api, adaptor, name) :
+    def __init__ (self, api, adaptor, cpi_cname) :
 
-        self._api      = api
-        self._adaptor  = adaptor
-        self._name     = name
-        self._logger   = saga_logger.getLogger (name)
+        self._api       = api
+        self._adaptor   = adaptor
+        self._cpi_cname = cpi_cname
+        self._logger    = saga_logger.getLogger (cpi_cname)
 
 
-    def get_cpi_name (self) :
-        return self._name
+    def get_cpi_cname (self) :
+        return self._cpi_cname
 
 
     def get_adaptor_name (self) :

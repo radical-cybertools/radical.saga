@@ -215,7 +215,7 @@ class Engine(Configurable):
                 adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
 
             except Exception as e:
-                self._logger.warn  ("Skipping adaptor %s: module loading failed: %s" \
+                self._logger.error ("Skipping adaptor %s: module loading failed: %s" \
                                 %  (module_name, str(e)))
                 self._logger.debug (get_traceback())
                 continue # skip to next adaptor
@@ -231,9 +231,9 @@ class Engine(Configurable):
                 adaptor_info     = adaptor_instance.register ()
 
             except Exception as e:
-                self._logger.warning ("Skipping adaptor %s: loading failed: %s" \
-                                   % (module_name, str(e)))
-                self._logger.debug   (get_traceback ())
+                self._logger.error ("Skipping adaptor %s: loading failed: %s" \
+                                 % (module_name, str(e)))
+                self._logger.debug (get_traceback ())
                 continue # skip to next adaptor
 
 
@@ -245,9 +245,9 @@ class Engine(Configurable):
                 adaptor_instance.sanity_check ()
 
             except Exception as e:
-                self._logger.warning ("Skipping adaptor %s: failed self test: %s" \
-                                   % (module_name, str(e)))
-                self._logger.debug   (get_traceback ())
+                self._logger.error ("Skipping adaptor %s: failed self test: %s" \
+                                 % (module_name, str(e)))
+                self._logger.debug (get_traceback ())
                 continue # skip to next adaptor
 
 
@@ -297,9 +297,9 @@ class Engine(Configurable):
             except Exception as e:
                 # this exception likely means that the adaptor does
                 # not call the cpi.AdaptorBase initializer (correctly)
-                self._logger.warning ("Skipping adaptor %s: initialization failed: %s" \
-                                   % (module_name, str(e)))
-                self._logger.debug   (get_traceback ())
+                self._logger.error ("Skipping adaptor %s: initialization failed: %s" \
+                                 % (module_name, str(e)))
+                self._logger.debug (get_traceback ())
                 continue # skip to next adaptor
 
 
@@ -332,10 +332,11 @@ class Engine(Configurable):
 
                 # adaptor classes are registered for specific API types.
                 cpi_type  = cpi_info['type']
+                cpi_cname = cpi_info['class']
                 cpi_class = None
 
                 try :
-                    cpi_class = getattr (adaptor_module, cpi_info['class'])
+                    cpi_class = getattr (adaptor_module, cpi_cname)
                 except Exception as e:
                     # this exception likely means that the adaptor does
                     # not call the cpi.AdaptorBase initializer (correctly)
@@ -394,7 +395,9 @@ class Engine(Configurable):
                     # as that is passed to the cpi class c'tor later
                     # on (the adaptor instance is used to share state
                     # between cpi instances, amongst others)
-                    info = {'cpi_class'        : cpi_class, 
+                    info = {'cpi_cname'        : cpi_cname, 
+                            'cpi_class'        : cpi_class, 
+                            'adaptor_name'     : adaptor_name,
                             'adaptor_instance' : adaptor_instance}
 
                     # make sure this tuple was not registered, yet
@@ -414,26 +417,23 @@ class Engine(Configurable):
     #-----------------------------------------------------------------
     # 
     def find_adaptors (self, ctype, schema) :
-        '''
-        Look for a suitable cpi class serving a particular schema
-        '''
+        ''' Look for a suitable cpi class serving a particular schema
 
-        adaptor_names = []
-
-        schema = schema.lower ()
+            This method will sift through our adaptor registry (see
+            '_load_adaptors()', and dig for any adaptor which marches the given
+            api class type and schema.  All matching adaptors are returned (by
+            name)
+        '''
 
         if not ctype in self._cpis :
             return []
 
-        if not schema in self._cpis[ctype] :
+        if not schema.lower () in self._cpis[ctype] :
             return []
 
-
-        for info in self._cpis[ctype][schema] :
-
-            adaptor_instance = info['adaptor_instance']
-            adaptor_name     = adaptor_instance.get_name ()
-            adaptor_names.append (adaptor_name)
+        adaptor_names = []
+        for info in self._cpis[ctype][schema.lower ()] :
+            adaptor_names.append (info['adaptor_name'])
 
         return adaptor_names
 
@@ -451,13 +451,13 @@ class Engine(Configurable):
         '''
         schema = schema.lower ()
 
-        #self._logger.debug(": '%s - %s - %s' "  %  (ctype, schema, requested_name))
-
         if not ctype in self._cpis :
-            raise saga.exceptions.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" % (ctype, schema))
+            raise saga.exceptions.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
+                                               % (ctype, schema))
 
         if not schema in self._cpis[ctype] :
-            raise saga.exceptions.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" %  (ctype, schema))
+            raise saga.exceptions.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
+                                               % (ctype, schema))
 
 
         # cycle through all applicable adaptors, and try to instantiate the ones
@@ -472,14 +472,14 @@ class Engine(Configurable):
         msg = ""
         for info in self._cpis[ctype][schema] :
 
+            cpi_cname        = info['cpi_cname']
             cpi_class        = info['cpi_class']
+            adaptor_name     = info['adaptor_name']
             adaptor_instance = info['adaptor_instance']
-            adaptor_name     = adaptor_instance.get_name ()
 
             try :
                 # instantiate cpi
                 cpi_instance = cpi_class (api_instance, adaptor_instance)
-                cpi_name     = cpi_instance.get_cpi_name ()
 
                 if requested_name != None :
                     if requested_name == adaptor_name :
@@ -487,7 +487,7 @@ class Engine(Configurable):
 
                     # ignore this adaptor
                     self._logger.debug ("get_adaptor %s.%s -- ignore %s != %s" \
-                                          %  (adaptor_name, cpi_name, requested_name, adaptor_name))
+                                          %  (adaptor_name, cpi_cname, requested_name, adaptor_name))
                     continue
 
 
@@ -497,7 +497,7 @@ class Engine(Configurable):
                     cpi_instance.init_instance  (*args, **kwargs)
 
                     self._logger.debug("BOUND get_adaptor %s.%s -- success"
-                            %  (adaptor_name, cpi_name))
+                            %  (adaptor_name, cpi_cname))
                     return cpi_instance
 
                 else :
@@ -505,7 +505,7 @@ class Engine(Configurable):
                     # back to the caller (instead of the adaptor instance). That 
                     # task is responsible for binding the adaptor to the later 
                     # returned API instance.
-                    self._logger.debug("get_adaptor %s.%s -- async task creation"  %  (adaptor_name, cpi_name))
+                    self._logger.debug("get_adaptor %s.%s -- async task creation"  %  (adaptor_name, cpi_cname))
 
                     task = cpi_instance.init_instance_async (ttype, *args, **kwargs)
                     return task
@@ -513,7 +513,7 @@ class Engine(Configurable):
 
             except Exception as e :
                 # adaptor class initialization failed - try next one
-                m    = "%s.%s: %s"  %  (adaptor_name, cpi_class, str(e))
+                m    = "adaptor class ctor failed : %s.%s: %s"  %  (adaptor_name, cpi_class, str(e))
                 msg += "\n  %s" % m
                 self._logger.info("get_adaptor %s", m)
                 continue
