@@ -54,24 +54,20 @@ class AdaptorBase (saga_config.Configurable) :
     # if sanity_check() is commented out here, then we will only load adaptors
     # which implement the method themselves.
     #
-    # def sanity_check (self) :
-    #     """ This method can be overloaded by adaptors to check runtime
-    #         conditions on adaptor load time.  The adaptor should raise an
-    #         exception if it will not be able to function properly in the given
-    #         environment, e.g. due to missing dependencies etc.
-    #     """
-    #     pass
+    def sanity_check (self) :
+        """ This method can be overloaded by adaptors to check runtime
+            conditions on adaptor load time.  The adaptor should raise an
+            exception if it will not be able to function properly in the given
+            environment, e.g. due to missing dependencies etc.
+        """
+        raise saga.exceptions.BadParameter ("Adaptor %s does not implement sanity_check()"  \
+                                         % self._name)
+
 
     def register (self) :
-        """ Adaptor registration function. The engine calls this during startup. 
-    
-            We call the sanity checks here which raise an exception if the
-            adaptor won't work in a given environment. In that case, the engine
-            won't add it to it's internal list of adaptors. If everything is ok,
-            we return the adaptor info.
+        """ Adaptor registration function. The engine calls this during startup
+            to retrieve the adaptor information.
         """
-
-        self.sanity_check ()
 
         return self._info
 

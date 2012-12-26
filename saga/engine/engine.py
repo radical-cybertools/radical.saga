@@ -180,7 +180,10 @@ class Engine(Configurable):
     # 
     def _load_adaptors (self, inject_registry=None):
         """ Try to load all adaptors that are registered in 
-            saga.engine.registry.py. This method is called from the constructor. 
+            saga.engine.registry.py. This method is called from the
+            constructor.  As Engine is a singleton, this method is
+            called once after the module is first loaded in any python
+            application.
 
             :param inject_registry: Inject a fake registry. *For unit tests only*.
         """
@@ -192,8 +195,9 @@ class Engine(Configurable):
         # get the list of adaptors to load
         registry = saga.engine.registry.adaptor_registry
 
+
         # check if some unit test wants to use a special registry.  If
-        # so, we reset cpi infos from earlier singleton creation.
+        # so, we reset cpi infos from the earlier singleton creation.
         if inject_registry != None :
             self._cpis = {}
             registry   = inject_registry
@@ -205,6 +209,7 @@ class Engine(Configurable):
             self._logger.info ("Loading  adaptor %s"  %  module_name)
 
 
+            # first, import the module
             adaptor_module = None
             try :
                 adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
@@ -216,22 +221,37 @@ class Engine(Configurable):
                 continue # skip to next adaptor
 
 
-            # we expect the module to have an 'Adaptor' class implemented,
-            # which returns a info dict for all implemented CPI
-            # classes on 'register()'
-            adaptor_info = None
+            # we expect the module to have an 'Adaptor' class
+            # implemented, which, on calling 'register()', returns
+            # a info dict for all implemented adaptor classes.
+            adaptor_instance = None
+            adaptor_info     = None
             try: 
                 adaptor_instance = adaptor_module.Adaptor ()
                 adaptor_info     = adaptor_instance.register ()
 
-            except Exception, ex:
+            except Exception as e:
                 self._logger.warning ("Skipping adaptor %s: loading failed: %s" \
-                                   % (module_name, str(ex)))
+                                   % (module_name, str(e)))
                 self._logger.debug   (get_traceback ())
                 continue # skip to next adaptor
 
 
-            # No exception, but adaptor_info is empty?
+            # the adaptor must also provide a sanity_check() method, which sould
+            # be used to confirm that the adaptor can function properly in the
+            # current runtime environment (e.g., that all pre-requisites and
+            # system dependencies are met).
+            try: 
+                adaptor_instance.sanity_check ()
+
+            except Exception as e:
+                self._logger.warning ("Skipping adaptor %s: failed self test: %s" \
+                                   % (module_name, str(e)))
+                self._logger.debug   (get_traceback ())
+                continue # skip to next adaptor
+
+
+            # check if we have a valid adaptor_info
             if adaptor_info is None :
                 self._logger.warning ("Skipping adaptor %s: adaptor meta data are invalid" \
                                    % module_name)
@@ -247,17 +267,10 @@ class Engine(Configurable):
                 self._logger.debug   (get_traceback ())
                 continue  # skip to next adaptor
 
+
             adaptor_name    = adaptor_info['name']
             adaptor_version = adaptor_info['version']
             adaptor_enabled = True   # default unless disabled by 'enabled' option or version filer
-
-
-            # check if the adaptor has anything to register
-            if not 'cpis' in adaptor_info :
-                self._logger.warn ("Skipping adaptor %s: does not register any cpis" \
-                                % (module_name))
-                continue
-
 
             # disable adaptors in 'alpha' or 'beta' versions -- unless
             # the 'load_beta_adaptors' config option is set to True
@@ -272,10 +285,23 @@ class Engine(Configurable):
 
 
             # get the 'enabled' option in the adaptor's config
-            # section (saga.cpi.base ensures it it there after
-            # instantiating the module's Adaptor class)
-            adaptor_config  = global_config.get_category (adaptor_name)
-            adaptor_enabled = adaptor_config['enabled'].get_value ()
+            # section (saga.cpi.base ensures that the option exists,
+            # if it is initialized correctly in the adaptor class.
+            adaptor_config  = None
+            adaptor_enabled = False
+
+            try :
+                adaptor_config  = global_config.get_category (adaptor_name)
+                adaptor_enabled = adaptor_config['enabled'].get_value ()
+
+            except Exception as e:
+                # this exception likely means that the adaptor does
+                # not call the cpi.AdaptorBase initializer (correctly)
+                self._logger.warning ("Skipping adaptor %s: initialization failed: %s" \
+                                   % (module_name, str(e)))
+                self._logger.debug   (get_traceback ())
+                continue # skip to next adaptor
+
 
             # only load adaptor if it is not disabled via config files
             if adaptor_enabled == False :
@@ -284,7 +310,15 @@ class Engine(Configurable):
                 continue # skip to next adaptor
 
 
-            # we got a valid and enabled adaptor info - yay!
+            # check if the adaptor has anything to register
+            if 0 == len (adaptor_info['cpis']) :
+                self._logger.warn ("Skipping adaptor %s: does not register any cpis" \
+                                % (module_name))
+                continue # skip to next adaptor
+
+
+            # we got an enabled adaptor with valid info - yay!  We can
+            # now register all adaptor classes (cpi implementations).
             for cpi_info in adaptor_info['cpis'] :
 
                 # check cpi information details for completeness
@@ -296,22 +330,30 @@ class Engine(Configurable):
                     continue # skip to next cpi info
 
 
-                # register adaptor class for the given API type and
-                # all listed URL schemas
+                # adaptor classes are registered for specific API types.
                 cpi_type  = cpi_info['type']
-                cpi_class = getattr (adaptor_module, cpi_info['class'])
+                cpi_class = None
 
-                # make sure the cpi class is a valid cpi for the
-                # given type.  Note that saga.job.service.Service
-                # is the same as saga.job.Service.
+                try :
+                    cpi_class = getattr (adaptor_module, cpi_info['class'])
+                except Exception as e:
+                    # this exception likely means that the adaptor does
+                    # not call the cpi.AdaptorBase initializer (correctly)
+                    self._logger.warning ("Skipping adaptor %s: adaptor class invalid %s: %s" \
+                                       % (module_name, cpi_info['class'], str(e)))
+                    self._logger.debug   (get_traceback ())
+                    continue # skip to next adaptor
+
+                # make sure the cpi class is a valid cpi for the given type.
+                # Note that saga.job.service.Service is the same as
+                # saga.job.Service -- so we also make sure the module name does
+                # not have duplicated last element.  Also, the last element
+                # needs to be translated from CamelCase to camel_case
                 cpi_last = re.sub (r'.*\.', '',             cpi_type)
-                cpi_modn = re.sub (r'^saga\.', 'saga.cpi.', cpi_type).lower ()
+                cpi_modn = re.sub (r'^saga\.', 'saga.cpi.', cpi_type)
+                cpi_modn = re.sub (r'([^.]+)\.\1$', r'\1',  cpi_modn)
+                cpi_modn = re.sub (r'(.*)([a-z])([A-Z])([^\.]*)$', r'\1\2_\3\4', cpi_modn).lower ()
 
-                # make sure the module name does not have
-                # duplicated last element
-                cpi_modn = re.sub (r'([^.]+)\.\1$', r'\1', cpi_modn)
-
-                
                 # does that module exist?
                 if not cpi_modn in sys.modules :
                     self._logger.error ("Skipping adaptor %s: cpi type not known: '%s'" \
@@ -363,8 +405,8 @@ class Engine(Configurable):
                         continue # skip to next cpi info
 
 
-                    self._logger.info ("Loading  adaptor %s: '%s (%s)'" \
-                                    % (module_name, cpi_class, cpi_type))
+                    self._logger.info ("Loading  adaptor %s: '%s (%s : %s://)'" \
+                                    % (module_name, cpi_class, cpi_type, cpi_schema))
                     self._cpis[cpi_type][cpi_schema].append (info)
 
 

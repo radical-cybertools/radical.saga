@@ -95,7 +95,7 @@ def test_load_adaptor_twice():
     sys.path = old_sys_path
 
 def test_load_broken_adaptor():
-    """ Test that an expection in the adaptor register() method is handled properly
+    """ Test that an expection in the adaptor's sanity_check() method is handled properly
     """
     # store old sys.path
     old_sys_path = sys.path
