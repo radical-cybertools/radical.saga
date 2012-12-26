@@ -7,14 +7,19 @@ __license__   = "MIT"
 
 """ Provides the SAGA runtime. """
 
-import signal
+import re
 import sys
+import pprint
+import string
+import signal
+import inspect
 
 from   saga.utils.singleton import Singleton
 from   saga.engine.logger   import getLogger, get_traceback
 from   saga.engine.config   import getConfig, Configurable
 
 import saga.engine.registry  # adaptors to load
+import saga.cpi              # load cpi's so that we can check what adaptors implement
 
 
 ##################################################################################
@@ -173,23 +178,26 @@ class Engine(Configurable):
 
     #-----------------------------------------------------------------
     # 
-    def _load_adaptors (self, inject_registry=False):
+    def _load_adaptors (self, inject_registry=None):
         """ Try to load all adaptors that are registered in 
             saga.engine.registry.py. This method is called from the constructor. 
 
             :param inject_registry: Inject a fake registry. *For unit tests only*.
         """
+
+        # get the engine config options
         global_config = getConfig()
 
-        # check if we support alpha/beta adaptos
-        allow_betas = self._cfg['load_beta_adaptors'].get_value ()
 
+        # get the list of adaptors to load
+        registry = saga.engine.registry.adaptor_registry
 
-        if inject_registry is False:
-            registry = saga.engine.registry.adaptor_registry
-        else:
-            self._cpis = {} # reset cpi infos
+        # check if some unit test wants to use a special registry.  If
+        # so, we reset cpi infos from earlier singleton creation.
+        if inject_registry != None :
+            self._cpis = {}
             registry   = inject_registry
+
 
         # attempt to load all registered modules
         for module_name in registry:
@@ -251,9 +259,9 @@ class Engine(Configurable):
                 continue
 
 
-            # default to 'disabled' if adaptor version is 'alpha' or
-            # 'beta', but honor the 'load_beta_adaptors' config option.
-            if not allow_betas :
+            # disable adaptors in 'alpha' or 'beta' versions -- unless
+            # the 'load_beta_adaptors' config option is set to True
+            if not self._cfg['load_beta_adaptors'].get_value () :
 
                 if 'alpha' in adaptor_version.lower() or \
                    'beta'  in adaptor_version.lower()    :
@@ -273,7 +281,7 @@ class Engine(Configurable):
             if adaptor_enabled == False :
                 self._logger.info ("Skipping adaptor %s: 'enabled' set to False" \
                                 % (module_name))
-                continue
+                continue # skip to next adaptor
 
 
             # we got a valid and enabled adaptor info - yay!
@@ -285,19 +293,51 @@ class Engine(Configurable):
                     not 'schemas' in cpi_info    :
                     self._logger.info ("Skipping adaptor %s cpi: cpi info detail is incomplete" \
                                     % (module_name))
-                    continue
+                    continue # skip to next cpi info
 
 
                 # register adaptor class for the given API type and
                 # all listed URL schemas
-                cpi_type      = cpi_info['type']
-                cpi_classname = cpi_info['class']
-                cpi_schemas   = cpi_info['schemas']
+                cpi_type  = cpi_info['type']
+                cpi_class = getattr (adaptor_module, cpi_info['class'])
 
-                for cpi_schema in cpi_schemas :
+                # make sure the cpi class is a valid cpi for the
+                # given type.  Note that saga.job.service.Service
+                # is the same as saga.job.Service.
+                cpi_last = re.sub (r'.*\.', '',             cpi_type)
+                cpi_modn = re.sub (r'^saga\.', 'saga.cpi.', cpi_type).lower ()
+
+                # make sure the module name does not have
+                # duplicated last element
+                cpi_modn = re.sub (r'([^.]+)\.\1$', r'\1', cpi_modn)
+
+                
+                # does that module exist?
+                if not cpi_modn in sys.modules :
+                    self._logger.error ("Skipping adaptor %s: cpi type not known: '%s'" \
+                                     % (module_name, cpi_type))
+                    continue # skip to next cpi info
+
+
+                # so, make sure the given cpi is actually
+                # implemented by the adaptor class
+                cpi_ok = False
+                for name, cpi_obj in inspect.getmembers (sys.modules[cpi_modn]) :
+                    if name == cpi_last            and \
+                       inspect.isclass (cpi_obj)   and \
+                       issubclass (cpi_class, cpi_obj) :
+                           cpi_ok = True
+
+                if not cpi_ok :
+                    self._logger.error ("Skipping adaptor %s: doesn't implement cpi '%s (%s)'" \
+                                     % (module_name, cpi_class, cpi_type))
+                    continue # skip to next cpi info
+
+
+                # finally, register the cpi for all its schemas!
+                for cpi_schema in cpi_info['schemas'] :
 
                     cpi_schema = cpi_schema.lower ()
-                    cpi_class  = getattr (adaptor_module, cpi_classname)
 
                     # make sure we can register that cpi type
                     if not cpi_type in self._cpis :
@@ -316,12 +356,17 @@ class Engine(Configurable):
                             'adaptor_instance' : adaptor_instance}
 
                     # make sure this tuple was not registered, yet
-                    if not info in self._cpis[cpi_type][cpi_schema] :
+                    if info in self._cpis[cpi_type][cpi_schema] :
 
-                        self._cpis[cpi_type][cpi_schema].append (info)
+                        self._logger.error ("Skipping adaptor %s: already registered '%s - %s'" \
+                                         % (module_name, cpi_class, adaptor_instance))
+                        continue # skip to next cpi info
 
 
-        # self._dump()
+                    self._logger.info ("Loading  adaptor %s: '%s (%s)'" \
+                                    % (module_name, cpi_class, cpi_type))
+                    self._cpis[cpi_type][cpi_schema].append (info)
+
 
 
     #-----------------------------------------------------------------
