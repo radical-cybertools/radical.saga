@@ -113,8 +113,7 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
         
         t = saga.task.Task ()
 
-        t._set_result (saga.dummysystem.Directory._create_from_adaptor \
-                       (url, flags, session, _ADAPTOR_NAME))
+        t._set_result (saga.dummysystem.Directory (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -178,8 +177,7 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
         if not url.scheme and not url.host : 
             url = saga.url.Url (str(self._url) + '/' + str(url))
 
-        f = saga.dummysystem.File._create_from_adaptor (url, flags, self._session, 
-                                                       _ADAPTOR_NAME)
+        f = saga.dummysystem.File (url, flags, self._session, _adaptor_name=_ADAPTOR_NAME)
         return f
 
 
@@ -214,8 +212,7 @@ class DummyFile (saga.cpi.filesystem.File) :
         
         t = saga.task.Task ()
 
-        t._set_result (saga.dummysystem.File._create_from_adaptor \
-                       (url, flags, session, _ADAPTOR_NAME))
+        t._set_result (saga.dummysystem.File (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t

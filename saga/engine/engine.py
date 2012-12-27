@@ -482,13 +482,12 @@ class Engine(Configurable):
                 cpi_instance = cpi_class (api_instance, adaptor_instance)
 
                 if requested_name != None :
-                    if requested_name == adaptor_name :
-                        return cpi_instance
-
-                    # ignore this adaptor
-                    self._logger.debug ("get_adaptor %s.%s -- ignore %s != %s" \
-                                          %  (adaptor_name, cpi_cname, requested_name, adaptor_name))
-                    continue
+                    if requested_name != adaptor_name :
+                        
+                        # ignore this adaptor
+                        self._logger.debug ("get_adaptor for %s : %s != %s - ignore adaptor" \
+                                         % (cpi_cname, requested_name, adaptor_name))
+                        continue
 
 
                 if ttype == None :
@@ -496,8 +495,8 @@ class Engine(Configurable):
                     # the adaptor_instance to bind to the API instance.
                     cpi_instance.init_instance  (*args, **kwargs)
 
-                    self._logger.debug("BOUND get_adaptor %s.%s -- success"
-                            %  (adaptor_name, cpi_cname))
+                    self._logger.debug ("BOUND get_adaptor %s.%s -- success"
+                                     % (adaptor_name, cpi_cname))
                     return cpi_instance
 
                 else :
@@ -505,7 +504,8 @@ class Engine(Configurable):
                     # back to the caller (instead of the adaptor instance). That 
                     # task is responsible for binding the adaptor to the later 
                     # returned API instance.
-                    self._logger.debug("get_adaptor %s.%s -- async task creation"  %  (adaptor_name, cpi_cname))
+                    self._logger.debug ("get_adaptor %s.%s -- async task creation"  \
+                                     % (adaptor_name, cpi_cname))
 
                     task = cpi_instance.init_instance_async (ttype, *args, **kwargs)
                     return task

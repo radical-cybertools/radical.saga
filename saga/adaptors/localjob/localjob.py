@@ -191,9 +191,7 @@ class LocalJobService (saga.cpi.job.Service) :
                      'session'         : self._session,
                      'container'       : self }
 
-        job  = saga.job.Job._create_from_adaptor (job_info,
-                                                  self._rm.scheme, 
-                                                  _ADAPTOR_NAME)
+        job  = saga.job.Job (_job_info=job_info, _adaptor_schema=self._rm.scheme, _adaptor_name=_ADAPTOR_NAME)
         return job
 
     @SYNC

@@ -14,7 +14,7 @@ import saga.attributes
 class LogicalFile (object) :
 
 
-    def __init__ (self, url=None, flags=READ, session=None, _adaptor=None) : 
+    def __init__ (self, url=None, flags=READ, session=None, _adaptor_name=None) : 
         '''
         url:       saga.Url
         flags:     flags enum
@@ -32,13 +32,8 @@ class LogicalFile (object) :
         self._logger.debug ("saga.replica.LogicalFile.__init__ (%s, %s)"  \
                          % (str(file_url), str(session)))
 
-        if _adaptor :
-            # created from adaptor
-            self._adaptor = _adaptor
-            self._adaptor.init_instance (url, flags, session)
-        else :
-            self._adaptor = self._engine.get_adaptor (self, 'saga.replica.LogicalFile', file_url.scheme, \
-                                                      None, ANY_ADAPTOR, file_url, flags, session)
+        self._adaptor = self._engine.get_adaptor (self, 'saga.replica.LogicalFile', file_url.scheme, \
+                                                  None, _adaptor_name, file_url, flags, session)
 
 
     @classmethod
@@ -62,30 +57,6 @@ class LogicalFile (object) :
         # init_instance_async(), which returns a task as expected.
         return engine.get_adaptor (self, 'saga.replica.LogicalFile', file_url.scheme, \
                                    ttype, ANY_ADAPTOR, file_url, session)
-
-
-    @classmethod
-    def _create_from_adaptor (self, url, flags, session, adaptor_name) :
-        '''
-        url:          saga.Url
-        flags:        saga.replica.flags enum
-        session:      saga.Session
-        adaptor_name: String
-        ret:          saga.replica.LogicalFile (bound to a specific adaptor)
-        '''
-
-        engine = getEngine ()
-        logger = getLogger ('saga.replica.LogicalFile')
-        logger.debug ("saga.replica.LogicalFile._create_from_adaptor (%s, %s, %s)"  \
-                   % (url, flags, adaptor_name))
-    
-    
-        # attempt to find a suitable adaptor, which will call 
-        # init_instance_sync(), resulting in 
-        # FIXME: self is not an instance here, but the class object...
-        adaptor = engine.get_adaptor (self, 'saga.replica.LogicalFile', url.scheme, None, adaptor_name)
-    
-        return self (url, flags, session, _adaptor=adaptor)
 
 
     # ----------------------------------------------------------------

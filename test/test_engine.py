@@ -14,6 +14,10 @@ try :
                                  saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS)
   print d.get_url ()
   f = d.open ('passwd')
+  
+  f._adaptor._dump()
+  sys.exit (0)
+
   print f.get_size_self ()
   t = f.get_size_self (saga.task.ASYNC)
   print t.state

@@ -58,31 +58,6 @@ class Directory (object) :
                                    ttype, ANY_ADAPTOR, dir_url, flags, session)
 
 
-    @classmethod
-    def _create_from_adaptor (self, url, flags, session, adaptor_name) :
-        '''
-        url:          saga.Url
-        flags:        saga.filesystem.flags enum
-        session:      saga.Session
-        adaptor_name: String
-        ret:          saga.filesystem.Directory (bound to a specific adaptor)
-        '''
-
-        engine = getEngine ()
-        logger = getLogger ('saga.filesystem.Directory')
-        logger.debug ("saga.filesystem.Directory._create_from_adaptor (%s, %s, %s)"  \
-                   % (url, flags, adaptor_name))
-    
-    
-        # attempt to find a suitable adaptor, which will call 
-        # init_instance_sync(), resulting in 
-        # FIXME: self is not an instance here, but the class object...
-        adaptor = engine.get_adaptor (self, 'saga.filesystem.Directory', url.scheme, None, adaptor_name)
-    
-        return self (url, flags, session, _adaptor=adaptor)
-
-
-
 
     # ----------------------------------------------------------------
     #

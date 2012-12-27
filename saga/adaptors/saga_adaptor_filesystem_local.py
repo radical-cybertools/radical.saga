@@ -5,12 +5,14 @@
 
 import os
 import shutil
+import traceback
 
 import saga.url
 import saga.cpi.base
 import saga.cpi.filesystem
 import saga.utils.misc
 
+from   saga.engine.logger   import get_traceback
 from   saga.utils.singleton import Singleton
 
 SYNC  = saga.cpi.base.sync
@@ -110,8 +112,7 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         
         t = saga.task.Task ()
 
-        t._set_result (saga.filesystem.Directory._create_from_adaptor \
-                       (url, flags, session, _ADAPTOR_NAME))
+        t._set_result (saga.filesystem.Directory (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -175,9 +176,7 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         if not url.scheme and not url.host : 
             url = saga.url.Url (str(self._url) + '/' + str(url))
 
-        f = saga.filesystem.File._create_from_adaptor (url, flags, self._session, 
-                                                       _ADAPTOR_NAME)
-        return f
+        return saga.filesystem.File (url, flags, self._session, _adaptor_name=_ADAPTOR_NAME)
 
 
 ######################################################################
@@ -188,6 +187,12 @@ class LocalFile (saga.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
         saga.cpi.Base.__init__ (self, api, adaptor, 'LocalFile')
+
+
+    def _dump (self) :
+        print "url    : %s"  % self._url
+        print "flags  : %s"  % self._flags
+        print "session: %s"  % self._session
 
 
     @SYNC
@@ -211,8 +216,7 @@ class LocalFile (saga.cpi.filesystem.File) :
         
         t = saga.task.Task ()
 
-        t._set_result (saga.filesystem.File._create_from_adaptor \
-                       (url, flags, session, _ADAPTOR_NAME))
+        t._set_result (saga.filesystem.File (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t

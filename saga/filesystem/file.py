@@ -14,7 +14,7 @@ import saga.attributes
 class File (object) :
 
 
-    def __init__ (self, url=None, flags=READ, session=None, _adaptor=None) : 
+    def __init__ (self, url=None, flags=READ, session=None, _adaptor_name=None) : 
         '''
         url:       saga.Url
         flags:     flags enum
@@ -32,17 +32,12 @@ class File (object) :
         self._logger.debug ("saga.filesystem.File.__init__ (%s, %s)"  \
                          % (str(file_url), str(session)))
 
-        if _adaptor :
-            # created from adaptor
-            self._adaptor = _adaptor
-            self._adaptor.init_instance (url, flags, session)
-        else :
-            self._adaptor = self._engine.get_adaptor (self, 'saga.filesystem.File', file_url.scheme, \
-                                                      None, ANY_ADAPTOR, file_url, flags, session)
+        self._adaptor = self._engine.get_adaptor (self, 'saga.filesystem.File', file_url.scheme, \
+                                                  None, _adaptor_name, file_url, flags, session)
 
 
     @classmethod
-    def create (self, url=None, flags=READ, ttype=None) :
+    def create (self, url=None, flags=READ, ttype=None, _adaptor_name=None) :
         '''
         url:       saga.Url
         flags:     saga.filesystem.flags enum
@@ -61,31 +56,7 @@ class File (object) :
         # attempt to find a suitable adaptor, which will call 
         # init_instance_async(), which returns a task as expected.
         return engine.get_adaptor (self, 'saga.filesystem.File', file_url.scheme, \
-                                   ttype, ANY_ADAPTOR, file_url, session)
-
-
-    @classmethod
-    def _create_from_adaptor (self, url, flags, session, adaptor_name) :
-        '''
-        url:          saga.Url
-        flags:        saga.filesystem.flags enum
-        session:      saga.Session
-        adaptor_name: String
-        ret:          saga.filesystem.File (bound to a specific adaptor)
-        '''
-
-        engine = getEngine ()
-        logger = getLogger ('saga.filesystem.File')
-        logger.debug ("saga.filesystem.File._create_from_adaptor (%s, %s, %s)"  \
-                   % (url, flags, adaptor_name))
-    
-    
-        # attempt to find a suitable adaptor, which will call 
-        # init_instance_sync(), resulting in 
-        # FIXME: self is not an instance here, but the class object...
-        adaptor = engine.get_adaptor (self, 'saga.filesystem.File', url.scheme, None, adaptor_name)
-    
-        return self (url, flags, session, _adaptor=adaptor)
+                                   ttype, _adaptor_name, file_url, flags, session)
 
 
     # ----------------------------------------------------------------

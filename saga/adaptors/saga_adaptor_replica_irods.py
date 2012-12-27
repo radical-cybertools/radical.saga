@@ -394,8 +394,7 @@ class IRODSDirectory (saga.cpi.replica.LogicalDirectory) :
         
         t = saga.task.Task ()
 
-        t._set_result (saga.replica.LogicalDirectory._create_from_adaptor \
-                       (url, flags, session, _ADAPTOR_NAME))
+        t._set_result (saga.replica.LogicalDirectory (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -435,7 +434,7 @@ class IRODSDirectory (saga.cpi.replica.LogicalDirectory) :
         if not url.scheme and not url.host : 
             url = saga.url.Url (str(self._url) + '/' + str(url))
 
-        f = saga.replica.LogicalFile._create_from_adaptor (url, flags, self._session, _ADAPTOR_NAME)
+        f = saga.replica.LogicalFile (url, flags, self._session, _adaptor_name=_ADAPTOR_NAME)
         return f
 
 
@@ -584,8 +583,7 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
         
         t = saga.task.Task ()
 
-        t._set_result (saga.replica.LogicalFile._create_from_adaptor \
-                       (url, flags, session, _ADAPTOR_NAME))
+        t._set_result (saga.replica.LogicalFile (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
