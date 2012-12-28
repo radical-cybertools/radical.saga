@@ -31,6 +31,7 @@ must be called like this::
     def __init__ (self) :
         saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
+
     def sanity_check (self) :
         # FIXME: detect gsissh tool
         pass
@@ -74,8 +75,8 @@ following layout::
 
 
 
-It is beneficial to specify ``_ADAPTOR_NAME`` and ``_ADAPTOR_SCHEMAS``
-separately, as they are used in multiple places, as explained later on.
+(It is beneficial to specify ``_ADAPTOR_NAME`` and ``_ADAPTOR_SCHEMAS``
+separately, as they are used in multiple places, as explained later on.)
 
 The *adaptor classes* listed in the ``_ADAPTOR_INFO`` (in this example,
 ``GSISSHJob`` and ``GSISSHJobService``) are the classes which are actually bound
@@ -116,8 +117,36 @@ method, which receives the API level constructor arguments.
 Adaptor Registration
 --------------------
 
-Any SAGA adaptor must be registered in the :ref:``Engine`` in order to be usable.
-That process involves several steps.
+Any SAGA adaptor must be registered in the :ref:``Engine`` in order to be
+usable.  That process is very simple, and performed by the
+:class:`saga.cpi.base.AdaptorBase` class -- so all the adaptor has to take care
+of is the correct initialization of that base class, as described in
+:ref:`adaptor_structure`.  The ``AdaptorBase`` will forward the
+``_ADAPTOR_INFO`` to the :class:`saga.engine.Engine` class, where the adaptor
+will be added to a registry of adaptor classes, hierarchically sorted like
+this (simplified)::
+
+  Engine._adaptor_registry = 
+  { 
+      'saga.job.Service' : 
+      { 
+          'gshiss' : [saga.adaptors.gsissh.job.GSISSHJobService, ...]
+          'ssh'    : [saga.adaptors.gsissh.job.GSISSHJobService, ...]
+          'gram'   : [saga.adaptors.globus.job.GRAMJobService, ...]
+          ...
+      },
+      'saga.job.Job' : 
+      { 
+          'gshiss' : [saga.adaptors.gsissh.job.GSISSHJob, ...]
+          'ssh'    : [saga.adaptors.gsissh.job.GSISSHJob, ...]
+          'gram'   : [saga.adaptors.globus.job.GRAMJob, ...]
+          ...
+      },
+      ...
+  }
+
+That registry is searched when the engine binds an adaptor class instance to
+a SAGA API object instance -- see :ref:`adaptor_binding`.
 
 
 
@@ -126,12 +155,69 @@ That process involves several steps.
 Adaptor Binding
 ---------------
 
+Whenever a SAGA API object is created, or whenever any method is invoked on that
+object, the SAGA-Python implementation needs to (a) select a suitable backend
+adaptor to perform that operation, and (b) invoke the respective adaptor
+functionality.  
+
+The first part, selecting a specific adaptor for a specific API
+object instance, is called *binding* -- SAGA-Python binds an adaptor to an
+object exactly once, at creation time, and the bond remains valid for the
+lifetime of the API object: on API creation, the API object will request
+a suitable adaptor from the engine, and will keep it for further method
+invocations (code simplified)::
+
+  class Service (object) :
+  
+    def __init__ (self, url=None, session=None) : 
+        self._engine  = getEngine ()
+        self._adaptor = self._engine.get_adaptor (self, 'saga.job.Service', url.scheme, ...,
+                                                  url, session)
+
+    def run_job (self, cmd, host="", ttype=None) :
+        return self._adaptor.run_job (cmd, host, ttype=ttype)
+    
+    ...
+
+
+The ``Engine.get_adaptor`` call will iterate through the engine's adaptor
+registry, and will, for all adaptors which indicated support for the given URL
+scheme, request an adaptor class instance for the given API class.  If an
+adaptor class instance can successfully be created, the engine will further
+attempt to call the adaptor class' ``init_instance`` method, which will in fact
+construct an adaptor level representation of the API level object::
+
+  class GSISSHJobService (saga.cpi.job.Service) :
+
+    def __init__ (self, api, adaptor) :
+      saga.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJobService')
+
+    def init_instance (self, url, session) :
+      # - check if session contains suitable security tokens for (gsi)ssh
+      # - check if endpoint given by 'url' can be served
+      # - establish and cache connection to that endpoint, with the sesssion
+      #   credentials
+      ...
+
+
+If either the adaptor class instantiation or the ``init_instance`` invocation
+raise an exception, the engine will try the next registered adaptor for that API
+class / url scheme combo.  If both steps are successful, the adaptor class
+instance will be returned to the API object's constructor, as shown above.
+
 
 
 .. _adaptor_state:
 
 Adaptor State
 -------------
+
+
+
+.. _adaptor_apicreate:
+
+Creating API objects on Adaptor Level
+-------------------------------------
 
 
 
