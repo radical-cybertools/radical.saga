@@ -68,12 +68,11 @@ Job Description -- :class:`saga.job.Description`
 
 :todo: Describe how to work with description.
 
-.. warning:: There is no guarantee that all middleware adaptors implement 
-             all job description attributes. In case a specific attribute
-             is not supported, the :meth:`~saga.job.Service.create_job` will 
-             throw an exception. Please refer to the 
-             :ref:`chapter_middleware_adaptors` documentation for more 
-             details and adaptor-specific lists of supported attributes.
+**Warning:** There is no guarantee that all middleware adaptors implement all job
+description attributes. In case a specific attribute is not supported, the
+:meth:`~saga.job.Service.create_job` will throw an exception. Please refer to
+the :ref:`chapter_middleware_adaptors` documentation for more details and
+adaptor-specific lists of supported attributes.
 
 .. autoclass:: saga.job.Description
    :members:
@@ -321,11 +320,11 @@ Callback functions are attached to a job object via the
     job.add_callback (saga.job.STATE, state_cb)
 
 
-.. warning:: There is no guarantee that all middleware adaptors implement 
-             these metrics. In case they are not implemented, you can still 
-             subscribe to them, but you won't receive any callbacks. Please
-             refer to the :ref:`chapter_middleware_adaptors` documentation 
-             for more details and adaptor-specific lists of supported metrics.
+**Warning:** There is no guarantee that all middleware adaptors implement these
+metrics. In case they are not implemented, you can still subscribe to them, but
+you won't receive any callbacks. Please refer to the
+:ref:`chapter_middleware_adaptors` documentation for more details and
+adaptor-specific lists of supported metrics.
 
 
 SAGA defines the following constants as job metrics:

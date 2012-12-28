@@ -72,19 +72,19 @@ _ADAPTOR_DOC           = {
 ################################################################################
 ## the adaptor info is used to register the adaptor with SAGA                 ##
 ##                                                                            ##
-_ADAPTOR_INFO       = {
-    'name'          : _ADAPTOR_NAME,
-    'version'       : 'v0.1',
-    'cpis'          : [
+_ADAPTOR_INFO          = {
+    'name'             : _ADAPTOR_NAME,
+    'version'          : 'v0.1',
+    'cpis'             : [
         { 
-        'type'      : 'saga.job.Service',
-        'class'     : 'LocalJobService',
-        'schemas'   : _ADAPTOR_SCHEMAS
+        'type'         : 'saga.job.Service',
+        'class'        : 'LocalJobService',
+        'schemas'      : _ADAPTOR_SCHEMAS
         }, 
         { 
-        'type'      : 'saga.job.Job',
-        'class'     : 'LocalJob',
-        'schemas'   : _ADAPTOR_SCHEMAS
+        'type'         : 'saga.job.Job',
+        'class'        : 'LocalJob',
+        'schemas'      : _ADAPTOR_SCHEMAS
         }
     ]
 }
