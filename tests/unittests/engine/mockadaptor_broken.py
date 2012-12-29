@@ -22,10 +22,10 @@ _ADAPTOR_OPTIONS     = []
 _ADAPTOR_INFO        = {
     'name'           : _ADAPTOR_NAME,
     'version'        : '1.0',
+    'schemas'        : _ADAPTOR_SCHEMAS,
     'cpis'           : [{ 
         'type'       : 'saga.job.Job',
-        'class'      : 'MockJob',
-        'schemas'    : _ADAPTOR_SCHEMAS
+        'class'      : 'MockJob'
         }
     ]
 }

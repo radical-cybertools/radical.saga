@@ -75,16 +75,15 @@ _ADAPTOR_DOC           = {
 _ADAPTOR_INFO          = {
     'name'             : _ADAPTOR_NAME,
     'version'          : 'v0.1',
+    'schemas'          : _ADAPTOR_SCHEMAS,
     'cpis'             : [
         { 
         'type'         : 'saga.job.Service',
-        'class'        : 'LocalJobService',
-        'schemas'      : _ADAPTOR_SCHEMAS
+        'class'        : 'LocalJobService'
         }, 
         { 
         'type'         : 'saga.job.Job',
-        'class'        : 'LocalJob',
-        'schemas'      : _ADAPTOR_SCHEMAS
+        'class'        : 'LocalJob'
         }
     ]
 }
@@ -184,15 +183,15 @@ class LocalJobService (saga.cpi.job.Service) :
                 raise saga.BadParameter._log (self._logger, msg)
 
         
-        # this is the dictionary we pass on to the job constructor
-        # you can pyt arbitrary data into it -- whatever you think you'll need
-        job_info = { 'job_service'     : self, 
-                     'job_description' : jd, 
-                     'session'         : self._session,
-                     'container'       : self }
+        # this dict is passed on to the job adaptor class -- use it to pass any
+        # state information you need there.
+        state = { 'job_service'     : self, 
+                  'job_description' : jd, 
+                  'session'         : self._session,
+                  'container'       : self }
 
-        job  = saga.job.Job (_job_info=job_info, _adaptor_schema=self._rm.scheme, _adaptor_name=_ADAPTOR_NAME)
-        return job
+        return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=state)
+
 
     @SYNC
     def get_job (self, jobid):

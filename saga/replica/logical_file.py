@@ -14,7 +14,7 @@ import saga.attributes
 class LogicalFile (object) :
 
 
-    def __init__ (self, url=None, flags=READ, session=None, _adaptor_name=None) : 
+    def __init__ (self, url=None, flags=READ, session=None, _adaptor=None) : 
         '''
         url:       saga.Url
         flags:     flags enum
@@ -32,8 +32,8 @@ class LogicalFile (object) :
         self._logger.debug ("saga.replica.LogicalFile.__init__ (%s, %s)"  \
                          % (str(file_url), str(session)))
 
-        self._adaptor = self._engine.get_adaptor (self, 'saga.replica.LogicalFile', file_url.scheme, \
-                                                  None, _adaptor_name, file_url, flags, session)
+        self._adaptor = self._engine.bind_adaptor (self, 'saga.replica.LogicalFile', file_url.scheme, \
+                                                   NOTASK, _adaptor, file_url, flags, session)
 
 
     @classmethod
@@ -55,8 +55,8 @@ class LogicalFile (object) :
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_async(), which returns a task as expected.
-        return engine.get_adaptor (self, 'saga.replica.LogicalFile', file_url.scheme, \
-                                   ttype, ANY_ADAPTOR, file_url, session)
+        return engine.bind_adaptor (self, 'saga.replica.LogicalFile', file_url.scheme, \
+                                    ttype, ANY_ADAPTOR, file_url, session)
 
 
     # ----------------------------------------------------------------
@@ -180,9 +180,11 @@ class LogicalFile (object) :
                     try :
                         self._logger.info("try fallback copy to %s" % adaptor_name)
 
+                        adaptor_instance = self._engine.get_adaptor ('adaptor_name')
+
                         # get an tgt-scheme'd adaptor for the new src url, and try copy again
-                        adaptor = self._engine.get_adaptor (self, 'saga.replica.LogicalFile', \
-                                                            tgt_url.scheme, None, adaptor_name)
+                        adaptor = self._engine.bind_adaptor (self, 'saga.replica.LogicalFile', \
+                                                             tgt_url.scheme, NOTASK, adaptor_instance)
                         tmp     = saga.replica.LogicalFile (tmp_url, READ, self._session, _adaptor=adaptor)
 
                         ret = tmp.copy_self (tgt_url, flags)

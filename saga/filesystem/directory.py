@@ -1,7 +1,7 @@
 
 from   saga.engine.logger import getLogger
 from   saga.engine.engine import getEngine, ANY_ADAPTOR
-from   saga.task          import SYNC, ASYNC, TASK
+from   saga.task          import SYNC, ASYNC, TASK, NOTASK
 from   saga.url           import Url
 from   saga.filesystem    import *
 
@@ -31,8 +31,8 @@ class Directory (object) :
             # created from adaptor
             self._adaptor = _adaptor
         else :
-            self._adaptor = self._engine.get_adaptor (self, 'saga.filesystem.Directory', dir_url.scheme, \
-                                                      None, ANY_ADAPTOR, dir_url, flags, session)
+            self._adaptor = self._engine.bind_adaptor (self, 'saga.filesystem.Directory', dir_url.scheme, \
+                                                       NOTASK, ANY_ADAPTOR, dir_url, flags, session)
 
 
     @classmethod
@@ -54,8 +54,8 @@ class Directory (object) :
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_async(), which returns a task as expected.
-        return engine.get_adaptor (self, 'saga.filesystem.Directory', dir_url.scheme, \
-                                   ttype, ANY_ADAPTOR, dir_url, flags, session)
+        return engine.bind_adaptor (self, 'saga.filesystem.Directory', dir_url.scheme, \
+                                    ttype, ANY_ADAPTOR, dir_url, flags, session)
 
 
 

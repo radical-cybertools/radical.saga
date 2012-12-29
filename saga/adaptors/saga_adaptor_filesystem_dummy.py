@@ -43,15 +43,14 @@ _ADAPTOR_DOC           = {
 _ADAPTOR_INFO          = {
     'name'             : _ADAPTOR_NAME,
     'version'          : 'v0.1beta',
+    'schemas'          : _ADAPTOR_SCHEMAS,
     'cpis'             : [{
         'type'         : 'saga.filesystem.Directory',
-        'class'        : 'DummyDirectory',
-        'schemas'      : _ADAPTOR_SCHEMAS
+        'class'        : 'DummyDirectory'
         }, 
         {
         'type'         : 'saga.filesystem.File',
-        'class'        : 'DummyFile',
-        'schemas'      : _ADAPTOR_SCHEMAS
+        'class'        : 'DummyFile'
         }
     ]
 }

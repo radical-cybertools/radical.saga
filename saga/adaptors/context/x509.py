@@ -40,10 +40,10 @@ _ADAPTOR_DOC           = {
 _ADAPTOR_INFO          = {
     'name'             : _ADAPTOR_NAME,
     'version'          : 'v0.1',
+    'schemas'          : _ADAPTOR_SCHEMAS,
     'cpis'             : [{ 
         'type'         : 'saga.Context',
-        'class'        : 'ContextX509',
-        'schemas'      : _ADAPTOR_SCHEMAS
+        'class'        : 'ContextX509'
         }
     ]
 }

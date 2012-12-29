@@ -23,7 +23,7 @@ import saga.cpi              # load cpi's so that we can check what adaptors imp
 
 
 ##################################################################################
-# a define to make get_adaptor more readable
+# a define to make bind_adaptor calls more readable
 ANY_ADAPTOR = None
 
 ############# These are all supported options for saga.engine ####################
@@ -73,15 +73,15 @@ class Engine(Configurable):
 
           _ADAPTOR_INFO = {
             'name'    : _adaptor_name,
+            'version' : 'v1.3'
+            'schemas' : ['fork', 'local']
             'cpis'    : [{ 
               'type'    : 'saga.job.Job',
               'class'   : 'LocalJob',
-              'schemas' : ['fork', 'local']
               }, 
               { 
               'type'    : 'saga.job.Service',
               'class'   : 'LocalJobService',
-              'schemas' : ['fork', 'local']
               } 
             ]
           }
@@ -99,20 +99,20 @@ class Engine(Configurable):
         registry of adaptor classes, hierarchically sorted like this
         (simplified)::
 
-          _cpis = 
+          _adaptor_registry = 
           { 
               'job' : 
               { 
-                  'gram' : [<gram job  adaptor class>]
-                  'ssh'  : [<ssh  job  adaptor class>]
-                  'http' : [<aws  job  adaptor class>,
-                            <occi job  adaptor class>]
+                  'gram' : [<gram job  adaptor, gram job adaptor class>]
+                  'ssh'  : [<ssh  job  adaptor, ssh  job adaptor class>]
+                  'http' : [<aws  job  adaptor, aws  job adaptor class>,
+                            <occi job  adaptor, occi job adaptor class>]
                   ...
               },
               'file' : 
               { 
-                  'ftp'  : <ftp  file adaptor class>
-                  'scp'  : <scp  file adaptor class>
+                  'ftp'  : <ftp file adaptor, ftp file adaptor class>
+                  'scp'  : <scp file adaptor, scp file adaptor class>
                   ...
               },
               ...
@@ -125,7 +125,7 @@ class Engine(Configurable):
 
           def __init__ (self, url="", session=None) :
               
-              for adaptor_class in self._engine._cpis{'job'}{url.scheme}
+              for (adaptor, adaptor_class) in self._engine._adaptor_registry{'job'}{url.scheme}
 
                   try :
                       self._adaptor = adaptor_class (self, url, session}
@@ -147,7 +147,7 @@ class Engine(Configurable):
     def __init__(self):
         
         # Engine manages cpis from adaptors
-        self._cpis = {}
+        self._adaptor_registry = {}
 
 
         # set the configuration options for this object
@@ -199,8 +199,8 @@ class Engine(Configurable):
         # check if some unit test wants to use a special registry.  If
         # so, we reset cpi infos from the earlier singleton creation.
         if inject_registry != None :
-            self._cpis = {}
-            registry   = inject_registry
+            self._adaptor_registry = {}
+            registry               = inject_registry
 
 
         # attempt to load all registered modules
@@ -261,7 +261,8 @@ class Engine(Configurable):
 
             if  not 'name'    in adaptor_info or \
                 not 'cpis'    in adaptor_info or \
-                not 'version' in adaptor_info    :
+                not 'version' in adaptor_info or \
+                not 'schemas' in adaptor_info    :
                 self._logger.warning ("Skipping adaptor %s: adaptor meta data are incomplete" \
                                    % module_name)
                 self._logger.debug   (get_traceback ())
@@ -270,6 +271,7 @@ class Engine(Configurable):
 
             adaptor_name    = adaptor_info['name']
             adaptor_version = adaptor_info['version']
+            adaptor_schemas = adaptor_info['schemas']
             adaptor_enabled = True   # default unless disabled by 'enabled' option or version filer
 
             # disable adaptors in 'alpha' or 'beta' versions -- unless
@@ -279,7 +281,7 @@ class Engine(Configurable):
                 if 'alpha' in adaptor_version.lower() or \
                    'beta'  in adaptor_version.lower()    :
 
-                    self._logger.info ("Skipping adaptor %s: beta versions are disabled (%s)" \
+                    self._logger.warn ("Skipping adaptor %s: beta versions are disabled (%s)" \
                                     % (module_name, adaptor_version))
                     continue  # skip to next adaptor
 
@@ -323,8 +325,7 @@ class Engine(Configurable):
 
                 # check cpi information details for completeness
                 if  not 'type'    in cpi_info or \
-                    not 'class'   in cpi_info or \
-                    not 'schemas' in cpi_info    :
+                    not 'class'   in cpi_info    :
                     self._logger.info ("Skipping adaptor %s cpi: cpi info detail is incomplete" \
                                     % (module_name))
                     continue # skip to next cpi info
@@ -378,17 +379,17 @@ class Engine(Configurable):
 
 
                 # finally, register the cpi for all its schemas!
-                for cpi_schema in cpi_info['schemas'] :
+                for adaptor_schema in adaptor_schemas :
 
-                    cpi_schema = cpi_schema.lower ()
+                    adaptor_schema = adaptor_schema.lower ()
 
                     # make sure we can register that cpi type
-                    if not cpi_type in self._cpis :
-                        self._cpis[cpi_type] = {}
+                    if not cpi_type in self._adaptor_registry :
+                        self._adaptor_registry[cpi_type] = {}
 
                     # make sure we can register that schema
-                    if not cpi_schema in self._cpis[cpi_type] :
-                        self._cpis[cpi_type][cpi_schema] = []
+                    if not adaptor_schema in self._adaptor_registry[cpi_type] :
+                        self._adaptor_registry[cpi_type][adaptor_schema] = []
 
                     # we register the cpi class, so that we can create
                     # instances as needed, and the adaptor instance,
@@ -401,7 +402,7 @@ class Engine(Configurable):
                             'adaptor_instance' : adaptor_instance}
 
                     # make sure this tuple was not registered, yet
-                    if info in self._cpis[cpi_type][cpi_schema] :
+                    if info in self._adaptor_registry[cpi_type][adaptor_schema] :
 
                         self._logger.error ("Skipping adaptor %s: already registered '%s - %s'" \
                                          % (module_name, cpi_class, adaptor_instance))
@@ -409,8 +410,8 @@ class Engine(Configurable):
 
 
                     self._logger.info ("Loading  adaptor %s: '%s (%s : %s://)'" \
-                                    % (module_name, cpi_class, cpi_type, cpi_schema))
-                    self._cpis[cpi_type][cpi_schema].append (info)
+                                    % (module_name, cpi_class, cpi_type, adaptor_schema))
+                    self._adaptor_registry[cpi_type][adaptor_schema].append (info)
 
 
 
@@ -425,14 +426,14 @@ class Engine(Configurable):
             name)
         '''
 
-        if not ctype in self._cpis :
+        if not ctype in self._adaptor_registry :
             return []
 
-        if not schema.lower () in self._cpis[ctype] :
+        if not schema.lower () in self._adaptor_registry[ctype] :
             return []
 
         adaptor_names = []
-        for info in self._cpis[ctype][schema.lower ()] :
+        for info in self._adaptor_registry[ctype][schema.lower ()] :
             adaptor_names.append (info['adaptor_name'])
 
         return adaptor_names
@@ -441,21 +442,41 @@ class Engine(Configurable):
 
     #-----------------------------------------------------------------
     # 
-    def get_adaptor (self, api_instance, ctype, schema, ttype, requested_name, *args, **kwargs) :
+    def get_adaptor (self, adaptor_name) :
+        ''' Return the adaptor module's ``Adaptor`` class for the given adaptor
+            name.  
+            
+            This method is used if adaptor or API object implementation need to
+            interact with other adaptors.
+        '''
+
+        for ctype in self._adaptor_registry.keys () :
+            for schema in self._adaptor_registry[ctype].keys () :
+                for info in self._adaptor_registry[ctype][schema] :
+                    if ( info['adaptor_name'] == adaptor_name ) :
+                        return info['adaptor']
+
+        raise saga.exceptions.NotSucess ("No adaptor named '%s' found"  %  adaptor_name)
+
+
+
+    #-----------------------------------------------------------------
+    # 
+    def bind_adaptor (self, api_instance, ctype, schema, ttype, adaptor=None, *args, **kwargs) :
         '''
         Look for a suitable cpi class for bind, and instantiate it.
         
-        If 'requested_name' is given, only matching adaptors are considered, and
-        the resulting adaptor classes are not initialized.  This code path is
-        used to re-bind to existing adaptors.
+        If 'adaptor' is not 'None', only that given adaptors is considered, and
+        adaptor classes are only created from that specific adaptor.
         '''
+
         schema = schema.lower ()
 
-        if not ctype in self._cpis :
+        if not ctype in self._adaptor_registry :
             raise saga.exceptions.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
                                                % (ctype, schema))
 
-        if not schema in self._cpis[ctype] :
+        if not schema in self._adaptor_registry[ctype] :
             raise saga.exceptions.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
                                                % (ctype, schema))
 
@@ -470,7 +491,7 @@ class Engine(Configurable):
         # binding if the constructor semantics signals a problem (i.e. cannot
         # handle URL after all).
         msg = ""
-        for info in self._cpis[ctype][schema] :
+        for info in self._adaptor_registry[ctype][schema] :
 
             cpi_cname        = info['cpi_cname']
             cpi_class        = info['cpi_class']
@@ -478,16 +499,19 @@ class Engine(Configurable):
             adaptor_instance = info['adaptor_instance']
 
             try :
-                # instantiate cpi
-                cpi_instance = cpi_class (api_instance, adaptor_instance)
 
-                if requested_name != None :
-                    if requested_name != adaptor_name :
+                # is this adaptor acceptable?
+                if adaptor != None :
+                    if adaptor != adaptor_instance :
                         
                         # ignore this adaptor
-                        self._logger.debug ("get_adaptor for %s : %s != %s - ignore adaptor" \
-                                         % (cpi_cname, requested_name, adaptor_name))
+                        self._logger.debug ("bind_adaptor for %s : %s != %s - ignore adaptor" \
+                                         % (cpi_cname, adaptor, adaptor_instance))
                         continue
+
+
+                # instantiate cpi
+                cpi_instance = cpi_class (api_instance, adaptor_instance)
 
 
                 if ttype == None :
@@ -495,7 +519,7 @@ class Engine(Configurable):
                     # the adaptor_instance to bind to the API instance.
                     cpi_instance.init_instance  (*args, **kwargs)
 
-                    self._logger.debug ("BOUND get_adaptor %s.%s -- success"
+                    self._logger.debug ("BOUND bind_adaptor %s.%s -- success"
                                      % (adaptor_name, cpi_cname))
                     return cpi_instance
 
@@ -504,7 +528,7 @@ class Engine(Configurable):
                     # back to the caller (instead of the adaptor instance). That 
                     # task is responsible for binding the adaptor to the later 
                     # returned API instance.
-                    self._logger.debug ("get_adaptor %s.%s -- async task creation"  \
+                    self._logger.debug ("bind_adaptor %s.%s -- async task creation"  \
                                      % (adaptor_name, cpi_cname))
 
                     task = cpi_instance.init_instance_async (ttype, *args, **kwargs)
@@ -515,7 +539,7 @@ class Engine(Configurable):
                 # adaptor class initialization failed - try next one
                 m    = "adaptor class ctor failed : %s.%s: %s"  %  (adaptor_name, cpi_class, str(e))
                 msg += "\n  %s" % m
-                self._logger.info("get_adaptor %s", m)
+                self._logger.info("bind_adaptor %s", m)
                 continue
 
         self._logger.error ("No suitable adaptor found for '%s' and URL scheme '%s'" %  (ctype, schema))
@@ -524,13 +548,13 @@ class Engine(Configurable):
 
     #-----------------------------------------------------------------
     # 
-    def loaded_cpis (self):
-        return self._cpis
+    def loaded_adaptors (self):
+        return self._adaptor_registry
 
 
     #-----------------------------------------------------------------
     # 
     def _dump (self) :
         import pprint
-        pprint.pprint (self._cpis)
+        pprint.pprint (self._adaptor_registry)
 

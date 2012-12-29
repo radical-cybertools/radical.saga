@@ -57,8 +57,8 @@ class Context (saga.Attributes) :
             self._adaptor = _adaptor
         else :
             # create from API -- create and bind adaptor
-            self._adaptor = self._engine.get_adaptor (self, 'saga.Context', type,
-                                                      None, ANY_ADAPTOR, type)
+            self._adaptor = self._engine.bind_adaptor (self, 'saga.Context', type,
+                                                       NOTASK, ANY_ADAPTOR, type)
 
     def _initialize (self, session) :
         '''

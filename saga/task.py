@@ -20,6 +20,7 @@ from   saga.utils.threads import Thread, NEW, RUNNING, DONE, FAILED
 from   saga.engine.logger import getLogger
 
 
+NOTASK   =  None    # makes some implementation internal method invocations more readable
 SYNC     = 'Sync'
 ASYNC    = 'Async'
 TASK     = 'Task'

@@ -20,9 +20,10 @@ class AdaptorBase (saga_config.Configurable) :
 
     def __init__ (self, adaptor_info, adaptor_options=[]) :
 
-        self._info   = adaptor_info
-        self._opts   = adaptor_options
-        self._name   = adaptor_info['name']
+        self._info    = adaptor_info
+        self._opts    = adaptor_options
+        self._name    = adaptor_info['name']
+        self._schemas = adaptor_info['schemas']
 
         self._logger = saga_logger.getLogger (self._name)
 
@@ -74,6 +75,10 @@ class AdaptorBase (saga_config.Configurable) :
 
     def get_name (self) :
         return self._name
+
+
+    def get_schemas (self) :
+        return self._schemas
 
 
 # ------------------------------------

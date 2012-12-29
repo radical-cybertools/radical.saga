@@ -43,15 +43,14 @@ _ADAPTOR_DOC           = {
 _ADAPTOR_INFO          = {
     'name'             : _ADAPTOR_NAME,
     'version'          : 'v0.2',
+    'schemas'          : _ADAPTOR_SCHEMAS,
     'cpis'             : [{
         'type'         : 'saga.filesystem.Directory',
-        'class'        : 'LocalDirectory',
-        'schemas'      : _ADAPTOR_SCHEMAS
+        'class'        : 'LocalDirectory'
         }, 
         {
         'type'         : 'saga.filesystem.File',
-        'class'        : 'LocalFile',
-        'schemas'      : _ADAPTOR_SCHEMAS
+        'class'        : 'LocalFile'
         }
     ]
 }
@@ -176,7 +175,7 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         if not url.scheme and not url.host : 
             url = saga.url.Url (str(self._url) + '/' + str(url))
 
-        return saga.filesystem.File (url, flags, self._session, _adaptor_name=_ADAPTOR_NAME)
+        return saga.filesystem.File (url, flags, self._session, _adaptor=self._adaptor)
 
 
 ######################################################################

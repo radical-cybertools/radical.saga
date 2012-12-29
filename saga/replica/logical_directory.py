@@ -12,7 +12,7 @@ import saga.attributes
 # permissions.Permissions, task.Async
 class LogicalDirectory (object) :
 
-    def __init__ (self, url=None, flags=READ, session=None, _adaptor_name=None) : 
+    def __init__ (self, url=None, flags=READ, session=None, _adaptor=None) : 
         '''
         url:       saga.Url
         flags:     flags enum
@@ -27,8 +27,8 @@ class LogicalDirectory (object) :
         self._logger.debug ("saga.replica.LogicalDirectory.__init__ (%s, %s)"  \
                          % (str(dir_url), str(session)))
 
-        self._adaptor = self._engine.get_adaptor (self, 'saga.replica.LogicalDirectory', dir_url.scheme, \
-                                                  None, _adaptor_name, dir_url, flags, session)
+        self._adaptor = self._engine.bind_adaptor (self, 'saga.replica.LogicalDirectory', dir_url.scheme, \
+                                                   NOTASK, _adaptor, dir_url, flags, session)
 
 
     @classmethod
@@ -50,8 +50,8 @@ class LogicalDirectory (object) :
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_async(), which returns a task as expected.
-        return engine.get_adaptor (self, 'saga.replica.LogicalDirectory', dir_url.scheme, \
-                                   ttype, ANY_ADAPTOR, dir_url, flags, session)
+        return engine.bind_adaptor (self, 'saga.replica.LogicalDirectory', dir_url.scheme, \
+                                    ttype, ANY_ADAPTOR, dir_url, flags, session)
 
 
     # ----------------------------------------------------------------

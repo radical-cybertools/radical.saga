@@ -11,7 +11,7 @@ __license__   = "MIT"
 
 from saga.engine.logger   import getLogger
 from saga.engine.engine   import getEngine, ANY_ADAPTOR
-from saga.task            import SYNC, ASYNC, TASK
+from saga.task            import SYNC, ASYNC, TASK, NOTASK
 from saga.url             import Url
 from saga.job.description import Description
 from saga.exceptions      import BadParameter
@@ -42,8 +42,8 @@ class Service (object) :
         self._logger.debug ("saga.job.Service.__init__ (%s, %s)"  \
                          % (str(rm), str(session)))
 
-        self._adaptor = self._engine.get_adaptor (self, 'saga.job.Service', rm.scheme, \
-                                                  None, ANY_ADAPTOR, rm, session)
+        self._adaptor = self._engine.bind_adaptor (self, 'saga.job.Service', rm.scheme, \
+                                                   None, ANY_ADAPTOR, rm, session)
 
 
     @classmethod
@@ -66,8 +66,8 @@ class Service (object) :
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_async(), which returns a task as expected.
-        return engine.get_adaptor (self, 'saga.job.Service', rm.scheme, \
-                                   ttype, ANY_ADAPTOR, rm, session)
+        return engine.bind_adaptor (self, 'saga.job.Service', rm.scheme, \
+                                    ttype, ANY_ADAPTOR, rm, session)
 
 
     def create_job (self, job_desc, ttype=None) :
