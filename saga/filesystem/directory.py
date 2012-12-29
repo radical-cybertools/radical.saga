@@ -12,7 +12,8 @@ import saga.attributes
 # permissions.Permissions, task.Async
 class Directory (object) :
 
-    def __init__ (self, url=None, flags=READ, session=None, _adaptor=None) : 
+    def __init__ (self, url=None, flags=READ, session=None, 
+                  _adaptor=None, _adaptor_state={}) : 
         '''
         url:       saga.Url
         flags:     flags enum

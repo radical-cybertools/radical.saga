@@ -22,7 +22,7 @@ from saga.job import *
 # class Job (Object, Async, Attributes, Permissions) :
 class Job (saga.attributes.Attributes, saga.task.Async) :
     
-    def __init__(self, _adaptor=None, _adaptor_state={}) :
+    def __init__ (self, _adaptor=None, _adaptor_state={}) :
 
         if not _adaptor :
             raise saga.exceptions.IncorrectState ("saga.job.Job constructor is private")

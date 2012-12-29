@@ -21,37 +21,37 @@ from saga.exceptions      import BadParameter
 # class Service (Object, Async) :
 class Service (object) :
     """ The job.Service represents a resource management backend, and as 
-        such allows the creation, submision and management of jobs.
+        such allows the creation, submission and management of jobs.
 
-        :param rm_url:  resource manager URL
-        :type  rm_url:  string or :class:`saga.Url`
+        :param url:     resource manager URL
+        :type  url:     string or :class:`saga.Url`
         :param session: an optional session object with security contexts
         :type  session: :class:`saga.Session`
         :rtype:         :class:`saga.job.Service`
 
-
     """
-    def __init__ (self, rm_url=None, session=None) : 
+    def __init__ (self, url=None, session=None, 
+                  _adaptor=None, _adaptor_state={}) : 
         """ Create a new job.Service instance.
         """
 
-        rm = Url (rm_url)
+        rm_url = Url (url)
 
         self._engine  = getEngine ()
         self._logger  = getLogger ('saga.job.Service')
         self._logger.debug ("saga.job.Service.__init__ (%s, %s)"  \
-                         % (str(rm), str(session)))
+                         % (rm_url, session))
 
-        self._adaptor = self._engine.bind_adaptor (self, 'saga.job.Service', rm.scheme, \
-                                                   None, ANY_ADAPTOR, rm, session)
+        self._adaptor = self._engine.bind_adaptor (self, 'saga.job.Service', rm_url.scheme, \
+                                                   NOTASK, ANY_ADAPTOR, rm_url, session)
 
 
     @classmethod
-    def create (self, rm_url=None, session=None, ttype=None) :
-        """ Create a new job.Service intance asynchronously.
+    def create (self, url=None, session=None, ttype=None) :
+        """ Create a new job.Service instance asynchronously.
 
-            :param rm_url:  resource manager URL
-            :type  rm_url:  string or :class:`saga.Url`
+            :param url:     resource manager URL
+            :type  url:     string or :class:`saga.Url`
             :param session: an optional session object with security contexts
             :type  session: :class:`saga.Session`
             :rtype:         :class:`saga.Task`

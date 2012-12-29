@@ -22,7 +22,7 @@ REMOTE_PORT     = "RemotePort"
 
 class Context (saga.Attributes) :
 
-    def __init__  (self, type=None, _adaptor=None) :
+    def __init__  (self, type=None, _adaptor=None, _adaptor_state={}) :
         '''
         type: string
         ret:  None
