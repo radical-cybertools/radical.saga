@@ -366,24 +366,157 @@ of adaptor level code for creating an :class:`saga.job.Job` instance via
   
   
 
-.. _adaptor_async:
-
-Synchronous versus Asynchronous Adaptor Methods
------------------------------------------------
-
-
-
 .. _adaptor_exceptions:
 
 Adaptor Level Exception Handling
 --------------------------------
 
+SAGA-Python defines a set of exceptions which can be thrown on the various
+method invocations (see section :ref:`api_exceptions`.  Adaptor implementors
+must ensure, that the correct exception types are thrown on the corresponding
+error conditions.  If the API layer encounters a non-SAGA exception from the
+adaptor layer, it will convert it to a ``saga.NoSuccess`` exception.  While that
+will reliably shield the user layer from non-SAGA exception types, it is a lossy
+translation, and likely to hide the underlying cause of the error.  This feature
+is thus to be considered as a safe guard, not as a preferred method of error
+state communication!
+
+An example of adaptor level error handling is below::
+
+  class ContextX509 (saga.cpi.Context) :
+  
+    def __init__ (self, api, adaptor) :
+      saga.cpi.Base.__init__ (self, api, adaptor, 'ContextX509')
+  
+    @SYNC
+    def init_instance (self, type) :
+      if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
+        raise saga.exceptions.BadParameter \
+                ("the x509 context adaptor only handles x509 contexts - duh!")
+  
+    @SYNC
+    def _initialize (self, session) :
+  
+      if not self._api.user_proxy :
+        self._api.user_proxy = "x509up_u%d"  %  os.getuid()   # fallback
+
+      if not os.path.exists (self._api.user_proxy) or \
+         not os.path.isfile (self._api.user_proxy)    :
+        raise saga.exceptions.BadParameter ("X509 proxy does not exist: %s"
+                                                 % self._api.user_proxy)
+  
+      try :
+        fh = open (self._api.user_proxy)
+      except Exception as e:
+        raise saga.exceptions.PermissionDenied ("X509 proxy '%s' not readable: %s"
+                                             % (self._api.user_proxy, str(e)))
+      else :
+        fh.close ()
+  
+
+
+
+.. _adaptor_async:
+
+Synchronous versus Asynchronous Adaptor Methods
+-----------------------------------------------
+
+The SAGA API features several objects which implement both synchronous and
+asynchronous versions of their respective methods.  Synchronous calls will
+return normal objects or values; asynchronous calls will return
+:class:`saga.Task` instances, which represent the ongoing asynchronous method,
+and can later be inspected for state and return values.
+
+On adaptor level, both method types are differences by the method decorators
+``@SYNC`` and ``@ASYNC``, like this::
+
+  class LocalFile (saga.cpi.filesystem.File) :
+  
+    def __init__ (self, api, adaptor) :
+        saga.cpi.Base.__init__ (self, api, adaptor, 'LocalFile')
+  
+    @SYNC
+    def init_instance (self, url, flags, session) :
+        self._url     = url
+        self._flags   = flags
+        self._session = session
+        ...
+  
+  
+    @ASYNC
+    def init_instance_async (self, ttype, url, flags, session) :
+      self._url     = url
+      self._flags   = flags
+      self._session = session
+
+      t = saga.task.Task ()
+      t._set_result (saga.filesystem.File (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
+      t._set_state  (saga.task.DONE)
+
+      return t
+
+
+    @SYNC
+    def get_url (self) :
+      return self._url
+  
+    @ASYNC
+    def get_url_async (self, ttype) :
+  
+      t = saga.task.Task ()
+      t._set_result (self._url)
+      t._set_state  (saga.task.DONE)
+  
+      return t
+
+
+Note that the async calls in the example code above are not *really*
+asynchronous, as they both return a task which is in ``Done`` state -- a proper
+async call would return a task in ``New`` or ``Running`` state, without setting
+the task\'s result, and would perform some required work in a separate thread or
+process.  Upon completion, the adaptor (which should keep a handle on the
+created task) would then set the result and state of the task, thus notifying
+the application of the completion of the asynchronous method call.
+
+Also note that there exists an asynchronous version for the ``init_instance()``
+method, which is used for the asynchronous API object creation, i.e. on::
+
+  #import sys
+  #import saga
+
+  t = saga.job.Service.create ('ssh://host.net')
+  
+  t.wait ()
+
+  if t.state != saga.task.DONE :
+    print "no job service: " + str(t.exception)
+    sys.exit (0)
+
+  job_service = t.get_result ()
+  job_service.run_job ("touch /tmp/hello_world")
+
+
+The exact semantics of SAGA's asynchronous operations is described elsewhere
+(see section :ref:`api_tasks`).  Relevant for this discussion is to note that
+the asynchronous adaptor methods all receive a task type parameter (``ttype``)
+which determines the state of the task to return: on ``ttype==saga.task.TASK``,
+the returned task should be in ``New`` state; on ``ttype==saga.task.ASYNC`` the
+task is in ``Running`` state, and on ``ttype==saga.task.SYNC`` the returned task
+is already ``Done``.  It is up to the adaptor implementor to ensure that
+semantics -- the examples above do not follow it, and are thus incomplete.
 
 
 .. _adaptor_bulks:
 
 Bulk Operations:
 ----------------
+
+
+
+.. _adaptor_logging:
+
+Logging on Adaptor Level:
+-------------------------
 
 
 

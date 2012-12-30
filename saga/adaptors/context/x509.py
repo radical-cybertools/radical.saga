@@ -102,10 +102,12 @@ class ContextX509 (saga.cpi.Context) :
         # make sure we have can access the proxy
         api = self._api
 
-        if api.user_proxy :
-            if not os.path.exists (api.user_proxy) or \
-               not os.path.isfile (api.user_proxy)    :
-                raise saga.exceptions.BadParameter ("X509 proxy does not exist: %s"
+        if not self._api.user_proxy :
+          self._api.user_proxy = "x509up_u%d"  %  os.getuid()
+
+        if not os.path.exists (api.user_proxy) or \
+           not os.path.isfile (api.user_proxy)    :
+            raise saga.exceptions.BadParameter ("X509 proxy does not exist: %s"
                                                  % api.user_proxy)
 
         try :
