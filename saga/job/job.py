@@ -57,7 +57,6 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         self._attributes_set_getter (FINISHED,        self._get_finished)
         self._attributes_set_getter (EXECUTION_HOSTS, self._get_execution_hosts)
 
-        self._engine = getEngine ()
         self._logger = getLogger ('saga.job.Job')
         self._logger.debug ("saga.job.Job.__init__()")
 

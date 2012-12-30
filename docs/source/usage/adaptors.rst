@@ -286,7 +286,85 @@ mechanism is in place).
 Creating API objects on Adaptor Level
 -------------------------------------
 
+Several SAGA API objects feature factory-like methods -- examples are
+``Directory.open()``, ``job.Service.create_job()/run_job()``, and
+``resource.Manager.aquire()``.  To correctly implement those methods on adaptor
+level, adaptors need to be able to instantiate the API objects to return.  We
+have seen in section :ref:`adaptor_binding` that, on API object creation, the
+``Engine`` will select and bind a suitable adaptor to the object instance.  In
+many cases, however, an implementation of a factory-like API method will want to
+make sure that the resulting API object is bound to the same adaptor instance as
+the spawning adaptor class instance itself.  For that purpose, all API object
+constructors will accept two additional parameters: ``_adaptor`` (type:
+:class:`saga.cpi.Base` or derivative), and ``_adaptor_state`` (type:
+:class:`dict`).  This is also provided for API objects which normally have no
+public constructor at all::
 
+
+  class Job (saga.attributes.Attributes, saga.task.Async) :
+      
+    def __init__ (self, _adaptor=None, _adaptor_state={}) :
+  
+      if not _adaptor :
+          raise saga.exceptions.IncorrectState ("saga.job.Job constructor is private")
+      ...
+    
+      # bind to the given adaptor -- this will create the required adaptor
+      # class.  We need to specify a schema for adaptor selection -- and
+      # simply choose the first one the adaptor offers.
+      engine         = getEngine ()
+      adaptor_schema = _adaptor.get_schemas()[0]
+      self._adaptor  = engine.bind_adaptor (self, 'saga.job.Job', adaptor_schema, 
+                                            saga.task.NOTASK, _adaptor, _adaptor_state)
+
+
+As shown above, ``_adaptor`` and ``_adaptor_state`` are forwarded to the
+Engine\'s ``bind_adaptor()`` method, and if present will ensure that the
+resulting API object is bound to the given adaptor.  The ``_adaptor_state`` dict
+will be forwarded to the adaptor class level ``init_instance()`` call, and can
+be used to correctly initialize the state of the new adaptor class.  An example
+of adaptor level code for creating an :class:`saga.job.Job` instance via
+:class:`saga.job.Service`\ ``.create_job()`` is below::
+
+  class GSISSHJobService (saga.cpi.job.Service) :
+      
+    def __init__ (self, api, adaptor) :
+        saga.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJobService')
+  
+    @SYNC
+    def init_instance (self, rm_url, session) :
+      ...
+  
+    @SYNC
+    def create_job (self, jd) :
+      
+      state = { 'job_service'     : self, 
+                'job_description' : jd, 
+                'session'         : self._session}
+  
+      return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=state)
+  
+  
+  class GSISSHJob (saga.cpi.job.Job) :
+    def __init__ (self, api, adaptor) :
+      saga.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJob')
+      ...
+  
+    @SYNC
+    def init_instance (self, job_info):
+
+      self._session        = job_info['session']
+      self._jd             = job_info['job_description']
+      self._parent_service = job_info['job_service'] 
+  
+      self._id             = None # is assigned when calling job.run()
+      self._state          = saga.job.NEW
+  
+      # register ourselves with the parent service
+      self._parent_service._update_jobid (self, self._id)
+      ...
+  
+  
 
 .. _adaptor_async:
 
@@ -299,6 +377,13 @@ Synchronous versus Asynchronous Adaptor Methods
 
 Adaptor Level Exception Handling
 --------------------------------
+
+
+
+.. _adaptor_bulks:
+
+Bulk Operations:
+----------------
 
 
 
