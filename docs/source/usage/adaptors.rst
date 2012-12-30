@@ -3,6 +3,7 @@
 Writing SAGA-Python Adaptors
 ############################
 
+
 .. note::
 
    This part of the SAGA-Python documentation is not for *users* of SAGA-Python,
@@ -20,16 +21,16 @@ Adaptor Structure
 A SAGA-Python adaptor is a Python module with well defined structure.  The
 module must expose a class ``Adaptor``, which (a) must be a singleton, (b) must
 provide a ``sanity_check()`` method, and (c) must inherit from
-:class:`saga.cpi.base.AdaptorBase`.  That base class' constructor (``__init__``)
+:class:`saga.cpi.AdaptorBase`.  That base class' constructor (``__init__``)
 must be called like this::
 
 
-  class Adaptor (saga.cpi.base.AdaptorBase):
+  class Adaptor (saga.cpi.AdaptorBase):
 
     __metaclass__ = Singleton
 
     def __init__ (self) :
-      saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+      saga.cpi.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
 
     def sanity_check (self) :
@@ -39,7 +40,7 @@ must be called like this::
 
 
 
-``_ADAPTOR_INFO`` and ``_ADAPTOR_OPTIONS`` are Python ``dict``\ s with the
+``_ADAPTOR_INFO`` and ``_ADAPTOR_OPTIONS`` are module level Python :class:`dict`\ s with the
 following layout::
 
 
@@ -52,7 +53,7 @@ following layout::
     'type'             : bool, 
     'default'          : True,
     'valid_options'    : [True, False],
-    'documentation'    : 'toggle connection caching.',
+    'documentation'    : 'toggle connection caching',
     'env_variable'     : None
     },
   ]
@@ -117,7 +118,7 @@ Adaptor Registration
 
 Any SAGA adaptor must be registered in the :ref:``Engine`` in order to be
 usable.  That process is very simple, and performed by the
-:class:`saga.cpi.base.AdaptorBase` class -- so all the adaptor has to take care
+:class:`saga.cpi.AdaptorBase` class -- so all the adaptor has to take care
 of is the correct initialization of that base class, as described in
 :ref:`adaptor_structure`.  The ``AdaptorBase`` will forward the
 ``_ADAPTOR_INFO`` to the :class:`saga.engine.Engine` class, where the adaptor
@@ -243,7 +244,7 @@ this::
     __metaclass__ = Singleton
 
     def __init__ (self) :
-      saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+      saga.cpi.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
       self._cache = {}
       ...
     ...
@@ -283,8 +284,8 @@ mechanism is in place).
 
 .. _adaptor_apicreate:
 
-Creating API objects on Adaptor Level
--------------------------------------
+Creating API Objects
+--------------------
 
 Several SAGA API objects feature factory-like methods -- examples are
 ``Directory.open()``, ``job.Service.create_job()/run_job()``, and
@@ -368,8 +369,8 @@ of adaptor level code for creating an :class:`saga.job.Job` instance via
 
 .. _adaptor_exceptions:
 
-Adaptor Level Exception Handling
---------------------------------
+Exception Handling
+------------------
 
 SAGA-Python defines a set of exceptions which can be thrown on the various
 method invocations (see section :ref:`api_exceptions`.  Adaptor implementors
@@ -418,8 +419,8 @@ An example of adaptor level error handling is below::
 
 .. _adaptor_async:
 
-Synchronous versus Asynchronous Adaptor Methods
------------------------------------------------
+Asynchronous Methods
+--------------------
 
 The SAGA API features several objects which implement both synchronous and
 asynchronous versions of their respective methods.  Synchronous calls will
@@ -506,29 +507,95 @@ is already ``Done``.  It is up to the adaptor implementor to ensure that
 semantics -- the examples above do not follow it, and are thus incomplete.
 
 
+
 .. _adaptor_bulks:
 
 Bulk Operations:
 ----------------
 
+On API level, there exists no explicit support for bulk operations.  Those can,
+however, be rendered implicitly, by collecting asynchronous operations in a task
+container, and calling ``run()`` on that container::
+
+  bulk  = saga.task.Container ()
+
+  dir_1 = saga.filesystem.Directory ("gridftp://remote.host1.net/")
+  for i in ranger (0, 1000) :
+
+    src = "gridftp://remote.host1.net/data/file_%4d.dat"  %  i
+    tgt = "gridftp://other.hostx.net/share/file_%4d.dat"  %  i
+
+    bulk.add (dir1.copy (src, tgt, saga.task.TASK))
+
+
+  dir_2 = saga.filesystem.Directory ("ssh://remote.host2.net/")
+  for i in ranger (0, 1000) :
+
+    src = "ssh://remote.host2.net/data/file_%4d.info"  %  i
+    tgt = "ssh://other.hostx.net/share/file_%4d.info"  %  i
+
+    bulk.add (dir2.copy (src, tgt, saga.task.TASK))
+
+
+  bulk.run  ()
+  bulk.wait (saga.task.ALL)
+
+
+The above task container gets filled by file copy tasks which are addressing two
+different file transfer protocols, and are thus likely mapped to two different
+adaptors.  The SAGA-Python API implementation will inspect the task container
+upon ``bulk.run()``, and will attempt to sort the contained tasks by adaptor,
+i.e. all tasks operating on API objects which bind to the same adaptor instance
+(not adaptor class instance) will be lumped together into a task *bucket*.  For
+each bucket, the API will then call the respective bulk operation
+(``container_method``) for that adaptor.
+
+Note that at this point, the task container implementation does not yet know
+what *adaptor class* instance to use for the bulk operations.  
+
+:todo: Needs completion after generic bulk ops are fixed.
+
+    
 
 
 .. _adaptor_logging:
 
-Logging on Adaptor Level:
--------------------------
+Adaptor Logging
+---------------
 
+Based on Python\'s ``logging`` facility, SAGA-Python also supports logging, both
+as an internal auditing and debugging mechanism, and as application supporting
+capability (see section :ref:`util_logging`.  Adaptor implementors are
+encouraged to use logging as well -- for that purposed, the
+:class:`saga.cpi.AdaptorBase` and :class:`saga.cpi.Base` classes will initialize
+a ``self._logger`` member for all adaptor and adaptor class implementations,
+respectively.
 
+We advice to use the log levels as indicated below:
 
-Module saga.engine
-------------------
+   +---------------------+------------------------------------+
+   | Log Level           | Type of Events Logged              |
+   +=====================+====================================+
+   | ``CRITICAL``        | Only fatal events that will cause  |
+   |                     | the process to abort -- that       |
+   |                     | NEVER happen on adaptor level!     |
+   +---------------------+------------------------------------+
+   | ``ERROR``           | Events that will prevent the       |
+   |                     | adaptor from functioning correctly.|
+   +---------------------+------------------------------------+
+   | ``WARNING``         | Events that indicate potential     |
+   |                     | problems or unusual events, and    |
+   |                     | can support application            |
+   |                     | diagnostics.                       |
+   +---------------------+------------------------------------+
+   | ``INFO``            | Events that support adaptor        |
+   |                     | auditing, inform about backend     |
+   |                     | activities, performance etc.       |
+   +---------------------+------------------------------------+
+   | ``DEBUG``           | Events which support the tracking  |
+   |                     | of adaptor code paths, to support  |
+   |                     | adaptor debugging (lots of output).|
+   +---------------------+------------------------------------+
 
-The config module provides classes and functions to introspect and modify
-SAGA's configuration. The :func:`getConfig` function is used to get the
-:class:`GlobalConfig` object which represents the current configuration 
-of SAGA:
-
-.. automodule:: saga.engine
-   :members:    saga.engine.Engine
 
 

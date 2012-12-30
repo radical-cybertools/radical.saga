@@ -55,7 +55,19 @@ class Async :
 class Task (saga.attributes.Attributes) :
 
 
-    def __init__ (self) :
+    def __init__ (self, _method_type=None) :
+        """ _method_type specifies the SAGA API method which task is
+        representing.  For example, for the following code::
+
+          d = saga.filesystem.Directory ("file:///")
+          t = d.copy ('/etc/passwd', '/tmp/passwd.bak', saga.task.ASYNC)
+
+        the resulting task ``t`` would represent the *'copy'* method.
+        """
+
+        if not _method_type :
+            raise saga.exceptions.IncorrectState ("saga.Task constructor is private")
+    
 
         # set attribute interface properties
         self._attributes_extensible  (False)
@@ -72,6 +84,7 @@ class Task (saga.attributes.Attributes) :
         self._attributes_set_setter (STATE,   self._set_state)
               
         self._set_state (NEW)
+        self._method_type = _method_type
 
 
     def _set_result (self, result) :
@@ -339,7 +352,6 @@ class Container (saga.attributes.Attributes) :
 
 
     def get_states (self) :
-
 
         if not len (self.tasks) :
             # nothing to do

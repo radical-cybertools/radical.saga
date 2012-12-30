@@ -244,9 +244,11 @@ class LocalJob (saga.cpi.job.Job) :
         self._parent_service = job_info['job_service'] 
 
         if 'container' in job_info :
-            self._container = job_info['container']
+            self._container   = job_info['container']
+            self._method_type = 'run'
         else :
-            self._container = None
+            self._container   = None
+            self._method_type = 'run'
 
         self._id         = None
         self._state      = saga.job.NEW

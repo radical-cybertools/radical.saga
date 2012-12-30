@@ -12,7 +12,6 @@ import saga.cpi.base
 import saga.cpi.filesystem
 import saga.utils.misc
 
-from   saga.engine.logger   import get_traceback
 from   saga.utils.singleton import Singleton
 
 SYNC  = saga.cpi.base.sync
