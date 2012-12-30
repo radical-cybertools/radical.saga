@@ -54,20 +54,31 @@ class Async :
 
 class Task (saga.attributes.Attributes) :
 
+    def __init__ (self, _adaptor=None, _method_type=None) :
+        """ 
+        ``_adaptor`` references the adaptor class instance from which this
+        task was created via an asynchronous function.  Note that the API level
+        object instance can be inferred via ``_adaptor._api``.  Further, the
+        adaptor will reference an _adaptor._container class, which will be
+        considered the target for bulk operations for this task.
 
-    def __init__ (self, _method_type=None) :
-        """ _method_type specifies the SAGA API method which task is
+        ``_method_type`` specifies the SAGA API method which task is
         representing.  For example, for the following code::
 
           d = saga.filesystem.Directory ("file:///")
           t = d.copy ('/etc/passwd', '/tmp/passwd.bak', saga.task.ASYNC)
 
-        the resulting task ``t`` would represent the *'copy'* method.
+        The resulting task ``t`` would represent the *'copy'* method.  This is
+        required to forward :class:`saga.task.Container` calls to the correct
+        bulk method, in this case ``container_copy()``.
         """
 
         if not _method_type :
             raise saga.exceptions.IncorrectState ("saga.Task constructor is private")
     
+
+        self._adaptor     = _adaptor
+        self._method_type = _method_type
 
         # set attribute interface properties
         self._attributes_extensible  (False)
@@ -84,7 +95,6 @@ class Task (saga.attributes.Attributes) :
         self._attributes_set_setter (STATE,   self._set_state)
               
         self._set_state (NEW)
-        self._method_type = _method_type
 
 
     def _set_result (self, result) :
@@ -407,9 +417,10 @@ class Container (saga.attributes.Attributes) :
 
         for t in self.tasks :
 
-            if hasattr (t._adaptor, '_container') and t._adaptor._container :
-                # the task's adaptor has a associated container class which can
-                # handle the container ops - great!
+            if  t._adaptor and t._adaptor._container :
+
+                # the task's adaptor has a valid associated container class 
+                # which can handle the container ops - great!
                 c = t._adaptor._container
                 if not c in buckets['containers'] :
                     buckets['containers'][c] = []

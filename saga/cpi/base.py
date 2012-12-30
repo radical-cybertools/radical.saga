@@ -93,6 +93,17 @@ class Base (saga_config.Configurable) :
         self._cpi_cname = cpi_cname
         self._logger    = saga_logger.getLogger (cpi_cname)
 
+        # by default, we assume that no bulk optimizations are supported by the
+        # adaptor class.  Any adaptor class supporting bulks ops must overwrite
+        # the ``_container`` attribute (via
+        # ``self._set_container(container=None)``, and have it point to the
+        # class which implements the respective ``container_*`` methods.
+        self._container = None
+
+
+    def _set_container (self, container=None) :
+        self._container = container
+
 
     def get_cpi_cname (self) :
         return self._cpi_cname

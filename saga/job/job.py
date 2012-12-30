@@ -22,10 +22,26 @@ from saga.job import *
 # class Job (Object, Async, Attributes, Permissions) :
 class Job (saga.attributes.Attributes, saga.task.Async) :
     
-    def __init__ (self, _adaptor=None, _adaptor_state={}) :
+    def __init__ (self, _adaptor=None, _adaptor_state={}, _method_type='run') :
+        """ 
+        _adaptor`` references the adaptor class instance which created this task
+        instance.
+
+        The ``_method_type`` parameter is flattened into the job constructor to
+        satisfy the bulk optimization properties of the saga.Task class, whose
+        interface is implemented by saga.job.Job.
+        ``_method_type`` specifies the SAGA API method which task is
+        representing.  For jobs, that defaults to the 'run' method.
+        """
 
         if not _adaptor :
             raise saga.exceptions.IncorrectState ("saga.job.Job constructor is private")
+
+        
+        # we need to keep _adaptor and _method_type around, for the task
+        # interface (see :class:`saga.Task`)
+        self._adaptor     = _adaptor
+        self._method_type = _method_type
     
         # set attribute interface properties
         self._attributes_allow_private (True)

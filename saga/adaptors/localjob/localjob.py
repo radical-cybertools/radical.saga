@@ -147,13 +147,14 @@ class LocalJobService (saga.cpi.job.Service) :
         self._jobs = dict() # {job_obj:id, ...}
 
 
-    def _update_jobid(self, job_obj, job_id):
-        """ Update the job id for a job object registered 
-            with this service instance.
+    def _register_job(self, job_obj):
+        """ Register job and job id with this service instance.  
 
-            This is a convenince method and not part of the CPI.
+            This is a convenience method and not part of the CPI.  A job can be
+            registered repeatedly, in particular for delayed assignment of job
+            IDs.
         """
-        self._jobs[job_obj] = job_id 
+        self._jobs[job_obj] = job_obj._id
 
 
     @SYNC
@@ -187,8 +188,7 @@ class LocalJobService (saga.cpi.job.Service) :
         # state information you need there.
         state = { 'job_service'     : self, 
                   'job_description' : jd, 
-                  'session'         : self._session,
-                  'container'       : self }
+                  'session'         : self._session }
 
         return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=state)
 
@@ -239,31 +239,29 @@ class LocalJob (saga.cpi.job.Job) :
     def init_instance (self, job_info):
         """ Implements saga.cpi.job.Job.init_instance()
         """
-        self._session        = job_info['session']
-        self._jd             = job_info['job_description']
-        self._parent_service = job_info['job_service'] 
+        self._session         = job_info['session']
+        self._jd              = job_info['job_description']
+        self._parent_service  = job_info['job_service'] 
 
-        if 'container' in job_info :
-            self._container   = job_info['container']
-            self._method_type = 'run'
-        else :
-            self._container   = None
-            self._method_type = 'run'
+        # the _parent_service is responsible for job bulk operations -- which
+        # for jobs only work for run()
+        self._container       = self._parent_service
+        self._method_type     = 'run'
 
-        self._id         = None
-        self._state      = saga.job.NEW
-
+        # initialize job attribute values
+        self._id              = None
+        self._state           = saga.job.NEW
         self._exit_code       = None
         self._started         = None
         self._finished        = None
         self._execution_hosts = [Adaptor().hostname]
         
-        # The subprocess handle
-        self._process    = None
+        # subprocess handle
+        self._process         = None
 
         # register ourselves with the parent service
         # our job id is still None at this point
-        self._parent_service._update_jobid(self, None)
+        self._parent_service._register_job(self)
 
 
     @SYNC
@@ -433,11 +431,11 @@ class LocalJob (saga.cpi.job.Job) :
             jid.native_id   = self._pid
             jid.backend_url = str(self._parent_service.get_url())
 
-            self._state   = saga.job.RUNNING
-            self._started = time.time()
-            self._id      = str(jid)
+            self._state     = saga.job.RUNNING
+            self._started   = time.time()
+            self._id        = str(jid)
 
-            self._parent_service._update_jobid(self, self._id)
+            self._parent_service._register_job(self)
             self._logger.debug("Starting process '%s' was successful." % cmdline) 
 
         except Exception, ex:
