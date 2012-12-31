@@ -28,11 +28,15 @@ try :
   for i in range (1, 10) :
       jd = saga.job.Description()
       jd.executable  = '/bin/sleep'
-      jd.arguments   = [ str (random.randrange (1,5,1)) ]
+      jd.arguments   = ['1']
       tc.add (js.create_job (jd))
 
   tc.run  ()
   tc.wait (saga.task.ALL)
+
+  for t in tc.tasks :
+    # t._attributes_dump ()
+    print "%s : %-6s [%s]"  %  (t, t.state, t.exception)
 
   sys.exit (0)
 

@@ -1,8 +1,9 @@
 
 from   saga.cpi.base   import Base
+from   saga.cpi.async  import Async
 import saga.exceptions
 
-class Directory (Base) :
+class Directory (Base, Async) :
 
     def __init__ (self, url, flags, session) : 
         raise saga.exceptions.NotImplemented ("method not implemented")

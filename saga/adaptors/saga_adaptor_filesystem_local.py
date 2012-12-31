@@ -114,6 +114,8 @@ class BulkDirectory (saga.cpi.filesystem.Directory) :
     def container_copy (self, tasks) :
         print " ~ copy ~~~~~~~~~~~~~~~~~~~~~ "
         pprint.pprint (tasks)
+        for task in tasks :
+            task.run ()
         print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
 
@@ -216,17 +218,83 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         return saga.filesystem.File (url, flags, self._session, _adaptor=self._adaptor)
 
 
+    @SYNC
+    def copy (self, source, target, flags) :
+
+
+        src_url = saga.url.Url (source)
+        src     = src_url.path
+        tgt_url = saga.url.Url (target)
+        tgt     = tgt_url.path
+
+
+        if src_url.schema :
+            if not src_url.schema.lower () in _ADAPTOR_SCHEMAS :
+                raise saga.exceptions.BadParameter ("Cannot handle url %s (not local)" %  source)
+
+        if not saga.utils.misc.url_is_local (src_url) :
+            raise saga.exceptions.BadParameter ("Cannot handle url %s (not local)"     %  source)
+
+        if src[0] != '/' :
+            src = "%s/%s"   % (os.path.dirname (src), src)
+
+
+        if tgt_url.schema :
+            if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :
+                raise saga.exceptions.BadParameter ("Cannot handle url %s (not local)" %  target)
+
+        if not saga.utils.misc.url_is_local (tgt_url) :
+            raise saga.exceptions.BadParameter ("Cannot handle url %s (not local)"     %  target)
+
+        if tgt[0] != '/' :
+            tgt = "%s/%s"   % (os.path.dirname (src), tgt)
+
+        print "sync copy %s -> %s" % (src, tgt)
+        shutil.copy2 (src, tgt)
+
+
     @ASYNC
-    def copy (self, src, tgt, flags, ttype) :
+    def copy_async (self, src, tgt, flags, ttype) :
 
-        print "async copy %s -> %s" % (src, tgt)
+        print "async copy %s -> %s [%s]" % (src, tgt, ttype)
 
-        t = saga.task.Task (self, 'copy')
+        context = {}
+        context['src']   = src
+        context['tgt']   = tgt
+        context['flags'] = flags
 
-        t._set_state  (saga.task.NEW)
+        t = saga.task.Task (self, 'copy', context)
+
+        if ttype == saga.task.SYNC :
+            t.run  ()
+            t.wait ()
+        elif ttype == saga.task.ASYNC :
+            t.run  ()
+        elif ttype == saga.task.TASK :
+            pass
 
         return t
-        
+
+
+    def task_run (self, task) :
+        # FIXME: that should be generalized, possibly wrapped into a thread, and
+        # moved to CPI level
+
+        m_type    = task._method_type
+        m_context = task._method_context
+
+        if m_type == 'copy' :
+            try :
+                task._set_result (self.copy (m_context['src'], m_context['tgt'], m_context['flags'], None))
+                task._set_state  (saga.task.DONE)
+            except Exception as e :
+                task._set_exception (e)
+                task._set_state     (saga.task.FAILED)
+        else :
+            raise saga.exceptions.NotImplemented ("Cannot handle %s tasks" %  m_type)
+
+
+
 
 ######################################################################
 #

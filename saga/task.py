@@ -21,23 +21,24 @@ from   saga.utils.threads import Thread, NEW, RUNNING, DONE, FAILED
 from   saga.engine.logger import getLogger
 
 
-NOTASK   =  None    # makes some implementation internal method invocations more readable
-SYNC     = 'Sync'
-ASYNC    = 'Async'
-TASK     = 'Task'
+NOTASK    =  None    # makes some implementation internal method invocations more readable
+SYNC      = 'Sync'
+ASYNC     = 'Async'
+TASK      = 'Task'
 
-UNKNOWN  = 'Unknown'
-NEW      = 'New'
-RUNNING  = 'Running'
-DONE     = 'Done'
-FAILED   = 'Failed'
-CANCELED = 'Canceled'
+UNKNOWN   = 'Unknown'
+NEW       = 'New'
+RUNNING   = 'Running'
+DONE      = 'Done'
+FAILED    = 'Failed'
+CANCELED  = 'Canceled'
 
-STATE    = 'State'
-RESULT   = 'Result'
+STATE     = 'State'
+RESULT    = 'Result'
+EXCEPTION = 'Exception'
 
-ALL      = 'All'
-ANY      = 'Any'
+ALL       = 'All'
+ANY       = 'Any'
 
 
 # --------------------------------------------------------------------
@@ -53,12 +54,15 @@ class Async :
     pass
 
 
+
 class Task (saga.attributes.Attributes) :
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, _adaptor=None, _method_type=None) :
+    def __init__ (self, _adaptor, _method_type, _method_context={}) :
         """ 
+        This saga.Task constructor is private.
+
         ``_adaptor`` references the adaptor class instance from which this
         task was created via an asynchronous function.  Note that the API level
         object instance can be inferred via ``_adaptor._api``.  Further, the
@@ -74,28 +78,33 @@ class Task (saga.attributes.Attributes) :
         The resulting task ``t`` would represent the *'copy'* method.  This is
         required to forward :class:`saga.task.Container` calls to the correct
         bulk method, in this case ``container_copy()``.
+
+        ``_method_context`` describes the context in which the task method is
+        running.  It is up to the creator of the task to provide that context --
+        in general, it will at least include method parameters.
         """
-
-        if not _method_type :
-            raise saga.exceptions.IncorrectState ("saga.Task constructor is private")
-    
-
-        self._adaptor     = _adaptor
-        self._method_type = _method_type
+        
+        self._adaptor        = _adaptor
+        self._method_type    = _method_type
+        self._method_context = _method_context
 
         # set attribute interface properties
         self._attributes_extensible  (False)
         self._attributes_camelcasing (True)
 
         # register properties with the attribute interface
-        self._attributes_register   (RESULT,  None,    self.ANY, self.SCALAR, self.READONLY)
-        self._attributes_set_getter (RESULT,  self.get_result)
-        self._attributes_set_setter (RESULT,  self._set_result)
+        self._attributes_register   (RESULT,    None,    self.ANY, self.SCALAR, self.READONLY)
+        self._attributes_set_getter (RESULT,    self.get_result)
+        self._attributes_set_setter (RESULT,    self._set_result)
 
-        self._attributes_register   (STATE,   UNKNOWN, self.ENUM, self.SCALAR, self.READONLY)
-        self._attributes_set_enums  (STATE,  [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED])
-        self._attributes_set_getter (STATE,   self.get_state)
-        self._attributes_set_setter (STATE,   self._set_state)
+        self._attributes_register   (EXCEPTION, None,    self.ANY, self.SCALAR, self.READONLY)
+        self._attributes_set_getter (EXCEPTION, self.get_exception)
+        self._attributes_set_setter (EXCEPTION, self._set_exception)
+
+        self._attributes_register   (STATE,     UNKNOWN, self.ENUM, self.SCALAR, self.READONLY)
+        self._attributes_set_enums  (STATE,    [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED])
+        self._attributes_set_getter (STATE,     self.get_state)
+        self._attributes_set_setter (STATE,     self._set_state)
               
         self._set_state (NEW)
 
@@ -143,27 +152,33 @@ class Task (saga.attributes.Attributes) :
     # ----------------------------------------------------------------
     #
     def wait (self, timeout=-1) :
-        # FIXME: implement timeout, more fine grained wait, attribute notification
-        while self.state not in [DONE, FAILED, CANCELED] :
-            time.sleep (1)
+        # FIXME: make sure task_wait exists.  Should be part of the CPI!
+        self._adaptor.task_wait (self, timeout)
 
 
     # ----------------------------------------------------------------
     #
     def run (self) :
-        pass
+        # FIXME: make sure task_run exists.  Should be part of the CPI!
+        self._adaptor.task_run (self)
 
 
     # ----------------------------------------------------------------
     #
     def cancel (self) :
-        self._set_state (CANCELED)
+        # FIXME: make sure task_cancel exists.  Should be part of the CPI!
+        self._adaptor.task_cancel (self)
 
 
     # ----------------------------------------------------------------
     #
     def _set_exception (self, e) :
         self._attributes_i_set (self._attributes_t_underscore (EXCEPTION), e, force=True)
+
+    # ----------------------------------------------------------------
+    #
+    def get_exception (self) :
+        return self.exception
 
     # ----------------------------------------------------------------
     #

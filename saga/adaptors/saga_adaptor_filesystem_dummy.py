@@ -110,8 +110,10 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
 
         self._init_check ()
         
-        t = saga.task.Task ()
-
+        t = saga.task.Task (self, 'init_instance', {'ttype'   : ttype, 
+                                                    'url'     : url, 
+                                                    'flags'   : flags, 
+                                                    'session' : session})
         t._set_result (saga.dummysystem.Directory (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
