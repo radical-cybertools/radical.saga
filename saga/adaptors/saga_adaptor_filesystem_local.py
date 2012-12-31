@@ -4,6 +4,7 @@
 """ Local filesystem adaptor implementation """
 
 import os
+import pprint
 import shutil
 import traceback
 
@@ -74,10 +75,47 @@ class Adaptor (saga.cpi.base.AdaptorBase):
     def __init__ (self) :
 
         saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        self._bulk = BulkDirectory ()
 
 
     def sanity_check (self) :
         pass
+
+
+
+
+
+###############################################################################
+#
+class BulkDirectory (saga.cpi.filesystem.Directory) :
+
+    def __init__ (self) : 
+        pass
+
+    @SYNC
+    def container_run (self, tasks) :
+        print " ~ run ~~~~~~~~~~~~~~~~~~~~~~ "
+        pprint.pprint (tasks)
+        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+
+    @SYNC
+    def container_wait (self, tasks, mode, timeout) :
+        print " ~ wait ~~~~~~~~~~~~~~~~~~~~~ "
+        pprint.pprint (tasks)
+        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+
+    @SYNC
+    def container_cancel (self, tasks) :
+        print " ~ wait ~~~~~~~~~~~~~~~~~~~~~ "
+        pprint.pprint (tasks)
+        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+
+    @SYNC
+    def container_copy (self, tasks) :
+        print " ~ copy ~~~~~~~~~~~~~~~~~~~~~ "
+        pprint.pprint (tasks)
+        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+
 
 
 
@@ -93,9 +131,10 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
     # FIXME: where are the flags?
     def init_instance (self, url, flags, session) :
 
-        self._url     = url
-        self._flags   = flags
-        self._session = session
+        self._url       = url
+        self._flags     = flags
+        self._session   = session
+        self._container = self._adaptor._bulk
 
         self._init_check ()
 
@@ -176,6 +215,18 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
 
         return saga.filesystem.File (url, flags, self._session, _adaptor=self._adaptor)
 
+
+    @ASYNC
+    def copy (self, src, tgt, flags, ttype) :
+
+        print "async copy %s -> %s" % (src, tgt)
+
+        t = saga.task.Task (self, 'copy')
+
+        t._set_state  (saga.task.NEW)
+
+        return t
+        
 
 ######################################################################
 #

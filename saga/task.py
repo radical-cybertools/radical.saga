@@ -10,6 +10,7 @@ __license__   = "MIT"
 
 import pprint
 import time
+import inspect
 import traceback
 import Queue
 
@@ -54,6 +55,8 @@ class Async :
 
 class Task (saga.attributes.Attributes) :
 
+    # ----------------------------------------------------------------
+    #
     def __init__ (self, _adaptor=None, _method_type=None) :
         """ 
         ``_adaptor`` references the adaptor class instance from which this
@@ -97,11 +100,15 @@ class Task (saga.attributes.Attributes) :
         self._set_state (NEW)
 
 
+    # ----------------------------------------------------------------
+    #
     def _set_result (self, result) :
         self._attributes_i_set (self._attributes_t_underscore (RESULT), result, force=True)
         self._attributes_i_set (self._attributes_t_underscore (STATE),  DONE,   force=True)
 
 
+    # ----------------------------------------------------------------
+    #
     def get_result (self) :
         
         if not self.state in [DONE, FAILED, CANCELED] :
@@ -119,33 +126,47 @@ class Task (saga.attributes.Attributes) :
             return self.result
 
 
+    # ----------------------------------------------------------------
+    #
     def _set_state (self, state) :
         if not state in [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED] :
             raise saga.exceptions.BadParameter ("attempt to set invalid task state '%s'" % state)
         self._attributes_i_set (self._attributes_t_underscore (STATE), state, force=True)
 
 
+    # ----------------------------------------------------------------
+    #
     def get_state (self) :
         return self.state
 
 
+    # ----------------------------------------------------------------
+    #
     def wait (self, timeout=-1) :
         # FIXME: implement timeout, more fine grained wait, attribute notification
         while self.state not in [DONE, FAILED, CANCELED] :
             time.sleep (1)
 
 
+    # ----------------------------------------------------------------
+    #
     def run (self) :
         pass
 
 
+    # ----------------------------------------------------------------
+    #
     def cancel (self) :
         self._set_state (CANCELED)
 
 
+    # ----------------------------------------------------------------
+    #
     def _set_exception (self, e) :
         self._attributes_i_set (self._attributes_t_underscore (EXCEPTION), e, force=True)
 
+    # ----------------------------------------------------------------
+    #
     def re_raise () :
         if self.exception :
             raise self.exception
@@ -158,6 +179,8 @@ class Task (saga.attributes.Attributes) :
 class Container (saga.attributes.Attributes) :
 
 
+    # ----------------------------------------------------------------
+    #
     def __init__ (self) :
 
         # set attribute interface properties
@@ -183,6 +206,8 @@ class Container (saga.attributes.Attributes) :
         self._logger = getLogger ('saga.task.Container')
 
 
+    # ----------------------------------------------------------------
+    #
     def add (self, t) :
 
         if not t in self.tasks :
@@ -190,6 +215,8 @@ class Container (saga.attributes.Attributes) :
 
 
 
+    # ----------------------------------------------------------------
+    #
     def remove (self, t) :
 
         if t in self.tasks :
@@ -197,6 +224,8 @@ class Container (saga.attributes.Attributes) :
 
 
 
+    # ----------------------------------------------------------------
+    #
     def run (self) :
 
         if not len (self.tasks) :
@@ -209,13 +238,33 @@ class Container (saga.attributes.Attributes) :
         queues  = {}
 
 
-        for container in buckets['containers'] :
+        # handle all container
+        for c in buckets['bound'] :
+        
+            # handle all methods
+            for m in buckets['bound'][c] :
 
-            tasks  = buckets['containers'][container]
-            threads.append (Thread (container.container_run, tasks))
+                tasks         = buckets['bound'][c][m]
+                m_name   = "container_%s" % m
+                m_handle = None
+
+                for (name, handle) in inspect.getmembers (c, predicate=inspect.ismethod) :
+                    if name == m_name :
+                        m_handle = handle
+                        break
+
+                if not handle :
+                    # Hmm, the specified container can't handle the call after
+                    # all -- fall back to the unbound handling
+                    buckets['unbound'] += tasks
+
+                else :
+                    # hand off to the container function, in a separate task
+                    threads.append (Thread (m_handle, tasks))
 
 
-        for task in buckets['tasks'] :
+        # handle tasks not bound to a container
+        for task in buckets['unbound'] :
 
             threads.append (Thread (task.run))
             
@@ -230,6 +279,8 @@ class Container (saga.attributes.Attributes) :
                             str(thread.get_traceback ())))
 
 
+    # ----------------------------------------------------------------
+    #
     def wait (self, mode=ALL, timeout=-1) :
 
         if not mode in [ANY, ALL] :
@@ -250,63 +301,91 @@ class Container (saga.attributes.Attributes) :
             return self._wait_any (timeout)
 
 
+
+    # ----------------------------------------------------------------
+    #
     def _wait_any (self, timeout) :
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
         queues  = {}
 
-        for container in buckets['containers'] :
+        # handle all tasks bound to containers
+        for c in buckets['bound'] :
 
-            tasks  = buckets['containers'][container]
-            threads.append (Thread (container.container_wait, tasks, mode, timeout))
+            # handle all methods -- all go to the same 'container_wait' though)
+            tasks = []
+            for m in buckets['bound'][c] :
+                tasks += buckets['bound'][c][m]
+
+            threads.append (Thread (c.container_wait, tasks, mode, timeout))
 
         
-        for task in buckets['tasks'] :
+        # handle all tasks not bound to containers
+        for task in buckets['unbound'] :
 
             threads.append (Thread (task.wait, timeout))
             
 
-            # mode == ANY: we need to watch our threads, and whenever one
-            # returns, and declare success.  Note that we still need to get the
-            # finished task from the 'winner'-thread -- we do that via a Queue
-            # object.  Note also that looser threads are not canceled, but left
-            # running (FIXME: consider sending a signal at least)
-            timeout = 0.01 # seconds
-            done    = False
+        # mode == ANY: we need to watch our threads, and whenever one
+        # returns, and declare success.  Note that we still need to get the
+        # finished task from the 'winner'-thread -- we do that via a Queue
+        # object.  Note also that looser threads are not canceled, but left
+        # running (FIXME: consider sending a signal at least)
 
-            for thread in threads :
-                thread.join (timeout)
+        timeout = 0.01 # seconds, heuristic :-/
+        done    = False
 
-                if thread.get_state () == FAILED :
-                    raise thread.get_exception ()
+        for thread in threads :
+            thread.join (timeout)
 
-                if not thread.isAlive :
-                    # thread indeed finished -- dig return value from this
-                    # threads queue
-                    result = thread.get_result ()
+            if thread.get_state () == FAILED :
+                raise thread.get_exception ()
 
-                    # ignore other threads, and simply declare success
-                    return result
+            if not thread.isAlive :
+                # thread indeed finished -- dig return value from this
+                # threads queue
+                result = thread.get_result ()
+
+                # ignore other threads, and simply declare success
+                return result
 
 
 
+    # ----------------------------------------------------------------
+    #
     def _wait_all (self, timeout) :
+        # this method should actually be symmetric to _wait_any, and could
+        # almost be mapped to it, but the code below is a kind of optimization
+        # (does not need threads, thus simpler code).
 
         buckets = self._get_buckets ()
         ret     = None
 
-        for container in buckets['containers'] :
+        # handle all tasks bound to containers
+        for c in buckets['bound'] :
 
-            tasks  = buckets['containers'][container]
-            container.container_wait (tasks, ALL, timeout)
-            ret    = tasks[0]
+            # handle all methods -- all go to the same 'container_wait' though)
+            tasks = []
+            for m in buckets['bound'][c] :
+                tasks += buckets['bound'][c][m]
+
+            c.container_wait (tasks, ALL, timeout)
+            ret = tasks[0]
  
-        # all done - return random task
+        # handle all tasks not bound to containers
+        for t in buckets['unbound'] :
+            t.wait ()
+            ret = t
+
+        # all done - return random task (first from last container, or last
+        # unbound task)
         return ret
 
 
 
+    # ----------------------------------------------------------------
+    #
     def cancel (self) :
 
         if not len (self.tasks) :
@@ -319,17 +398,24 @@ class Container (saga.attributes.Attributes) :
         queues  = {}
 
 
-        for container in buckets['containers'] :
+        # handle all tasks bound to containers
+        for c in buckets['bound'] :
 
-            tasks  = buckets['containers'][container]
+            # handle all methods -- all go to the same 'container_cancel' though)
+            tasks = []
+            for m in buckets['bound'][c] :
+
+                tasks += buckets['bound'][c]
+
             queue  = Queue.Queue ()
-            thread = su_threads.wrap (container.container_cancel, (queue, tasks))
+            thread = su_threads.wrap (c.container_cancel, (queue, tasks))
 
             threads.append (thread)
             queues[thread] = queue
 
 
-        for task in buckets['tasks'] :
+        # handle all tasks not bound to containers
+        for task in buckets['unbound'] :
 
             queue  = Queue.Queue ()
             thread = su_threads.wrap (task.cancel, (queue, timeout))
@@ -347,20 +433,23 @@ class Container (saga.attributes.Attributes) :
                         %  (str(thread.get_exception ()),
                             str(thread.get_traceback ())))
 
-    
 
-
-
+    # ----------------------------------------------------------------
+    #
     def get_size (self) :
 
-        return len(self.tasks)
+        return len (self.tasks)
 
 
+    # ----------------------------------------------------------------
+    #
     def get_tasks (self) :
 
         return self.tasks
 
 
+    # ----------------------------------------------------------------
+    #
     def get_states (self) :
 
         if not len (self.tasks) :
@@ -373,9 +462,9 @@ class Container (saga.attributes.Attributes) :
         queues  = {}
 
 
-        for container in buckets['containers'] :
+        for container in buckets['bound'] :
 
-            tasks  = buckets['containers'][container]
+            tasks  = buckets['bound'][container]
             threads.append (su_threads.Thread (container.container_get_states, tasks))
 
 
@@ -405,6 +494,8 @@ class Container (saga.attributes.Attributes) :
 
 
 
+    # ----------------------------------------------------------------
+    #
     def _get_buckets (self) :
         # collective container ops: walk through the task list, and sort into
         # buckets of tasks which have (a) the same task._container, or if that
@@ -412,8 +503,8 @@ class Container (saga.attributes.Attributes) :
         # created).  All tasks were neither is available are handled one-by-one
 
         buckets = {}
-        buckets['tasks']      = [] # no container adaptor for these [tasks]
-        buckets['containers'] = {} # dict  of container adaptors : [tasks]
+        buckets['unbound'] = [] # no container adaptor for these [tasks]
+        buckets['bound']   = {} # dict  of container adaptors [tasks]
 
         for t in self.tasks :
 
@@ -422,44 +513,21 @@ class Container (saga.attributes.Attributes) :
                 # the task's adaptor has a valid associated container class 
                 # which can handle the container ops - great!
                 c = t._adaptor._container
-                if not c in buckets['containers'] :
-                    buckets['containers'][c] = []
-                buckets['containers'][c].append (t)
+                m = t._method_type
+
+                if not c in buckets['bound'] :
+                    buckets['bound'][c] = {}
+
+                if not m in buckets['bound'][c] :
+                    buckets['bound'][c][m] = []
+
+                buckets['bound'][c][m].append (t)
 
             else :
 
-                # we do not have a container -- so we use the class information
-                # to create a new instance of the task, and assume that this can
-                # act as container class.  We cache that instance for future
-                # uses.  Note that this will call the adaptor ctor, but will
-                # *not* initialize the adaptor -- the bulk ops need to make sure
-                # to get the respective state from the task objects on their
-                # own...
-                c  = None
-                cc = t._adaptor.__class__ 
-
-                if cc in self._containers :
-                    # we created a container class instance in the past, and can
-                    # reuse it.
-                    c = self._containers[cc]
-                else :
-                    try :
-                        c = cc ()
-                    except Exception as e :
-                        self._logger.warn ("Cannot create container class: %s" %  str(e))
-                        
-                if c :
-                    # we got a container, use it just as above
-                    if not c in buckets['container_classes'] :
-                        buckets['container_classes'][c] = []
-                    buckets['container_classes'][c].append (t)
-
-                else :
-                    # we ultimately have no container to handle this task -- so
-                    # put it into the fallback list
-                    buckets['tasks'].append (t)
-
-        # pprint.pprint (buckets)
+                # we have no container to handle this task -- so
+                # put it into the fallback list
+                buckets['unbound'].append (t)
 
         return buckets
 

@@ -551,7 +551,8 @@ each bucket, the API will then call the respective bulk operation
 (``container_method``) for that adaptor.
 
 Note that at this point, the task container implementation does not yet know
-what *adaptor class* instance to use for the bulk operations.  
+what *adaptor class* instance to use for the bulk operations.  For that purpose,
+it will inspect
 
 :todo: Needs completion after generic bulk ops are fixed.
 

@@ -1,5 +1,6 @@
 
 import sys
+import random
 import saga
 
 from   saga.engine.engine import Engine, getEngine, ANY_ADAPTOR
@@ -16,6 +17,23 @@ try :
   f = d.open ('passwd')
   
   f._adaptor._dump()
+
+  tc = saga.task.Container ()
+
+  for i in range (1, 10) :
+    tc.add (d.copy ("/etc/passwd", "/tmp/passwd_%04d.bak"  %  i, saga.task.TASK))
+
+
+  js = saga.job.Service ("fork://localhost")
+  for i in range (1, 10) :
+      jd = saga.job.Description()
+      jd.executable  = '/bin/sleep'
+      jd.arguments   = [ str (random.randrange (1,5,1)) ]
+      tc.add (js.create_job (jd))
+
+  tc.run  ()
+  tc.wait (saga.task.ALL)
+
   sys.exit (0)
 
   print f.get_size_self ()
@@ -25,6 +43,7 @@ try :
 
   # f.copy_self ('passwd.bak') 
   f.copy_self ('dummy://boskop/tmp/') 
+
 
   t = saga.filesystem.Directory.create ('file://localhost/tmp/test1/test1/',
                                  saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS, saga.task.ASYNC)

@@ -90,8 +90,9 @@ class Service (object) :
             raise BadParameter("No executable defined")
 
         # convert environment to string
-        for (key, value) in jd_copy.environment.iteritems():
-            jd_copy.environment[key] = str(value)
+        if jd_copy.attribute_exists ('Environment') :
+            for (key, value) in jd_copy.environment.iteritems():
+                jd_copy.environment[key] = str(value)
 
         return self._adaptor.create_job (jd_copy, ttype=ttype)
 
