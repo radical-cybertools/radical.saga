@@ -184,8 +184,9 @@ class File (object) :
 
                         # get an tgt-scheme'd adaptor for the new src url, and try copy again
                         adaptor = self._engine.bind_adaptor (self, 'saga.filesystem.File', tgt_url.scheme, 
-                                                             NOTASK, adaptor_instance)
-                        tmp     = saga.filesystem.File (tmp_url, READ, self._session, _adaptor=adaptor)
+                                                             NOTASK, adaptor_instance, 
+                                                             tmp_url, READ, self._session)
+                        tmp     = saga.filesystem.File (tmp_url, READ, self._session, _adaptor=adaptor_instance)
 
                         ret = tmp.copy_self (tgt_url, flags)
 

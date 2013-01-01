@@ -454,7 +454,7 @@ class Engine(Configurable):
             for schema in self._adaptor_registry[ctype].keys () :
                 for info in self._adaptor_registry[ctype][schema] :
                     if ( info['adaptor_name'] == adaptor_name ) :
-                        return info['adaptor']
+                        return info['adaptor_instance']
 
         raise saga.exceptions.NotSucess ("No adaptor named '%s' found"  %  adaptor_name)
 
@@ -540,6 +540,7 @@ class Engine(Configurable):
                 m    = "adaptor class ctor failed : %s.%s: %s"  %  (adaptor_name, cpi_class, str(e))
                 msg += "\n  %s" % m
                 self._logger.info("bind_adaptor %s", m)
+                self._logger.debug(e.traceback)
                 continue
 
         self._logger.error ("No suitable adaptor found for '%s' and URL scheme '%s'" %  (ctype, schema))

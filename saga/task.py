@@ -29,7 +29,7 @@ class Task (saga.attributes.Attributes) :
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, _adaptor, _method_type, _method_context={}) :
+    def __init__ (self, _adaptor, _method_type, _method_context, _ttype) :
         """ 
         This saga.Task constructor is private.
 
@@ -52,8 +52,13 @@ class Task (saga.attributes.Attributes) :
         ``_method_context`` describes the context in which the task method is
         running.  It is up to the creator of the task to provide that context --
         in general, it will at least include method parameters.
+
+        ``ttype`` determines in what state the constructor will leave the task:
+        ``DONE`` for ``ttype=SYNC``, ``RUNNING`` for ``ttype=ASYNC`` and ``NEW``
+        for ``ttype=TASK``.
         """
         
+        self._ttype          = _ttype
         self._adaptor        = _adaptor
         self._method_type    = _method_type
         self._method_context = _method_context
@@ -77,6 +82,15 @@ class Task (saga.attributes.Attributes) :
         self._attributes_set_setter (STATE,     self._set_state)
               
         self._set_state (NEW)
+
+        if self._ttype == saga.task.SYNC :
+            self.run  ()
+            self.wait ()
+        elif self._ttype == saga.task.ASYNC :
+            self.run  ()
+        elif self._ttype == saga.task.TASK :
+            pass
+
 
 
     # ----------------------------------------------------------------

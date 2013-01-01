@@ -57,17 +57,17 @@ class Service (object) :
             :rtype:         :class:`saga.Task`
         """
     
-        rm = Url (rm_url)
+        rm_url = Url (url)
 
         engine = getEngine ()
         logger = getLogger ('saga.job.Service')
         logger.debug ("saga.job.Service.create(%s, %s, %s)"  \
-                   % (str(rm), str(session), str(ttype)))
+                   % (str(rm_url), str(session), str(ttype)))
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_async(), which returns a task as expected.
-        return engine.bind_adaptor (self, 'saga.job.Service', rm.scheme, \
-                                    ttype, ANY_ADAPTOR, rm, session)
+        return engine.bind_adaptor (self, 'saga.job.Service', rm_url.scheme, \
+                                    ttype, ANY_ADAPTOR, rm_url, session)
 
 
     def create_job (self, job_desc, ttype=None) :

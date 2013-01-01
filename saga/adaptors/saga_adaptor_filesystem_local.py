@@ -55,6 +55,7 @@ _ADAPTOR_INFO          = {
     ]
 }
 
+
 ###############################################################################
 # The adaptor class
 
@@ -143,15 +144,20 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
 
     @ASYNC
     def init_instance_async (self, ttype, url, flags, session) :
+
         self._url     = url
         self._flags   = flags
         self._session = session
-
-        self._init_check ()
         
-        t = saga.task.Task ()
+        c = { 'url'     : self._url, 
+              'flags'   : self._flags,
+              'session' : self._session }
+        t = saga.task.Task (self, 'init_instance', c, ttype)
 
-        t._set_result (saga.filesystem.Directory (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
+        # FIXME: move to task_run...
+        self._init_check ()
+
+        t._set_result (saga.filesystem.Directory (url, flags, session, _adaptor=self._adaptor))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -258,42 +264,40 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
 
         print "async copy %s -> %s [%s]" % (src, tgt, ttype)
 
-        context = {}
-        context['src']   = src
-        context['tgt']   = tgt
-        context['flags'] = flags
+        c = { 'src'     : src,
+              'tgt'     : tgt,
+              'flags'   : flags }
 
-        t = saga.task.Task (self, 'copy', context)
+        return saga.task.Task (self, 'copy', c, ttype)
 
-        if ttype == saga.task.SYNC :
-            t.run  ()
-            t.wait ()
-        elif ttype == saga.task.ASYNC :
-            t.run  ()
-        elif ttype == saga.task.TASK :
-            pass
 
-        print " -----------> %s"  %  t
-
-        return t
-
+    def task_wait (self, task, timout) :
+        # FIXME: our task_run moves all tasks into DONE state... :-/
+        pass
 
     def task_run (self, task) :
         # FIXME: that should be generalized, possibly wrapped into a thread, and
         # moved to CPI level
 
-        m_type    = task._method_type
-        m_context = task._method_context
+        call = task._method_type
+        c    = task._method_context
 
-        if m_type == 'copy' :
+        if call == 'copy' :
             try :
-                task._set_result (self.copy (m_context['src'], m_context['tgt'], m_context['flags']))
+                task._set_result (self.copy (c['src'], c['tgt'], c['flags']))
+                task._set_state  (saga.task.DONE)
+            except Exception as e :
+                task._set_exception (e)
+                task._set_state     (saga.task.FAILED)
+        elif call == 'init_instance' :
+            try :
+                task._set_result (self.init_instance (c['url'], c['flags'], c['session']))
                 task._set_state  (saga.task.DONE)
             except Exception as e :
                 task._set_exception (e)
                 task._set_state     (saga.task.FAILED)
         else :
-            raise saga.exceptions.NotImplemented ("Cannot handle %s tasks" %  m_type)
+            raise saga.exceptions.NotImplemented ("Cannot handle %s tasks" %  call)
 
 
 
@@ -331,11 +335,16 @@ class LocalFile (saga.cpi.filesystem.File) :
         self._flags   = flags
         self._session = session
 
-        self._init_check ()
+        c = { 'url'     : self._url, 
+              'flags'   : self._flags,
+              'session' : self._session }
         
-        t = saga.task.Task ()
+        t = saga.task.Task (self, 'init_instance', c, ttype)
 
-        t._set_result (saga.filesystem.File (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
+        # FIXME: move to task_run...
+        self._init_check ()
+
+        t._set_result (saga.filesystem.File (url, flags, session, _adaptor=self._adaptor))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -403,8 +412,10 @@ class LocalFile (saga.cpi.filesystem.File) :
     @ASYNC
     def get_url_async (self, ttype) :
 
-        t = saga.task.Task ()
+        c = {}
+        t = saga.task.Task (self, 'get_url', c, ttype)
 
+        # FIXME: move to task_run...
         t._set_state  = saga.task.Done
         t._set_result = self._url
 
@@ -419,8 +430,10 @@ class LocalFile (saga.cpi.filesystem.File) :
     @ASYNC
     def get_size_self_async (self, ttype) :
 
-        t = saga.task.Task ()
+        c = {}
+        t = saga.task.Task (self, 'get_size', c, ttype)
 
+        # FIXME: move to task_run...
         t._set_result (os.path.getsize (self._url.path))
         t._set_state  (saga.task.DONE)
 
@@ -446,4 +459,31 @@ class LocalFile (saga.cpi.filesystem.File) :
 
         print " copy %s %s" % (self._url, tgt)
         shutil.copy2 (src, tgt)
+
+
+
+    def task_run (self, task) :
+        # FIXME: that should be generalized, possibly wrapped into a thread, and
+        # moved to CPI level
+
+        call = task._method_type
+        c    = task._method_context
+
+        if call == 'copy_self' :
+            try :
+                task._set_result (self.copy_self (c['tgt'], c['flags']))
+                task._set_state  (saga.task.DONE)
+            except Exception as e :
+                task._set_exception (e)
+                task._set_state     (saga.task.FAILED)
+        elif call == 'get_size' :
+            try :
+                task._set_result (self.get_size ())
+                task._set_state  (saga.task.DONE)
+            except Exception as e :
+                task._set_exception (e)
+                task._set_state     (saga.task.FAILED)
+        else :
+            raise saga.exceptions.NotImplemented ("Cannot handle %s tasks" %  call)
+
 

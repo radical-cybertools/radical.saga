@@ -16,15 +16,15 @@ class Thread (threading.Thread) :
     @classmethod
     def _call_wrapper (self, thread) :
 
-        #   try :
-        thread._state     = RUNNING
-        thread._result    = thread._call (*thread._args, **thread._kwargs)
-        thread._state     = DONE
+        try :
+            thread._state     = RUNNING
+            thread._result    = thread._call (*thread._args, **thread._kwargs)
+            thread._state     = DONE
 
-        #   except Exception as e :
-        thread._exception = e
-        thread._traceback = saga.utils.exception.get_traceback ()
-        thread._state     = FAILED
+        except Exception as e :
+            thread._exception = e
+            thread._traceback = saga.utils.exception.get_traceback ()
+            thread._state     = FAILED
 
 
 

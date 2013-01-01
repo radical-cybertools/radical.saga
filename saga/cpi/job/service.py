@@ -16,6 +16,7 @@ import saga.exceptions
 class Service (Base) :
 
     def __init__ (self, api) : 
+        print " 1====================================================== "
         raise saga.exceptions.NotImplemented ("method not implemented")
 
     def init_instance (self, rm, session) :

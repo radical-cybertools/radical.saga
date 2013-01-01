@@ -124,7 +124,6 @@ class LocalJobService (saga.cpi.job.Service) :
     """ Implements saga.cpi.job.Service
     """
     def __init__ (self, api, adaptor) :
-
         """ Implements saga.cpi.job.Service.__init__
         """
         saga.cpi.Base.__init__ (self, api, adaptor, 'LocalJobService')
