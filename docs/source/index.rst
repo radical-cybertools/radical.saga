@@ -18,6 +18,7 @@ Contents:
    library/index.rst
    examples/index.rst
    tutorial/index.rst
+   developers/index.rst
 
 ##################
 Indices and tables
