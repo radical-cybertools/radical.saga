@@ -252,8 +252,6 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         print "sync copy %s -> %s" % (src, tgt)
         shutil.copy2 (src, tgt)
 
-        print "here?"
-        return 1
 
     @ASYNC
     def copy_async (self, src, tgt, flags, ttype) :
@@ -289,7 +287,7 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
 
         if m_type == 'copy' :
             try :
-                task._set_result (self.copy (m_context['src'], m_context['tgt'], m_context['flags'], None))
+                task._set_result (self.copy (m_context['src'], m_context['tgt'], m_context['flags']))
                 task._set_state  (saga.task.DONE)
             except Exception as e :
                 task._set_exception (e)

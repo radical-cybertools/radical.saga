@@ -252,6 +252,7 @@ class LocalJob (saga.cpi.job.Job) :
         self._id              = None
         self._state           = saga.job.NEW
         self._exit_code       = None
+        self._exception       = None
         self._started         = None
         self._finished        = None
         self._execution_hosts = [Adaptor().hostname]
@@ -273,7 +274,8 @@ class LocalJob (saga.cpi.job.Job) :
             self._exit_code = self._process.poll() 
             if self._exit_code is not None:
                 if self._exit_code != 0:
-                    self._state = saga.job.FAILED
+                    self._exception = saga.NoSuccess ("non-zero exit code : %d" % self._exit_code)
+                    self._state     = saga.job.FAILED
                 else:
                     self._state = saga.job.DONE
                 # TODO: this is not accurate -- job could have terminated 
@@ -439,7 +441,13 @@ class LocalJob (saga.cpi.job.Job) :
             self._logger.debug("Starting process '%s' was successful." % cmdline) 
 
         except Exception, ex:
-            self._state = saga.job.FAILED
             msg = "Starting process: '%s' failed: %s" % (cmdline, str(ex))
-            raise saga.NoSuccess._log (self._logger, msg)
+            self._exception = saga.NoSuccess._log (self._logger, msg)
+            self._state     = saga.job.FAILED
+            raise self._exception
+
+
+    @SYNC
+    def re_raise(self):
+        return self._exception
 

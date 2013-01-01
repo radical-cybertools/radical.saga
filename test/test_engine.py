@@ -21,15 +21,15 @@ f._adaptor._dump()
 tc = saga.task.Container ()
 
 for i in range (1, 10) :
-  t = d.copy ("/etc/passwd", "/tmp/passwd_%04d.bak"  %  i, ttype=saga.task.TASK)
+  t = d.copy ("/etc/passwd", "/tmp/test_a_%04d.bak"  %  i, ttype=saga.task.TASK)
   tc.add (t)
 
 
 js = saga.job.Service ("fork://localhost")
 for i in range (1, 10) :
     jd = saga.job.Description()
-    jd.executable  = '/bin/sleep'
-    jd.arguments   = ['1']
+    jd.executable  = '/usr/bin/touch'
+    jd.arguments   = ["/tmp/test_b_%04d.bak"  %  i]
     tc.add (js.create_job (jd))
 
 tc.run  ()
