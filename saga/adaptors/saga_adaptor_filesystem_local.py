@@ -15,8 +15,8 @@ import saga.utils.misc
 
 from   saga.utils.singleton import Singleton
 
-SYNC  = saga.cpi.base.sync
-ASYNC = saga.cpi.base.async
+SYNC_CALL  = saga.cpi.base.SYNC_CALL
+ASYNC_CALL = saga.cpi.base.ASYNC_CALL
 
 
 ###############################################################################
@@ -66,8 +66,8 @@ class Adaptor (saga.cpi.base.AdaptorBase):
     provide the adaptor's functionality.
 
     We only need one instance of this adaptor per process (actually per engine,
-    but engine is a singleton, too...) -- the engine will though create new CPI
-    implementation instances as needed (one per SAGA API object).
+    but engine is a singleton, too...) -- the engine will create new adaptor
+    class instances (see below) as needed (one per SAGA API object).
     """
 
     __metaclass__ = Singleton
@@ -76,12 +76,15 @@ class Adaptor (saga.cpi.base.AdaptorBase):
     def __init__ (self) :
 
         saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+
+        # the adaptor *singleton* creates a (single) instance of a bulk handler
+        # (BulkDirectory), which implements container_* bulk methods.
         self._bulk = BulkDirectory ()
 
 
     def sanity_check (self) :
+        # nothing to check for, local file system should always be accessible
         pass
-
 
 
 
@@ -89,48 +92,64 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 ###############################################################################
 #
 class BulkDirectory (saga.cpi.filesystem.Directory) :
+    """
+    Well, this implementation can handle bulks, but cannot optimize them.
+    We leave that code here anyway, for demonstration -- but those methods
+    are also provided as fallback, and are thusly used if the adaptor does
+    not implement the bulk container_* methods at all.
+    """
 
     def __init__ (self) : 
         pass
 
-    @SYNC
-    def container_run (self, tasks) :
-        print " ~ run ~~~~~~~~~~~~~~~~~~~~~~ "
-        pprint.pprint (tasks)
-        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
-    @SYNC
     def container_wait (self, tasks, mode, timeout) :
-        print " ~ wait ~~~~~~~~~~~~~~~~~~~~~ "
+        print " ~ bulk wait ~~~~~~~~~~~~~~~~~~~~~ "
         pprint.pprint (tasks)
-        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+        if timeout >= 0 :
+            raise saga.exceptions.BadParameter ("Cannot handle timeouts > 0")
+        for task in tasks :
+            task.wait ()
+        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
-    @SYNC
+
     def container_cancel (self, tasks) :
-        print " ~ wait ~~~~~~~~~~~~~~~~~~~~~ "
+        print " ~ bulk wait ~~~~~~~~~~~~~~~~~~~~~ "
         pprint.pprint (tasks)
-        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+        for task in tasks :
+            task.cancel ()
+        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
-    @SYNC
+
     def container_copy (self, tasks) :
-        print " ~ copy ~~~~~~~~~~~~~~~~~~~~~ "
+        """
+        A *good* implementation would dig the file copy operations from the
+        tasks, and run them in a bulk -- we can't do that, so simply *run* the
+        individual tasks, falling back to the default non-bulk asynchronous copy
+        operation...
+        """
+        print " ~ bulk copy ~~~~~~~~~~~~~~~~~~~~~ "
         pprint.pprint (tasks)
         for task in tasks :
             task.run ()
-        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
+
+    # the container methods for the other calls are obviously similar, and left
+    # out here.  The :class:`saga.task.Container` implementation will fall back
+    # to the non-bulk async calls for all then.
 
 
 
 ###############################################################################
 #
-class LocalDirectory (saga.cpi.filesystem.Directory) :
+class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
 
     def __init__ (self, api, adaptor) :
         saga.cpi.Base.__init__ (self, api, adaptor, 'LocalDirectory')
 
 
-    @SYNC
+    @SYNC_CALL
     # FIXME: where are the flags?
     def init_instance (self, url, flags, session) :
 
@@ -142,7 +161,7 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         self._init_check ()
 
 
-    @ASYNC
+    @ASYNC_CALL
     def init_instance_async (self, ttype, url, flags, session) :
 
         self._url     = url
@@ -209,14 +228,16 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         
 
 
-    @SYNC
+    @SYNC_CALL
     def get_url (self) :
 
         return self._url
 
 
-    @SYNC
+    @SYNC_CALL
     def open (self, url, flags) :
+
+        print "sync open: - '%s' - '%s' - "  %  (url, flags)
         
         if not url.scheme and not url.host : 
             url = saga.url.Url (str(self._url) + '/' + str(url))
@@ -224,7 +245,19 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         return saga.filesystem.File (url, flags, self._session, _adaptor=self._adaptor)
 
 
-    @SYNC
+    # # the async call implementation works, in pair with task_run.  As it is
+    # disabled though, the threaded async fallback from the cpi layer will be
+    # used.
+    # @ASYNC_CALL
+    # def open_async (self, url, flags, ttype) :
+    #
+    #     c = { 'url'     : url,
+    #             'flags'   : flags}
+    #
+    #     return saga.task.Task (self, 'open', c, ttype)
+
+
+    @SYNC_CALL
     def copy (self, source, target, flags) :
 
 
@@ -259,7 +292,7 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         shutil.copy2 (src, tgt)
 
 
-    @ASYNC
+    @ASYNC_CALL
     def copy_async (self, src, tgt, flags, ttype) :
 
         print "async copy %s -> %s [%s]" % (src, tgt, ttype)
@@ -271,9 +304,12 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         return saga.task.Task (self, 'copy', c, ttype)
 
 
+
     def task_wait (self, task, timout) :
         # FIXME: our task_run moves all tasks into DONE state... :-/
         pass
+
+
 
     def task_run (self, task) :
         # FIXME: that should be generalized, possibly wrapped into a thread, and
@@ -292,6 +328,13 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         elif call == 'init_instance' :
             try :
                 task._set_result (self.init_instance (c['url'], c['flags'], c['session']))
+                task._set_state  (saga.task.DONE)
+            except Exception as e :
+                task._set_exception (e)
+                task._set_state     (saga.task.FAILED)
+        elif call == 'open' :
+            try :
+                task._set_result (self.open (c['url'], c['flags']))
                 task._set_state  (saga.task.DONE)
             except Exception as e :
                 task._set_exception (e)
@@ -318,7 +361,7 @@ class LocalFile (saga.cpi.filesystem.File) :
         print "session: %s"  % self._session
 
 
-    @SYNC
+    @SYNC_CALL
     def init_instance (self, url, flags, session) :
 
         self._url     = url
@@ -328,7 +371,7 @@ class LocalFile (saga.cpi.filesystem.File) :
         self._init_check ()
 
 
-    @ASYNC
+    @ASYNC_CALL
     def init_instance_async (self, ttype, url, flags, session) :
 
         self._url     = url
@@ -405,11 +448,11 @@ class LocalFile (saga.cpi.filesystem.File) :
             raise saga.exceptions.BadParameter ("Cannot handle url %s (is not a file)"  \
                                                %  path)
 
-    @SYNC
+    @SYNC_CALL
     def get_url (self) :
         return self._url
 
-    @ASYNC
+    @ASYNC_CALL
     def get_url_async (self, ttype) :
 
         c = {}
@@ -422,12 +465,12 @@ class LocalFile (saga.cpi.filesystem.File) :
         return t
 
 
-    @SYNC
+    @SYNC_CALL
     def get_size_self (self) :
         return os.path.getsize (self._url.path)
 
 
-    @ASYNC
+    @ASYNC_CALL
     def get_size_self_async (self, ttype) :
 
         c = {}
@@ -440,7 +483,7 @@ class LocalFile (saga.cpi.filesystem.File) :
         return t
 
 
-    @SYNC
+    @SYNC_CALL
     def copy_self (self, target, flags) :
 
         tgt_url = saga.url.Url (target)

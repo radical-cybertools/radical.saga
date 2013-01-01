@@ -104,3 +104,6 @@ class Self (Job) :
     def __init__(self):
         raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
 
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+

@@ -17,8 +17,8 @@ from saga.utils.which     import which
 import saga.cpi.base
 import saga.cpi.job
 
-SYNC  = saga.cpi.base.sync
-ASYNC = saga.cpi.base.async
+SYNC_CALL  = saga.cpi.base.SYNC_CALL
+ASYNC_CALL = saga.cpi.base.ASYNC_CALL
 
 ################################################################################
 ## the adaptor name                                                           ## 
@@ -129,7 +129,7 @@ class LocalJobService (saga.cpi.job.Service) :
         saga.cpi.Base.__init__ (self, api, adaptor, 'LocalJobService')
 
 
-    @SYNC
+    @SYNC_CALL
     def init_instance (self, rm_url, session) :
         """ Service instance constructor
         """
@@ -156,13 +156,13 @@ class LocalJobService (saga.cpi.job.Service) :
         self._jobs[job_obj] = job_obj._id
 
 
-    @SYNC
+    @SYNC_CALL
     def get_url (self) :
         """ Implements saga.cpi.job.Service.get_url()
         """
         return self._rm
 
-    @SYNC
+    @SYNC_CALL
     def list(self):
         """ Implements saga.cpi.job.Service.list()
         """
@@ -172,7 +172,7 @@ class LocalJobService (saga.cpi.job.Service) :
                 jobids.append(job_id)
         return jobids
 
-    @SYNC
+    @SYNC_CALL
     def create_job (self, jd) :
         """ Implements saga.cpi.job.Service.get_url()
         """
@@ -192,7 +192,7 @@ class LocalJobService (saga.cpi.job.Service) :
         return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=state)
 
 
-    @SYNC
+    @SYNC_CALL
     def get_job (self, jobid):
         """ Implements saga.cpi.job.Service.get_url()
         """
@@ -234,7 +234,7 @@ class LocalJob (saga.cpi.job.Job) :
         """
         saga.cpi.Base.__init__ (self, api, adaptor, 'LocalJob')
 
-    @SYNC
+    @SYNC_CALL
     def init_instance (self, job_info):
         """ Implements saga.cpi.job.Job.init_instance()
         """
@@ -264,7 +264,7 @@ class LocalJob (saga.cpi.job.Job) :
         self._parent_service._register_job(self)
 
 
-    @SYNC
+    @SYNC_CALL
     def get_state(self):
         """ Implements saga.cpi.job.Job.get_state()
         """
@@ -282,7 +282,7 @@ class LocalJob (saga.cpi.job.Job) :
                 self._finished = time.time() 
         return self._state
 
-    @SYNC
+    @SYNC_CALL
     def wait(self, timeout):
         if self._process is None:
             msg = "Can't wait for job that has not been started"
@@ -301,19 +301,19 @@ class LocalJob (saga.cpi.job.Job) :
                     break
                 time.sleep(0.5)
 
-    @SYNC
+    @SYNC_CALL
     def get_id (self) :
         """ Implements saga.cpi.job.Job.get_id()
         """        
         return self._id
 
-    @SYNC
+    @SYNC_CALL
     def get_exit_code(self) :
         """ Implements saga.cpi.job.Job.get_exit_code()
         """        
         return self._exit_code
 
-    @SYNC
+    @SYNC_CALL
     def get_created(self) :
         """ Implements saga.cpi.job.Job.get_started()
         """     
@@ -321,25 +321,25 @@ class LocalJob (saga.cpi.job.Job) :
         # this is not necessarily true   
         return self._started
 
-    @SYNC
+    @SYNC_CALL
     def get_started(self) :
         """ Implements saga.cpi.job.Job.get_started()
         """        
         return self._started
 
-    @SYNC
+    @SYNC_CALL
     def get_finished(self) :
         """ Implements saga.cpi.job.Job.get_finished()
         """        
         return self._finished
     
-    @SYNC
+    @SYNC_CALL
     def get_execution_hosts(self) :
         """ Implements saga.cpi.job.Job.get_execution_hosts()
         """        
         return self._execution_hosts
 
-    @SYNC
+    @SYNC_CALL
     def cancel(self, timeout):
         try:
             os.killpg(self._process.pid, signal.SIGTERM)
@@ -350,10 +350,11 @@ class LocalJob (saga.cpi.job.Job) :
             raise saga.IncorrectState._log (self._logger, msg)
 
 
-    @SYNC
+    @SYNC_CALL
     def run(self): 
         """ Implements saga.cpi.job.Job.run()
         """
+
         # lots of attribute checking and such 
         executable  = self._jd.executable
         arguments   = self._jd.arguments
@@ -446,7 +447,7 @@ class LocalJob (saga.cpi.job.Job) :
             raise self._exception
 
 
-    @SYNC
+    @SYNC_CALL
     def re_raise(self):
         return self._exception
 

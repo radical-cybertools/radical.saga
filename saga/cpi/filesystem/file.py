@@ -128,3 +128,6 @@ class File (Base) :
     def write_e (self, emode, spec, data, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
   
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+

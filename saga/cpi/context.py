@@ -16,3 +16,6 @@ class Context (Base) :
     def _initialize (self, session) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+

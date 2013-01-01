@@ -56,8 +56,13 @@ class Task (saga.attributes.Attributes) :
         ``ttype`` determines in what state the constructor will leave the task:
         ``DONE`` for ``ttype=SYNC``, ``RUNNING`` for ``ttype=ASYNC`` and ``NEW``
         for ``ttype=TASK``.
+
+        If the ``_method_context`` has *exactly* two elements, names ``_call``
+        and ``args``, then the created task will wrap
+        a :class:`saga.util.threads.Thread` with that ``_call (_args)``.
         """
         
+        self._thread         = None
         self._ttype          = _ttype
         self._adaptor        = _adaptor
         self._method_type    = _method_type
@@ -83,6 +88,27 @@ class Task (saga.attributes.Attributes) :
               
         self._set_state (NEW)
 
+        # check if this task is supposed to wrap a callable in a thread
+        if  '_call'   in self._method_context :
+
+            if not '_args'   in self._method_context :
+                self._method_context['_args'] = ()
+
+            if not '_kwargs' in self._method_context :
+                self._method_context['_kwargs'] = {}
+
+            if  3 !=  len (self._method_context) :
+                raise saga.exceptions.BadParameter \
+                    ("invalid call context for callable task")
+            
+            call   = self._method_context['_call']
+            args   = self._method_context['_args']
+            kwargs = self._method_context['_kwargs']
+
+            self._thread = Thread (call, *args, **kwargs)
+
+
+        # ensure task goes into the correct state
         if self._ttype == saga.task.SYNC :
             self.run  ()
             self.wait ()
@@ -96,6 +122,7 @@ class Task (saga.attributes.Attributes) :
     # ----------------------------------------------------------------
     #
     def _set_result (self, result) :
+
         self._attributes_i_set (self._attributes_t_underscore (RESULT), result, force=True)
         self._attributes_i_set (self._attributes_t_underscore (STATE),  DONE,   force=True)
 
@@ -106,6 +133,8 @@ class Task (saga.attributes.Attributes) :
         
         if not self.state in [DONE, FAILED, CANCELED] :
             self.wait ()
+
+        assert (self.state in [DONE, FAILED, CANCELED]) 
         
         if self.state == FAILED :
             self.re_raise ()
@@ -116,42 +145,69 @@ class Task (saga.attributes.Attributes) :
                     ("task.get_result() cannot be called on cancelled tasks")
 
         if self.state == DONE :
+
+            if self._thread :
+                self._set_result (self._thread.result)
+
             return self.result
 
 
     # ----------------------------------------------------------------
     #
     def _set_state (self, state) :
+
         if not state in [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED] :
             raise saga.exceptions.BadParameter ("attempt to set invalid task state '%s'" % state)
+
         self._attributes_i_set (self._attributes_t_underscore (STATE), state, force=True)
 
 
     # ----------------------------------------------------------------
     #
     def get_state (self) :
+
+        if self._thread :
+            self._set_state (self._thread.state)
+
         return self.state
 
 
     # ----------------------------------------------------------------
     #
     def wait (self, timeout=-1) :
-        # FIXME: make sure task_wait exists.  Should be part of the CPI!
-        self._adaptor.task_wait (self, timeout)
+
+        if self._thread :
+            self._thread.wait ()  # FIXME: timeout?!
+            self._set_state   (self._thread.state)
+
+        else :
+            # FIXME: make sure task_wait exists.  Should be part of the CPI!
+            self._adaptor.task_wait (self, timeout)
 
 
     # ----------------------------------------------------------------
     #
     def run (self) :
-        # FIXME: make sure task_run exists.  Should be part of the CPI!
-        self._adaptor.task_run (self)
+
+        if self._thread :
+            self._thread.run ()
+
+        else :
+            # FIXME: make sure task_run exists.  Should be part of the CPI!
+            self._adaptor.task_run (self)
 
 
     # ----------------------------------------------------------------
     #
     def cancel (self) :
-        # FIXME: make sure task_cancel exists.  Should be part of the CPI!
-        self._adaptor.task_cancel (self)
+
+        if self._thread :
+            self._thread.cancel ()
+            self._set_state (CANCELED)
+
+        else :
+            # FIXME: make sure task_cancel exists.  Should be part of the CPI!
+            self._adaptor.task_cancel (self)
 
 
     # ----------------------------------------------------------------
@@ -162,11 +218,16 @@ class Task (saga.attributes.Attributes) :
     # ----------------------------------------------------------------
     #
     def get_exception (self) :
+
+        if self._thread :
+            self._set_exception (self._thread.exception)
+
         return self.exception
 
     # ----------------------------------------------------------------
     #
-    def re_raise () :
+    def re_raise (self) :
+
         if self.exception :
             raise self.exception
 
@@ -267,18 +328,19 @@ class Container (saga.attributes.Attributes) :
 
                 else :
                     # hand off to the container function, in a separate task
-                    threads.append (Thread (m_handle, tasks))
+                    threads.append (Thread.Run (m_handle, tasks))
 
 
         # handle tasks not bound to a container
         for task in buckets['unbound'] :
 
-            threads.append (Thread (task.run))
+            threads.append (Thread.Run (task.run))
             
 
         # wait for all threads to finish
         for thread in threads :
-            thread.join ()
+            if thread.isAlive () :
+                thread.join ()
 
             if thread.get_state () == FAILED :
                 raise saga.NoSuccess ("thread exception: %s\n%s" \
@@ -325,13 +387,13 @@ class Container (saga.attributes.Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
-            threads.append (Thread (c.container_wait, tasks, mode, timeout))
+            threads.append (Thread.Run (c.container_wait, tasks, mode, timeout))
 
         
         # handle all tasks not bound to containers
         for task in buckets['unbound'] :
 
-            threads.append (Thread (task.wait, timeout))
+            threads.append (Thread.Run (task.wait, timeout))
             
 
         # mode == ANY: we need to watch our threads, and whenever one
@@ -415,7 +477,7 @@ class Container (saga.attributes.Attributes) :
                 tasks += buckets['bound'][c]
 
             queue  = Queue.Queue ()
-            thread = su_threads.wrap (c.container_cancel, (queue, tasks))
+            thread = Thread.Run (c.container_cancel, (queue, tasks))
 
             threads.append (thread)
             queues[thread] = queue
@@ -425,7 +487,7 @@ class Container (saga.attributes.Attributes) :
         for task in buckets['unbound'] :
 
             queue  = Queue.Queue ()
-            thread = su_threads.wrap (task.cancel, (queue, timeout))
+            thread = Thread.Run (task.cancel, (queue, timeout))
 
             threads.append (thread)
             queues[thread] = queue
@@ -472,12 +534,12 @@ class Container (saga.attributes.Attributes) :
         for container in buckets['bound'] :
 
             tasks  = buckets['bound'][container]
-            threads.append (su_threads.Thread (container.container_get_states, tasks))
+            threads.append (Thread.Run (container.container_get_states, tasks))
 
 
-        for task in buckets['tasks'] :
+        for task in buckets['unbound'] :
 
-            threads.append (su_threads.Thread (task.get_states, timeout))
+            threads.append (Thread.Run (task.get_states, timeout))
             
 
         # wait for all threads to finish

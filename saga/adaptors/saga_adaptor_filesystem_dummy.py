@@ -13,8 +13,8 @@ import saga.utils.misc
 
 from   saga.utils.singleton import Singleton
 
-SYNC  = saga.cpi.base.sync
-ASYNC = saga.cpi.base.async
+SYNC_CALL  = saga.cpi.base.SYNC_CALL
+ASYNC_CALL = saga.cpi.base.ASYNC_CALL
 
 
 ###############################################################################
@@ -91,7 +91,7 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
         saga.cpi.Base.__init__ (self, api, adaptor, 'DummyDirectory')
 
 
-    @SYNC
+    @SYNC_CALL
     # FIXME: where are the flags?
     def init_instance (self, url, flags, session) :
 
@@ -102,7 +102,7 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
         self._init_check ()
 
 
-    @ASYNC
+    @ASYNC_CALL
     def init_instance_async (self, ttype, url, flags, session) :
         self._url     = url
         self._flags   = flags
@@ -166,13 +166,13 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
         
 
 
-    @SYNC
+    @SYNC_CALL
     def get_url (self) :
 
         return self._url
 
 
-    @SYNC
+    @SYNC_CALL
     def open (self, url, flags) :
         
         if not url.scheme and not url.host : 
@@ -192,7 +192,7 @@ class DummyFile (saga.cpi.filesystem.File) :
         saga.cpi.Base.__init__ (self, api, adaptor, 'DummyFile')
 
 
-    @SYNC
+    @SYNC_CALL
     def init_instance (self, url, flags, session) :
 
         self._url     = url
@@ -202,7 +202,7 @@ class DummyFile (saga.cpi.filesystem.File) :
         self._init_check ()
 
 
-    @ASYNC
+    @ASYNC_CALL
     def init_instance_async (self, ttype, url, flags, session) :
 
         self._url     = url
@@ -274,11 +274,11 @@ class DummyFile (saga.cpi.filesystem.File) :
             raise saga.exceptions.BadParameter ("Cannot handle url %s (is not a file)"  \
                                                %  path)
 
-    @SYNC
+    @SYNC_CALL
     def get_url (self) :
         return self._url
 
-    @ASYNC
+    @ASYNC_CALL
     def get_url_async (self, ttype) :
 
         t = saga.task.Task ()
@@ -289,12 +289,12 @@ class DummyFile (saga.cpi.filesystem.File) :
         return t
 
 
-    @SYNC
+    @SYNC_CALL
     def get_size_self (self) :
         return os.path.getsize (self._url.path)
 
 
-    @ASYNC
+    @ASYNC_CALL
     def get_size_self_async (self, ttype) :
 
         t = saga.task.Task ()
@@ -305,7 +305,7 @@ class DummyFile (saga.cpi.filesystem.File) :
         return t
 
 
-    @SYNC
+    @SYNC_CALL
     def copy_self (self, target, flags) :
 
         tgt_url = saga.url.Url (target)

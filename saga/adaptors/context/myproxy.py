@@ -8,8 +8,8 @@ import saga.context
 import saga.cpi.base
 import saga.cpi.context
 
-SYNC  = saga.cpi.base.sync
-ASYNC = saga.cpi.base.async
+SYNC_CALL  = saga.cpi.base.SYNC_CALL
+ASYNC_CALL = saga.cpi.base.ASYNC_CALL
 
 ######################################################################
 #
@@ -87,7 +87,7 @@ class ContextMyProxy (saga.cpi.Context) :
 
 
 
-    @SYNC
+    @SYNC_CALL
     def init_instance (self, type) :
 
         if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
@@ -97,7 +97,7 @@ class ContextMyProxy (saga.cpi.Context) :
         self._api.type = type
 
 
-    @SYNC
+    @SYNC_CALL
     def _initialize (self, session) :
 
         # make sure we have server, username, password

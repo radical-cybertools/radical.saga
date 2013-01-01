@@ -17,8 +17,8 @@ import saga.utils.misc
 
 from   saga.utils.singleton import Singleton
 
-SYNC  = saga.cpi.base.sync
-ASYNC = saga.cpi.base.async
+SYNC_CALL  = saga.cpi.base.SYNC_CALL
+ASYNC_CALL = saga.cpi.base.ASYNC_CALL
 
 class CommandWrapper () : 
     def __init__ (self) :
@@ -370,7 +370,7 @@ class IRODSDirectory (saga.cpi.replica.LogicalDirectory) :
     # ----------------------------------------------------------------
     #
     #
-    @SYNC
+    @SYNC_CALL
     def init_instance (self, url, flags, session) :
 
         self._url     = url
@@ -383,7 +383,7 @@ class IRODSDirectory (saga.cpi.replica.LogicalDirectory) :
     # ----------------------------------------------------------------
     #
     #
-    @ASYNC
+    @ASYNC_CALL
     def init_instance_async (self, ttype, url, flags, session) :
         self._url     = url
         self._flags   = flags
@@ -418,7 +418,7 @@ class IRODSDirectory (saga.cpi.replica.LogicalDirectory) :
     # ----------------------------------------------------------------
     #
     #
-    @SYNC
+    @SYNC_CALL
     def get_url (self) :
 
         return self._url
@@ -427,7 +427,7 @@ class IRODSDirectory (saga.cpi.replica.LogicalDirectory) :
     # ----------------------------------------------------------------
     #
     #
-    @SYNC
+    @SYNC_CALL
     def open (self, url, flags) :
         
         if not url.scheme and not url.host : 
@@ -558,7 +558,7 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
     # ----------------------------------------------------------------
     #
     #
-    @SYNC
+    @SYNC_CALL
     def init_instance (self, url, flags, session) :
 
         self._url     = url
@@ -571,7 +571,7 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
     # ----------------------------------------------------------------
     #
     #
-    @ASYNC
+    @ASYNC_CALL
     def init_instance_async (self, ttype, url, flags, session) :
 
         self._url     = url
@@ -645,14 +645,14 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
     # ----------------------------------------------------------------
     #
     #
-    @SYNC
+    @SYNC_CALL
     def get_url (self) :
         return self._url
 
     # ----------------------------------------------------------------
     #
     #
-    @ASYNC
+    @ASYNC_CALL
     def get_url_async (self, ttype) :
 
         t = saga.task.Task ()
@@ -666,7 +666,7 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
     # ----------------------------------------------------------------
     #
     #
-    @SYNC
+    @SYNC_CALL
     def get_size_self (self) :
 
         path = self._url.get_path()
@@ -680,7 +680,7 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
     # ----------------------------------------------------------------
     #
     #
-    @ASYNC
+    @ASYNC_CALL
     def get_size_self_async (self, ttype) :
 
         t = saga.task.Task ()
@@ -694,7 +694,7 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
     # ----------------------------------------------------------------
     #
     #
-    @SYNC
+    @SYNC_CALL
     def copy_self (self, target, flags) :
 
         tgt_url = saga.url.Url (target)

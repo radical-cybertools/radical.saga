@@ -14,9 +14,22 @@ e._dump()
 d = saga.filesystem.Directory ('file://localhost/tmp/test1/test1/',
                                saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS)
 print d.get_url ()
-f = d.open ('passwd')
+t_1 = d.open ('group', ttype=saga.task.TASK)
+print "New     : %s" % t_1.state
+t_1.run ()
+print "Running : %s" % t_1.state
+t_1.wait ()
+print "Done    : %s" % t_1.state
+f_1 = t_1.result
+print f_1.url
+print f_1.size
 
-f._adaptor._dump()
+sys.exit (0)
+
+print d.get_url ()
+f_2 = d.open ('passwd')
+
+f_2._adaptor._dump()
 
 tc = saga.task.Container ()
 
@@ -39,28 +52,28 @@ for t in tc.tasks :
   print "%s : %-6s [%s]"  %  (t, t.state, t.exception)
 
 
-print f.get_size_self ()
-t = f.get_size_self (saga.task.ASYNC)
-print t.state
-print t.result
+print f_2.get_size_self ()
+t_2 = f_2.get_size_self (saga.task.ASYNC)
+print t_2.state
+print t_2.result
 
-# f.copy_self ('passwd.bak') 
-f.copy_self ('dummy://boskop/tmp/') 
+# f_2.copy_self ('passwd.bak') 
+f_2.copy_self ('dummy://boskop/tmp/') 
 
 
-t = saga.filesystem.Directory.create ('file://localhost/tmp/test1/test1/',
+t_3 = saga.filesystem.Directory.create ('file://localhost/tmp/test1/test1/',
                                saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS, saga.task.ASYNC)
-print t
-print t.state
-d2 = t.get_result ()
+print t_3
+print t_3.state
+d2 = t_3.get_result ()
 print d2
 
 
 jd     = saga.job.Description ()
 jd.executable = '/bin/date'
 
-# t_1    = saga.job.Service.create ("local://localhost")
-# print str(t_1)
+# t_4    = saga.job.Service.create ("local://localhost")
+# print str(t_4)
 
 js_1   = saga.job.Service ("fork://localhost")
 print js_1.get_url ()
@@ -69,9 +82,9 @@ j_1    = js_1.create_job (jd)
 print str(j_1)
 print j_1.get_id ()
 
-# t_2    = j_1.get_id (ttype=saga.task.TASK)
-# print str(t_2)
-# print t_2.get_state ()
+# t_5    = j_1.get_id (ttype=saga.task.TASK)
+# print str(t_5)
+# print t_5.get_state ()
 
 s = saga.Session ()
 

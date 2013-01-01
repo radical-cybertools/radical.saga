@@ -1,7 +1,5 @@
 
 
-from saga.cpi.base import Base
-
 import inspect
 import saga.exceptions
 

@@ -1,6 +1,7 @@
 
-from   saga.cpi.base   import Base
+from   saga.cpi.base   import Base, CPI_ASYNC_CALL
 from   saga.cpi.async  import Async
+
 import saga.exceptions
 
 class Directory (Base, Async) :
@@ -26,8 +27,18 @@ class Directory (Base, Async) :
 
 
     def open (self, name, flags, ttype) :
+
+        # if we end up here, then the callee did not manage to invoke the sync
+        # adaptor call -- not much to do than raising an exception...
         raise saga.exceptions.NotImplemented ("method not implemented")
 
+    @CPI_ASYNC_CALL
+    def open_async (self, name, flags, ttype) :
+        # if we end up here, then the callee did not manage to invoke the async
+        # adaptor call -- the decorator above will attempt to wrap the sync call
+        # in a threaded task, and use that as async op fallback
+        pass
+        
 
     # ----------------------------------------------------------------
     #
@@ -160,4 +171,6 @@ class Directory (Base, Async) :
     def permissions_deny_self (self, id, perms, flags, ttype) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

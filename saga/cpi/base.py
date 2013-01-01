@@ -7,6 +7,8 @@ __license__   = "MIT"
 
 """ Provides the SAGA runtime. """
 
+import re
+
 import saga.engine.logger as saga_logger
 import saga.engine.config as saga_config
 
@@ -119,14 +121,13 @@ class Base (saga_config.Configurable) :
 # ------------------------------------
 # decorator, which switches method to 
 # _async version if ttype is set and !None
-def sync (sync_function) :
+def SYNC_CALL (sync_function) :
     
     def wrap_function (self, *args, **kwargs) :
 
         if 'ttype' in kwargs and kwargs['ttype'] != None :
-            if kwargs['ttype'] != SYNC  and \
-               kwargs['ttype'] != ASYNC and \
-               kwargs['ttype'] != TASK      :
+
+            if not kwargs['ttype'] in (SYNC, ASYNC, TASK) :
                 # cannot handle that ttype value, do not call async methods
                 msg = " %s: async %s() called with invalid tasktype (%s)" \
                     % (self.__class__.__name__, sync_function.__name__, str(ttype))
@@ -158,7 +159,63 @@ def sync (sync_function) :
 
 # ------------------------------------
 # we assume that async calls want to call, aehm, async methods...
-def async (async_function) :
+def ASYNC_CALL (async_function) :
     return async_function
 
+
+
+# ------------------------------------
+# we assume that async calls want to call, aehm, async methods...
+def CPI_ASYNC_CALL (cpi_async_function) :
+
+    def wrap_function (self, *args, **kwargs) :
+
+        print cpi_async_function
+
+        my_ttype = None
+        my_call  = None
+        my_args  = ()
+
+
+
+        if not 'ttype' in kwargs :
+            msg = " %s: async %s() called with unknown tasktype (%s)" \
+                % (self.__class__.__name__, cpi_async_function.__name__, str(ttype))
+            raise saga.exceptions.BadParameter (msg)
+
+
+        ttype = kwargs['ttype']
+        del kwargs['ttype']
+
+
+        if not ttype in (SYNC, ASYNC, TASK) :
+            # cannot handle that ttype value, do not call async methods
+            msg = " %s: async %s() called with invalid tasktype (%s)" \
+                % (self.__class__.__name__, cpi_async_function.__name__, str(ttype))
+            raise saga.exceptions.BadParameter (msg)
+
+
+        cpi_sync_function_name = None
+        cpi_sync_function      = None
+
+        # find sync method flavor
+        try :
+            cpi_sync_function_name = re.sub ("_async$", "", cpi_async_function.__name__)
+            cpi_sync_function      = getattr (self, cpi_sync_function_name)
+
+        except AttributeError :
+            msg = " %s: sync %s() not implemented" \
+                % (self.__class__.__name__, cpi_sync_function.__name__)
+            raise saga.exceptions.NotImplemented (msg)
+
+
+        # got the sync call, wrap it in a task
+
+        c = { '_call'   : cpi_sync_function,
+              '_args'   : args, 
+              '_kwargs' : kwargs }   # no ttype!
+
+        return saga.task.Task (self, cpi_sync_function_name, c, ttype)
+
+    return wrap_function
 

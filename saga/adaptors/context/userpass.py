@@ -5,8 +5,8 @@ import saga.context
 import saga.cpi.base
 import saga.cpi.context
 
-SYNC  = saga.cpi.base.sync
-ASYNC = saga.cpi.base.async
+SYNC_CALL  = saga.cpi.base.SYNC_CALL
+ASYNC_CALL = saga.cpi.base.ASYNC_CALL
 
 ######################################################################
 #
@@ -81,7 +81,7 @@ class ContextUserPass (saga.cpi.Context) :
         saga.cpi.Base.__init__ (self, api, adaptor, 'ContextUserPass')
 
 
-    @SYNC
+    @SYNC_CALL
     def init_instance (self, type) :
         
         if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
@@ -91,7 +91,7 @@ class ContextUserPass (saga.cpi.Context) :
         self._type = type
 
 
-    @SYNC
+    @SYNC_CALL
     def _initialize (self, session) :
         pass
 
