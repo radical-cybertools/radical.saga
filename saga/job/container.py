@@ -6,10 +6,11 @@ __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
 from saga.engine.logger import getLogger
-from saga.task          import Container as TaskContainer
+
+import saga.task
 
 # 'forward' declaration of job.Container
-class Container(TaskContainer):
+class Container(saga.task.Container):
     """ :todo: document me
 
         .. py:attribute:: jobs
@@ -33,7 +34,7 @@ class Container(TaskContainer):
     """
     def __init__ (self) :
 
-        TaskContainer.__init__(self)
+        saga.task.Container.__init__(self)
 
         self._attributes_register   ("Jobs",   [],    self.ANY, self.VECTOR, self.READONLY)
         self._attributes_set_getter ("Jobs",   self.get_tasks)

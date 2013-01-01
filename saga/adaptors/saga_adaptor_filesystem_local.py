@@ -252,6 +252,8 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
         print "sync copy %s -> %s" % (src, tgt)
         shutil.copy2 (src, tgt)
 
+        print "here?"
+        return 1
 
     @ASYNC
     def copy_async (self, src, tgt, flags, ttype) :
@@ -272,6 +274,8 @@ class LocalDirectory (saga.cpi.filesystem.Directory) :
             t.run  ()
         elif ttype == saga.task.TASK :
             pass
+
+        print " -----------> %s"  %  t
 
         return t
 

@@ -30,6 +30,10 @@ class Thread (threading.Thread) :
 
     def __init__ (self, call, *args, **kwargs) :
 
+        if not callable (call) :
+            raise saga.exceptions.BadParameter ("Thread requires a callable to function, not %s" \
+                                             % (str(call)))
+
         threading.Thread.__init__ (self)
         self._call      = call
         self._args      = args

@@ -19,7 +19,7 @@ from   saga.engine.logger   import getLogger, get_traceback
 from   saga.engine.config   import getConfig, Configurable
 
 import saga.engine.registry  # adaptors to load
-import saga.cpi              # load cpi's so that we can check what adaptors implement
+# import saga.cpi              # load cpi's so that we can check what adaptors implement
 
 
 ##################################################################################

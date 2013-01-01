@@ -10,17 +10,18 @@ __license__   = "MIT"
 
 
 from   saga.engine.logger import getLogger
-from   saga.engine.engine import getEngine, ANY_ADAPTOR
 
+import saga.engine.engine
 import saga.exceptions
 import saga.attributes
 import saga.task
+import saga.async
 
-from saga.job import *
+from   saga.job.constants import *
 
 
 # class Job (Object, Async, Attributes, Permissions) :
-class Job (saga.attributes.Attributes, saga.task.Async) :
+class Job (saga.attributes.Attributes, saga.async.Async) :
     
     def __init__ (self, _adaptor=None, _adaptor_state={}, _method_type='run') :
         """ 
@@ -80,7 +81,7 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         # bind to the given adaptor -- this will create the required adaptor
         # class.  We need to specify a schema for adaptor selection -- and
         # simply choose the first one the adaptor offers.
-        engine         = getEngine ()
+        engine         = saga.engine.engine.getEngine ()
         adaptor_schema = _adaptor.get_schemas()[0]
         self._adaptor  = engine.bind_adaptor (self, 'saga.job.Job', adaptor_schema, 
                                               saga.task.NOTASK, _adaptor, _adaptor_state)
@@ -94,10 +95,10 @@ class Job (saga.attributes.Attributes, saga.task.Async) :
         ret:       saga.Task
         '''
     
-        t = saga.task.Task ()
+        t = saga.task.Task (None, None, None)
 
         t._set_exception = saga.exceptions.IncorrectState ("saga.job.Job constructor is private")
-        t._set_state     = saga.task.Failed
+        t._set_state     = saga.task.FAILED
 
         return t
     
@@ -282,14 +283,13 @@ class Self (Job) :
         # self._attributes_extensible  (False)
         # self._attributes_camelcasing (True)
 
-        self._logger = getLogger ('saga.job.Job')
+        self._logger  = getLogger ('saga.job.Job')
         self._logger.debug ("saga.job.Self.__init__ (%s, %s)"  \
                          % (str(session)))
 
-        self._engine = getEngine ()
-
+        self._engine  = saga.engine.engine.getEngine ()
         self._adaptor = self._engine.bind_adaptor (self, 'saga.job.Self', 'fork', \
-                                                  NOTASK, ANY_ADAPTOR, session)
+                                                  NOTASK, saga.engine.ANY_ADAPTOR, session)
 
 
     @classmethod
@@ -304,10 +304,10 @@ class Self (Job) :
         logger.debug ("saga.job.Self.create (%s, %s)"  \
                    % (str(session), str(ttype)))
     
-        engine = getEngine ()
+        engine = saga.engine.engine.getEngine ()
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_async(), which returns a task as expected.
-        return engine.bind_adaptor (self, 'saga.job.Self', 'fork', ttype, ANY_ADAPTOR, session)
+        return engine.bind_adaptor (self, 'saga.job.Self', 'fork', ttype, saga.engine.ANY_ADAPTOR, session)
 
 

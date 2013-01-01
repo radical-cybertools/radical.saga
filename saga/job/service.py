@@ -11,11 +11,11 @@ __license__   = "MIT"
 
 from saga.engine.logger   import getLogger
 from saga.engine.engine   import getEngine, ANY_ADAPTOR
-from saga.task            import SYNC, ASYNC, TASK, NOTASK
 from saga.url             import Url
 from saga.job.description import Description
 from saga.exceptions      import BadParameter
 
+from saga.constants       import SYNC, ASYNC, TASK, NOTASK # task constants
 
 
 # class Service (Object, Async) :

@@ -17,41 +17,11 @@ import Queue
 import saga.exceptions
 import saga.attributes
 
+import saga.job.job
+
+from   saga.constants     import *
 from   saga.utils.threads import Thread, NEW, RUNNING, DONE, FAILED
 from   saga.engine.logger import getLogger
-
-
-NOTASK    =  None    # makes some implementation internal method invocations more readable
-SYNC      = 'Sync'
-ASYNC     = 'Async'
-TASK      = 'Task'
-
-UNKNOWN   = 'Unknown'
-NEW       = 'New'
-RUNNING   = 'Running'
-DONE      = 'Done'
-FAILED    = 'Failed'
-CANCELED  = 'Canceled'
-
-STATE     = 'State'
-RESULT    = 'Result'
-EXCEPTION = 'Exception'
-
-ALL       = 'All'
-ANY       = 'Any'
-
-
-# --------------------------------------------------------------------
-# container attribute names
-SIZE   = "Size"
-TASKS  = "Tasks"
-STATES = "States"
-
-class Async :
-    '''
-    tagging interface for SAGA classes which implement asynchronous methods.
-    '''
-    pass
 
 
 
@@ -224,6 +194,14 @@ class Container (saga.attributes.Attributes) :
     # ----------------------------------------------------------------
     #
     def add (self, t) :
+
+        # AM: oh I hate that we don't use proper inheritance...
+        if  not isinstance (t, Task) and \
+            not isinstance (t, saga.job.job.Job)      :
+            
+            traceback.print_stack ()
+            raise saga.BadParameter ("Container handles jobs or tasks, not %s" \
+                                  % (type(t)))
 
         if not t in self.tasks :
             self.tasks.append (t)

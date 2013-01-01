@@ -11,7 +11,8 @@ import saga.engine.logger as saga_logger
 import saga.engine.config as saga_config
 
 import saga.exceptions
-import saga.task
+
+from   saga.task import SYNC, ASYNC, TASK
 
 # ------------------------------------
 # adaptor base class
@@ -123,9 +124,9 @@ def sync (sync_function) :
     def wrap_function (self, *args, **kwargs) :
 
         if 'ttype' in kwargs and kwargs['ttype'] != None :
-            if kwargs['ttype'] != saga.task.SYNC  and \
-               kwargs['ttype'] != saga.task.ASYNC and \
-               kwargs['ttype'] != saga.task.TASK      :
+            if kwargs['ttype'] != SYNC  and \
+               kwargs['ttype'] != ASYNC and \
+               kwargs['ttype'] != TASK      :
                 # cannot handle that ttype value, do not call async methods
                 msg = " %s: async %s() called with invalid tasktype (%s)" \
                     % (self.__class__.__name__, sync_function.__name__, str(ttype))
