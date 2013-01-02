@@ -1,162 +1,167 @@
 
-from   saga.cpi.base   import Base, CPI_SYNC_CALL, CPI_ASYNC_CALL
+from   saga.cpi.base   import Base
+from   saga.cpi.base   import CPI_SYNC_CALL  as sync
+from   saga.cpi.base   import CPI_ASYNC_CALL as async
 from   saga.cpi.async  import Async
+
 
 class File (Base, Async) :
 
-    @CPI_SYNC_CALL
-    def __init__ (self, url, flags, session) : 
-        pass
+    @sync
+    def init_instance        (self, url, flags, session)      : pass
+    @async
+    def init_instance_async  (self, url, flags, session)      : pass
 
 
     # ----------------------------------------------------------------
     #
     # namespace entry methods
     #
-    @CPI_SYNC_CALL
-    def get_url (self, ttype) :
-        pass
+    @sync
+    def get_url              (self, ttype)                    : pass
+    @async
+    def get_url_async        (self, ttype)                    : pass
 
+    @sync
+    def get_cwd              (self, ttype)                    : pass
+    @async
+    def get_cwd_async        (self, ttype)                    : pass
 
-    @CPI_SYNC_CALL
-    def get_cwd (self, ttype) :
-        pass
+    @sync
+    def get_name             (self, ttype)                    : pass
+    @async
+    def get_name_async       (self, ttype)                    : pass
 
+    @sync
+    def is_dir_self          (self, ttype)                    : pass
+    @async
+    def is_dir_self_async    (self, ttype)                    : pass
 
-    @CPI_SYNC_CALL
-    def get_name (self, ttype) :
-        pass
+    @sync
+    def is_entry_self        (self, ttype)                    : pass
+    @async
+    def is_entry_self_async  (self, ttype)                    : pass
 
+    @sync
+    def is_link_self         (self, ttype)                    : pass
+    @async
+    def is_link_self_async   (self, ttype)                    : pass
 
-    @CPI_SYNC_CALL
-    def is_dir_self (self, ttype) :
-        pass
+    @sync
+    def read_link_self       (self, ttype)                    : pass
+    @async
+    def read_link_self_async (self, ttype)                    : pass
 
+    @sync
+    def copy_self            (self, tgt, flags, ttype)        : pass
+    @async
+    def copy_self_async      (self, tgt, flags, ttype)        : pass
 
-    @CPI_SYNC_CALL
-    def is_entry_self (self, ttype) :
-        pass
+    @sync
+    def link_self            (self, tgt, flags, ttype)        : pass
+    @async
+    def link_self_async      (self, tgt, flags, ttype)        : pass
 
+    @sync
+    def move_self            (self, tgt, flags, ttype)        : pass
+    @async
+    def move_self_async      (self, tgt, flags, ttype)        : pass
 
-    @CPI_SYNC_CALL
-    def is_link_self (self, ttype) :
-        pass
+    @sync
+    def remove_self          (self, flags, ttype)             : pass
+    @async
+    def remove_self_async    (self, flags, ttype)             : pass
 
+    @sync
+    def close                (self, timeout, ttype)           : pass
+    @async
+    def close_async          (self, timeout, ttype)           : pass
 
-    @CPI_SYNC_CALL
-    def read_link_self (self, ttype) :
-        pass
+    @sync
+    def permissions_allow_self       (self, id, perms, flags, ttype) : pass
+    @async
+    def permissions_allow_self_async (self, id, perms, flags, ttype) : pass
 
-
-    @CPI_SYNC_CALL
-    def copy_self (self, tgt, flags, ttype) :
-        pass
-
-
-    @CPI_SYNC_CALL
-    def link_self (self, tgt, flags, ttype) :
-        pass
-
-
-    @CPI_SYNC_CALL
-    def move_self (self, tgt, flags, ttype) :
-        pass
-
-
-    @CPI_SYNC_CALL
-    def remove_self (self, flags, ttype) :
-        pass
-
-
-    @CPI_SYNC_CALL
-    def close (self, timeout, ttype) :
-        pass
-
-
-    @CPI_SYNC_CALL
-    def permissions_allow_self (self, id, perms, flags, ttype) :
-        pass
-
-
-    @CPI_SYNC_CALL
-    def permissions_deny_self (self, id, perms, flags, ttype) :
-        pass
-
+    @sync
+    def permissions_deny_self       (self, id, perms, flags, ttype)  : pass
+    @async
+    def permissions_deny_self_async (self, id, perms, flags, ttype)  : pass
 
 
     # ----------------------------------------------------------------
     #
     # filesystem methods
     #
-    @CPI_SYNC_CALL
-    def is_file_self (self, ttype) :
-        pass
+    @sync
+    def is_file_self         (self, ttype)                    : pass
+    @async
+    def is_file_self_async   (self, ttype)                    : pass
 
+    @sync
+    def get_size_self        (self, ttype)                    : pass
+    @async
+    def get_size_self_async  (self, ttype)                    : pass
 
-    @CPI_SYNC_CALL
-    def get_size_self (self, ttype) :
-        pass
+    @sync
+    def read                 (self, size, ttype)              : pass
+    @async
+    def read_async           (self, size, ttype)              : pass
 
+    @sync
+    def write                (self, data, ttype)              : pass
+    @async
+    def write_async          (self, data, ttype)              : pass
 
-    @CPI_SYNC_CALL
-    def read (self, size, ttype) :
-        pass
+    @sync
+    def seek                 (self, off, whence, ttype)       : pass
+    @async
+    def seek_async           (self, off, whence, ttype)       : pass
 
+    @sync
+    def read_v               (self, iovecs, ttype)            : pass
+    @async
+    def read_v_async         (self, iovecs, ttype)            : pass
 
-    @CPI_SYNC_CALL
-    def write (self, data, ttype) :
-        pass
+    @sync
+    def write_v              (self, data, ttype)              : pass
+    @async
+    def write_v_async        (self, data, ttype)              : pass
 
+    @sync
+    def size_p               (self, pattern, ttype)           : pass
+    @async
+    def size_p_async         (self, pattern, ttype)           : pass
 
-    @CPI_SYNC_CALL
-    def seek (self, off, whence, ttype) :
-        pass
+    @sync
+    def read_p               (self, pattern, ttype)           : pass
+    @async
+    def read_p_async         (self, pattern, ttype)           : pass
 
+    @sync
+    def write_p              (self, pattern, data, ttype)     : pass
+    @async
+    def write_p_async        (self, pattern, data, ttype)     : pass
 
-    @CPI_SYNC_CALL
-    def read_v (self, iovecs, ttype) :
-        pass
+    @sync
+    def modes_e              (self, ttype)                    : pass
+    @async
+    def modes_e_async        (self, ttype)                    : pass
 
+    @sync
+    def size_e               (self, emode, spec, ttype)       : pass
+    @async
+    def size_e_async         (self, emode, spec, ttype)       : pass
 
-    @CPI_SYNC_CALL
-    def write_v (self, data, ttype) :
-        pass
+    @sync
+    def read_e               (self, emode, spec, ttype)       : pass
+    @async
+    def read_e_async         (self, emode, spec, ttype)       : pass
 
+    @sync
+    def write_e              (self, emode, spec, data, ttype) : pass
+    @async
+    def write_e_async        (self, emode, spec, data, ttype) : pass
 
-    @CPI_SYNC_CALL
-    def size_p (self, pattern, ttype) :
-        pass
-
-
-    @CPI_SYNC_CALL
-    def read_p (self, pattern, ttype) :
-        pass
-
-
-    @CPI_SYNC_CALL
-    def write_p (self, pattern, data, ttype) :
-        pass
-
-
-    @CPI_SYNC_CALL
-    def modes_e (self, ttype) :
-        pass
-
-
-    @CPI_SYNC_CALL
-    def size_e (self, emode, spec, ttype) :
-        pass
-
-
-    @CPI_SYNC_CALL
-    def read_e (self, emode, spec, ttype) :
-        pass
-
-
-    @CPI_SYNC_CALL
-    def write_e (self, emode, spec, data, ttype) :
-        pass
-  
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

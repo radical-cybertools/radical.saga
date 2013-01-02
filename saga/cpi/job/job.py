@@ -1,131 +1,147 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-""" Provides the SAGA Job CPI 
-"""
+""" Provides the SAGA Job CPI """
 
-from   saga.cpi.base   import Base, CPI_SYNC_CALL, CPI_ASYNC_CALL
+from   saga.cpi.base   import Base
+from   saga.cpi.base   import CPI_SYNC_CALL  as sync
+from   saga.cpi.base   import CPI_ASYNC_CALL as async
 from   saga.cpi.async  import Async
 
+
 class Job (Base, Async) :
-    
-    @CPI_SYNC_CALL
-    def __init__ (self, api) :
-        pass
 
-    @CPI_SYNC_CALL
-    def init_instance (self, info) :
-        pass
+    @sync
+    def init_instance             (self, info)           : pass
+    @async
+    def init_instance_async       (self, info)           : pass
 
-    @CPI_SYNC_CALL
-    def init_instance_async (self, ttype) :
-        pass
+    @sync
+    def get_id                    (self, ttype)          : pass
+    @async
+    def get_id_async              (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def get_id (self, ttype) :
-        pass
+    @sync
+    def get_description           (self, ttype)          : pass
+    @async
+    def get_description_async     (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def get_description (self, ttype) :
-        pass
+    @sync
+    def get_stdin                 (self, ttype)          : pass
+    @async
+    def get_stdin_async           (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def get_stdin (self, ttype) :
-        pass
+    @sync
+    def get_stdout                (self, ttype)          : pass
+    @async
+    def get_stdout_async          (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def get_stdout (self, ttype) :
-        pass
+    @sync
+    def get_stderr                (self, ttype)          : pass
+    @async
+    def get_stderr_async          (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def get_stderr (self, ttype) :
-        pass
+    @sync
+    def suspend                   (self, ttype)          : pass
+    @async
+    def suspend_async             (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def suspend (self, ttype) :
-        pass
+    @sync
+    def resume                    (self, ttype)          : pass
+    @async
+    def resume_async              (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def resume (self, ttype) :
-        pass
+    @sync
+    def checkpoint                (self, ttype)          : pass
+    @async
+    def checkpoint_async          (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def checkpoint (self, ttype) :
-        pass
+    @sync
+    def migrate                   (self, jd, ttype)      : pass
+    @async
+    def migrate_async             (self, jd, ttype)      : pass
 
-    @CPI_SYNC_CALL
-    def migrate (self, jd, ttype) :
-        pass
-
-    @CPI_SYNC_CALL
-    def signal (self, signum, ttype) :
-        pass
+    @sync
+    def signal                    (self, signum, ttype)  : pass
+    @async
+    def signal_async              (self, signum, ttype)  : pass
 
 
     #-----------------------------------------------------------------
     # task methods flattened into job :-/
-    @CPI_SYNC_CALL
-    def run (self, ttype) :
-        pass
+    @sync
+    def run                       (self, ttype)          : pass
+    @async
+    def run_async                 (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def cancel (self, timeout, ttype) :
-        pass
+    @sync
+    def cancel                    (self, timeout, ttype) : pass
+    @async
+    def cancel_async              (self, timeout, ttype) : pass
 
-    @CPI_SYNC_CALL
-    def wait (self, timeout, ttype) :
-        pass
+    @sync
+    def wait                      (self, timeout, ttype) : pass
+    @async
+    def wait_async                (self, timeout, ttype) : pass
 
-    @CPI_SYNC_CALL
-    def get_state (self, ttype) :
-        pass
+    @sync
+    def get_state                 (self, ttype)          : pass
+    @async
+    def get_state_async           (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def get_result (self, ttype) :
-        pass
+    @sync
+    def get_result                (self, ttype)          : pass
+    @async
+    def get_result_async          (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def get_object (self, ttype) :
-        pass
+    @sync
+    def get_object                (self, ttype)          : pass
+    @async
+    def get_object_async          (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def re_raise (self, ttype) :
-        pass
+    @sync
+    def re_raise                  (self, ttype)          : pass
+    @async
+    def re_raise_async            (self, ttype)          : pass
 
 
     #-----------------------------------------------------------------
     # attribute getters
-    @CPI_SYNC_CALL
-    def get_exit_code (self, ttype) :
-        pass
+    @sync
+    def get_exit_code             (self, ttype)          : pass
+    @async
+    def get_exit_code_async       (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def get_created (self, ttype) :
-        pass
+    @sync
+    def get_created               (self, ttype)          : pass
+    @async
+    def get_created_async         (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def get_started (self, ttype) :
-        pass
+    @sync
+    def get_started               (self, ttype)          : pass
+    @async
+    def get_started_async         (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def get_finished (self, ttype) :
-        pass
+    @sync
+    def get_finished              (self, ttype)          : pass
+    @async
+    def get_finished_async        (self, ttype)          : pass
 
-    @CPI_SYNC_CALL
-    def get_execution_hosts (self, ttype) :
-        pass
+    @sync
+    def get_execution_hosts       (self, ttype)          : pass
+    @async
+    def get_execution_hosts_async (self, ttype)          : pass
 
 
 # class Self (Job, monitoring.Steerable) :
 class Self (Job) :
 
-    @CPI_SYNC_CALL
-    def __init__(self):
-        pass
+    @sync
+    def init_instance             (self)                 : pass
+    @async
+    def init_instance_async       (self)                 : pass
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

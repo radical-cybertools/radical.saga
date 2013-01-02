@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-""" Provides the SAGA runtime. """
+""" Provides the CPI base class, adaptor base class, and a number of call
+    decorators. """
 
 import re
 import inspect
@@ -16,6 +15,7 @@ import saga.engine.config as saga_config
 import saga.exceptions
 
 from   saga.task import SYNC, ASYNC, TASK
+
 
 # ------------------------------------
 # adaptor base class
@@ -233,4 +233,7 @@ def CPI_ASYNC_CALL (cpi_async_function) :
         return saga.task.Task (self, cpi_sync_function_name, c, ttype)
 
     return wrap_function
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
