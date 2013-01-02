@@ -8,6 +8,7 @@ __license__   = "MIT"
 """ Provides the SAGA runtime. """
 
 import re
+import inspect
 
 import saga.engine.logger as saga_logger
 import saga.engine.config as saga_config
@@ -165,7 +166,21 @@ def ASYNC_CALL (async_function) :
 
 
 # ------------------------------------
-# we assume that async calls want to call, aehm, async methods...
+# sync cpi calls are only called when an adaptor does not implement that call --
+# we thus raise a NotImplemented exception.
+def CPI_SYNC_CALL (cpi_sync_function) :
+
+    def wrap_function (self, *args, **kwargs) :
+        raise saga.exceptions.NotImplemented ("%s.%s is not implemented for %s.%s" \
+                %  (self._api.__class__.__name__, 
+                    inspect.stack ()[1][3],
+                    self._adaptor._name, 
+                    self.__class__.__name__))
+
+    return wrap_function
+
+# ------------------------------------
+# async cpi calls attempt to wrap sync adaptor calls into threaded tasks
 def CPI_ASYNC_CALL (cpi_async_function) :
 
     def wrap_function (self, *args, **kwargs) :

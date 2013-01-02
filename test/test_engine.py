@@ -24,8 +24,6 @@ f_1 = t_1.result
 print f_1.url
 print f_1.size
 
-sys.exit (0)
-
 print d.get_url ()
 f_2 = d.open ('passwd')
 

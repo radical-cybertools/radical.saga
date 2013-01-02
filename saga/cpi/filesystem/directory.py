@@ -1,5 +1,5 @@
 
-from   saga.cpi.base   import Base, CPI_ASYNC_CALL
+from   saga.cpi.base   import Base, CPI_SYNC_CALL, CPI_ASYNC_CALL
 from   saga.cpi.async  import Async
 
 import saga.exceptions
@@ -26,11 +26,12 @@ class Directory (Base, Async) :
         raise saga.exceptions.NotImplemented ("method not implemented")
 
 
+    @CPI_SYNC_CALL
     def open (self, name, flags, ttype) :
-
         # if we end up here, then the callee did not manage to invoke the sync
-        # adaptor call -- not much to do than raising an exception...
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        # adaptor call -- not much to do than raising an exception.  The
+        # decorator above will take care of that
+        pass
 
     @CPI_ASYNC_CALL
     def open_async (self, name, flags, ttype) :
