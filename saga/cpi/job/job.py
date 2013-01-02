@@ -8,101 +8,124 @@ __license__   = "MIT"
 """ Provides the SAGA Job CPI 
 """
 
-from saga.cpi.base import Base
+from   saga.cpi.base   import Base, CPI_SYNC_CALL, CPI_ASYNC_CALL
+from   saga.cpi.async  import Async
 
-import inspect
-import saga.exceptions
-
-# class Job (CPIBase) : # CPIObject, CPIAsync, CPIAttributes, CPIPermissions) :
-class Job (Base) :
+class Job (Base, Async) :
     
+    @CPI_SYNC_CALL
     def __init__ (self, api) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def init_instance (self, info) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def init_instance_async (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def get_id (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def get_description (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def get_stdin (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def get_stdout (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def get_stderr (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def suspend (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def resume (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def checkpoint (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def migrate (self, jd, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def signal (self, signum, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
 
     #-----------------------------------------------------------------
     # task methods flattened into job :-/
+    @CPI_SYNC_CALL
     def run (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def cancel (self, timeout, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def wait (self, timeout, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def get_state (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def get_result (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def get_object (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def re_raise (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
 
     #-----------------------------------------------------------------
     # attribute getters
+    @CPI_SYNC_CALL
     def get_exit_code (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def get_created (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def get_started (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def get_finished (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
+    @CPI_SYNC_CALL
     def get_execution_hosts (self, ttype) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
 
 # class Self (Job, monitoring.Steerable) :
 class Self (Job) :
 
+    @CPI_SYNC_CALL
     def __init__(self):
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented" % (__name__,inspect.stack()[0][3]))
+        pass
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

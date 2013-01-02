@@ -9,7 +9,7 @@ from   saga.engine.engine import Engine, getEngine, ANY_ADAPTOR
 # try :
 
 e = Engine ()
-e._dump()
+# e._dump()
 
 d = saga.filesystem.Directory ('file://localhost/tmp/test1/test1/',
                                saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS)

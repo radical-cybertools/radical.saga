@@ -1,20 +1,19 @@
 
-from saga.cpi.base import Base
-
-import saga.exceptions
+from saga.cpi.base import Base, CPI_SYNC_CALL, CPI_ASYNC_CALL
 
 class Context (Base) :
     
+    @CPI_SYNC_CALL
     def __init__  (self, api) :
-        raise saga.exceptions.NotImplemented
+        pass
 
-
+    @CPI_SYNC_CALL
     def init_instance (self, type) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
-
+    @CPI_SYNC_CALL
     def _initialize (self, session) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

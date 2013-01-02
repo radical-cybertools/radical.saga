@@ -6,52 +6,63 @@ __license__   = "MIT"
 """ Provides the SAGA Job Service CPI 
 """
 
-from saga.cpi.base import Base
-
-import saga.exceptions
+from   saga.cpi.base   import Base, CPI_SYNC_CALL, CPI_ASYNC_CALL
+from   saga.cpi.async  import Async
 
 # class Service (Object, Async, Configurable) :
-class Service (Base) :
+class Service (Base, Async) :
 
+    @CPI_SYNC_CALL
     def __init__ (self, api) : 
-        print " 1====================================================== "
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
+    @CPI_SYNC_CALL
     def init_instance (self, rm, session) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
+    @CPI_SYNC_CALL
     def init_instance_async (self, rm, session, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
+    @CPI_SYNC_CALL
     def create_job (self, jd, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
+    @CPI_SYNC_CALL
     def run_job (self, cmd, host, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
+    @CPI_SYNC_CALL
     def list (self, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
+    @CPI_SYNC_CALL
     def get_url (self, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
+    @CPI_SYNC_CALL
     def get_job (self, job_id, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
+    @CPI_SYNC_CALL
     def get_self (self, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
+    @CPI_SYNC_CALL
     def container_run (self, jobs) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
+    @CPI_SYNC_CALL
     def container_wait (self, jobs, mode, timeout) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
+    @CPI_SYNC_CALL
     def container_cancel (self, jobs) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
+    @CPI_SYNC_CALL
     def container_get_states (self, jobs) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

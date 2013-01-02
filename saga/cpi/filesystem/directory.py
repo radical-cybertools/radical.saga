@@ -2,28 +2,30 @@
 from   saga.cpi.base   import Base, CPI_SYNC_CALL, CPI_ASYNC_CALL
 from   saga.cpi.async  import Async
 
-import saga.exceptions
-
 class Directory (Base, Async) :
 
+    @CPI_SYNC_CALL
     def __init__ (self, url, flags, session) : 
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
     # ----------------------------------------------------------------
     #
     # filesystem directory methods
     #
+    @CPI_SYNC_CALL
     def get_size (self, name, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def is_file (self, name, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def open_dir (self, name, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
     @CPI_SYNC_CALL
@@ -45,132 +47,163 @@ class Directory (Base, Async) :
     #
     # namespace directory methods
     #
+    @CPI_SYNC_CALL
     def change_dir (self, url, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def list (self, npat, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def find (self, npat, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def exists (self, name, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def is_dir (self, name, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def is_entry (self, name, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def is_link (self, name, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def read_link (self, name, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def get_num_entries (self, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def get_entry (self, num, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def copy (self, src, tgt, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def link (self, src, tgt, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def move (self, src, tgt, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def remove (self, tgt, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def make_dir (self, tgt, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def permissions_allow (self, tgt, id, perms, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def permissions_deny (self, tgt, id, perms, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
     # ----------------------------------------------------------------
     #
     # namespace entry methods
     #
+    @CPI_SYNC_CALL
     def get_url (self, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def get_cwd (self, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def get_name (self, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def is_dir_self (self, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def is_entry_self (self, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def is_link_self (self, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def read_link_self (self, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def copy_self (self, tgt, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def link_self (self, tgt, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def move_self (self, tgt, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def remove_self (self, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def close (self, timeout, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def permissions_allow_self (self, id, perms, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
+    @CPI_SYNC_CALL
     def permissions_deny_self (self, id, perms, flags, ttype) :
-        raise saga.exceptions.NotImplemented ("method not implemented")
+        pass
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
