@@ -47,7 +47,8 @@ def main():
               # jd.environment = {'RUNTIME': random.randrange(1,60,1)}       
                 jd.executable  = '/bin/sleep'
                 jd.arguments   = ['$RUNTIME']
-                containers[c].add(service.create_job(jd))
+                j = service.create_job(jd)
+                containers[c].add(j)
 
         # execute the containers sequentially
         for c in range(0, num_job_groups):
@@ -67,7 +68,7 @@ def main():
     except saga.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))
         # get the whole traceback - this might be helpful
-        print " *** %s" % saga.utils.exception.get_traceback()
+        print " *** %s" % ex.traceback
         sys.exit(-1)
 
 if __name__ == "__main__":

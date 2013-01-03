@@ -32,7 +32,6 @@ class Context (Base, Attributes) :
         self._attributes_register  (REMOTE_ID,       None, self.STRING, self.SCALAR, self.WRITABLE)
         self._attributes_register  (REMOTE_HOST,     None, self.STRING, self.SCALAR, self.WRITABLE)
         self._attributes_register  (REMOTE_PORT,     None, self.STRING, self.VECTOR, self.WRITABLE)
-     
 
 
     def _initialize (self, session) :

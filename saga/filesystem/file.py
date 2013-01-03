@@ -401,7 +401,7 @@ class File (Base, Async) :
 
   
     size  = property (get_size_self)  # int
-    modes = property (modes_e)  # int
+    modes = property (modes_e)        # list [string]
   
   
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

@@ -7,9 +7,7 @@ __license__   = "MIT"
 """
 
 
-import saga.exceptions
-import saga.task
-
+from   saga.exceptions    import IncorrectState
 from   saga.attributes    import Attributes
 from   saga.base          import Base
 from   saga.async         import Async
@@ -17,7 +15,6 @@ from   saga.job.constants import *
 
 
 
-# class Job (Object, Async, Attributes, Permissions) :
 class Job (Base, Attributes, Async) :
     
     def __init__ (self, _method_type='run', 
@@ -41,7 +38,7 @@ class Job (Base, Attributes, Async) :
         '''
 
         if not _adaptor :
-            raise saga.exceptions.IncorrectState ("saga.job.Job constructor is private")
+            raise IncorrectState ("saga.job.Job constructor is private")
 
 
         # we need to keep _method_type around, for the task interface (see
@@ -50,7 +47,7 @@ class Job (Base, Attributes, Async) :
 
         # We need to specify a schema for adaptor selection -- and
         # simply choose the first one the adaptor offers.
-        scheme = _adaptor.get_schemas()[0]
+        scheme = 'fork' # _adaptor.get_schemas()[0]
 
         Base.__init__ (self, scheme, _adaptor, _adaptor_state, ttype=None)
 
@@ -61,21 +58,17 @@ class Job (Base, Attributes, Async) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface 
-        self._attributes_register   (STATE,            saga.job.UNKNOWN, self.ENUM,   self.SCALAR, self.READONLY)
-        self._attributes_register   (EXIT_CODE,        None,             self.INT,    self.SCALAR, self.READONLY)
-        self._attributes_register   (CREATED,          None,             self.INT,    self.SCALAR, self.READONLY)
-        self._attributes_register   (STARTED,          None,             self.INT,    self.SCALAR, self.READONLY)
-        self._attributes_register   (FINISHED,         None,             self.INT,    self.SCALAR, self.READONLY)
-        self._attributes_register   (EXECUTION_HOSTS,  None,             self.STRING, self.VECTOR, self.READONLY)
-        self._attributes_register   (ID,               None,             self.STRING, self.SCALAR, self.READONLY)
-        self._attributes_register   (SERVICE_URL,      None,             self.URL,    self.SCALAR, self.READONLY)
+        self._attributes_register   (STATE,            UNKNOWN, self.ENUM,   self.SCALAR, self.READONLY)
+        self._attributes_register   (EXIT_CODE,        None,    self.INT,    self.SCALAR, self.READONLY)
+        self._attributes_register   (CREATED,          None,    self.INT,    self.SCALAR, self.READONLY)
+        self._attributes_register   (STARTED,          None,    self.INT,    self.SCALAR, self.READONLY)
+        self._attributes_register   (FINISHED,         None,    self.INT,    self.SCALAR, self.READONLY)
+        self._attributes_register   (EXECUTION_HOSTS,  None,    self.STRING, self.VECTOR, self.READONLY)
+        self._attributes_register   (ID,               None,    self.STRING, self.SCALAR, self.READONLY)
+        self._attributes_register   (SERVICE_URL,      None,    self.URL,    self.SCALAR, self.READONLY)
 
-        self._attributes_set_enums  (STATE,   [saga.job.UNKNOWN, 
-                                               saga.job.NEW, saga.job.RUNNING,
-                                               saga.job.DONE,
-                                               saga.job.FAILED,  
-                                               saga.job.CANCELED, 
-                                               saga.job.SUSPENDED])
+        self._attributes_set_enums  (STATE, [UNKNOWN, NEW,     PENDING,  RUNNING,
+                                             DONE,    FAILED,  CANCELED, SUSPENDED])
 
         self._attributes_set_getter (STATE,           self.get_state)
         self._attributes_set_getter (ID,              self.get_id)
@@ -283,10 +276,6 @@ class Self (Job) :
 
         return cls (session, _ttype=ttype)._init_task
     
-        # attempt to find a suitable adaptor, which will call 
-        # init_instance_async(), which returns a task as expected.
-        return engine.bind_adaptor (self, 'saga.job.Self', 'fork', ttype, saga.engine.ANY_ADAPTOR, session)
-
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

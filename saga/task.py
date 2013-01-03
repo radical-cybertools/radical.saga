@@ -19,7 +19,6 @@ from   saga.utils.threads import Thread, NEW, RUNNING, DONE, FAILED
 from   saga.engine.logger import getLogger
 
 
-
 class Task (SimpleBase, Attributes) :
 
     # ----------------------------------------------------------------
@@ -66,8 +65,9 @@ class Task (SimpleBase, Attributes) :
         self._method_context = _method_context
 
         # set attribute interface properties
-        self._attributes_extensible  (False)
-        self._attributes_camelcasing (True)
+        self._attributes_allow_private (True)
+        self._attributes_extensible    (False)
+        self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface
         self._attributes_register   (RESULT,    None,    self.ANY, self.SCALAR, self.READONLY)

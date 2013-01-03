@@ -8,7 +8,6 @@ from   saga.async                import Async
 import saga.exceptions
 
 
-# permissions.Permissions, task.Async
 class Directory (Base, Async) :
 
     def __init__ (self, url=None, flags=READ, session=None, 

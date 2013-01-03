@@ -4,10 +4,12 @@ __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.task
+from saga.task    import Container as TaskContainer
+from saga.job.job import Job
+
 
 # 'forward' declaration of job.Container
-class Container(saga.task.Container):
+class Container (TaskContainer):
     """ :todo: document me
 
         .. py:attribute:: jobs
@@ -29,13 +31,29 @@ class Container(saga.task.Container):
 
            :rtype: list
     """
+
+
     def __init__ (self) :
 
-        saga.task.Container.__init__(self)
+        TaskContainer.__init__(self)
 
-        self._attributes_register   ("Jobs",   [],    self.ANY, self.VECTOR, self.READONLY)
-        self._attributes_set_getter ("Jobs",   self.get_tasks)
+        self._attributes_register   ("Jobs",   [], self.ANY, self.VECTOR, self.READONLY)
+        self._attributes_set_getter ("Jobs",   self.get_jobs)
 
+
+    def get_jobs (self) :
+        """ This is similar to get_tasks(), but returns only Job typed entries
+        from the container.
+        """
+
+        tasks = self.get_tasks ()
+        jobs  = []
+
+        for task in tasks :
+            if isinstance (task, Job) :
+                jobs.append (task)
+
+        return jobs
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

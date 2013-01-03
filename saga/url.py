@@ -3,11 +3,11 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2011-2012, The SAGA Project"
 __license__   = "MIT"
 
-# Using urlparse from Python 2.5
 from saga.exceptions import BadParameter
-from saga.contrib    import urlparse25 as urlparse  
+from saga.contrib    import urlparse25 as urlparse  # this urlparse needs Python 2.5
 
-class Url(object):
+
+class Url (object):
     """ The SAGA Url class.
     
         URLs are used in several places in the SAGA API: to specify service

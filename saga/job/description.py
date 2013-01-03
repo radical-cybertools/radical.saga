@@ -8,10 +8,11 @@ __license__   = "MIT"
 
 import saga
 
-# class Description(Object, Attributes) :
+
 class Description (saga.Attributes) :
     """ The job description class.
     """
+
     def __init__(self):
 
         # set attribute interface properties

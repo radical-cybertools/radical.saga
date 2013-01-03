@@ -59,7 +59,6 @@ class Service (Base, Async) :
         return cls (url, flags, session, _ttype=ttype)._init_task
 
 
-
     def create_job (self, job_desc, ttype=None) :
         """ Create a new job.Job instance from a 
             :class:`~saga.job.Description`. The resulting job instance
