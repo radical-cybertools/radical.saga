@@ -88,13 +88,15 @@ class ContextMyProxy (saga.cpi.Context) :
 
 
     @SYNC_CALL
-    def init_instance (self, type) :
+    def init_instance (self, adaptor_state, type) :
 
         if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
             raise saga.exceptions.BadParameter \
                     ("the MyProxy context adaptor only handles MyProxy contexts - duh!")
 
         self._api.type = type
+
+        return self
 
 
     @SYNC_CALL

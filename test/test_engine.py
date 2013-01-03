@@ -3,18 +3,36 @@ import sys
 import random
 import saga
 
-from   saga.engine.engine import Engine, getEngine, ANY_ADAPTOR
+from   saga.engine.engine import Engine
 
 
 # try :
 
 e = Engine ()
-# e._dump()
+e._dump()
 
-d = saga.filesystem.Directory ('file://localhost/tmp/test1/test1/',
-                               saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS)
-print d.get_url ()
-t_1 = d.open ('group', ttype=saga.task.TASK)
+d_1 = saga.filesystem.Directory ('file://localhost/tmp/test1/test1/',
+                                 saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS)
+print d_1
+print d_1.get_url ()
+
+
+t_0 = saga.filesystem.Directory.create ('file://localhost/tmp/test1/test1/',
+                                        saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS, 
+                                        ttype=saga.task.TASK)
+print t_0
+print t_0.state
+t_0.run ()
+print t_0.state
+t_0.wait ()
+print t_0.state
+d_2 = t_0.result
+print d_2
+print d_2.get_url()
+
+
+
+t_1 = d_1.open ('group', ttype=saga.task.TASK)
 print "New     : %s" % t_1.state
 t_1.run ()
 print "Running : %s" % t_1.state
@@ -24,15 +42,15 @@ f_1 = t_1.result
 print f_1.url
 print f_1.size
 
-print d.get_url ()
-f_2 = d.open ('passwd')
+print d_1.get_url ()
+f_2 = d_1.open ('passwd')
 
 f_2._adaptor._dump()
 
 tc = saga.task.Container ()
 
 for i in range (1, 10) :
-  t = d.copy ("/etc/passwd", "/tmp/test_a_%04d.bak"  %  i, ttype=saga.task.TASK)
+  t = d_1.copy ("/etc/passwd", "/tmp/test_a_%04d.bak"  %  i, ttype=saga.task.TASK)
   tc.add (t)
 
 

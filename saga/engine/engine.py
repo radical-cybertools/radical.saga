@@ -22,10 +22,6 @@ import saga.engine.registry  # adaptors to load
 # import saga.cpi              # load cpi's so that we can check what adaptors implement
 
 
-##################################################################################
-# a define to make bind_adaptor calls more readable
-ANY_ADAPTOR = None
-
 ############# These are all supported options for saga.engine ####################
 ##
 _config_options = [
@@ -462,15 +458,20 @@ class Engine(Configurable):
 
     #-----------------------------------------------------------------
     # 
-    def bind_adaptor (self, api_instance, ctype, schema, ttype, adaptor=None, *args, **kwargs) :
+    def bind_adaptor (self, api_instance, ctype, schema, 
+                      preferred_adaptor, *args, **kwargs) :
         '''
-        Look for a suitable cpi class for bind, and instantiate it.
+        Look for a suitable adaptor class to bind to, instantiate it, and
+        initialize it.
         
-        If 'adaptor' is not 'None', only that given adaptors is considered, and
-        adaptor classes are only created from that specific adaptor.
+        If 'preferred_adaptor' is not 'None', only that given adaptors is
+        considered, and adaptor classes are only created from that specific
+        adaptor.
         '''
 
-        schema = schema.lower ()
+        print " args  : %s" % str(args)
+        print " kwargs: %s" % str(kwargs)
+
 
         if not ctype in self._adaptor_registry :
             raise saga.exceptions.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
@@ -481,15 +482,8 @@ class Engine(Configurable):
                                                % (ctype, schema))
 
 
-        # cycle through all applicable adaptors, and try to instantiate the ones
-        # with matching name.  
-        # If that works, and ttype signals a sync object construction, call the 
-        # init_instance(), which effectively performs the semantics of the API
-        # level object constructor.  For asynchronous object instantiation (via
-        # create factory methods), the init_instance_async will be called from
-        # API level -- but at that point will not be able to abort the adaptor
-        # binding if the constructor semantics signals a problem (i.e. cannot
-        # handle URL after all).
+        # cycle through all applicable adaptors, and try to instantiate
+        # a matching one.
         msg = ""
         for info in self._adaptor_registry[ctype][schema] :
 
@@ -501,46 +495,35 @@ class Engine(Configurable):
             try :
 
                 # is this adaptor acceptable?
-                if adaptor != None :
-                    if adaptor != adaptor_instance :
+                if  preferred_adaptor != None and \
+                    preferred_adaptor != adaptor_instance :
                         
-                        # ignore this adaptor
-                        self._logger.debug ("bind_adaptor for %s : %s != %s - ignore adaptor" \
-                                         % (cpi_cname, adaptor, adaptor_instance))
-                        continue
+                    # ignore this adaptor
+                    self._logger.debug ("bind_adaptor for %s : %s != %s - ignore adaptor" \
+                                     % (cpi_cname, preferred_adaptor, adaptor_instance))
+                    continue
 
 
                 # instantiate cpi
                 cpi_instance = cpi_class (api_instance, adaptor_instance)
 
-
-                if ttype == None :
-                    # run the sync constructor for sync construction, and return
-                    # the adaptor_instance to bind to the API instance.
-                    cpi_instance.init_instance  (*args, **kwargs)
-
-                    self._logger.debug ("BOUND bind_adaptor %s.%s -- success"
-                                     % (adaptor_name, cpi_cname))
-                    return cpi_instance
-
-                else :
-                    # the async constructor will return a task, which we pass
-                    # back to the caller (instead of the adaptor instance). That 
-                    # task is responsible for binding the adaptor to the later 
-                    # returned API instance.
-                    self._logger.debug ("bind_adaptor %s.%s -- async task creation"  \
-                                     % (adaptor_name, cpi_cname))
-
-                    task = cpi_instance.init_instance_async (ttype, *args, **kwargs)
-                    return task
+                self._logger.debug ("BOUND bind_adaptor %s.%s -- success"
+                                 % (adaptor_name, cpi_cname))
+                return cpi_instance
 
 
-            except Exception as e :
+            except saga.exceptions.SagaException as e :
                 # adaptor class initialization failed - try next one
                 m    = "adaptor class ctor failed : %s.%s: %s"  %  (adaptor_name, cpi_class, str(e))
                 msg += "\n  %s" % m
                 self._logger.info("bind_adaptor %s", m)
                 self._logger.debug(e.traceback)
+                continue
+            except Exception as e :
+                # adaptor class initialization failed - try next one
+                m    = "adaptor class ctor failed : %s.%s: %s"  %  (adaptor_name, cpi_class, str(e))
+                msg += "\n  %s" % m
+                self._logger.info("bind_adaptor %s", m)
                 continue
 
         self._logger.error ("No suitable adaptor found for '%s' and URL scheme '%s'" %  (ctype, schema))

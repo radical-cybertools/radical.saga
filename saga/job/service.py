@@ -9,8 +9,8 @@ __license__   = "MIT"
 """
 
 
-from saga.engine.logger   import getLogger
-from saga.engine.engine   import getEngine, ANY_ADAPTOR
+from saga.base            import Base
+from saga.async           import Async
 from saga.url             import Url
 from saga.job.description import Description
 from saga.exceptions      import BadParameter
@@ -18,8 +18,7 @@ from saga.exceptions      import BadParameter
 from saga.constants       import SYNC, ASYNC, TASK, NOTASK # task constants
 
 
-# class Service (Object, Async) :
-class Service (object) :
+class Service (Base, Async) :
     """ The job.Service represents a resource management backend, and as 
         such allows the creation, submission and management of jobs.
 
@@ -30,24 +29,22 @@ class Service (object) :
         :rtype:         :class:`saga.job.Service`
 
     """
+
     def __init__ (self, url=None, session=None, 
-                  _adaptor=None, _adaptor_state={}) : 
+                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
         """ Create a new job.Service instance.
         """
 
-        rm_url = Url (url)
+        # param checks
+        url     = Url (url)
+        scheme  = url.scheme.lower ()
 
-        self._engine  = getEngine ()
-        self._logger  = getLogger ('saga.job.Service')
-        self._logger.debug ("saga.job.Service.__init__ (%s, %s)"  \
-                         % (rm_url, session))
-
-        self._adaptor = self._engine.bind_adaptor (self, 'saga.job.Service', rm_url.scheme, \
-                                                   NOTASK, ANY_ADAPTOR, rm_url, session)
+        Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
+                       url, session, ttype=_ttype)
 
 
     @classmethod
-    def create (self, url=None, session=None, ttype=None) :
+    def create (cls, url=None, session=None, ttype=SYNC) :
         """ Create a new job.Service instance asynchronously.
 
             :param url:     resource manager URL
@@ -56,18 +53,13 @@ class Service (object) :
             :type  session: :class:`saga.Session`
             :rtype:         :class:`saga.Task`
         """
-    
-        rm_url = Url (url)
 
-        engine = getEngine ()
-        logger = getLogger ('saga.job.Service')
-        logger.debug ("saga.job.Service.create(%s, %s, %s)"  \
-                   % (str(rm_url), str(session), str(ttype)))
-    
-        # attempt to find a suitable adaptor, which will call 
-        # init_instance_async(), which returns a task as expected.
-        return engine.bind_adaptor (self, 'saga.job.Service', rm_url.scheme, \
-                                    ttype, ANY_ADAPTOR, rm_url, session)
+        # param checks
+        url     = Url (url)
+        scheme  = url.scheme.lower ()
+
+        return cls (url, flags, session, _ttype=ttype)._init_task
+
 
 
     def create_job (self, job_desc, ttype=None) :

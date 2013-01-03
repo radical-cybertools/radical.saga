@@ -130,9 +130,14 @@ class LocalJobService (saga.cpi.job.Service) :
 
 
     @SYNC_CALL
-    def init_instance (self, rm_url, session) :
+    def init_instance (self, adaptor_state, rm_url, session) :
         """ Service instance constructor
         """
+
+        print " state  : %s " % str(adaptor_state)
+        print " rm_url : %s " % str(rm_url)
+        print " session: %s " % str(session)
+
         # check that the hostname is supported
         fqhn = Adaptor().hostname
         if rm_url.host != 'localhost' and rm_url.host != fqhn:
@@ -144,6 +149,8 @@ class LocalJobService (saga.cpi.job.Service) :
 
         # holds the jobs that were started via this instance
         self._jobs = dict() # {job_obj:id, ...}
+
+        return self._api
 
 
     def _register_job(self, job_obj):
@@ -262,6 +269,8 @@ class LocalJob (saga.cpi.job.Job) :
         # register ourselves with the parent service
         # our job id is still None at this point
         self._parent_service._register_job(self)
+
+        return self._api
 
 
     @SYNC_CALL

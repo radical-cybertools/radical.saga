@@ -1,21 +1,20 @@
 
 
-from   saga.engine.logger import getLogger
-from   saga.engine.engine import getEngine, ANY_ADAPTOR
-from   saga.task          import SYNC, ASYNC, TASK, NOTASK
-from   saga.url           import Url
-from   saga.filesystem    import *
+from   saga.task                 import SYNC, ASYNC, TASK, NOTASK
+from   saga.url                  import Url
+from   saga.filesystem.constants import *
+from   saga.base                 import Base
+from   saga.async                import Async
 
 import saga.exceptions
-import saga.attributes
 
 
 # permissions.Permissions, task.Async
-class File (object) :
+class File (Base, Async) :
 
 
     def __init__ (self, url=None, flags=READ, session=None, 
-                  _adaptor=None, _adaptor_state={}) : 
+                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         url:       saga.Url
         flags:     flags enum
@@ -23,22 +22,19 @@ class File (object) :
         ret:       obj
         '''
 
-        file_url = Url (url)
-
+        self._session      = session
         self._is_recursive = False # recursion guard (NOTE: NOT THREAD SAFE)
 
-        self._session = session
-        self._engine  = getEngine ()
-        self._logger  = getLogger ('saga.filesystem.File')
-        self._logger.debug ("saga.filesystem.File.__init__ (%s, %s)"  \
-                         % (str(file_url), str(session)))
+        # param checks
+        url     = Url (url)
+        scheme  = url.scheme.lower ()
 
-        self._adaptor = self._engine.bind_adaptor (self, 'saga.filesystem.File', file_url.scheme, \
-                                                   NOTASK, _adaptor, file_url, flags, session)
+        Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
+                       url, flags, session, ttype=_ttype)
 
 
     @classmethod
-    def create (self, url=None, flags=READ, ttype=None, _adaptor_name=None) :
+    def create (cls, url=None, flags=READ, session=None, ttype=SYNC) :
         '''
         url:       saga.Url
         flags:     saga.filesystem.flags enum
@@ -47,17 +43,12 @@ class File (object) :
         ret:       saga.Task
         '''
 
-        file_url = Url (url)
-    
-        engine = getEngine ()
-        logger = getLogger ('saga.filesystem.File.create')
-        logger.debug ("saga.filesystem.File.create(%s, %s, %s)"  \
-                   % (str(file_url), str(session), str(ttype)))
-    
-        # attempt to find a suitable adaptor, which will call 
-        # init_instance_async(), which returns a task as expected.
-        return engine.bind_adaptor (self, 'saga.filesystem.File', file_url.scheme, \
-                                    ttype, _adaptor_name, file_url, flags, session)
+        # param checks
+        url     = Url (url)
+        scheme  = url.scheme.lower ()
+
+        return cls (url, flags, session, _ttype=ttype)._init_task
+
 
 
     # ----------------------------------------------------------------
@@ -184,8 +175,9 @@ class File (object) :
 
                         # get an tgt-scheme'd adaptor for the new src url, and try copy again
                         adaptor = self._engine.bind_adaptor (self, 'saga.filesystem.File', tgt_url.scheme, 
-                                                             NOTASK, adaptor_instance, 
-                                                             tmp_url, READ, self._session)
+                                                             adaptor_instance)
+                        print adaptor
+                        adaptor.init_instance ({}, tmp_url, READ, self._session)
                         tmp     = saga.filesystem.File (tmp_url, READ, self._session, _adaptor=adaptor_instance)
 
                         ret = tmp.copy_self (tgt_url, flags)

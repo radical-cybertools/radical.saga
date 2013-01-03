@@ -2,7 +2,6 @@
 import saga
 
 from saga.engine.logger import getLogger
-from saga.engine.engine import getEngine, ANY_ADAPTOR
 
 
 class Session (object) :

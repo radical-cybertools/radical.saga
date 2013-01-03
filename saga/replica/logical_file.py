@@ -1,21 +1,20 @@
 
 
-from   saga.engine.logger import getLogger
-from   saga.engine.engine import getEngine, ANY_ADAPTOR
-from   saga.task          import SYNC, ASYNC, TASK
-from   saga.url           import Url
-from   saga.replica       import *
+from   saga.task                 import SYNC, ASYNC, TASK, NOTASK
+from   saga.url                  import Url
+from   saga.replica.constants    import *
+from   saga.base                 import Base
+from   saga.async                import Async
+from   saga.attributes           import Attributes
 
 import saga.exceptions
-import saga.attributes
 
 
-# permissions.Permissions, task.Async
-class LogicalFile (object) :
+class LogicalFile (Base, Attributes, Async) :
 
 
     def __init__ (self, url=None, flags=READ, session=None, 
-                  _adaptor=None, _adaptor_state={}) : 
+                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         url:       saga.Url
         flags:     flags enum
@@ -23,22 +22,16 @@ class LogicalFile (object) :
         ret:       obj
         '''
 
-        file_url = Url (url)
+        # param checks
+        url     = Url (url)
+        scheme  = url.scheme.lower ()
 
-        self._is_recursive = False # recursion guard (NOTE: NOT THREAD SAFE)
-
-        self._session = session
-        self._engine  = getEngine ()
-        self._logger  = getLogger ('saga.replica.LogicalFile')
-        self._logger.debug ("saga.replica.LogicalFile.__init__ (%s, %s)"  \
-                         % (str(file_url), str(session)))
-
-        self._adaptor = self._engine.bind_adaptor (self, 'saga.replica.LogicalFile', file_url.scheme, \
-                                                   NOTASK, _adaptor, file_url, flags, session)
+        Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
+                       url, flags, session, ttype=_ttype)
 
 
     @classmethod
-    def create (self, url=None, flags=READ, ttype=None) :
+    def create (cls, url=None, flags=READ, session=None, ttype=SYNC) :
         '''
         url:       saga.Url
         flags:     saga.replica.flags enum
@@ -47,17 +40,11 @@ class LogicalFile (object) :
         ret:       saga.Task
         '''
 
-        file_url = Url (url)
-    
-        engine = getEngine ()
-        logger = getLogger ('saga.replica.LogicalFile.create')
-        logger.debug ("saga.replica.LogicalFile.create(%s, %s, %s)"  \
-                   % (str(file_url), str(session), str(ttype)))
-    
-        # attempt to find a suitable adaptor, which will call 
-        # init_instance_async(), which returns a task as expected.
-        return engine.bind_adaptor (self, 'saga.replica.LogicalFile', file_url.scheme, \
-                                    ttype, ANY_ADAPTOR, file_url, session)
+        # param checks
+        url     = Url (url)
+        scheme  = url.scheme.lower ()
+
+        return cls (url, flags, session, _ttype=ttype)._init_task
 
 
     # ----------------------------------------------------------------

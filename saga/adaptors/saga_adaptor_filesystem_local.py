@@ -146,12 +146,12 @@ class BulkDirectory (saga.cpi.filesystem.Directory) :
 class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
 
     def __init__ (self, api, adaptor) :
+
         saga.cpi.Base.__init__ (self, api, adaptor, 'LocalDirectory')
 
 
     @SYNC_CALL
-    # FIXME: where are the flags?
-    def init_instance (self, url, flags, session) :
+    def init_instance (self, adaptor_state, url, flags, session) :
 
         self._url       = url
         self._flags     = flags
@@ -160,9 +160,11 @@ class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
 
         self._init_check ()
 
+        return self._api
+
 
     @ASYNC_CALL
-    def init_instance_async (self, ttype, url, flags, session) :
+    def init_instance_async (self, adaptor_state, url, flags, session, ttype) :
 
         self._url     = url
         self._flags   = flags
@@ -171,15 +173,8 @@ class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
         c = { 'url'     : self._url, 
               'flags'   : self._flags,
               'session' : self._session }
-        t = saga.task.Task (self, 'init_instance', c, ttype)
 
-        # FIXME: move to task_run...
-        self._init_check ()
-
-        t._set_result (saga.filesystem.Directory (url, flags, session, _adaptor=self._adaptor))
-        t._set_state  (saga.task.DONE)
-
-        return t
+        return saga.task.Task (self, 'init_instance', c, ttype)
 
 
     def _init_check (self) :
@@ -327,7 +322,8 @@ class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
                 task._set_state     (saga.task.FAILED)
         elif call == 'init_instance' :
             try :
-                task._set_result (self.init_instance (c['url'], c['flags'], c['session']))
+                self.init_instance ({}, c['url'], c['flags'], c['session'])
+                task._set_result (self._api)
                 task._set_state  (saga.task.DONE)
             except Exception as e :
                 task._set_exception (e)
@@ -362,7 +358,7 @@ class LocalFile (saga.cpi.filesystem.File) :
 
 
     @SYNC_CALL
-    def init_instance (self, url, flags, session) :
+    def init_instance (self, adaptor_state, url, flags, session) :
 
         self._url     = url
         self._flags   = flags
@@ -370,9 +366,11 @@ class LocalFile (saga.cpi.filesystem.File) :
 
         self._init_check ()
 
+        return self
+
 
     @ASYNC_CALL
-    def init_instance_async (self, ttype, url, flags, session) :
+    def init_instance_async (self, adaptor_state, url, flags, session, ttype) :
 
         self._url     = url
         self._flags   = flags

@@ -9,22 +9,27 @@ __license__   = "MIT"
 """
 
 
-from   saga.engine.logger import getLogger
-
-import saga.engine.engine
 import saga.exceptions
-import saga.attributes
 import saga.task
-import saga.async
 
+from   saga.attributes    import Attributes
+from   saga.base          import Base
+from   saga.async         import Async
 from   saga.job.constants import *
 
 
+
 # class Job (Object, Async, Attributes, Permissions) :
-class Job (saga.attributes.Attributes, saga.async.Async) :
+class Job (Base, Attributes, Async) :
     
-    def __init__ (self, _adaptor=None, _adaptor_state={}, _method_type='run') :
-        """ 
+    def __init__ (self, _method_type='run', 
+                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
+        '''
+        url:       saga.Url
+        flags:     flags enum
+        session:   saga.Session
+        ret:       obj
+
         _adaptor`` references the adaptor class instance which created this task
         instance.
 
@@ -32,18 +37,26 @@ class Job (saga.attributes.Attributes, saga.async.Async) :
         satisfy the bulk optimization properties of the saga.Task class, whose
         interface is implemented by saga.job.Job.
         ``_method_type`` specifies the SAGA API method which task is
-        representing.  For jobs, that defaults to the 'run' method.
-        """
+        representing.  For jobs, that is the 'run' method.
+
+        We don't have a create classmethod -- jobs are never constructed by the user
+        '''
 
         if not _adaptor :
             raise saga.exceptions.IncorrectState ("saga.job.Job constructor is private")
 
-        
-        # we need to keep _adaptor and _method_type around, for the task
-        # interface (see :class:`saga.Task`)
-        self._adaptor     = _adaptor
+
+        # we need to keep _method_type around, for the task interface (see
+        # :class:`saga.Task`)
         self._method_type = _method_type
-    
+
+        # We need to specify a schema for adaptor selection -- and
+        # simply choose the first one the adaptor offers.
+        scheme = _adaptor.get_schemas()[0]
+
+        Base.__init__ (self, scheme, _adaptor, _adaptor_state, ttype=None)
+
+
         # set attribute interface properties
         self._attributes_allow_private (True)
         self._attributes_extensible    (False)
@@ -74,35 +87,9 @@ class Job (saga.attributes.Attributes, saga.async.Async) :
         self._attributes_set_getter (FINISHED,        self._get_finished)
         self._attributes_set_getter (EXECUTION_HOSTS, self._get_execution_hosts)
 
-        self._logger = getLogger ('saga.job.Job')
-        self._logger.debug ("saga.job.Job.__init__()")
+ 
 
 
-        # bind to the given adaptor -- this will create the required adaptor
-        # class.  We need to specify a schema for adaptor selection -- and
-        # simply choose the first one the adaptor offers.
-        engine         = saga.engine.engine.getEngine ()
-        adaptor_schema = _adaptor.get_schemas()[0]
-        self._adaptor  = engine.bind_adaptor (self, 'saga.job.Job', adaptor_schema, 
-                                              saga.task.NOTASK, _adaptor, _adaptor_state)
-    
-
-    @classmethod
-    def create (self, session=None, ttype=None) :
-        '''
-        session:   saga.Session
-        ttype:     saga.task.type enum
-        ret:       saga.Task
-        '''
-    
-        t = saga.task.Task (None, None, None)
-
-        t._set_exception = saga.exceptions.IncorrectState ("saga.job.Job constructor is private")
-        t._set_state     = saga.task.FAILED
-
-        return t
-    
-    
     def get_id (self, ttype=None) :
         '''
         ttype:     saga.task.type enum

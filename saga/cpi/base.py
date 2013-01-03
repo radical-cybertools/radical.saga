@@ -166,7 +166,7 @@ def ASYNC_CALL (async_function) :
 
 
 # ------------------------------------
-# sync cpi calls are only called when an adaptor does not implement that call --
+# sync cpi calls ae only called when an adaptor does not implement that call --
 # we thus raise a NotImplemented exception.
 def CPI_SYNC_CALL (cpi_sync_function) :
 
@@ -192,10 +192,9 @@ def CPI_ASYNC_CALL (cpi_async_function) :
         my_args  = ()
 
 
-
         if not 'ttype' in kwargs :
-            msg = " %s: async %s() called with unknown tasktype (%s)" \
-                % (self.__class__.__name__, cpi_async_function.__name__, str(ttype))
+            msg = " %s: async %s() called with no tasktype" \
+                % (self.__class__.__name__, cpi_async_function.__name__)
             raise saga.exceptions.BadParameter (msg)
 
 

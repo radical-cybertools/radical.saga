@@ -1,19 +1,19 @@
 
-import saga
-
-from saga.engine.logger import getLogger
-from saga.engine.engine import getEngine, ANY_ADAPTOR
-
-from saga.constants import *
+from saga.attributes import Attributes
+from saga.base       import Base
+from saga.constants  import *
 
 
-class Context (saga.Attributes) :
+class Context (Base, Attributes) :
 
-    def __init__  (self, type=None, _adaptor=None, _adaptor_state={}) :
+    def __init__ (self, type=None, _adaptor=None, _adaptor_state={}) : 
         '''
         type: string
         ret:  None
         '''
+
+        Base.__init__ (self, type.lower(), _adaptor, _adaptor_state, type, ttype=None)
+
 
         # set attribute interface properties
         self._attributes_extensible  (False)
@@ -34,18 +34,7 @@ class Context (saga.Attributes) :
         self._attributes_register  (REMOTE_HOST,     None, self.STRING, self.SCALAR, self.WRITABLE)
         self._attributes_register  (REMOTE_PORT,     None, self.STRING, self.VECTOR, self.WRITABLE)
      
-        self._logger = getLogger ('saga.Context')
-        self._logger.debug ("saga.Context.__init__(%s)" % type)
 
-        self._engine = getEngine ()
-
-        if _adaptor :
-            # created from adaptor
-            self._adaptor = _adaptor
-        else :
-            # create from API -- create and bind adaptor
-            self._adaptor = self._engine.bind_adaptor (self, 'saga.Context', type,
-                                                       NOTASK, ANY_ADAPTOR, type)
 
     def _initialize (self, session) :
         '''

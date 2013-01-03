@@ -1,19 +1,18 @@
 
-from   saga.engine.logger import getLogger
-from   saga.engine.engine import getEngine, ANY_ADAPTOR
-from   saga.task          import SYNC, ASYNC, TASK, NOTASK
-from   saga.url           import Url
-from   saga.filesystem    import *
+from   saga.task                 import SYNC, ASYNC, TASK, NOTASK
+from   saga.url                  import Url
+from   saga.filesystem.constants import *
+from   saga.base                 import Base
+from   saga.async                import Async
 
 import saga.exceptions
-import saga.attributes
 
 
 # permissions.Permissions, task.Async
-class Directory (object) :
+class Directory (Base, Async) :
 
     def __init__ (self, url=None, flags=READ, session=None, 
-                  _adaptor=None, _adaptor_state={}) : 
+                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         url:       saga.Url
         flags:     flags enum
@@ -21,23 +20,16 @@ class Directory (object) :
         ret:       obj
         '''
 
-        dir_url = Url (url)
+        # param checks
+        url     = Url (url)
+        scheme  = url.scheme.lower ()
 
-        self._engine  = getEngine ()
-        self._logger  = getLogger ('saga.filesystem.Directory')
-        self._logger.debug ("saga.filesystem.Directory.__init__ (%s, %s)"  \
-                         % (str(dir_url), str(session)))
-
-        if _adaptor :
-            # created from adaptor
-            self._adaptor = _adaptor
-        else :
-            self._adaptor = self._engine.bind_adaptor (self, 'saga.filesystem.Directory', dir_url.scheme, \
-                                                       NOTASK, ANY_ADAPTOR, dir_url, flags, session)
+        Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
+                       url, flags, session, ttype=_ttype)
 
 
     @classmethod
-    def create (self, url=None, flags=READ, session=None, ttype=saga.task.SYNC) :
+    def create (cls, url=None, flags=READ, session=None, ttype=SYNC) :
         '''
         url:       saga.Url
         flags:     saga.filesystem.flags enum
@@ -46,18 +38,11 @@ class Directory (object) :
         ret:       saga.Task
         '''
 
-        dir_url = Url (url)
-    
-        engine = getEngine ()
-        logger = getLogger ('saga.filesystem.Directory.create')
-        logger.debug ("saga.filesystem.Directory.create(%s, %s, %s)"  \
-                   % (str(dir_url), str(session), str(ttype)))
-    
-        # attempt to find a suitable adaptor, which will call 
-        # init_instance_async(), which returns a task as expected.
-        return engine.bind_adaptor (self, 'saga.filesystem.Directory', dir_url.scheme, \
-                                    ttype, ANY_ADAPTOR, dir_url, flags, session)
+        # param checks
+        url     = Url (url)
+        scheme  = url.scheme.lower ()
 
+        return cls (url, flags, session, _ttype=ttype)._init_task
 
 
     # ----------------------------------------------------------------

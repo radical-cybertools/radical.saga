@@ -379,6 +379,8 @@ class IRODSDirectory (saga.cpi.replica.LogicalDirectory) :
 
         self._init_check ()
 
+        return self
+
 
     # ----------------------------------------------------------------
     #
@@ -566,6 +568,8 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
         self._session = session
 
         self._init_check ()
+
+        return self
 
 
     # ----------------------------------------------------------------

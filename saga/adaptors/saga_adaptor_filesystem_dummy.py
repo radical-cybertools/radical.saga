@@ -93,7 +93,7 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
 
     @SYNC_CALL
     # FIXME: where are the flags?
-    def init_instance (self, url, flags, session) :
+    def init_instance (self, adaptor_state, url, flags, session) :
 
         self._url     = url
         self._flags   = flags
@@ -101,9 +101,11 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
 
         self._init_check ()
 
+        return self._api
+
 
     @ASYNC_CALL
-    def init_instance_async (self, ttype, url, flags, session) :
+    def init_instance_async (self, adaptor_state, url, flags, session, ttype) :
         self._url     = url
         self._flags   = flags
         self._session = session
@@ -193,7 +195,7 @@ class DummyFile (saga.cpi.filesystem.File) :
 
 
     @SYNC_CALL
-    def init_instance (self, url, flags, session) :
+    def init_instance (self, adaptor_state, url, flags, session) :
 
         self._url     = url
         self._flags   = flags
@@ -201,9 +203,11 @@ class DummyFile (saga.cpi.filesystem.File) :
 
         self._init_check ()
 
+        return self
+
 
     @ASYNC_CALL
-    def init_instance_async (self, ttype, url, flags, session) :
+    def init_instance_async (self, adaptor_state, url, flags, session, ttype) :
 
         self._url     = url
         self._flags   = flags
