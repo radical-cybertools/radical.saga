@@ -8,24 +8,21 @@ __license__   = "MIT"
 """ SAGA task interface
 """
 
-import pprint
-import time
 import inspect
-import traceback
 import Queue
-
-import saga.exceptions
-import saga.attributes
 
 import saga.job.job
 
+from   saga.exceptions    import *
 from   saga.constants     import *
+from   saga.base          import SimpleBase
+from   saga.attributes    import Attributes
 from   saga.utils.threads import Thread, NEW, RUNNING, DONE, FAILED
 from   saga.engine.logger import getLogger
 
 
 
-class Task (saga.attributes.Attributes) :
+class Task (SimpleBase, Attributes) :
 
     # ----------------------------------------------------------------
     #
@@ -62,6 +59,8 @@ class Task (saga.attributes.Attributes) :
         a :class:`saga.util.threads.Thread` with that ``_call (_args)``.
         """
         
+        SimpleBase.__init__ (self)
+
         self._thread         = None
         self._ttype          = _ttype
         self._adaptor        = _adaptor
@@ -109,12 +108,12 @@ class Task (saga.attributes.Attributes) :
 
 
         # ensure task goes into the correct state
-        if self._ttype == saga.task.SYNC :
+        if self._ttype == SYNC :
             self.run  ()
             self.wait ()
-        elif self._ttype == saga.task.ASYNC :
+        elif self._ttype == ASYNC :
             self.run  ()
-        elif self._ttype == saga.task.TASK :
+        elif self._ttype == TASK :
             pass
 
 
@@ -141,8 +140,7 @@ class Task (saga.attributes.Attributes) :
             return
 
         if self.state == CANCELED :
-            raise saga.exceptions.IncorrectState \
-                    ("task.get_result() cannot be called on cancelled tasks")
+            raise IncorrectState ("task.get_result() cannot be called on cancelled tasks")
 
         if self.state == DONE :
 
@@ -157,7 +155,7 @@ class Task (saga.attributes.Attributes) :
     def _set_state (self, state) :
 
         if not state in [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED] :
-            raise saga.exceptions.BadParameter ("attempt to set invalid task state '%s'" % state)
+            raise BadParameter ("attempt to set invalid task state '%s'" % state)
 
         self._attributes_i_set (self._attributes_t_underscore (STATE), state, force=True)
 
@@ -236,12 +234,15 @@ class Task (saga.attributes.Attributes) :
 
 # --------------------------------------------------------------------
 #
-class Container (saga.attributes.Attributes) :
+class Container (SimpleBase, Attributes) :
 
 
     # ----------------------------------------------------------------
     #
     def __init__ (self) :
+
+
+        SimpleBase.__init__ (self)
 
         # set attribute interface properties
         self._attributes_allow_private (True)
@@ -263,8 +264,6 @@ class Container (saga.attributes.Attributes) :
         # cache for created container instances
         self._containers = {}
 
-        self._logger = getLogger ('saga.task.Container')
-
 
     # ----------------------------------------------------------------
     #
@@ -274,9 +273,8 @@ class Container (saga.attributes.Attributes) :
         if  not isinstance (t, Task) and \
             not isinstance (t, saga.job.job.Job)      :
             
-            traceback.print_stack ()
-            raise saga.BadParameter ("Container handles jobs or tasks, not %s" \
-                                  % (type(t)))
+            raise BadParameter ("Container handles jobs or tasks, not %s" \
+                             % (type(t)))
 
         if not t in self.tasks :
             self.tasks.append (t)
@@ -343,7 +341,7 @@ class Container (saga.attributes.Attributes) :
                 thread.join ()
 
             if thread.get_state () == FAILED :
-                raise saga.NoSuccess ("thread exception: %s\n%s" \
+                raise NoSuccess ("thread exception: %s\n%s" \
                         %  (str(thread.get_exception ()),
                             str(thread.get_traceback ())))
 
@@ -353,12 +351,10 @@ class Container (saga.attributes.Attributes) :
     def wait (self, mode=ALL, timeout=-1) :
 
         if not mode in [ANY, ALL] :
-            raise saga.exceptions.BadParameter \
-                    ("wait mode must be saga.task.ANY or saga.task.ALL")
+            raise BadParameter ("wait mode must be saga.task.ANY or saga.task.ALL")
 
         if type (timeout) not in [int, long, float] : 
-            raise saga.exceptions.BadParameter \
-                    ("wait timeout must be a floating point number (or integer)")
+            raise BadParameter ("wait timeout must be a floating point number (or integer)")
 
         if not len (self.tasks) :
             # nothing to do
@@ -498,7 +494,7 @@ class Container (saga.attributes.Attributes) :
             thread.join ()
 
             if thread.get_state () == FAILED :
-                raise saga.NoSuccess ("thread exception: %s\n%s" \
+                raise NoSuccess ("thread exception: %s\n%s" \
                         %  (str(thread.get_exception ()),
                             str(thread.get_traceback ())))
 
@@ -547,7 +543,7 @@ class Container (saga.attributes.Attributes) :
             thread.join ()
 
             if thread.get_state () == FAILED :
-                raise saga.NoSuccess ("thread exception: %s\n%s" \
+                raise NoSuccess ("thread exception: %s\n%s" \
                         %  (str(thread.get_exception ()),
                             str(thread.get_traceback ())))
 

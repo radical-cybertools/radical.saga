@@ -264,34 +264,26 @@ class Job (Base, Attributes, Async) :
 # class Self (Job, monitoring.Steerable) :
 class Self (Job) :
 
-    def __init__(self, session=None):
+    def __init__ (self, session=None, 
+                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
+
     
         # # set attribute interface properties
         # self._attributes_extensible  (False)
         # self._attributes_camelcasing (True)
 
-        self._logger  = getLogger ('saga.job.Job')
-        self._logger.debug ("saga.job.Self.__init__ (%s, %s)"  \
-                         % (str(session)))
-
-        self._engine  = saga.engine.engine.getEngine ()
-        self._adaptor = self._engine.bind_adaptor (self, 'saga.job.Self', 'fork', \
-                                                  NOTASK, saga.engine.ANY_ADAPTOR, session)
+        Base.__init__ (self, 'fork', session, ttype=_ttype)
 
 
     @classmethod
-    def create (self, session=None, ttype=None) :
+    def create (cls, session=None, ttype=None) :
         '''
         session:   saga.Session
         ttype:     saga.task.type enum
         ret:       saga.Task
         '''
-    
-        logger = getLogger ('saga.job.Job')
-        logger.debug ("saga.job.Self.create (%s, %s)"  \
-                   % (str(session), str(ttype)))
-    
-        engine = saga.engine.engine.getEngine ()
+
+        return cls (session, _ttype=ttype)._init_task
     
         # attempt to find a suitable adaptor, which will call 
         # init_instance_async(), which returns a task as expected.

@@ -12,9 +12,8 @@ import inspect
 import saga.engine.logger as saga_logger
 import saga.engine.config as saga_config
 
-import saga.exceptions
-
-from   saga.task import SYNC, ASYNC, TASK
+from   saga.exceptions import *
+from   saga.task       import Task, SYNC, ASYNC, TASK
 
 
 # ------------------------------------
@@ -65,8 +64,8 @@ class AdaptorBase (saga_config.Configurable) :
             exception if it will not be able to function properly in the given
             environment, e.g. due to missing dependencies etc.
         """
-        raise saga.exceptions.BadParameter ("Adaptor %s does not implement sanity_check()"  \
-                                         % self._name)
+        raise BadParameter ("Adaptor %s does not implement sanity_check()"  \
+                         % self._name)
 
 
     def register (self) :
@@ -88,14 +87,14 @@ class AdaptorBase (saga_config.Configurable) :
 # ------------------------------------
 # CPI base class
 #
-class Base (saga_config.Configurable) :
+class CPIBase (saga_config.Configurable) :
 
-    def __init__ (self, api, adaptor, cpi_cname) :
+    def __init__ (self, api, adaptor) :
 
         self._api       = api
         self._adaptor   = adaptor
-        self._cpi_cname = cpi_cname
-        self._logger    = saga_logger.getLogger (cpi_cname)
+        self._cpi_cname = self.__class__.__name__
+        self._logger    = saga_logger.getLogger (self._cpi_cname)
 
         # by default, we assume that no bulk optimizations are supported by the
         # adaptor class.  Any adaptor class supporting bulks ops must overwrite
@@ -132,7 +131,7 @@ def SYNC_CALL (sync_function) :
                 # cannot handle that ttype value, do not call async methods
                 msg = " %s: async %s() called with invalid tasktype (%s)" \
                     % (self.__class__.__name__, sync_function.__name__, str(ttype))
-                raise saga.exceptions.BadParameter (msg)
+                raise BadParameter (msg)
 
             # call async method flavor
             try :
@@ -142,7 +141,7 @@ def SYNC_CALL (sync_function) :
             except AttributeError :
                 msg = " %s: async %s() not implemented" \
                     % (self.__class__.__name__, sync_function.__name__)
-                raise saga.exceptions.NotImplemented (msg)
+                raise NotImplemented (msg)
 
             else :
                 # 'self' not needed, getattr() returns member function
@@ -171,7 +170,7 @@ def ASYNC_CALL (async_function) :
 def CPI_SYNC_CALL (cpi_sync_function) :
 
     def wrap_function (self, *args, **kwargs) :
-        raise saga.exceptions.NotImplemented ("%s.%s is not implemented for %s.%s" \
+        raise NotImplemented ("%s.%s is not implemented for %s.%s" \
                 %  (self._api.__class__.__name__, 
                     inspect.stack ()[1][3],
                     self._adaptor._name, 
@@ -195,7 +194,7 @@ def CPI_ASYNC_CALL (cpi_async_function) :
         if not 'ttype' in kwargs :
             msg = " %s: async %s() called with no tasktype" \
                 % (self.__class__.__name__, cpi_async_function.__name__)
-            raise saga.exceptions.BadParameter (msg)
+            raise BadParameter (msg)
 
 
         ttype = kwargs['ttype']
@@ -206,7 +205,7 @@ def CPI_ASYNC_CALL (cpi_async_function) :
             # cannot handle that ttype value, do not call async methods
             msg = " %s: async %s() called with invalid tasktype (%s)" \
                 % (self.__class__.__name__, cpi_async_function.__name__, str(ttype))
-            raise saga.exceptions.BadParameter (msg)
+            raise BadParameter (msg)
 
 
         cpi_sync_function_name = None
@@ -220,7 +219,7 @@ def CPI_ASYNC_CALL (cpi_async_function) :
         except AttributeError :
             msg = " %s: sync %s() not implemented" \
                 % (self.__class__.__name__, cpi_sync_function.__name__)
-            raise saga.exceptions.NotImplemented (msg)
+            raise NotImplemented (msg)
 
 
         # got the sync call, wrap it in a task
@@ -229,7 +228,7 @@ def CPI_ASYNC_CALL (cpi_async_function) :
               '_args'   : args, 
               '_kwargs' : kwargs }   # no ttype!
 
-        return saga.task.Task (self, cpi_sync_function_name, c, ttype)
+        return Task (self, cpi_sync_function_name, c, ttype)
 
     return wrap_function
 

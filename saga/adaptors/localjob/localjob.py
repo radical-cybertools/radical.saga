@@ -126,7 +126,7 @@ class LocalJobService (saga.cpi.job.Service) :
     def __init__ (self, api, adaptor) :
         """ Implements saga.cpi.job.Service.__init__
         """
-        saga.cpi.Base.__init__ (self, api, adaptor, 'LocalJobService')
+        saga.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL
@@ -239,7 +239,7 @@ class LocalJob (saga.cpi.job.Job) :
     def __init__ (self, api, adaptor) :
         """ Implements saga.cpi.job.Job.__init__()
         """
-        saga.cpi.Base.__init__ (self, api, adaptor, 'LocalJob')
+        saga.cpi.CPIBase.__init__ (self, api, adaptor)
 
     @SYNC_CALL
     def init_instance (self, job_info):

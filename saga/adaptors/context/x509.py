@@ -69,6 +69,8 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
         saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
+        self.default_contexts = []
+
 
     def sanity_check (self) :
         pass
@@ -82,7 +84,8 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 class ContextX509 (saga.cpi.Context) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.Base.__init__ (self, api, adaptor, 'ContextX509')
+
+        saga.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL

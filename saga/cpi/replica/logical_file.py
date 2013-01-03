@@ -1,11 +1,11 @@
 
-from   saga.cpi.base   import Base
+from   saga.cpi.base   import CPIBase
 from   saga.cpi.base   import CPI_SYNC_CALL  as sync
 from   saga.cpi.base   import CPI_ASYNC_CALL as async
 from   saga.cpi.async  import Async
 
 
-class LogicalFile (Base, Async) :
+class LogicalFile (CPIBase, Async) :
 
     @sync
     def __init__              (self, url, flags, session)      : pass

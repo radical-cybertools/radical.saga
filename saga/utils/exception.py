@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
@@ -10,14 +8,24 @@ __license__   = "MIT"
 
 import traceback
 
-def get_traceback () :
-    """ Returns the current tracback as string.
+def get_traceback (limit=1) :
+    """ Returns the current stacktrace as string.
     """
-    import traceback, StringIO
-    output = StringIO.StringIO()
-    traceback.print_exc (file=output)
-    ret = output.getvalue ()
-    output.close ()
+
+    limit += 2  # ignore local stack
+    ret = ""
+
+    stack  = traceback.extract_stack ()
+    frames = traceback.format_list (stack)
+
+    # ignore last <limit> frames
+    for i in range (0, limit) :
+        del frames[-1]
+
+    # dump frames into string
+    for frame in frames :
+        ret += str(frame)
+
     return ret
 
 class ExceptionBase(Exception):
@@ -64,4 +72,6 @@ class ExceptionBase(Exception):
 
         return self (message)
 
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

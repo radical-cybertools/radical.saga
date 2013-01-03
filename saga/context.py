@@ -14,7 +14,6 @@ class Context (Base, Attributes) :
 
         Base.__init__ (self, type.lower(), _adaptor, _adaptor_state, type, ttype=None)
 
-
         # set attribute interface properties
         self._attributes_extensible  (False)
         self._attributes_camelcasing (True)

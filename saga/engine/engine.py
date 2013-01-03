@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
@@ -14,6 +12,7 @@ import string
 import signal
 import inspect
 
+from   saga.exceptions      import *
 from   saga.utils.singleton import Singleton
 from   saga.engine.logger   import getLogger, get_traceback
 from   saga.engine.config   import getConfig, Configurable
@@ -133,9 +132,10 @@ class Engine(Configurable):
                   else :
                       # successfully bound to adaptor
                       return
-
     """
+
     __metaclass__ = Singleton
+
 
 
     #-----------------------------------------------------------------
@@ -211,9 +211,7 @@ class Engine(Configurable):
                 adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
 
             except Exception as e:
-                self._logger.error ("Skipping adaptor %s: module loading failed: %s" \
-                                %  (module_name, str(e)))
-                self._logger.debug (get_traceback())
+                self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
                 continue # skip to next adaptor
 
 
@@ -222,14 +220,17 @@ class Engine(Configurable):
             # a info dict for all implemented adaptor classes.
             adaptor_instance = None
             adaptor_info     = None
+
             try: 
                 adaptor_instance = adaptor_module.Adaptor ()
                 adaptor_info     = adaptor_instance.register ()
 
+            except SagaException as e:
+                self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
+                self._logger.debug (e.traceback)
+                continue # skip to next adaptor
             except Exception as e:
-                self._logger.error ("Skipping adaptor %s: loading failed: %s" \
-                                 % (module_name, str(e)))
-                self._logger.debug (get_traceback ())
+                self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
                 continue # skip to next adaptor
 
 
@@ -241,9 +242,7 @@ class Engine(Configurable):
                 adaptor_instance.sanity_check ()
 
             except Exception as e:
-                self._logger.error ("Skipping adaptor %s: failed self test: %s" \
-                                 % (module_name, str(e)))
-                self._logger.debug (get_traceback ())
+                self._logger.error ("Skipping adaptor %s: failed self test: %s" % (module_name, e))
                 continue # skip to next adaptor
 
 
@@ -251,7 +250,7 @@ class Engine(Configurable):
             if adaptor_info is None :
                 self._logger.warning ("Skipping adaptor %s: adaptor meta data are invalid" \
                                    % module_name)
-                self._logger.debug   (get_traceback ())
+                self._logger.debug   (get_traceback (0))
                 continue  # skip to next adaptor
 
 
@@ -261,7 +260,7 @@ class Engine(Configurable):
                 not 'schemas' in adaptor_info    :
                 self._logger.warning ("Skipping adaptor %s: adaptor meta data are incomplete" \
                                    % module_name)
-                self._logger.debug   (get_traceback ())
+                self._logger.debug   (get_traceback (0))
                 continue  # skip to next adaptor
 
 
@@ -292,12 +291,12 @@ class Engine(Configurable):
                 adaptor_config  = global_config.get_category (adaptor_name)
                 adaptor_enabled = adaptor_config['enabled'].get_value ()
 
+            except SagaException as e:
+                self._logger.error ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
+                self._logger.debug (e.traceback)
+                continue # skip to next adaptor
             except Exception as e:
-                # this exception likely means that the adaptor does
-                # not call the cpi.AdaptorBase initializer (correctly)
-                self._logger.error ("Skipping adaptor %s: initialization failed: %s" \
-                                 % (module_name, str(e)))
-                self._logger.debug (get_traceback ())
+                self._logger.error ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
                 continue # skip to next adaptor
 
 
@@ -334,12 +333,12 @@ class Engine(Configurable):
 
                 try :
                     cpi_class = getattr (adaptor_module, cpi_cname)
+
                 except Exception as e:
                     # this exception likely means that the adaptor does
                     # not call the cpi.AdaptorBase initializer (correctly)
                     self._logger.warning ("Skipping adaptor %s: adaptor class invalid %s: %s" \
                                        % (module_name, cpi_info['class'], str(e)))
-                    self._logger.debug   (get_traceback ())
                     continue # skip to next adaptor
 
                 # make sure the cpi class is a valid cpi for the given type.
@@ -452,7 +451,7 @@ class Engine(Configurable):
                     if ( info['adaptor_name'] == adaptor_name ) :
                         return info['adaptor_instance']
 
-        raise saga.exceptions.NotSucess ("No adaptor named '%s' found"  %  adaptor_name)
+        raise NotSucess ("No adaptor named '%s' found"  %  adaptor_name)
 
 
 
@@ -469,22 +468,18 @@ class Engine(Configurable):
         adaptor.
         '''
 
-        print " args  : %s" % str(args)
-        print " kwargs: %s" % str(kwargs)
-
-
         if not ctype in self._adaptor_registry :
-            raise saga.exceptions.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
-                                               % (ctype, schema))
+            raise NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
+                               % (ctype, schema))
 
         if not schema in self._adaptor_registry[ctype] :
-            raise saga.exceptions.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
-                                               % (ctype, schema))
+            raise NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
+                               % (ctype, schema))
 
 
         # cycle through all applicable adaptors, and try to instantiate
         # a matching one.
-        msg = ""
+        exception = saga.NoSuccess ("binding adaptor failed", api_instance)
         for info in self._adaptor_registry[ctype][schema] :
 
             cpi_cname        = info['cpi_cname']
@@ -495,9 +490,9 @@ class Engine(Configurable):
             try :
 
                 # is this adaptor acceptable?
-                if  preferred_adaptor != None and \
+                if  preferred_adaptor != None         and \
                     preferred_adaptor != adaptor_instance :
-                        
+
                     # ignore this adaptor
                     self._logger.debug ("bind_adaptor for %s : %s != %s - ignore adaptor" \
                                      % (cpi_cname, preferred_adaptor, adaptor_instance))
@@ -512,22 +507,23 @@ class Engine(Configurable):
                 return cpi_instance
 
 
-            except saga.exceptions.SagaException as e :
+            except SagaException as e :
                 # adaptor class initialization failed - try next one
-                m    = "adaptor class ctor failed : %s.%s: %s"  %  (adaptor_name, cpi_class, str(e))
-                msg += "\n  %s" % m
-                self._logger.info("bind_adaptor %s", m)
+                exception._add_exception (e)
+                self._logger.info ("bind_adaptor adaptor class ctor failed : %s.%s: %s" \
+                                % (adaptor_name, cpi_class, str(e)))
                 self._logger.debug(e.traceback)
                 continue
             except Exception as e :
-                # adaptor class initialization failed - try next one
-                m    = "adaptor class ctor failed : %s.%s: %s"  %  (adaptor_name, cpi_class, str(e))
-                msg += "\n  %s" % m
-                self._logger.info("bind_adaptor %s", m)
+                exception._add_exception (saga.NoSuccess (str(e), api_instance))
+                self._logger.info ("bind_adaptor adaptor class ctor failed : %s.%s: %s" \
+                                % (adaptor_name, cpi_class, str(e)))
                 continue
 
+
         self._logger.error ("No suitable adaptor found for '%s' and URL scheme '%s'" %  (ctype, schema))
-        raise saga.exceptions.NotImplemented ("No suitable adaptor found: %s" %  msg)
+        self._logger.info  ("%s" %  (str(exception)))
+        raise exception._get_exception_stack ()
 
 
     #-----------------------------------------------------------------
@@ -541,4 +537,7 @@ class Engine(Configurable):
     def _dump (self) :
         import pprint
         pprint.pprint (self._adaptor_registry)
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

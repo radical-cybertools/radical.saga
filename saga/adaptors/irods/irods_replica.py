@@ -359,7 +359,7 @@ class IRODSDirectory (saga.cpi.replica.LogicalDirectory) :
     #
     def __init__ (self, api, adaptor) :
 
-        saga.cpi.Base.__init__ (self, api, adaptor, 'IRODSDirectory')
+        saga.cpi.CPIBase.__init__ (self, api, adaptor)
 
         self.name         = None
         self.size         = None
@@ -544,7 +544,7 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
     #
     def __init__ (self, api, adaptor) :
 
-        saga.cpi.Base.__init__ (self, api, adaptor, 'IRODSFile')
+        saga.cpi.CPIBase.__init__ (self, api, adaptor)
 
         self.name         = None
         self.locations    = []

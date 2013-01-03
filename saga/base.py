@@ -4,32 +4,26 @@ import string
 from saga.engine.logger import getLogger
 from saga.engine.engine import getEngine
 
-class Base (object) :
+class SimpleBase (object) :
+    """ This is a very simple API base class which just initializes
+    the self._logger and self._engine members, but does not perform any further
+    initialization, nor any adaptor binding.  This base is used for API classes
+    which are not backed by a (single) adaptor (session, task, etc).
+    """
 
-    def __init__  (self, schema, adaptor, adaptor_state, *args, **kwargs) :
+    def __init__  (self) :
 
-        ctype = self._get_ctype ()
-
-        self._logger    = getLogger (ctype)
-        self._logger.debug ("[saga.Base] %s.__init__()" % ctype)
-
+        self._apitype   = self._get_apitype ()
         self._engine    = getEngine ()
-        self._adaptor   = adaptor
-        self._adaptor   = self._engine.bind_adaptor   (self, ctype, schema, adaptor)
-
-        print " state  : %s " % str(adaptor_state)
-        print " args   : %s " % str(args)
-        print " kwargs : %s " % str(kwargs)
-
-        self._init_task = self._adaptor.init_instance (adaptor_state, *args, **kwargs)
+        self._logger    = getLogger (self._apitype)
+        self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
 
 
+    def _get_apitype (self) :
 
-    def _get_ctype (self) :
+        apitype = self.__module__ + '.' + self.__class__.__name__
 
-        ctype = self.__module__ + '.' + self.__class__.__name__
-
-        name_parts = ctype.split ('.')
+        name_parts = apitype.split ('.')
         l = len(name_parts)
 
         if len > 2 :
@@ -39,9 +33,28 @@ class Base (object) :
           if t1 == string.capwords (t2) :
               del name_parts[l-2]
 
-          ctype = string.join (name_parts, '.')
+          apitype = string.join (name_parts, '.')
 
-        return ctype
+        return apitype
+
+    
+
+class Base (SimpleBase) :
+
+    def __init__  (self, schema, adaptor, adaptor_state, *args, **kwargs) :
+
+        SimpleBase.__init__ (self)
+
+        self._adaptor = adaptor
+        self._adaptor = self._engine.bind_adaptor   (self, self._apitype, schema, adaptor)
+
+        print " state  : %s " % str(adaptor_state)
+        print " args   : %s " % str(args)
+        print " kwargs : %s " % str(kwargs)
+
+        self._init_task = self._adaptor.init_instance (adaptor_state, *args, **kwargs)
+
+
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

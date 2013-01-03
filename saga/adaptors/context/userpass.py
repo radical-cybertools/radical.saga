@@ -65,6 +65,9 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
         saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
+        # there are no default myproxy contexts
+        self.default_contexts = []
+
 
     def sanity_check (self) :
         pass
@@ -78,7 +81,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 class ContextUserPass (saga.cpi.Context) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.Base.__init__ (self, api, adaptor, 'ContextUserPass')
+        saga.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL

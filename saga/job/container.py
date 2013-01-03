@@ -5,7 +5,6 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-from saga.engine.logger import getLogger
 
 import saga.task
 
@@ -38,8 +37,6 @@ class Container(saga.task.Container):
 
         self._attributes_register   ("Jobs",   [],    self.ANY, self.VECTOR, self.READONLY)
         self._attributes_set_getter ("Jobs",   self.get_tasks)
-
-        self._logger = getLogger ('saga.job.Container')
 
 
 

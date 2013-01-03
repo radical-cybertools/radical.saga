@@ -9,7 +9,7 @@ __license__   = "MIT"
 """
 
 import os, sys
-from   saga.engine.engine import Engine, getEngine, ANY_ADAPTOR
+from   saga.engine.engine import Engine, getEngine
 
 def test_singleton():
     """ Test that the object behaves like a singleton

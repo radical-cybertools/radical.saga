@@ -88,7 +88,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 class DummyDirectory (saga.cpi.filesystem.Directory) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.Base.__init__ (self, api, adaptor, 'DummyDirectory')
+        saga.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL
@@ -191,7 +191,7 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
 class DummyFile (saga.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.Base.__init__ (self, api, adaptor, 'DummyFile')
+        saga.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL

@@ -23,7 +23,7 @@ from   saga.engine.config                   import Configurable
 
 ############# forward call to exception util's get_traceback() #################
 ##
-def get_traceback () :
+def get_traceback (limit=2) :
     """ 
     :todo: it would be nice to get the following to work::
 
@@ -33,7 +33,7 @@ def get_traceback () :
     Alas, as we don't inherit the system logger, we can't (easily) add
     properties or methods...
     """
-    return get_tb ()
+    return get_tb (limit)
 
 
 ############# These are all supported options for saga.logging #################
