@@ -450,3 +450,5 @@ class LogicalDirectory (Base, Attributes, Async) :
         return self._adaptor.find (name_pattern, attr_pattern, flags, ttype=ttype)
 
     
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+

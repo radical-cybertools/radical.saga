@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 """Parse (absolute and relative) URLs.
 
@@ -377,4 +375,7 @@ def test():
 
 if __name__ == '__main__':
     test()
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

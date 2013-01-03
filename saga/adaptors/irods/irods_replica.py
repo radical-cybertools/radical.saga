@@ -1,6 +1,4 @@
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
 """ iRODS replica adaptor implementation """
 
 import os
@@ -957,4 +955,6 @@ class IRODSFile (saga.cpi.replica.LogicalFile) :
 
         return
 
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

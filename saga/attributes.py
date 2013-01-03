@@ -2066,5 +2066,5 @@ class Attributes (_AttributesBase) :
 
 ################################################################################
 
-# vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
@@ -15,4 +13,7 @@ from   configfile  import *
 from   exception   import *
 from   misc        import *
 from   which       import *
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

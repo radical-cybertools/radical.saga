@@ -404,3 +404,5 @@ class File (Base, Async) :
     modes = property (modes_e)  # int
   
   
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+

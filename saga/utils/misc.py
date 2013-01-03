@@ -1,6 +1,4 @@
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
 """ Provides an assortment of utilities """
 
 # --------------------------------------------------------------------
@@ -30,4 +28,7 @@ def url_is_local (arg) :
 
     return host_is_local (u.host)
 
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

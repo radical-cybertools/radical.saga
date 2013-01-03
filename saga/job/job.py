@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012, The SAGA Project"
@@ -289,4 +287,6 @@ class Self (Job) :
         # init_instance_async(), which returns a task as expected.
         return engine.bind_adaptor (self, 'saga.job.Self', 'fork', ttype, saga.engine.ANY_ADAPTOR, session)
 
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
@@ -51,3 +49,6 @@ def test_IncorrectURL():
     except Exception, e:
         assert e.get_message() == 'IncorrectURL'
         assert str(e) == 'IncorrectURL'
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+

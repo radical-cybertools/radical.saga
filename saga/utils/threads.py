@@ -1,6 +1,4 @@
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
 import threading
 
 import saga.utils.exception
@@ -93,4 +91,7 @@ class Thread (threading.Thread) :
 
     traceback = property (get_traceback)
 
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

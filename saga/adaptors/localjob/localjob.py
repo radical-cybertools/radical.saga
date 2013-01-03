@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2011-2012, The SAGA Project"
@@ -459,4 +457,7 @@ class LocalJob (saga.cpi.job.Job) :
     @SYNC_CALL
     def re_raise(self):
         return self._exception
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

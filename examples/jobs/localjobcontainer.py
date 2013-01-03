@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 """ This examples shows how to run groups of jobs using the 
     'local' file adaptor. This example uses job containers for 
@@ -74,4 +72,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

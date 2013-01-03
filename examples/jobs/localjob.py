@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 """ This examples shows how to run a job on the local machine
     using the 'local' job adaptor. 
@@ -63,3 +61,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+

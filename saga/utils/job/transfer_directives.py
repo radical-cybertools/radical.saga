@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
@@ -111,4 +109,7 @@ def _test_():
     print tdp.out_append
     print tdp.out_overwrite
 
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

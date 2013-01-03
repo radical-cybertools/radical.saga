@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
@@ -39,4 +37,6 @@ class Container(saga.task.Container):
         self._attributes_set_getter ("Jobs",   self.get_tasks)
 
 
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

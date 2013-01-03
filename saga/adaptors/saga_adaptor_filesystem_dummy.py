@@ -1,6 +1,4 @@
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
 """ dummy filesystem adaptor implementation """
 
 import os
@@ -325,4 +323,7 @@ class DummyFile (saga.cpi.filesystem.File) :
 
         print " copy %s %s" % (self._url, tgt)
         shutil.copy2 (src, tgt)
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

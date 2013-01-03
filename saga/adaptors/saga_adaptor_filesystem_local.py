@@ -1,6 +1,4 @@
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
 """ Local filesystem adaptor implementation """
 
 import os
@@ -527,4 +525,6 @@ class LocalFile (saga.cpi.filesystem.File) :
         else :
             raise saga.exceptions.NotImplemented ("Cannot handle %s tasks" %  call)
 
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

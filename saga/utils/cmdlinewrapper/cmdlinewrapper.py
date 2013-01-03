@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
@@ -125,4 +123,7 @@ class CommandLineWrapper(object):
 
     def run_async(self, executable, arguments=[], environemnt={}):
         raise Exception('Not Implemented')
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

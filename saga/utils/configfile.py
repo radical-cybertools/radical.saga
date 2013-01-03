@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__     = "Ole Weidner"
 __copyright__  = "Copyright 2012, The SAGA Project"
@@ -108,4 +106,7 @@ def _test_():
     print cq.as_query_string()
     cq.remove_option('VERBOSE')
     print cq.as_dict()
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
@@ -107,4 +105,7 @@ def test_load_broken_adaptor():
 
     # restore sys.path
     sys.path = old_sys_path
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
@@ -26,4 +24,7 @@ adaptor_registry = ["saga.adaptors.localjob.localjob",
                     "saga.adaptors.saga_adaptor_filesystem_dummy",
                     "saga.adaptors.irods.irods_replica"
                    ]
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

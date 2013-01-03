@@ -342,3 +342,5 @@ class LogicalFile (Base, Attributes, Async) :
         return self._adaptor.replicate (name, flags, ttype=ttype)
     
   
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+

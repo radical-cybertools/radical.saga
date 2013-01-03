@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
@@ -279,4 +277,7 @@ class ValueTypeError(ExceptionBase):
         name = "%s.%s" % (category_name, option_name)
         self.message = "Option %s requires value of type '%s' but got '%s'." % \
             (name, required_type, value_type)
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

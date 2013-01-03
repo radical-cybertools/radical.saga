@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
@@ -55,4 +53,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 class MockJob(saga.cpi.job.Job):
     def __init__ (self, api, adaptor) :
         saga.cpi.Base.__init__ (self, api, adaptor, 'MockJob')
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
