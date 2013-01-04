@@ -66,11 +66,16 @@ class Adaptor (saga.cpi.base.AdaptorBase):
         saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # there are no default myproxy contexts
-        self.default_contexts = []
+        self._default_contexts = []
 
 
     def sanity_check (self) :
         pass
+
+
+    def _get_default_contexts (self) :
+
+        return self._default_contexts
 
 
 

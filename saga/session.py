@@ -1,5 +1,7 @@
 
 from   saga.utils.singleton import Singleton
+from   saga.engine.engine   import getEngine
+from   saga.engine.logger   import getLogger
 from   saga.base            import SimpleBase
 
 class _DefaultSession (object) :
@@ -8,10 +10,25 @@ class _DefaultSession (object) :
 
     def __init__ (self) :
 
-        # FIXME: the default session should attempt to pick up default
-        # contexts, from all context adaptors
+        # the default session picks up default contexts, from all context
+        # adaptors.  To implemented, we have to do some legwork: get the engine,
+        # dig through the registered context adaptors, and ask each of them for
+        # default contexts.
 
         self._contexts = []
+        self._engine   = getEngine ()
+        self._logger   = getLogger ('saga._DefaultSession')
+
+        if not 'saga.Context' in self._engine._adaptor_registry :
+            self._logger.warn ("no context adaptors found")
+            return
+
+        for schema in   self._engine._adaptor_registry['saga.Context'] :
+            for info in self._engine._adaptor_registry['saga.Context'][schema] :
+                self._logger.debug ("pulling defaults for context adaptors : %s [%s]"
+                               % (info['adaptor_name'], schema))
+
+                self._contexts += info['adaptor_instance']._get_default_contexts ()
 
 
 

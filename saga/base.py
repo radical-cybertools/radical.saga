@@ -48,10 +48,6 @@ class Base (SimpleBase) :
         self._adaptor = adaptor
         self._adaptor = self._engine.bind_adaptor   (self, self._apitype, schema, adaptor)
 
-        print " state  : %s " % str(adaptor_state)
-        print " args   : %s " % str(args)
-        print " kwargs : %s " % str(kwargs)
-
         self._init_task = self._adaptor.init_instance (adaptor_state, *args, **kwargs)
 
 

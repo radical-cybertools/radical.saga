@@ -69,11 +69,44 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
         saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
-        self.default_contexts = []
+        # there are no default myproxy contexts
+        self._default_contexts = []
+        self._have_defaults    = False
 
 
     def sanity_check (self) :
         pass
+
+
+    def _get_default_contexts (self) :
+
+        if not self._have_defaults :
+
+            p = "/tmp/x509up_u%d"  %  os.getuid()
+            print p
+
+            if  os.path.exists (p) and \
+                os.path.isfile (p)     :
+
+                try :
+                    fh = open (p)
+
+                except Exception as e:
+                    pass
+
+                else :
+                    fh.close ()
+
+                    c = saga.Context ('X509')
+                    c.user_proxy = p
+
+                    self._logger.info ("default X509 context for proxy at %s"  %  p)
+
+                    self._default_contexts.append (c)
+                    self._have_defaults = True
+
+        # have defaults, and can return them...
+        return self._default_contexts
 
 
 
