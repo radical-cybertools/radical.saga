@@ -9,7 +9,6 @@ from   saga.async                import Async
 import saga.exceptions
 
 
-# permissions.Permissions, task.Async
 class File (Base, Async) :
 
 
@@ -239,28 +238,6 @@ class File (Base, Async) :
         return self._adaptor.close (timeout, ttype=ttype)
   
     
-    def permissions_allow_self (self, id, perms, flags=None, ttype=None) :
-        '''
-        id:            string
-        perms:         saga.permissions.flags enum
-        flags:         flags enum
-        ttype:         saga.task.type enum
-        ret:           None / saga.Task
-        '''
-        return self._adaptor.permissions_allow_self (id, perms, flags, ttype=ttype)
-  
-    
-    def permissions_deny_self (self, id, perms, flags=None, ttype=None) :
-        '''
-        id:            string
-        perms:         saga.permissions.flags enum
-        flags:         flags enum
-        ttype:         saga.task.type enum
-        ret:           None / saga.Task
-        '''
-        return self._adaptor.permissions_deny_self (id, perms, flags, ttype=ttype)
-  
-  
     url  = property (get_url)   # saga.Url
     cwd  = property (get_cwd)   # string
     name = property (get_name)  # string

@@ -9,7 +9,6 @@ from   saga.attributes           import Attributes
 import saga.exceptions
 
 
-# permissions.Permissions, task.Async
 class LogicalDirectory (Base, Attributes, Async) :
 
     def __init__ (self, url=None, flags=READ, session=None, 
@@ -238,30 +237,6 @@ class LogicalDirectory (Base, Attributes, Async) :
         return self._adaptor.mkdir (tgt, flags, ttype=ttype)
   
     
-    def permissions_allow (self, tgt, id, perms, flags=None, ttype=None) :
-        '''
-        tgt:           saga.Url
-        id:            string
-        perms:         saga.permissions.flags enum
-        flags:         flags enum
-        ttype:         saga.task.type enum
-        ret:           None / saga.Task
-        '''
-        return self._adaptor.permissions_allow (tgt, id, perms, flags, ttype=ttype)
-  
-    
-    def permissions_deny (self, tgt, id, perms, flags=None, ttype=None) :
-        '''
-        tgt:           saga.Url
-        id:            string
-        perms:         saga.permission.flags enum
-        flags:         flags enum
-        ttype:         saga.task.type enum
-        ret:           None / saga.Task
-        '''
-        return self._adaptor.permissions_deny (tgt, id, perms, flags, ttype=ttype)
-
-
     # ----------------------------------------------------------------
     #
     # namespace entry methods
@@ -370,28 +345,6 @@ class LogicalDirectory (Base, Attributes, Async) :
         return self._adaptor.close (timeout, ttype=ttype)
   
     
-    def permissions_allow_self (self, id, perms, flags=None, ttype=None) :
-        '''
-        id:            string
-        perms:         saga.permissions.flags enum
-        flags:         flags enum
-        ttype:         saga.task.type enum
-        ret:           None / saga.Task
-        '''
-        return self._adaptor.permissions_allow_self (id, perms, flags, ttype=ttype)
-  
-    
-    def permissions_deny_self (self, id, perms, flags=None, ttype=None) :
-        '''
-        id:            string
-        perms:         saga.permissions.flags enum
-        flags:         flags enum
-        ttype:         saga.task.type enum
-        ret:           None / saga.Task
-        '''
-        return self._adaptor.permissions_deny_self (id, perms, flags, ttype=ttype)
-  
-  
     url  = property (get_url)   # saga.Url
     cwd  = property (get_cwd)   # string
     name = property (get_name)  # string

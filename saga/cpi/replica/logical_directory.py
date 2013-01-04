@@ -112,16 +112,6 @@ class LogicalDirectory (CPIBase, Async) :
     @async
     def make_dir_async          (self, tgt, flags, ttype)            : pass
 
-    @sync
-    def permissions_allow       (self, tgt, id, perms, flags, ttype) : pass
-    @async
-    def permissions_allow_async (self, tgt, id, perms, flags, ttype) : pass
-
-    @sync
-    def permissions_deny        (self, tgt, id, perms, flags, ttype) : pass
-    @async
-    def permissions_deny_async  (self, tgt, id, perms, flags, ttype) : pass
-
 
     # ----------------------------------------------------------------
     #
@@ -186,16 +176,6 @@ class LogicalDirectory (CPIBase, Async) :
     def close                   (self, timeout, ttype)               : pass
     @async
     def close_async             (self, timeout, ttype)               : pass
-
-    @sync
-    def permissions_allow_self       (self, id, perms, flags, ttype) : pass
-    @async
-    def permissions_allow_self_async (self, id, perms, flags, ttype) : pass
-
-    @sync
-    def permissions_deny_self        (self, id, perms, flags, ttype) : pass
-    @async
-    def permissions_deny_self_async  (self, id, perms, flags, ttype) : pass
 
 
     # ----------------------------------------------------------------

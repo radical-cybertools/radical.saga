@@ -77,16 +77,6 @@ class File (CPIBase, Async) :
     @async
     def close_async          (self, timeout, ttype)           : pass
 
-    @sync
-    def permissions_allow_self       (self, id, perms, flags, ttype) : pass
-    @async
-    def permissions_allow_self_async (self, id, perms, flags, ttype) : pass
-
-    @sync
-    def permissions_deny_self       (self, id, perms, flags, ttype)  : pass
-    @async
-    def permissions_deny_self_async (self, id, perms, flags, ttype)  : pass
-
 
     # ----------------------------------------------------------------
     #
