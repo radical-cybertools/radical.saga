@@ -7,7 +7,7 @@ docs:
 	make -C docs html
 
 clean:
-	-rm -rf build
+	-rm -rf build/ saga.egg-info/
 	make -C docs clean
 	find . -name \*.pyc -exec rm -f {} \;
 
