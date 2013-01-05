@@ -20,8 +20,8 @@ adaptor_registry = ["saga.adaptors.localjob.localjob",
                     "saga.adaptors.context.myproxy",
                     "saga.adaptors.context.x509",
                     "saga.adaptors.context.userpass",
-                    "saga.adaptors.saga_adaptor_filesystem_local",
-                    "saga.adaptors.saga_adaptor_filesystem_dummy",
+                    "saga.adaptors.localfile.localfile",
+                    "saga.adaptors.localfile.dummyfile",
                     "saga.adaptors.irods.irods_replica"
                    ]
 

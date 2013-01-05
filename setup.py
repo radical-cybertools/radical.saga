@@ -95,6 +95,7 @@ setup_args = {
         "saga.adaptors",
         "saga.adaptors.context",
         "saga.adaptors.localjob",
+        "saga.adaptors.localfile",
         "saga.adaptors.irods",
         "saga.engine",
         "saga.contrib",
