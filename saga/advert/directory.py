@@ -26,14 +26,14 @@ class Directory (Base, Attributes, Async) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface 
-        self._attributes_register   (ATTRIBUTE, None     self.String, self.SCALAR, self.READONLY)
-        self._attributes_register   (CHANGE,    None     self.String, self.SCALAR, self.READONLY)
-        self._attributes_register   (CREATE,    None     self.String, self.SCALAR, self.READONLY)
-        self._attributes_register   (DELETE,    None     self.String, self.SCALAR, self.READONLY)
-        self._attributes_register   (EXPIRES,   None     self.String, self.SCALAR, self.READONLY)
-        self._attributes_register   (TTL,       None     self.Int,    self.SCALAR, self.READWRITE)
+        self._attributes_register   (ATTRIBUTE, None, self.String, self.SCALAR, self.READONLY)
+        self._attributes_register   (CHANGE,    None, self.String, self.SCALAR, self.READONLY)
+        self._attributes_register   (CREATE,    None, self.String, self.SCALAR, self.READONLY)
+        self._attributes_register   (DELETE,    None, self.String, self.SCALAR, self.READONLY)
+        self._attributes_register   (EXPIRES,   None, self.String, self.SCALAR, self.READONLY)
+        self._attributes_register   (TTL,       None, self.Int,    self.SCALAR, self.READWRITE)
 
-        self._attributes_set_getter (TTL,           self.get_ttl)
+        self._attributes_set_getter (TTL, self.get_ttl)
 
 
         # param checks
@@ -345,6 +345,58 @@ class Directory (Base, Attributes, Async) :
     url  = property (get_url)   # saga.Url
     cwd  = property (get_cwd)   # string
     name = property (get_name)  # string
+
+
+    # ----------------------------------------------------------------
+    #
+    # advert methods
+    #
+    def set_ttl_self (self, ttl, ttype=None) : 
+        """
+        ttl :           int
+        ttype:          saga.task.type enum
+        ret:            None / saga.Task
+        """
+        return self._adaptor.set_ttl_self (ttl, ttype=ttype)
+
+
+    def get_ttl_self (self, ttype=None) : 
+        """
+        ttype:          saga.task.type enum
+        ret:            int / saga.Task
+        """
+        return self._adaptor.get_ttl_self (ttype=ttype)
+
+     
+    def set_ttl (self, tgt, ttl, ttype=None) : 
+        """
+        tgt :           saga.Url
+        ttl :           int
+        ttype:          saga.task.type enum
+        ret:            None / saga.Task
+        """
+        return self._adaptor.set_ttl (ttl, ttype=ttype)
+
+     
+    def get_ttl (self, tgt, ttype=None) : 
+        """
+        tgt :           saga.Url
+        ttype:          saga.task.type enum
+        ret:            int / saga.Task
+        """
+        return self._adaptor.get_ttl (ttype=ttype)
+
+
+    def find_adverts (self, name_pattern, attr_pattern, obj_type,
+                      flags=RECURSIVE, ttype=None) : 
+        """
+        name_pattern:   string
+        attr_pattern:   string
+        obj_type:       string
+        flags:          flags enum
+        ret:            list [saga.Url]
+        """
+        return self._adaptor.find_adverts (name_pattern, attr_pattern, obj_type, flags, ttype=ttype)
 
 
 

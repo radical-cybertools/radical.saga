@@ -28,16 +28,16 @@ class Entry (Base, Attributes, Async) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface 
-        self._attributes_register   (ATTRIBUTE, None     self.String, self.SCALAR, self.READONLY)
-        self._attributes_register   (OBJECT,    None     self.Any,    self.SCALAR, self.READONLY)
-        self._attributes_register   (EXPIRES,   None     self.String, self.SCALAR, self.READONLY)
-        self._attributes_register   (TTL,       None     self.Int,    self.SCALAR, self.READWRITE)
+        self._attributes_register   (ATTRIBUTE, None, self.String, self.SCALAR, self.READONLY)
+        self._attributes_register   (OBJECT,    None, self.Any,    self.SCALAR, self.READONLY)
+        self._attributes_register   (EXPIRES,   None, self.String, self.SCALAR, self.READONLY)
+        self._attributes_register   (TTL,       None, self.Int,    self.SCALAR, self.READWRITE)
 
-        self._attributes_set_setter (TTL,       self.set_ttl)
-        self._attributes_set_getter (TTL,       self.get_ttl)
+        self._attributes_set_setter (TTL,    self.set_ttl)
+        self._attributes_set_getter (TTL,    self.get_ttl)
 
-        self._attributes_set_setter (OBJECT,    self.store_object)
-        self._attributes_set_getter (OBJECT,    self.retrieve_object)
+        self._attributes_set_setter (OBJECT, self.store_object)
+        self._attributes_set_getter (OBJECT, self.retrieve_object)
 
 
         # param checks
@@ -184,137 +184,48 @@ class Entry (Base, Attributes, Async) :
     #
     # advert methods
     #
-    def is_file_self (self, ttype=None) :
-        '''
-        ttype:    saga.task.type enum
-        ret:      bool / saga.Task
-        '''
-        return self._adaptor.is_file_self (ttype=ttype)
+    def set_ttl_self (self, ttl, ttype=None) : 
+        """
+        ttl :           int
+        ttype:          saga.task.type enum
+        ret:            None / saga.Task
+        """
+        return self._adaptor.set_ttl_self (ttl, ttype=ttype)
 
   
-    def get_size_self (self, ttype=None) :
-        '''
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
-        '''
-        return self._adaptor.get_size_self (ttype=ttype)
+    def get_ttl_self (self, ttype=None) : 
+        """
+        ttype:          saga.task.type enum
+        ret:            int / saga.Task
+        """
+        return self._adaptor.get_ttl_self (ttype=ttype)
+
+     
+    def store_object (self, object, ttype=None) : 
+        """
+        object :        <object type>
+        ttype:          saga.task.type enum
+        ret:            None / saga.Task
+        """
+        return self._adaptor.store_object (object, ttype=ttype)
 
   
-    def read (self, size=-1, ttype=None) :
-        '''
-        size :    int
-        ttype:    saga.task.type enum
-        ret:      string / bytearray / saga.Task
-        '''
-        return self._adaptor.read (size, ttype=ttype)
+    def retrieve_object (self, ttype=None) : 
+        """
+        ttype:          saga.task.type enum
+        ret:            any / saga.Task
+        """
+        return self._adaptor.retrieve_object (ttype=ttype)
 
-  
-    def write (self, data, ttype=None) :
-        '''
-        data :    string / bytearray
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
-        '''
-        return self._adaptor.write (data, ttype=ttype)
+     
+    def delete_object (self, ttype=None) : 
+        """
+        ttype:          saga.task.type enum
+        ret:            None / saga.Task
+        """
+        return self._adaptor.delete_object (ttype=ttype)
 
-  
-    def seek (self, off, whence=START, ttype=None) :
-        '''
-        off :     int
-        whence:   seek_mode enum
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
-        '''
-        return self._adaptor.seek (off, whence, ttype=ttype)
-
-  
-    def read_v (self, iovecs, ttype=None) :
-        '''
-        iovecs:   list [tuple (int, int)]
-        ttype:    saga.task.type enum
-        ret:      list [bytearray] / saga.Task
-        '''
-        return self._adaptor.read_v (iovecs, ttype=ttype)
-
-  
-    def write_v (self, data, ttype=None) :
-        '''
-        data:     list [tuple (int, string / bytearray)]
-        ttype:    saga.task.type enum
-        ret:      list [int] / saga.Task
-        '''
-        return self._adaptor.write_v (data, ttype=ttype)
-
-  
-    def size_p (self, pattern, ttype=None) :
-        '''
-        pattern:  string 
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
-        '''
-        return self._adaptor.size_p (pattern, ttype=ttype)
-  
-
-    def read_p (self, pattern, ttype=None) :
-        '''
-        pattern:  string
-        ttype:    saga.task.type enum
-        ret:      string / bytearray / saga.Task
-        '''
-        return self._adaptor.read_p (pattern, ttype=ttype)
-
-  
-    def write_p (self, pattern, data, ttype=None) :
-        '''
-        pattern:  string
-        data:     string / bytearray
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
-        '''
-        return self._adaptor.write_p (pattern, data, ttype=ttype)
-
-  
-    def modes_e (self, ttype=None) :
-        '''
-        ttype:    saga.task.type enum
-        ret:      list [string] / saga.Task
-        '''
-        return self._adaptor.modes_e (ttype=ttype)
-
-  
-    def size_e (self, emode, spec, ttype=None) :
-        '''
-        emode:    string
-        spec:     string
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
-        '''
-        return self._adaptor.size_e (emode, spec, ttype=ttype)
-
-  
-    def read_e (self, emode, spec, ttype=None) :
-        '''
-        emode:    string
-        spec:     string
-        ttype:    saga.task.type enum
-        ret:      bytearray / saga.Task
-        '''
-        return self._adaptor.read_e (emode, spec, ttype=ttype)
-
-  
-    def write_e (self, emode, spec, data, ttype=None) :
-        '''
-        emode:    string
-        spec:     string
-        data:     string / bytearray
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
-        '''
-        return self._adaptor.read_e (emode, spec, data, ttype=ttype)
-
-  
-    size  = property (get_size_self)  # int
-    modes = property (modes_e)        # list [string]
+     
   
   
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
