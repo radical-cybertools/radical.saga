@@ -194,20 +194,19 @@ class RedisDirectory (saga.cpi.advert.Directory, saga.cpi.Async) :
     def attribute_getter (self, key) :
         if key == '_adaptor' :
             raise saga.exceptions.NotImplemented ('yet')
-        return saga.url.Url ("oops://host/path")
+        e = redis_ns_get (self._r, self._url.path)
+        return e.data[key]
 
 
     @SYNC_CALL
     def attribute_setter (self, key, val) :
-        if key == '_adaptor' :
-            raise saga.exceptions.NotImplemented ('yet')
 
-        print " setter"
-        try :
-            redis_ns_datakey_set (self._r, self._url.path, key, val)
-        except Exception as e :
-            print str(e)
-        print " setter done"
+        #  FIXME: we need a better way to ignore local attributes.  This needs
+        #  fixing in the attribute interface implementation...
+        if key == '_adaptor' :
+            raise saga.exceptions.NotSuccess ('self._adaptor is private to the api class')
+
+        redis_ns_datakey_set (self._r, self._url.path, key, val)
 
 
     @SYNC_CALL
@@ -231,16 +230,8 @@ class RedisDirectory (saga.cpi.advert.Directory, saga.cpi.Async) :
 
     def _init_check (self) :
 
-        url   = self._url
-        flags = self._flags 
-
-        self._path = url.path
-        path       = url.path
-
-        self._r    = self._adaptor.get_redis (url)
-        self._ns_dir = redis_ns_opendir (self._r, url.path, flags)
-
-        print str(self._ns_dir)
+        self._r     = self._adaptor.get_redis (self._url)
+        self._nsdir = redis_ns_opendir (self._r, self._url.path, self._flags)
 
 
 
@@ -408,51 +399,38 @@ class RedisEntry (saga.cpi.advert.Entry) :
 
     def _init_check (self) :
 
-        url   = self._url
-        flags = self._flags 
+        self._r       = self._adaptor.get_redis (self._url)
+        self._nsentry = redis_ns_open (self._r, self._url.path, self._flags)
 
-        self._path = url.path
-        path       = url.path
 
-        self._r    = self._adaptor.get_redis (url)
+    @SYNC_CALL
+    def attribute_getter (self, key) :
+        if key == '_adaptor' :
+            raise saga.exceptions.NotImplemented ('yet')
+        e = redis_ns_get (self._r, self._url.path)
+        return e.data[key]
 
-        if not os.path.exists (path) :
 
-            (dirname, entryname) = os.path.split (path)
+    @SYNC_CALL
+    def attribute_setter (self, key, val) :
 
-            if not entryname :
-                raise saga.exceptions.BadParameter ("Cannot handle url %s (names directory)"  \
-                                                 %  path)
+        #  FIXME: we need a better way to ignore local attributes.  This needs
+        #  fixing in the attribute interface implementation...
+        if key == '_adaptor' :
+            raise saga.exceptions.NotSuccess ('self._adaptor is private to the api class')
 
-            if not os.path.exists (dirname) :
-                if saga.advert.CREATE_PARENTS & flags :
-                    try :
-                        os.makedirs (path)
-                    except Exception as e :
-                        raise saga.exceptions.NoSuccess ("Could not 'mkdir -p %s': %s)"  \
-                                                        % (path, str(e)))
-                else :
-                    raise saga.exceptions.BadParameter ("Cannot handle url %s (parent dir does not exist)"  \
-                                                     %  path)
-        
-            if not os.path.exists (entryname) :
-                if saga.advert.CREATE & flags :
-                    try :
-                        open (path, 'w').close () # touch
-                    except Exception as e :
-                        raise saga.exceptions.NoSuccess ("Could not 'touch %s': %s)"  \
-                                                        % (path, str(e)))
-                else :
-                    raise saga.exceptions.BadParameter ("Cannot handle url %s (entry does not exist)"  \
-                                                     %  path)
-        
-        if not os.path.isentry (path) :
-            raise saga.exceptions.BadParameter ("Cannot handle url %s (is not a entry)"  \
-                                               %  path)
+        redis_ns_datakey_set (self._r, self._url.path, key, val)
+
+
+    @SYNC_CALL
+    def attribute_lister (self) :
+        return ['helllooooouuuu']
+
 
     @SYNC_CALL
     def get_url (self) :
         return self._url
+
 
     @ASYNC_CALL
     def get_url_async (self, ttype) :

@@ -42,11 +42,13 @@ performance is insufficient.
 import os
 import time
 import redis
+import threading
+
 import redis_cache
 
-from saga.exceptions       import *
-from saga.advert.constants import *
-from saga.engine.logger    import getLogger
+from   saga.exceptions       import *
+from   saga.advert.constants import *
+from   saga.engine.logger    import getLogger
 
 
 TYPE   = 'type'
@@ -62,7 +64,99 @@ KIDS   = 'kids'
 KEYS   = 'keys'
 VALS   = 'vals'
 
+MON    = 'saga-advert-events'
 
+# --------------------------------------------------------------------
+#
+class redis_ns_monitor (threading.Thread) :
+
+    def __init__ (self, r) :
+
+        self.host      = r.host
+        self.port      = r.port
+        self.db        = r.db
+        self.password  = r.password
+        self.errors    = r.errors
+
+        threading.Thread.__init__ (self)
+        self.setDaemon (True)
+
+
+    def run (self) :
+        
+        # create pubsub monitor for advert callback triggers
+        self._mon = redis.Redis (host      = self.host,
+                                 port      = self.port,
+                                 db        = self.db,
+                                 password  = self.password,
+                                 errors    = self.errors)
+        
+        self._pub = self._mon.pubsub ()
+        print self._pub
+        self._pub.subscribe (MON)
+        
+        print 'monitoring'
+        print self._pub
+        
+        res = self._pub.listen ()
+        
+        while res :
+            print res.next ()
+
+
+
+# --------------------------------------------------------------------
+#
+class redis_ns_server (redis.Redis) :
+
+    def __init__ (self, url) :
+
+        self.url        = url
+        self.host       = 'localhost'
+        self.port       = 6379
+        self.db         = 0
+        self.password   = None
+        self.errors     = 'strict'
+
+        if url.host     : self.host     = url.host
+        if url.port     : self.port     = url.port
+        if url.username : self.username = url.username
+        if url.password : self.password = url.password
+
+        t1 = time.time ()
+
+        # create redis client 
+        redis.Redis.__init__    (self, 
+                                 host      = self.host,
+                                 port      = self.port,
+                                 db        = self.db,
+                                 password  = self.password,
+                                 errors    = self.errors)
+        t2 = time.time ()
+
+        # redis_ns_monitor (self)
+
+        self._monitor = redis_ns_monitor (self)
+        self._monitor.start ()
+
+        # also add a logger 
+        self._logger = getLogger ("redis-%s"  % self.host)
+        self._logger.info ("redis handle initialized")
+
+        # create a cache dict and attach to redis client instance
+        self._cache = redis_cache.Cache (logger=self._logger, ttl=((t2-t1)/2))
+
+
+
+    def __del__ (self) :
+
+        if self._pub :
+            self._pub.unsubscribe (MON)
+
+
+
+# --------------------------------------------------------------------
+#
 class redis_ns_entry :
 
     def __init__ (self, path=None) :
@@ -78,7 +172,6 @@ class redis_ns_entry :
              % (self.node[TYPE], self.path, self.node, self.kids, self.data) 
 
 
-
 # --------------------------------------------------------------------
 #
 def redis_ns_init (url) :
@@ -86,45 +179,7 @@ def redis_ns_init (url) :
     if url.scheme != 'redis' :
         raise BadParameter ("scheme in url is not supported (%s != redis://...)" %  url)
 
-    host             = 'localhost'
-    port             = 6379
-    db               = 0
-    password         = None
-    socket_timeout   = None
-    connection_pool  = None
-    charset          = 'utf-8'
-    errors           = 'strict'
-    decode_responses = False
-    unix_socket_path = None
-
-    if url.host     : host     = url.host
-    if url.port     : port     = url.port
-    if url.username : username = url.username
-    if url.password : password = url.password
-
-    t1 = time.time ()
-    r  = redis.Redis (host=host,
-                      port             = port,
-                      db               = db,
-                      password         = password,
-                      socket_timeout   = socket_timeout,
-                      connection_pool  = connection_pool,
-                      charset          = charset,
-                      errors           = errors,
-                      decode_responses = decode_responses,
-                      unix_socket_path = unix_socket_path)
-    t2 = time.time ()
-
-    # also add a logger to the redis client
-    r._logger = getLogger ("redis-%s"  % host)
-    r._logger.info ("redis handle initialized")
-
-    # create a cache dict and attach to redis client instance
-    r._cache = redis_cache.Cache (logger=r._logger, ttl=((t2-t1)/2))
-
-    # FIXME: make sure the root entries exist
-
-    return r
+    return redis_ns_server (url)
 
 
 
@@ -160,7 +215,7 @@ def redis_ns_data_get (r, path) :
 
     r._logger.info ("redis_ns_data_get %s" % path)
 
-    ret = r._cache.get (DATA+':'+path, r.hgetall, path)
+    ret = r._cache.get (DATA+':'+path, r.hgetall, DATA+':'+path)
 
     return ret
 
@@ -195,6 +250,9 @@ def redis_ns_data_set (r, path, data) :
     # FIXME: eval vals
     p.execute ()
 
+    print "publish " + DATA+":"+path
+    r.publish (MON, DATA+":"+path)
+
     r._cache.set (DATA+':'+path, data)
 
 
@@ -225,6 +283,9 @@ def redis_ns_datakey_set (r, path, key, val) :
     # FIXME: eval vals
     p.execute ()
 
+    print "publish " + DATA+":"+path
+    r.publish (MON, DATA+":"+path)
+
     old_data[key] = val
     r._cache.set (DATA+':'+path, old_data)
 
@@ -242,7 +303,6 @@ def redis_ns_get (r, path) :
 
     vals = p.execute ()
     if len(vals) != 3 :
-        print "Ooops: %s" % str(vals)
         return None
 
     e = redis_ns_entry (path)
@@ -353,9 +413,8 @@ def redis_ns_write_entry (r, e) :
         p.sadd (KEYS+':'+str(key), e.path)
         p.sadd (VALS+':'+str(val), e.path)
 
-    print " --- "
-    print p.execute ()
-    print " --- "
+    # FIXME: eval retvals
+    p.execute ()
 
     r._cache.set (DATA+':'+path, data)
 
@@ -381,9 +440,42 @@ def redis_ns_opendir (r, path, flags) :
             e = redis_ns_mkdir (r, path, flags)
         
         else :
-            raise BadParameter ("Cannot open path %s (not such directory)" % path)
+            raise BadParameter ("Cannot open path %s (no such directory)" % path)
 
-    print "opendir: %s" % e
+    return e
+        
+
+# --------------------------------------------------------------------
+#
+def redis_ns_open (r, path, flags) :
+
+    r._logger.info ("redis_ns_open %s" % path)
+
+    e = redis_ns_get (r, path)
+
+    if e :
+
+        if e.node[TYPE] == DIR :
+            raise BadParameter ("Cannot open path %s (is a directory)" % path)
+
+    else :
+
+        if  CREATE         & flags or \
+            CREATE_PARENTS & flags    :
+            r._logger.info ("redis_ns_open : calling create for %s" % path)
+
+            e = redis_ns_entry (path)
+
+            e.node = {}
+            e.data = {}
+            e.kids = []
+
+            e.node[TYPE] = ENTRY
+
+            e = redis_ns_create (r, e, flags)
+        
+        else :
+            raise BadParameter ("Cannot open path %s (no such entry)" % path)
 
     return e
         

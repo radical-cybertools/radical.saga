@@ -1,6 +1,7 @@
 
 import sys
 import random
+import time
 import saga
 
 from   saga.engine.engine import Engine
@@ -16,7 +17,31 @@ try :
   print d_1
   print d_1.get_url ()
   d_1.set_attribute ('foo', 'bar')
-  d_1._attributes_dump ()
+  print d_1.get_attribute ('foo')
+  d_1.foo = 'baz'
+  print d_1.foo
+
+
+  e_1 = saga.advert.Entry ('redis://:securedis@localhost/tmp/test1/test1/passwd', 
+                           saga.filesystem.CREATE)
+  print e_1
+  print e_1.get_url ()
+  e_1.set_attribute ('foo', 'bar')
+  print e_1.get_attribute ('foo')
+  e_1.foo = 'baz'
+  print e_1.foo
+
+  e_2 = saga.advert.Entry ('redis://:securedis@localhost/tmp/test1/test1/groups', 
+                           saga.filesystem.CREATE)
+  print e_2
+  print e_2.get_url ()
+  e_2.set_attribute ('foo', 'bar')
+  print e_2.get_attribute ('foo')
+  e_2.foo = 'buz'
+  print e_2.foo
+
+  time.sleep (10)
+
   sys.exit (0)
 
   

@@ -43,7 +43,8 @@ class Directory (Base, Attributes, Async) :
         self._attributes_register   (EXPIRES,   None, self.STRING, self.SCALAR, self.READONLY)
         self._attributes_register   (TTL,       None, self.INT,    self.SCALAR, self.WRITEABLE)
 
-        self._attributes_set_getter (TTL, self.get_ttl)
+        self._attributes_set_setter (TTL, self.set_ttl_self)
+        self._attributes_set_getter (TTL, self.get_ttl_self)
 
 
 

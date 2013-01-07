@@ -1,6 +1,7 @@
 
 import time
 
+from   pprint             import pprint
 from   threading          import Lock
 from   redis_ordered_dict import OrderedDict
 
@@ -43,6 +44,7 @@ class Cache :
                 if self.dict[key][TTL] > time.time () :
                     # if yes, return it -- doh!
                     return self.dict[key][VAL]
+
 
             # no live cache entry, check if we can refresh the cache
             if not func :
