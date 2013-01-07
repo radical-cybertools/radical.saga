@@ -3,6 +3,8 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2011-2012, The SAGA Project"
 __license__   = "MIT"
 
+import os
+
 from saga.exceptions import BadParameter
 from saga.contrib    import urlparse25 as urlparse  # this urlparse needs Python 2.5
 
@@ -251,9 +253,9 @@ class Url (object):
         """
         if '?' in self._urlobj.path:
             (path, query) = self._urlobj.path.split('?')
-            return path
+            return os.path.normpath (path)
         else:
-            return self._urlobj.path
+            return os.path.normpath (self._urlobj.path)
 
     path=property(get_path, set_path)
     """ The path component.
