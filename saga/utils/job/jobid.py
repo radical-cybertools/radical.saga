@@ -14,12 +14,12 @@ from saga.utils.exception import ExceptionBase
 # sake of interoperability of different SAGA implementations, and for potential 
 # extended use of the JobID information, the JobID SHOULD be implemented as:
 #
-#      ’[backend url]-[native id]’
+#      '[backend url]-[native id]'
 #
 # For example, a job submitted to the host remote.host.net via ssh (whose 
 # daemon runs on port 22), and having the POSIX PID 1234, should get the job id:
 #
-#      ’[ssh://remote.host.net:22/]-[1234]’
+#      '[ssh://remote.host.net:22/]-[1234]'
 
 class JobId(object):
 

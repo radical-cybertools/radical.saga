@@ -19,19 +19,19 @@ class Context (Base, Attributes) :
         self._attributes_camelcasing (True)
 
         # register properties with the attribute interface
-        self._attributes_register  (TYPE,            None, self.STRING, self.SCALAR, self.WRITABLE)
-        self._attributes_register  (SERVER,          None, self.STRING, self.SCALAR, self.WRITABLE)
-        self._attributes_register  (CERT_REPOSITORY, None, self.STRING, self.SCALAR, self.WRITABLE)
-        self._attributes_register  (USER_PROXY,      None, self.STRING, self.SCALAR, self.WRITABLE)
-        self._attributes_register  (USER_CERT,       None, self.STRING, self.SCALAR, self.WRITABLE)
-        self._attributes_register  (USER_KEY,        None, self.STRING, self.SCALAR, self.WRITABLE)
-        self._attributes_register  (USER_ID,         None, self.STRING, self.SCALAR, self.WRITABLE)
-        self._attributes_register  (USER_PASS,       None, self.STRING, self.SCALAR, self.WRITABLE)
-        self._attributes_register  (USER_VO,         None, self.STRING, self.SCALAR, self.WRITABLE)
-        self._attributes_register  (LIFE_TIME,       -1,   self.INT,    self.SCALAR, self.WRITABLE)
-        self._attributes_register  (REMOTE_ID,       None, self.STRING, self.SCALAR, self.WRITABLE)
-        self._attributes_register  (REMOTE_HOST,     None, self.STRING, self.SCALAR, self.WRITABLE)
-        self._attributes_register  (REMOTE_PORT,     None, self.STRING, self.VECTOR, self.WRITABLE)
+        self._attributes_register  (TYPE,            None, self.STRING, self.SCALAR, self.WRITEABLE)
+        self._attributes_register  (SERVER,          None, self.STRING, self.SCALAR, self.WRITEABLE)
+        self._attributes_register  (CERT_REPOSITORY, None, self.STRING, self.SCALAR, self.WRITEABLE)
+        self._attributes_register  (USER_PROXY,      None, self.STRING, self.SCALAR, self.WRITEABLE)
+        self._attributes_register  (USER_CERT,       None, self.STRING, self.SCALAR, self.WRITEABLE)
+        self._attributes_register  (USER_KEY,        None, self.STRING, self.SCALAR, self.WRITEABLE)
+        self._attributes_register  (USER_ID,         None, self.STRING, self.SCALAR, self.WRITEABLE)
+        self._attributes_register  (USER_PASS,       None, self.STRING, self.SCALAR, self.WRITEABLE)
+        self._attributes_register  (USER_VO,         None, self.STRING, self.SCALAR, self.WRITEABLE)
+        self._attributes_register  (LIFE_TIME,       -1,   self.INT,    self.SCALAR, self.WRITEABLE)
+        self._attributes_register  (REMOTE_ID,       None, self.STRING, self.SCALAR, self.WRITEABLE)
+        self._attributes_register  (REMOTE_HOST,     None, self.STRING, self.SCALAR, self.WRITEABLE)
+        self._attributes_register  (REMOTE_PORT,     None, self.STRING, self.VECTOR, self.WRITEABLE)
 
 
     def _initialize (self, session) :

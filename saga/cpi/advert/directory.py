@@ -1,11 +1,12 @@
 
-from   saga.cpi.base   import CPIBase
-from   saga.cpi.base   import CPI_SYNC_CALL  as sync
-from   saga.cpi.base   import CPI_ASYNC_CALL as async
-from   saga.cpi.async  import Async
+from   saga.cpi.base       import CPIBase
+from   saga.cpi.base       import CPI_SYNC_CALL  as sync
+from   saga.cpi.base       import CPI_ASYNC_CALL as async
+from   saga.cpi.async      import Async
+from   saga.cpi.attributes import Attributes
 
 
-class Directory (CPIBase, Async) :
+class Directory (CPIBase, Attributes, Async) :
 
     @sync
     def init_instance           (self, url, flags, session) : pass
@@ -15,7 +16,7 @@ class Directory (CPIBase, Async) :
 
     # ----------------------------------------------------------------
     #
-    # advert directory methods 
+    # advert directory methods
     #
     @sync
     def open_dir                (self, name, flags, ttype)           : pass
@@ -186,22 +187,22 @@ class Directory (CPIBase, Async) :
     def get_ttl_self            (self, ttype)                        : pass
     @async
     def get_ttl_self_async      (self, ttype)                        : pass
-     
+
     @sync
     def set_ttl                 (self, tgt, ttl, ttype)              : pass
     @async
     def set_ttl_async           (self, tgt, ttl, ttype)              : pass
-     
+
     @sync
     def get_ttl                 (self, tgt, ttype)                   : pass
     @async
     def get_ttl_async           (self, tgt, ttype)                   : pass
 
     @sync
-    def find_adverts            (self, name_pattern, attr_pattern, 
+    def find_adverts            (self, name_pattern, attr_pattern,
                                  obj_type, flags, ttype)             : pass
     @async
-    def find_adverts_async      (self, name_pattern, attr_pattern, 
+    def find_adverts_async      (self, name_pattern, attr_pattern,
                                  obj_type, flags, ttype)             : pass
 
 

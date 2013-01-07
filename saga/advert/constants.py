@@ -14,5 +14,14 @@ WRITE          = 1024
 READ_WRITE     = 1536
 
 
+# attributes
+ATTRIBUTE      = 'Attribute'
+OBJECT         = 'Object'
+EXPIRES        = 'Expires'
+TTL            = 'TTL'
+CHANGE         = 'Change'
+NEW            = 'New'
+DELETE         = 'Delete'
+
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

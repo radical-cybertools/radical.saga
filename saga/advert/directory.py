@@ -20,28 +20,31 @@ class Directory (Base, Attributes, Async) :
         ret:       obj
         '''
 
-        # set attribute interface properties
-        self._attributes_allow_private (True)
-        self._attributes_extensible    (True)
-        self._attributes_camelcasing   (True)
-
-        # register properties with the attribute interface 
-        self._attributes_register   (ATTRIBUTE, None, self.String, self.SCALAR, self.READONLY)
-        self._attributes_register   (CHANGE,    None, self.String, self.SCALAR, self.READONLY)
-        self._attributes_register   (CREATE,    None, self.String, self.SCALAR, self.READONLY)
-        self._attributes_register   (DELETE,    None, self.String, self.SCALAR, self.READONLY)
-        self._attributes_register   (EXPIRES,   None, self.String, self.SCALAR, self.READONLY)
-        self._attributes_register   (TTL,       None, self.Int,    self.SCALAR, self.READWRITE)
-
-        self._attributes_set_getter (TTL, self.get_ttl)
-
-
         # param checks
         url     = Url (url)
         scheme  = url.scheme.lower ()
 
         Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
                        url, flags, session, ttype=_ttype)
+
+
+        # set attribute interface properties
+        self._attributes_allow_private (True)
+        self._attributes_camelcasing   (True)
+        self._attributes_extensible    (True, getter=self._attribute_getter, 
+                                              setter=self._attribute_setter,
+                                              lister=self._attribute_lister)
+
+        # register properties with the attribute interface 
+        self._attributes_register   (ATTRIBUTE, None, self.STRING, self.SCALAR, self.READONLY)
+        self._attributes_register   (CHANGE,    None, self.STRING, self.SCALAR, self.READONLY)
+        self._attributes_register   (NEW,       None, self.STRING, self.SCALAR, self.READONLY)
+        self._attributes_register   (DELETE,    None, self.STRING, self.SCALAR, self.READONLY)
+        self._attributes_register   (EXPIRES,   None, self.STRING, self.SCALAR, self.READONLY)
+        self._attributes_register   (TTL,       None, self.INT,    self.SCALAR, self.WRITEABLE)
+
+        self._attributes_set_getter (TTL, self.get_ttl)
+
 
 
     @classmethod
@@ -59,6 +62,23 @@ class Directory (Base, Attributes, Async) :
         scheme  = url.scheme.lower ()
 
         return cls (url, flags, session, _ttype=ttype)._init_task
+
+
+    # ----------------------------------------------------------------
+    #
+    # attribute methods
+    #
+    # NOTE: we do not yet pass ttype, as async calls are not yet supported
+    #
+    def _attribute_getter (self, key, ttype=None) :
+        return self._adaptor.attribute_getter (key)
+
+    def _attribute_setter (self, key, val, ttype=None) :
+        return self._adaptor.attribute_setter (key, val)
+
+    def _attribute_lister (self, ttype=None) :
+        return self._adaptor.attribute_lister ()
+
 
 
     # ----------------------------------------------------------------

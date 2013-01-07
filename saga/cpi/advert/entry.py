@@ -1,11 +1,12 @@
 
-from   saga.cpi.base   import CPIBase
-from   saga.cpi.base   import CPI_SYNC_CALL  as sync
-from   saga.cpi.base   import CPI_ASYNC_CALL as async
-from   saga.cpi.async  import Async
+from   saga.cpi.base       import CPIBase
+from   saga.cpi.base       import CPI_SYNC_CALL  as sync
+from   saga.cpi.base       import CPI_ASYNC_CALL as async
+from   saga.cpi.async      import Async
+from   saga.cpi.attributes import Attributes
 
 
-class Entry (CPIBase, Async) :
+class Entry (CPIBase, Attributes, Async) :
 
     @sync
     def __init__              (self, url, flags, session)      : pass
@@ -15,7 +16,7 @@ class Entry (CPIBase, Async) :
 
     # ----------------------------------------------------------------
     #
-    # namespace entry methods 
+    # namespace entry methods
     #
     @sync
     def get_url               (self, ttype)                    : pass
@@ -166,22 +167,22 @@ class Entry (CPIBase, Async) :
     def get_ttl_self            (self, ttype)                        : pass
     @async
     def get_ttl_self_async      (self, ttype)                        : pass
-     
+
     @sync
     def store_object            (self, object, ttype)                : pass
     @async
     def store_object_async      (self, object, ttype)                : pass
-     
+
     @sync
     def retrieve_object         (self, ttype)                        : pass
     @async
     def retrieve_object_async   (self, ttype)                        : pass
-     
+
     @sync
     def delete_object           (self, ttype)                        : pass
-    @async                                              
+    @async
     def delete_object_async     (self, ttype)                        : pass
-     
+
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

@@ -1,7 +1,8 @@
 
-from saga.cpi.base    import *
-from saga.cpi.async   import *
-from saga.cpi.context import *
+from saga.cpi.base       import *
+from saga.cpi.async      import *
+from saga.cpi.context    import *
+from saga.cpi.attributes import *
 
 import saga.cpi.job
 import saga.cpi.filesystem

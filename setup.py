@@ -97,6 +97,7 @@ setup_args = {
         "saga.adaptors",
         "saga.adaptors.context",
         "saga.adaptors.local",
+        "saga.adaptors.redis",
         "saga.adaptors.irods",
         "saga.engine",
         "saga.contrib",
