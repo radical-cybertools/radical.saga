@@ -15,7 +15,7 @@ t1=time.time()
 if arg == 'start' :
   d_1.set_attribute ('foo', 'start')
 
-for i in xrange (10000) :
+for i in xrange (10) :
   # print i
   d_1.set_attribute ('foo', str(i))
 

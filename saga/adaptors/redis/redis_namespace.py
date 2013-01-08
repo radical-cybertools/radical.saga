@@ -51,7 +51,6 @@ import threading
 
 import redis_cache
 
-from   pprint                import pprint as pp
 from   saga.exceptions       import *
 from   saga.advert.constants import *
 from   saga.engine.logger    import getLogger
@@ -175,12 +174,10 @@ class redis_ns_server (redis.Redis) :
 
         # add a logger 
         self.logger = getLogger ("redis-%s"  % self.host)
-        self.logger.info ("redis handle initialized")
 
         # create a cache dict and attach to redis client instance.  Cache
-        # lifetime is set to half of redis-connect latency.
-        # self.cache = redis_cache.Cache (logger=self.logger, ttl=((t2-t1)/2))
-        self.cache = redis_cache.Cache (logger=self.logger, ttl=1)
+        # lifetime is set to 10 times the redis-connect latency.
+        self.cache = redis_cache.Cache (logger=self.logger, ttl=((t2-t1)*10))
 
         # create a second client to manage the (blocking) 
         # pubsub communication for event notifications
@@ -265,7 +262,7 @@ def redis_ns_name (r, path) :
 #
 def redis_ns_data_get (r, path) :
 
-    r.logger.info ("redis_ns_data_get %s" % path)
+    r.logger.debug ("redis_ns_data_get %s" % path)
 
     ret = r.cache.get (DATA+':'+path, r.hgetall, DATA+':'+path)
 
@@ -276,7 +273,7 @@ def redis_ns_data_get (r, path) :
 #
 def redis_ns_data_set (r, path, data) :
 
-    r.logger.info ("redis_ns_data_set %s: %s" % (path, data))
+    r.logger.debug ("redis_ns_data_set %s: %s" % (path, data))
 
     old_data = redis_ns_data_get (r, path)
     now      = time.time()
@@ -317,7 +314,7 @@ def redis_ns_data_set (r, path, data) :
 #
 def redis_ns_datakey_set (r, path, key, val) :
 
-    r.logger.info ("redis_ns_datakey_set %s: %s" % (path, key))
+    r.logger.debug ("redis_ns_datakey_set %s: %s" % (path, key))
 
     old_data = redis_ns_data_get (r, path)
     now      = time.time()
@@ -351,30 +348,43 @@ def redis_ns_datakey_set (r, path, key, val) :
 #
 def redis_ns_get (r, path) :
 
-    r.logger.info ("redis_ns_get %s" % (path))
-
-    p = r.pipeline ()
-    p.hgetall  (NODE+':'+path)
-    p.hgetall  (DATA+':'+path)
-    p.smembers (KIDS+':'+path)
-
-    vals = p.execute ()
-    if len(vals) != 3 :
-        return None
+    r.logger.debug ("redis_ns_get %s" % (path))
 
     e = redis_ns_entry (path)
-    e.node = vals[0]
-    e.data = vals[1]
-    e.kids = vals[2]
 
-    if not len(e.node) :
-        return None
+    try :
+        e.node = r.cache.get (NODE+':'+path)
+        e.data = r.cache.get (DATA+':'+path)
 
-    else :
-        r.cache.set (NODE+':'+path, e.node)
-        r.cache.set (DATA+':'+path, e.data)
-        r.cache.set (KIDS+':'+path, e.kids)
-        return e
+        if e.node[TYPE] == DIR :
+            e.kids = r.cache.get (KIDS+':'+path)
+
+    except Exception as e :
+        # some cache ops failed, so we need to properly fetch data.  We simply
+        # fetch all of it, but kids might not exist
+        #
+        p = r.pipeline ()
+        p.hgetall  (NODE+':'+path)
+        p.hgetall  (DATA+':'+path)
+        p.smembers (KIDS+':'+path)
+
+        vals = p.execute ()
+        if len(vals) != 3 :
+            return None
+
+        e.node = vals[0]
+        e.data = vals[1]
+        e.kids = vals[2]
+
+        if not len(e.node) :
+            return None
+
+        else :
+            r.cache.set (NODE+':'+path, e.node)
+            r.cache.set (DATA+':'+path, e.data)
+            r.cache.set (KIDS+':'+path, e.kids)
+
+    return e
 
 
 # --------------------------------------------------------------------
@@ -385,7 +395,7 @@ def redis_ns_create (r, e, flags=0) :
     """
     # FIXME: need to ensure this via a WATCH call.
 
-    r.logger.info ("redis_ns_create %s" % e)
+    r.logger.debug ("redis_ns_create %s" % e)
 
     path   = e.path
     name   = redis_ns_name   (r, path)
@@ -431,7 +441,7 @@ def redis_ns_create (r, e, flags=0) :
 #
 def redis_ns_read_entry (r, path) :
 
-    r.logger.info ("redis_ns_data_get %s" % path)
+    r.logger.debug ("redis_ns_data_get %s" % path)
 
     e = redis_ns_entry (path)
     try :
@@ -463,7 +473,7 @@ def redis_ns_read_entry (r, path) :
 #
 def redis_ns_write_entry (r, e) :
 
-    r.logger.info ("redis_ns_write_entry %s: %s" % (path, data))
+    r.logger.debug ("redis_ns_write_entry %s: %s" % (path, data))
 
     p = r.pipeline ()
     p.hmset (NODE+':'+e.path, e.node)  # FIXME: for create, only set if not exist
@@ -485,7 +495,7 @@ def redis_ns_write_entry (r, e) :
 #
 def redis_ns_opendir (r, path, flags) :
 
-    r.logger.info ("redis_ns_opendir %s" % path)
+    r.logger.debug ("redis_ns_opendir %s" % path)
 
     e = redis_ns_get (r, path)
 
@@ -498,7 +508,6 @@ def redis_ns_opendir (r, path, flags) :
 
         if  CREATE         & flags or \
             CREATE_PARENTS & flags    :
-            r.logger.info ("redis_ns_opendir : calling mkdir for %s" % path)
             e = redis_ns_mkdir (r, path, flags)
         
         else :
@@ -511,7 +520,7 @@ def redis_ns_opendir (r, path, flags) :
 #
 def redis_ns_open (r, path, flags) :
 
-    r.logger.info ("redis_ns_open %s" % path)
+    r.logger.debug ("redis_ns_open %s" % path)
 
     e = redis_ns_get (r, path)
 
@@ -524,7 +533,6 @@ def redis_ns_open (r, path, flags) :
 
         if  CREATE         & flags or \
             CREATE_PARENTS & flags    :
-            r.logger.info ("redis_ns_open : calling create for %s" % path)
 
             e = redis_ns_entry (path)
 
@@ -546,7 +554,7 @@ def redis_ns_open (r, path, flags) :
 #
 def redis_ns_mkdir (r, path, flags) :
     
-    r.logger.info ("redis_ns_mkdir %s" % path)
+    r.logger.debug ("redis_ns_mkdir %s" % path)
 
     e = redis_ns_get (r, path)
 
@@ -606,7 +614,7 @@ def redis_ns_mkdir (r, path, flags) :
 def redis_ns_callback (r, path, key, id, cb, obj) :
     # FIXME: this needs a shared lock with the monitor thread!
 
-    r.logger.info ("redis_ns_callback %s : %s" % (path, key))
+    r.logger.debug ("redis_ns_callback %s : %s" % (path, key))
 
     if not path in r.callbacks :
         r.callbacks[path] = {}

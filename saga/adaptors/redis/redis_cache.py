@@ -1,7 +1,6 @@
 
 import time
 
-from   pprint             import pprint
 from   threading          import Lock
 from   redis_ordered_dict import OrderedDict
 
@@ -28,9 +27,6 @@ class Cache :
         self.lock   = Lock ()
         self.logger = logger
 
-        print " ------------------ "
-        print self.ttl
-
         # start a thread which, with low priority, cleans out the dict now and
         # then (pops items until a live one is found
 
@@ -38,7 +34,7 @@ class Cache :
     #
     def get (self, key, func=None, *args, **kwargs) :
 
-        self.logger.info ("redis_cache_get %s", key)
+        self.logger.debug ("redis_cache_get %s", key)
 
         with self.lock:
 
@@ -47,7 +43,6 @@ class Cache :
                 if self.dict[key][TTL] > time.time () :
                     # if yes, cache hit!
                     # return data -- doh!
-                    # print "!"
                     return self.dict[key][VAL]
 
 
@@ -59,7 +54,6 @@ class Cache :
             else :
                 # cache miss
                 # refresh cached value
-                # print "?"
                 ret = func (*args, **kwargs)
 
                 # set wants lock, so we rather push data ourself here

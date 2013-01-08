@@ -15,7 +15,8 @@ class my_cb (saga.Callback) :
 
 
   def cb (self, obj, key, val) :
-    # print " ----------------- callback triggered for %s - %s - %s" % (obj, key, val)
+    print "callback triggered for %s - %s - %s [%s]" \
+        % (obj, key, val, obj.get_attribute (key))
     self.cnt += 1
     if val == 'start' :
       print 'start'
