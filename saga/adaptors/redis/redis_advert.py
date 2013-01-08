@@ -214,6 +214,11 @@ class RedisDirectory (saga.cpi.advert.Directory, saga.cpi.Async) :
         return ['helllooooouuuu']
 
 
+    @SYNC_CALL
+    def attribute_caller (self, key, id, cb) :
+        redis_ns_callback (self._r, self._url.path, key, id, cb, self._api)
+
+
     @ASYNC_CALL
     def init_instance_async (self, adaptor_state, url, flags, session, ttype) :
 
@@ -425,6 +430,11 @@ class RedisEntry (saga.cpi.advert.Entry) :
     @SYNC_CALL
     def attribute_lister (self) :
         return ['helllooooouuuu']
+
+
+    @SYNC_CALL
+    def attribute_caller (self, key, id, cb) :
+        redis_ns_callback (self._r, self._url.path, key, id, cb, self._api)
 
 
     @SYNC_CALL

@@ -34,7 +34,8 @@ class Entry (Base, Attributes, Async) :
         self._attributes_camelcasing   (True)
         self._attributes_extensible    (True, getter=self._attribute_getter, 
                                               setter=self._attribute_setter,
-                                              lister=self._attribute_lister)
+                                              lister=self._attribute_lister,
+                                              caller=self._attribute_caller)
 
         # register properties with the attribute interface 
         self._attributes_register   (ATTRIBUTE, None, self.STRING, self.SCALAR, self.READONLY)
@@ -80,6 +81,9 @@ class Entry (Base, Attributes, Async) :
 
     def _attribute_lister (self, ttype=None) :
         return self._adaptor.key_lister ()
+
+    def _attribute_caller (self, key, id, cb, ttype=None) :
+        return self._adaptor.attribute_caller (key, id, cb)
 
 
 

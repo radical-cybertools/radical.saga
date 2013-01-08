@@ -37,9 +37,9 @@ class Callback () :
 
     The cb instance receives three parameters upon invocation:
 
-      - member: the watched attribute (e.g. 'state' or 'state_detail')
-      - value:  the new value of the watched attribute
-      - obj:    the watched object instance
+      - key:  the watched attribute (e.g. 'state' or 'state_detail')
+      - val:  the new value of the watched attribute
+      - obj:  the watched object instance
 
     If the callback returns 'True', it will remain registered after invocation,
     to monitor the attribute for the next subsequent state change.  On returning
@@ -52,8 +52,8 @@ class Callback () :
         def __init__ (self, msg) :
           self._msg = msg
 
-        def cb (self, obj, member, value) :
-          print " %s\\n %s (%s) : %s"  %  self._msg, obj, member, value
+        def cb (self, obj, key, val) :
+          print " %s\\n %s (%s) : %s"  %  self._msg, obj, key, val
 
         def main () :
 
@@ -74,17 +74,22 @@ class Callback () :
             to signal that the application needs to inherit the callback class
             in a custom class in order to use notifications.
         """
-        raise IncorrectState ("Callback class must be inherited before use!")
+        # raise IncorrectState ("Callback class must be inherited before use!")
+        pass
 
 
-    def cb (self, wu, member, value) :
+    def __call__ (self, obj, key, val) :
+        return self.cb (obj, key, val)
+
+
+    def cb (self, obj, key, val) :
         """ This is the method that needs to be implemented by the application
 
             Keyword arguments::
 
-                member: the watched attribute
-                value:  the new value of the watched attribute
-                obj:    the watched object instance
+                obj:  the watched object instance
+                key:  the watched attribute
+                val:  the new value of the watched attribute
 
             Return::
 
@@ -349,6 +354,7 @@ class Attributes (_AttributesBase) :
             d['getter']       = None
             d['setter']       = None
             d['lister']       = None
+            d['caller']       = None
             d['recursion']    = False
 
             _AttributesBase.__setattr__ (self, '_d', d)
@@ -610,6 +616,40 @@ class Attributes (_AttributesBase) :
             try :
                 d['recursion'] = True
                 return lister ()
+            finally :
+                d['recursion'] = False
+
+        return []
+
+
+
+    ####################################
+    def _attributes_t_call_caller (self, key, id, cb) :
+        """
+        This internal function is not to be used by the consumer of this API.
+
+        It triggers the invocation of any registered caller function, usually
+        after an 'add_callback()' call.
+        """
+
+        # make sure interface is ready to use.
+        d = self._attributes_t_init (key)
+
+        # avoid recursion
+        if d['recursion'] :
+            return
+
+        caller = d['caller']
+
+        if caller :
+
+            # the caller is simply called, and it is expected that it internally
+            # adds/removes callbacks as needed
+            #
+            # always raise and lower the recursion shield
+            try :
+                d['recursion'] = True
+                return caller (key, id, cb)
             finally :
                 d['recursion'] = False
 
@@ -980,9 +1020,8 @@ class Attributes (_AttributesBase) :
         # make sure interface is ready to use
         d = self._attributes_t_init ()
 
-        # call list hooks
-        
-        ret = self._attributes_t_call_lister ()
+        # call list hooks to update state for listing
+        self._attributes_t_call_lister ()
 
         for key in sorted(d['_attributes'].iterkeys()) :
             if d['_attributes'][key]['mode'] != self.ALIAS :
@@ -1230,7 +1269,12 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init (key)
 
         d['_attributes'][key]['callbacks'].append (cb)
-        return len (d['_attributes'][key]['callbacks']) - 1
+
+        id = len (d['_attributes'][key]['callbacks']) - 1
+
+        self._attributes_t_call_caller (key, id, cb)
+
+        return id
 
 
     ####################################
@@ -1245,6 +1289,8 @@ class Attributes (_AttributesBase) :
         # make sure interface is ready to use
         d = self._attributes_t_init (key)
 
+        self._attributes_t_call_caller (key, id, None)
+
         # id == None: remove all callbacks
         if not id :
             d['_attributes'][key]['callbacks'] = []
@@ -1252,6 +1298,7 @@ class Attributes (_AttributesBase) :
             if len (d['_attributes'][key]['callbacks']) < id :
                 raise BadParameter ("invalid callback cookie for attribute %s"  %  key)
             else :
+                # do not pop from list, that would invalidate the id's!
                 d['_attributes'][key]['callbacks'][id] = undef
 
 
@@ -1479,7 +1526,8 @@ class Attributes (_AttributesBase) :
 
     ####################################
     def _attributes_extensible (self, e=True, 
-                                getter=None, setter=None, lister=None) :
+                                getter=None, setter=None, 
+                                lister=None, caller=None) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1496,6 +1544,7 @@ class Attributes (_AttributesBase) :
         if getter : self._attributes_set_global_getter (getter)
         if setter : self._attributes_set_global_setter (setter)
         if lister : self._attributes_set_global_lister (lister)
+        if caller : self._attributes_set_global_caller (caller)
 
 
 
@@ -1562,6 +1611,7 @@ class Attributes (_AttributesBase) :
         other_d['getter']       = d['setter']    
         other_d['setter']       = d['setter']    
         other_d['lister']       = d['lister']    
+        other_d['caller']       = d['caller']    
 
         other_d['_attributes'] = {}
 
@@ -1789,9 +1839,12 @@ class Attributes (_AttributesBase) :
 
         Hooks have a different call signature than callbacks::
         
-            setter (self, value)
-            getter (self)
-            lister (self)
+            setter        (self, value)
+            getter        (self)
+            global_setter (self, key, value)
+            global_setter (self, key)
+            global_lister (self)
+            global_caller (self, key)
 
         FIXME: consider a cooling-off period for caching.
         """
@@ -1834,6 +1887,21 @@ class Attributes (_AttributesBase) :
 
         # register the attribute and properties
         d['lister'] = lister
+
+
+    ####################################
+    def _attributes_set_global_caller (self, caller) :
+        """
+        This interface method is not part of the public consumer API, but can
+        safely be called from within derived classes.
+
+        See documentation of L{_attributes_set_getter } for details.
+        """
+
+        d = self._attributes_t_init ()
+
+        # register the attribute and properties
+        d['caller'] = caller
 
 
     ####################################

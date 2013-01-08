@@ -15,6 +15,9 @@ class Attributes (object) :
     @sync
     def attribute_lister    (self)              : pass
 
+    @sync
+    def attribute_caller    (self, key, id, cb) : pass
+
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

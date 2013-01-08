@@ -28,6 +28,9 @@ class Cache :
         self.lock   = Lock ()
         self.logger = logger
 
+        print " ------------------ "
+        print self.ttl
+
         # start a thread which, with low priority, cleans out the dict now and
         # then (pops items until a live one is found
 
@@ -42,7 +45,9 @@ class Cache :
             # check if we have a live entry
             if key in self.dict :
                 if self.dict[key][TTL] > time.time () :
-                    # if yes, return it -- doh!
+                    # if yes, cache hit!
+                    # return data -- doh!
+                    # print "!"
                     return self.dict[key][VAL]
 
 
@@ -52,7 +57,9 @@ class Cache :
                 del self.dict[key]
                 raise AttributeError ("cache miss for '%s' " % key)
             else :
+                # cache miss
                 # refresh cached value
+                # print "?"
                 ret = func (*args, **kwargs)
 
                 # set wants lock, so we rather push data ourself here

@@ -6,10 +6,31 @@ import saga
 
 from   saga.engine.engine import Engine
 
+class my_cb (saga.Callback) :
+
+  def __init__ (self) :
+    self.t1  = 0
+    self.t2  = 0
+    self.cnt = 0
+
+
+  def cb (self, obj, key, val) :
+    # print " ----------------- callback triggered for %s - %s - %s" % (obj, key, val)
+    self.cnt += 1
+    if val == 'start' :
+      print 'start'
+      self.t1 = time.time()
+    if val == 'stop' :
+      print 'stop'
+      self.t2 = time.time()
+      print self.cnt
+      print (self.t2-self.t1)
+
+
 
 try :
 
-  e = Engine ()
+# e = Engine ()
 # e._dump()
   
   d_1 = saga.advert.Directory ('redis://:securedis@localhost/tmp/test1/test1/',
@@ -20,6 +41,9 @@ try :
   print d_1.get_attribute ('foo')
   d_1.foo = 'baz'
   print d_1.foo
+
+  d_1.add_callback ('foo', my_cb ())
+
 
 
   e_1 = saga.advert.Entry ('redis://:securedis@localhost/tmp/test1/test1/passwd', 
@@ -40,7 +64,7 @@ try :
   e_2.foo = 'buz'
   print e_2.foo
 
-  time.sleep (10)
+  time.sleep (100)
 
   sys.exit (0)
 

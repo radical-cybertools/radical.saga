@@ -37,15 +37,21 @@ All parts of the above structure are set/get in a single pipelined transactional
 'MULTI' block.  One could consider to move the ops into a lua script, if
 performance is insufficient.  
 
+TODO:
+    - use locks to make thread safe
+
 """
 
+import re
 import os
 import time
+import string
 import redis
 import threading
 
 import redis_cache
 
+from   pprint                import pprint as pp
 from   saga.exceptions       import *
 from   saga.advert.constants import *
 from   saga.engine.logger    import getLogger
@@ -70,13 +76,14 @@ MON    = 'saga-advert-events'
 #
 class redis_ns_monitor (threading.Thread) :
 
-    def __init__ (self, r) :
+    def __init__ (self, r, pub) :
 
-        self.host      = r.host
-        self.port      = r.port
-        self.db        = r.db
-        self.password  = r.password
-        self.errors    = r.errors
+        self.r      = r
+        self.pub    = pub
+        self.logger = r.logger
+
+        self.pat = {}
+        self.pat['ATTRIBUTE'] = re.compile ('\s*\[(?P<key>[^=]+)=(?P<val>.+)]\s*')
 
         threading.Thread.__init__ (self)
         self.setDaemon (True)
@@ -84,25 +91,58 @@ class redis_ns_monitor (threading.Thread) :
 
     def run (self) :
         
-        # create pubsub monitor for advert callback triggers
-        self._mon = redis.Redis (host      = self.host,
-                                 port      = self.port,
-                                 db        = self.db,
-                                 password  = self.password,
-                                 errors    = self.errors)
-        
-        self._pub = self._mon.pubsub ()
-        print self._pub
-        self._pub.subscribe (MON)
-        
-        print 'monitoring'
-        print self._pub
-        
-        res = self._pub.listen ()
-        
-        while res :
-            print res.next ()
+        callbacks = self.r.callbacks
+        sub       = self.pub.listen ()
 
+        while sub :
+            
+            info = sub.next ()
+            data = info['data']
+
+            if not type (data) == type ("") :
+                self.logger.debug ("ignoring event : %s"  %  data)
+                continue
+
+            # FIXME: need proper regex parsing
+            elems = data.split ()
+            if not len (elems) == 3 :
+                self.logger.debug ("ignoring event args : %s"  %  data)
+                continue
+
+
+            event = elems[0]
+            path  = elems[1]
+            args  = elems[2:]
+
+            if path in callbacks :
+                
+                if event == 'ATTRIBUTE' :
+
+                    for arg in args :
+                        
+                        # args are formatted like '[key=val]'
+                        match = self.pat[event].match (string.join (args, ' '))
+
+                        if  not match :
+                            self.logger.warn ("event parse error for %s" % args)
+                            pp (match)
+                            continue
+
+                        # FIXME: error check
+                        key     = match.group ('key')
+                        val     = match.group ('val')
+
+                        if key in callbacks[path] :
+                            for idx in callbacks[path][key] :
+
+                                cb  = callbacks[path][key][idx][0]
+                                obj = callbacks[path][key][idx][1]
+
+                                cb (obj, key, val)
+
+                if event == 'ATTRIBUTES' :
+                    self.logger.warn ("unknown event type %s" % event)
+                    pass
 
 
 # --------------------------------------------------------------------
@@ -123,35 +163,47 @@ class redis_ns_server (redis.Redis) :
         if url.username : self.username = url.username
         if url.password : self.password = url.password
 
-        t1 = time.time ()
-
         # create redis client 
-        redis.Redis.__init__    (self, 
-                                 host      = self.host,
-                                 port      = self.port,
-                                 db        = self.db,
-                                 password  = self.password,
+        t1 = time.time ()
+        redis.Redis.__init__   (self, 
+                                host      = self.host,
+                                port      = self.port,
+                                db        = self.db,
+                                password  = self.password,
                                  errors    = self.errors)
         t2 = time.time ()
 
-        # redis_ns_monitor (self)
+        # add a logger 
+        self.logger = getLogger ("redis-%s"  % self.host)
+        self.logger.info ("redis handle initialized")
 
-        self._monitor = redis_ns_monitor (self)
-        self._monitor.start ()
+        # create a cache dict and attach to redis client instance.  Cache
+        # lifetime is set to half of redis-connect latency.
+        # self.cache = redis_cache.Cache (logger=self.logger, ttl=((t2-t1)/2))
+        self.cache = redis_cache.Cache (logger=self.logger, ttl=1)
 
-        # also add a logger 
-        self._logger = getLogger ("redis-%s"  % self.host)
-        self._logger.info ("redis handle initialized")
+        # create a second client to manage the (blocking) 
+        # pubsub communication for event notifications
+        self.r2 = redis.Redis  (host      = self.host,
+                                port      = self.port,
+                                db        = self.db,
+                                password  = self.password,
+                                errors    = self.errors)
 
-        # create a cache dict and attach to redis client instance
-        self._cache = redis_cache.Cache (logger=self._logger, ttl=((t2-t1)/2))
+        # set up pubsub endpoint, and start a thread to monitor channels
+        self.callbacks = {}
+        self.pub = self.r2.pubsub ()
+        self.pub.subscribe (MON)
+
+        self.monitor = redis_ns_monitor (self, self.pub)
+        self.monitor.start ()
 
 
 
     def __del__ (self) :
 
-        if self._pub :
-            self._pub.unsubscribe (MON)
+        if self.pub :
+            self.pub.unsubscribe (MON)
 
 
 
@@ -213,9 +265,9 @@ def redis_ns_name (r, path) :
 #
 def redis_ns_data_get (r, path) :
 
-    r._logger.info ("redis_ns_data_get %s" % path)
+    r.logger.info ("redis_ns_data_get %s" % path)
 
-    ret = r._cache.get (DATA+':'+path, r.hgetall, DATA+':'+path)
+    ret = r.cache.get (DATA+':'+path, r.hgetall, DATA+':'+path)
 
     return ret
 
@@ -224,7 +276,7 @@ def redis_ns_data_get (r, path) :
 #
 def redis_ns_data_set (r, path, data) :
 
-    r._logger.info ("redis_ns_data_set %s: %s" % (path, data))
+    r.logger.info ("redis_ns_data_set %s: %s" % (path, data))
 
     old_data = redis_ns_data_get (r, path)
     now      = time.time()
@@ -250,17 +302,22 @@ def redis_ns_data_set (r, path, data) :
     # FIXME: eval vals
     p.execute ()
 
-    print "publish " + DATA+":"+path
-    r.publish (MON, DATA+":"+path)
+    # issue notification about attribute changes
+    args=[]
+    for key in data :
+        arg.append (key+'='+data[key])
 
-    r._cache.set (DATA+':'+path, data)
+    r.publish (MON, "ATTRIBUTES %s [%s]"  % (path, string.join (args, '][')))
+
+    # refresh cache
+    r.cache.set (DATA+':'+path, data)
 
 
 # --------------------------------------------------------------------
 #
 def redis_ns_datakey_set (r, path, key, val) :
 
-    r._logger.info ("redis_ns_datakey_set %s: %s" % (path, key))
+    r.logger.info ("redis_ns_datakey_set %s: %s" % (path, key))
 
     old_data = redis_ns_data_get (r, path)
     now      = time.time()
@@ -283,18 +340,18 @@ def redis_ns_datakey_set (r, path, key, val) :
     # FIXME: eval vals
     p.execute ()
 
-    print "publish " + DATA+":"+path
-    r.publish (MON, DATA+":"+path)
+    # issue notification about entry creation to parent dir
+    r.publish (MON, "ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
 
     old_data[key] = val
-    r._cache.set (DATA+':'+path, old_data)
+    r.cache.set (DATA+':'+path, old_data)
 
 
 # --------------------------------------------------------------------
 #
 def redis_ns_get (r, path) :
 
-    r._logger.info ("redis_ns_get %s" % (path))
+    r.logger.info ("redis_ns_get %s" % (path))
 
     p = r.pipeline ()
     p.hgetall  (NODE+':'+path)
@@ -314,9 +371,9 @@ def redis_ns_get (r, path) :
         return None
 
     else :
-        r._cache.set (NODE+':'+path, e.node)
-        r._cache.set (DATA+':'+path, e.data)
-        r._cache.set (KIDS+':'+path, e.kids)
+        r.cache.set (NODE+':'+path, e.node)
+        r.cache.set (DATA+':'+path, e.data)
+        r.cache.set (KIDS+':'+path, e.kids)
         return e
 
 
@@ -328,9 +385,10 @@ def redis_ns_create (r, e, flags=0) :
     """
     # FIXME: need to ensure this via a WATCH call.
 
-    r._logger.info ("redis_ns_create %s" % e)
+    r.logger.info ("redis_ns_create %s" % e)
 
     path   = e.path
+    name   = redis_ns_name   (r, path)
     parent = redis_ns_parent (r, path)
 
     old_data = redis_ns_data_get (r, path)
@@ -358,9 +416,13 @@ def redis_ns_create (r, e, flags=0) :
     # FIXME: eval vals
     p.execute ()
 
-    if len(e.node) : r._cache.set (NODE+':'+path, e.node)
-    if len(e.data) : r._cache.set (DATA+':'+path, e.data)
-    if len(e.kids) : r._cache.set (KIDS+':'+path, e.kids)
+    # issue notification about entry creation to parent dir
+
+    r.publish (MON, "CREATE %s [%s]"  %  (parent, name))
+
+    if len(e.node) : r.cache.set (NODE+':'+path, e.node)
+    if len(e.data) : r.cache.set (DATA+':'+path, e.data)
+    if len(e.kids) : r.cache.set (KIDS+':'+path, e.kids)
 
     return e
 
@@ -369,15 +431,15 @@ def redis_ns_create (r, e, flags=0) :
 #
 def redis_ns_read_entry (r, path) :
 
-    r._logger.info ("redis_ns_data_get %s" % path)
+    r.logger.info ("redis_ns_data_get %s" % path)
 
     e = redis_ns_entry (path)
     try :
-        e.node = r._cache.get (NODE+':'+path)
-        e.data = r._cache.get (DATA+':'+path)
+        e.node = r.cache.get (NODE+':'+path)
+        e.data = r.cache.get (DATA+':'+path)
 
         if e.node[TYPE] == DIR :
-            e.kids = r._cache.get (KIDS+':'+path)
+            e.kids = r.cache.get (KIDS+':'+path)
 
     except Exception as e :
         # some cache ops failed, so we need to properly fetch data.  We simply
@@ -401,7 +463,7 @@ def redis_ns_read_entry (r, path) :
 #
 def redis_ns_write_entry (r, e) :
 
-    r._logger.info ("redis_ns_data_set %s: %s" % (path, data))
+    r.logger.info ("redis_ns_write_entry %s: %s" % (path, data))
 
     p = r.pipeline ()
     p.hmset (NODE+':'+e.path, e.node)  # FIXME: for create, only set if not exist
@@ -416,14 +478,14 @@ def redis_ns_write_entry (r, e) :
     # FIXME: eval retvals
     p.execute ()
 
-    r._cache.set (DATA+':'+path, data)
+    r.cache.set (DATA+':'+path, data)
 
 
 # --------------------------------------------------------------------
 #
 def redis_ns_opendir (r, path, flags) :
 
-    r._logger.info ("redis_ns_opendir %s" % path)
+    r.logger.info ("redis_ns_opendir %s" % path)
 
     e = redis_ns_get (r, path)
 
@@ -436,7 +498,7 @@ def redis_ns_opendir (r, path, flags) :
 
         if  CREATE         & flags or \
             CREATE_PARENTS & flags    :
-            r._logger.info ("redis_ns_opendir : calling mkdir for %s" % path)
+            r.logger.info ("redis_ns_opendir : calling mkdir for %s" % path)
             e = redis_ns_mkdir (r, path, flags)
         
         else :
@@ -449,7 +511,7 @@ def redis_ns_opendir (r, path, flags) :
 #
 def redis_ns_open (r, path, flags) :
 
-    r._logger.info ("redis_ns_open %s" % path)
+    r.logger.info ("redis_ns_open %s" % path)
 
     e = redis_ns_get (r, path)
 
@@ -462,7 +524,7 @@ def redis_ns_open (r, path, flags) :
 
         if  CREATE         & flags or \
             CREATE_PARENTS & flags    :
-            r._logger.info ("redis_ns_open : calling create for %s" % path)
+            r.logger.info ("redis_ns_open : calling create for %s" % path)
 
             e = redis_ns_entry (path)
 
@@ -484,7 +546,7 @@ def redis_ns_open (r, path, flags) :
 #
 def redis_ns_mkdir (r, path, flags) :
     
-    r._logger.info ("redis_ns_mkdir %s" % path)
+    r.logger.info ("redis_ns_mkdir %s" % path)
 
     e = redis_ns_get (r, path)
 
@@ -539,6 +601,27 @@ def redis_ns_mkdir (r, path, flags) :
     return e
 
 
+# --------------------------------------------------------------------
+#
+def redis_ns_callback (r, path, key, id, cb, obj) :
+    # FIXME: this needs a shared lock with the monitor thread!
+
+    r.logger.info ("redis_ns_callback %s : %s" % (path, key))
+
+    if not path in r.callbacks :
+        r.callbacks[path] = {}
+        if not key in r.callbacks[path] :
+            r.callbacks[path][key] = {}
+
+    if id == None :
+        del r.callbacks[path][key]
+
+
+    if cb :
+        r.callbacks[path][key][id] = [cb, obj]
+    else :
+        # cb == None: remove that callback
+        del r.callbacks[path][key][id]
 
   
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
