@@ -16,12 +16,14 @@ while the engine will attempt to load the module, it may be disabled by
 configure options, or due to missing pre-requisites.  
 """
 
-adaptor_registry = ["saga.adaptors.local.localjob",
-                    "saga.adaptors.local.localfile",
-                    "saga.adaptors.local.dummyfile",
+adaptor_registry = [
                     "saga.adaptors.context.myproxy",
                     "saga.adaptors.context.x509",
                     "saga.adaptors.context.userpass",
+                    "saga.adaptors.local.localjob",
+                    "saga.adaptors.local.localfile",
+                    "saga.adaptors.local.dummyfile",
+                    "saga.adaptors.redis.redis_advert",
                     "saga.adaptors.irods.irods_replica"
                    ]
 

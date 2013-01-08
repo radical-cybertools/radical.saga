@@ -37,9 +37,9 @@ class Callback () :
 
     The cb instance receives three parameters upon invocation:
 
-      - member: the watched attribute (e.g. 'state' or 'state_detail')
-      - value:  the new value of the watched attribute
-      - obj:    the watched object instance
+      - key:  the watched attribute (e.g. 'state' or 'state_detail')
+      - val:  the new value of the watched attribute
+      - obj:  the watched object instance
 
     If the callback returns 'True', it will remain registered after invocation,
     to monitor the attribute for the next subsequent state change.  On returning
@@ -52,8 +52,8 @@ class Callback () :
         def __init__ (self, msg) :
           self._msg = msg
 
-        def cb (self, obj, member, value) :
-          print " %s\\n %s (%s) : %s"  %  self._msg, obj, member, value
+        def cb (self, obj, key, val) :
+          print " %s\\n %s (%s) : %s"  %  self._msg, obj, key, val
 
         def main () :
 
@@ -74,17 +74,22 @@ class Callback () :
             to signal that the application needs to inherit the callback class
             in a custom class in order to use notifications.
         """
-        raise IncorrectState ("Callback class must be inherited before use!")
+        # raise IncorrectState ("Callback class must be inherited before use!")
+        pass
 
 
-    def cb (self, wu, member, value) :
+    def __call__ (self, obj, key, val) :
+        return self.cb (obj, key, val)
+
+
+    def cb (self, obj, key, val) :
         """ This is the method that needs to be implemented by the application
 
             Keyword arguments::
 
-                member: the watched attribute
-                value:  the new value of the watched attribute
-                obj:    the watched object instance
+                obj:  the watched object instance
+                key:  the watched attribute
+                val:  the new value of the watched attribute
 
             Return::
 
@@ -149,7 +154,7 @@ class Attributes (_AttributesBase) :
                 super (Transliterator, self).__init__ (*args, **kwargs)
         
                 # setup class attribs
-                self._attributes_register   ('apple', 'Appel', self.URL,    self.SCALAR, self.WRITABLE)
+                self._attributes_register   ('apple', 'Appel', self.URL,    self.SCALAR, self.WRITEABLE)
                 self._attributes_register   ('plum',  'Pruim', self.STRING, self.SCALAR, self.READONLY)
         
                 # setting attribs to non-extensible at *this* point will have allowed
@@ -266,7 +271,7 @@ class Attributes (_AttributesBase) :
                                # FIXME: conversion not implemented
 
     # mode enums
-    WRITABLE    = 'writable'   # the consumer of the interface can change
+    WRITEABLE   = 'writeable'  # the consumer of the interface can change
                                # the attrib value
     READONLY    = 'readonly'   # the consumer of the interface can not
                                # change the attrib value.  The
@@ -346,7 +351,10 @@ class Attributes (_AttributesBase) :
             d['_extensible']  = True
             d['_private']     = True
             d['_camelcasing'] = False
+            d['getter']       = None
+            d['setter']       = None
             d['lister']       = None
+            d['caller']       = None
             d['recursion']    = False
 
             _AttributesBase.__setattr__ (self, '_d', d)
@@ -462,18 +470,42 @@ class Attributes (_AttributesBase) :
         if d['_attributes'][key]['recursion'] :
             return
 
-        setter = d['_attributes'][key]['setter']
+        # key_setter overwrites results from all_setter
+        all_setter = d['setter']
+        key_setter = d['_attributes'][key]['setter']
 
-        if setter :
+        # Get the value via the attribute getter.  The getter will not call
+        # attrib getters or callbacks, due to the recursion guard.
+        # Set the value via the native setter (to the backend), 
+        # always raise and lower the recursion shield
+        #
+        # If both are present, we can ignore *one* exception.  If one 
+        # is present, exceptions are not ignored.
+        #
+        # always raise and lower the recursion shield.
+        can_ignore = 0
+        if all_setter and key_setter : can_ignore = 1
 
-            # Get the value via the attribute getter.  The getter will not call
-            # attrib getters or callbacks, due to the recursion guard.
-            # Set the value via the native setter (to the backend), 
-            #
-            # always raise and lower the recursion shield
+        if all_setter :
             try :
                 d['_attributes'][key]['recursion'] = True
-                setter (self._attributes_i_get (key))
+                all_setter (key, self._attributes_i_get (key))
+            except Exception as e :
+                # ignoring failures from getter
+                pass
+            except Exception as e :
+                can_ignore -= 1
+                if not can_ignore : raise e
+            finally :
+                d['_attributes'][key]['recursion'] = False
+
+        if key_setter :
+            try :
+                d['_attributes'][key]['recursion'] = True
+                key_setter (self._attributes_i_get (key))
+            except Exception as e :
+                can_ignore -= 1
+                if not can_ignore : raise e
             finally :
                 d['_attributes'][key]['recursion'] = False
 
@@ -495,10 +527,10 @@ class Attributes (_AttributesBase) :
         if d['_attributes'][key]['recursion'] :
             return
 
-        getter = d['_attributes'][key]['getter']
+        # key getter overwrites results from all_getter
+        all_getter = d['getter']
+        key_getter = d['_attributes'][key]['getter']
 
-        if not getter :
-            return
 
         # # Note that attributes have a time-to-live (ttl).  If a _attributes_i_set
         # # operation is attempted within 'time-of-last-update + ttl', the operation
@@ -525,13 +557,36 @@ class Attributes (_AttributesBase) :
         # set it via the attribute setter.  The setter will not call
         # attrib setters or callbacks, due to the recursion guard.
         #
-        # always raise and lower the recursion shield
-        try :
-            d['_attributes'][key]['recursion'] = True
-            self._attributes_i_set (key, val=getter (), force=True)
-            d['_attributes'][key]['last'] = datetime.datetime.now ()
-        finally :
-            d['_attributes'][key]['recursion'] = False
+        # If both are present, we can ignore *one* exception.  If one 
+        # is present, exceptions are not ignored.
+        #
+        # always raise and lower the recursion shield.
+        can_ignore = 0
+        if all_getter and key_getter : can_ignore = 1
+
+        if all_getter :
+
+            try :
+                d['_attributes'][key]['recursion'] = True
+                self._attributes_i_set (key, val=all_getter (key), force=True)
+                d['_attributes'][key]['last'] = datetime.datetime.now ()
+            except Exception as e :
+                can_ignore -= 1
+                if not can_ignore : raise e
+            finally :
+              d['_attributes'][key]['recursion'] = False
+
+        if key_getter :
+            try :
+                d['_attributes'][key]['recursion'] = True
+                self._attributes_i_set (key, val=key_getter (), force=True)
+                d['_attributes'][key]['last'] = datetime.datetime.now ()
+            except Exception as e :
+                can_ignore -= 1
+                if not can_ignore : raise e
+            finally :
+                d['_attributes'][key]['recursion'] = False
+
 
 
     ####################################
@@ -559,10 +614,46 @@ class Attributes (_AttributesBase) :
             #
             # always raise and lower the recursion shield
             try :
-                d['_attributes'][key]['recursion'] = True
-                lister ()
+                d['recursion'] = True
+                return lister ()
             finally :
-                d['_attributes'][key]['recursion'] = False
+                d['recursion'] = False
+
+        return []
+
+
+
+    ####################################
+    def _attributes_t_call_caller (self, key, id, cb) :
+        """
+        This internal function is not to be used by the consumer of this API.
+
+        It triggers the invocation of any registered caller function, usually
+        after an 'add_callback()' call.
+        """
+
+        # make sure interface is ready to use.
+        d = self._attributes_t_init (key)
+
+        # avoid recursion
+        if d['recursion'] :
+            return
+
+        caller = d['caller']
+
+        if caller :
+
+            # the caller is simply called, and it is expected that it internally
+            # adds/removes callbacks as needed
+            #
+            # always raise and lower the recursion shield
+            try :
+                d['recursion'] = True
+                return caller (key, id, cb)
+            finally :
+                d['recursion'] = False
+
+        return []
 
 
 
@@ -833,19 +924,19 @@ class Attributes (_AttributesBase) :
             if key[0] == '_' and d['_private'] :
                 # if the set is private, we can register the new key.  It
                 # won't have any callbacks at this point.
-                self._attributes_register (key, None, self.ANY, self.SCALAR, self.WRITABLE, self.EXTENDED)
+                self._attributes_register (key, None, self.ANY, self.SCALAR, self.WRITEABLE, self.EXTENDED)
 
             elif d['_extensible'] :
                 # if the set is extensible, we can register the new key.  It
                 # won't have any callbacks at this point.
-                self._attributes_register (key, None, self.ANY, self.SCALAR, self.WRITABLE, self.EXTENDED)
+                self._attributes_register (key, None, self.ANY, self.SCALAR, self.WRITEABLE, self.EXTENDED)
 
             else :
                 # we cannot add new keys on non-extensible / non-private sets
                 raise IncorrectState ("attribute set is not extensible/private (key %s)" %  key)
 
 
-        # known attribute - attempt to set its value
+        # known attribute
         else :
 
             # check if we are allowed to change the attribute - complain if not.
@@ -853,11 +944,13 @@ class Attributes (_AttributesBase) :
             if 'mode' in  d['_attributes'][key] :
 
                 mode = d['_attributes'][key]['mode']
+
                 if self.FINAL == mode :
                     return
+
                 elif self.READONLY == mode :
                     if not force :
-                        raise BadParameter ("attribute %s is not writable" %  key)
+                        raise BadParameter ("attribute %s is not writeable" %  key)
 
 
         # permissions are confirmed, set the attribute with conversion etc.
@@ -927,11 +1020,8 @@ class Attributes (_AttributesBase) :
         # make sure interface is ready to use
         d = self._attributes_t_init ()
 
-        # call list hooks
+        # call list hooks to update state for listing
         self._attributes_t_call_lister ()
-
-        ret = []
-
 
         for key in sorted(d['_attributes'].iterkeys()) :
             if d['_attributes'][key]['mode'] != self.ALIAS :
@@ -1095,14 +1185,14 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_i_is_writable (self, key) :
+    def _attributes_i_is_writeable (self, key) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
 
-        see L{attribute_is_writable} (key) for details.
+        see L{attribute_is_writeable} (key) for details.
 
-        This method will check if the given key is writable - i.e. not readonly.
+        This method will check if the given key is writeable - i.e. not readonly.
         """
 
         return not self._attributes_i_is_readonly (key)
@@ -1116,10 +1206,10 @@ class Attributes (_AttributesBase) :
 
         see L{attribute_is_removable} (key) for details.
 
-        'True' if the attrib is Writable and Extended.
+        'True' if the attrib is writeable and Extended.
         """
 
-        if self._attributes_i_is_writable (key) and \
+        if self._attributes_i_is_writeable (key) and \
            self._attributes_i_is_extended (key)     :
             return True
 
@@ -1179,7 +1269,12 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init (key)
 
         d['_attributes'][key]['callbacks'].append (cb)
-        return len (d['_attributes'][key]['callbacks']) - 1
+
+        id = len (d['_attributes'][key]['callbacks']) - 1
+
+        self._attributes_t_call_caller (key, id, cb)
+
+        return id
 
 
     ####################################
@@ -1194,6 +1289,8 @@ class Attributes (_AttributesBase) :
         # make sure interface is ready to use
         d = self._attributes_t_init (key)
 
+        self._attributes_t_call_caller (key, id, None)
+
         # id == None: remove all callbacks
         if not id :
             d['_attributes'][key]['callbacks'] = []
@@ -1201,6 +1298,7 @@ class Attributes (_AttributesBase) :
             if len (d['_attributes'][key]['callbacks']) < id :
                 raise BadParameter ("invalid callback cookie for attribute %s"  %  key)
             else :
+                # do not pop from list, that would invalidate the id's!
                 d['_attributes'][key]['callbacks'][id] = undef
 
 
@@ -1216,7 +1314,7 @@ class Attributes (_AttributesBase) :
     # Naming: __attributes*
     #
     ####################################
-    def _attributes_register (self, key, default=None, typ=ANY, flavor=SCALAR, mode=WRITABLE, ext=False) :
+    def _attributes_register (self, key, default=None, typ=ANY, flavor=SCALAR, mode=WRITEABLE, ext=False) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1255,7 +1353,7 @@ class Attributes (_AttributesBase) :
         d['_attributes'][us_key]['type']         = typ     # int, float, enum, ...
         d['_attributes'][us_key]['exists']       = False   # no value set, yet
         d['_attributes'][us_key]['flavor']       = flavor  # scalar / vector
-        d['_attributes'][us_key]['mode']         = mode    # readonly / writable / final
+        d['_attributes'][us_key]['mode']         = mode    # readonly / writeable / final
         d['_attributes'][us_key]['extended']     = ext     # is an extended attribute 
         d['_attributes'][us_key]['private']      = priv    # is a  private attribute
         d['_attributes'][us_key]['camelcase']    = key     # keep original key name
@@ -1321,10 +1419,10 @@ class Attributes (_AttributesBase) :
         registered before (via L{_attributes_register})::
 
             # old code:
-            self._attributes_register ('apple', 'Appel', self.STRING, self.SCALAR, self.WRITABLE)
+            self._attributes_register ('apple', 'Appel', self.STRING, self.SCALAR, self.WRITEABLE)
 
             # new code
-            self._attributes_register ('fruit', 'Appel', self.STRING, self.SCALAR, self.WRITABLE)
+            self._attributes_register ('fruit', 'Appel', self.STRING, self.SCALAR, self.WRITEABLE)
             self._attributes_register_deprecated ('apple', 'fruit)
 
         In some cases, you may want to deprecate a variable and not replace it
@@ -1332,7 +1430,7 @@ class Attributes (_AttributesBase) :
         achieved via::
 
             # new code
-            self._attributes_register ('deprecated_apple', 'Appel', self.STRING, self.SCALAR, self.WRITABLE)
+            self._attributes_register ('deprecated_apple', 'Appel', self.STRING, self.SCALAR, self.WRITEABLE)
             self._attributes_register_deprecated ('apple', 'deprecated_apple)
 
         This way, the user will either see a warning, or has to explicitly use
@@ -1427,7 +1525,9 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_extensible (self, e=True) :
+    def _attributes_extensible (self, e=True, 
+                                getter=None, setter=None, 
+                                lister=None, caller=None) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1440,6 +1540,12 @@ class Attributes (_AttributesBase) :
 
         d = self._attributes_t_init ()
         d['_extensible'] = e
+
+        if getter : self._attributes_set_global_getter (getter)
+        if setter : self._attributes_set_global_setter (setter)
+        if lister : self._attributes_set_global_lister (lister)
+        if caller : self._attributes_set_global_caller (caller)
+
 
 
     ####################################
@@ -1502,7 +1608,10 @@ class Attributes (_AttributesBase) :
         other_d['_private']     = d['_private']
         other_d['_camelcasing'] = d['_camelcasing']
         other_d['recursion']    = d['recursion']    
+        other_d['getter']       = d['setter']    
+        other_d['setter']       = d['setter']    
         other_d['lister']       = d['lister']    
+        other_d['caller']       = d['caller']    
 
         other_d['_attributes'] = {}
 
@@ -1730,9 +1839,12 @@ class Attributes (_AttributesBase) :
 
         Hooks have a different call signature than callbacks::
         
-            setter (self, value)
-            getter (self)
-            lister (self)
+            setter        (self, value)
+            getter        (self)
+            global_setter (self, key, value)
+            global_setter (self, key)
+            global_lister (self)
+            global_caller (self, key)
 
         FIXME: consider a cooling-off period for caching.
         """
@@ -1763,7 +1875,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_set_lister (self, key, lister) :
+    def _attributes_set_global_lister (self, lister) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1771,12 +1883,55 @@ class Attributes (_AttributesBase) :
         See documentation of L{_attributes_set_getter } for details.
         """
 
-        # make sure interface is ready to use
-        us_key = self._attributes_t_underscore (key)
-        d      = self._attributes_t_init       (us_key)
+        d = self._attributes_t_init ()
 
         # register the attribute and properties
         d['lister'] = lister
+
+
+    ####################################
+    def _attributes_set_global_caller (self, caller) :
+        """
+        This interface method is not part of the public consumer API, but can
+        safely be called from within derived classes.
+
+        See documentation of L{_attributes_set_getter } for details.
+        """
+
+        d = self._attributes_t_init ()
+
+        # register the attribute and properties
+        d['caller'] = caller
+
+
+    ####################################
+    def _attributes_set_global_getter (self, getter) :
+        """
+        This interface method is not part of the public consumer API, but can
+        safely be called from within derived classes.
+
+        See documentation of L{_attributes_set_getter } for details.
+        """
+
+        d = self._attributes_t_init ()
+
+        # register the attribute and properties
+        d['getter'] = getter
+
+
+    ####################################
+    def _attributes_set_global_setter (self, setter) :
+        """
+        This interface method is not part of the public consumer API, but can
+        safely be called from within derived classes.
+
+        See documentation of L{_attributes_set_getter } for details.
+        """
+
+        d = self._attributes_t_init ()
+
+        # register the attribute and properties
+        d['setter'] = setter
 
 
     ###########################################################################
@@ -1794,7 +1949,7 @@ class Attributes (_AttributesBase) :
         This method sets the value of the specified attribute.  If that
         attribute does not exist, DoesNotExist is raised -- unless the attribute
         set is marked 'extensible' or 'private'.  In that case, the attribute is
-        created and set on the fly (defaulting to mode=Writable, flavor=Scalar,
+        created and set on the fly (defaulting to mode=writeable, flavor=Scalar,
         type=ANY, default=None).  A value of 'None' may reset the attribute to
         its default value, if such one exists (see documentation).
 
@@ -1939,22 +2094,22 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def attribute_is_writable (self, key) :
+    def attribute_is_writeable (self, key) :
         """
-        attribute_is_writable (key)
+        attribute_is_writeable (key)
 
-        This method will check if the given key is writable - i.e. not readonly.
+        This method will check if the given key is writeable - i.e. not readonly.
         """
 
         key    = self._attributes_t_keycheck   (key)
         us_key = self._attributes_t_underscore (key)
-        return self._attributes_i_is_writable (us_key)
+        return self._attributes_i_is_writeable (us_key)
 
 
     ####################################
     def attribute_is_removable (self, key) :
         """
-        attribute_is_writable (key)
+        attribute_is_writeable (key)
 
         This method will check if the given key can be removed.
         """

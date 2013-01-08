@@ -20,13 +20,13 @@ from saga.utils.exception import ExceptionBase
 # where the submission is executed, and the remote_file is evaluated on the 
 # execution host of the job. The operator is one of the following four:
 #
-# ’>’  copies the local file to the remote file before the job starts. 
+# '>'  copies the local file to the remote file before the job starts. 
 #      Overwrites the remote file if it exists.
-# ’>>’ copies the local file to the remote file before the job starts. 
+# '>>' copies the local file to the remote file before the job starts. 
 #      Appends to the remote file if it exists.
-# ’<’  copies the remote file to the local file after the job finishes. 
+# '<'  copies the remote file to the local file after the job finishes. 
 #      Overwrites the local file if it exists.
-# ’<<’ copies the remote file to the local file after the job finishes. 
+# '<<' copies the remote file to the local file after the job finishes. 
 #      Appends to the local file if it exists.
 
 class TransferDirectives(object):

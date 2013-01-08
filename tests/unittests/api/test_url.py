@@ -146,7 +146,7 @@ def test_url_properties():
    url.path = "/path/"
    if str(url) != "scheme://username:password@host:42/path/":
        self.fail("unexpected url")
-   if url.get_path() != "/path/":
+   if url.get_path() != "/path":
        self.fail("unexpected path")       
    url.set_path("tpath")
    if url.get_path() != "/tpath":
