@@ -16,7 +16,7 @@ if arg == 'start' :
   d_1.set_attribute ('foo', 'start')
 
 for i in xrange (10) :
-  # print i
+  print i
   d_1.set_attribute ('foo', str(i))
 
 t2=time.time()

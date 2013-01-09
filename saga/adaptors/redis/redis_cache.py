@@ -21,18 +21,33 @@ class Cache :
         if int (size) < 1 :
             raise AttributeError ('size < 1 or not a number')
 
+        if int (ttl) < 0 :
+            raise AttributeError ('ttl < 0 or not a number')
+
         self.size   = size
         self.ttl    = ttl
         self.dict   = OrderedDict ()
         self.lock   = Lock ()
         self.logger = logger
+        self.hit    = 0
+        self.miss   = 0
 
         # start a thread which, with low priority, cleans out the dict now and
         # then (pops items until a live one is found
 
     # ----------------------------------------------------------------
     #
-    def get (self, key, func=None, *args, **kwargs) :
+    def _dump (self) :
+        print " ---------------------------------------------- "
+        print " CACHE STATISTICS : "
+        print " size: %5d" % len(self.dict)
+        print " hit : %5d" % self.hit 
+        print " miss: %5d" % self.miss
+        print self.dict.keys()
+        print " ---------------------------------------------- "
+    # ----------------------------------------------------------------
+    #
+    def get (self, key) :
 
         self.logger.debug ("redis_cache_get %s", key)
 
@@ -40,28 +55,23 @@ class Cache :
 
             # check if we have a live entry
             if key in self.dict :
-                if self.dict[key][TTL] > time.time () :
+
+                now = time.time ()
+
+                if self.ttl and self.dict[key][TTL] > now :
                     # if yes, cache hit!
                     # return data -- doh!
+                    self.hit += 1
                     return self.dict[key][VAL]
 
+                else :
+                    # entry timed out
+                    self.miss += 1
+                    del self.dict[key]
 
-            # no live cache entry, check if we can refresh the cache
-            if not func :
-                # no means to refresh, raise an exception
-                del self.dict[key]
-                raise AttributeError ("cache miss for '%s' " % key)
-            else :
-                # cache miss
-                # refresh cached value
-                ret = func (*args, **kwargs)
-
-                # set wants lock, so we rather push data ourself here
-                self.dict[key]      = {}
-                self.dict[key][VAL] = ret
-                self.dict[key][TTL] = time.time () + self.ttl
-
-                return ret
+            # cache entry not found, or timed out
+            self.miss += 1
+            raise AttributeError ("cache miss for '%s' " % key)
 
 
     # ----------------------------------------------------------------
@@ -69,6 +79,8 @@ class Cache :
     def set (self, key, value) :
 
         with self.lock :
+
+            # remove superfluous(?) entries
             while len (self.dict) >= self.size :
                 self.dict.popitem (last=False)
 
@@ -85,29 +97,7 @@ class Cache :
             del self.dict[key]
 
 
-
-
-## ######################################################################
-## #
-## def memoize (key) :
-##     def _decorating_wrapper (func) :
-##         def _caching_wrapper (*args, **kwargs) :
-## 
-##             cache_key = normalize_key (key, args, kwargs)
-##             now       = time.time ()
-## 
-##             # if still valid, return it
-##             if _times.get (cache_key, now) > now :
-##                 return _cache[cache_key]
-## 
-##             # otherwise store the retval of the decorated function
-##             ret = func (*args, **kwargs)
-##             _cache[cache_key] = ret
-##             _times[cache_key] = now + TTL
-##             return ret
-##         return _caching_wrapper
-##     return _decorating_wrapper
-
+    # ----------------------------------------------------------------
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

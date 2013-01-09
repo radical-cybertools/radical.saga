@@ -102,7 +102,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
                 hash = "redis://%s:%d"        %  (                host, port)
        
         if not hash in self._redis :
-            self._redis[hash] = redis_ns_init (url)
+            self._redis[hash] = redis_ns_server (url)
 
         return self._redis[hash]
 
@@ -196,18 +196,23 @@ class RedisDirectory (saga.cpi.advert.Directory, saga.cpi.Async) :
     def _init_check (self) :
 
         self._r     = self._adaptor.get_redis (self._url)
-        self._nsdir = redis_ns_opendir (self._r, self._url.path, self._flags)
+        self._nsdir = redis_ns_entry.opendir (self._r, self._url.path, self._flags)
 
 
     @SYNC_CALL
     def attribute_getter (self, key) :
+
+        #  FIXME: we need a better way to ignore local attributes.  This needs
+        #  fixing in the attribute interface implementation...
         if key == '_adaptor' :
-            raise saga.exceptions.NotImplemented ('yet')
+            raise saga.exceptions.PermissionDenied ('self._adaptor is private to the api class')
 
-        # FIXME: a refresh should suffice
-        self._nsdir = redis_ns_get (self._r, self._url.path)
+        try :
+            return self._nsdir.get_key (key)
 
-        return self._nsdir.data[key]
+        except Exception as e :
+            self._logger.error ("get_key failed: %s" % e)
+            raise e
 
 
     @SYNC_CALL
@@ -216,24 +221,28 @@ class RedisDirectory (saga.cpi.advert.Directory, saga.cpi.Async) :
         #  FIXME: we need a better way to ignore local attributes.  This needs
         #  fixing in the attribute interface implementation...
         if key == '_adaptor' :
-            raise saga.exceptions.NotSuccess ('self._adaptor is private to the api class')
+            raise saga.exceptions.PermissionDenied ('self._adaptor is private to the api class')
 
-        redis_ns_datakey_set (self._r, self._url.path, key, val)
+        try :
+            self._nsdir.set_key (key, val)
+
+        except Exception as e :
+            self._logger.error ("set_key failed: %s" % e)
+            raise e
 
 
     @SYNC_CALL
     def attribute_lister (self) :
-        return ['helllooooouuuu']
+        return self._nsdir.get_data ().keys ()
 
 
     @SYNC_CALL
     def attribute_caller (self, key, id, cb) :
-        redis_ns_callback (self._r, self._url.path, key, id, cb, self._api)
+        self._nsdir.manage_callback (key, id, cb, self._api)
 
 
     @SYNC_CALL
     def get_url (self) :
-
         return self._url
 
 
@@ -246,21 +255,10 @@ class RedisDirectory (saga.cpi.advert.Directory, saga.cpi.Async) :
         return saga.advert.Entry (url, flags, self._session, _adaptor=self._adaptor)
 
 
-    # # the async call implementation works, in pair with task_run.  As it is
-    # disabled though, the threaded async fallback from the cpi layer will be
-    # used.
-    # @ASYNC_CALL
-    # def open_async (self, url, flags, ttype) :
-    #
-    #     c = { 'url'     : url,
-    #             'flags'   : flags}
-    #
-    #     return saga.task.Task (self, 'open', c, ttype)
-
-
+    ##################################################################
+    # FIXME: all below
     @SYNC_CALL
     def copy (self, source, target, flags) :
-
 
         src_url = saga.url.Url (source)
         src     = src_url.path
@@ -301,41 +299,6 @@ class RedisDirectory (saga.cpi.advert.Directory, saga.cpi.Async) :
 
 
 
-    def task_run (self, task) :
-        # FIXME: that should be generalized, possibly wrapped into a thread, and
-        # moved to CPI level
-
-        call = task._method_type
-        c    = task._method_context
-
-        if call == 'copy' :
-            try :
-                task._set_result (self.copy (c['src'], c['tgt'], c['flags']))
-                task._set_state  (saga.task.DONE)
-            except Exception as e :
-                task._set_exception (e)
-                task._set_state     (saga.task.FAILED)
-        elif call == 'init_instance' :
-            try :
-                self.init_instance ({}, c['url'], c['flags'], c['session'])
-                task._set_result (self._api)
-                task._set_state  (saga.task.DONE)
-            except Exception as e :
-                task._set_exception (e)
-                task._set_state     (saga.task.FAILED)
-        elif call == 'open' :
-            try :
-                task._set_result (self.open (c['url'], c['flags']))
-                task._set_state  (saga.task.DONE)
-            except Exception as e :
-                task._set_exception (e)
-                task._set_state     (saga.task.FAILED)
-        else :
-            raise saga.exceptions.NotImplemented ("Cannot handle %s tasks" %  call)
-
-
-
-
 ######################################################################
 #
 # entry adaptor class
@@ -345,7 +308,6 @@ class RedisEntry (saga.cpi.advert.Entry) :
     def __init__ (self, api, adaptor) :
 
         saga.cpi.CPIBase.__init__ (self, api, adaptor)
-
 
 
     def _dump (self) :
@@ -366,39 +328,18 @@ class RedisEntry (saga.cpi.advert.Entry) :
         return self
 
 
-    @ASYNC_CALL
-    def init_instance_async (self, adaptor_state, url, flags, session, ttype) :
-
-        self._url     = url
-        self._flags   = flags
-        self._session = session
-
-        c = { 'url'     : self._url, 
-              'flags'   : self._flags,
-              'session' : self._session }
-        
-        t = saga.task.Task (self, 'init_instance', c, ttype)
-
-        # FIXME: move to task_run...
-        self._init_check ()
-
-        t._set_result (saga.advert.Entry (url, flags, session, _adaptor=self._adaptor))
-        t._set_state  (saga.task.DONE)
-
-        return t
-
-
     def _init_check (self) :
 
         self._r       = self._adaptor.get_redis (self._url)
-        self._nsentry = redis_ns_open (self._r, self._url.path, self._flags)
+        self._nsentry = redis_ns_entry.open (self._r, self._url.path, self._flags)
 
 
     @SYNC_CALL
     def attribute_getter (self, key) :
         if key == '_adaptor' :
             raise saga.exceptions.NotImplemented ('yet')
-        return self._nsentry.data[key]
+
+        return self._nsentry.get_key (key)
 
 
     @SYNC_CALL
@@ -409,17 +350,17 @@ class RedisEntry (saga.cpi.advert.Entry) :
         if key == '_adaptor' :
             raise saga.exceptions.NotSuccess ('self._adaptor is private to the api class')
 
-        redis_ns_datakey_set (self._r, self._url.path, key, val)
+        self._nsentry.set_key (key, val)
 
 
     @SYNC_CALL
     def attribute_lister (self) :
-        return ['helllooooouuuu']
+        return self._nsdir.get_data ().keys ()
 
 
     @SYNC_CALL
     def attribute_caller (self, key, id, cb) :
-        redis_ns_callback (self._r, self._url.path, key, id, cb, self._api)
+        self._nsentry.manage_callback (key, id, cb, self._api)
 
 
     @SYNC_CALL
@@ -427,37 +368,8 @@ class RedisEntry (saga.cpi.advert.Entry) :
         return self._url
 
 
-    @ASYNC_CALL
-    def get_url_async (self, ttype) :
-
-        c = {}
-        t = saga.task.Task (self, 'get_url', c, ttype)
-
-        # FIXME: move to task_run...
-        t._set_state  = saga.task.Done
-        t._set_result = self._url
-
-        return t
-
-
-    @SYNC_CALL
-    def get_size_self (self) :
-        return os.path.getsize (self._url.path)
-
-
-    @ASYNC_CALL
-    def get_size_self_async (self, ttype) :
-
-        c = {}
-        t = saga.task.Task (self, 'get_size', c, ttype)
-
-        # FIXME: move to task_run...
-        t._set_result (os.path.getsize (self._url.path))
-        t._set_state  (saga.task.DONE)
-
-        return t
-
-
+    ##################################################################
+    # FIXME: all below
     @SYNC_CALL
     def copy_self (self, target, flags) :
 
@@ -476,32 +388,6 @@ class RedisEntry (saga.cpi.advert.Entry) :
         if tgt[0] != '/'  :  tgt = "%s/%s"   % (os.path.dirname (src), tgt)
 
         shutil.copy2 (src, tgt)
-
-
-
-    def task_run (self, task) :
-        # FIXME: that should be generalized, possibly wrapped into a thread, and
-        # moved to CPI level
-
-        call = task._method_type
-        c    = task._method_context
-
-        if call == 'copy_self' :
-            try :
-                task._set_result (self.copy_self (c['tgt'], c['flags']))
-                task._set_state  (saga.task.DONE)
-            except Exception as e :
-                task._set_exception (e)
-                task._set_state     (saga.task.FAILED)
-        elif call == 'get_size' :
-            try :
-                task._set_result (self.get_size ())
-                task._set_state  (saga.task.DONE)
-            except Exception as e :
-                task._set_exception (e)
-                task._set_state     (saga.task.FAILED)
-        else :
-            raise saga.exceptions.NotImplemented ("Cannot handle %s tasks" %  call)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
