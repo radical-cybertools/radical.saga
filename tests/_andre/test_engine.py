@@ -2,11 +2,42 @@
 import sys
 import random
 import saga
+import time
 
 from   saga.engine.engine import Engine
 
 
 try :
+
+  time.sleep (2)
+  print " ----------------------------------------------------------- "
+  t1 = time.time ()
+  js = saga.job.Service ("fork://localhost")
+  # tc = saga.task.Container ()
+  for i in range (1, 1000) :
+      jd = saga.job.Description()
+      jd.executable  = '/bin/sleep'
+      jd.arguments   = ["1"]
+      j = js.create_job (jd)
+      j.run ()
+
+  
+  # tc.run  ()
+  # tc.wait (saga.task.ALL)
+  
+  # for t in tc.tasks :
+  #   print "%s : %-6s [%s]"  %  (t, t.state, t.exception)
+  t2 = time.time ()
+
+  print " ----------------------------------------------------------- "
+  print (t2-t1)
+  print " =========================================================== "
+
+  time.sleep (10)
+  sys.exit (0)
+
+
+
 
   e = Engine ()
   e._dump()

@@ -1023,6 +1023,7 @@ class Attributes (_AttributesBase) :
         # call list hooks to update state for listing
         self._attributes_t_call_lister ()
 
+        ret = []
         for key in sorted(d['_attributes'].iterkeys()) :
             if d['_attributes'][key]['mode'] != self.ALIAS :
                 if d['_attributes'][key]['exists'] :
