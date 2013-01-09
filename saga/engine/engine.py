@@ -212,7 +212,7 @@ class Engine(Configurable):
 
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
-                self._logger.error (get_traceback ())
+                self._logger.debug (get_traceback ())
                 continue # skip to next adaptor
 
 
@@ -232,7 +232,7 @@ class Engine(Configurable):
                 continue # skip to next adaptor
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
-                self._logger.error (get_traceback (0))
+                self._logger.debug (get_traceback (0))
                 continue # skip to next adaptor
 
 
