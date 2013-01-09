@@ -259,6 +259,7 @@ class RedisDirectory (saga.cpi.advert.Directory, saga.cpi.Async) :
     # FIXME: all below
     @SYNC_CALL
     def copy (self, source, target, flags) :
+        return
 
         src_url = saga.url.Url (source)
         src     = src_url.path
