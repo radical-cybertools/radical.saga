@@ -202,11 +202,6 @@ class RedisDirectory (saga.cpi.advert.Directory, saga.cpi.Async) :
     @SYNC_CALL
     def attribute_getter (self, key) :
 
-        #  FIXME: we need a better way to ignore local attributes.  This needs
-        #  fixing in the attribute interface implementation...
-        if key == '_adaptor' :
-            raise saga.exceptions.PermissionDenied ('self._adaptor is private to the api class')
-
         try :
             return self._nsdir.get_key (key)
 
@@ -217,11 +212,6 @@ class RedisDirectory (saga.cpi.advert.Directory, saga.cpi.Async) :
 
     @SYNC_CALL
     def attribute_setter (self, key, val) :
-
-        #  FIXME: we need a better way to ignore local attributes.  This needs
-        #  fixing in the attribute interface implementation...
-        if key == '_adaptor' :
-            raise saga.exceptions.PermissionDenied ('self._adaptor is private to the api class')
 
         try :
             self._nsdir.set_key (key, val)
@@ -337,19 +327,12 @@ class RedisEntry (saga.cpi.advert.Entry) :
 
     @SYNC_CALL
     def attribute_getter (self, key) :
-        if key == '_adaptor' :
-            raise saga.exceptions.NotImplemented ('yet')
 
         return self._nsentry.get_key (key)
 
 
     @SYNC_CALL
     def attribute_setter (self, key, val) :
-
-        #  FIXME: we need a better way to ignore local attributes.  This needs
-        #  fixing in the attribute interface implementation...
-        if key == '_adaptor' :
-            raise saga.exceptions.NotSuccess ('self._adaptor is private to the api class')
 
         self._nsentry.set_key (key, val)
 

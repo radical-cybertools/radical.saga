@@ -6,6 +6,7 @@ __license__   = "MIT"
 """ Provides exception handling utilities and base classes.
 """
 
+import pdb
 import traceback
 
 def get_traceback (limit=1) :
@@ -27,6 +28,15 @@ def get_traceback (limit=1) :
         ret += str(frame)
 
     return ret
+
+
+def breakpoint () :
+    """ set a breakpoint
+    """
+    pdb.pm()
+
+
+
 
 class ExceptionBase(Exception):
     """ Base exception class. 
