@@ -115,6 +115,7 @@ class CommandLineWrapper(object):
                 % self._wrapper.__class__.__name__)
         else:
             try:
+                import pprint
                 (cmd, stdout, stderr, rc, duration) = self._wrapper.run_sync(executable, arguments, environemnt)
                 return CommandWrapperResult(cmd, stdout, stderr, rc, duration)
             except Exception, ex:

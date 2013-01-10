@@ -44,11 +44,17 @@ class GSISSHCommandLineWrapper(object):
         for arg in arguments:
             cmd += " %s " % (arg)
 
+        stderr = "/tmp/saga.cmd.stderr.%d"  %  id(self)
+        cmd += " 2>%s"  %  stderr
+
         t1 = time.time()
         result = self._connection.execute(cmd)
         tdelta = time.time() - t1
 
-        return (cmd, result['output'], result['exitcode'], tdelta)
+        reserr = self._connection.execute("cat %s ; rm %s" %  (stderr, stderr))
+        result['error'] = "error: %s" % reserr['output']
+
+        return (cmd, result['output'], result['error'], result['exitcode'], tdelta)
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

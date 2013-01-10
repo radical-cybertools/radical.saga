@@ -55,6 +55,8 @@ from   saga.exceptions       import *
 from   saga.advert.constants import *
 from   saga.engine.logger    import getLogger
 
+import saga.utils.exception
+
 
 TYPE   = 'type'
 OBJECT = 'object'
@@ -159,6 +161,8 @@ class redis_ns_monitor (threading.Thread) :
                                     cb  = callbacks[path][key][idx][0]
                                     obj = callbacks[path][key][idx][1]
 
+                                    self.logger.debug (" -- event set key ")
+                                    # obj.set_attribute (key, val)
                                     cb (obj, key, val)
 
                     if event == 'ATTRIBUTES' :
@@ -166,7 +170,11 @@ class redis_ns_monitor (threading.Thread) :
                         pass
 
         except Exception as e :
-            self.logger.crit (" -- redis monitoring thread crashed - disable callback handling (%s)") % str(e)
+            print "~~~~~~~~~~~~~~~~"
+            print saga.utils.exception.get_traceback (0)
+            print e
+            print "~~~~~~~~~~~~~~~~"
+            # self.logger.critical (" -- redis monitoring thread crashed - disable callback handling (%s)") % str(e)
 
 
 # --------------------------------------------------------------------
