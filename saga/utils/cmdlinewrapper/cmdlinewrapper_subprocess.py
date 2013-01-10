@@ -35,12 +35,12 @@ class SubprocessCommandLineWrapper(object):
         t1 = time.time()
         pid = subprocess.Popen(cmd, shell=True, 
                                stdout=subprocess.PIPE, 
-                               stderr=subprocess.STDOUT)
+                               stderr=subprocess.PIPE)
         
         out, err = pid.communicate() 
         tdelta = time.time() - t1
 
-        return (cmd, out, pid.returncode, tdelta)
+        return (cmd, out, err, pid.returncode, tdelta)
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
