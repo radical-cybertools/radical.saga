@@ -162,7 +162,7 @@ class redis_ns_monitor (threading.Thread) :
                                     obj = callbacks[path][key][idx][1]
 
                                     self.logger.debug (" -- event set key ")
-                                    # obj.set_attribute (key, val)
+                                    obj.set_attribute (key, val, obj.UP)
                                     cb (obj, key, val)
 
                     if event == 'ATTRIBUTES' :
