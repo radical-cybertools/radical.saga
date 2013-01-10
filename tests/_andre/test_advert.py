@@ -15,7 +15,7 @@ class my_cb (saga.Callback) :
 
 
   def cb (self, obj, key, val) :
-    print "callback triggered for %s - %s - %s [%s]" \
+    print " ----------- callback triggered for %s - %s - %s [%s]" \
         % (obj, key, val, obj.get_attribute (key))
     self.cnt += 1
     if val == 'start' :
@@ -43,18 +43,23 @@ def test () :
     d_1.foo = 'baz'
     print d_1.foo
   
-    print " ---------------------------------------------------"
-    t1 = time.time()
-    for i in range (1, 10000) :
-      d_1.copy ('src', 'tgt', ttype=saga.task.TASK)
-    t2 = time.time()
-    print " ---------------------------------------------------"
-    print (t2-t1)
-    print " ==================================================="
+    # print " ---------------------------------------------------"
+    # t1 = time.time()
+    # for i in range (1, 10000) :
+    #   d_1.copy ('src', 'tgt', ttype=saga.task.TASK)
+    # t2 = time.time()
+    # print " ---------------------------------------------------"
+    # print (t2-t1)
+    # print " ==================================================="
 
-    sys.exit (0)
+    # sys.exit (0)
 
-    d_1.add_callback ('foo', my_cb ())
+    d_1.set_attribute ('foo', 'oops1')
+    d_1.add_callback  ('foo', my_cb ())
+    d_1.set_attribute ('foo', 'oops2')
+
+    time.sleep (100)
+  # sys.exit (0)
   
   
   

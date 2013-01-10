@@ -13,7 +13,7 @@ import datetime
 import traceback
 import inspect
 import re
-import pprint
+from   pprint import pprint
 
 # FIXME: add a tagging 'Monitorable' interface, which enables callbacks.
 
@@ -428,23 +428,14 @@ class Attributes (_AttributesBase) :
         # screw up the iteration
         for cb in list (callbacks) :
 
-            call = cb
-
-            # support both plain callables, but also Callback derivates
-            if inspect.isclass (cb) and \
-               issubclass (cb, Callback) :
-                # for those too lazy to parse this beautiful line below:
-                # if the registered cb is an instance of our Callback class, we
-                # call that class' cb method.  So, the callable (cb) is the
-                # member 'cb' of the registered class (cb)
-                call = cb.cb
+            cb = cb
 
             # got the callable - call it!
             # raise and lower recursion shield as needed
             ret = False
             try :
                 d['_attributes'][key]['recursion'] = True
-                ret = call (key, self.__get_attr__ (key), self)
+                ret = cb (self, key, self.__getattr__ (key))
             finally :
                 d['_attributes'][key]['recursion'] = False
 
@@ -469,6 +460,11 @@ class Attributes (_AttributesBase) :
         # avoid recursion
         if d['_attributes'][key]['recursion'] :
             return
+
+        # no callbacks for private keys
+        if key[0] == '_' and d['_private'] :
+            return
+
 
         # key_setter overwrites results from all_setter
         all_setter = d['setter']
@@ -525,6 +521,10 @@ class Attributes (_AttributesBase) :
 
         # avoid recursion
         if d['_attributes'][key]['recursion'] :
+            return
+
+        # no callbacks for private keys
+        if key[0] == '_' and d['_private'] :
             return
 
         # key getter overwrites results from all_getter
@@ -637,6 +637,10 @@ class Attributes (_AttributesBase) :
 
         # avoid recursion
         if d['recursion'] :
+            return
+
+        # no callbacks for private keys
+        if key[0] == '_' and d['_private'] :
             return
 
         caller = d['caller']
@@ -794,8 +798,7 @@ class Attributes (_AttributesBase) :
 
 
         # we should never get here...
-        raise NoSuccess ("Cannot evaluate attribute flavor (%s) : %s"
-                %  (key, str(f)))
+        raise NoSuccess ("Cannot evaluate attribute flavor (%s) : %s"  %  (key, str(f)))
 
 
     ####################################
@@ -1680,11 +1683,12 @@ class Attributes (_AttributesBase) :
             if key not in keys_exist :
                 if not  d['_attributes'][key]['mode'] == self.ALIAS and \
                    not  d['_attributes'][key]['extended'] :
-                    print " %-30s [%-6s, %-6s, %-8s]: %s"  % \
+                    print " %-30s [%6s, %6s, %9s, %3d]: %s"  % \
                              (d['_attributes'][key]['camelcase'],
                               d['_attributes'][key]['type'],
                               d['_attributes'][key]['flavor'],
                               d['_attributes'][key]['mode'],
+                      len(d['_attributes'][key]['callbacks']),
                               d['_attributes'][key]['value']
                               )
 
@@ -1693,11 +1697,12 @@ class Attributes (_AttributesBase) :
         print "'Existing' attributes"
         for key in keys_exist :
             if not  d['_attributes'][key]['mode'] == self.ALIAS :
-                print " %-30s [%-6s, %-6s, %-8s]: %s"  % \
+                print " %-30s [%6s, %6s, %9s, %3d]: %s"  % \
                          (d['_attributes'][key]['camelcase'],
                           d['_attributes'][key]['type'],
                           d['_attributes'][key]['flavor'],
                           d['_attributes'][key]['mode'],
+                      len(d['_attributes'][key]['callbacks']),
                           d['_attributes'][key]['value']
                           )
 
@@ -1708,11 +1713,12 @@ class Attributes (_AttributesBase) :
             if key not in keys_exist :
                 if not  d['_attributes'][key]['mode'] == self.ALIAS and \
                         d['_attributes'][key]['extended'] :
-                    print " %-30s [%-6s, %-6s, %-8s]: %s"  % \
+                    print " %-30s [%6s, %6s, %9s, %3d]: %s"  % \
                              (d['_attributes'][key]['camelcase'],
                               d['_attributes'][key]['type'],
                               d['_attributes'][key]['flavor'],
                               d['_attributes'][key]['mode'],
+                      len(d['_attributes'][key]['callbacks']),
                               d['_attributes'][key]['value']
                               )
 
