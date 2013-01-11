@@ -976,17 +976,21 @@ class Attributes (_AttributesBase) :
         # of the 'attribute_exists' call, and the key iteration
         d['_attributes'][key]['exists'] = True
 
-        # only actually change the attribute when the new value differs --
-        # and only then invoke any callbacks and hooked setters
-        if val != d['_attributes'][key]['value'] :
+        # # only actually change the attribute when the new value differs --
+        # # and only then invoke any callbacks and hooked setters
+        # if val != d['_attributes'][key]['value'] :
+        #
+        # NOTE: this was disabled - we want to set 'last' anyway, but that
+        # means IMHO that we should also call callbacks.  The spec is
+        # inconclusive here, FWIW.
 
-            d['_attributes'][key]['value'] = val
-            d['_attributes'][key]['last']  = now ()
+        d['_attributes'][key]['value'] = val
+        d['_attributes'][key]['last']  = now ()
 
-            if flow==self._DOWN :
-                self._attributes_t_call_setter (key, val)
+        if flow==self._DOWN :
+            self._attributes_t_call_setter (key, val)
 
-            self._attributes_t_call_cb (key)
+        self._attributes_t_call_cb (key)
 
 
     ####################################

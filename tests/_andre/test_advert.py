@@ -60,7 +60,7 @@ def test () :
     d_1.add_callback  ('foo', my_cb ())
     d_1.set_attribute ('foo', 'oops2')
 
-    time.sleep (10)
+    time.sleep (30)
     sys.exit (0)
   
   
