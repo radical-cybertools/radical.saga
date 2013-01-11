@@ -37,7 +37,7 @@ class Container (TaskContainer):
 
         TaskContainer.__init__(self)
 
-        self._attributes_register   ("Jobs",   [], self.ANY, self.VECTOR, self.READONLY)
+        self._attributes_register   ("Jobs",   [], ANY, VECTOR, READONLY)
         self._attributes_set_getter ("Jobs",   self.get_jobs)
 
 
