@@ -7,14 +7,14 @@ import shutil
 import traceback
 
 import saga.url
-import saga.cpi.base
-import saga.cpi.filesystem
+import saga.adaptors.cpi.base
+import saga.adaptors.cpi.filesystem
 import saga.utils.misc
 
 from   saga.utils.singleton import Singleton
 
-SYNC_CALL  = saga.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 
 
 ###############################################################################
@@ -57,7 +57,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -73,7 +73,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # the adaptor *singleton* creates a (single) instance of a bulk handler
         # (BulkDirectory), which implements container_* bulk methods.
@@ -89,7 +89,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
 ###############################################################################
 #
-class BulkDirectory (saga.cpi.filesystem.Directory) :
+class BulkDirectory (saga.adaptors.cpi.filesystem.Directory) :
     """
     Well, this implementation can handle bulks, but cannot optimize them.
     We leave that code here anyway, for demonstration -- but those methods
@@ -141,11 +141,11 @@ class BulkDirectory (saga.cpi.filesystem.Directory) :
 
 ###############################################################################
 #
-class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
+class LocalDirectory (saga.adaptors.cpi.filesystem.Directory, saga.adaptors.cpi.Async) :
 
     def __init__ (self, api, adaptor) :
 
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL
@@ -343,10 +343,10 @@ class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
 #
 # file adaptor class
 #
-class LocalFile (saga.cpi.filesystem.File) :
+class LocalFile (saga.adaptors.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     def _dump (self) :

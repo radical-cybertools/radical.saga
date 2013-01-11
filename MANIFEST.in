@@ -7,12 +7,6 @@ include saga/filesystem/*.py
 include saga/replica/*.py
 include saga/advert/*.py
 
-include saga/cpi/*.py
-include saga/cpi/job/*.py
-include saga/cpi/filesystem/*.py
-include saga/cpi/replica/*.py
-include saga/cpi/advert/*.py
-
 include saga/engine/*.py
 
 include saga/utils/*.py
@@ -23,6 +17,11 @@ include saga/utils/logger/*.py
 include saga/utils/cmdlinewrapper/*.py
 
 include saga/adaptors/*.py
+include saga/adaptors/cpi/*.py
+include saga/adaptors/cpi/job/*.py
+include saga/adaptors/cpi/filesystem/*.py
+include saga/adaptors/cpi/replica/*.py
+include saga/adaptors/cpi/advert/*.py
 include saga/adaptors/context/*.py
 include saga/adaptors/local/*.py
 include saga/adaptors/redis/*.py

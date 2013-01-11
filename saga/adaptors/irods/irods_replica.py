@@ -9,14 +9,14 @@ import string
 import errno
 
 import saga.url
-import saga.cpi.base
-import saga.cpi.replica
+import saga.adaptors.cpi.base
+import saga.adaptors.cpi.replica
 import saga.utils.misc
 
 from   saga.utils.singleton import Singleton
 
-SYNC_CALL  = saga.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 
 class CommandWrapper () : 
     def __init__ (self) :
@@ -67,7 +67,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -86,7 +86,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
     #
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
 
     def sanity_check (self) :
@@ -350,14 +350,14 @@ class irods_resource_entry (object):
 #
 # logical_directory adaptor class
 #
-class IRODSDirectory (saga.cpi.replica.LogicalDirectory) :
+class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
 
     # ----------------------------------------------------------------
     #
     #
     def __init__ (self, api, adaptor) :
 
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
         self.name         = None
         self.size         = None
@@ -535,14 +535,14 @@ class IRODSDirectory (saga.cpi.replica.LogicalDirectory) :
 #
 # logical_file adaptor class
 #
-class IRODSFile (saga.cpi.replica.LogicalFile) :
+class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
 
     # ----------------------------------------------------------------
     #
     #
     def __init__ (self, api, adaptor) :
 
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
         self.name         = None
         self.locations    = []

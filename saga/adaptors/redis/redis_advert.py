@@ -4,16 +4,16 @@
 import traceback
 
 import saga.url
-import saga.cpi.base
-import saga.cpi.advert
+import saga.adaptors.cpi.base
+import saga.adaptors.cpi.advert
 import saga.utils.misc
 
 from   saga.utils.singleton import Singleton
 
 from   redis_namespace      import *
 
-SYNC_CALL  = saga.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 
 
 ###############################################################################
@@ -54,7 +54,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -70,7 +70,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # the adaptor *singleton* creates a (single) instance of a bulk handler
         # (BulkDirectory), which implements container_* bulk methods.
@@ -116,7 +116,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
 ###############################################################################
 #
-class BulkDirectory (saga.cpi.advert.Directory) :
+class BulkDirectory (saga.adaptors.cpi.advert.Directory) :
     """
     Well, this implementation can handle bulks, but cannot optimize them.
     We leave that code here anyway, for demonstration -- but those methods
@@ -159,11 +159,11 @@ class BulkDirectory (saga.cpi.advert.Directory) :
 
 ###############################################################################
 #
-class RedisDirectory (saga.cpi.advert.Directory, saga.cpi.Async) :
+class RedisDirectory (saga.adaptors.cpi.advert.Directory, saga.adaptors.cpi.Async) :
 
     def __init__ (self, api, adaptor) :
 
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL
@@ -294,11 +294,11 @@ class RedisDirectory (saga.cpi.advert.Directory, saga.cpi.Async) :
 #
 # entry adaptor class
 #
-class RedisEntry (saga.cpi.advert.Entry) :
+class RedisEntry (saga.adaptors.cpi.advert.Entry) :
 
     def __init__ (self, api, adaptor) :
 
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     def _dump (self) :

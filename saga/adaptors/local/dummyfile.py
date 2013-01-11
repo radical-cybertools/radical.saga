@@ -5,14 +5,14 @@ import os
 import shutil
 
 import saga.url
-import saga.cpi.base
-import saga.cpi.filesystem
+import saga.adaptors.cpi.base
+import saga.adaptors.cpi.filesystem
 import saga.utils.misc
 
 from   saga.utils.singleton import Singleton
 
-SYNC_CALL  = saga.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 
 
 ###############################################################################
@@ -57,7 +57,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -73,7 +73,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
 
     def sanity_check (self) :
@@ -83,10 +83,10 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
 ###############################################################################
 #
-class DummyDirectory (saga.cpi.filesystem.Directory) :
+class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL
@@ -186,10 +186,10 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
 #
 # file adaptor class
 #
-class DummyFile (saga.cpi.filesystem.File) :
+class DummyFile (saga.adaptors.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL

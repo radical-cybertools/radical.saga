@@ -12,11 +12,11 @@ from saga.utils.singleton import Singleton
 from saga.utils.job.jobid import JobId
 from saga.utils.which     import which
 
-import saga.cpi.base
-import saga.cpi.job
+import saga.adaptors.cpi.base
+import saga.adaptors.cpi.job
 
-SYNC_CALL  = saga.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 
 ################################################################################
 ## the adaptor name                                                           ## 
@@ -89,7 +89,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -105,7 +105,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # we only need to call gethostname once 
         self.hostname = socket.gethostname()
@@ -118,13 +118,13 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
 ###############################################################################
 #
-class LocalJobService (saga.cpi.job.Service) :
+class LocalJobService (saga.adaptors.cpi.job.Service) :
     """ Implements saga.cpi.job.Service
     """
     def __init__ (self, api, adaptor) :
         """ Implements saga.cpi.job.Service.__init__
         """
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL
@@ -163,13 +163,13 @@ class LocalJobService (saga.cpi.job.Service) :
 
     @SYNC_CALL
     def get_url (self) :
-        """ Implements saga.cpi.job.Service.get_url()
+        """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
         return self._rm
 
     @SYNC_CALL
     def list(self):
-        """ Implements saga.cpi.job.Service.list()
+        """ Implements saga.adaptors.cpi.job.Service.list()
         """
         jobids = list()
         for (job_obj, job_id) in self._jobs.iteritems():
@@ -179,7 +179,7 @@ class LocalJobService (saga.cpi.job.Service) :
 
     @SYNC_CALL
     def create_job (self, jd) :
-        """ Implements saga.cpi.job.Service.get_url()
+        """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
         # check that only supported attributes are provided
         for attribute in jd.list_attributes():
@@ -199,7 +199,7 @@ class LocalJobService (saga.cpi.job.Service) :
 
     @SYNC_CALL
     def get_job (self, jobid):
-        """ Implements saga.cpi.job.Service.get_url()
+        """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
         if jobid not in self._jobs.values():
             msg = "Service instance doesn't know a Job with ID '%s'" % (jobid)
@@ -231,17 +231,17 @@ class LocalJobService (saga.cpi.job.Service) :
 
 ###############################################################################
 #
-class LocalJob (saga.cpi.job.Job) :
-    """ Implements saga.cpi.job.Job
+class LocalJob (saga.adaptors.cpi.job.Job) :
+    """ Implements saga.adaptors.cpi.job.Job
     """
     def __init__ (self, api, adaptor) :
-        """ Implements saga.cpi.job.Job.__init__()
+        """ Implements saga.adaptors.cpi.job.Job.__init__()
         """
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
     @SYNC_CALL
     def init_instance (self, job_info):
-        """ Implements saga.cpi.job.Job.init_instance()
+        """ Implements saga.adaptors.cpi.job.Job.init_instance()
         """
         self._session         = job_info['session']
         self._jd              = job_info['job_description']
@@ -273,7 +273,7 @@ class LocalJob (saga.cpi.job.Job) :
 
     @SYNC_CALL
     def get_state(self):
-        """ Implements saga.cpi.job.Job.get_state()
+        """ Implements saga.adaptors.cpi.job.Job.get_state()
         """
         if self._state == saga.job.RUNNING:
             # only update if still running 
@@ -310,19 +310,19 @@ class LocalJob (saga.cpi.job.Job) :
 
     @SYNC_CALL
     def get_id (self) :
-        """ Implements saga.cpi.job.Job.get_id()
+        """ Implements saga.adaptors.cpi.job.Job.get_id()
         """        
         return self._id
 
     @SYNC_CALL
     def get_exit_code(self) :
-        """ Implements saga.cpi.job.Job.get_exit_code()
+        """ Implements saga.adaptors.cpi.job.Job.get_exit_code()
         """        
         return self._exit_code
 
     @SYNC_CALL
     def get_created(self) :
-        """ Implements saga.cpi.job.Job.get_started()
+        """ Implements saga.adaptors.cpi.job.Job.get_started()
         """     
         # for local jobs started == created. for other adaptors 
         # this is not necessarily true   
@@ -330,19 +330,19 @@ class LocalJob (saga.cpi.job.Job) :
 
     @SYNC_CALL
     def get_started(self) :
-        """ Implements saga.cpi.job.Job.get_started()
+        """ Implements saga.adaptors.cpi.job.Job.get_started()
         """        
         return self._started
 
     @SYNC_CALL
     def get_finished(self) :
-        """ Implements saga.cpi.job.Job.get_finished()
+        """ Implements saga.adaptors.cpi.job.Job.get_finished()
         """        
         return self._finished
     
     @SYNC_CALL
     def get_execution_hosts(self) :
-        """ Implements saga.cpi.job.Job.get_execution_hosts()
+        """ Implements saga.adaptors.cpi.job.Job.get_execution_hosts()
         """        
         return self._execution_hosts
 
@@ -359,7 +359,7 @@ class LocalJob (saga.cpi.job.Job) :
 
     @SYNC_CALL
     def run(self): 
-        """ Implements saga.cpi.job.Job.run()
+        """ Implements saga.adaptors.cpi.job.Job.run()
         """
 
         # lots of attribute checking and such 
