@@ -980,9 +980,12 @@ class Attributes (_AttributesBase) :
         # # and only then invoke any callbacks and hooked setters
         # if val != d['_attributes'][key]['value'] :
         #
-        # NOTE: this was disabled - we want to set 'last' anyway, but that
-        # means IMHO that we should also call callbacks.  The spec is
-        # inconclusive here, FWIW.
+        # NOTE: this check is disabled now: we certainly want to update 'last',
+        # and IMHO that should also imply a notification call, etc.  FWIW, the
+        # spec is inconclusive here.
+        #
+        # if val != d['_attributes'][key]['value'] :
+
 
         d['_attributes'][key]['value'] = val
         d['_attributes'][key]['last']  = now ()
@@ -1788,8 +1791,10 @@ class Attributes (_AttributesBase) :
 
         # callbacks are not invoked if the value did not change -- we take care
         # of that here.
-        if  None == newval or oldval == newval :
-            self._attributes_t_call_cb (key)
+        #
+        # if  None == newval or oldval == newval :
+
+        self._attributes_t_call_cb (key)
 
 
     ####################################
