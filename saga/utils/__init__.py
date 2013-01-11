@@ -8,6 +8,7 @@ import cmdlinewrapper
 import logger
 import threads
 import config
+import contrib
 
 from   singleton   import *
 from   exception   import *
