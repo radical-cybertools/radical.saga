@@ -117,22 +117,21 @@ class redis_ns_monitor (threading.Thread) :
             while sub :
 
                 
-                self.logger.debug (" -- waiting for next event ")
                 info = sub.next ()
                 data = info['data']
 
                 if not type (data) == type ("") :
-                    self.logger.debug (" -- ignoring event : %s"  %  data)
+                    self.logger.warn ("ignoring event : %s"  %  data)
                     continue
 
                 # FIXME: need proper regex parsing
                 elems = data.split ()
                 if not len (elems) == 3 :
-                    self.logger.debug (" -- ignoring event args : %s"  %  data)
+                    self.logger.warn ("ignoring event args : %s"  %  data)
                     continue
 
 
-                self.logger.debug (" -- event args : %s"  %  data)
+                self.logger.debug ("sub %s"  %  data)
                 event = elems[0]
                 path  = elems[1]
                 args  = elems[2:]
@@ -147,7 +146,7 @@ class redis_ns_monitor (threading.Thread) :
                             match = self.pat[event].match (string.join (args, ' '))
 
                             if  not match :
-                                self.logger.warn (" -- event parse error for %s" % args)
+                                self.logger.warn ("event parse error for %s" % args)
                                 pp (match)
                                 continue
 
@@ -161,20 +160,16 @@ class redis_ns_monitor (threading.Thread) :
                                     cb  = callbacks[path][key][idx][0]
                                     obj = callbacks[path][key][idx][1]
 
-                                    self.logger.debug (" -- event set key ")
-                                    obj.set_attribute (key, val, obj.UP)
-                                    cb (obj, key, val)
+                                    obj.set_attribute (key, val, obj._UP)
 
                     if event == 'ATTRIBUTES' :
-                        self.logger.warn (" -- unknown event type %s" % event)
+                        self.logger.warn ("unknown event type %s" % event)
                         pass
 
         except Exception as e :
-            print "~~~~~~~~~~~~~~~~"
-            print saga.utils.exception.get_traceback (0)
-            print e
-            print "~~~~~~~~~~~~~~~~"
-            # self.logger.critical (" -- redis monitoring thread crashed - disable callback handling (%s)") % str(e)
+            self.logger.critical ("redis monitoring thread crashed - disable callback handling (%s)") % str(e)
+            self.logger.debug    (saga.utils.exception.get_traceback (0))
+            return
 
 
 # --------------------------------------------------------------------
@@ -444,7 +439,7 @@ class redis_ns_entry :
         p.execute ()
     
         # issue notification about entry creation to parent dir
-        self.logger.debug (" -- CREATE %s [%s]"  %  (parent, name))
+        self.logger.debug (" pub CREATE %s [%s]"  %  (parent, name))
         self.r.publish   (MON, "CREATE %s [%s]"  %  (parent, name))
     
         # refresh cache state
@@ -616,7 +611,7 @@ class redis_ns_entry :
         for key in self.data :
             args.append (key+'='+self.data[key])
     
-        self.logger.debug (" -- ATTRIBUTES %s [%s]"  % (path, string.join (args, '][')))
+        self.logger.debug ("pub ATTRIBUTES %s [%s]"  % (path, string.join (args, '][')))
         self.r.publish   (MON, "ATTRIBUTES %s [%s]"  % (path, string.join (args, '][')))
     
         # refresh cache state
@@ -660,7 +655,8 @@ class redis_ns_entry :
         if key in self.data and self.data[key] == val :
 
             # nothing changed - so just trigger the set event
-            self.logger.debug (" -- ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
+            print "just publish"
+            self.logger.debug ("pub ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
             self.r.publish   (MON, "ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
 
             # nothing else to do
@@ -685,10 +681,10 @@ class redis_ns_entry :
         p.sadd (VALS+':'+str(val), path)
     
         # FIXME: eval return types / values
-        p.execute ()
+        vals = p.execute ()
     
         # issue notification about key creation/update
-        self.logger.debug (" -- ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
+        self.logger.debug ("pub ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
         self.r.publish   (MON, "ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
     
         # update cache

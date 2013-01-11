@@ -4,7 +4,7 @@ from   saga.url                  import Url
 from   saga.advert.constants     import *
 from   saga.base                 import Base
 from   saga.async                import Async
-from   saga.attributes           import Attributes
+from   saga.attributes           import *
 
 import saga.exceptions
 
@@ -27,6 +27,8 @@ class Directory (Base, Attributes, Async) :
         Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
                        url, flags, session, ttype=_ttype)
 
+        Attributes.__init__ (self, ttype=_ttype)
+
 
         # set attribute interface properties
         self._attributes_allow_private (True)
@@ -37,12 +39,12 @@ class Directory (Base, Attributes, Async) :
                                               caller=self._attribute_caller)
 
         # register properties with the attribute interface 
-        self._attributes_register   (ATTRIBUTE, None, self.STRING, self.SCALAR, self.READONLY)
-        self._attributes_register   (CHANGE,    None, self.STRING, self.SCALAR, self.READONLY)
-        self._attributes_register   (NEW,       None, self.STRING, self.SCALAR, self.READONLY)
-        self._attributes_register   (DELETE,    None, self.STRING, self.SCALAR, self.READONLY)
-        self._attributes_register   (EXPIRES,   None, self.STRING, self.SCALAR, self.READONLY)
-        self._attributes_register   (TTL,       None, self.INT,    self.SCALAR, self.WRITEABLE)
+        self._attributes_register   (ATTRIBUTE, None, STRING, SCALAR, READONLY)
+        self._attributes_register   (CHANGE,    None, STRING, SCALAR, READONLY)
+        self._attributes_register   (NEW,       None, STRING, SCALAR, READONLY)
+        self._attributes_register   (DELETE,    None, STRING, SCALAR, READONLY)
+        self._attributes_register   (EXPIRES,   None, STRING, SCALAR, READONLY)
+        self._attributes_register   (TTL,       None, INT,    SCALAR, WRITEABLE)
 
         self._attributes_set_setter (TTL, self.set_ttl_self)
         self._attributes_set_getter (TTL, self.get_ttl_self)

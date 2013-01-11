@@ -14,7 +14,7 @@ import saga.job.job
 from   saga.exceptions    import *
 from   saga.constants     import *
 from   saga.base          import SimpleBase
-from   saga.attributes    import Attributes
+from   saga.attributes    import *
 from   saga.utils.threads import Thread, NEW, RUNNING, DONE, FAILED
 from   saga.engine.logger import getLogger
 
@@ -70,15 +70,15 @@ class Task (SimpleBase, Attributes) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface
-        self._attributes_register   (RESULT,    None,    self.ANY, self.SCALAR, self.READONLY)
+        self._attributes_register   (RESULT,    None,    ANY, SCALAR, READONLY)
         self._attributes_set_getter (RESULT,    self.get_result)
         self._attributes_set_setter (RESULT,    self._set_result)
 
-        self._attributes_register   (EXCEPTION, None,    self.ANY, self.SCALAR, self.READONLY)
+        self._attributes_register   (EXCEPTION, None,    ANY, SCALAR, READONLY)
         self._attributes_set_getter (EXCEPTION, self.get_exception)
         self._attributes_set_setter (EXCEPTION, self._set_exception)
 
-        self._attributes_register   (STATE,     UNKNOWN, self.ENUM, self.SCALAR, self.READONLY)
+        self._attributes_register   (STATE,     UNKNOWN, ENUM, SCALAR, READONLY)
         self._attributes_set_enums  (STATE,    [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED])
         self._attributes_set_getter (STATE,     self.get_state)
         self._attributes_set_setter (STATE,     self._set_state)
@@ -248,13 +248,13 @@ class Container (SimpleBase, Attributes) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface
-        self._attributes_register   (SIZE,    0,    self.INT, self.SCALAR, self.READONLY)
+        self._attributes_register   (SIZE,    0,    INT, SCALAR, READONLY)
         self._attributes_set_getter (SIZE,    self.get_size)
 
-        self._attributes_register   (TASKS,   [],    self.ANY, self.VECTOR, self.READONLY)
+        self._attributes_register   (TASKS,   [],    ANY, VECTOR, READONLY)
         self._attributes_set_getter (TASKS,   self.get_tasks)
 
-        self._attributes_register   (STATES,  [],    self.ENUM, self.VECTOR, self.READONLY)
+        self._attributes_register   (STATES,  [],    ENUM, VECTOR, READONLY)
         self._attributes_set_getter (STATES,  self.get_states)
 
         self._attributes_set_enums  (STATES,  [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED])
