@@ -7,9 +7,9 @@ __license__   = "MIT"
 import cmdlinewrapper
 import logger
 import threads
+import config
 
 from   singleton   import *
-from   configfile  import *
 from   exception   import *
 from   misc        import *
 from   which       import *

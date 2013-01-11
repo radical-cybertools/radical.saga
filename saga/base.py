@@ -1,7 +1,7 @@
 
 import string
 
-from saga.engine.logger import getLogger
+from saga.utils.logger  import getLogger
 from saga.engine.engine import getEngine
 
 class SimpleBase (object) :

@@ -1,7 +1,7 @@
 
 from   saga.utils.singleton import Singleton
+from   saga.utils.logger    import getLogger
 from   saga.engine.engine   import getEngine
-from   saga.engine.logger   import getLogger
 from   saga.base            import SimpleBase
 
 class _DefaultSession (object) :

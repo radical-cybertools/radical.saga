@@ -53,8 +53,8 @@ import redis_cache
 
 from   saga.exceptions       import *
 from   saga.advert.constants import *
-from   saga.engine.logger    import getLogger
 
+from   saga.utils.logger     import getLogger
 import saga.utils.exception
 
 

@@ -10,7 +10,8 @@ import os
 
 from saga.utils.singleton  import Singleton
 from saga.utils.exception  import ExceptionBase
-from saga.utils.configfile import ConfigFileReader
+
+from configfile            import ConfigFileReader
 
 ################################################################################
 ##

@@ -6,7 +6,7 @@ __license__   = "MIT"
 ''' Unit tests for saga.engine.logger.py
 '''
 
-from saga.engine.logger import *
+from saga.utils.logger import *
 
 ############################# BEGIN UNIT TESTS ################################
 ##

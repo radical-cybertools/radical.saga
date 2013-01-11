@@ -10,6 +10,7 @@ import os
 from   logging import StreamHandler, Filter, getLogger as logging_getLogger
 from   logging import INFO, DEBUG, ERROR, WARNING, CRITICAL
 
+from   saga.utils.config                    import Configurable
 from   saga.utils.logger.colorstreamhandler import *
 from   saga.utils.logger.filehandler        import FileHandler
 from   saga.utils.logger.defaultformatter   import DefaultFormatter
@@ -17,7 +18,6 @@ from   saga.utils.singleton                 import Singleton
 from   saga.utils.exception                 import ExceptionBase
 from   saga.utils.exception                 import get_traceback as get_tb
 
-from   saga.engine.config                   import Configurable
 
 ############# forward call to exception util's get_traceback() #################
 ##

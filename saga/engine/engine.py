@@ -14,8 +14,8 @@ import inspect
 
 from   saga.exceptions      import *
 from   saga.utils.singleton import Singleton
-from   saga.engine.logger   import getLogger, get_traceback
-from   saga.engine.config   import getConfig, Configurable
+from   saga.utils.logger    import getLogger, get_traceback
+from   saga.utils.config    import getConfig, Configurable
 
 import saga.engine.registry  # adaptors to load
 # import saga.cpi              # load cpi's so that we can check what adaptors implement

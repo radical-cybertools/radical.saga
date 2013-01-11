@@ -9,8 +9,8 @@ __license__   = "MIT"
 import re
 import inspect
 
-import saga.engine.logger as saga_logger
-import saga.engine.config as saga_config
+import saga.utils.logger as saga_logger
+import saga.utils.config as saga_config
 
 from   saga.exceptions import *
 from   saga.task       import Task, SYNC, ASYNC, TASK

@@ -11,9 +11,9 @@ import sys
 import shutil
 import fileinput
 
-from distutils.core import setup
+from distutils.core                 import setup
 from distutils.command.install_data import install_data
-from distutils.command.sdist import sdist
+from distutils.command.sdist        import sdist
 
 from saga import version
 
@@ -104,6 +104,7 @@ setup_args = {
         "saga.utils",
         "saga.utils.cmdlinewrapper",
         "saga.utils.logger",
+        "saga.utils.config",
         "saga.utils.job"
     ],
     'scripts': scripts,

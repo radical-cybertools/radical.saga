@@ -6,7 +6,7 @@ __license__   = "MIT"
 """ Unit tests for saga.engine.config.py
 """
 
-from saga.engine.config import *
+from saga.utils.config import *
 
 ############################# BEGIN UNIT TESTS ################################
 ##
