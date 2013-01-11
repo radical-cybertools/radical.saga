@@ -33,7 +33,6 @@ from   saga.context        import *
 from   saga.session        import *
 from   saga.url            import *
 
-import saga.engine
 import saga.job
 import saga.filesystem
 import saga.replica

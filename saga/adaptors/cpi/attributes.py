@@ -1,7 +1,7 @@
 
-from   saga.cpi.base   import CPIBase
-from   saga.cpi.base   import CPI_SYNC_CALL  as sync
-from   saga.cpi.base   import CPI_ASYNC_CALL as async
+from   saga.adaptors.cpi.base   import CPIBase
+from   saga.adaptors.cpi.base   import CPI_SYNC_CALL  as sync
+from   saga.adaptors.cpi.base   import CPI_ASYNC_CALL as async
 
 
 class Attributes (object) :

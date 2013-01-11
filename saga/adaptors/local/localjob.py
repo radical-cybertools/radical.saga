@@ -119,10 +119,10 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 ###############################################################################
 #
 class LocalJobService (saga.adaptors.cpi.job.Service) :
-    """ Implements saga.cpi.job.Service
+    """ Implements saga.adaptors.cpi.job.Service
     """
     def __init__ (self, api, adaptor) :
-        """ Implements saga.cpi.job.Service.__init__
+        """ Implements saga.adaptors.cpi.job.Service.__init__
         """
         saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 

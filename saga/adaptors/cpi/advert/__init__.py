@@ -1,4 +1,4 @@
 
-from saga.cpi.advert.entry      import Entry
-from saga.cpi.advert.directory  import Directory
+from saga.adaptors.cpi.advert.entry      import Entry
+from saga.adaptors.cpi.advert.directory  import Directory
 

@@ -18,7 +18,7 @@ from   saga.utils.logger    import getLogger, get_traceback
 from   saga.utils.config    import getConfig, Configurable
 
 import saga.engine.registry  # adaptors to load
-# import saga.cpi              # load cpi's so that we can check what adaptors implement
+# import saga.adaptors.cpi              # load cpi's so that we can check what adaptors implement
 
 
 ############# These are all supported options for saga.engine ####################
@@ -348,9 +348,9 @@ class Engine(Configurable):
                 # saga.job.Service -- so we also make sure the module name does
                 # not have duplicated last element.  Also, the last element
                 # needs to be translated from CamelCase to camel_case
-                cpi_last = re.sub (r'.*\.', '',             cpi_type)
-                cpi_modn = re.sub (r'^saga\.', 'saga.cpi.', cpi_type)
-                cpi_modn = re.sub (r'([^.]+)\.\1$', r'\1',  cpi_modn)
+                cpi_last = re.sub (r'.*\.', '',                      cpi_type)
+                cpi_modn = re.sub (r'^saga\.', 'saga.adaptors.cpi.', cpi_type)
+                cpi_modn = re.sub (r'([^.]+)\.\1$', r'\1',           cpi_modn)
                 cpi_modn = re.sub (r'(.*)([a-z])([A-Z])([^\.]*)$', r'\1\2_\3\4', cpi_modn).lower ()
 
                 # does that module exist?

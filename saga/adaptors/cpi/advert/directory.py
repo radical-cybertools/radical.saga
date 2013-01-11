@@ -1,9 +1,9 @@
 
-from   saga.cpi.base       import CPIBase
-from   saga.cpi.base       import CPI_SYNC_CALL  as sync
-from   saga.cpi.base       import CPI_ASYNC_CALL as async
-from   saga.cpi.async      import Async
-from   saga.cpi.attributes import Attributes
+from   saga.adaptors.cpi.base       import CPIBase
+from   saga.adaptors.cpi.base       import CPI_SYNC_CALL  as sync
+from   saga.adaptors.cpi.base       import CPI_ASYNC_CALL as async
+from   saga.adaptors.cpi.async      import Async
+from   saga.adaptors.cpi.attributes import Attributes
 
 
 class Directory (CPIBase, Attributes, Async) :

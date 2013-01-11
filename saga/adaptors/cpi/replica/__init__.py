@@ -1,4 +1,4 @@
 
-from saga.cpi.replica.logical_file       import LogicalFile
-from saga.cpi.replica.logical_directory  import LogicalDirectory
+from saga.adaptors.cpi.replica.logical_file       import LogicalFile
+from saga.adaptors.cpi.replica.logical_directory  import LogicalDirectory
 

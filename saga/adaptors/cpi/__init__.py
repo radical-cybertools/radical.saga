@@ -1,12 +1,12 @@
 
-from saga.cpi.base       import *
-from saga.cpi.async      import *
-from saga.cpi.context    import *
-from saga.cpi.attributes import *
+from saga.adaptors.cpi.base       import *
+from saga.adaptors.cpi.async      import *
+from saga.adaptors.cpi.context    import *
+from saga.adaptors.cpi.attributes import *
 
-import saga.cpi.job
-import saga.cpi.filesystem
-import saga.cpi.replica
+import saga.adaptors.cpi.job
+import saga.adaptors.cpi.filesystem
+import saga.adaptors.cpi.replica
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
