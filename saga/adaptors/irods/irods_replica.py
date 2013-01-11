@@ -12,21 +12,22 @@ import saga.url
 import saga.cpi.base
 import saga.cpi.replica
 import saga.utils.misc
-
+from saga.utils.cmdlinewrapper import CommandLineWrapper
 from   saga.utils.singleton import Singleton
 
 SYNC_CALL  = saga.cpi.base.SYNC_CALL
 ASYNC_CALL = saga.cpi.base.ASYNC_CALL
 
-class CommandWrapper () : 
-    def __init__ (self) :
-        pass
 
-    @classmethod
-    def initAsLocalWrapper (self, logger):
-        return self ()
-
-    def connect (self) : pass
+#class CommandWrapper () : 
+#    def __init__ (self) :
+#        pass
+#
+#    @classmethod
+#    def initAsLocalWrapper (self, logger):
+#        return self ()
+#
+#    def connect (self) : pass
 
 
 ###############################################################################
@@ -91,19 +92,19 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
     def sanity_check (self) :
 
-        cw = CommandWrapper.initAsLocalWrapper(logger=self)
-        cw.connect()
+        cw = CommandLineWrapper.init_as_subprocess_wrapper()
+        cw.open()
 
         # run ils, see if we get any errors -- if so, fail the
         # sanity check
         try:
-            result = cw.run("ils")
+            result = cw.run_sync("ils")
             if result.returncode != 0:
                 raise Exception("sanity check error")
         except Exception, ex:
             raise saga.NoSuccess ("Disabling iRODS plugin - could not access iRODS "+\
                               "filesystem through ils.  Check your iRODS "+\
-                              "environment and certificates.")
+                              "environment and certificates. %s" % ex)
 
         # try ienv or imiscsvrinfo later? ( check for error messages )
 
