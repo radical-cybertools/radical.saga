@@ -27,6 +27,8 @@ class my_cb (saga.Callback) :
       print self.cnt
       print (self.t2-self.t1)
 
+    return True
+
 
 def test () :
   try :
@@ -58,8 +60,8 @@ def test () :
     d_1.add_callback  ('foo', my_cb ())
     d_1.set_attribute ('foo', 'oops2')
 
-    time.sleep (100)
-  # sys.exit (0)
+    time.sleep (30)
+    sys.exit (0)
   
   
   

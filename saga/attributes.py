@@ -10,12 +10,53 @@ from saga.exceptions import *
 ################################################################################
 
 import datetime
+import datetime
 import traceback
 import inspect
 import re
 from   pprint import pprint
 
 # FIXME: add a tagging 'Monitorable' interface, which enables callbacks.
+
+
+now   = datetime.datetime.now 
+never = datetime.datetime.min
+
+################################################################################
+#
+# define a couple of constants for the attribute API, mostly for registering
+# attributes.
+#
+# type enums
+ANY         = 'any'        # any python type can be set
+URL         = 'url'        # URL type (string + URL parser checks)
+INT         = 'int'        # Integer type
+FLOAT       = 'float'      # float type
+STRING      = 'string'     # string, duh!
+BOOL        = 'bool'       # True or False or Maybe
+ENUM        = 'enum'       # value is any one of a list of candidates
+TIME        = 'time'       # seconds since epoch, or any py time thing
+                           # which can be converted into such
+                           # FIXME: conversion not implemented
+
+# mode enums
+WRITEABLE   = 'writeable'  # the consumer of the interface can change
+                           # the attrib value
+READONLY    = 'readonly'   # the consumer of the interface can not
+                           # change the attrib value.  The
+                           # implementation can still change it.
+FINAL       = 'final'      # neither consumer nor implementation can
+                           # change the value anymore
+ALIAS       = 'alias'      # variable is deprecated, and alias'ed to
+                           # a different variable.
+
+# attrib extensions
+EXTENDED    = 'extended'   # attribute added as extension
+PRIVATE     = 'private'    # attribute added as private
+
+# flavor enums
+SCALAR      = 'scalar'     # the attribute value is a single data element
+VECTOR      = 'vector'     # the attribute value is a list of data elements
 
 ################################################################################
 #
@@ -154,8 +195,8 @@ class Attributes (_AttributesBase) :
                 super (Transliterator, self).__init__ (*args, **kwargs)
         
                 # setup class attribs
-                self._attributes_register   ('apple', 'Appel', self.URL,    self.SCALAR, self.WRITEABLE)
-                self._attributes_register   ('plum',  'Pruim', self.STRING, self.SCALAR, self.READONLY)
+                self._attributes_register   ('apple', 'Appel', URL,    SCALAR, WRITEABLE)
+                self._attributes_register   ('plum',  'Pruim', STRING, SCALAR, READONLY)
         
                 # setting attribs to non-extensible at *this* point will have allowed
                 # custom user attribs on __init__ time (via args), but will then forbid
@@ -253,41 +294,9 @@ class Attributes (_AttributesBase) :
 
     """
 
-    ############################################################################
-    #
-    # define a couple of constants for the attribute API, mostly for registering
-    # attributes.
-    #
-    # type enums
-    ANY         = 'any'        # any python type can be set
-    URL         = 'url'        # URL type (string + URL parser checks)
-    INT         = 'int'        # Integer type
-    FLOAT       = 'float'      # float type
-    STRING      = 'string'     # string, duh!
-    BOOL        = 'bool'       # True or False or Maybe
-    ENUM        = 'enum'       # value is any one of a list of candidates
-    TIME        = 'time'       # seconds since epoch, or any py time thing
-                               # which can be converted into such
-                               # FIXME: conversion not implemented
-
-    # mode enums
-    WRITEABLE   = 'writeable'  # the consumer of the interface can change
-                               # the attrib value
-    READONLY    = 'readonly'   # the consumer of the interface can not
-                               # change the attrib value.  The
-                               # implementation can still change it.
-    FINAL       = 'final'      # neither consumer nor implementation can
-                               # change the value anymore
-    ALIAS       = 'alias'      # variable is deprecated, and alias'ed to
-                               # a different variable.
-
-    # attrib extensions
-    EXTENDED    = 'extended'   # attribute added as extension
-    PRIVATE     = 'private'    # attribute added as private
-
-    # flavor enums
-    SCALAR      = 'scalar'     # the attribute value is a single data element
-    VECTOR      = 'vector'     # the attribute value is a list of data elements
+    # internally used constants to distinguish API from adaptor calls
+    _UP    = '_up'
+    _DOWN  = '_down'
 
     # two regexes for converting CamelCase into under_score_casing, as static
     # class vars to avoid frequent recompilation
@@ -304,11 +313,10 @@ class Attributes (_AttributesBase) :
         This method is not supposed to be directly called by the consumer of
         this API -- it should be called via derived object construction.
 
-        _attributes_t_init makes sure that the basic structures are in place on
+        attributes_t_init makes sure that the basic structures are in place on
         the attribute dictionary - this saves us ton of safety checks later on.
-
-        # FIXME: add the ability to initalize the attributes via a dict
         """
+        # FIXME: add the ability to initalize the attributes via a dict
 
         # initialize state
         d = self._attributes_t_init ()
@@ -397,7 +405,7 @@ class Attributes (_AttributesBase) :
         # if key is known, check for aliasing
         else: 
             # check if we know about the given attribute
-            if d['_attributes'][key]['mode'] == self.ALIAS :
+            if d['_attributes'][key]['mode'] == ALIAS :
                 alias = d['_attributes'][key]['alias']
                 print "attribute key / property name '%s' is deprecated - use '%s'"  %  (key, alias)
                 key   = alias
@@ -446,7 +454,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_t_call_setter (self, key) :
+    def _attributes_t_call_setter (self, key, val) :
         """
         This internal function is not to be used by the consumer of this API.
 
@@ -485,8 +493,9 @@ class Attributes (_AttributesBase) :
         if all_setter :
             try :
                 d['_attributes'][key]['recursion'] = True
-                all_setter (key, self._attributes_i_get (key))
+                all_setter (key, val)
             except Exception as e :
+                print "setter exception: " + str(e)
                 # ignoring failures from getter
                 pass
             except Exception as e :
@@ -498,7 +507,7 @@ class Attributes (_AttributesBase) :
         if key_setter :
             try :
                 d['_attributes'][key]['recursion'] = True
-                key_setter (self._attributes_i_get (key))
+                key_setter (val)
             except Exception as e :
                 can_ignore -= 1
                 if not can_ignore : raise e
@@ -568,8 +577,7 @@ class Attributes (_AttributesBase) :
 
             try :
                 d['_attributes'][key]['recursion'] = True
-                self._attributes_i_set (key, val=all_getter (key), force=True)
-                d['_attributes'][key]['last'] = datetime.datetime.now ()
+                val=all_getter (key)
             except Exception as e :
                 can_ignore -= 1
                 if not can_ignore : raise e
@@ -579,8 +587,7 @@ class Attributes (_AttributesBase) :
         if key_getter :
             try :
                 d['_attributes'][key]['recursion'] = True
-                self._attributes_i_set (key, val=key_getter (), force=True)
-                d['_attributes'][key]['last'] = datetime.datetime.now ()
+                key_getter ()
             except Exception as e :
                 can_ignore -= 1
                 if not can_ignore : raise e
@@ -696,7 +703,7 @@ class Attributes (_AttributesBase) :
         method will restore a 'None' value to the attribute's default value.
 
         A deriving class can add additional value checks for attributes by
-        calling L{_attributes_check_add} (key, check).
+        calling L{_attributes_check_add} (key, check, flow=flow).
         """
 
         # make sure interface is ready to use.  We do not check for keys, that
@@ -748,7 +755,7 @@ class Attributes (_AttributesBase) :
 
         # check if we need to serialize a list into a scalar
         f = d['_attributes'][key]['flavor']
-        if f == self.VECTOR :
+        if f == VECTOR :
             # we want a vector
             if isinstance (val, list) :
                 # val is already vec - apply type conversion on all elems
@@ -772,7 +779,7 @@ class Attributes (_AttributesBase) :
                     return [self._attributes_t_conversion_type (key, val)]
 
 
-        elif f == self.SCALAR :
+        elif f == SCALAR :
             # we want a scalar
             if isinstance (val, list) :
                 # need to create scalar from vec
@@ -816,12 +823,12 @@ class Attributes (_AttributesBase) :
         ret = None
         try :
             # FIXME: add time/date conversion to/from string
-            if   t == self.ANY    : return        val  
-            elif t == self.INT    : return int   (val) 
-            elif t == self.FLOAT  : return float (val) 
-            elif t == self.BOOL   : return bool  (val) 
-            elif t == self.STRING : return str   (val) 
-            else                  : return        val  
+            if   t == ANY    : return        val  
+            elif t == INT    : return int   (val) 
+            elif t == FLOAT  : return float (val) 
+            elif t == BOOL   : return bool  (val) 
+            elif t == STRING : return str   (val) 
+            else             : return        val  
         except ValueError as e:
             raise BadParameter ("attribute value %s has incorrect type: %s" %  (key, val))
 
@@ -881,14 +888,12 @@ class Attributes (_AttributesBase) :
         """ get the age of the attribute, i.e. seconds.microseconds since last set """
 
         # make sure interface is ready to use.
-        d = self._attributes_t_init (key)
-
-        now  = datetime.datetime.now ()
+        d    = self._attributes_t_init (key)
         last = d['_attributes'][key]['last']
-
-        age  = now - last
+        age  = now() - last
 
         return (age.microseconds + (age.seconds + age.days * 24 * 3600) * 1e6) / 1e6
+
 
 
     ###########################################################################
@@ -903,7 +908,7 @@ class Attributes (_AttributesBase) :
     # Naming: __attributes_i*
     #
     ####################################
-    def _attributes_i_set (self, key, val=None, force=False) :
+    def _attributes_i_set (self, key, val=None, force=False, flow=_DOWN) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -927,12 +932,14 @@ class Attributes (_AttributesBase) :
             if key[0] == '_' and d['_private'] :
                 # if the set is private, we can register the new key.  It
                 # won't have any callbacks at this point.
-                self._attributes_register (key, None, self.ANY, self.SCALAR, self.WRITEABLE, self.EXTENDED)
+                self._attributes_register (key, None, ANY, SCALAR, WRITEABLE,
+                        EXTENDED, flow=flow)
 
-            elif d['_extensible'] :
+            elif flow==self._UP or d['_extensible'] :
                 # if the set is extensible, we can register the new key.  It
                 # won't have any callbacks at this point.
-                self._attributes_register (key, None, self.ANY, self.SCALAR, self.WRITEABLE, self.EXTENDED)
+                self._attributes_register (key, None, ANY, SCALAR, WRITEABLE,
+                        EXTENDED, flow=flow)
 
             else :
                 # we cannot add new keys on non-extensible / non-private sets
@@ -948,10 +955,10 @@ class Attributes (_AttributesBase) :
 
                 mode = d['_attributes'][key]['mode']
 
-                if self.FINAL == mode :
+                if FINAL == mode :
                     return
 
-                elif self.READONLY == mode :
+                elif READONLY == mode :
                     if not force :
                         raise BadParameter ("attribute %s is not writeable" %  key)
 
@@ -969,16 +976,28 @@ class Attributes (_AttributesBase) :
         # of the 'attribute_exists' call, and the key iteration
         d['_attributes'][key]['exists'] = True
 
-        # only actually change the attribute when the new value differs --
-        # and only then invoke any callbacks and hooked setters
-        if val != d['_attributes'][key]['value'] :
-            d['_attributes'][key]['value'] = val
-            self._attributes_t_call_setter (key)
-            self._attributes_t_call_cb     (key)
+        # # only actually change the attribute when the new value differs --
+        # # and only then invoke any callbacks and hooked setters
+        # if val != d['_attributes'][key]['value'] :
+        #
+        # NOTE: this check is disabled now: we certainly want to update 'last',
+        # and IMHO that should also imply a notification call, etc.  FWIW, the
+        # spec is inconclusive here.
+        #
+        # if val != d['_attributes'][key]['value'] :
+
+
+        d['_attributes'][key]['value'] = val
+        d['_attributes'][key]['last']  = now ()
+
+        if flow==self._DOWN :
+            self._attributes_t_call_setter (key, val)
+
+        self._attributes_t_call_cb (key)
 
 
     ####################################
-    def _attributes_i_get (self, key) :
+    def _attributes_i_get (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -1009,7 +1028,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_i_list (self, ext=True, priv=False, CamelCase=True) :
+    def _attributes_i_list (self, ext=True, priv=False, CamelCase=True, flow=_DOWN) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -1028,7 +1047,7 @@ class Attributes (_AttributesBase) :
 
         ret = []
         for key in sorted(d['_attributes'].iterkeys()) :
-            if d['_attributes'][key]['mode'] != self.ALIAS :
+            if d['_attributes'][key]['mode'] != ALIAS :
                 if d['_attributes'][key]['exists'] :
 
                     e = d['_attributes'][key]['extended'] 
@@ -1053,7 +1072,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_i_find (self, pattern) :
+    def _attributes_i_find (self, pattern, flow) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -1083,7 +1102,7 @@ class Attributes (_AttributesBase) :
           
           if len (tmp) >  0 : 
               # at least one elem: only key pattern present
-              p_key = self._attributes_t_wildcard2regex (tmp[0])  
+              p_key = self._attributes_t_wildcard2regex (tmp[0])
           
           if len (tmp) == 2 :
               # two elems: val pattern is also present
@@ -1094,10 +1113,10 @@ class Attributes (_AttributesBase) :
         if len (p_val) : pc_val = re.compile (p_val)
 
         # now dig out matching keys. List hooks are triggered in
-        # _attributes_i_list().
+        # _attributes_i_list(flow).
         matches = []
-        for key in self._attributes_i_list () :
-            val = str(self._attributes_i_get (key))
+        for key in self._attributes_i_list (flow) :
+            val = str(self._attributes_i_get (key, flow=flow))
 
             if ( (pc_key == None) or pc_key.search (key) ) and \
                ( (pc_val == None) or pc_val.search (val) )     :
@@ -1107,7 +1126,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_i_exists (self, key) :
+    def _attributes_i_exists (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -1130,7 +1149,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_i_is_extended (self, key) :
+    def _attributes_i_is_extended (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -1148,7 +1167,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_i_is_private (self, key) :
+    def _attributes_i_is_private (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -1166,7 +1185,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_i_is_readonly (self, key) :
+    def _attributes_i_is_readonly (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -1181,15 +1200,15 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init (key)
 
         # check if we know about that attribute
-        if  d['_attributes'][key]['mode'] == self.FINAL or \
-            d['_attributes'][key]['mode'] == self.READONLY :
+        if  d['_attributes'][key]['mode'] == FINAL or \
+            d['_attributes'][key]['mode'] == READONLY :
             return True
 
         return False
 
 
     ####################################
-    def _attributes_i_is_writeable (self, key) :
+    def _attributes_i_is_writeable (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -1199,11 +1218,11 @@ class Attributes (_AttributesBase) :
         This method will check if the given key is writeable - i.e. not readonly.
         """
 
-        return not self._attributes_i_is_readonly (key)
+        return not self._attributes_i_is_readonly (key, flow=flow)
 
 
     ####################################
-    def _attributes_i_is_removable (self, key) :
+    def _attributes_i_is_removable (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -1213,14 +1232,14 @@ class Attributes (_AttributesBase) :
         'True' if the attrib is writeable and Extended.
         """
 
-        if self._attributes_i_is_writeable (key) and \
-           self._attributes_i_is_extended (key)     :
+        if self._attributes_i_is_writeable (key, flow=flow) and \
+           self._attributes_i_is_extended  (key, flow=flow)     :
             return True
 
         return False
 
     ####################################
-    def _attributes_i_is_vector (self, key) :
+    def _attributes_i_is_vector (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -1232,14 +1251,14 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init (key)
 
         # check if we know about that attribute
-        if  d['_attributes'][key]['flavor'] == self.VECTOR :
+        if  d['_attributes'][key]['flavor'] == VECTOR :
             return True
 
         return False
 
 
     ####################################
-    def _attributes_i_is_final (self, key) :
+    def _attributes_i_is_final (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -1253,7 +1272,7 @@ class Attributes (_AttributesBase) :
         # make sure interface is ready to use
         d = self._attributes_t_init (key)
 
-        if self.FINAL == d['_attributes'][key]['mode'] :
+        if FINAL == d['_attributes'][key]['mode'] :
              return True
 
         # no final flag found -- assume non-finality!
@@ -1261,7 +1280,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_i_add_cb (self, key, cb) :
+    def _attributes_i_add_cb (self, key, cb, flow) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -1276,13 +1295,14 @@ class Attributes (_AttributesBase) :
 
         id = len (d['_attributes'][key]['callbacks']) - 1
 
-        self._attributes_t_call_caller (key, id, cb)
+        if flow==self._DOWN :
+            self._attributes_t_call_caller (key, id, cb)
 
         return id
 
 
     ####################################
-    def _attributes_i_del_cb (self, key, id=None) :
+    def _attributes_i_del_cb (self, key, id=None, flow=_DOWN) :
         """
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
@@ -1293,7 +1313,8 @@ class Attributes (_AttributesBase) :
         # make sure interface is ready to use
         d = self._attributes_t_init (key)
 
-        self._attributes_t_call_caller (key, id, None)
+        if flow==self._DOWN :
+            self._attributes_t_call_caller (key, id, None)
 
         # id == None: remove all callbacks
         if not id :
@@ -1315,10 +1336,11 @@ class Attributes (_AttributesBase) :
     # Keys should be provided as CamelCase (only relevant if camelcasing is
     # set).
     #
-    # Naming: __attributes*
+    # Naming: _attributes*
     #
     ####################################
-    def _attributes_register (self, key, default=None, typ=ANY, flavor=SCALAR, mode=WRITEABLE, ext=False) :
+    def _attributes_register (self, key, default=None, typ=ANY, flavor=SCALAR,
+                              mode=WRITEABLE, ext=False, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1346,9 +1368,7 @@ class Attributes (_AttributesBase) :
 
         # remove any old instance of this attribute
         if us_key in  d['_attributes'] :
-            self._attributes_unregister (us_key)
-
-        never = datetime.datetime.min
+            self._attributes_unregister (us_key, flow=flow)
 
         # register the attribute and properties
         d['_attributes'][us_key]                 = {}
@@ -1372,7 +1392,7 @@ class Attributes (_AttributesBase) :
         d['_attributes'][us_key]['ttl']          = 0.0     # refresh delay (none)
 
         # for enum types, we add a value checker
-        if typ == self.ENUM :
+        if typ == ENUM :
             ######################################
             def _enum_check (key, val) :
                 if None == val  :
@@ -1380,7 +1400,8 @@ class Attributes (_AttributesBase) :
                     return True
                 
                 us_key = self._attributes_t_underscore (key)
-                d      = self._attributes_t_init (us_key)
+                d      = self._attributes_t_init       (us_key)
+
                 vals   = d['_attributes'][us_key]['enums']
 
                 # check if there is anything to check
@@ -1398,12 +1419,12 @@ class Attributes (_AttributesBase) :
                 """  %  (str(val), key, str(vals))
             ######################################
 
-            self._attributes_check_add (key, _enum_check)
+            self._attributes_check_add (key, _enum_check, flow=flow)
 
 
 
     ####################################
-    def _attributes_register_deprecated (self, key, alias) :
+    def _attributes_register_deprecated (self, key, alias, flow) :
         """
         Often enough, there is the need to use change attribute names.  It is
         good practice to not simply rename attributes, and thus effectively
@@ -1423,10 +1444,10 @@ class Attributes (_AttributesBase) :
         registered before (via L{_attributes_register})::
 
             # old code:
-            self._attributes_register ('apple', 'Appel', self.STRING, self.SCALAR, self.WRITEABLE)
+            self._attributes_register ('apple', 'Appel', STRING, SCALAR, WRITEABLE)
 
             # new code
-            self._attributes_register ('fruit', 'Appel', self.STRING, self.SCALAR, self.WRITEABLE)
+            self._attributes_register ('fruit', 'Appel', STRING, SCALAR, WRITEABLE)
             self._attributes_register_deprecated ('apple', 'fruit)
 
         In some cases, you may want to deprecate a variable and not replace it
@@ -1434,7 +1455,7 @@ class Attributes (_AttributesBase) :
         achieved via::
 
             # new code
-            self._attributes_register ('deprecated_apple', 'Appel', self.STRING, self.SCALAR, self.WRITEABLE)
+            self._attributes_register ('deprecated_apple', 'Appel', STRING, SCALAR, WRITEABLE)
             self._attributes_register_deprecated ('apple', 'deprecated_apple)
 
         This way, the user will either see a warning, or has to explicitly use
@@ -1453,11 +1474,11 @@ class Attributes (_AttributesBase) :
 
         # remove any old instance of this attribute
         if us_key in  d['_attributes'] :
-            self._attributes_unregister (us_key)
+            self._attributes_unregister (us_key, flow=flow)
 
         # register the attribute and properties
         d['_attributes'][us_key]               = {}
-        d['_attributes'][us_key]['mode']       = self.ALIAS # alias
+        d['_attributes'][us_key]['mode']       = ALIAS      # alias
         d['_attributes'][us_key]['alias']      = us_alias   # aliased var
         d['_attributes'][us_key]['camelcase']  = key        # keep original key name
         d['_attributes'][us_key]['underscore'] = us_key     # keep under_scored name
@@ -1465,7 +1486,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_unregister (self, key) :
+    def _attributes_unregister (self, key, flow) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1485,7 +1506,7 @@ class Attributes (_AttributesBase) :
 
         # make sure interface is ready to use
         us_key = self._attributes_t_underscore (key)
-        d = self._attributes_t_init (us_key)
+        d      = self._attributes_t_init       (us_key)
 
         # if the attribute exists, purge it
         if us_key in d['_attributes'] :
@@ -1493,7 +1514,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_remove (self, key) :
+    def _attributes_remove (self, key, flow) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1506,14 +1527,14 @@ class Attributes (_AttributesBase) :
 
         # make sure interface is ready to use
         us_key = self._attributes_t_underscore (key)
-        d = self._attributes_t_init (us_key)
+        d      = self._attributes_t_init       (us_key)
 
-        if self._attributes_i_is_removable (key) :
+        if self._attributes_i_is_removable (key, flow=flow) :
             del (d['_attributes'][us_key])
 
 
     ####################################
-    def _attributes_set_enums (self, key, enums=None) :
+    def _attributes_set_enums (self, key, enums=None, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1531,7 +1552,8 @@ class Attributes (_AttributesBase) :
     ####################################
     def _attributes_extensible (self, e=True, 
                                 getter=None, setter=None, 
-                                lister=None, caller=None) :
+                                lister=None, caller=None, 
+                                flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1545,15 +1567,15 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init ()
         d['_extensible'] = e
 
-        if getter : self._attributes_set_global_getter (getter)
-        if setter : self._attributes_set_global_setter (setter)
-        if lister : self._attributes_set_global_lister (lister)
-        if caller : self._attributes_set_global_caller (caller)
+        if getter : self._attributes_set_global_getter (getter, flow=flow)
+        if setter : self._attributes_set_global_setter (setter, flow=flow)
+        if lister : self._attributes_set_global_lister (lister, flow=flow)
+        if caller : self._attributes_set_global_caller (caller, flow=flow)
 
 
 
     ####################################
-    def _attributes_allow_private (self, p=True) :
+    def _attributes_allow_private (self, p=True, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1570,7 +1592,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_camelcasing (self, c=True) :
+    def _attributes_camelcasing (self, c=True, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1587,7 +1609,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_deep_copy (self, other) :
+    def _attributes_deep_copy (self, other, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1639,8 +1661,8 @@ class Attributes (_AttributesBase) :
             other_d['_attributes'][key]['last']         =       d['_attributes'][key]['last']
             other_d['_attributes'][key]['ttl']          =       d['_attributes'][key]['ttl']
 
-            if d['_attributes'][key]['flavor'] == self.VECTOR and \
-               d['_attributes'][key]['value' ] != None            :
+            if d['_attributes'][key]['flavor'] == VECTOR and \
+               d['_attributes'][key]['value' ] != None       :
                 other_d['_attributes'][key]['value']  = list (d['_attributes'][key]['value'])
             else :
                 other_d['_attributes'][key]['value']  =       d['_attributes'][key]['value']
@@ -1650,7 +1672,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_dump (self, msg=None) :
+    def _attributes_dump (self, msg=None, flow=_DOWN) :
         """ 
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1663,7 +1685,7 @@ class Attributes (_AttributesBase) :
 
 
         keys_all   = sorted (d['_attributes'].iterkeys ())
-        keys_exist = (key.lower for key in sorted (self._attributes_i_list ()))
+        keys_exist = (key.lower for key in sorted (self._attributes_i_list (flow)))
 
         print "---------------------------------------"
         print str (type (self))
@@ -1681,7 +1703,7 @@ class Attributes (_AttributesBase) :
         print "'Registered' attributes"
         for key in keys_all :
             if key not in keys_exist :
-                if not  d['_attributes'][key]['mode'] == self.ALIAS and \
+                if not  d['_attributes'][key]['mode'] == ALIAS and \
                    not  d['_attributes'][key]['extended'] :
                     print " %-30s [%6s, %6s, %9s, %3d]: %s"  % \
                              (d['_attributes'][key]['camelcase'],
@@ -1696,7 +1718,7 @@ class Attributes (_AttributesBase) :
 
         print "'Existing' attributes"
         for key in keys_exist :
-            if not  d['_attributes'][key]['mode'] == self.ALIAS :
+            if not  d['_attributes'][key]['mode'] == ALIAS :
                 print " %-30s [%6s, %6s, %9s, %3d]: %s"  % \
                          (d['_attributes'][key]['camelcase'],
                           d['_attributes'][key]['type'],
@@ -1711,7 +1733,7 @@ class Attributes (_AttributesBase) :
         print "'Extended' attributes"
         for key in keys_all :
             if key not in keys_exist :
-                if not  d['_attributes'][key]['mode'] == self.ALIAS and \
+                if not  d['_attributes'][key]['mode'] == ALIAS and \
                         d['_attributes'][key]['extended'] :
                     print " %-30s [%6s, %6s, %9s, %3d]: %s"  % \
                              (d['_attributes'][key]['camelcase'],
@@ -1727,7 +1749,7 @@ class Attributes (_AttributesBase) :
         print "'Deprecated' attributes (aliases)"
         for key in keys_all :
             if key not in keys_exist :
-                if d['_attributes'][key]['mode'] == self.ALIAS :
+                if d['_attributes'][key]['mode'] == ALIAS :
                     print " %-30s [%24s]:  %s"  % \
                              (d['_attributes'][key]['camelcase'],
                               ' ',
@@ -1738,7 +1760,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_set_final (self, key, val=None) :
+    def _attributes_set_final (self, key, val=None, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1764,17 +1786,19 @@ class Attributes (_AttributesBase) :
 
         # flag as final, and set the final value (this order to avoid races in
         # callbacks)
-        d['_attributes'][us_key]['mode'] = self.FINAL
-        self._attributes_i_set (us_key, val)
+        d['_attributes'][us_key]['mode'] = FINAL
+        self._attributes_i_set (us_key, val, flow=flow)
 
         # callbacks are not invoked if the value did not change -- we take care
         # of that here.
-        if  None == newval or oldval == newval :
-            self._attributes_t_call_cb (key)
+        #
+        # if  None == newval or oldval == newval :
+
+        self._attributes_t_call_cb (key)
 
 
     ####################################
-    def _attributes_set_ttl (self, key, ttl=0.0) :
+    def _attributes_set_ttl (self, key, ttl=0.0, flow=_DOWN) :
         """ set attributes TTL in seconds (float) -- see L{_attributes_i_set} """
 
         # make sure interface is ready to use.
@@ -1786,7 +1810,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_check_add (self, key, check) :
+    def _attributes_check_add (self, key, check, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1811,7 +1835,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_set_getter (self, key, getter) :
+    def _attributes_set_getter (self, key, getter, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1865,7 +1889,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_set_setter (self, key, setter) :
+    def _attributes_set_setter (self, key, setter, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1882,7 +1906,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_set_global_lister (self, lister) :
+    def _attributes_set_global_lister (self, lister, flow) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1897,7 +1921,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_set_global_caller (self, caller) :
+    def _attributes_set_global_caller (self, caller, flow) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1912,7 +1936,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_set_global_getter (self, getter) :
+    def _attributes_set_global_getter (self, getter, flow) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1927,7 +1951,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_set_global_setter (self, setter) :
+    def _attributes_set_global_setter (self, setter, flow) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1949,7 +1973,7 @@ class Attributes (_AttributesBase) :
     # underscore before using them.
     # 
     ####################################
-    def set_attribute (self, key, val) :
+    def set_attribute (self, key, val, _flow=_DOWN) :
         """
         set_attribute(key, val)
 
@@ -1979,11 +2003,11 @@ class Attributes (_AttributesBase) :
 
         key    = self._attributes_t_keycheck   (key)
         us_key = self._attributes_t_underscore (key)
-        return   self._attributes_i_set        (us_key, val)
+        return   self._attributes_i_set        (us_key, val, flow=_flow)
 
 
     ####################################
-    def get_attribute (self, key) :
+    def get_attribute (self, key, _flow=_DOWN) :
         """
         get_attribute(key)
 
@@ -1995,11 +2019,11 @@ class Attributes (_AttributesBase) :
 
         key    = self._attributes_t_keycheck   (key)
         us_key = self._attributes_t_underscore (key)
-        return   self._attributes_i_get        (us_key)
+        return   self._attributes_i_get        (us_key, _flow)
 
 
     ####################################
-    def set_vector_attribute (self, key, val) :
+    def set_vector_attribute (self, key, val, _flow=_DOWN) :
         """
         set_vector_attribute (key, val)
 
@@ -2012,11 +2036,11 @@ class Attributes (_AttributesBase) :
 
         key    = self._attributes_t_keycheck   (key)
         us_key = self._attributes_t_underscore (key)
-        return   self._attributes_i_set        (us_key, val)
+        return   self._attributes_i_set        (us_key, val, _flow)
 
 
     ####################################
-    def get_vector_attribute (self, key) :
+    def get_vector_attribute (self, key, _flow=_DOWN) :
         """
         get_vector_attribute (key)
 
@@ -2029,11 +2053,11 @@ class Attributes (_AttributesBase) :
 
         key    = self._attributes_t_keycheck   (key)
         us_key = self._attributes_t_underscore (key)
-        return   self._attributes_i_get        (us_key)
+        return   self._attributes_i_get        (us_key, _flow)
 
 
     ####################################
-    def remove_attribute (self, key) :
+    def remove_attribute (self, key, _flow=_DOWN) :
         """
         remove_attribute (key)
 
@@ -2044,22 +2068,22 @@ class Attributes (_AttributesBase) :
 
         key    = self._attributes_t_keycheck   (key)
         us_key = self._attributes_t_underscore (key)
-        return   self._attributes_remove       (us_key)
+        return   self._attributes_remove       (us_key, _flow)
 
 
     ####################################
-    def list_attributes (self) :
+    def list_attributes (self, _flow=_DOWN) :
         """
         list_attributes ()
 
         List all attributes which have been explicitly set. 
         """
 
-        return self._attributes_i_list ()
+        return self._attributes_i_list (_flow)
 
 
     ####################################
-    def find_attributes (self, pattern) :
+    def find_attributes (self, pattern, _flow=_DOWN) :
         """
         find_attributes (pattern)
 
@@ -2069,11 +2093,11 @@ class Attributes (_AttributesBase) :
         applied to a string serialization of the typed value, if that exists.
         """
 
-        return self._attributes_i_find (pattern)
+        return self._attributes_i_find (pattern, _flow)
 
 
     ####################################
-    def attribute_exists (self, key) :
+    def attribute_exists (self, key, _flow=_DOWN) :
         """
         attribute_exist (key)
 
@@ -2083,11 +2107,11 @@ class Attributes (_AttributesBase) :
 
         key    = self._attributes_t_keycheck   (key)
         us_key = self._attributes_t_underscore (key)
-        return self._attributes_i_exists (us_key)
+        return self._attributes_i_exists (us_key, _flow)
 
 
     ####################################
-    def attribute_is_readonly (self, key) :
+    def attribute_is_readonly (self, key, _flow=_DOWN) :
         """
         attribute_is_readonly (key)
 
@@ -2097,11 +2121,11 @@ class Attributes (_AttributesBase) :
 
         key    = self._attributes_t_keycheck   (key)
         us_key = self._attributes_t_underscore (key)
-        return self._attributes_i_is_readonly (us_key)
+        return self._attributes_i_is_readonly (us_key, _flow)
 
 
     ####################################
-    def attribute_is_writeable (self, key) :
+    def attribute_is_writeable (self, key, _flow=_DOWN) :
         """
         attribute_is_writeable (key)
 
@@ -2110,11 +2134,11 @@ class Attributes (_AttributesBase) :
 
         key    = self._attributes_t_keycheck   (key)
         us_key = self._attributes_t_underscore (key)
-        return self._attributes_i_is_writeable (us_key)
+        return self._attributes_i_is_writeable (us_key, _flow)
 
 
     ####################################
-    def attribute_is_removable (self, key) :
+    def attribute_is_removable (self, key, _flow=_DOWN) :
         """
         attribute_is_writeable (key)
 
@@ -2123,11 +2147,11 @@ class Attributes (_AttributesBase) :
 
         key    = self._attributes_t_keycheck   (key)
         us_key = self._attributes_t_underscore (key)
-        return self._attributes_i_is_removable (us_key)
+        return self._attributes_i_is_removable (us_key, _flow)
 
 
     ####################################
-    def attribute_is_vector (self, key) :
+    def attribute_is_vector (self, key, _flow=_DOWN) :
         """
         attribute_is_vector (key)
 
@@ -2136,13 +2160,13 @@ class Attributes (_AttributesBase) :
 
         key    = self._attributes_t_keycheck   (key)
         us_key = self._attributes_t_underscore (key)
-        return self._attributes_i_is_vector (us_key)
+        return self._attributes_i_is_vector (us_key, _flow)
 
 
     ####################################
     # fold the GFD.90 monitoring API into the attributes API
     ####################################
-    def add_callback (self, key, cb) :
+    def add_callback (self, key, cb, _flow=_DOWN) :
         """
         add_callback (key, cb)
 
@@ -2174,11 +2198,11 @@ class Attributes (_AttributesBase) :
 
         key    = self._attributes_t_keycheck   (key)
         us_key = self._attributes_t_underscore (key)
-        return self._attributes_i_add_cb (us_key, cb)
+        return self._attributes_i_add_cb (us_key, cb, _flow)
 
 
     ####################################
-    def remove_callback (self, key, id) :
+    def remove_callback (self, key, id, _flow=_DOWN) :
         """
         remove_callback (key, id)
 
@@ -2192,7 +2216,7 @@ class Attributes (_AttributesBase) :
 
         key    = self._attributes_t_keycheck   (key)
         us_key = self._attributes_t_underscore (key)
-        return self._attributes_i_del_cb (us_key, id)
+        return self._attributes_i_del_cb (us_key, id, _flow)
 
 
 
@@ -2207,15 +2231,15 @@ class Attributes (_AttributesBase) :
         """ see L{get_attribute} (key) for details. """
         
         key  = self._attributes_t_keycheck (key)
-        return self._attributes_i_get (key)
+        return self._attributes_i_get      (key, flow=self._DOWN)
 
 
     ####################################
     def __setattr__ (self, key, val) :
         """ see L{set_attribute} (key, val) for details. """
-        
+
         key  = self._attributes_t_keycheck (key)
-        return self._attributes_i_set (key, val)
+        return self._attributes_i_set      (key, val, flow=self._DOWN)
 
 
     ####################################
@@ -2223,7 +2247,7 @@ class Attributes (_AttributesBase) :
         """ see L{remove_attribute} (key) for details. """
         
         key  = self._attributes_t_keycheck (key)
-        return self._attributes_remove (key)
+        return self._attributes_remove     (key, flow=self._DOWN)
 
 
 ################################################################################
