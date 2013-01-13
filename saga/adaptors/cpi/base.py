@@ -92,6 +92,7 @@ class CPIBase (saga_config.Configurable) :
     def __init__ (self, api, adaptor) :
 
         self._api       = api
+        self._session   = None
         self._adaptor   = adaptor
         self._cpi_cname = self.__class__.__name__
         self._logger    = saga_logger.getLogger (self._cpi_cname)
@@ -114,6 +115,14 @@ class CPIBase (saga_config.Configurable) :
 
     def get_adaptor_name (self) :
         return self._adaptor.get_name ()
+
+
+    def _set_session (self, session) :
+        self._session = session
+
+
+    def get_session (self) :
+        return self._session
 
 
 

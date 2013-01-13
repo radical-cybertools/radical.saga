@@ -1,10 +1,56 @@
 
-from saga.attributes import Attributes
-from saga.base       import Base
-from saga.constants  import *
+from   saga.constants  import *
+
+import saga.attributes 
+import saga.base
 
 
-class Context (Base, Attributes) :
+class Context (saga.base.Base, saga.attributes.Attributes) :
+    '''A SAGA Context object as defined in GFD.90.
+
+    A security context is a description of a security token.  It is important to
+    understand that, in general, a context really just *describes* a token, but
+    that a context *is not* a token (*). For example, a context may point to
+    a X509 certificate -- but it will in general not hold the certificate
+    contents.
+
+    Context classes are used to inform the backends used by Bliss on what
+    security tokens are expected to be used.  By default, Bliss will be able to
+    pick up such tokens from their default location, but in some cases it might
+    be necessary to explicitly point to them - then use a L{Session} with
+    context instances to do so.
+
+    The usage example for contexts is below::
+
+        # define an ssh context
+        c = saga.Context()
+        c.context_type = 'ssh'
+        c.user_cert = '$HOME/.ssh/special_id_rsa'
+        c.user_key = '$HOME/.ssh/special_id_rsa.pub'
+
+        # add the context to a session
+        s = saga.Session()
+        s.contexts.append(c)
+
+        # create a job service in this session -- that job service can now
+        # *only* use that ssh context. 
+        j = saga.job.Service('ssh://remote.host.net/', s)
+
+
+    The L{Session} argument to the L{job.Service} constructor is fully optional
+    -- if left out, Bliss will use default session, which picks up some default
+    contexts as described above -- that will suffice for the majority of use
+    cases.
+
+    ----
+
+    (*) The only exception to this rule is the 'UserPass' key, which is used to
+    hold plain-text passwords.  Use this key with care -- it is not good
+    practice to hard-code passwords in the code base, or in config files.
+    Also, be aware that the password may show up in log files, when debugging or
+    analyzing your application.
+
+    '''
 
     def __init__ (self, type=None, _adaptor=None, _adaptor_state={}) : 
         '''
@@ -12,7 +58,7 @@ class Context (Base, Attributes) :
         ret:  None
         '''
 
-        Base.__init__ (self, type.lower(), _adaptor, _adaptor_state, type, ttype=None)
+        saga.base.Base.__init__ (self, type.lower(), _adaptor, _adaptor_state, type, ttype=None)
 
         # set attribute interface properties
         self._attributes_extensible  (False)

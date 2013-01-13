@@ -10,6 +10,8 @@ Intro library reference...
    :numbered:
 
    exceptions.rst
+   context.rst
+   session.rst
    attribute.rst
    url.rst
    job/index.rst

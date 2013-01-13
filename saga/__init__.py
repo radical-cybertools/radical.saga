@@ -29,8 +29,8 @@ except IOError:
 
 from   saga.exceptions     import *
 from   saga.attributes     import *
-from   saga.context        import *
 from   saga.session        import *
+from   saga.context        import *
 from   saga.url            import *
 
 import saga.job

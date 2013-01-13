@@ -189,14 +189,6 @@ def getLogger(module, obj=None):
     ''' Get the SAGA logger.
     '''
 
-    class _MultiNameFilter(Filter):
-        def __init__(self, names):
-            self._names = names
-        def filter(self, record):
-            for n in self._names:
-                if n in record.name:
-                    return True
-
     Logger ()
 
     if obj is None:
