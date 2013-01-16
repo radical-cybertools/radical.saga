@@ -17,12 +17,12 @@ try:
  
         # Some basic colour scheme defaults
         colours = {
-            'DEBUG' : Fore.CYAN,
-            'INFO' : Fore.GREEN,
-            'WARN' : Fore.YELLOW,
-            'WARNING': Fore.YELLOW,
-            'ERROR': Fore.RED,
-            'CRIT' : Back.RED + Fore.WHITE,
+            'DEBUG'    : Fore.CYAN,
+            'INFO'     : Fore.GREEN,
+            'WARN'     : Fore.YELLOW,
+            'WARNING'  : Fore.YELLOW,
+            'ERROR'    : Fore.RED,
+            'CRIT'     : Back.RED + Fore.WHITE,
             'CRITICAL' : Back.RED + Fore.WHITE
         }
  
@@ -34,7 +34,7 @@ try:
             :return: Using a TTY status
             :rtype: bool
             """
-            try: return getattr(self.stream, 'isatty', None)()
+            try:    return getattr(self.stream, 'isatty', None)()
             except: return False
  
         def emit(self, record):
@@ -70,26 +70,25 @@ def _test_():
     from defaultformatter import DefaultFormatter
 
     log = getLogger('saga.engine')
+
     # Only enable colour if support was loaded properly
     handler = ColorStreamHandler() if has_color_stream_handler else StreamHandler()
     handler.setLevel(DEBUG)
     handler.setFormatter(DefaultFormatter)
+
     log.addHandler(handler)
-
-
-
     log.setLevel(DEBUG)
     log.propagate = 0 # Don't bubble up to the root logger
     log.debug('DEBUG')
     log.info('INFO')
     log.warning('WARNING')
+    log.error('ERROR')
+    log.critical('CRITICAL')
 
     #log = getLogger('saga.adaptor')
     #f = Filter(name='saga')
     #log.addFilter(f)
 
-    log.error('ERROR')
-    log.critical('CRITICAL')
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

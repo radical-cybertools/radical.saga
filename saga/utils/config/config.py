@@ -152,6 +152,9 @@ class Configuration(object):
             else:
                 value = option['default']
 
+            if not 'valid_options' in option :
+                option['valid_options'] = None
+
             self._master_config[cat][option['name']] = ConfigOption(
                 option['category'],
                 option['name'],

@@ -29,7 +29,6 @@ class _TestConfigurable(Configurable):
         'name'          : 'filters', 
         'type'          : list, 
         'default'       : [], 
-        'valid_options' : None,
         'documentation' : 'The log filters',
         'env_variable'  : 'SAGA_LOG_FILTER' 
        },
@@ -38,7 +37,6 @@ class _TestConfigurable(Configurable):
         'name'          : 'targets', 
         'type'          : list, 
         'default'       : ['STDOUT'], 
-        'valid_options' : None,
         'documentation' : 'The log targets',
         'env_variable'  : 'SAGA_LOG_TARGETS' 
        },
@@ -47,7 +45,6 @@ class _TestConfigurable(Configurable):
         'name'          : 'ttycolor', 
         'type'          : bool, 
         'default'       : True, 
-        'valid_options' : None,
         'documentation' : 'Whether to use colors for console output or not.',
         'env_variable'  : None 
        }]

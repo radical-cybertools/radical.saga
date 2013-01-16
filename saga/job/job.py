@@ -8,7 +8,7 @@ __license__   = "MIT"
 
 
 from   saga.exceptions    import IncorrectState
-from   saga.attributes    import Attributes
+from   saga.attributes    import *
 from   saga.base          import Base
 from   saga.async         import Async
 from   saga.job.constants import *
@@ -58,14 +58,14 @@ class Job (Base, Attributes, Async) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface 
-        self._attributes_register   (STATE,            UNKNOWN, self.ENUM,   self.SCALAR, self.READONLY)
-        self._attributes_register   (EXIT_CODE,        None,    self.INT,    self.SCALAR, self.READONLY)
-        self._attributes_register   (CREATED,          None,    self.INT,    self.SCALAR, self.READONLY)
-        self._attributes_register   (STARTED,          None,    self.INT,    self.SCALAR, self.READONLY)
-        self._attributes_register   (FINISHED,         None,    self.INT,    self.SCALAR, self.READONLY)
-        self._attributes_register   (EXECUTION_HOSTS,  None,    self.STRING, self.VECTOR, self.READONLY)
-        self._attributes_register   (ID,               None,    self.STRING, self.SCALAR, self.READONLY)
-        self._attributes_register   (SERVICE_URL,      None,    self.URL,    self.SCALAR, self.READONLY)
+        self._attributes_register   (STATE,            UNKNOWN, ENUM,   SCALAR, READONLY)
+        self._attributes_register   (EXIT_CODE,        None,    INT,    SCALAR, READONLY)
+        self._attributes_register   (CREATED,          None,    INT,    SCALAR, READONLY)
+        self._attributes_register   (STARTED,          None,    INT,    SCALAR, READONLY)
+        self._attributes_register   (FINISHED,         None,    INT,    SCALAR, READONLY)
+        self._attributes_register   (EXECUTION_HOSTS,  None,    STRING, VECTOR, READONLY)
+        self._attributes_register   (ID,               None,    STRING, SCALAR, READONLY)
+        self._attributes_register   (SERVICE_URL,      None,    URL,    SCALAR, READONLY)
 
         self._attributes_set_enums  (STATE, [UNKNOWN, NEW,     PENDING,  RUNNING,
                                              DONE,    FAILED,  CANCELED, SUSPENDED])

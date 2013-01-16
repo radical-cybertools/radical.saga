@@ -19,7 +19,6 @@ _ADAPTOR_OPTIONS     = [{
     'name'           : 'foo',
     'type'           : str,
     'default'        : 'bar',
-    'valid_options'  : None,
     'documentation'  : 'dummy config option for unit test.',
     'env_variable'   : None
     }

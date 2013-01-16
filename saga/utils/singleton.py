@@ -3,8 +3,10 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-""" Provides a Singleton metaclass.
-"""
+""" Provides a Singleton metaclass.  """
+
+# FIXME: I don't think this is thread safe.  Better, but more complex version: 
+# http://www.garyrobinson.net/singletonmixin.py
 
 class Singleton(type):
     """ A metaclass to 'tag' other classes as singleton::
