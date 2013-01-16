@@ -14,7 +14,7 @@ import inspect
 
 from   saga.exceptions      import *
 from   saga.utils.singleton import Singleton
-from   saga.utils.logger    import getLogger, get_traceback
+from   saga.utils.logger    import getLogger
 from   saga.utils.config    import getConfig, Configurable
 
 import saga.engine.registry  # adaptors to load
@@ -212,7 +212,7 @@ class Engine(Configurable):
 
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
-                self._logger.debug (get_traceback ())
+                self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -232,7 +232,7 @@ class Engine(Configurable):
                 continue # skip to next adaptor
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
-                self._logger.debug (get_traceback (0))
+                self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -245,6 +245,7 @@ class Engine(Configurable):
 
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: failed self test: %s" % (module_name, e))
+                self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -252,7 +253,7 @@ class Engine(Configurable):
             if adaptor_info is None :
                 self._logger.warning ("Skipping adaptor %s: adaptor meta data are invalid" \
                                    % module_name)
-                self._logger.debug   (get_traceback (0))
+                self._logger.trace ()
                 continue  # skip to next adaptor
 
 
@@ -262,7 +263,7 @@ class Engine(Configurable):
                 not 'schemas' in adaptor_info    :
                 self._logger.warning ("Skipping adaptor %s: adaptor meta data are incomplete" \
                                    % module_name)
-                self._logger.debug   (get_traceback (0))
+                self._logger.trace ()
                 continue  # skip to next adaptor
 
 

@@ -6,9 +6,8 @@ __license__   = "MIT"
 ''' Provides log handler management for SAGA.
 '''
 
-import os
-from   logging import StreamHandler, Filter, getLogger as logging_getLogger
-from   logging import INFO, DEBUG, ERROR, WARNING, CRITICAL
+import logging
+import saga.exceptions
 
 from   saga.utils.config                    import Configurable
 from   saga.utils.logger.colorstreamhandler import *
@@ -16,22 +15,7 @@ from   saga.utils.logger.filehandler        import FileHandler
 from   saga.utils.logger.defaultformatter   import DefaultFormatter
 from   saga.utils.singleton                 import Singleton
 from   saga.utils.exception                 import ExceptionBase
-from   saga.utils.exception                 import get_traceback as get_tb
-
-
-############# forward call to exception util's get_traceback() #################
-##
-def get_traceback (limit=2) :
-    """ 
-    :todo: it would be nice to get the following to work::
-
-      self.logger = getLogger()
-      self.logger.debug (self.logger.traceback)
-
-    Alas, as we don't inherit the system logger, we can't (easily) add
-    properties or methods...
-    """
-    return get_tb (limit)
+from   saga.utils.exception                 import get_traceback
 
 
 ############# These are all supported options for saga.logging #################
@@ -77,15 +61,17 @@ _all_logging_options = [
 
 ################################################################################
 ##
-class Logger(Configurable):
+class _Logger(Configurable):
     """
     :todo: documentation.  Also, documentation of options are insufficient
     (like, what are valid options for 'target'?)
+
+    This class is not to be directly used by applications.
     """
 
     __metaclass__ = Singleton
 
-    class _MultiNameFilter(Filter):
+    class _MultiNameFilter(logging.Filter):
         def __init__(self, names):
             self._names = names
         def filter(self, record):
@@ -101,61 +87,35 @@ class Logger(Configurable):
         self._loglevel = cfg['level'].get_value()
         self._filters  = cfg['filters'].get_value()
         self._targets  = cfg['targets'].get_value()
-
         self._handlers = list()
 
-        SAGA_VERBOSE = self._loglevel
-
-        if SAGA_VERBOSE is not None:
-            if SAGA_VERBOSE.isdigit():
-                SAGA_VERBOSE = int(SAGA_VERBOSE)
-                # 4 = DEBUG + INFO + WARNING + ERROR
-                if SAGA_VERBOSE >= 4:
-                    self._loglevel = DEBUG
-                # 3 = INFO + WARNING + ERROR
-                elif SAGA_VERBOSE == 3:
-                    self._loglevel = INFO
-                # 2 = WARNING + ERROR 
-                elif SAGA_VERBOSE == 2:
-                    self._loglevel = WARNING
-                # 1 = ERROR ONLY
-                elif SAGA_VERBOSE == 1:
-                    self._loglevel = ERROR
-                # 0 = No Logging
-                elif SAGA_VERBOSE == 0:
-                    self._loglevel = CRITICAL
-                else:
-                    raise LoggingException('%s is not a valid value for SAGA_VERBOSE.' % SAGA_VERBOSE)
+        if self._loglevel is not None:
+            if self._loglevel.isdigit():
+                if   int(self._loglevel) >= 4:  self._loglevel = logging.DEBUG
+                elif int(self._loglevel) == 3:  self._loglevel = logging.INFO
+                elif int(self._loglevel) == 2:  self._loglevel = logging.WARNING
+                elif int(self._loglevel) == 1:  self._loglevel = logging.ERROR
+                elif int(self._loglevel) == 0:  self._loglevel = logging.CRITICAL
+                else: raise saga.exceptions.NoSuccess('%s is not a valid value for SAGA_VERBOSE.' % self._loglevel)
             else:
-                SAGA_VERBOSE_lower = SAGA_VERBOSE.lower()
-                # 4 = DEBUG + INFO + WARNING + ERROR
-                if SAGA_VERBOSE_lower == 'debug':
-                    self._loglevel = DEBUG
-                # 3 = INFO + WARNING + ERROR
-                elif SAGA_VERBOSE_lower == 'info':
-                    self._loglevel = INFO
-                # 2 = WARNING + ERROR 
-                elif SAGA_VERBOSE_lower == 'warning':
-                    self._loglevel = WARNING
-                # 1 = ERROR ONLY
-                elif SAGA_VERBOSE_lower == 'error':
-                    self._loglevel = ERROR
-                # 0 = No Logging
-                elif SAGA_VERBOSE_lower == 'critical':
-                    self._loglevel = CRITICAL
+                if   self._loglevel.lower() == 'debug':     self._loglevel = logging.DEBUG
+                elif self._loglevel.lower() == 'info':      self._loglevel = logging.INFO
+                elif self._loglevel.lower() == 'warning':   self._loglevel = logging.WARNING
+                elif self._loglevel.lower() == 'error':     self._loglevel = logging.ERROR
+                elif self._loglevel.lower() == 'critical':  self._loglevel = logging.CRITICAL
                 else:
-                    raise LoggingException('%s is not a valid value for SAGA_VERBOSE.' % SAGA_VERBOSE)
+                    raise saga.exceptions.NoSuccess('%s is not a valid value for SAGA_VERBOSE.' % self._loglevel)
 
-        # create the  handler
-        # check how many handlers we need
+        # create the handlers (target + formatter + filter)
         for target in self._targets:
+
             if target.lower() == 'stdout':
                 # create a console stream logger
                 # Only enable colour if support was loaded properly
                 if has_color_stream_handler is True:
                     handler = ColorStreamHandler()
                 else: 
-                    handler = StreamHandler()
+                    handler = logging.StreamHandler()
             else:
                 # got to be a file logger
                 handler = FileHandler(target)
@@ -163,7 +123,8 @@ class Logger(Configurable):
             handler.setFormatter(DefaultFormatter)
 
             if self._filters != []:
-                handler.addFilter(_MultiNameFilter(Logger().filters))
+                handler.addFilter(_MultiNameFilter(self._filters))
+
             self._handlers.append(handler)
 
 
@@ -172,43 +133,49 @@ class Logger(Configurable):
         return self._loglevel
 
     @property
-    def filters(self):
-        return self._filters
-
-    @property
-    def targets(self):
-        return self._targets
-
-    @property
     def handlers(self):
         return self._handlers
 
+
 ################################################################################
 ##
-def getLogger(module, obj=None):
-    ''' Get the SAGA logger.
-    '''
+def getLogger (name='saga-python'):
+    ''' Get a SAGA logger.  For any new name, a new logger instance will be
+    created; subsequent calls to this method with the same name argument will
+    return the same instance.'''
 
-    Logger ()
+    # make sure the saga logging configuration is evaluated at least once
+    _Logger ()
 
-    if obj is None:
-        _logger = logging_getLogger('%-20s' % module)
-    else:
-        _logger = logging_getLogger('%s.%s' % (module, obj))
+    # get a python logger
+    _logger = logging.getLogger(name)
 
-    _logger.setLevel(Logger().loglevel)
-    _logger.propagate = 0 # Don't bubble up to the root logger
-
+    # was this logger initialized before?
+    #
+    # The check / action below forms a race condition, but (a) this should be
+    # rare (TM), and (b) it does have no practical consequences (apart from a 
+    # small runtime overhead).  So, we don't care... :-P
     if _logger.handlers == []:
-        for handler in Logger().handlers:
+
+        # initialize that logger
+        for handler in _Logger().handlers:
             _logger.addHandler(handler)
 
+        _logger.setLevel(_Logger().loglevel)
+        _logger.propagate = 0 # Don't bubble up to the root logger
+
+        # we add a 'trace' method to the system logger, which prints a traceback on
+        # the debug handler
+        def mk_trace (logger) :
+            def trace () :
+                logger.debug (get_traceback (1))
+            return trace
+        _logger.__dict__['trace'] = mk_trace (_logger)
+
+    
+    # setup done - we can return the logger
     return _logger
 
-################################################################################
-##
-class LoggingException(ExceptionBase):
-    pass
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

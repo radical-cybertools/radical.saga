@@ -17,7 +17,7 @@ class _DefaultSession (object) :
 
         self._contexts = []
         self._engine   = saga.engine.engine.Engine ()
-        self._logger   = saga.utils.logger.Logger ('saga._DefaultSession')
+        self._logger   = saga.utils.logger.getLogger ('saga.DefaultSession')
 
         if not 'saga.Context' in self._engine._adaptor_registry :
             self._logger.warn ("no context adaptors found")
