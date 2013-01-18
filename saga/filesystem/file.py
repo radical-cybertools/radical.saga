@@ -10,15 +10,47 @@ import saga.exceptions
 
 
 class File (Base, Async) :
+    '''
+    Represents a SAGA file as defined in GFD.90
+
+    The saga.filesystem.File class represents, as the name indicates,
+    a file on some (local or remote) filesystem.  That class offers
+    a number of operations on that file, such as copy, move and remove::
+    
+        # get a file handle
+        file = saga.filesystem.File("sftp://localhost/tmp/data/data.bin")
+    
+        # copy the file
+        file.copy ("sftp://localhost/tmp/data/data.bak")
+
+        # move the file
+        file.move ("sftp://localhost/tmp/data/data.new")
+    '''
 
 
     def __init__ (self, url=None, flags=READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
-        url:       saga.Url
+        :param url: Url of the (remote) file
+        :type  url: :class:`bliss.saga.Url` 
+
         flags:     flags enum
         session:   saga.Session
         ret:       obj
+
+        Construct a new file object
+
+        The specified file is expected to exist -- otherwise a DoesNotExist
+        exception is raised.  Also, the URL must point to a file (not to
+        a directory), otherwise a BadParameter exception is raised.
+
+        Example::
+
+            # get a file handle
+            file = saga.filesystem.File("sftp://localhost/tmp/data/data.bin")
+    
+            # print the file's size
+            print file.get_size ()
         '''
 
         self._session      = session
@@ -58,6 +90,15 @@ class File (Base, Async) :
         '''
         ttype:         saga.task.type enum
         ret:           saga.Url / saga.Task
+        
+        Return the complete url pointing to the file.
+
+        The call will return the complete url pointing to
+        this file as a saga.Url object::
+
+            # print URL of a file
+            file = saga.filesystem.File("sftp://localhost/etc/passwd")
+            print file.get_url()
         '''
         return self._adaptor.get_url (ttype=ttype)
 
@@ -116,6 +157,19 @@ class File (Base, Async) :
         flags:         enum flags
         ttype:         saga.task.type enum
         ret:           None / saga.Task
+        
+        Copy the file to another location
+
+        :param target: Url of the copy target.
+        :param flags: Flags to use for the operation.
+
+        The file is copied to the given target location.  The target URL must
+        be an absolute path, and can be a target file name or target
+        directory name.  If the target file exists, it is overwritten::
+
+            # copy a file
+            file = saga.filesystem.Directory("sftp://localhost/tmp/data/data.bin")
+            file.copy ("sftp://localhost/tmp/data/data.bak")
         '''
 
         # ------------------------------------------------------------
@@ -212,10 +266,21 @@ class File (Base, Async) :
     
     def move_self (self, tgt, flags=None, ttype=None) :
         '''
-        tgt:           saga.Url
-        flags:         flags enum
+        :param target: Url of the move target.
+        :param flags:  Flags to use for the operation.
+
         ttype:         saga.task.type enum
         ret:           None / saga.Task
+        
+        Move the file to another location
+
+        The file is copied to the given target location.  The target URL must
+        be an absolute path, and can be a target file name or target
+        directory name.  If the target file exists, it is overwritten::
+
+            # copy a file
+            file = saga.filesystem.Directory("sftp://localhost/tmp/data/data.bin")
+            file.move ("sftp://localhost/tmp/data/data.bak")
         '''
         return self._adaptor.move_self (tgt, flags, ttype=ttype)
   
@@ -260,6 +325,17 @@ class File (Base, Async) :
         '''
         ttype:    saga.task.type enum
         ret:      int / saga.Task
+        
+        Returns the size of a file (in bytes)
+
+           Example::
+
+               # get a file handle
+               file = saga.filesystem.File("sftp://localhost/tmp/data/data.bin")
+    
+               # print the file's size
+               print file.get_size ()
+
         '''
         return self._adaptor.get_size_self (ttype=ttype)
 

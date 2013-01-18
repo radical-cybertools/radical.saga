@@ -91,11 +91,11 @@ class _Logger(Configurable):
 
         if self._loglevel is not None:
             if self._loglevel.isdigit():
-                if   int(self._loglevel) >= 4:  self._loglevel = logging.DEBUG
-                elif int(self._loglevel) == 3:  self._loglevel = logging.INFO
-                elif int(self._loglevel) == 2:  self._loglevel = logging.WARNING
-                elif int(self._loglevel) == 1:  self._loglevel = logging.ERROR
-                elif int(self._loglevel) == 0:  self._loglevel = logging.CRITICAL
+                if   int(self._loglevel)    >= 4:           self._loglevel = logging.DEBUG
+                elif int(self._loglevel)    == 3:           self._loglevel = logging.INFO
+                elif int(self._loglevel)    == 2:           self._loglevel = logging.WARNING
+                elif int(self._loglevel)    == 1:           self._loglevel = logging.ERROR
+                elif int(self._loglevel)    == 0:           self._loglevel = logging.CRITICAL
                 else: raise saga.exceptions.NoSuccess('%s is not a valid value for SAGA_VERBOSE.' % self._loglevel)
             else:
                 if   self._loglevel.lower() == 'debug':     self._loglevel = logging.DEBUG
@@ -103,8 +103,7 @@ class _Logger(Configurable):
                 elif self._loglevel.lower() == 'warning':   self._loglevel = logging.WARNING
                 elif self._loglevel.lower() == 'error':     self._loglevel = logging.ERROR
                 elif self._loglevel.lower() == 'critical':  self._loglevel = logging.CRITICAL
-                else:
-                    raise saga.exceptions.NoSuccess('%s is not a valid value for SAGA_VERBOSE.' % self._loglevel)
+                else: raise saga.exceptions.NoSuccess('%s is not a valid value for SAGA_VERBOSE.' % self._loglevel)
 
         # create the handlers (target + formatter + filter)
         for target in self._targets:
