@@ -21,13 +21,32 @@ ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 
 _ADAPTOR_NAME          = 'saga.adaptor.dummysystem.local'
 _ADAPTOR_SCHEMAS       = ['dummy']
-_ADAPTOR_OPTIONS       = []
-_ADAPTOR_CAPABILITES   = {}
+_ADAPTOR_OPTIONS       = [
+    { 
+    'category'         : 'saga.engine',
+    'name'             : 'enable_ctrl_c', 
+    'type'             : bool, 
+    'default'          : True,
+    'valid_options'    : [True, False],
+    'documentation'    : 'install SIGINT signal handler to abort application.',
+    'env_variable'     : None
+    },
+    { 
+    'category'         : 'saga.engine',
+    'name'             : 'load_beta_adaptors', 
+    'type'             : bool, 
+    'default'          : False,
+    'valid_options'    : [True, False],
+    'documentation'    : 'load adaptors which are marked as beta (i.e. not released).',
+    'env_variable'     : None
+    }
+]
+_ADAPTOR_CAPABILITIES  = {}
 
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITES,
+    'capabilites'      : _ADAPTOR_CAPABILITIES,
     'description'      : 'The local filesystem adaptor.',
     'details'          : """This adaptor interacts with local filesystem, by
                             using the (POSIX like) os and shutil Python packages.

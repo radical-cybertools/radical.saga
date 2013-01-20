@@ -19,7 +19,7 @@ _ADAPTOR_NAME          = 'saga.adaptor.myproxy'
 _ADAPTOR_SCHEMAS       = ['MyProxy']
 _ADAPTOR_OPTIONS       = []
 
-_ADAPTOR_CAPABILITES   = {
+_ADAPTOR_CAPABILITIES  = {
     'attributes'       : [saga.context.TYPE,
                           saga.context.SERVER,
                           saga.context.USER_ID,
@@ -30,7 +30,7 @@ _ADAPTOR_CAPABILITES   = {
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITES,
+    'capabilites'      : _ADAPTOR_CAPABILITIES,
     'description'      : 'The MyProxy context adaptor.',
     'details'          : """This adaptor fetches an X509 proxy from
                             MyProxy when it is added to a saga.Session.""",
