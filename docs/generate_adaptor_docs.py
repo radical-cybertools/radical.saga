@@ -53,21 +53,26 @@ for a in saga.engine.registry.adaptor_registry :
                 'documentation'    : "enable / disable %s adaptor"  % n,
                 'env_variable'     : None
               }]
+    capable = "NO CAPABILITIES SPECIFIED"
+    capabs  = []
 
     
     if 'details' in m._ADAPTOR_DOC :
         details  =  m._ADAPTOR_DOC['details']
         details  =  cleanup (details)
 
+
     if 'version' in m._ADAPTOR_INFO :
         version  =  m._ADAPTOR_INFO['version']
         version  =  cleanup (version)
+
 
     if 'schemas' in m._ADAPTOR_DOC :
         schemas = ""
         for schema in m._ADAPTOR_DOC['schemas'] :
             text     = cleanup (m._ADAPTOR_DOC['schemas'][schema])
             schemas += "  - **%s** : %s\n" % (schema, text)
+
 
     if 'cfg_options' in m._ADAPTOR_DOC :
         cfgopts += m._ADAPTOR_DOC['cfg_options']
@@ -84,8 +89,7 @@ for a in saga.engine.registry.adaptor_registry :
             if 'valid_options' in o :
                 oval  = o['valid_options']
 
-            options += "%s\n" % oname
-            options += "%s\n" % ('-' * len(oname))
+            options += "``%s``\n" % oname
             options += "\n"
             options += "%s\n" % odoc
             options += "\n"
@@ -96,6 +100,40 @@ for a in saga.engine.registry.adaptor_registry :
             if len (oval) :
                 options += "  - **valid options** : %s\n" % str(oval)
 
+
+    if 'capabilities' in m._ADAPTOR_DOC :
+        capabs   = m._ADAPTOR_DOC['capabilities']
+        capable  = ""
+
+        cap_headers = {
+            'jdes_attributes'   : 'Supported Job Description Attributes' ,
+            'job_attributes'    : 'Supported Job Attributes' ,
+            'metrics'           : 'Supported Monitorable Metrics' ,
+            'contexts'          : 'Supported Context Types' 
+        }
+
+        for cname in capabs  :
+
+            header   = cname
+            if cname in cap_headers :
+                header = cap_headers[cname]
+
+            capable += "``%s``\n" % header
+            capable += "\n"
+
+            capab = capabs[cname]
+
+            if type(capab) == list :
+                for key in capab :
+                    capable += "  - %s\n" % key
+            elif type(capab) == dict :
+                for key in capab :
+                    val = capab[key]
+                    capable += "  - *%s*: %s\n" % (key,val)
+
+            capable += "\n"
+
+
     if 'cpis' in m._ADAPTOR_INFO :
         classes      = ""
         classes_long = ""
@@ -104,7 +142,7 @@ for a in saga.engine.registry.adaptor_registry :
             classes      += "  - :class:`%s`\n" % cpi['type']
             classes_long += "\n"
             classes_long += "%s\n" % cpi['type']
-            classes_long += "%s\n" % ('-' * len(cpi['type']))
+            classes_long += "%s\n" % ('"' * len(cpi['type']))
             classes_long += "\n"
             classes_long += ".. autoclass:: %s.%s\n"  % (a, cpi['class'])
             classes_long += "   :members:\n"
@@ -137,6 +175,11 @@ for a in saga.engine.registry.adaptor_registry :
     f.write ("=====================\n")
     f.write ("\n")
     f.write ("%s\n" % options)
+    f.write ("\n")
+    f.write ("Supported Capabilities\n")
+    f.write ("======================\n")
+    f.write ("\n")
+    f.write ("%s\n" % capable)
     f.write ("\n")
     f.write ("Supported API Classes\n")
     f.write ("=====================\n")

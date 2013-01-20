@@ -23,8 +23,7 @@ Supported Schemas
 Configuration Options
 =====================
 
-enabled
--------
+``enabled``
 
 enable / disable saga.adaptor.replica.irods adaptor
 
@@ -32,6 +31,11 @@ enable / disable saga.adaptor.replica.irods adaptor
   - **default** : True
   - **environment** : None
   - **valid options** : [True, False]
+
+
+Supported Capabilities
+======================
+
 
 
 Supported API Classes
@@ -42,14 +46,14 @@ Supported API Classes
 
 
 saga.replica.LogicalDirectory
------------------------------
+"""""""""""""""""""""""""""""
 
 .. autoclass:: saga.adaptors.irods.irods_replica.IRODSDirectory
    :members:
 
 
 saga.replica.LogicalFile
-------------------------
+""""""""""""""""""""""""
 
 .. autoclass:: saga.adaptors.irods.irods_replica.IRODSFile
    :members:

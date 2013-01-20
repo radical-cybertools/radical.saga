@@ -28,7 +28,7 @@ _ADAPTOR_CAPABILITIES  = {}
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITIES,
+    'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : 'The redis advert adaptor.',
     'details'          : """This adaptor interacts with a redis server to
                             implement the advert API semantics.""", 

@@ -23,8 +23,7 @@ Supported Schemas
 Configuration Options
 =====================
 
-enabled
--------
+``enabled``
 
 enable / disable saga.adaptor.filesystem.local adaptor
 
@@ -32,6 +31,11 @@ enable / disable saga.adaptor.filesystem.local adaptor
   - **default** : True
   - **environment** : None
   - **valid options** : [True, False]
+
+
+Supported Capabilities
+======================
+
 
 
 Supported API Classes
@@ -42,14 +46,14 @@ Supported API Classes
 
 
 saga.filesystem.Directory
--------------------------
+"""""""""""""""""""""""""
 
 .. autoclass:: saga.adaptors.local.localfile.LocalDirectory
    :members:
 
 
 saga.filesystem.File
---------------------
+""""""""""""""""""""
 
 .. autoclass:: saga.adaptors.local.localfile.LocalFile
    :members:

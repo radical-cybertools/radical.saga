@@ -22,8 +22,7 @@ Supported Schemas
 Configuration Options
 =====================
 
-enabled
--------
+``enabled``
 
 enable / disable saga.adaptor.advert.redis adaptor
 
@@ -31,6 +30,11 @@ enable / disable saga.adaptor.advert.redis adaptor
   - **default** : True
   - **environment** : None
   - **valid options** : [True, False]
+
+
+Supported Capabilities
+======================
+
 
 
 Supported API Classes
@@ -41,14 +45,14 @@ Supported API Classes
 
 
 saga.advert.Directory
----------------------
+"""""""""""""""""""""
 
 .. autoclass:: saga.adaptors.redis.redis_advert.RedisDirectory
    :members:
 
 
 saga.advert.Entry
------------------
+"""""""""""""""""
 
 .. autoclass:: saga.adaptors.redis.redis_advert.RedisEntry
    :members:

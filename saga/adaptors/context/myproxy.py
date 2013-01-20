@@ -30,7 +30,7 @@ _ADAPTOR_CAPABILITIES  = {
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITIES,
+    'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : 'The MyProxy context adaptor.',
     'details'          : """This adaptor fetches an X509 proxy from
                             MyProxy when it is added to a saga.Session.""",

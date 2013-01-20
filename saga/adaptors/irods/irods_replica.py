@@ -40,7 +40,7 @@ _ADAPTOR_CAPABILITIES  = {}
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITIES,
+    'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : 'The iRODS replica adaptor.',
     'details'          : """This adaptor interacts with the irids data
                             management system, by using the irods command line

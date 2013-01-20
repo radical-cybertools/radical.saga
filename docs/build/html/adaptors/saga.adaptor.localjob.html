@@ -76,8 +76,7 @@
 </div>
 <div class="section" id="configuration-options">
 <h2>4.3. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="enabled">
-<h3>4.3.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">enabled</span></tt></p>
 <p>enable / disable saga.adaptor.localjob adaptor</p>
 <blockquote>
 <div><ul class="simple">
@@ -88,9 +87,52 @@
 </ul>
 </div></blockquote>
 </div>
+<div class="section" id="supported-capabilities">
+<h2>4.4. Supported Capabilities<a class="headerlink" href="#supported-capabilities" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">Supported</span> <span class="pre">Monitorable</span> <span class="pre">Metrics</span></tt></p>
+<blockquote>
+<div><ul class="simple">
+<li>State</li>
+</ul>
+</div></blockquote>
+<p><tt class="docutils literal"><span class="pre">Supported</span> <span class="pre">Job</span> <span class="pre">Attributes</span></tt></p>
+<blockquote>
+<div><ul class="simple">
+<li>ExitCode</li>
+<li>ExecutionHosts</li>
+<li>Created</li>
+<li>Started</li>
+<li>Finished</li>
+</ul>
+</div></blockquote>
+<p><tt class="docutils literal"><span class="pre">desc_attributes</span></tt></p>
+<blockquote>
+<div><ul class="simple">
+<li>Executable</li>
+<li>Arguments</li>
+<li>Environment</li>
+<li>WorkingDirectory</li>
+<li>Input</li>
+<li>Output</li>
+<li>Error</li>
+<li>SPMDVariation</li>
+<li>NumberOfProcesses</li>
+</ul>
+</div></blockquote>
+<p><tt class="docutils literal"><span class="pre">Supported</span> <span class="pre">Context</span> <span class="pre">Types</span></tt></p>
+<blockquote>
+<div><ul>
+<li><dl class="first docutils">
+<dt><em>None</em>: this adaptor works in the same security</dt>
+<dd><p class="first last">context as the application process itself.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
 </div>
 <div class="section" id="supported-api-classes">
-<h2>4.4. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<h2>4.5. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><a class="reference internal" href="../library/job/index.html#saga.job.Service" title="saga.job.Service"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Service</span></tt></a></li>
@@ -98,7 +140,7 @@
 </ul>
 </div></blockquote>
 <div class="section" id="saga-job-service">
-<h3>4.4.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
+<h3>4.5.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.local.localjob.LocalJobService">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.local.localjob.</tt><tt class="descname">LocalJobService</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/local/localjob.html#LocalJobService"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.local.localjob.LocalJobService" title="Permalink to this definition">¶</a></dt>
@@ -143,7 +185,7 @@
 
 </div>
 <div class="section" id="saga-job-job">
-<h3>4.4.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
+<h3>4.5.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.local.localjob.LocalJob">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.local.localjob.</tt><tt class="descname">LocalJob</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/local/localjob.html#LocalJob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.local.localjob.LocalJob" title="Permalink to this definition">¶</a></dt>
@@ -226,13 +268,11 @@
 <li><a class="reference internal" href="#">4. saga.adaptor.localjob</a><ul>
 <li><a class="reference internal" href="#version">4.1. Version</a></li>
 <li><a class="reference internal" href="#supported-schemas">4.2. Supported Schemas</a></li>
-<li><a class="reference internal" href="#configuration-options">4.3. Configuration Options</a><ul>
-<li><a class="reference internal" href="#enabled">4.3.1. enabled</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#supported-api-classes">4.4. Supported API Classes</a><ul>
-<li><a class="reference internal" href="#saga-job-service">4.4.1. saga.job.Service</a></li>
-<li><a class="reference internal" href="#saga-job-job">4.4.2. saga.job.Job</a></li>
+<li><a class="reference internal" href="#configuration-options">4.3. Configuration Options</a></li>
+<li><a class="reference internal" href="#supported-capabilities">4.4. Supported Capabilities</a></li>
+<li><a class="reference internal" href="#supported-api-classes">4.5. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-job-service">4.5.1. saga.job.Service</a></li>
+<li><a class="reference internal" href="#saga-job-job">4.5.2. saga.job.Job</a></li>
 </ul>
 </li>
 </ul>

@@ -22,8 +22,7 @@ Supported Schemas
 Configuration Options
 =====================
 
-enabled
--------
+``enabled``
 
 enable / disable saga.adaptor.myproxy adaptor
 
@@ -33,6 +32,19 @@ enable / disable saga.adaptor.myproxy adaptor
   - **valid options** : [True, False]
 
 
+Supported Capabilities
+======================
+
+``attributes``
+
+  - Type
+  - Server
+  - UserID
+  - UserPass
+  - LifeTime
+
+
+
 Supported API Classes
 =====================
 
@@ -40,7 +52,7 @@ Supported API Classes
 
 
 saga.Context
-------------
+""""""""""""
 
 .. autoclass:: saga.adaptors.context.myproxy.ContextMyProxy
    :members:

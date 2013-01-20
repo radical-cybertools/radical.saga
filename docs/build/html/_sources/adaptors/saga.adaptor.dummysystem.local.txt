@@ -26,8 +26,7 @@ Supported Schemas
 Configuration Options
 =====================
 
-enabled
--------
+``enabled``
 
 enable / disable saga.adaptor.dummysystem.local adaptor
 
@@ -35,6 +34,27 @@ enable / disable saga.adaptor.dummysystem.local adaptor
   - **default** : True
   - **environment** : None
   - **valid options** : [True, False]
+``enable_ctrl_c``
+
+install SIGINT signal handler to abort application.
+
+  - **type** : <type 'bool'>
+  - **default** : True
+  - **environment** : None
+  - **valid options** : [True, False]
+``load_beta_adaptors``
+
+load adaptors which are marked as beta (i.e. not released).
+
+  - **type** : <type 'bool'>
+  - **default** : False
+  - **environment** : None
+  - **valid options** : [True, False]
+
+
+Supported Capabilities
+======================
+
 
 
 Supported API Classes
@@ -45,14 +65,14 @@ Supported API Classes
 
 
 saga.filesystem.Directory
--------------------------
+"""""""""""""""""""""""""
 
 .. autoclass:: saga.adaptors.local.dummyfile.DummyDirectory
    :members:
 
 
 saga.filesystem.File
---------------------
+""""""""""""""""""""
 
 .. autoclass:: saga.adaptors.local.dummyfile.DummyFile
    :members:

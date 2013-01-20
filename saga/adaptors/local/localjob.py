@@ -26,10 +26,10 @@ _ADAPTOR_SCHEMAS       = ['fork', 'local']
 _ADAPTOR_OPTIONS       = []
 
 ################################################################################
-## the adaptor capabilites & supported attributes                             ##
+## the adaptor capabilities & supported attributes                            ##
 ##                                                                            ##
 _ADAPTOR_CAPABILITIES  = {
-    'desc_attributes'  : [saga.job.EXECUTABLE,
+    'jdes_attributes'  : [saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
                           saga.job.WORKING_DIRECTORY,
@@ -46,7 +46,7 @@ _ADAPTOR_CAPABILITIES  = {
     'metrics'          : [saga.job.STATE],
     'contexts'         : {'None' : """this adaptor works in the same security
                                       context as the application process itself."""
-    }                  # {context type : how it is used}
+    }
 }
 
 ################################################################################
@@ -55,7 +55,7 @@ _ADAPTOR_CAPABILITIES  = {
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITIES,
+    'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : """ 
         The local job adaptor. This adaptor uses subprocesses to run jobs on the 
         local machine.

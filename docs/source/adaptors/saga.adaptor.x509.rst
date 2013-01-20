@@ -23,8 +23,7 @@ Supported Schemas
 Configuration Options
 =====================
 
-enabled
--------
+``enabled``
 
 enable / disable saga.adaptor.x509 adaptor
 
@@ -34,6 +33,17 @@ enable / disable saga.adaptor.x509 adaptor
   - **valid options** : [True, False]
 
 
+Supported Capabilities
+======================
+
+``attributes``
+
+  - Type
+  - UserProxy
+  - LifeTime
+
+
+
 Supported API Classes
 =====================
 
@@ -41,7 +51,7 @@ Supported API Classes
 
 
 saga.Context
-------------
+""""""""""""
 
 .. autoclass:: saga.adaptors.context.x509.ContextX509
    :members:

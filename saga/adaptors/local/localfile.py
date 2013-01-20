@@ -29,7 +29,7 @@ _ADAPTOR_CAPABILITIES  = {}
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITIES,
+    'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : 'The local filesystem adaptor.',
     'details'          : """This adaptor interacts with local filesystem, by
                             using the (POSIX like) os and shutil Python packages.""",

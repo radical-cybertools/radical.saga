@@ -1,8 +1,8 @@
 
 .. _file_managemen:
 
-File/Directory Management Overview
-==================================
+File/Directory Management
+=========================
 
 Introduction
 ------------

@@ -22,8 +22,7 @@ Supported Schemas
 Configuration Options
 =====================
 
-enabled
--------
+``enabled``
 
 enable / disable saga.adaptor.userpass adaptor
 
@@ -33,6 +32,17 @@ enable / disable saga.adaptor.userpass adaptor
   - **valid options** : [True, False]
 
 
+Supported Capabilities
+======================
+
+``attributes``
+
+  - Type
+  - UserID
+  - UserPass
+
+
+
 Supported API Classes
 =====================
 
@@ -40,7 +50,7 @@ Supported API Classes
 
 
 saga.Context
-------------
+""""""""""""
 
 .. autoclass:: saga.adaptors.context.userpass.ContextUserPass
    :members:

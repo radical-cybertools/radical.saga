@@ -28,7 +28,7 @@ _ADAPTOR_CAPABILITIES  = {
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITIES,
+    'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : 'The X509 context adaptor.',
     'details'          : """This adaptor points to a X509 proxy, or certificate,
                             be used for backend connections.  Note that this
