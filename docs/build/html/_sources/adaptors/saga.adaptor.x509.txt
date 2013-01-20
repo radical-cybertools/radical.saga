@@ -16,7 +16,7 @@ v0.1
 Supported Schemas
 =================
 
-**x509** : x509 token information.
+  - **x509** : x509 token information.
 
 
 

@@ -15,8 +15,8 @@ v0.2
 Supported Schemas
 =================
 
-**local** : alias for *file*
-**file** : local filesystem.
+  - **local** : alias for *file*
+  - **file** : local filesystem.
 
 
 

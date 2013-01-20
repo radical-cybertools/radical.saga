@@ -15,7 +15,7 @@ v0.2
 Supported Schemas
 =================
 
-**redis** : redis nosql backend.
+  - **redis** : redis nosql backend.
 
 
 

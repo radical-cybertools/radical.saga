@@ -15,7 +15,7 @@ v0.1
 Supported Schemas
 =================
 
-**userpass** : this adaptor can only store username/password pairs.
+  - **userpass** : this adaptor can only store username/password pairs.
 
 
 

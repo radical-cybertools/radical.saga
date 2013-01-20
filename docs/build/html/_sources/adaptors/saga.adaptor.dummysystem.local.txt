@@ -19,7 +19,7 @@ v0.1beta
 Supported Schemas
 =================
 
-**dummy** : an invented schema.
+  - **dummy** : an invented schema.
 
 
 
