@@ -74,7 +74,7 @@ class ExceptionBase(Exception):
         log_method = logger.error
 
         try :
-            log_method = getattr (logger, level)
+            log_method = getattr (logger, level.lower())
         except :
             sys.stderr.write ("unknown log level '%s'"  %  level)
 

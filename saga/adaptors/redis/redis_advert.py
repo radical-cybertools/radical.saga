@@ -171,10 +171,10 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory, saga.adaptors.cpi.Asyn
 
         self._url       = url
         self._flags     = flags
-        self._session   = session
         self._container = self._adaptor._bulk
 
-        self._init_check ()
+        self._set_session (session)
+        self._init_check  ()
 
         return self._api
 
@@ -184,11 +184,11 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory, saga.adaptors.cpi.Asyn
 
         self._url     = url
         self._flags   = flags
-        self._session = session
+        
+        self._set_session (session)
         
         c = { 'url'     : self._url, 
-              'flags'   : self._flags,
-              'session' : self._session }
+              'flags'   : self._flags }
 
         return saga.task.Task (self, 'init_instance', c, ttype)
 
@@ -302,9 +302,8 @@ class RedisEntry (saga.adaptors.cpi.advert.Entry) :
 
 
     def _dump (self) :
-        self._logger.debug ("url    : %s"  % self._url)
-        self._logger.debug ("flags  : %s"  % self._flags)
-        self._logger.debug ("session: %s"  % self._session)
+        self._logger.debug ("url  : %s"  % self._url)
+        self._logger.debug ("flags: %s"  % self._flags)
 
 
     @SYNC_CALL
@@ -312,9 +311,9 @@ class RedisEntry (saga.adaptors.cpi.advert.Entry) :
 
         self._url     = url
         self._flags   = flags
-        self._session = session
 
-        self._init_check ()
+        self._set_session (session)
+        self._init_check  ()
 
         return self
 

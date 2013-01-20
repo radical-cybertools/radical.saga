@@ -6,7 +6,8 @@ __license__   = "MIT"
 ''' Unit tests for saga.engine.logger.py
 '''
 
-from saga.utils.logger import *
+from saga.utils.logger        import getLogger
+from saga.utils.logger.logger import _Logger
 
 ############################# BEGIN UNIT TESTS ################################
 ##
@@ -14,15 +15,14 @@ def test_singleton():
     """ Test if the logger behaves like a singleton
     """
     # make sure singleton works
-    #assert(getLogger() == getLogger())
-    assert Logger() == Logger() 
+    assert getLogger()         == getLogger()
     assert getLogger('engine') == getLogger('engine')
 
 def test_configurable():
     """ Test if the logger config options work
     """
     # make sure singleton works
-    c = Logger().get_config()
+    c = _Logger().get_config()
     
     assert c['ttycolor'].get_value() == True
     assert c['filters'].get_value() == []

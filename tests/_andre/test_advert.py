@@ -33,8 +33,8 @@ class my_cb (saga.Callback) :
 def test () :
   try :
   
-  # e = Engine ()
-  # e._dump()
+    e = Engine ()
+    e._dump()
     
     d_1 = saga.advert.Directory ('redis://:securedis@localhost/tmp/test1/test1/',
                                      saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS)

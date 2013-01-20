@@ -1,3 +1,4 @@
+
 .. _chapter_usage:
 
 **********************
@@ -13,5 +14,5 @@ and configuration of SAGA and things that make working with SAGA easier.
    install.rst
    config.rst
    logger.rst
-   adaptors.rst
+   examples.rst
 

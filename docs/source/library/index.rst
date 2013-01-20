@@ -1,3 +1,4 @@
+
 .. _chapter_library_reference:
 
 *****************
@@ -10,6 +11,13 @@ Intro library reference...
    :numbered:
 
    exceptions.rst
+   context.rst
+   session.rst
    attribute.rst
    url.rst
    job/index.rst
+   filesystem/index.rst
+   replica/index.rst
+   advert/index.rst
+   resource/index.rst
+

@@ -21,9 +21,12 @@ class Directory (Base, Attributes, Async) :
         '''
 
         # param checks
+        print url
         url     = Url (url)
+        print url
         scheme  = url.scheme.lower ()
 
+        print "schema: %s" % scheme
         Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
                        url, flags, session, ttype=_ttype)
 
