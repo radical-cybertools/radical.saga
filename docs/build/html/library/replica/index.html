@@ -1,0 +1,368 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>8. Replica Management &mdash; SAGA 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 1.0 documentation" href="../../index.html" />
+    <link rel="up" title="2. Library Reference" href="../index.html" />
+    <link rel="next" title="9. Advert Management" href="../advert/index.html" />
+    <link rel="prev" title="7. File/Directory Management Overview" href="../filesystem/index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../advert/index.html" title="9. Advert Management"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../filesystem/index.html" title="7. File/Directory Management Overview"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">2. Library Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="replica-management">
+<span id="id1"></span><h1>8. Replica Management<a class="headerlink" href="#replica-management" title="Permalink to this headline">¶</a></h1>
+<p>SAGA&#8217;s replica management module is ...</p>
+<p>The basic usage of the replica module is as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># ...</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">More examples on how to use the SAGA replica module can be found in
+the <a class="reference internal" href="examples.html#code-examples-replica"><em>Replica Module</em></a> section of the
+<a class="reference internal" href="../../examples/index.html#chapter-code-examples"><em>Code Examples</em></a> chapter.</p>
+</div>
+<p>Like all SAGA modules, the replica module relies on  middleware adaptors
+to provide bindings to a specific resource manager. Adaptors are implicitly
+selected via the <cite>scheme</cite> part of the URL, e.g., <tt class="docutils literal"><span class="pre">local://</span></tt> in the example
+above selects the <cite>local</cite> replica adaptor.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">A list of available adaptors and supported resource managers can be
+found in the <a class="reference internal" href="../../developers/index.html#chapter-middleware-adaptors"><em>Developer Documentation</em></a> part of this
+documentation.</p>
+</div>
+<p>The rest of this section is structured as follows:</p>
+<div class="contents local topic" id="table-of-contents">
+<p class="topic-title first">Table of Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#replica-service-saga-replica-logicalfile" id="id2">Replica Service &#8211; <a class="reference internal" href="#saga.replica.LogicalFile" title="saga.replica.LogicalFile"><tt class="xref py py-class docutils literal"><span class="pre">saga.replica.LogicalFile</span></tt></a></a></li>
+</ul>
+</div>
+<div class="section" id="replica-service-saga-replica-logicalfile">
+<span id="replica-file"></span><h2><a class="toc-backref" href="#id2">8.1. Replica Service &#8211; <a class="reference internal" href="#saga.replica.LogicalFile" title="saga.replica.LogicalFile"><tt class="xref py py-class docutils literal"><span class="pre">saga.replica.LogicalFile</span></tt></a></a><a class="headerlink" href="#replica-service-saga-replica-logicalfile" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">todo:</th><td class="field-body">Describe how to work with services.</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="saga.replica.LogicalFile">
+<em class="property">class </em><tt class="descclassname">saga.replica.</tt><tt class="descname">LogicalFile</tt><big>(</big><em>url=None</em>, <em>flags=512</em>, <em>session=None</em>, <em>_adaptor=None</em>, <em>_adaptor_state={}</em>, <em>_ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.Base</span></tt>, <a class="reference internal" href="../attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a>, <tt class="xref py py-class docutils literal"><span class="pre">saga.async.Async</span></tt></p>
+<dl class="classmethod">
+<dt id="saga.replica.LogicalFile.create">
+<em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>url=None</em>, <em>flags=512</em>, <em>session=None</em>, <em>ttype='Sync'</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>url:       saga.Url
+flags:     saga.replica.flags enum
+session:   saga.Session
+ttype:     saga.task.type enum
+ret:       saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.get_url">
+<tt class="descname">get_url</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.get_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           saga.Url / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.get_cwd">
+<tt class="descname">get_cwd</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.get_cwd" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           string / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.get_name">
+<tt class="descname">get_name</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.get_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           string / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.is_dir_self">
+<tt class="descname">is_dir_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.is_dir_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           bool / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.is_entry_self">
+<tt class="descname">is_entry_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.is_entry_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           bool / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.is_link_self">
+<tt class="descname">is_link_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.is_link_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           bool / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.read_link_self">
+<tt class="descname">read_link_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.read_link_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           saga.Url / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.copy_self">
+<tt class="descname">copy_self</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.copy_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>tgt:           saga.Url
+flags:         enum flags
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.link_self">
+<tt class="descname">link_self</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.link_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>tgt:           saga.Url
+flags:         enum flags
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.move_self">
+<tt class="descname">move_self</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.move_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>tgt:           saga.Url
+flags:         flags enum
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.remove_self">
+<tt class="descname">remove_self</tt><big>(</big><em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.remove_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>flags:         flags enum
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.close">
+<tt class="descname">close</tt><big>(</big><em>timeout=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>timeout:       float
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.replica.LogicalFile.url">
+<tt class="descname">url</tt><a class="headerlink" href="#saga.replica.LogicalFile.url" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           saga.Url / saga.Task</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.replica.LogicalFile.cwd">
+<tt class="descname">cwd</tt><a class="headerlink" href="#saga.replica.LogicalFile.cwd" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           string / saga.Task</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.replica.LogicalFile.name">
+<tt class="descname">name</tt><a class="headerlink" href="#saga.replica.LogicalFile.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           string / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.is_file_self">
+<tt class="descname">is_file_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.is_file_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:    saga.task.type enum
+ret:      bool / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.add_location">
+<tt class="descname">add_location</tt><big>(</big><em>name</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.add_location" title="Permalink to this definition">¶</a></dt>
+<dd><p>name:           saga.Url
+ttype:          saga.task.type enum
+ret:            None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.remove_location">
+<tt class="descname">remove_location</tt><big>(</big><em>name</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.remove_location" title="Permalink to this definition">¶</a></dt>
+<dd><p>name:           saga.Url
+ttype:          saga.task.type enum
+ret:            None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.update_location">
+<tt class="descname">update_location</tt><big>(</big><em>old</em>, <em>new</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.update_location" title="Permalink to this definition">¶</a></dt>
+<dd><p>old:            saga.Url
+new:            saga.Url 
+ttype:          saga.task.type enum
+ret:            None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.list_locations">
+<tt class="descname">list_locations</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.list_locations" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:          saga.task.type enum
+ret:            list [saga.Url] / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.replicate">
+<tt class="descname">replicate</tt><big>(</big><em>name</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.replicate" title="Permalink to this definition">¶</a></dt>
+<dd><p>name:           saga.Url
+flags:          flags enum
+ttype:          saga.task.type enum
+ret:            None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.upload">
+<tt class="descname">upload</tt><big>(</big><em>name</em>, <em>tgt=''</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.upload" title="Permalink to this definition">¶</a></dt>
+<dd><p>name:           saga.Url
+tgt:            saga.Url
+flags:          flags enum
+ttype:          saga.task.type enum
+ret:            None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.download">
+<tt class="descname">download</tt><big>(</big><em>name</em>, <em>src=''</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.download" title="Permalink to this definition">¶</a></dt>
+<dd><p>name:           saga.Url
+src:            saga.Url
+flags:          flags enum
+ttype:          saga.task.type enum
+ret:            None / saga.Task</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">8. Replica Management</a><ul>
+<li><a class="reference internal" href="#replica-service-saga-replica-logicalfile">8.1. Replica Service &#8211; <tt class="docutils literal"><span class="pre">saga.replica.LogicalFile</span></tt></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../filesystem/index.html"
+                        title="previous chapter">7. File/Directory Management Overview</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../advert/index.html"
+                        title="next chapter">9. Advert Management</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/library/replica/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../advert/index.html" title="9. Advert Management"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../filesystem/index.html" title="7. File/Directory Management Overview"
+             >previous</a> |</li>
+        <li><a href="../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >2. Library Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
