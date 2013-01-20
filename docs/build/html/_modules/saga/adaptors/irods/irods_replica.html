@@ -1,0 +1,1056 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>saga.adaptors.irods.irods_replica &mdash; SAGA 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 1.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="saga" href="../../../saga.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for saga.adaptors.irods.irods_replica</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot; iRODS replica adaptor implementation &quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pwd</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">import</span> <span class="nn">errno</span>
+
+<span class="kn">import</span> <span class="nn">saga.url</span>
+<span class="kn">import</span> <span class="nn">saga.adaptors.cpi.base</span>
+<span class="kn">import</span> <span class="nn">saga.adaptors.cpi.replica</span>
+<span class="kn">import</span> <span class="nn">saga.utils.misc</span>
+
+<span class="kn">from</span>   <span class="nn">saga.utils.singleton</span> <span class="kn">import</span> <span class="n">Singleton</span>
+
+<span class="n">SYNC_CALL</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">SYNC_CALL</span>
+<span class="n">ASYNC_CALL</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">ASYNC_CALL</span>
+
+<span class="k">class</span> <span class="nc">CommandWrapper</span> <span class="p">()</span> <span class="p">:</span> 
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">initAsLocalWrapper</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span> <span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">connect</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span> <span class="k">pass</span>
+
+
+<span class="c">###############################################################################</span>
+<span class="c"># adaptor info</span>
+<span class="c">#</span>
+
+<span class="n">_ADAPTOR_NAME</span>          <span class="o">=</span> <span class="s">&#39;saga.adaptor.replica.irods&#39;</span>
+<span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&#39;irods&#39;</span><span class="p">]</span>
+<span class="n">_ADAPTOR_OPTIONS</span>       <span class="o">=</span> <span class="p">[]</span>
+<span class="n">_ADAPTOR_CAPABILITIES</span>  <span class="o">=</span> <span class="p">{}</span>
+<span class="n">_ADAPTOR_DOC</span>           <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;name&#39;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&#39;cfg_options&#39;</span>      <span class="p">:</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">,</span> 
+    <span class="s">&#39;capabilites&#39;</span>      <span class="p">:</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
+    <span class="s">&#39;description&#39;</span>      <span class="p">:</span> <span class="s">&#39;The iRODS replica adaptor.&#39;</span><span class="p">,</span>
+    <span class="s">&#39;details&#39;</span>          <span class="p">:</span> <span class="s">&quot;&quot;&quot;This adaptor interacts with the irids data</span>
+<span class="s">                            management system, by using the irods command line</span>
+<span class="s">                            tools.&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&#39;schemas&#39;</span>          <span class="p">:</span> <span class="p">{</span><span class="s">&#39;irods&#39;</span>  <span class="p">:</span> <span class="s">&#39;irods schema&#39;</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="n">_ADAPTOR_INFO</span>          <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;name&#39;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&#39;version&#39;</span>          <span class="p">:</span> <span class="s">&#39;v0.1&#39;</span><span class="p">,</span>
+    <span class="s">&#39;schemas&#39;</span>          <span class="p">:</span> <span class="n">_ADAPTOR_SCHEMAS</span><span class="p">,</span>
+    <span class="s">&#39;cpis&#39;</span>             <span class="p">:</span> <span class="p">[{</span>
+        <span class="s">&#39;type&#39;</span>         <span class="p">:</span> <span class="s">&#39;saga.replica.LogicalDirectory&#39;</span><span class="p">,</span>
+        <span class="s">&#39;class&#39;</span>        <span class="p">:</span> <span class="s">&#39;IRODSDirectory&#39;</span>
+        <span class="p">},</span> 
+        <span class="p">{</span>
+        <span class="s">&#39;type&#39;</span>         <span class="p">:</span> <span class="s">&#39;saga.replica.LogicalFile&#39;</span><span class="p">,</span>
+        <span class="s">&#39;class&#39;</span>        <span class="p">:</span> <span class="s">&#39;IRODSFile&#39;</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="c">###############################################################################</span>
+<span class="c"># The adaptor class</span>
+
+<span class="k">class</span> <span class="nc">Adaptor</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AdaptorBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">    This is the actual adaptor class, which gets loaded by SAGA (i.e. by the</span>
+<span class="sd">    SAGA engine), and which registers the CPI implementation classes which</span>
+<span class="sd">    provide the adaptor&#39;s functionality.</span>
+
+<span class="sd">    We only need one instance of this adaptor per process (actually per engine,</span>
+<span class="sd">    but engine is a singleton, too...) -- the engine will though create new CPI</span>
+<span class="sd">    implementation instances as needed (one per SAGA API object).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">Singleton</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AdaptorBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_ADAPTOR_INFO</span><span class="p">,</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">sanity_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="n">cw</span> <span class="o">=</span> <span class="n">CommandWrapper</span><span class="o">.</span><span class="n">initAsLocalWrapper</span><span class="p">(</span><span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">cw</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="c"># run ils, see if we get any errors -- if so, fail the</span>
+        <span class="c"># sanity check</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">cw</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;ils&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;sanity check error&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Disabling iRODS plugin - could not access iRODS &quot;</span><span class="o">+</span>\
+                              <span class="s">&quot;filesystem through ils.  Check your iRODS &quot;</span><span class="o">+</span>\
+                              <span class="s">&quot;environment and certificates.&quot;</span><span class="p">)</span>
+
+        <span class="c"># try ienv or imiscsvrinfo later? ( check for error messages )</span>
+
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">irods_get_directory_listing</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">dir</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="sd">&#39;&#39;&#39;function takes an iRODS logical directory as an argument,</span>
+<span class="sd">           and returns a list of irods_logical_entry instances containing</span>
+<span class="sd">           information on files/directories found in the directory argument</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+    
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cw</span> <span class="o">=</span> <span class="n">CommandWrapper</span><span class="o">.</span><span class="n">initAsLocalWrapper</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+            <span class="n">cw</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+            
+            <span class="c"># execute the ils -L command</span>
+            <span class="n">cw_result</span> <span class="o">=</span> <span class="n">cw</span><span class="o">.</span><span class="n">run</span> <span class="p">(</span><span class="s">&quot;ils -L </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">dir</span><span class="p">)</span>
+    
+            <span class="c"># make sure we ran ok</span>
+            <span class="k">if</span> <span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not open directory </span><span class="si">%s</span><span class="s">, errorcode </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span>\
+                                        <span class="o">%</span> <span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span><span class="p">),</span>
+                                           <span class="n">cw_result</span><span class="p">))</span>
+    
+            <span class="c"># strip extra linebreaks from stdout, make a list from the linebreaks that</span>
+            <span class="c"># remain, skip first entry which just tells us the current directory</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">cw_result</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">):</span>
+    
+                <span class="c"># if we are listing a directory or remote resource file location i.e.</span>
+                <span class="c"># (bliss-irods)[azebro1@gw68 bliss]$ ils -L /osg/home/azebro1</span>
+                <span class="c"># /osg/home/azebro1:</span>
+                <span class="c">#    azebro1           1 UFlorida-SSERCA_FTP            12 2012-11-14.09:55 &amp; irods-test.txt</span>
+                <span class="c">#          /data/cache/UFlorida-SSERCA_FTPplaceholder/home/azebro1/irods-test.txt    osgGridFtpGroup</span>
+    
+                <span class="c"># then we want to ignore that entry (not using it for now)</span>
+                <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">):</span>
+                    <span class="k">continue</span> 
+                
+                <span class="c"># remove whitespace</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    
+                <span class="c"># entry for file or directory</span>
+                <span class="n">dir_entry</span> <span class="o">=</span> <span class="n">irods_logical_entry</span><span class="p">()</span>
+                
+                <span class="c"># if we have a directory here</span>
+                <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;C- &quot;</span><span class="p">):</span>
+                    <span class="n">dir_entry</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span>
+                    <span class="n">dir_entry</span><span class="o">.</span><span class="n">is_directory</span> <span class="o">=</span> <span class="bp">True</span>
+    
+                <span class="c"># if we have a file here</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c"># ils -L output looks like this after you split it:</span>
+                    <span class="c">#  0           1    2                      3     4                   5    6</span>
+                    <span class="c"># [&#39;azebro1&#39;, &#39;1&#39;, &#39;UFlorida-SSERCA_FTP&#39;, &#39;12&#39;, &#39;2012-11-14.09:55&#39;, &#39;&amp;&#39;, &#39;irods-test.txt&#39;]</span>
+                    <span class="c"># not sure what 1 and 5 are ... </span>
+                    <span class="n">dir_entry</span><span class="o">.</span><span class="n">owner</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">dir_entry</span><span class="o">.</span><span class="n">locations</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">2</span><span class="p">]]</span>
+                    <span class="n">dir_entry</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">3</span><span class="p">]</span>
+                    <span class="n">dir_entry</span><span class="o">.</span><span class="n">date</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">4</span><span class="p">]</span>
+                    <span class="n">dir_entry</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">6</span><span class="p">]</span>
+    
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dir_entry</span><span class="p">)</span>
+    
+            <span class="c"># merge all entries on the list with duplicate filenames into a</span>
+            <span class="c"># single entry with one filename and multiple resource locations</span>
+            <span class="n">final_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">final_list</span><span class="p">]:</span>
+                    <span class="c"># duplicate name, merge this entry with the previous one</span>
+                    <span class="k">for</span> <span class="n">final_list_item</span> <span class="ow">in</span> <span class="n">final_list</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">final_list_item</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">item</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                            <span class="n">final_list_item</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">locations</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">final_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">final_list</span>
+    
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Couldn&#39;t get directory listing: </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+    
+        <span class="k">return</span> <span class="n">result</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">irods_get_resource_listing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Return a list of irods resources and resource groups with information</span>
+<span class="sd">            stored in irods_resource_entry format</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cw</span> <span class="o">=</span> <span class="n">CommandWrapper</span><span class="o">.</span><span class="n">initAsLocalWrapper</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+            <span class="n">cw</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+    
+            <span class="c"># execute the ilsresc -l command</span>
+            <span class="n">cw_result</span> <span class="o">=</span> <span class="n">cw</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;ilsresc -l&quot;</span><span class="p">)</span>
+    
+            <span class="c"># make sure we ran ok</span>
+            <span class="k">if</span> <span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Could not obtain list of resources with ilsresc -l&quot;</span><span class="p">)</span>
+    
+            <span class="c"># convert our command&#39;s stdout to a list of text lines</span>
+            <span class="n">cw_result_list</span> <span class="o">=</span> <span class="n">cw_result</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+    
+            <span class="c"># list of resource entries we will save our results to</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    
+            <span class="c"># while loop instead of for loop so we can mutate the list</span>
+            <span class="c"># as we iterate</span>
+            <span class="k">while</span> <span class="n">cw_result_list</span><span class="p">:</span>
+                <span class="n">entry</span> <span class="o">=</span> <span class="n">irods_resource_entry</span><span class="p">()</span>
+                
+                <span class="c"># get our next line from the FRONT of the list</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">cw_result_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                
+                <span class="c"># check to see if this is the beginning of a</span>
+                <span class="c"># singular resource entry </span>
+                <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;resource name: &quot;</span><span class="p">):</span>
+                    <span class="c"># singular resource entry output from ilsresc -l</span>
+                    <span class="c"># LINE NUMBERS AND PADDING ADDED</span>
+                    <span class="c"># ex. actual output, line 0 starts like &quot;resource name&quot;</span>
+                    <span class="c"># 0  resource name: BNL_ATLAS_2_FTP</span>
+                    <span class="c"># 1  resc id: 16214</span>
+                    <span class="c"># 2  zone: osg</span>
+                    <span class="c"># 3  type: MSS universal driver</span>
+                    <span class="c"># 4  class: compound</span>
+                    <span class="c"># 5  location: gw014k1.fnal.gov</span>
+                    <span class="c"># 6  vault: /data/cache/BNL_ATLAS_2_FTPplaceholder</span>
+                    <span class="c"># 7  free space:</span>
+                    <span class="c"># 8  status: up</span>
+                    <span class="c"># 9  info:</span>
+                    <span class="c"># 10 comment:</span>
+                    <span class="c"># 11 create time: 01343055975: 2012-07-23.09:06:15</span>
+                    <span class="c"># 12 modify time: 01347480717: 2012-09-12.14:11:57</span>
+                    <span class="c"># 13 ----</span>
+                    <span class="n">entry</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="s">&quot;resource name: &quot;</span><span class="p">):]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="n">entry</span><span class="o">.</span><span class="n">is_resource_group</span> <span class="o">=</span> <span class="bp">False</span>
+    
+                    <span class="c"># TODO: SAVE ALL THE OTHER INFO</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">13</span><span class="p">):</span>
+                        <span class="n">cw_result_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    
+                    <span class="c">#add our resource to the list</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+    
+                <span class="c"># check to see if this is an entry for a resource group</span>
+                <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;resource group: &quot;</span><span class="p">):</span>
+                    <span class="n">entry</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="s">&quot;resource group: &quot;</span><span class="p">):]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="n">entry</span><span class="o">.</span><span class="n">is_resource_group</span> <span class="o">=</span> <span class="bp">True</span>
+    
+                    <span class="c"># continue processing ilsresc -l results until we</span>
+                    <span class="c"># are at the end of the resource group information</span>
+                    <span class="c"># ----- is not printed if there are no further entries</span>
+                    <span class="c"># so we have to make sure to check we don&#39;t pop off an empty</span>
+                    <span class="c"># stack too</span>
+                    <span class="c">#</span>
+                    <span class="c"># TODO: ACTUALLY SAVE THE LIST OF RESOURCES IN A RESOURCE GROUP</span>
+                    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">cw_result_list</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;-----&quot;</span><span class="p">)):</span>
+                        <span class="n">line</span><span class="o">=</span><span class="n">cw_result_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    
+                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+    
+                <span class="c"># for some reason, we&#39;re at a line which we have no idea how to handle</span>
+                <span class="c"># this is bad -- throw an error</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Error parsing iRODS ilsresc -l information!&quot;</span><span class="p">)</span>
+                    
+            <span class="k">return</span> <span class="n">result</span>
+    
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Couldn&#39;t get resource listing: </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+
+
+
+<span class="c">###############################################################################</span>
+<span class="c">#</span>
+<span class="c">#</span>
+<span class="c">#</span>
+
+<span class="k">class</span> <span class="nc">irods_resource_entry</span> <span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;class to hold info on an iRODS resource &#39;&#39;&#39;</span>
+
+    <span class="c"># Resources (not groups) as retreived from ilsresc -l look like the following:</span>
+    <span class="c">#</span>
+    <span class="c"># resource name:     BNL_ATLAS_2_FTP</span>
+    <span class="c"># resc id:           16214</span>
+    <span class="c"># zone:              osg</span>
+    <span class="c"># type:              MSS universal driver</span>
+    <span class="c"># class:             compound</span>
+    <span class="c"># location:          gw014k1.fnal.gov</span>
+    <span class="c"># vault:             /data/cache/BNL_ATLAS_2_FTPplaceholder</span>
+    <span class="c"># free space:</span>
+    <span class="c"># status:            up</span>
+    <span class="c"># info:</span>
+    <span class="c"># comment:</span>
+    <span class="c"># create time:       01343055975: 2012-07-23.09:06:15</span>
+    <span class="c"># modify time:       01347480717: 2012-09-12.14:11:57</span>
+    <span class="c"># ----</span>
+
+    <span class="c"># Resource groups look like this (shortened):</span>
+    <span class="c">#</span>
+    <span class="c"># resource group:    osgGridFtpGroup</span>
+    <span class="c"># Includes resource: NWICG_NotreDame_FTP</span>
+    <span class="c"># Includes resource: UCSDT2-B_FTP</span>
+    <span class="c"># Includes resource: UFlorida-SSERCA_FTP</span>
+    <span class="c"># Includes resource: cinvestav_FTP</span>
+    <span class="c"># Includes resource: SPRACE_FTP</span>
+    <span class="c"># Includes resource: NYSGRID_CORNELL_NYS1_FTP</span>
+    <span class="c"># Includes resource: Nebraska_FTP</span>
+    <span class="c"># -----</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># are we a resource group? </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_resource_group</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c"># individual resource-specific properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span>              <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zone</span>              <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span>              <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resource_class</span>    <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">location</span>          <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vault</span>             <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">free_space</span>        <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span>            <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span>              <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span>           <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_time</span>       <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modify_time</span>       <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c"># resource group-specific properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_members</span>     <span class="o">=</span> <span class="p">[]</span>
+
+
+
+<span class="c">###############################################################################</span>
+<span class="c">#</span>
+<span class="c"># logical_directory adaptor class</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">IRODSDirectory</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">LogicalDirectory</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSDirectory"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory">[docs]</a>
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">CPIBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span>         <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span>         <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">owner</span>        <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">date</span>         <span class="o">=</span> <span class="bp">None</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSDirectory.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_check</span> <span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ttype</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSDirectory.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance_async">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_check</span> <span class="p">()</span>
+        
+        <span class="n">t</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">()</span>
+
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">LogicalDirectory</span> <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">_adaptor_name</span><span class="o">=</span><span class="n">_ADAPTOR_NAME</span><span class="p">))</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_state</span>  <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_init_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+
+        <span class="n">url</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span> 
+
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (is not a Logicaldirectory)&quot;</span>  \
+                                               <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+        
+        <span class="c"># TODO: &quot;stat&quot; the file</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSDirectory.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.get_url">[docs]</a>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">open</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSDirectory.open"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.open">[docs]</a>        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">host</span> <span class="p">:</span> 
+            <span class="n">url</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
+
+        <span class="n">f</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">LogicalFile</span> <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">_adaptor_name</span><span class="o">=</span><span class="n">_ADAPTOR_NAME</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">make_dir</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="IRODSDirectory.make_dir"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.make_dir">[docs]</a>
+        <span class="c">#complete_path = dir_obj._url.path</span>
+        <span class="n">complete_path</span> <span class="o">=</span> <span class="n">bliss</span><span class="o">.</span><span class="n">saga</span><span class="o">.</span><span class="n">Url</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&quot;Attempting to make directory at: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">complete_path</span><span class="p">)</span>
+
+        <span class="c">#attempt to run iRODS mkdir command</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cw_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cw</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;imkdir </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">complete_path</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not create directory </span><span class="si">%s</span><span class="s">, errorcode </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span>\
+                                    <span class="o">%</span> <span class="p">(</span><span class="n">complete_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span><span class="p">),</span>
+                                       <span class="n">cw_result</span><span class="p">))</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="c"># did the directory already exist?</span>
+            <span class="k">if</span> <span class="s">&quot;CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">AlreadyExists</span> <span class="p">(</span><span class="s">&quot;Directory already exists.&quot;</span><span class="p">)</span>
+
+            <span class="c"># couldn&#39;t create for unspecificed reason</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Couldn&#39;t create directory.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">remove</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="IRODSDirectory.remove"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.remove">[docs]</a>        <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.remove() &#39;&#39;&#39;</span>
+
+        <span class="n">complete_path</span> <span class="o">=</span> <span class="n">bliss</span><span class="o">.</span><span class="n">saga</span><span class="o">.</span><span class="n">Url</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&quot;Attempting to remove directory at: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">complete_path</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cw_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cw</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;irm -r </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">complete_path</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not remove directory </span><span class="si">%s</span><span class="s">, errorcode </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span>\
+                                    <span class="o">%</span> <span class="p">(</span><span class="n">complete_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span><span class="p">),</span>
+                                       <span class="n">cw_result</span><span class="p">))</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="c"># was there no directory to delete?</span>
+            <span class="k">if</span> <span class="s">&quot;does not exist&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">DoesNotExist</span> <span class="p">(</span><span class="s">&quot;Directory </span><span class="si">%s</span><span class="s"> does not exist.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">complete_path</span><span class="p">)</span> <span class="p">)</span>
+
+            <span class="c"># couldn&#39;t delete for unspecificed reason</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Couldn&#39;t delete directory </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">complete_path</span><span class="p">))</span>
+
+        <span class="k">return</span>
+
+
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">list</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="IRODSDirectory.list"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.list">[docs]</a>       <span class="c">#TODO: Make this use the irods_get_directory_listing</span>
+
+        <span class="n">complete_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&quot;Attempting to get directory listing for logical path </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">complete_path</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cw_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cw</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;ils </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">complete_path</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Could not open directory&quot;</span><span class="p">)</span>
+
+            <span class="c"># strip extra linebreaks from stdout, make a list w/ linebreaks,</span>
+            <span class="c"># skip first entry which tells us the current directory</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">cw_result</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]:</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;C- &quot;</span><span class="p">):</span>
+                    <span class="c">#result.append(&quot;dir &quot; + item[3:])</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c">#result.append(&quot;file &quot; +item)</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Couldn&#39;t list directory: </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+
+
+<span class="c">######################################################################</span>
+<span class="c">#</span>
+<span class="c"># logical_file adaptor class</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">IRODSFile</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">LogicalFile</span><span class="p">)</span> <span class="p">:</span></div></div>
+<div class="viewcode-block" id="IRODSFile"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile">[docs]</a>
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">CPIBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span>         <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locations</span>    <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span>         <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">owner</span>        <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">date</span>         <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_directory</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c"># TODO: &quot;stat&quot; the file</span>
+
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.init_instance">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_check</span> <span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ttype</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.init_instance_async">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_check</span> <span class="p">()</span>
+        
+        <span class="n">t</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">()</span>
+
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">LogicalFile</span> <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">_adaptor_name</span><span class="o">=</span><span class="n">_ADAPTOR_NAME</span><span class="p">))</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_state</span>  <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_init_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+
+        <span class="n">url</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span> 
+
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">port</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has fragment)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">query</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has query)&quot;</span>     <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">username</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has username)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">password</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has password)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">path</span>       <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">path</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="p">:</span>
+
+            <span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">filename</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (names directory)&quot;</span>  \
+                                                 <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">dirname</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">if</span> <span class="n">saga</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="o">&amp;</span> <span class="n">flags</span> <span class="p">:</span>
+                    <span class="k">try</span> <span class="p">:</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not &#39;mkdir -p </span><span class="si">%s</span><span class="s">&#39;: </span><span class="si">%s</span><span class="s">)&quot;</span>  \
+                                                        <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+                <span class="k">else</span> <span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (parent dir does not exist)&quot;</span>  \
+                                                     <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+        
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">if</span> <span class="n">saga</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">CREATE</span> <span class="o">&amp;</span> <span class="n">flags</span> <span class="p">:</span>
+                    <span class="k">try</span> <span class="p">:</span>
+                        <span class="nb">open</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">close</span> <span class="p">()</span> <span class="c"># touch</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not &#39;touch </span><span class="si">%s</span><span class="s">&#39;: </span><span class="si">%s</span><span class="s">)&quot;</span>  \
+                                                        <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+                <span class="k">else</span> <span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (Logicalfile does not exist)&quot;</span>  \
+                                                     <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (is not a Logicalfile)&quot;</span>  \
+                                               <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.get_url">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_url_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.get_url_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.get_url_async">[docs]</a>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">()</span>
+
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_state</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Done</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_size_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.get_size_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.get_size_self">[docs]</a>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&quot;Attempting to get size for logical file </span><span class="si">%s</span><span class="s"> &quot;</span> \
+                         <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+        <span class="n">listing</span> <span class="o">=</span> <span class="n">irods_get_directory_listing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">listing</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_size_self_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.get_size_self_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.get_size_self_async">[docs]</a>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">()</span>
+
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_size_self</span> <span class="p">())</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_state</span>  <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">copy_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.copy_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.copy_self">[docs]</a>
+        <span class="n">tgt_url</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="n">tgt</span>     <span class="o">=</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">src</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span>
+
+        <span class="k">if</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">schema</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url schema for </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>  <span class="n">target</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">tgt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;/&#39;</span> <span class="p">:</span>
+            <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">&quot;</span>   <span class="o">%</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span> <span class="p">(</span><span class="n">src</span><span class="p">),</span> <span class="n">tgt</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="s">&quot; copy </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">logicalfile_list_locations</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logicalfile_obj</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="IRODSFile.logicalfile_list_locations"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.logicalfile_list_locations">[docs]</a>         <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.list_locations()</span>
+<span class="sd">         &#39;&#39;&#39;</span>
+         <span class="c">#return a list of all replica locations for a file</span>
+         <span class="n">path</span> <span class="o">=</span> <span class="n">logicalfile_obj</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&quot;Attempting to get a list of replica locations for </span><span class="si">%s</span><span class="s">&quot;</span> \
+                            <span class="o">%</span> <span class="n">path</span><span class="p">)</span>
+         <span class="n">listing</span> <span class="o">=</span> <span class="n">irods_get_directory_listing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+         <span class="k">return</span> <span class="n">listing</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">locations</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">logicalfile_remove_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logicalfile_obj</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span></div>
+<div class="viewcode-block" id="IRODSFile.logicalfile_remove_location"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.logicalfile_remove_location">[docs]</a>        <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.remove_locations()</span>
+<span class="sd">        &#39;&#39;&#39;</span>     
+        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NotImplemented</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;Not implemented&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">logicalfile_replicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logicalfile_obj</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span></div>
+<div class="viewcode-block" id="IRODSFile.logicalfile_replicate"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.logicalfile_replicate">[docs]</a>        <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.replicate()</span>
+<span class="sd">        &#39;&#39;&#39;</span>        
+        <span class="c">#path to file we are replicating on iRODS</span>
+        <span class="n">complete_path</span> <span class="o">=</span> <span class="n">logicalfile_obj</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>        
+
+        <span class="c">#TODO: Verify Correctness in the way the resource is grabbed</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">bliss</span><span class="o">.</span><span class="n">saga</span><span class="o">.</span><span class="n">Url</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">get_query</span><span class="p">()</span>
+        <span class="n">resource</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;=&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&quot;Attempting to replicate logical file </span><span class="si">%s</span><span class="s"> to resource/resource group </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">complete_path</span><span class="p">,</span> <span class="n">resource</span><span class="p">))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cw_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cw</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;irepl -R </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">complete_path</span><span class="p">)</span> <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Could not replicate logical file </span><span class="si">%s</span><span class="s"> to resource/resource group </span><span class="si">%s</span><span class="s">, errorcode </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span>\
+                                    <span class="o">%</span> <span class="p">(</span><span class="n">complete_path</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span><span class="p">),</span>
+                                       <span class="n">cw_result</span><span class="p">))</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;Couldn&#39;t replicate file.&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c"># TODO: This is COMPLETELY untested, as it is unsupported on the only iRODS</span>
+    <span class="c"># machine I have access to.</span>
+    <span class="k">def</span> <span class="nf">move</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="IRODSFile.move"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.move">[docs]</a>        <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.move() &#39;&#39;&#39;</span>
+
+        <span class="c">#path to file we are moving on iRODS</span>
+        <span class="n">source_path</span> <span class="o">=</span> <span class="n">logicalfile_obj</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
+        <span class="n">dest_path</span>   <span class="o">=</span> <span class="n">bliss</span><span class="o">.</span><span class="n">saga</span><span class="o">.</span><span class="n">Url</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&quot;Attempting to move logical file </span><span class="si">%s</span><span class="s"> to location </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">source_path</span><span class="p">,</span> <span class="n">dest_path</span><span class="p">))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cw_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cw</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;imv </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">source_path</span><span class="p">,</span> <span class="n">dest_path</span><span class="p">)</span> <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not move logical file </span><span class="si">%s</span><span class="s"> to location </span><span class="si">%s</span><span class="s">, errorcode </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span>\
+                                    <span class="o">%</span> <span class="p">(</span><span class="n">source_path</span><span class="p">,</span> <span class="n">dest_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span><span class="p">),</span>
+                                       <span class="n">cw_result</span><span class="p">))</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Couldn&#39;t move file.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="c"># def add_location (self, location) :</span>
+    <span class="c">#     &#39;&#39;&#39;This method is called upon logicaldir.add_location() &#39;&#39;&#39;</span>
+
+    <span class="c">######################################################################</span>
+    <span class="c">##</span>
+    <span class="k">def</span> <span class="nf">remove</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="IRODSFile.remove"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.remove">[docs]</a>        <span class="sd">&#39;&#39;&#39;This method is called upon logicalfile.remove() &#39;&#39;&#39;</span>
+
+        <span class="n">complete_path</span> <span class="o">=</span> <span class="n">logicalfile_obj</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&quot;Attempting to remove file at: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">complete_path</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cw_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cw</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;irm </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">complete_path</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not remove file </span><span class="si">%s</span><span class="s">, errorcode </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span>\
+                                    <span class="o">%</span> <span class="p">(</span><span class="n">complete_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span><span class="p">),</span>
+                                       <span class="n">cw_result</span><span class="p">))</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="c"># couldn&#39;t delete for unspecificed reason</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Couldn&#39;t delete file </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">complete_path</span><span class="p">))</span>
+
+        <span class="k">return</span>
+
+
+    <span class="c">######################################################################</span>
+    <span class="c">##   </span>
+    <span class="c">#</span>
+    <span class="c"># From a convo with Andre M...</span>
+    <span class="c">#</span>
+    <span class="c"># So, if you want to have a logical file in that logical dir, you would create it:</span>
+    <span class="c"># myfile = mydir.open (irods.tar.gz, saga.replica.Create |</span>
+    <span class="c">#                      saga.replica.ReadWrite)</span>
+    <span class="c"># and then upload</span>
+    <span class="c"># myfile.upload (&quot;file://home/ashley/my/local/filesystem/irods.tar.gz&quot;)</span>
+    <span class="c"># OR (revised)</span>
+    <span class="c"># myfile.upload(&quot;file://home/ashley/my/local/filesystem/irods.tar.gz&quot;,</span>
+    <span class="c">#               &quot;irods://.../?resource=host3&quot;)</span>
+    <span class="c"># </span>
+    <span class="c"># THIS IS A FUNCTION FOR A **PROPOSED** PART OF THE SAGA API!!!</span>
+    <span class="c"># HERE BE DRAGONS, in other words...</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">upload</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="IRODSFile.upload"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.upload">[docs]</a>        <span class="sd">&#39;&#39;&#39;Uploads a file from the LOCAL, PHYSICAL filesystem to</span>
+<span class="sd">           the replica management system.</span>
+<span class="sd">           @param source: URL (should be file:// or local path) of local file</span>
+<span class="sd">           @param target: Optional param containing ?resource=myresource query</span>
+<span class="sd">                          This will upload the file to a specified iRODS</span>
+<span class="sd">                          resource or group.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c">#TODO: Make sure that the source URL is a local/file:// URL</span>
+        <span class="n">complete_path</span> <span class="o">=</span> <span class="n">bliss</span><span class="o">.</span><span class="n">saga</span><span class="o">.</span><span class="n">Url</span><span class="p">(</span><span class="n">source</span><span class="p">)</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
+        
+        <span class="c"># extract the path from the LogicalFile object, excluding</span>
+        <span class="c"># the filename</span>
+        <span class="n">destination_path</span><span class="o">=</span><span class="n">logicalfile_obj</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">get_path</span><span class="p">()[</span><span class="mi">0</span><span class="p">:</span><span class="n">string</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span>
+                         <span class="n">logicalfile_obj</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">get_path</span><span class="p">(),</span> <span class="s">&quot;/&quot;</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c">#var to hold our command result, placed here to keep in scope</span>
+            <span class="n">cw_result</span> <span class="o">=</span> <span class="mi">0</span>
+            
+            <span class="c">#mark that this is experimental/may not be part of official API</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&quot;Beginning EXPERIMENTAL upload operation &quot;</span> <span class="o">+</span>\
+                           <span class="s">&quot;will register file in logical dir: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                           <span class="n">destination_path</span><span class="p">)</span>
+
+            <span class="c"># was no resource selected?</span>
+            <span class="k">if</span> <span class="n">target</span><span class="o">==</span><span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&quot;Attempting to upload to default resource&quot;</span><span class="p">)</span>
+                <span class="n">cw_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cw</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;iput </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                                         <span class="p">(</span><span class="n">complete_path</span><span class="p">,</span> <span class="n">destination_path</span><span class="p">))</span>
+
+            <span class="c"># resource was selected, have to parse it and supply to iput -R</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c">#TODO: Verify correctness</span>
+                <span class="n">query</span> <span class="o">=</span> <span class="n">bliss</span><span class="o">.</span><span class="n">saga</span><span class="o">.</span><span class="n">Url</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">get_query</span><span class="p">()</span>
+                <span class="n">resource</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;=&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&quot;Attempting to upload to resource </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">resource</span><span class="p">)</span>
+                <span class="n">cw_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cw</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;iput -R </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                                         <span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">complete_path</span><span class="p">,</span> <span class="n">destination_path</span><span class="p">))</span>
+
+            <span class="c"># check our result</span>
+            <span class="k">if</span> <span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not upload file </span><span class="si">%s</span><span class="s">, errorcode </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span>\
+                                    <span class="o">%</span> <span class="p">(</span><span class="n">complete_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span><span class="p">),</span>
+                                       <span class="n">cw_result</span><span class="p">))</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="c"># couldn&#39;t upload for unspecificed reason</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Couldn&#39;t upload file.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span>
+
+
+    <span class="c">######################################################################</span>
+    <span class="c">##   </span>
+    <span class="c"># THIS IS A FUNCTION FOR A **PROPOSED** PART OF THE SAGA API!!!</span>
+    <span class="c"># HERE BE DRAGONS, in other words...</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="k">def</span> <span class="nf">download</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="IRODSFile.download"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.download">[docs]</a>        <span class="sd">&#39;&#39;&#39;Downloads a file from the REMOTE REPLICA FILESYSTEM to a local</span>
+<span class="sd">           directory.</span>
+<span class="sd">           @param target: param containing a local path/filename</span>
+<span class="sd">                          to save the file to</span>
+<span class="sd">           @param source: Optional param containing a remote replica to retrieve</span>
+<span class="sd">                          the file from (not evaluated, yet)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c">#TODO: Make sure that the target URL is a local/file:// URL</span>
+        <span class="c"># extract the path from the LogicalFile object, excluding</span>
+        <span class="c"># the filename</span>
+        <span class="n">logical_path</span><span class="o">=</span><span class="n">logicalfile_obj</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
+
+        <span class="c"># fill in our local path if one was specified</span>
+        <span class="n">local_path</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">target</span><span class="p">:</span>
+            <span class="n">local_path</span> <span class="o">=</span> <span class="n">bliss</span><span class="o">.</span><span class="n">saga</span><span class="o">.</span><span class="n">Url</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c">#var to hold our command result, placed here to keep in scope</span>
+            <span class="n">cw_result</span> <span class="o">=</span> <span class="mi">0</span>
+            
+            <span class="c">#mark that this is experimental/may not be part of official API</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&quot;Beginning EXPERIMENTAL download operation &quot;</span> <span class="o">+</span>\
+                           <span class="s">&quot;will download logical file: </span><span class="si">%s</span><span class="s">, specified local directory is </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                           <span class="p">(</span><span class="n">logical_path</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span> <span class="p">)</span>
+
+            <span class="c"># was no local target selected?</span>
+            <span class="k">if</span> <span class="n">target</span><span class="o">==</span><span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&quot;Attempting to download file </span><span class="si">%s</span><span class="s"> with iget to current local directory&quot;</span> <span class="o">%</span> \
+                                   <span class="n">logical_path</span><span class="p">)</span>
+                <span class="n">cw_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cw</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;iget </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> \
+                                         <span class="p">(</span><span class="n">logical_path</span><span class="p">))</span>
+
+            <span class="c"># local target selected</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&quot;Attempting to download file </span><span class="si">%s</span><span class="s"> with iget to </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">logical_path</span><span class="p">,</span> <span class="n">local_path</span><span class="p">))</span>
+                <span class="n">cw_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cw</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;iget </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span>
+                                         <span class="p">(</span><span class="n">logical_path</span><span class="p">,</span> <span class="n">local_path</span><span class="p">))</span>
+
+            <span class="c"># check our result</span>
+            <span class="k">if</span> <span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not download file </span><span class="si">%s</span><span class="s">, errorcode </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span>\
+                                    <span class="o">%</span> <span class="p">(</span><span class="n">logical_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">cw_result</span><span class="o">.</span><span class="n">returncode</span><span class="p">),</span>
+                                       <span class="n">cw_result</span><span class="p">))</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="c"># couldn&#39;t download for unspecificed reason</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Couldn&#39;t download file.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span>
+
+
+<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
