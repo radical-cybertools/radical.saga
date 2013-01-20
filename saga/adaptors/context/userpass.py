@@ -16,7 +16,7 @@ _ADAPTOR_NAME          = 'saga.adaptor.userpass'
 _ADAPTOR_SCHEMAS       = ['UserPass']
 _ADAPTOR_OPTIONS       = []
 
-_ADAPTOR_CAPABILITES   = {
+_ADAPTOR_CAPABILITIES  = {
     'attributes'       : [saga.context.TYPE,
                           saga.context.USER_ID,
                           saga.context.USER_PASS]
@@ -25,7 +25,7 @@ _ADAPTOR_CAPABILITES   = {
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITES,
+    'capabilites'      : _ADAPTOR_CAPABILITIES,
     'description'      : 'The UserPass context adaptor.',
     'details'          : """This adaptor stores user_id and user_pass tokens, to
                             be used for backend connections.""",

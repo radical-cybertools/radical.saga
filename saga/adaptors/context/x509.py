@@ -19,7 +19,7 @@ _ADAPTOR_SCHEMAS       = ['X509']
 _ADAPTOR_OPTIONS       = []
 
 # FIXME: complete attribute list
-_ADAPTOR_CAPABILITES   = {
+_ADAPTOR_CAPABILITIES  = {
     'attributes'       : [saga.context.TYPE,
                           saga.context.USER_PROXY,
                           saga.context.LIFE_TIME]
@@ -28,7 +28,7 @@ _ADAPTOR_CAPABILITES   = {
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITES,
+    'capabilites'      : _ADAPTOR_CAPABILITIES,
     'description'      : 'The X509 context adaptor.',
     'details'          : """This adaptor points to a X509 proxy, or certificate,
                             be used for backend connections.  Note that this

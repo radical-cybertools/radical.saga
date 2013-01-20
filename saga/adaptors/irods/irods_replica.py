@@ -36,11 +36,11 @@ class CommandWrapper () :
 _ADAPTOR_NAME          = 'saga.adaptor.replica.irods'
 _ADAPTOR_SCHEMAS       = ['irods']
 _ADAPTOR_OPTIONS       = []
-_ADAPTOR_CAPABILITES   = {}
+_ADAPTOR_CAPABILITIES  = {}
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITES,
+    'capabilites'      : _ADAPTOR_CAPABILITIES,
     'description'      : 'The iRODS replica adaptor.',
     'details'          : """This adaptor interacts with the irids data
                             management system, by using the irods command line

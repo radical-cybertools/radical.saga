@@ -28,7 +28,7 @@ _ADAPTOR_OPTIONS       = []
 ################################################################################
 ## the adaptor capabilites & supported attributes                             ##
 ##                                                                            ##
-_ADAPTOR_CAPABILITES   = {
+_ADAPTOR_CAPABILITIES  = {
     'desc_attributes'  : [saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
@@ -55,7 +55,7 @@ _ADAPTOR_CAPABILITES   = {
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITES,
+    'capabilites'      : _ADAPTOR_CAPABILITIES,
     'description'      : """ 
         The local job adaptor. This adaptor uses subprocesses to run jobs on the 
         local machine.
@@ -183,7 +183,7 @@ class LocalJobService (saga.adaptors.cpi.job.Service) :
         """
         # check that only supported attributes are provided
         for attribute in jd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITES['desc_attributes']:
+            if attribute not in _ADAPTOR_CAPABILITIES['desc_attributes']:
                 msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
                 raise saga.BadParameter._log (self._logger, msg)
 

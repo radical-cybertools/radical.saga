@@ -23,12 +23,12 @@ ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 _ADAPTOR_NAME          = 'saga.adaptor.advert.redis'
 _ADAPTOR_SCHEMAS       = ['redis']
 _ADAPTOR_OPTIONS       = []
-_ADAPTOR_CAPABILITES   = {}
+_ADAPTOR_CAPABILITIES  = {}
 
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITES,
+    'capabilites'      : _ADAPTOR_CAPABILITIES,
     'description'      : 'The redis advert adaptor.',
     'details'          : """This adaptor interacts with a redis server to
                             implement the advert API semantics.""", 
