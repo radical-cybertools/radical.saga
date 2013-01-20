@@ -36,7 +36,7 @@ for a in saga.engine.registry.adaptor_registry :
     m  = __import__ (a, fromlist=['Adaptor'])
     n  = m._ADAPTOR_NAME
     fn = "%s/%s.rst" % (DOCROOT, n)
-    print " -------------> %s" % fn
+    print "create %s" % fn
     i.write ("   %s\n" % n)
 
     details = "NO DETAILS KNOWN"
