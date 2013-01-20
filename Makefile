@@ -25,6 +25,10 @@ gh-pages:
 	make docs
 	git add -f docs/build/html/*
 	git add -f docs/build/html/*/*
+	git add -f docs/build/doctrees/*
+	git add -f docs/build/doctrees/*/*
+	git add -f docs/source/*
+	git add -f docs/source/*/*
 	git  ci -m 'regenerate documentation'
 	git co gh-pages
 	git rebase devel
