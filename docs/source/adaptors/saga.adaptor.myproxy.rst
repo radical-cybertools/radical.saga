@@ -15,7 +15,7 @@ v0.1
 Supported Schemas
 =================
 
-**myproxy** : this adaptor can only interact with myproxy backends
+  - **myproxy** : this adaptor can only interact with myproxy backends
 
 
 

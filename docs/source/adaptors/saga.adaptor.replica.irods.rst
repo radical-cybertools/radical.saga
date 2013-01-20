@@ -16,7 +16,7 @@ v0.1
 Supported Schemas
 =================
 
-**irods** : irods schema
+  - **irods** : irods schema
 
 
 

@@ -16,8 +16,8 @@ v0.1
 Supported Schemas
 =================
 
-**fork** : desc
-**local** : same as fork
+  - **fork** : desc
+  - **local** : same as fork
 
 
 
