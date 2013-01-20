@@ -18,3 +18,16 @@ andre:
 	    python test/test_engine.py  ; \
 	    python examples/jobs/localjobcontainer.py
 
+pages: gh-pages
+
+gh-pages:
+	make clean
+	make docs
+	git add -f docs/build/html/*
+	git add -f docs/build/html/*/*
+	git  ci -m 'regenerate documentation'
+	git co gh-pages
+	git rebase devel
+	git co devel
+	git push --all
+

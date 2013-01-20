@@ -67,7 +67,7 @@ for a in saga.engine.registry.adaptor_registry :
         schemas = ""
         for schema in m._ADAPTOR_DOC['schemas'] :
             text     = cleanup (m._ADAPTOR_DOC['schemas'][schema])
-            schemas += "**%s** : %s\n" % (schema, text)
+            schemas += "  - **%s** : %s\n" % (schema, text)
 
     if 'cfg_options' in m._ADAPTOR_DOC :
         cfgopts += m._ADAPTOR_DOC['cfg_options']
