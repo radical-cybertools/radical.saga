@@ -8,7 +8,6 @@ __license__   = "MIT"
 
 import os, time, socket, signal, subprocess
 
-from saga.utils.singleton import Singleton
 from saga.utils.job.jobid import JobId
 from saga.utils.which     import which
 
@@ -94,14 +93,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
-
-    We only need one instance of this adaptor per process (actually per engine,
-    but engine is a singleton, too...) -- the engine will though create new CPI
-    implementation instances as needed (one per SAGA API object).
     """
-
-    __metaclass__ = Singleton
-
 
     def __init__ (self) :
 

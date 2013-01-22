@@ -8,8 +8,6 @@ import saga.adaptors.cpi.base
 import saga.adaptors.cpi.advert
 import saga.utils.misc
 
-from   saga.utils.singleton import Singleton
-
 from   redis_namespace      import *
 
 SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
@@ -59,14 +57,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
-
-    We only need one instance of this adaptor per process (actually per engine,
-    but engine is a singleton, too...) -- the engine will create new adaptor
-    class instances (see below) as needed (one per SAGA API object).
     """
-
-    __metaclass__ = Singleton
-
 
     def __init__ (self) :
 

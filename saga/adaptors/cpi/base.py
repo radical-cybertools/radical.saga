@@ -9,8 +9,9 @@ __license__   = "MIT"
 import re
 import inspect
 
-import saga.utils.logger as saga_logger
-import saga.utils.config as saga_config
+import saga.utils.singleton as saga_singleton
+import saga.utils.logger    as saga_logger
+import saga.utils.config    as saga_config
 
 from   saga.exceptions import *
 from   saga.task       import Task, SYNC, ASYNC, TASK
@@ -20,6 +21,15 @@ from   saga.task       import Task, SYNC, ASYNC, TASK
 # adaptor base class
 #
 class AdaptorBase (saga_config.Configurable) :
+
+    
+
+    # We only need one instance of this adaptor per process (actually per
+    # engine, but engine is a singleton, too...) -- the engine will though
+    # create new CPI implementation instances as needed (one per SAGA API
+    # object).
+    __metaclass__ = saga_singleton.Singleton
+
 
     def __init__ (self, adaptor_info, adaptor_options=[]) :
 
