@@ -90,7 +90,9 @@ cmd_run_process () {
   mkdir -p "$DIR"   || die "cannot create sandbox for job '$args' ($DIR)"
   echo "$args"       > "$DIR/cmd"
   echo "RUNNING"     > "$DIR/state"
-  $args \
+  touch                "$DIR/in"
+  tail -f  "$DIR/in"  \
+    |  $args \
     >  "$DIR/out" \
     2> "$DIR/err" \
     && echo "DONE"   > "$DIR/state" \
@@ -179,7 +181,7 @@ cmd_cancel () {
   state=`cat $DIR/state`
   rpid=`cat $DIR/pid`
 
-  if ! test "$state" = "SUSPENDED" -or "$state" = "RUNNING"; then
+  if ! test "$state" = "SUSPENDED" -o "$state" = "RUNNING"; then
     ERROR="job $1 in incorrect state ($state != SUSPENDED|RUNNING)"
     return
   fi
@@ -207,7 +209,7 @@ cmd_stdin () {
 
   shift
 
-  echo "$* >> $DIR/in"
+  echo "$*" >> "$DIR/in"
   RETVAL="stdin refreshed"
 }
 
@@ -219,8 +221,7 @@ cmd_stdout () {
   verify_pid $1 || return
 
   DIR="$BASE/$1"
-  DATA=`uuencode "$DIR/out"`
-  RETVAL="---- stdout ----\nDATA\n----------------"
+  RETVAL=`uuencode "$DIR/out" "/dev/stdout"`
 }
 
 
@@ -231,8 +232,7 @@ cmd_stderr () {
   verify_pid $1 || return
 
   DIR="$BASE/$1"
-  DATA=`uuencode "$DIR/err"`
-  RETVAL="---- stderr ----\nDATA\n----------------"
+  RETVAL=`uuencode "$DIR/err"`
 }
 
 
@@ -303,7 +303,7 @@ listen() {
         ;;
 
       STDERR )
-        cmd_sterr $args
+        cmd_stderr $args
         ;;
 
       PURGE )
