@@ -360,7 +360,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
     #
     #
     @SYNC_CALL
-    def init_instance (self, url, flags, session) :
+    def init_instance (self, adaptor_state, url, flags, session) :
 
         self._url     = url
         self._flags   = flags
@@ -375,7 +375,8 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
     #
     #
     @ASYNC_CALL
-    def init_instance_async (self, ttype, url, flags, session) :
+    def init_instance_async (self, adaptor_state, url, flags, session, ttype) :
+
         self._url     = url
         self._flags   = flags
         self._session = session
@@ -550,7 +551,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     #
     #
     @SYNC_CALL
-    def init_instance (self, url, flags, session) :
+    def init_instance (self, adaptor_state, url, flags, session) :
 
         self._url     = url
         self._flags   = flags
@@ -565,7 +566,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     #
     #
     @ASYNC_CALL
-    def init_instance_async (self, ttype, url, flags, session) :
+    def init_instance_async (self, adaptor_state, url, flags, session, ttype) :
 
         self._url     = url
         self._flags   = flags
