@@ -5,8 +5,8 @@ __license__   = "MIT"
 
 import os
 
-from saga.exceptions import BadParameter
-from saga.contrib    import urlparse25 as urlparse  # this urlparse needs Python 2.5
+from saga.exceptions    import BadParameter
+from saga.utils.contrib import urlparse25 as urlparse  # this urlparse needs Python 2.5
 
 
 class Url (object):

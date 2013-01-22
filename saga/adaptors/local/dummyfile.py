@@ -5,14 +5,12 @@ import os
 import shutil
 
 import saga.url
-import saga.cpi.base
-import saga.cpi.filesystem
+import saga.adaptors.cpi.base
+import saga.adaptors.cpi.filesystem
 import saga.utils.misc
 
-from   saga.utils.singleton import Singleton
-
-SYNC_CALL  = saga.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 
 
 ###############################################################################
@@ -21,13 +19,32 @@ ASYNC_CALL = saga.cpi.base.ASYNC_CALL
 
 _ADAPTOR_NAME          = 'saga.adaptor.dummysystem.local'
 _ADAPTOR_SCHEMAS       = ['dummy']
-_ADAPTOR_OPTIONS       = []
-_ADAPTOR_CAPABILITES   = {}
+_ADAPTOR_OPTIONS       = [
+    { 
+    'category'         : 'saga.engine',
+    'name'             : 'enable_ctrl_c', 
+    'type'             : bool, 
+    'default'          : True,
+    'valid_options'    : [True, False],
+    'documentation'    : 'install SIGINT signal handler to abort application.',
+    'env_variable'     : None
+    },
+    { 
+    'category'         : 'saga.engine',
+    'name'             : 'load_beta_adaptors', 
+    'type'             : bool, 
+    'default'          : False,
+    'valid_options'    : [True, False],
+    'documentation'    : 'load adaptors which are marked as beta (i.e. not released).',
+    'env_variable'     : None
+    }
+]
+_ADAPTOR_CAPABILITIES  = {}
 
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITES,
+    'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : 'The local filesystem adaptor.',
     'details'          : """This adaptor interacts with local filesystem, by
                             using the (POSIX like) os and shutil Python packages.
@@ -57,23 +74,16 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
-
-    We only need one instance of this adaptor per process (actually per engine,
-    but engine is a singleton, too...) -- the engine will though create new CPI
-    implementation instances as needed (one per SAGA API object).
     """
-
-    __metaclass__ = Singleton
-
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
 
     def sanity_check (self) :
@@ -83,10 +93,10 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
 ###############################################################################
 #
-class DummyDirectory (saga.cpi.filesystem.Directory) :
+class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL
@@ -186,10 +196,10 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
 #
 # file adaptor class
 #
-class DummyFile (saga.cpi.filesystem.File) :
+class DummyFile (saga.adaptors.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL

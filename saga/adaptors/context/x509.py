@@ -1,14 +1,12 @@
 
 import os
 
-from   saga.utils.singleton import Singleton
-
 import saga.context
-import saga.cpi.base
-import saga.cpi.context
+import saga.adaptors.cpi.base
+import saga.adaptors.cpi.context
 
-SYNC_CALL  = saga.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 
 ######################################################################
 #
@@ -19,7 +17,7 @@ _ADAPTOR_SCHEMAS       = ['X509']
 _ADAPTOR_OPTIONS       = []
 
 # FIXME: complete attribute list
-_ADAPTOR_CAPABILITES   = {
+_ADAPTOR_CAPABILITIES  = {
     'attributes'       : [saga.context.TYPE,
                           saga.context.USER_PROXY,
                           saga.context.LIFE_TIME]
@@ -28,7 +26,7 @@ _ADAPTOR_CAPABILITES   = {
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITES,
+    'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : 'The X509 context adaptor.',
     'details'          : """This adaptor points to a X509 proxy, or certificate,
                             be used for backend connections.  Note that this
@@ -51,23 +49,16 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
-
-    We only need one instance of this adaptor per process (actually per engine,
-    but engine is a singleton, too...) -- the engine will though create new CPI
-    implementation instances as needed (one per SAGA API object).
     """
-
-    __metaclass__ = Singleton
-
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # there are no default myproxy contexts
         self._default_contexts = []
@@ -114,11 +105,11 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 #
 # job adaptor class
 #
-class ContextX509 (saga.cpi.Context) :
+class ContextX509 (saga.adaptors.cpi.Context) :
 
     def __init__ (self, api, adaptor) :
 
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL

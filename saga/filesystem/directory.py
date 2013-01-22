@@ -9,14 +9,54 @@ import saga.exceptions
 
 
 class Directory (Base, Async) :
+    '''
+    Represents a SAGA directory as defined in GFD.90
+    
+    The saga.filesystem.Directory class represents, as the name indicates,
+    a directory on some (local or remote) filesystem.  That class offers
+    a number of operations on that directory, such as listing its contents,
+    copying files, or creating subdirectories::
+    
+        # get a directory handle
+        dir = saga.filesystem.Directory("sftp://localhost/tmp/")
+    
+        # create a subdir
+        dir.make_dir ("data/")
+    
+        # list contents of the directory
+        files = dir.list ()
+    
+        # copy *.dat files into the subdir
+        for f in files :
+            if f ^ '^.*\.dat$' :
+                dir.copy (f, "sftp://localhost/tmp/data/")
+    '''
 
     def __init__ (self, url=None, flags=READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
-        url:       saga.Url
+        :param url: Url of the (remote) file system directory.
+        :type  url: :class:`saga.Url` 
+
         flags:     flags enum
         session:   saga.Session
         ret:       obj
+        
+        Construct a new directory object
+
+        The specified directory is expected to exist -- otherwise
+        a DoesNotExist exception is raised.  Also, the URL must point to
+        a directory (not to a file), otherwise a BadParameter exception is
+        raised.
+
+        Example::
+
+            # open some directory
+            dir = saga.filesystem.Directory("sftp://localhost/tmp/")
+
+            # and list its contents
+            files = dir.list ()
+
         '''
 
         # param checks
@@ -48,12 +88,22 @@ class Directory (Base, Async) :
     #
     # filesystem directory methods
     #
-    def get_size (self, name, flags=None, ttype=None) :
+    def get_size (self, path, flags=None, ttype=None) :
         '''
-        name:     saga.Url
+        :param path: path of the file or directory
+
         flags:    saga.namespace.flags enum
         ttype:    saga.task.type enum
         ret:      int / saga.Task
+        
+        Returns the size of a file or directory (in bytes)
+
+        Example::
+
+            # inspect a file for its size
+            dir  = saga.filesystem.Directory("sftp://localhost/tmp/")
+            size = dir.get_size ('data/data.bin')
+            print size
         '''
         return self._adaptor.get_size (name, ttype=ttype)
 
@@ -67,12 +117,23 @@ class Directory (Base, Async) :
         return self._adaptor.is_file (name, ttype=ttype)
 
     
-    def open_dir (self, name, flags=READ, ttype=None) :
+    def open_dir (self, path, flags=READ, ttype=None) :
         '''
-        name:     saga.Url
-        flags:    saga.namespace.flags enum
+        :param path: name/path of the directory to open
+        :param flags: directory creation flags
+
         ttype:    saga.task.type enum
         ret:      saga.filesystem.Directory / saga.Task
+        
+        Open and return a new directoy
+
+           The call opens and returns a directory at the given location.
+
+           Example::
+
+               # create a subdir 'data' in /tmp
+               dir = saga.filesystem.Directory("sftp://localhost/tmp/")
+               data = dir.open_dir ('data/', saga.filesystem.Create)
         '''
         return self._adaptor.open_dir (name, flags, ttype=ttype)
 
@@ -103,10 +164,20 @@ class Directory (Base, Async) :
     
     def list (self, npat=".", flags=None, ttype=None) :
         '''
-        npat:          string
+        :param npat: File name pattern (like POSIX 'ls', e.g. '\*.txt')
+
         flags:         flags enum
         ttype:         saga.task.type enum
         ret:           list [saga.Url] / saga.Task
+        
+        List the directory's content
+
+        The call will return a list of files and subdirectories within the
+        directory::
+
+            # list contents of the directory
+            for f in dir.list() :
+                print f
         '''
         return self._adaptor.list (npat, flags, ttype=ttype)
   
@@ -121,20 +192,41 @@ class Directory (Base, Async) :
         return self._adaptor.find (npat, flags, ttype=ttype)
   
     
-    def exists (self, name, ttype=None) :
+    def exists (self, path, ttype=None) :
         '''
-        name:          saga.Url
+        :param path: path of the entry to check
+
         ttype:         saga.task.type enum
         ret:           bool / saga.Task
+        
+        Returns True if path exists, False otherwise. 
+
+
+        Example::
+
+            # inspect a file for its size
+            dir  = saga.filesystem.Directory("sftp://localhost/tmp/")
+            if dir.exists ('data'):
+                # do something
         '''
         return self._adaptor.exists (name, ttype=ttype)
   
     
-    def is_dir (self, name, ttype=None) :
+    def is_dir (self, path, ttype=None) :
         '''
-        name:          saga.Url
+        :param path: path of the entry to check
+
         ttype:         saga.task.type enum
         ret:           bool / saga.Task
+        
+        Returns True if path is a directory, False otherwise. 
+
+        Example::
+
+            # inspect a file for its size
+            dir  = saga.filesystem.Directory("sftp://localhost/tmp/")
+            if dir.is_dir ('data'):
+                # do something
         '''
         return self._adaptor.is_dir (name, ttype=ttype)
   
@@ -185,11 +277,21 @@ class Directory (Base, Async) :
     
     def copy (self, src, tgt, flags=None, ttype=None) :
         '''
-        src:           saga.Url
-        tgt:           saga.Url 
+        :param src: path of the file to copy
+        :param tgt: absolute URL of target name or directory
+        
         flags:         flags enum
         ttype:         saga.task.type enum
         ret:           None / saga.Task
+        
+        Copy a file from source to target
+
+        The source is copied to the given target directory.  The path of the
+        source can be relative::
+
+            # copy a file
+            dir = saga.filesystem.Directory("sftp://localhost/tmp/")
+            dir.copy ("./data.bin", "sftp://localhost/tmp/data/")
         '''
         return self._adaptor.copy (src, tgt, flags, ttype=ttype)
   
@@ -207,11 +309,22 @@ class Directory (Base, Async) :
     
     def move (self, src, tgt, flags=None, ttype=None) :
         '''
-        src:           saga.Url
-        tgt:           saga.Url
+        :param src: path of the file to copy
+        :param tgt: absolute URL of target directory
+
         flags:         flags enum
         ttype:         saga.task.type enum
         ret:           None / saga.Task
+        
+        Move a file from source to target
+
+        The source is moved to the given target directory.  The path of the
+        source can be relative::
+
+            # copy a file
+            dir = saga.filesystem.Directory("sftp://localhost/tmp/")
+            dir.move ("./data.bin", "sftp://localhost/tmp/data/")
+
         '''
         return self._adaptor.move (src, tgt, flags, ttype=ttype)
   
@@ -228,12 +341,24 @@ class Directory (Base, Async) :
     
     def make_dir (self, tgt, flags=None, ttype=None) :
         '''
-        tgt:           saga.Url
-        flags:         flags enum
+        :param tgt:   name/path of the new directory
+        :param flags: directory creation flags
+
         ttype:         saga.task.type enum
         ret:           None / saga.Task
+        
+        Create a new directoy
+
+        The call creates a directory at the given location.
+
+        Example::
+
+            # create a subdir 'data' in /tmp
+            dir = saga.filesystem.Directory("sftp://localhost/tmp/")
+            dir.make_dir ('data/')
         '''
-        return self._adaptor.mkdir (tgt, flags, ttype=ttype)
+
+        return self._adaptor.make_dir (tgt, flags, ttype=ttype)
   
     
     # ----------------------------------------------------------------
@@ -244,6 +369,15 @@ class Directory (Base, Async) :
         '''
         ttype:         saga.task.type enum
         ret:           saga.Url / saga.Task
+        
+        Return the complete url pointing to the directory.
+
+        The call will return the complete url pointing to
+        this directory as a saga.Url object::
+
+            # print URL of a directory
+            dir = saga.filesystem.Directory("sftp://localhost/tmp/")
+            print dir.get_url()
         '''
         return self._adaptor.get_url (ttype=ttype)
 
@@ -331,6 +465,22 @@ class Directory (Base, Async) :
         flags:         flags enum
         ttype:         saga.task.type enum
         ret:           None / saga.Task
+        
+        Removes the directory
+
+        If no path is given, the remote directory associated with
+        the object is removed. If a relative or absolute path is given,
+        that given target is removed instead.  The target must be a 
+        directory.
+
+        :param path: (relative or absolute) path to a directory
+
+       
+        Example::
+
+            # remove a subdir 'data' in /tmp
+            dir = saga.filesystem.Directory("sftp://localhost/tmp/")
+            dir.remove ('data/')
         '''
         return self._adaptor.remove_self (flags, ttype=ttype)
   

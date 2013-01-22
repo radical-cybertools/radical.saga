@@ -7,9 +7,10 @@ __license__   = "MIT"
 import cmdlinewrapper
 import logger
 import threads
+import config
+import contrib
 
 from   singleton   import *
-from   configfile  import *
 from   exception   import *
 from   misc        import *
 from   which       import *

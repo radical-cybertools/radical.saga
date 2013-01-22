@@ -66,21 +66,22 @@ class Callback () :
     """
     Callback base class.
 
-    All stateful objects of the pilot API allow to register a callback for any
-    changes of its attributes, such as 'state' and 'state_detail'.  Those
+    All objects using the Attribute Interface allow to register a callback for
+    any changes of its attributes, such as 'state' and 'state_detail'.  Those
     callbacks can be python call'ables, or derivates of this callback base
     class.  Instances which inherit this base class MUST implement (overload)
     the cb() method.
 
     The callable, or the callback's cb() method is what is invoked whenever the
-    TROY implementation is notified of an change on the monitored object's
+    SAGA implementation is notified of an change on the monitored object's
     attribute.
 
     The cb instance receives three parameters upon invocation:
 
+
+      - obj: the watched object instance
       - key:  the watched attribute (e.g. 'state' or 'state_detail')
       - val:  the new value of the watched attribute
-      - obj:  the watched object instance
 
     If the callback returns 'True', it will remain registered after invocation,
     to monitor the attribute for the next subsequent state change.  On returning
@@ -88,7 +89,7 @@ class Callback () :
 
     To register a callback on a object instance, use::
 
-      class MyCallback (troy.pilot.Callback) :
+      class MyCallback (saga.Callback) :
 
         def __init__ (self, msg) :
           self._msg = msg
@@ -96,32 +97,24 @@ class Callback () :
         def cb (self, obj, key, val) :
           print " %s\\n %s (%s) : %s"  %  self._msg, obj, key, val
 
+
         def main () :
 
-          cpd = troy.pilot.compute_pilot_description ()
-          cps = troy.pilot.compute_pilot_service ()
-          cp  = cps.submit_pilot (cpd)
+        jd  = saga.job.description ()
+        js  = saga.job.service ("fork://localhost/")
+        job = js.create_job (jd)
 
-          mcb = MyCallback ("Hello Pilot, how is your state?")
+        cb = MyCallback ("Hello Pilot, how is your state?")
+        job.add_callback ('state', cb)
+        job.run ()
 
-          cp.add_callback ('state', mcb)
 
-    See documentation of the L{Attributes} interface for further details and
+    See documentation of the :class:`saga.Attributes` interface for further details and
     examples.
     """
 
-    def __init__ (self) :
-        """ The callback constructor simply raises an IncorrectState exception,
-            to signal that the application needs to inherit the callback class
-            in a custom class in order to use notifications.
-        """
-        # raise IncorrectState ("Callback class must be inherited before use!")
-        pass
-
-
     def __call__ (self, obj, key, val) :
         return self.cb (obj, key, val)
-
 
     def cb (self, obj, key, val) :
         """ This is the method that needs to be implemented by the application
@@ -242,7 +235,7 @@ class Attributes (_AttributesBase) :
             # Setting an attribute final is actually an internal method, used by
             # the implementation to signal that no further changes on that
             # attribute are expected.  We use that here for demonstrating the
-            # concept though.  Callback is invoked on _set_final.
+            # concept though.  Callback is invoked on set_final().
             trans._attributes_set_final ('apple')
             trans.apple = 'Abbel'
             print trans.apple 
@@ -313,13 +306,19 @@ class Attributes (_AttributesBase) :
         This method is not supposed to be directly called by the consumer of
         this API -- it should be called via derived object construction.
 
-        attributes_t_init makes sure that the basic structures are in place on
+        _attributes_t_init makes sure that the basic structures are in place on
         the attribute dictionary - this saves us ton of safety checks later on.
         """
         # FIXME: add the ability to initalize the attributes via a dict
 
         # initialize state
         d = self._attributes_t_init ()
+
+        # # call to update and the args/kwargs handling seems to be part of the
+        # # dict interface conventions *shrug*
+        #
+        # # FIXME: use similar mechanism to initialize attribs
+        # self.update (*args, **kwargs)
 
 
     ############################################################################
@@ -329,7 +328,7 @@ class Attributes (_AttributesBase) :
     # These tools are only for internal use, and should never be called from 
     # outside of this module.
     #
-    # Naming: __attributes_t*
+    # Naming: _attributes_t_*
     #
     ####################################
     def _attributes_t_init (self, key=None) :
@@ -355,22 +354,22 @@ class Attributes (_AttributesBase) :
             d = _AttributesBase.__getattribute__ (self, '_d')
         except :
             # need to initialize -- any exceptions in the code below should fall through
-            d['_attributes']  = {}
-            d['_extensible']  = True
-            d['_private']     = True
-            d['_camelcasing'] = False
-            d['getter']       = None
-            d['setter']       = None
-            d['lister']       = None
-            d['caller']       = None
-            d['recursion']    = False
+            d['attributes']  = {}
+            d['extensible']  = True
+            d['private']     = True
+            d['camelcasing'] = False
+            d['getter']      = None
+            d['setter']      = None
+            d['lister']      = None
+            d['caller']      = None
+            d['recursion']   = False
 
             _AttributesBase.__setattr__ (self, '_d', d)
 
 
         # check if we know about the given attribute
         if key :
-            if not key in d['_attributes'] :
+            if not key in d['attributes'] :
                 raise DoesNotExist ("attribute key is invalid: %s"  %  (key))
 
         # all is well
@@ -386,7 +385,7 @@ class Attributes (_AttributesBase) :
         aliased.  
         
         If the does not yet exist, the validity check is performed, and allows
-        to limit dynamically added attribute names.
+        to limit dynamically added attribute names (for 'extensible' sets).
         
         if the key does exist, the alias check triggers a deprecation warning,
         and returns the aliased key for transparent operation.
@@ -396,17 +395,17 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init ()
 
         # perform name validity checks if key is new
-        if not key in d['_attributes'] :
+        if not key in d['attributes'] :
             # FIXME: we actually don't have any tests, yet.  We should allow to
-            # configure such via, say, _attributes_check_add (callable (key))
+            # configure such via, say, _attributes_add_check (callable (key))
             pass
 
 
         # if key is known, check for aliasing
         else: 
             # check if we know about the given attribute
-            if d['_attributes'][key]['mode'] == ALIAS :
-                alias = d['_attributes'][key]['alias']
+            if d['attributes'][key]['mode'] == ALIAS :
+                alias = d['attributes'][key]['alias']
                 print "attribute key / property name '%s' is deprecated - use '%s'"  %  (key, alias)
                 key   = alias
 
@@ -414,7 +413,7 @@ class Attributes (_AttributesBase) :
 
 
     ####################################
-    def _attributes_t_call_cb (self, key) :
+    def _attributes_t_call_cb (self, key, val) :
         """
         This internal function is not to be used by the consumer of this API.
 
@@ -427,25 +426,25 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init (key)
 
         # avoid recursion
-        if d['_attributes'][key]['recursion'] :
+        if d['attributes'][key]['recursion'] :
             return
 
-        callbacks = d['_attributes'][key]['callbacks']
+        callbacks = d['attributes'][key]['callbacks']
 
         # iterate over a copy of the callback list, so that remove does not
         # screw up the iteration
         for cb in list (callbacks) :
 
-            cb = cb
+            call = cb
 
             # got the callable - call it!
             # raise and lower recursion shield as needed
             ret = False
             try :
-                d['_attributes'][key]['recursion'] = True
-                ret = cb (self, key, self.__getattr__ (key))
+                d['attributes'][key]['recursion'] = True
+                ret = call (self, key, val)
             finally :
-                d['_attributes'][key]['recursion'] = False
+                d['attributes'][key]['recursion'] = False
 
             # remove callbacks which return 'False', or raised and exception
             if not ret :
@@ -458,25 +457,25 @@ class Attributes (_AttributesBase) :
         """
         This internal function is not to be used by the consumer of this API.
 
-        It triggers the invocation of any registered setter function, usually
-        after an attribute's set()
+        It triggers the setter callbacks, to signal that the attribute value
+        has just been set and should be propagated as needed.
         """
 
         # make sure interface is ready to use.
         d = self._attributes_t_init (key)
 
         # avoid recursion
-        if d['_attributes'][key]['recursion'] :
+        if d['attributes'][key]['recursion'] :
             return
 
         # no callbacks for private keys
-        if key[0] == '_' and d['_private'] :
+        if key[0] == '_' and d['private'] :
             return
 
 
         # key_setter overwrites results from all_setter
         all_setter = d['setter']
-        key_setter = d['_attributes'][key]['setter']
+        key_setter = d['attributes'][key]['setter']
 
         # Get the value via the attribute getter.  The getter will not call
         # attrib getters or callbacks, due to the recursion guard.
@@ -492,7 +491,7 @@ class Attributes (_AttributesBase) :
 
         if all_setter :
             try :
-                d['_attributes'][key]['recursion'] = True
+                d['attributes'][key]['recursion'] = True
                 all_setter (key, val)
             except Exception as e :
                 print "setter exception: " + str(e)
@@ -502,17 +501,17 @@ class Attributes (_AttributesBase) :
                 can_ignore -= 1
                 if not can_ignore : raise e
             finally :
-                d['_attributes'][key]['recursion'] = False
+                d['attributes'][key]['recursion'] = False
 
         if key_setter :
             try :
-                d['_attributes'][key]['recursion'] = True
+                d['attributes'][key]['recursion'] = True
                 key_setter (val)
             except Exception as e :
                 can_ignore -= 1
                 if not can_ignore : raise e
             finally :
-                d['_attributes'][key]['recursion'] = False
+                d['attributes'][key]['recursion'] = False
 
 
 
@@ -521,24 +520,24 @@ class Attributes (_AttributesBase) :
         """
         This internal function is not to be used by the consumer of this API.
 
-        It triggers the invocation of any registered getter function, usually
-        before an attribute's get()
+        It triggers the getter callbacks, to signal that the attribute value
+        is about to be accesses and should be updated as needed.
         """
 
         # make sure interface is ready to use.
         d = self._attributes_t_init (key)
 
         # avoid recursion
-        if d['_attributes'][key]['recursion'] :
+        if d['attributes'][key]['recursion'] :
             return
 
         # no callbacks for private keys
-        if key[0] == '_' and d['_private'] :
+        if key[0] == '_' and d['private'] :
             return
 
         # key getter overwrites results from all_getter
         all_getter = d['getter']
-        key_getter = d['_attributes'][key]['getter']
+        key_getter = d['attributes'][key]['getter']
 
 
         # # Note that attributes have a time-to-live (ttl).  If a _attributes_i_set
@@ -556,7 +555,7 @@ class Attributes (_AttributesBase) :
         # # not push the state change upward
         #
         # age = self._attributes_t_get_age (key)
-        # ttl = d['_attributes'][key]['ttl']
+        # ttl = d['attributes'][key]['ttl']
         #
         # if age < ttl :
         #     return
@@ -576,23 +575,23 @@ class Attributes (_AttributesBase) :
         if all_getter :
 
             try :
-                d['_attributes'][key]['recursion'] = True
+                d['attributes'][key]['recursion'] = True
                 val=all_getter (key)
             except Exception as e :
                 can_ignore -= 1
                 if not can_ignore : raise e
             finally :
-              d['_attributes'][key]['recursion'] = False
+              d['attributes'][key]['recursion'] = False
 
         if key_getter :
             try :
-                d['_attributes'][key]['recursion'] = True
+                d['attributes'][key]['recursion'] = True
                 key_getter ()
             except Exception as e :
                 can_ignore -= 1
                 if not can_ignore : raise e
             finally :
-                d['_attributes'][key]['recursion'] = False
+                d['attributes'][key]['recursion'] = False
 
 
 
@@ -601,8 +600,8 @@ class Attributes (_AttributesBase) :
         """
         This internal function is not to be used by the consumer of this API.
 
-        It triggers the invocation of any registered lister function, usually
-        before a list() call.
+        It triggers the lister callback, to signal that the attribute list
+        is about to be accesses and should be updated as needed.
         """
 
         # make sure interface is ready to use.
@@ -647,7 +646,7 @@ class Attributes (_AttributesBase) :
             return
 
         # no callbacks for private keys
-        if key[0] == '_' and d['_private'] :
+        if key[0] == '_' and d['private'] :
             return
 
         caller = d['caller']
@@ -674,7 +673,7 @@ class Attributes (_AttributesBase) :
         This internal function is not to be used by the consumer of this API.
 
         The method accepts a CamelCased word, and translates that into
-        'under_score' notation -- IFF '_camelcasing' is set
+        'under_score' notation -- IFF 'camelcasing' is set
 
         Kudos: http://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-camel-case
         """
@@ -682,10 +681,8 @@ class Attributes (_AttributesBase) :
         # make sure interface is ready to use
         d = self._attributes_t_init ()
 
-        _camel_case_regex_1 = re.compile('(.)([A-Z][a-z]+)')
-        _camel_case_regex_2 = re.compile('([a-z0-9])([A-Z])')
 
-        if d['_camelcasing'] :
+        if d['camelcasing'] :
             temp = Attributes._camel_case_regex_1.sub(r'\1_\2', key)
             return Attributes._camel_case_regex_2.sub(r'\1_\2', temp).lower()
         else :
@@ -703,7 +700,7 @@ class Attributes (_AttributesBase) :
         method will restore a 'None' value to the attribute's default value.
 
         A deriving class can add additional value checks for attributes by
-        calling L{_attributes_check_add} (key, check, flow=flow).
+        calling :func:`_attributes_add_check` (key, check).
         """
 
         # make sure interface is ready to use.  We do not check for keys, that
@@ -712,7 +709,7 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init ()
 
         # if the key is not known
-        if not key in d['_attributes'] :
+        if not key in d['attributes'] :
             # cannot handle unknown attributes.  Attributes which have been
             # registered earlier will be fine, as they have type information.
             return val
@@ -720,15 +717,15 @@ class Attributes (_AttributesBase) :
         # check if a value is given.  If not, revert to the default value
         # (if available)
         if val == None :
-            if 'default' in d['_attributes'][key] :
-                val = d['_attributes'][key]['default']
+            if 'default' in d['attributes'][key] :
+                val = d['attributes'][key]['default']
 
 
         # perform flavor and type conversion
         val = self._attributes_t_conversion_flavor (key, val)
 
         # apply all value checks on the conversion result
-        for check in d['_attributes'][key]['checks'] :
+        for check in d['attributes'][key]['checks'] :
             ret = check (key, val)
             if ret != True :
                 raise BadParameter ("attribute value %s is not valid: %s"  %  (key, ret))
@@ -754,7 +751,7 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init (key)
 
         # check if we need to serialize a list into a scalar
-        f = d['_attributes'][key]['flavor']
+        f = d['attributes'][key]['flavor']
         if f == VECTOR :
             # we want a vector
             if isinstance (val, list) :
@@ -819,7 +816,7 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init (key)
 
         # oh python, how about a decent switch statement???
-        t   = d['_attributes'][key]['type']
+        t   = d['attributes'][key]['type']
         ret = None
         try :
             # FIXME: add time/date conversion to/from string
@@ -889,7 +886,7 @@ class Attributes (_AttributesBase) :
 
         # make sure interface is ready to use.
         d    = self._attributes_t_init (key)
-        last = d['_attributes'][key]['last']
+        last = d['attributes'][key]['last']
         age  = now() - last
 
         return (age.microseconds + (age.seconds + age.days * 24 * 3600) * 1e6) / 1e6
@@ -905,7 +902,7 @@ class Attributes (_AttributesBase) :
     # sorted out before this internal interface is called.  All other tests,
     # verifications, and conversion are done here though.
     #
-    # Naming: __attributes_i*
+    # Naming: _attributes_i_*
     #
     ####################################
     def _attributes_i_set (self, key, val=None, force=False, flow=_DOWN) :
@@ -913,10 +910,10 @@ class Attributes (_AttributesBase) :
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
 
-        See L{set_attribute} (key, val) for details.
+        See :func:`set_attribute` (key, val) for details.
 
         New value checks can be added dynamically, and per attribute, by calling
-        L{_attributes_check_add} (key, callable).
+        :func:`_attributes_add_check` (key, callable).
 
         Some internal methods can set the 'force' flag, and will be able to set
         attributes even in ReadOnly mode.  That is, for example, used for getter
@@ -928,14 +925,14 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init ()
 
         # if the key is not known
-        if not key in d['_attributes'] :
-            if key[0] == '_' and d['_private'] :
+        if not key in d['attributes'] :
+            if key[0] == '_' and d['private'] :
                 # if the set is private, we can register the new key.  It
                 # won't have any callbacks at this point.
                 self._attributes_register (key, None, ANY, SCALAR, WRITEABLE,
                         EXTENDED, flow=flow)
 
-            elif flow==self._UP or d['_extensible'] :
+            elif flow==self._UP or d['extensible'] :
                 # if the set is extensible, we can register the new key.  It
                 # won't have any callbacks at this point.
                 self._attributes_register (key, None, ANY, SCALAR, WRITEABLE,
@@ -951,9 +948,9 @@ class Attributes (_AttributesBase) :
 
             # check if we are allowed to change the attribute - complain if not.
             # Also, simply ignore write attempts to finalized keys.
-            if 'mode' in  d['_attributes'][key] :
+            if 'mode' in  d['attributes'][key] :
 
-                mode = d['_attributes'][key]['mode']
+                mode = d['attributes'][key]['mode']
 
                 if FINAL == mode :
                     return
@@ -969,31 +966,31 @@ class Attributes (_AttributesBase) :
         val = self._attributes_t_conversion (key, val)
 
         # make sure the key's value entry exists
-        if not 'value' in d['_attributes'][key] :
-            d['_attributes'][key]['value'] = None
+        if not 'value' in d['attributes'][key] :
+            d['attributes'][key]['value'] = None
 
         # only once an attribute is explicitly set, it 'exists' for the purpose
         # of the 'attribute_exists' call, and the key iteration
-        d['_attributes'][key]['exists'] = True
+        d['attributes'][key]['exists'] = True
 
         # # only actually change the attribute when the new value differs --
         # # and only then invoke any callbacks and hooked setters
-        # if val != d['_attributes'][key]['value'] :
+        # if val != d['attributes'][key]['value'] :
         #
         # NOTE: this check is disabled now: we certainly want to update 'last',
         # and IMHO that should also imply a notification call, etc.  FWIW, the
         # spec is inconclusive here.
         #
-        # if val != d['_attributes'][key]['value'] :
+        # if val != d['attributes'][key]['value'] :
 
 
-        d['_attributes'][key]['value'] = val
-        d['_attributes'][key]['last']  = now ()
+        d['attributes'][key]['value'] = val
+        d['attributes'][key]['last']  = now ()
 
         if flow==self._DOWN :
             self._attributes_t_call_setter (key, val)
 
-        self._attributes_t_call_cb (key)
+        self._attributes_t_call_cb (key, val)
 
 
     ####################################
@@ -1002,7 +999,7 @@ class Attributes (_AttributesBase) :
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
 
-        see L{get_attribute} (key) for details.
+        see :func:`get_attribute` (key) for details.
 
         Note that this method is not performing any checks or conversions --
         those are all performed when *setting* an attribute.  So, any attribute
@@ -1015,13 +1012,14 @@ class Attributes (_AttributesBase) :
         # make sure interface is ready to use
         d = self._attributes_t_init (key)
 
-        self._attributes_t_call_getter (key)
+        if flow == self._DOWN :
+            self._attributes_t_call_getter (key)
 
-        if 'value' in d['_attributes'][key] :
-            return d['_attributes'][key]['value']
+        if 'value' in d['attributes'][key] :
+            return d['attributes'][key]['value']
 
-        if 'default' in d['_attributes'][key] :
-            return d['_attributes'][key]['default']
+        if 'default' in d['attributes'][key] :
+            return d['attributes'][key]['default']
                 
         return None
 
@@ -1033,7 +1031,7 @@ class Attributes (_AttributesBase) :
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
 
-        see L{list_attributes} () for details.
+        see :func:`list_attributes` () for details.
 
         Note that registration alone does not qualify for listing.  If 'ext' is
         True (default),extended attributes are listed, too.
@@ -1046,16 +1044,16 @@ class Attributes (_AttributesBase) :
         self._attributes_t_call_lister ()
 
         ret = []
-        for key in sorted(d['_attributes'].iterkeys()) :
-            if d['_attributes'][key]['mode'] != ALIAS :
-                if d['_attributes'][key]['exists'] :
+        for key in sorted(d['attributes'].iterkeys()) :
+            if d['attributes'][key]['mode'] != ALIAS :
+                if d['attributes'][key]['exists'] :
 
-                    e = d['_attributes'][key]['extended'] 
-                    p = d['_attributes'][key]['private'] 
+                    e = d['attributes'][key]['extended'] 
+                    p = d['attributes'][key]['private'] 
                     k = key
 
                     if CamelCase :
-                        k = d['_attributes'][key]['camelcase']
+                        k = d['attributes'][key]['camelcase']
 
                     if e and ext :
                         if p and priv :
@@ -1077,7 +1075,7 @@ class Attributes (_AttributesBase) :
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
 
-        see L{find_attributes} (pattern) for details.
+        see :func:`find_attributes` (pattern) for details.
         """
 
         # FIXME: wildcard-to-regex
@@ -1131,7 +1129,7 @@ class Attributes (_AttributesBase) :
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
 
-        see L{attribute_exists} (key) for details.
+        see :func:`attribute_exists` (key) for details.
 
         Registered keys which have never been explicitly set to a value do not
         exist for the purpose of this call.
@@ -1141,8 +1139,8 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init ()
 
         # check if we know about that attribute
-        if 'exists' in d['_attributes'][key] :
-            if  d['_attributes'][key]['exists'] :
+        if 'exists' in d['attributes'][key] :
+            if  d['attributes'][key]['exists'] :
                 return True
 
         return False
@@ -1163,7 +1161,7 @@ class Attributes (_AttributesBase) :
         # make sure interface is ready to use
         d = self._attributes_t_init (key)
 
-        return d['_attributes'][key]['extended']
+        return d['attributes'][key]['extended']
 
 
     ####################################
@@ -1181,7 +1179,7 @@ class Attributes (_AttributesBase) :
         # make sure interface is ready to use
         d = self._attributes_t_init (key)
 
-        return d['_attributes'][key]['private']
+        return d['attributes'][key]['private']
 
 
     ####################################
@@ -1200,8 +1198,8 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init (key)
 
         # check if we know about that attribute
-        if  d['_attributes'][key]['mode'] == FINAL or \
-            d['_attributes'][key]['mode'] == READONLY :
+        if  d['attributes'][key]['mode'] == FINAL or \
+            d['attributes'][key]['mode'] == READONLY :
             return True
 
         return False
@@ -1213,7 +1211,7 @@ class Attributes (_AttributesBase) :
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
 
-        see L{attribute_is_writeable} (key) for details.
+        see :func:`attribute_is_writable` (key) for details.
 
         This method will check if the given key is writeable - i.e. not readonly.
         """
@@ -1227,7 +1225,7 @@ class Attributes (_AttributesBase) :
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
 
-        see L{attribute_is_removable} (key) for details.
+        see :func:`attribute_is_removable` (key) for details.
 
         'True' if the attrib is writeable and Extended.
         """
@@ -1244,14 +1242,14 @@ class Attributes (_AttributesBase) :
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
 
-        see L{attribute_is_vector} (key) for details.
+        see :func:`attribute_is_vector` (key) for details.
         """
 
         # make sure interface is ready to use
         d = self._attributes_t_init (key)
 
         # check if we know about that attribute
-        if  d['_attributes'][key]['flavor'] == VECTOR :
+        if  d['attributes'][key]['flavor'] == VECTOR :
             return True
 
         return False
@@ -1272,7 +1270,7 @@ class Attributes (_AttributesBase) :
         # make sure interface is ready to use
         d = self._attributes_t_init (key)
 
-        if FINAL == d['_attributes'][key]['mode'] :
+        if FINAL == d['attributes'][key]['mode'] :
              return True
 
         # no final flag found -- assume non-finality!
@@ -1285,15 +1283,15 @@ class Attributes (_AttributesBase) :
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
 
-        see L{add_callback} (key, cb) for details.
+        see :func:`add_callback` (key, cb) for details.
         """
 
         # make sure interface is ready to use
         d = self._attributes_t_init (key)
 
-        d['_attributes'][key]['callbacks'].append (cb)
+        d['attributes'][key]['callbacks'].append (cb)
 
-        id = len (d['_attributes'][key]['callbacks']) - 1
+        id = len (d['attributes'][key]['callbacks']) - 1
 
         if flow==self._DOWN :
             self._attributes_t_call_caller (key, id, cb)
@@ -1307,7 +1305,7 @@ class Attributes (_AttributesBase) :
         This internal method should not be explicitly called by consumers of
         this API, but is indirectly used via the different public interfaces.
 
-        see L{remove_callback} (key, cb) for details.
+        see :func:`remove_callback` (key, cb) for details.
         """
 
         # make sure interface is ready to use
@@ -1318,13 +1316,13 @@ class Attributes (_AttributesBase) :
 
         # id == None: remove all callbacks
         if not id :
-            d['_attributes'][key]['callbacks'] = []
+            d['attributes'][key]['callbacks'] = []
         else :
-            if len (d['_attributes'][key]['callbacks']) < id :
+            if len (d['attributes'][key]['callbacks']) < id :
                 raise BadParameter ("invalid callback cookie for attribute %s"  %  key)
             else :
                 # do not pop from list, that would invalidate the id's!
-                d['_attributes'][key]['callbacks'][id] = undef
+                d['attributes'][key]['callbacks'][id] = undef
 
 
 
@@ -1336,7 +1334,7 @@ class Attributes (_AttributesBase) :
     # Keys should be provided as CamelCase (only relevant if camelcasing is
     # set).
     #
-    # Naming: _attributes*
+    # Naming: _attributes_*
     #
     ####################################
     def _attributes_register (self, key, default=None, typ=ANY, flavor=SCALAR,
@@ -1359,7 +1357,7 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init ()
 
         priv = False
-        if d['_private'] and key[0] == '_' :
+        if d['private'] and key[0] == '_' :
             priv = True
 
         # we expect keys to be registered as CamelCase (in those cases where
@@ -1367,29 +1365,29 @@ class Attributes (_AttributesBase) :
         us_key = self._attributes_t_underscore (key)
 
         # remove any old instance of this attribute
-        if us_key in  d['_attributes'] :
+        if us_key in  d['attributes'] :
             self._attributes_unregister (us_key, flow=flow)
 
         # register the attribute and properties
-        d['_attributes'][us_key]                 = {}
-        d['_attributes'][us_key]['value']        = default # initial value
-        d['_attributes'][us_key]['default']      = default # default value
-        d['_attributes'][us_key]['type']         = typ     # int, float, enum, ...
-        d['_attributes'][us_key]['exists']       = False   # no value set, yet
-        d['_attributes'][us_key]['flavor']       = flavor  # scalar / vector
-        d['_attributes'][us_key]['mode']         = mode    # readonly / writeable / final
-        d['_attributes'][us_key]['extended']     = ext     # is an extended attribute 
-        d['_attributes'][us_key]['private']      = priv    # is a  private attribute
-        d['_attributes'][us_key]['camelcase']    = key     # keep original key name
-        d['_attributes'][us_key]['underscore']   = us_key  # keep under_scored name
-        d['_attributes'][us_key]['enums']        = []      # list of valid enum values
-        d['_attributes'][us_key]['checks']       = []      # list of custom value checks
-        d['_attributes'][us_key]['callbacks']    = []      # list of callbacks
-        d['_attributes'][us_key]['recursion']    = False   # recursion check for callbacks
-        d['_attributes'][us_key]['setter']       = None    # custom attribute setter
-        d['_attributes'][us_key]['getter']       = None    # custom attribute getter
-        d['_attributes'][us_key]['last']         = never   # time of last refresh (never)
-        d['_attributes'][us_key]['ttl']          = 0.0     # refresh delay (none)
+        d['attributes'][us_key]                 = {}
+        d['attributes'][us_key]['value']        = default # initial value
+        d['attributes'][us_key]['default']      = default # default value
+        d['attributes'][us_key]['type']         = typ     # int, float, enum, ...
+        d['attributes'][us_key]['exists']       = False   # no value set, yet
+        d['attributes'][us_key]['flavor']       = flavor  # scalar / vector
+        d['attributes'][us_key]['mode']         = mode    # readonly / writeable / final
+        d['attributes'][us_key]['extended']     = ext     # is an extended attribute 
+        d['attributes'][us_key]['private']      = priv    # is a  private attribute
+        d['attributes'][us_key]['camelcase']    = key     # keep original key name
+        d['attributes'][us_key]['underscore']   = us_key  # keep under_scored name
+        d['attributes'][us_key]['enums']        = []      # list of valid enum values
+        d['attributes'][us_key]['checks']       = []      # list of custom value checks
+        d['attributes'][us_key]['callbacks']    = []      # list of callbacks
+        d['attributes'][us_key]['recursion']    = False   # recursion check for callbacks
+        d['attributes'][us_key]['setter']       = None    # custom attribute setter
+        d['attributes'][us_key]['getter']       = None    # custom attribute getter
+        d['attributes'][us_key]['last']         = never   # time of last refresh (never)
+        d['attributes'][us_key]['ttl']          = 0.0     # refresh delay (none)
 
         # for enum types, we add a value checker
         if typ == ENUM :
@@ -1402,7 +1400,7 @@ class Attributes (_AttributesBase) :
                 us_key = self._attributes_t_underscore (key)
                 d      = self._attributes_t_init       (us_key)
 
-                vals   = d['_attributes'][us_key]['enums']
+                vals   = d['attributes'][us_key]['enums']
 
                 # check if there is anything to check
                 if not vals :
@@ -1419,7 +1417,7 @@ class Attributes (_AttributesBase) :
                 """  %  (str(val), key, str(vals))
             ######################################
 
-            self._attributes_check_add (key, _enum_check, flow=flow)
+            self._attributes_add_check (key, _enum_check, flow=flow)
 
 
 
@@ -1441,7 +1439,7 @@ class Attributes (_AttributesBase) :
 
         The first parameter is the old name of the attribute, the second
         parameter is the aliased new name.  Note that the new name needs to be
-        registered before (via L{_attributes_register})::
+        registered before (via :class:`bliss.saga._attributes_register`)::
 
             # old code:
             self._attributes_register ('apple', 'Appel', STRING, SCALAR, WRITEABLE)
@@ -1473,15 +1471,15 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init (us_alias)
 
         # remove any old instance of this attribute
-        if us_key in  d['_attributes'] :
+        if us_key in  d['attributes'] :
             self._attributes_unregister (us_key, flow=flow)
 
         # register the attribute and properties
-        d['_attributes'][us_key]               = {}
-        d['_attributes'][us_key]['mode']       = ALIAS      # alias
-        d['_attributes'][us_key]['alias']      = us_alias   # aliased var
-        d['_attributes'][us_key]['camelcase']  = key        # keep original key name
-        d['_attributes'][us_key]['underscore'] = us_key     # keep under_scored name
+        d['attributes'][us_key]               = {}
+        d['attributes'][us_key]['mode']       = ALIAS      # alias
+        d['attributes'][us_key]['alias']      = us_alias   # aliased var
+        d['attributes'][us_key]['camelcase']  = key        # keep original key name
+        d['attributes'][us_key]['underscore'] = us_key     # keep under_scored name
 
 
 
@@ -1509,8 +1507,8 @@ class Attributes (_AttributesBase) :
         d      = self._attributes_t_init       (us_key)
 
         # if the attribute exists, purge it
-        if us_key in d['_attributes'] :
-            del (d['_attributes'][us_key])
+        if us_key in d['attributes'] :
+            del (d['attributes'][us_key])
 
 
     ####################################
@@ -1530,7 +1528,7 @@ class Attributes (_AttributesBase) :
         d      = self._attributes_t_init       (us_key)
 
         if self._attributes_i_is_removable (key, flow=flow) :
-            del (d['_attributes'][us_key])
+            del (d['attributes'][us_key])
 
 
     ####################################
@@ -1546,7 +1544,7 @@ class Attributes (_AttributesBase) :
         us_key = self._attributes_t_underscore (key)
         d      = self._attributes_t_init       (us_key)
 
-        d['_attributes'][us_key]['enums'] = enums
+        d['attributes'][us_key]['enums'] = enums
 
 
     ####################################
@@ -1565,7 +1563,7 @@ class Attributes (_AttributesBase) :
         """
 
         d = self._attributes_t_init ()
-        d['_extensible'] = e
+        d['extensible'] = e
 
         if getter : self._attributes_set_global_getter (getter, flow=flow)
         if setter : self._attributes_set_global_setter (setter, flow=flow)
@@ -1588,7 +1586,7 @@ class Attributes (_AttributesBase) :
         """
 
         d = self._attributes_t_init ()
-        d['_private'] = p
+        d['private'] = p
 
 
     ####################################
@@ -1605,7 +1603,7 @@ class Attributes (_AttributesBase) :
         """
 
         d = self._attributes_t_init ()
-        d['_camelcasing'] = c
+        d['camelcasing'] = c
 
 
     ####################################
@@ -1626,46 +1624,46 @@ class Attributes (_AttributesBase) :
 
         other_d = {}
 
-        # for some reason, deep copy won't work on the '_attributes' dict, so we
+        # for some reason, deep copy won't work on the 'attributes' dict, so we
         # do it manually.  Use the list copy c'tor to copy list elements.
-        other_d['_camelcasing'] = d['_camelcasing']
-        other_d['_attributes']  = d['_attributes'] 
-        other_d['_extensible']  = d['_extensible'] 
-        other_d['_private']     = d['_private']
-        other_d['_camelcasing'] = d['_camelcasing']
+        other_d['camelcasing']  = d['camelcasing']
+        other_d['attributes']   = d['attributes'] 
+        other_d['extensible']   = d['extensible'] 
+        other_d['private']      = d['private']
+        other_d['camelcasing']  = d['camelcasing']
         other_d['recursion']    = d['recursion']    
         other_d['getter']       = d['setter']    
         other_d['setter']       = d['setter']    
         other_d['lister']       = d['lister']    
         other_d['caller']       = d['caller']    
 
-        other_d['_attributes'] = {}
+        other_d['attributes'] = {}
 
-        for key in d['_attributes'] :
-            other_d['_attributes'][key] = {}
-            other_d['_attributes'][key]['default']      =       d['_attributes'][key]['default']   
-            other_d['_attributes'][key]['exists']       =       d['_attributes'][key]['exists']      
-            other_d['_attributes'][key]['type']         =       d['_attributes'][key]['type']      
-            other_d['_attributes'][key]['flavor']       =       d['_attributes'][key]['flavor']    
-            other_d['_attributes'][key]['mode']         =       d['_attributes'][key]['mode']      
-            other_d['_attributes'][key]['extended']     =       d['_attributes'][key]['extended']  
-            other_d['_attributes'][key]['private']      =       d['_attributes'][key]['private']  
-            other_d['_attributes'][key]['camelcase']    =       d['_attributes'][key]['camelcase'] 
-            other_d['_attributes'][key]['underscore']   =       d['_attributes'][key]['underscore']
-            other_d['_attributes'][key]['enums']        = list (d['_attributes'][key]['enums'])
-            other_d['_attributes'][key]['checks']       = list (d['_attributes'][key]['checks'])
-            other_d['_attributes'][key]['callbacks']    = list (d['_attributes'][key]['callbacks'])
-            other_d['_attributes'][key]['recursion']    =       d['_attributes'][key]['recursion']
-            other_d['_attributes'][key]['setter']       =       d['_attributes'][key]['setter']
-            other_d['_attributes'][key]['getter']       =       d['_attributes'][key]['getter']
-            other_d['_attributes'][key]['last']         =       d['_attributes'][key]['last']
-            other_d['_attributes'][key]['ttl']          =       d['_attributes'][key]['ttl']
+        for key in d['attributes'] :
+            other_d['attributes'][key] = {}
+            other_d['attributes'][key]['default']      =       d['attributes'][key]['default']   
+            other_d['attributes'][key]['exists']       =       d['attributes'][key]['exists']      
+            other_d['attributes'][key]['type']         =       d['attributes'][key]['type']      
+            other_d['attributes'][key]['flavor']       =       d['attributes'][key]['flavor']    
+            other_d['attributes'][key]['mode']         =       d['attributes'][key]['mode']      
+            other_d['attributes'][key]['extended']     =       d['attributes'][key]['extended']  
+            other_d['attributes'][key]['private']      =       d['attributes'][key]['private']  
+            other_d['attributes'][key]['camelcase']    =       d['attributes'][key]['camelcase'] 
+            other_d['attributes'][key]['underscore']   =       d['attributes'][key]['underscore']
+            other_d['attributes'][key]['enums']        = list (d['attributes'][key]['enums'])
+            other_d['attributes'][key]['checks']       = list (d['attributes'][key]['checks'])
+            other_d['attributes'][key]['callbacks']    = list (d['attributes'][key]['callbacks'])
+            other_d['attributes'][key]['recursion']    =       d['attributes'][key]['recursion']
+            other_d['attributes'][key]['setter']       =       d['attributes'][key]['setter']
+            other_d['attributes'][key]['getter']       =       d['attributes'][key]['getter']
+            other_d['attributes'][key]['last']         =       d['attributes'][key]['last']
+            other_d['attributes'][key]['ttl']          =       d['attributes'][key]['ttl']
 
-            if d['_attributes'][key]['flavor'] == VECTOR and \
-               d['_attributes'][key]['value' ] != None       :
-                other_d['_attributes'][key]['value']  = list (d['_attributes'][key]['value'])
+            if d['attributes'][key]['flavor'] == VECTOR and \
+               d['attributes'][key]['value' ] != None       :
+                other_d['attributes'][key]['value']  = list (d['attributes'][key]['value'])
             else :
-                other_d['_attributes'][key]['value']  =       d['_attributes'][key]['value']
+                other_d['attributes'][key]['value']  =       d['attributes'][key]['value']
 
         # set the new dictionary as state for copied class
         _AttributesBase.__setattr__ (other, '_d', other_d)
@@ -1684,7 +1682,7 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init ()
 
 
-        keys_all   = sorted (d['_attributes'].iterkeys ())
+        keys_all   = sorted (d['attributes'].iterkeys ())
         keys_exist = (key.lower for key in sorted (self._attributes_i_list (flow)))
 
         print "---------------------------------------"
@@ -1695,37 +1693,37 @@ class Attributes (_AttributesBase) :
             print msg
 
         print "---------------------------------------"
-        print " %-30s : %s"  %  ("Extensible"  , d['_extensible'])
-        print " %-30s : %s"  %  ("Private"     , d['_private'])
-        print " %-30s : %s"  %  ("CamelCasing" , d['_camelcasing'])
+        print " %-30s : %s"  %  ("Extensible"  , d['extensible'])
+        print " %-30s : %s"  %  ("Private"     , d['private'])
+        print " %-30s : %s"  %  ("CamelCasing" , d['camelcasing'])
         print "---------------------------------------"
 
         print "'Registered' attributes"
         for key in keys_all :
             if key not in keys_exist :
-                if not  d['_attributes'][key]['mode'] == ALIAS and \
-                   not  d['_attributes'][key]['extended'] :
+                if not  d['attributes'][key]['mode'] == ALIAS and \
+                   not  d['attributes'][key]['extended'] :
                     print " %-30s [%6s, %6s, %9s, %3d]: %s"  % \
-                             (d['_attributes'][key]['camelcase'],
-                              d['_attributes'][key]['type'],
-                              d['_attributes'][key]['flavor'],
-                              d['_attributes'][key]['mode'],
-                      len(d['_attributes'][key]['callbacks']),
-                              d['_attributes'][key]['value']
+                             (d['attributes'][key]['camelcase'],
+                              d['attributes'][key]['type'],
+                              d['attributes'][key]['flavor'],
+                              d['attributes'][key]['mode'],
+                      len(d['attributes'][key]['callbacks']),
+                              d['attributes'][key]['value']
                               )
 
         print "---------------------------------------"
 
         print "'Existing' attributes"
         for key in keys_exist :
-            if not  d['_attributes'][key]['mode'] == ALIAS :
+            if not  d['attributes'][key]['mode'] == ALIAS :
                 print " %-30s [%6s, %6s, %9s, %3d]: %s"  % \
-                         (d['_attributes'][key]['camelcase'],
-                          d['_attributes'][key]['type'],
-                          d['_attributes'][key]['flavor'],
-                          d['_attributes'][key]['mode'],
-                      len(d['_attributes'][key]['callbacks']),
-                          d['_attributes'][key]['value']
+                         (d['attributes'][key]['camelcase'],
+                          d['attributes'][key]['type'],
+                          d['attributes'][key]['flavor'],
+                          d['attributes'][key]['mode'],
+                      len(d['attributes'][key]['callbacks']),
+                          d['attributes'][key]['value']
                           )
 
         print "---------------------------------------"
@@ -1733,15 +1731,15 @@ class Attributes (_AttributesBase) :
         print "'Extended' attributes"
         for key in keys_all :
             if key not in keys_exist :
-                if not  d['_attributes'][key]['mode'] == ALIAS and \
-                        d['_attributes'][key]['extended'] :
+                if not  d['attributes'][key]['mode'] == ALIAS and \
+                        d['attributes'][key]['extended'] :
                     print " %-30s [%6s, %6s, %9s, %3d]: %s"  % \
-                             (d['_attributes'][key]['camelcase'],
-                              d['_attributes'][key]['type'],
-                              d['_attributes'][key]['flavor'],
-                              d['_attributes'][key]['mode'],
-                      len(d['_attributes'][key]['callbacks']),
-                              d['_attributes'][key]['value']
+                             (d['attributes'][key]['camelcase'],
+                              d['attributes'][key]['type'],
+                              d['attributes'][key]['flavor'],
+                              d['attributes'][key]['mode'],
+                      len(d['attributes'][key]['callbacks']),
+                              d['attributes'][key]['value']
                               )
 
         print "---------------------------------------"
@@ -1749,11 +1747,11 @@ class Attributes (_AttributesBase) :
         print "'Deprecated' attributes (aliases)"
         for key in keys_all :
             if key not in keys_exist :
-                if d['_attributes'][key]['mode'] == ALIAS :
+                if d['attributes'][key]['mode'] == ALIAS :
                     print " %-30s [%24s]:  %s"  % \
-                             (d['_attributes'][key]['camelcase'],
+                             (d['attributes'][key]['camelcase'],
                               ' ',
-                              d['_attributes'][key]['alias']
+                              d['attributes'][key]['alias']
                               )
 
         print "---------------------------------------"
@@ -1779,14 +1777,14 @@ class Attributes (_AttributesBase) :
         d      = self._attributes_t_init       (us_key)
 
         newval = val
-        oldval = d['_attributes'][us_key]['value']
+        oldval = d['attributes'][us_key]['value']
         if None == newval :
             # freeze at current value unless indicated otherwise
             val = oldval
 
         # flag as final, and set the final value (this order to avoid races in
         # callbacks)
-        d['_attributes'][us_key]['mode'] = FINAL
+        d['attributes'][us_key]['mode'] = FINAL
         self._attributes_i_set (us_key, val, flow=flow)
 
         # callbacks are not invoked if the value did not change -- we take care
@@ -1794,7 +1792,7 @@ class Attributes (_AttributesBase) :
         #
         # if  None == newval or oldval == newval :
 
-        self._attributes_t_call_cb (key)
+        self._attributes_t_call_cb (key, val)
 
 
     ####################################
@@ -1805,12 +1803,12 @@ class Attributes (_AttributesBase) :
         us_key = self._attributes_t_underscore (key)
         d      = self._attributes_t_init       (us_key)
 
-        d['_attributes'][us_key]['ttl'] = ttl
+        d['attributes'][us_key]['ttl'] = ttl
 
 
 
     ####################################
-    def _attributes_check_add (self, key, check, flow=_DOWN) :
+    def _attributes_add_check (self, key, check, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
@@ -1831,7 +1829,7 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init (us_key)
 
         # register the attribute and properties
-        d['_attributes'][us_key]['checks'].append (check)
+        d['attributes'][us_key]['checks'].append (check)
 
 
     ####################################
@@ -1877,7 +1875,9 @@ class Attributes (_AttributesBase) :
             global_lister (self)
             global_caller (self, key)
 
-        FIXME: consider a cooling-off period for caching.
+        Note that frequent setter, and even more list and getter calls are very
+        common -- the implementation of hooks should consider to cache the
+        respective values.
         """
 
         # make sure interface is ready to use
@@ -1885,7 +1885,7 @@ class Attributes (_AttributesBase) :
         d      = self._attributes_t_init       (us_key)
 
         # register the attribute and properties
-        d['_attributes'][us_key]['getter'] = getter
+        d['attributes'][us_key]['getter'] = getter
 
 
     ####################################
@@ -1902,7 +1902,7 @@ class Attributes (_AttributesBase) :
         d      = self._attributes_t_init       (us_key)
 
         # register the attribute and properties
-        d['_attributes'][us_key]['setter'] = setter
+        d['attributes'][us_key]['setter'] = setter
 
 
     ####################################
@@ -1926,7 +1926,7 @@ class Attributes (_AttributesBase) :
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
 
-        See documentation of L{_attributes_set_getter } for details.
+        See documentation of :class:`bliss.saga._attributes_set_setter ` for details.
         """
 
         d = self._attributes_t_init ()
@@ -2027,7 +2027,7 @@ class Attributes (_AttributesBase) :
         """
         set_vector_attribute (key, val)
 
-        See also: L{set_attribute} (key, val).
+        See also: :func:`saga.Attributes.set_attribute` (key, val).
 
         As python can handle scalar and vector types transparently, this method
         is in fact not very useful.  For that reason, it maps internally to the
@@ -2044,7 +2044,7 @@ class Attributes (_AttributesBase) :
         """
         get_vector_attribute (key)
 
-        See also: L{get_attribute} (key).
+        See also: :func:`bliss.saga.AttributeInterface.get_attribute` (key).
 
         As python can handle scalar and vector types transparently, this method
         is in fact not very useful.  For that reason, it maps internally to the
@@ -2063,7 +2063,8 @@ class Attributes (_AttributesBase) :
 
         Removing an attribute is actually different from unsetting it, or from
         setting it to 'None'.  On remove, all traces of the attribute are
-        purged, and the key will not be listed on L{list_attributes}() anymore.
+        purged, and the key will not be listed on 
+        :func:`bliss.saga.AttributeInterface.list_attributes` () anymore.
         """
 
         key    = self._attributes_t_keycheck   (key)
@@ -2249,6 +2250,10 @@ class Attributes (_AttributesBase) :
         key  = self._attributes_t_keycheck (key)
         return self._attributes_remove     (key, flow=self._DOWN)
 
+
+################################################################################
+
+# FIXME: add 'as_dict()'
 
 ################################################################################
 

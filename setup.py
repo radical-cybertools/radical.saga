@@ -11,9 +11,9 @@ import sys
 import shutil
 import fileinput
 
-from distutils.core import setup
+from distutils.core                 import setup
 from distutils.command.install_data import install_data
-from distutils.command.sdist import sdist
+from distutils.command.sdist        import sdist
 
 from saga import version
 
@@ -89,21 +89,22 @@ setup_args = {
         "saga.filesystem",
         "saga.replica",
         "saga.advert",
-        "saga.cpi",
-        "saga.cpi.job",
-        "saga.cpi.filesystem",
-        "saga.cpi.replica",
-        "saga.cpi.advert",
         "saga.adaptors",
+        "saga.adaptors.cpi",
+        "saga.adaptors.cpi.job",
+        "saga.adaptors.cpi.filesystem",
+        "saga.adaptors.cpi.replica",
+        "saga.adaptors.cpi.advert",
         "saga.adaptors.context",
         "saga.adaptors.local",
         "saga.adaptors.redis",
         "saga.adaptors.irods",
         "saga.engine",
-        "saga.contrib",
         "saga.utils",
+        "saga.utils.contrib",
         "saga.utils.cmdlinewrapper",
         "saga.utils.logger",
+        "saga.utils.config",
         "saga.utils.job"
     ],
     'scripts': scripts,

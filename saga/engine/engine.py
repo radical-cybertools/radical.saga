@@ -14,11 +14,11 @@ import inspect
 
 from   saga.exceptions      import *
 from   saga.utils.singleton import Singleton
-from   saga.engine.logger   import getLogger, get_traceback
-from   saga.engine.config   import getConfig, Configurable
+from   saga.utils.logger    import getLogger
+from   saga.utils.config    import getConfig, Configurable
 
 import saga.engine.registry  # adaptors to load
-# import saga.cpi              # load cpi's so that we can check what adaptors implement
+# import saga.adaptors.cpi              # load cpi's so that we can check what adaptors implement
 
 
 ############# These are all supported options for saga.engine ####################
@@ -212,7 +212,7 @@ class Engine(Configurable):
 
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
-                self._logger.debug (get_traceback ())
+                self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -232,7 +232,7 @@ class Engine(Configurable):
                 continue # skip to next adaptor
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
-                self._logger.debug (get_traceback (0))
+                self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -245,6 +245,7 @@ class Engine(Configurable):
 
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: failed self test: %s" % (module_name, e))
+                self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -252,7 +253,7 @@ class Engine(Configurable):
             if adaptor_info is None :
                 self._logger.warning ("Skipping adaptor %s: adaptor meta data are invalid" \
                                    % module_name)
-                self._logger.debug   (get_traceback (0))
+                self._logger.trace ()
                 continue  # skip to next adaptor
 
 
@@ -262,7 +263,7 @@ class Engine(Configurable):
                 not 'schemas' in adaptor_info    :
                 self._logger.warning ("Skipping adaptor %s: adaptor meta data are incomplete" \
                                    % module_name)
-                self._logger.debug   (get_traceback (0))
+                self._logger.trace ()
                 continue  # skip to next adaptor
 
 
@@ -348,9 +349,9 @@ class Engine(Configurable):
                 # saga.job.Service -- so we also make sure the module name does
                 # not have duplicated last element.  Also, the last element
                 # needs to be translated from CamelCase to camel_case
-                cpi_last = re.sub (r'.*\.', '',             cpi_type)
-                cpi_modn = re.sub (r'^saga\.', 'saga.cpi.', cpi_type)
-                cpi_modn = re.sub (r'([^.]+)\.\1$', r'\1',  cpi_modn)
+                cpi_last = re.sub (r'.*\.', '',                      cpi_type)
+                cpi_modn = re.sub (r'^saga\.', 'saga.adaptors.cpi.', cpi_type)
+                cpi_modn = re.sub (r'([^.]+)\.\1$', r'\1',           cpi_modn)
                 cpi_modn = re.sub (r'(.*)([a-z])([A-Z])([^\.]*)$', r'\1\2_\3\4', cpi_modn).lower ()
 
                 # does that module exist?
@@ -469,6 +470,9 @@ class Engine(Configurable):
         considered, and adaptor classes are only created from that specific
         adaptor.
         '''
+
+
+        print "schema: %s" % schema
 
         if not ctype in self._adaptor_registry :
             raise NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \

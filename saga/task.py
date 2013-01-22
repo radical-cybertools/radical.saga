@@ -11,12 +11,13 @@ import Queue
 
 import saga.job.job
 
+from   saga.base          import SimpleBase
 from   saga.exceptions    import *
 from   saga.constants     import *
-from   saga.base          import SimpleBase
 from   saga.attributes    import *
+
 from   saga.utils.threads import Thread, NEW, RUNNING, DONE, FAILED
-from   saga.engine.logger import getLogger
+from   saga.utils.logger  import getLogger
 
 
 class Task (SimpleBase, Attributes) :
