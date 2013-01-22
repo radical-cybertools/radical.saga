@@ -44,8 +44,11 @@ class SimpleBase (object) :
         if len > 2 :
           t1 = name_parts [l-1]
           t2 = name_parts [l-2]
+          t2 = t2.replace ('_', ' ')
+          t2 = string.capwords (t2)
+          t2 = t2.replace (' ', '')
 
-          if t1 == string.capwords (t2) :
+          if t1 == t2 :
               del name_parts[l-2]
 
           apitype = string.join (name_parts, '.')
