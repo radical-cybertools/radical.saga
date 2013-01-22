@@ -91,13 +91,18 @@ cmd_run_process () {
   echo "$args"       > "$DIR/cmd"
   echo "RUNNING"     > "$DIR/state"
   touch                "$DIR/in"
-  tail -f  "$DIR/in"  \
-    |  $args \
-    >  "$DIR/out" \
-    2> "$DIR/err" \
-    && echo "DONE"   > "$DIR/state" \
-    || echo "FAILED" > "$DIR/state" &
-  echo $!            > "$DIR/pid"
+  mkfifo               "$DIR/fifo"
+  tail -f "$DIR/in" >> "$DIR/fifo" &
+  $args \
+    <  "$DIR/fifo" \
+    >  "$DIR/out"  \
+    2> "$DIR/err"  \
+    && (rm "$DIR/fifo"; echo "DONE"   > "$DIR/state") \
+    || (rm "$DIR/fifo"; echo "FAILED" > "$DIR/state") &
+  rpid=$!
+  echo $rpid         > "$DIR/pid"
+  wait $rpid
+  echo $?            > "$DIR/exit"
 }
 
 
@@ -241,7 +246,7 @@ cmd_stderr () {
 cmd_purge () {
 
   if test "$1" = "ALL" ; then
-    rm -rf "$BASE"
+    rm -rf "$BASE"/*
     RETVAL="purged ALL"
     return
   fi
