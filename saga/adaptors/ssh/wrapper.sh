@@ -245,9 +245,11 @@ cmd_stderr () {
 #
 cmd_purge () {
 
-  if test "$1" = "ALL" ; then
-    rm -rf "$BASE"/*
-    RETVAL="purged ALL"
+  if test -z "$1" ; then
+    for d in `grep -l -e 'DONE' -e 'FAILED' -e 'CANCELED' "$BASE"/*/state`; do
+      rm -rf `dirname "$d"`
+    done
+    RETVAL="purged finished jobs"
     return
   fi
 
