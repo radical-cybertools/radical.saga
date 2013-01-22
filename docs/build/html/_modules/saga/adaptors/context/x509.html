@@ -54,8 +54,6 @@
   <h1>Source code for saga.adaptors.context.x509</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">os</span>
 
-<span class="kn">from</span>   <span class="nn">saga.utils.singleton</span> <span class="kn">import</span> <span class="n">Singleton</span>
-
 <span class="kn">import</span> <span class="nn">saga.context</span>
 <span class="kn">import</span> <span class="nn">saga.adaptors.cpi.base</span>
 <span class="kn">import</span> <span class="nn">saga.adaptors.cpi.context</span>
@@ -109,14 +107,7 @@
 <span class="sd">    This is the actual adaptor class, which gets loaded by SAGA (i.e. by the</span>
 <span class="sd">    SAGA engine), and which registers the CPI implementation classes which</span>
 <span class="sd">    provide the adaptor&#39;s functionality.</span>
-
-<span class="sd">    We only need one instance of this adaptor per process (actually per engine,</span>
-<span class="sd">    but engine is a singleton, too...) -- the engine will though create new CPI</span>
-<span class="sd">    implementation instances as needed (one per SAGA API object).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">Singleton</span>
-
 
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 

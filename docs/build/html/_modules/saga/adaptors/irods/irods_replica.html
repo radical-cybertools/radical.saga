@@ -66,8 +66,6 @@
 <span class="kn">import</span> <span class="nn">saga.adaptors.cpi.replica</span>
 <span class="kn">import</span> <span class="nn">saga.utils.misc</span>
 
-<span class="kn">from</span>   <span class="nn">saga.utils.singleton</span> <span class="kn">import</span> <span class="n">Singleton</span>
-
 <span class="n">SYNC_CALL</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">SYNC_CALL</span>
 <span class="n">ASYNC_CALL</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">ASYNC_CALL</span>
 
@@ -125,14 +123,7 @@
 <span class="sd">    This is the actual adaptor class, which gets loaded by SAGA (i.e. by the</span>
 <span class="sd">    SAGA engine), and which registers the CPI implementation classes which</span>
 <span class="sd">    provide the adaptor&#39;s functionality.</span>
-
-<span class="sd">    We only need one instance of this adaptor per process (actually per engine,</span>
-<span class="sd">    but engine is a singleton, too...) -- the engine will though create new CPI</span>
-<span class="sd">    implementation instances as needed (one per SAGA API object).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">Singleton</span>
-
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -143,6 +134,8 @@
 
 
     <span class="k">def</span> <span class="nf">sanity_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="k">return</span>
 
         <span class="n">cw</span> <span class="o">=</span> <span class="n">CommandWrapper</span><span class="o">.</span><span class="n">initAsLocalWrapper</span><span class="p">(</span><span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">cw</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -422,7 +415,7 @@
     <span class="c">#</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
-    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="IRODSDirectory.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance">[docs]</a>
         <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
@@ -437,8 +430,9 @@
     <span class="c">#</span>
     <span class="c">#</span>
     <span class="nd">@ASYNC_CALL</span></div>
-    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ttype</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="IRODSDirectory.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance_async">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSDirectory.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance_async">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
 
@@ -612,7 +606,7 @@
     <span class="c">#</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
-    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="IRODSFile.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.init_instance">[docs]</a>
         <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
@@ -627,7 +621,7 @@
     <span class="c">#</span>
     <span class="c">#</span>
     <span class="nd">@ASYNC_CALL</span></div>
-    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ttype</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="IRODSFile.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.init_instance_async">[docs]</a>
         <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
