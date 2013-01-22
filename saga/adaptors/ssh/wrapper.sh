@@ -91,18 +91,38 @@ cmd_run_process () {
   echo "$args"       > "$DIR/cmd"
   echo "RUNNING"     > "$DIR/state"
   touch                "$DIR/in"
-  mkfifo               "$DIR/fifo"
-  tail -f "$DIR/in" >> "$DIR/fifo" &
   $args \
-    <  "$DIR/fifo" \
+    <  "$DIR/in"   \
     >  "$DIR/out"  \
     2> "$DIR/err"  \
-    && (rm "$DIR/fifo"; echo "DONE"   > "$DIR/state") \
-    || (rm "$DIR/fifo"; echo "FAILED" > "$DIR/state") &
+    && echo "DONE"   > "$DIR/state" \
+    || echo "FAILED" > "$DIR/state" &
   rpid=$!
   echo $rpid         > "$DIR/pid"
   wait $rpid
   echo $?            > "$DIR/exit"
+
+# mkdir -p "$DIR"   || die "cannot create sandbox for job '$args' ($DIR)"
+# echo "$args"       > "$DIR/cmd"
+# echo "RUNNING"     > "$DIR/state"
+# touch                "$DIR/in"
+# mkfifo               "$DIR/fifo"
+# tail -f "$DIR/in" >> "$DIR/fifo" &
+# echo $!            > "$DIR/fifo.pid"
+# $args \
+#   <  "$DIR/fifo" \
+#   >  "$DIR/out"  \
+#   2> "$DIR/err"  \
+#   && (rm "$DIR/fifo"; echo "DONE"   > "$DIR/state") \
+#   || (rm "$DIR/fifo"; echo "FAILED" > "$DIR/state") &
+# rpid=$!
+# echo $rpid         > "$DIR/pid"
+# wait $rpid
+# echo $?            > "$DIR/exit"
+#
+# kill `cat "$DIR/fifo.pid"`
+# rm -f "$DIR/fifo.pid"
+# rm -f "$DIR/fifo"
 }
 
 
@@ -195,12 +215,22 @@ cmd_cancel () {
   ECODE=$?
 
   if ! test "$ECODE" = "0" ; then
-    ERROR="cancel failed ($ECODE): $RETVAL"
+    state=`cat $DIR/state`
+    if ! test "$state" = "DONE" -o "$state" = "FAILED"; then
+      ERROR="job $1 in incorrect state ($state != SUSPENDED|RUNNING)"
+    else
+      ERROR="cancel failed ($ECODE): $RETVAL"
+    fi
+    return
   else
     RETVAL="$1 canceled"
   fi
 
   echo "CANCELED" > "$DIR/state"
+
+# kill `cat "$DIR/fifo.pid"`
+# rm -f "$DIR/fifo.pid"
+# rm -f "$DIR/fifo"
 }
 
 
