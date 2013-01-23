@@ -30,7 +30,7 @@ IRODS_RESOURCE = "osgGridFtpGroup" #iRODS resource or resource group to upload f
 def main():
     try:
         myfile = saga.replica.LogicalFile('irods://'+IRODS_DIRECTORY+TEMP_FILENAME)
-        myfile.add_location("irods:////data/cache/AGLT2_CE_2_FTPplaceholder/whatever?resource=AGLT2_CE_2_FTP")
+        #myfile.add_location("irods:////data/cache/AGLT2_CE_2_FTPplaceholder/whatever?resource=AGLT2_CE_2_FTP")
 
         # grab our home directory (tested on Linux)
         home_dir = os.path.expanduser("~"+"/")
@@ -42,10 +42,10 @@ def main():
             f.write ("x" * (FILE_SIZE * pow(2,20)) )
 
         print "Creating iRODS directory object"
-        mydir = saga.logicalfile.LogicalDirectory("irods://" + IRODS_DIRECTORY) 
+        mydir = saga.replica.LogicalDirectory("irods://" + IRODS_DIRECTORY) 
 
         print "Uploading file to iRODS"
-        myfile = saga.logicalfile.LogicalFile('irods://'+IRODS_DIRECTORY+TEMP_FILENAME)
+        myfile = saga.replica.LogicalFile('irods://'+IRODS_DIRECTORY+TEMP_FILENAME)
         myfile.upload(home_dir + TEMP_FILENAME, \
                      "irods:///this/path/is/ignored/?resource="+IRODS_RESOURCE)
 
@@ -57,7 +57,7 @@ def main():
             print entry
 
         print "Creating iRODS file object"
-        myfile = saga.logicalfile.LogicalFile('irods://' + IRODS_DIRECTORY+TEMP_FILENAME)
+        myfile = saga.replica.LogicalFile('irods://' + IRODS_DIRECTORY+TEMP_FILENAME)
         
         print "Size of test file %s on iRODS in bytes:" % (IRODS_DIRECTORY + TEMP_FILENAME)
         print myfile.get_size()

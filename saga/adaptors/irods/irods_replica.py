@@ -402,10 +402,12 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
         url   = self._url
         flags = self._flags 
 
-
-        if not os.path.isdir (path) :
-            raise saga.BadParameter ("Cannot handle url %s (is not a Logicaldirectory)"  \
-                                               %  path)
+        # TODO: verify that this is correct commented out
+        # or if i should add some alternate functionality
+        # (seems like boilerplate from local file adaptor)
+        #if not os.path.isdir (path) :
+        #    raise saga.BadParameter ("Cannot handle url %s (is not a Logicaldirectory)"  \
+        #                                       %  path)
         
         # TODO: "stat" the file
 
@@ -605,39 +607,42 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
         self._path = url.path
         path       = url.path
 
-        if not os.path.exists (path) :
+        # TODO: add appropriate sanity checks as may be needed for logical file
+        # (as opposed to local, which this boilerplate seems to be for)
 
-            (dirname, filename) = os.path.split (path)
+        # if not os.path.exists (path) :
 
-            if not filename :
-                raise saga.BadParameter ("Cannot handle url %s (names directory)"  \
-                                                 %  path)
+        #     (dirname, filename) = os.path.split (path)
 
-            if not os.path.exists (dirname) :
-                if saga.replica.CREATE_PARENTS & flags :
-                    try :
-                        os.makedirs (path)
-                    except Exception as e :
-                        raise saga.NoSuccess ("Could not 'mkdir -p %s': %s)"  \
-                                                        % (path, str(e)))
-                else :
-                    raise saga.BadParameter ("Cannot handle url %s (parent dir does not exist)"  \
-                                                     %  path)
+        #     if not filename :
+        #         raise saga.BadParameter ("Cannot handle url %s (names directory)"  \
+        #                                          %  path)
+
+        #     if not os.path.exists (dirname) :
+        #         if saga.replica.CREATE_PARENTS & flags :
+        #             try :
+        #                 os.makedirs (path)
+        #             except Exception as e :
+        #                 raise saga.NoSuccess ("Could not 'mkdir -p %s': %s)"  \
+        #                                                 % (path, str(e)))
+        #         else :
+        #             raise saga.BadParameter ("Cannot handle url %s (parent dir does not exist)"  \
+        #                                              %  path)
         
-            if not os.path.exists (filename) :
-                if saga.replica.CREATE & flags :
-                    try :
-                        open (path, 'w').close () # touch
-                    except Exception as e :
-                        raise saga.NoSuccess ("Could not 'touch %s': %s)"  \
-                                                        % (path, str(e)))
-                else :
-                    raise saga.BadParameter ("Cannot handle url %s (Logicalfile does not exist)"  \
-                                                     %  path)
+        #     if not os.path.exists (filename) :
+        #         if saga.replica.CREATE & flags :
+        #             try :
+        #                 open (path, 'w').close () # touch
+        #             except Exception as e :
+        #                 raise saga.NoSuccess ("Could not 'touch %s': %s)"  \
+        #                                                 % (path, str(e)))
+        #         else :
+        #             raise saga.BadParameter ("Cannot handle url %s (Logicalfile does not exist)"  \
+        #                                              %  path)
         
-        if not os.path.isfile (path) :
-            raise saga.BadParameter ("Cannot handle url %s (is not a Logicalfile)"  \
-                                               %  path)
+        # if not os.path.isfile (path) :
+        #     raise saga.BadParameter ("Cannot handle url %s (is not a Logicalfile)"  \
+        #                                        %  path)
 
     # ----------------------------------------------------------------
     #
@@ -897,7 +902,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     # HERE BE DRAGONS, in other words...
 
     # ----------------------------------------------------------------
-    def download (self, target, source) :
+    def logicalfile_download (self, target, source) :
         '''Downloads a file from the REMOTE REPLICA FILESYSTEM to a local
            directory.
            @param target: param containing a local path/filename

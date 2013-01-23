@@ -100,9 +100,111 @@ implement the advert API semantics.</p>
 </div></blockquote>
 <div class="section" id="saga-advert-directory">
 <h3>7.5.1. saga.advert.Directory<a class="headerlink" href="#saga-advert-directory" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.redis.redis_advert.RedisDirectory">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.redis.redis_advert.</tt><tt class="descname">RedisDirectory</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisDirectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.advert.directory.Directory</span></tt>, <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.async.Async</span></tt></p>
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisDirectory.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisDirectory.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisDirectory.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisDirectory.init_instance_async">
+<tt class="descname">init_instance_async</tt><big>(</big><em>adaptor_state</em>, <em>url</em>, <em>flags</em>, <em>session</em>, <em>ttype</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisDirectory.init_instance_async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisDirectory.init_instance_async" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisDirectory.attribute_getter">
+<tt class="descname">attribute_getter</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisDirectory.attribute_getter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisDirectory.attribute_getter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisDirectory.attribute_setter">
+<tt class="descname">attribute_setter</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisDirectory.attribute_setter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisDirectory.attribute_setter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisDirectory.attribute_lister">
+<tt class="descname">attribute_lister</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisDirectory.attribute_lister"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisDirectory.attribute_lister" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisDirectory.attribute_caller">
+<tt class="descname">attribute_caller</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisDirectory.attribute_caller"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisDirectory.attribute_caller" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisDirectory.get_url">
+<tt class="descname">get_url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisDirectory.get_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisDirectory.get_url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisDirectory.open">
+<tt class="descname">open</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisDirectory.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisDirectory.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisDirectory.copy">
+<tt class="descname">copy</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisDirectory.copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisDirectory.copy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisDirectory.copy_async">
+<tt class="descname">copy_async</tt><big>(</big><em>src</em>, <em>tgt</em>, <em>flags</em>, <em>ttype</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisDirectory.copy_async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisDirectory.copy_async" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisDirectory.task_wait">
+<tt class="descname">task_wait</tt><big>(</big><em>task</em>, <em>timout</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisDirectory.task_wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisDirectory.task_wait" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="saga-advert-entry">
 <h3>7.5.2. saga.advert.Entry<a class="headerlink" href="#saga-advert-entry" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.redis.redis_advert.RedisEntry">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.redis.redis_advert.</tt><tt class="descname">RedisEntry</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisEntry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.advert.entry.Entry</span></tt></p>
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisEntry.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisEntry.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisEntry.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisEntry.attribute_getter">
+<tt class="descname">attribute_getter</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisEntry.attribute_getter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisEntry.attribute_getter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisEntry.attribute_setter">
+<tt class="descname">attribute_setter</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisEntry.attribute_setter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisEntry.attribute_setter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisEntry.attribute_lister">
+<tt class="descname">attribute_lister</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisEntry.attribute_lister"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisEntry.attribute_lister" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisEntry.attribute_caller">
+<tt class="descname">attribute_caller</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisEntry.attribute_caller"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisEntry.attribute_caller" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisEntry.get_url">
+<tt class="descname">get_url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisEntry.get_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisEntry.get_url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.redis.redis_advert.RedisEntry.copy_self">
+<tt class="descname">copy_self</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/redis/redis_advert.html#RedisEntry.copy_self"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.redis.redis_advert.RedisEntry.copy_self" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 </div>
