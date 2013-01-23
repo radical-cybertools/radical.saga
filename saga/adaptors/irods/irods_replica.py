@@ -85,6 +85,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
     def sanity_check (self) :
 
+        return
+
         cw = CommandLineWrapper.init_as_subprocess_wrapper()
         cw.open()
 
@@ -344,7 +346,7 @@ class irods_resource_entry (object):
 #
 # logical_directory adaptor class
 #
-class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
+class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.cpi.Async) :
 
     # ----------------------------------------------------------------
     #
@@ -466,7 +468,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
     # ----------------------------------------------------------------
     #
     #
-    def remove (self, path) :
+    def remove (self, path, flags) :
         '''This method is called upon logicaldir.remove() '''
 
         complete_path = bliss.saga.Url(path).get_path()
@@ -532,7 +534,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
 #
 # logical_file adaptor class
 #
-class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
+class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async) :
 
     # ----------------------------------------------------------------
     #
@@ -669,34 +671,6 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     #
     #
     @SYNC_CALL
-    def get_size_self (self) :
-
-        path = self._url.get_path()
-        self.log_debug("Attempting to get size for logical file %s " \
-                         %  path)
-        listing = irods_get_directory_listing(self, path)
-
-        return listing[0].size
-
-
-    # ----------------------------------------------------------------
-    #
-    #
-    @ASYNC_CALL
-    def get_size_self_async (self, ttype) :
-
-        t = saga.task.Task ()
-
-        t._set_result (self.get_size_self ())
-        t._set_state  (saga.task.DONE)
-
-        return t
-
-
-    # ----------------------------------------------------------------
-    #
-    #
-    @SYNC_CALL
     def copy_self (self, target, flags) :
 
         tgt_url = saga.url.Url (target)
@@ -717,7 +691,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     # ----------------------------------------------------------------
     #
     #
-    def logicalfile_list_locations (self, logicalfile_obj) :
+    def list_locations (self) :
          '''This method is called upon logicaldir.list_locations()
          '''
          #return a list of all replica locations for a file
@@ -731,7 +705,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     # ----------------------------------------------------------------
     #
     #
-    def logicalfile_remove_location(self, logicalfile_obj, location):
+    def remove_location(self, location):
         '''This method is called upon logicaldir.remove_locations()
         '''     
         raise saga.NotImplemented._log (self._logger, "Not implemented")
@@ -741,7 +715,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     # ----------------------------------------------------------------
     #
     #
-    def logicalfile_replicate(self, logicalfile_obj, target):
+    def replicate (self, target, flags):
         '''This method is called upon logicaldir.replicate()
         '''        
         #path to file we are replicating on iRODS
@@ -769,7 +743,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     #
     # TODO: This is COMPLETELY untested, as it is unsupported on the only iRODS
     # machine I have access to.
-    def move (self, target) :
+    def move_self (self, target, flags) :
         '''This method is called upon logicaldir.move() '''
 
         #path to file we are moving on iRODS
@@ -800,7 +774,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
 
     ######################################################################
     ##
-    def remove (self) :
+    def remove_self (self, flags) :
         '''This method is called upon logicalfile.remove() '''
 
         complete_path = logicalfile_obj._url.get_path()
@@ -842,7 +816,8 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     #
     #
     #
-    def upload (self, source, target) :
+    @SYNC_CALL
+    def upload (self, source, target, flags) :
         '''Uploads a file from the LOCAL, PHYSICAL filesystem to
            the replica management system.
            @param source: URL (should be file:// or local path) of local file
@@ -902,7 +877,8 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     # HERE BE DRAGONS, in other words...
 
     # ----------------------------------------------------------------
-    def logicalfile_download (self, target, source) :
+    @SYNC_CALL
+    def download (self, name, source, flags) :
         '''Downloads a file from the REMOTE REPLICA FILESYSTEM to a local
            directory.
            @param target: param containing a local path/filename

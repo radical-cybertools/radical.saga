@@ -306,7 +306,7 @@ class LogicalFile (Base, Attributes, Async) :
         ttype:          saga.task.type enum
         ret:            None / saga.Task
         '''
-        return self._adaptor.replicate (name, flags, ttype=ttype)
+        return self._adaptor.upload (name, tgt, flags, ttype=ttype)
     
   
     def download (self, name, src="", flags=None, ttype=None) :
@@ -317,7 +317,7 @@ class LogicalFile (Base, Attributes, Async) :
         ttype:          saga.task.type enum
         ret:            None / saga.Task
         '''
-        return self._adaptor.replicate (name, flags, ttype=ttype)
+        return self._adaptor.download (name, src, flags, ttype=ttype)
     
   
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
