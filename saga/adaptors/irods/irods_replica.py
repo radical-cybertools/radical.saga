@@ -438,6 +438,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
     # ----------------------------------------------------------------
     #
     #
+    @SYNC_CALL
     def make_dir (self, path, flags) :
 
         #complete_path = dir_obj._url.path
@@ -467,6 +468,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
     # ----------------------------------------------------------------
     #
     #
+    @SYNC_CALL
     def remove (self, path, flags) :
         '''This method is called upon logicaldir.remove() '''
 
@@ -692,6 +694,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
     # ----------------------------------------------------------------
     #
     #
+    @SYNC_CALL
     def list_locations (self) :
          '''This method is called upon logicaldir.list_locations()
          '''
@@ -706,6 +709,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
     # ----------------------------------------------------------------
     #
     #
+    @SYNC_CALL
     def remove_location(self, location):
         '''This method is called upon logicaldir.remove_locations()
         '''     
@@ -716,6 +720,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
     # ----------------------------------------------------------------
     #
     #
+    @SYNC_CALL
     def replicate (self, target, flags):
         '''This method is called upon logicaldir.replicate()
         '''        
@@ -744,6 +749,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
     #
     # TODO: This is COMPLETELY untested, as it is unsupported on the only iRODS
     # machine I have access to.
+    @SYNC_CALL
     def move_self (self, target, flags) :
         '''This method is called upon logicaldir.move() '''
 
@@ -775,6 +781,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
 
     ######################################################################
     ##
+    @SYNC_CALL
     def remove_self (self, flags) :
         '''This method is called upon logicalfile.remove() '''
 

@@ -68,8 +68,12 @@ def main():
         print "Creating iRODS file object"
         myfile = saga.replica.LogicalFile('irods://' + IRODS_DIRECTORY+TEMP_FILENAME)
         
-        print "Size of test file %s on iRODS in bytes:" % (IRODS_DIRECTORY + TEMP_FILENAME)
-        print myfile.get_size()
+        # TODO: Re-implement this test
+        # [11:49:05 AM] Andre M: To get the size, you will first need to dig out a location, open a filesystem.File on it, and then check the size...
+        # [11:50:18 AM] Ashley Z: and by location, that's a physical location, not a logical location, right?
+        # [11:50:34 AM] Andre M: correct!  size is a property of a physical file...
+        # print "Size of test file %s on iRODS in bytes:" % (IRODS_DIRECTORY + TEMP_FILENAME)
+        # print myfile.get_size()
 
         print "Creating",NUM_REPLICAS,"replicas for",IRODS_DIRECTORY+TEMP_FILENAME
         for i in range(NUM_REPLICAS):
