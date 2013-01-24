@@ -43,9 +43,9 @@ class LogicalDirectory (CPIBase, Async) :
     def change_dir_async        (self, url, ttype)                   : pass
 
     @sync
-    def list                    (self, npat, ttype)                  : pass
+    def list                    (self, npat, flags, ttype)           : pass
     @async
-    def list_async              (self, npat, ttype)                  : pass
+    def list_async              (self, npat, flags, ttype)           : pass
 
     @sync
     def find                    (self, npat, flags, ttype)           : pass

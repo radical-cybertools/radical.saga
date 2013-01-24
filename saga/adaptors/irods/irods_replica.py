@@ -497,7 +497,8 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
     # ----------------------------------------------------------------
     #
     #
-    def list (self) :
+    @SYNC_CALL
+    def list (self, npat, flags) :
        #TODO: Make this use the irods_get_directory_listing
 
         complete_path = self._url.path
