@@ -65,6 +65,83 @@ _ADAPTOR_INFO          = {
     ]
 }
 
+class irods_logical_entry():
+    '''class to hold info on an iRODS logical file or directory
+    '''
+    def __init__(self):
+        self.name = "undefined"
+        self.locations = []
+        self.size = 1234567899
+        self.owner = "undefined"
+        self.date = "1/1/1111"
+        self.is_directory = False
+
+    def __str__(self):
+        return str(self.name + " " +  \
+                   "/".join(self.locations) + " " + \
+                   str(self.size) + " " + \
+                   self.owner + " " + \
+                   self.date + " " + \
+                   str(self.is_directory))
+
+
+class irods_resource_entry (object):
+    '''class to hold info on an iRODS resource '''
+
+    # Resources (not groups) as retreived from ilsresc -l look like the following:
+    #
+    # resource name:     BNL_ATLAS_2_FTP
+    # resc id:           16214
+    # zone:              osg
+    # type:              MSS universal driver
+    # class:             compound
+    # location:          gw014k1.fnal.gov
+    # vault:             /data/cache/BNL_ATLAS_2_FTPplaceholder
+    # free space:
+    # status:            up
+    # info:
+    # comment:
+    # create time:       01343055975: 2012-07-23.09:06:15
+    # modify time:       01347480717: 2012-09-12.14:11:57
+    # ----
+
+    # Resource groups look like this (shortened):
+    #
+    # resource group:    osgGridFtpGroup
+    # Includes resource: NWICG_NotreDame_FTP
+    # Includes resource: UCSDT2-B_FTP
+    # Includes resource: UFlorida-SSERCA_FTP
+    # Includes resource: cinvestav_FTP
+    # Includes resource: SPRACE_FTP
+    # Includes resource: NYSGRID_CORNELL_NYS1_FTP
+    # Includes resource: Nebraska_FTP
+    # -----
+
+    # ----------------------------------------------------------------
+    #
+    #
+    def __init__ (self):
+        # are we a resource group? 
+        self.is_resource_group = False
+
+        # individual resource-specific properties
+        self.name              = None
+        self.zone              = None
+        self.type              = None
+        self.resource_class    = None
+        self.location          = None
+        self.vault             = None
+        self.free_space        = None
+        self.status            = None
+        self.info              = None
+        self.comment           = None
+        self.create_time       = None
+        self.modify_time       = None
+
+        # resource group-specific properties
+        self.group_members     = []
+
+
 ###############################################################################
 # The adaptor class
 
@@ -104,20 +181,20 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     # ----------------------------------------------------------------
     #
     #
-    def irods_get_directory_listing (self, dir) :
-
+    def irods_get_directory_listing (obj, dir, wrapper) :
         '''function takes an iRODS logical directory as an argument,
            and returns a list of irods_logical_entry instances containing
            information on files/directories found in the directory argument
         '''
-    
+
         result = []
         try:
-            cw = CommandWrapper.initAsLocalWrapper(None)
-            cw.connect()
+            cw = wrapper
+            #cw = CommandWrapper.initAsLocalWrapper(None)
+            #cw.connect()
             
             # execute the ils -L command
-            cw_result = cw.run ("ils -L %s" % dir)
+            cw_result = cw.run_sync ("ils -L %s" % dir)
     
             # make sure we ran ok
             if cw_result.returncode != 0:
@@ -186,7 +263,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     # ----------------------------------------------------------------
     #
     #
-    def irods_get_resource_listing(self):
+    def irods_get_resource_listing():
         ''' Return a list of irods resources and resource groups with information
             stored in irods_resource_entry format
         '''
@@ -279,63 +356,6 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 #
 #
 #
-
-class irods_resource_entry (object):
-    '''class to hold info on an iRODS resource '''
-
-    # Resources (not groups) as retreived from ilsresc -l look like the following:
-    #
-    # resource name:     BNL_ATLAS_2_FTP
-    # resc id:           16214
-    # zone:              osg
-    # type:              MSS universal driver
-    # class:             compound
-    # location:          gw014k1.fnal.gov
-    # vault:             /data/cache/BNL_ATLAS_2_FTPplaceholder
-    # free space:
-    # status:            up
-    # info:
-    # comment:
-    # create time:       01343055975: 2012-07-23.09:06:15
-    # modify time:       01347480717: 2012-09-12.14:11:57
-    # ----
-
-    # Resource groups look like this (shortened):
-    #
-    # resource group:    osgGridFtpGroup
-    # Includes resource: NWICG_NotreDame_FTP
-    # Includes resource: UCSDT2-B_FTP
-    # Includes resource: UFlorida-SSERCA_FTP
-    # Includes resource: cinvestav_FTP
-    # Includes resource: SPRACE_FTP
-    # Includes resource: NYSGRID_CORNELL_NYS1_FTP
-    # Includes resource: Nebraska_FTP
-    # -----
-
-    # ----------------------------------------------------------------
-    #
-    #
-    def __init__ (self):
-        # are we a resource group? 
-        self.is_resource_group = False
-
-        # individual resource-specific properties
-        self.name              = None
-        self.zone              = None
-        self.type              = None
-        self.resource_class    = None
-        self.location          = None
-        self.vault             = None
-        self.free_space        = None
-        self.status            = None
-        self.info              = None
-        self.comment           = None
-        self.create_time       = None
-        self.modify_time       = None
-
-        # resource group-specific properties
-        self.group_members     = []
-
 
 
 ###############################################################################
@@ -439,7 +459,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
     #
     #
     @SYNC_CALL
-    def make_dir (self, path, flags) :
+    def mkdir (self, path, flags) :
 
         #complete_path = dir_obj._url.path
         complete_path = saga.Url(path).get_path()
@@ -702,7 +722,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
          path = self._url.get_path()
          self._logger.debug("Attempting to get a list of replica locations for %s" \
                             % path)
-         listing = irods_get_directory_listing(self, path)
+         listing = self._adaptor.irods_get_directory_listing(path, self._cw)
          return listing[0].locations
 
 
@@ -895,6 +915,8 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
                           the file from (not evaluated, yet)
         '''
 
+        target = name
+
         #TODO: Make sure that the target URL is a local/file:// URL
         # extract the path from the LogicalFile object, excluding
         # the filename
@@ -935,7 +957,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
 
         except Exception, ex:
             # couldn't download for unspecificed reason
-            raise saga.NoSuccess ("Couldn't download file.")
+            raise saga.NoSuccess ("Couldn't download file. %s" % ex)
 
         return
 

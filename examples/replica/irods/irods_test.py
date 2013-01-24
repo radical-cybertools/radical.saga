@@ -23,17 +23,21 @@ import logging
 import subprocess
 
 FILE_SIZE = 1 # in megs, approx
-NUM_REPLICAS = 5 # num replicas to create
+NUM_REPLICAS = 2 # num replicas to create
 TEMP_FILENAME = "test.txt" # filename to create and use for testing
 TEMP_DIR      = "/irods_test_dir/" #directory to create and use for testing
 IRODS_DIRECTORY = "/osg/home/azebro1/" #directory to store our iRODS files in, don't forget trailing and leading /
 IRODS_RESOURCE = "osgGridFtpGroup" #iRODS resource or resource group to upload files to
 
 def main():
+    # remove any intermediary files that may have been created on iRODS from an 
+    # earlier, failed run of this script
     try:
-        # remove any intermediary files that may have been created on iRODS from an 
-        # earlier, failed run of this script
         subprocess.check_call(["irm", IRODS_DIRECTORY+TEMP_FILENAME])
+    except:
+        pass
+    try:
+        subprocess.check_call(["rm", "/tmp/"+TEMP_FILENAME])
     except:
         pass
 
@@ -83,16 +87,16 @@ def main():
         for entry in myfile.list_locations():
             print entry
 
-        print "Downloading logical file %s to current/default directory" % \
-            (IRODS_DIRECTORY + TEMP_FILENAME) 
-        myfile.download()
+        #print "Downloading logical file %s to current/default directory" % \
+        #    (IRODS_DIRECTORY + TEMP_FILENAME) 
+        #myfile.download("."/)
 
         print "Downloading logical file %s to /tmp/" % \
             (IRODS_DIRECTORY + TEMP_FILENAME) 
         myfile.download("/tmp/")
 
-        print "Deleting downloaded file locally : %s" % (os.getcwd() + TEMP_FILENAME)
-        os.remove(os.getcwd() +"/" + TEMP_FILENAME)
+        #print "Deleting downloaded file locally : %s" % (os.getcwd() + TEMP_FILENAME)
+        #os.remove(os.getcwd() +"/" + TEMP_FILENAME)
 
         print "Deleting downloaded file locally : %s" % ("/tmp" + TEMP_FILENAME)
         os.remove("/tmp/" + TEMP_FILENAME)
