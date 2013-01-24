@@ -699,7 +699,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
          '''This method is called upon logicaldir.list_locations()
          '''
          #return a list of all replica locations for a file
-         path = logicalfile_obj._url.get_path()
+         path = self._url.get_path()
          self._logger.debug("Attempting to get a list of replica locations for %s" \
                             % path)
          listing = irods_get_directory_listing(self, path)
@@ -725,7 +725,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
         '''This method is called upon logicaldir.replicate()
         '''        
         #path to file we are replicating on iRODS
-        complete_path = logicalfile_obj._url.get_path()        
+        complete_path = self._url.get_path()        
 
         #TODO: Verify Correctness in the way the resource is grabbed
         query = saga.Url(target).get_query()
@@ -754,7 +754,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
         '''This method is called upon logicaldir.move() '''
 
         #path to file we are moving on iRODS
-        source_path = logicalfile_obj._url.get_path()
+        source_path = self._url.get_path()
         dest_path   = saga.Url(target).get_path()
 
         self._logger.debug("Attempting to move logical file %s to location %s" % (source_path, dest_path))
@@ -785,7 +785,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
     def remove_self (self, flags) :
         '''This method is called upon logicalfile.remove() '''
 
-        complete_path = logicalfile_obj._url.get_path()
+        complete_path = self._url.get_path()
         self._logger.debug("Attempting to remove file at: %s" % complete_path)
 
         try:
@@ -898,7 +898,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
         #TODO: Make sure that the target URL is a local/file:// URL
         # extract the path from the LogicalFile object, excluding
         # the filename
-        logical_path=logicalfile_obj._url.get_path()
+        logical_path=self._url.get_path()
 
         # fill in our local path if one was specified
         local_path = ""
