@@ -442,8 +442,8 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
     def make_dir (self, path, flags) :
 
         #complete_path = dir_obj._url.path
-        complete_path = bliss.saga.Url(path).get_path()
-        self.log_debug("Attempting to make directory at: %s" % complete_path)
+        complete_path = saga.Url(path).get_path()
+        self._logger.debug("Attempting to make directory at: %s" % complete_path)
 
         #attempt to run iRODS mkdir command
         try:
@@ -471,8 +471,8 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
     def remove (self, path, flags) :
         '''This method is called upon logicaldir.remove() '''
 
-        complete_path = bliss.saga.Url(path).get_path()
-        self.log_debug("Attempting to remove directory at: %s" % complete_path)
+        complete_path = saga.Url(path).get_path()
+        self._logger.debug("Attempting to remove directory at: %s" % complete_path)
 
         try:
             cw_result = self._cw.run("irm -r %s" % complete_path)
@@ -504,7 +504,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
         complete_path = self._url.path
         result = []
 
-        self.log_debug("Attempting to get directory listing for logical path %s" % complete_path)
+        self._logger.debug("Attempting to get directory listing for logical path %s" % complete_path)
 
         try:
             cw_result = self._cw.run("ils %s" % complete_path)
@@ -696,7 +696,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
          '''
          #return a list of all replica locations for a file
          path = logicalfile_obj._url.get_path()
-         self.log_debug("Attempting to get a list of replica locations for %s" \
+         self._logger.debug("Attempting to get a list of replica locations for %s" \
                             % path)
          listing = irods_get_directory_listing(self, path)
          return listing[0].locations
@@ -722,9 +722,9 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
         complete_path = logicalfile_obj._url.get_path()        
 
         #TODO: Verify Correctness in the way the resource is grabbed
-        query = bliss.saga.Url(target).get_query()
+        query = saga.Url(target).get_query()
         resource = query.split("=")[1]
-        self.log_debug("Attempting to replicate logical file %s to resource/resource group %s" % (complete_path, resource))
+        self._logger.debug("Attempting to replicate logical file %s to resource/resource group %s" % (complete_path, resource))
 
         try:
             cw_result = self._cw.run("irepl -R %s %s" % (resource, complete_path) )
@@ -748,9 +748,9 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
 
         #path to file we are moving on iRODS
         source_path = logicalfile_obj._url.get_path()
-        dest_path   = bliss.saga.Url(target).get_path()
+        dest_path   = saga.Url(target).get_path()
 
-        self.log_debug("Attempting to move logical file %s to location %s" % (source_path, dest_path))
+        self._logger.debug("Attempting to move logical file %s to location %s" % (source_path, dest_path))
 
         try:
             cw_result = self._cw.run("imv %s %s" % (source_path, dest_path) )
@@ -778,7 +778,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
         '''This method is called upon logicalfile.remove() '''
 
         complete_path = logicalfile_obj._url.get_path()
-        self.log_debug("Attempting to remove file at: %s" % complete_path)
+        self._logger.debug("Attempting to remove file at: %s" % complete_path)
 
         try:
             cw_result = self._cw.run("irm %s" % complete_path)
@@ -827,34 +827,34 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
         '''
 
         #TODO: Make sure that the source URL is a local/file:// URL
-        complete_path = bliss.saga.Url(source).get_path()
+        complete_path = saga.Url(source).get_path()
         
         # extract the path from the LogicalFile object, excluding
         # the filename
-        destination_path=logicalfile_obj._url.get_path()[0:string.rfind(
-                         logicalfile_obj._url.get_path(), "/")+1]
+        destination_path=self._url.get_path()[0:string.rfind(
+                         self._url.get_path(), "/")+1]
 
         try:
             #var to hold our command result, placed here to keep in scope
             cw_result = 0
             
             #mark that this is experimental/may not be part of official API
-            self.log_debug("Beginning EXPERIMENTAL upload operation " +\
+            self._logger.debug("Beginning EXPERIMENTAL upload operation " +\
                            "will register file in logical dir: %s" %
                            destination_path)
 
             # was no resource selected?
             if target==None:
-                self.log_debug("Attempting to upload to default resource")
+                self._logger.debug("Attempting to upload to default resource")
                 cw_result = self._cw.run("iput %s %s" %
                                          (complete_path, destination_path))
 
             # resource was selected, have to parse it and supply to iput -R
             else:
                 #TODO: Verify correctness
-                query = bliss.saga.Url(target).get_query()
+                query = saga.Url(target).get_query()
                 resource = query.split("=")[1]
-                self.log_debug("Attempting to upload to resource %s" % resource)
+                self._logger.debug("Attempting to upload to resource %s" % resource)
                 cw_result = self._cw.run("iput -R %s %s %s" %
                                          (resource, complete_path, destination_path))
 
@@ -866,7 +866,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
 
         except Exception, ex:
             # couldn't upload for unspecificed reason
-            raise saga.NoSuccess ("Couldn't upload file.")
+            raise saga.NoSuccess._log (self._logger, "Couldn't upload file: %s" % ex)
 
         return
 
@@ -895,27 +895,27 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
         # fill in our local path if one was specified
         local_path = ""
         if target:
-            local_path = bliss.saga.Url(target).get_path()
+            local_path = saga.Url(target).get_path()
         
         try:
             #var to hold our command result, placed here to keep in scope
             cw_result = 0
             
             #mark that this is experimental/may not be part of official API
-            self.log_debug("Beginning EXPERIMENTAL download operation " +\
+            self._logger.debug("Beginning EXPERIMENTAL download operation " +\
                            "will download logical file: %s, specified local directory is %s" %
                            (logical_path, target) )
 
             # was no local target selected?
             if target==None:
-                self.log_debug("Attempting to download file %s with iget to current local directory" % \
+                self._logger.debug("Attempting to download file %s with iget to current local directory" % \
                                    logical_path)
                 cw_result = self._cw.run("iget %s" % \
                                          (logical_path))
 
             # local target selected
             else:
-                self.log_debug("Attempting to download file %s with iget to %s" % (logical_path, local_path))
+                self._logger.debug("Attempting to download file %s with iget to %s" % (logical_path, local_path))
                 cw_result = self._cw.run("iget %s %s " %
                                          (logical_path, local_path))
 
