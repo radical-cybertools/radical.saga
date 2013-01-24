@@ -19,6 +19,8 @@ __license__   = "MIT"
 import sys, time
 import saga
 import os
+import logging
+import subprocess
 
 FILE_SIZE = 1 # in megs, approx
 NUM_REPLICAS = 5 # num replicas to create
@@ -28,6 +30,13 @@ IRODS_DIRECTORY = "/osg/home/azebro1/" #directory to store our iRODS files in, d
 IRODS_RESOURCE = "osgGridFtpGroup" #iRODS resource or resource group to upload files to
 
 def main():
+    try:
+        # remove any intermediary files that may have been created on iRODS from an 
+        # earlier, failed run of this script
+        subprocess.check_call(["irm", IRODS_DIRECTORY+TEMP_FILENAME])
+    except:
+        pass
+
     try:
         myfile = saga.replica.LogicalFile('irods://'+IRODS_DIRECTORY+TEMP_FILENAME)
         #myfile.add_location("irods:////data/cache/AGLT2_CE_2_FTPplaceholder/whatever?resource=AGLT2_CE_2_FTP")
@@ -98,7 +107,7 @@ def main():
         myfile.remove()
 
     except Exception, ex:
-        print "An error occured while executing the test script! %s" % (str(ex))
+        logging.exception("An error occured while executing the test script! %s" % (str(ex)))
         sys.exit(-1)
 
     print "iRODS test script finished execution"

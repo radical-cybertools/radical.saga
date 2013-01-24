@@ -79,14 +79,10 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     #
     #
     def __init__ (self) :
-
         saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
 
     def sanity_check (self) :
-
-        return
-
         cw = CommandLineWrapper.init_as_subprocess_wrapper()
         cw.open()
 
@@ -200,7 +196,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
             cw.connect()
     
             # execute the ilsresc -l command
-            cw_result = cw.run("ilsresc -l")
+            cw_result = cw.run_sync("ilsresc -l")
     
             # make sure we ran ok
             if cw_result.returncode != 0:
@@ -360,6 +356,9 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
         self.owner        = None
         self.date         = None
 
+        self._cw = CommandLineWrapper.init_as_subprocess_wrapper()
+        self._cw.open()
+
 
     # ----------------------------------------------------------------
     #
@@ -447,7 +446,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
 
         #attempt to run iRODS mkdir command
         try:
-            cw_result = self._cw.run("imkdir %s" % complete_path)
+            cw_result = self._cw.run_sync("imkdir %s" % complete_path)
 
             if cw_result.returncode != 0:
                 raise saga.NoSuccess ("Could not create directory %s, errorcode %s: %s"\
@@ -475,7 +474,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
         self._logger.debug("Attempting to remove directory at: %s" % complete_path)
 
         try:
-            cw_result = self._cw.run("irm -r %s" % complete_path)
+            cw_result = self._cw.run_sync("irm -r %s" % complete_path)
 
             if cw_result.returncode != 0:
                 raise saga.NoSuccess ("Could not remove directory %s, errorcode %s: %s"\
@@ -507,7 +506,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
         self._logger.debug("Attempting to get directory listing for logical path %s" % complete_path)
 
         try:
-            cw_result = self._cw.run("ils %s" % complete_path)
+            cw_result = self._cw.run_sync("ils %s" % complete_path)
             
             if cw_result.returncode != 0:
                 raise Exception("Could not open directory")
@@ -551,7 +550,8 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
         self.is_directory = False
 
         # TODO: "stat" the file
-
+        self._cw = CommandLineWrapper.init_as_subprocess_wrapper()
+        self._cw.open()
 
 
     # ----------------------------------------------------------------
@@ -727,7 +727,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
         self._logger.debug("Attempting to replicate logical file %s to resource/resource group %s" % (complete_path, resource))
 
         try:
-            cw_result = self._cw.run("irepl -R %s %s" % (resource, complete_path) )
+            cw_result = self._cw.run_sync("irepl -R %s %s" % (resource, complete_path) )
 
             if cw_result.returncode != 0:
                 raise Exception("Could not replicate logical file %s to resource/resource group %s, errorcode %s: %s"\
@@ -753,7 +753,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
         self._logger.debug("Attempting to move logical file %s to location %s" % (source_path, dest_path))
 
         try:
-            cw_result = self._cw.run("imv %s %s" % (source_path, dest_path) )
+            cw_result = self._cw.run_sync("imv %s %s" % (source_path, dest_path) )
 
             if cw_result.returncode != 0:
                 raise saga.NoSuccess ("Could not move logical file %s to location %s, errorcode %s: %s"\
@@ -781,7 +781,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
         self._logger.debug("Attempting to remove file at: %s" % complete_path)
 
         try:
-            cw_result = self._cw.run("irm %s" % complete_path)
+            cw_result = self._cw.run_sync("irm %s" % complete_path)
 
             if cw_result.returncode != 0:
                 raise saga.NoSuccess ("Could not remove file %s, errorcode %s: %s"\
@@ -846,7 +846,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
             # was no resource selected?
             if target==None:
                 self._logger.debug("Attempting to upload to default resource")
-                cw_result = self._cw.run("iput %s %s" %
+                cw_result = self._cw.run_sync("iput %s %s" %
                                          (complete_path, destination_path))
 
             # resource was selected, have to parse it and supply to iput -R
@@ -855,7 +855,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
                 query = saga.Url(target).get_query()
                 resource = query.split("=")[1]
                 self._logger.debug("Attempting to upload to resource %s" % resource)
-                cw_result = self._cw.run("iput -R %s %s %s" %
+                cw_result = self._cw.run_sync("iput -R %s %s %s" %
                                          (resource, complete_path, destination_path))
 
             # check our result
@@ -910,13 +910,13 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
             if target==None:
                 self._logger.debug("Attempting to download file %s with iget to current local directory" % \
                                    logical_path)
-                cw_result = self._cw.run("iget %s" % \
+                cw_result = self._cw.run_sync("iget %s" % \
                                          (logical_path))
 
             # local target selected
             else:
                 self._logger.debug("Attempting to download file %s with iget to %s" % (logical_path, local_path))
-                cw_result = self._cw.run("iget %s %s " %
+                cw_result = self._cw.run_sync("iget %s %s " %
                                          (logical_path, local_path))
 
             # check our result
