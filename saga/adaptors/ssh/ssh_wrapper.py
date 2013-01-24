@@ -1,4 +1,10 @@
-#!/bin/sh
+
+# --------------------------------------------------------------------
+# server side job management script
+_PROMPT     = "CMD"
+_PROMPT_OK  = "OK"
+_PROMPT_ERR = "ERROR"
+_MANAGER    = '''#!/bin/sh
 
 # --------------------------------------------------------------------
 # ERROR and RETVAL are used for return state from function calls
@@ -34,10 +40,8 @@ verify_pid () {
 }
 # --------------------------------------------------------------------
 cmd_run () {
-  echo " run 1" >> /tmp/t
   cmd_run_process $args &
   RETVAL=$!
-  echo " run 2" >> /tmp/t
 }
 
 cmd_run_process () {
@@ -200,13 +204,9 @@ cmd_purge () {
 # --------------------------------------------------------------------
 listen() {
   
-  t=/tmp/t
-
   echo "CMD"
 
   while read LINE; do
-
-    echo "ECHO $LINE" >> /tmp/t
     ERROR="OK"
     RETVAL=""
 
@@ -214,8 +214,7 @@ listen() {
     get_args $LINE ; args=$RETVAL
 
     if ! test $ERROR = "OK"; then
-      echo "ERROR"     ; echo $ERROR
-      echo "ERROR" >>$t; echo $ERROR >>$t
+      echo "ERROR"; echo $ERROR
       continue
     fi
 
@@ -230,19 +229,15 @@ listen() {
       STDERR  ) cmd_stderr  $args ;; 
       LIST    ) cmd_list    $args ;; 
       PURGE   ) cmd_purge   $args ;; 
-      NOOP    )                   ;;
       QUIT    ) echo "OK"; exit 0 ;;
       *       ) ERROR="$cmd unknown ($LINE)" ;; 
     esac
 
     if ! test "$ERROR" = "OK"; then
-      echo "ERROR"     ; echo $ERROR
-      echo "ERROR" >>$t; echo $ERROR >>$t
+      echo "ERROR"; echo $ERROR
     else
-      echo "OK"        ; echo "$RETVAL"
-      echo "OK"    >>$t; echo "$RETVAL" >>$t
+      echo "OK";    echo "$RETVAL"
     fi
-    echo "CMD" >>$t
     echo "CMD"
   done
 }
@@ -250,4 +245,5 @@ listen() {
 listen
 # --------------------------------------------------------------------
 
+'''
 

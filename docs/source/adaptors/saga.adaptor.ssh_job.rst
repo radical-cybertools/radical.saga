@@ -1,7 +1,7 @@
 
-*********************
-saga.adaptor.localjob
-*********************
+********************
+saga.adaptor.ssh_job
+********************
 
  
 A more elaborate description....
@@ -16,8 +16,8 @@ v0.1
 Supported Schemas
 =================
 
-  - **fork** : desc
-  - **local** : same as fork
+  - **gsissh** : use gsissh to run a remote job
+  - **ssh** : use ssh to run a remote job
 
 
 
@@ -26,7 +26,7 @@ Configuration Options
 
 ``enabled``
 
-enable / disable saga.adaptor.localjob adaptor
+enable / disable saga.adaptor.ssh_job adaptor
 
   - **type** : <type 'bool'>
   - **default** : True
@@ -40,6 +40,7 @@ Supported Capabilities
 ``Supported Monitorable Metrics``
 
   - State
+  - StateDetail
 
 ``Supported Job Attributes``
 
@@ -51,20 +52,18 @@ Supported Capabilities
 
 ``Supported Context Types``
 
-  - *None*: this adaptor works in the same security
-                                      context as the application process itself.
+  - *x509*: X509 proxy for gsissh
+  - *userpass*: username/password pair for simple ssh
+  - *ssh*: public/private keypair
 
 ``Supported Job Description Attributes``
 
   - Executable
   - Arguments
   - Environment
-  - WorkingDirectory
   - Input
   - Output
   - Error
-  - SPMDVariation
-  - NumberOfProcesses
 
 
 
@@ -78,14 +77,14 @@ Supported API Classes
 saga.job.Service
 """"""""""""""""
 
-.. autoclass:: saga.adaptors.local.localjob.LocalJobService
+.. autoclass:: saga.adaptors.ssh.ssh_job.SSHJobService
    :members:
 
 
 saga.job.Job
 """"""""""""
 
-.. autoclass:: saga.adaptors.local.localjob.LocalJob
+.. autoclass:: saga.adaptors.ssh.ssh_job.SSHJob
    :members:
 
 

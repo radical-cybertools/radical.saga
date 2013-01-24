@@ -49,7 +49,12 @@ Supported Capabilities
   - Started
   - Finished
 
-``desc_attributes``
+``Supported Context Types``
+
+  - *None*: this adaptor works in the same security
+                                      context as the application process itself.
+
+``Supported Job Description Attributes``
 
   - Executable
   - Arguments
@@ -60,11 +65,6 @@ Supported Capabilities
   - Error
   - SPMDVariation
   - NumberOfProcesses
-
-``Supported Context Types``
-
-  - *None*: this adaptor works in the same security
-                                      context as the application process itself.
 
 
 

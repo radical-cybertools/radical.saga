@@ -240,12 +240,12 @@ class LocalJob (saga.adaptors.cpi.job.Job) :
         saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
     @SYNC_CALL
-    def init_instance (self, job_info):
+    def init_instance (self, adaptor_state):
         """ Implements saga.adaptors.cpi.job.Job.init_instance()
         """
-        self._session         = job_info['session']
-        self._jd              = job_info['job_description']
-        self._parent_service  = job_info['job_service'] 
+        self._session         = adaptor_state['session']
+        self._jd              = adaptor_state['job_description']
+        self._parent_service  = adaptor_state['job_service'] 
 
         # the _parent_service is responsible for job bulk operations -- which
         # for jobs only work for run()
