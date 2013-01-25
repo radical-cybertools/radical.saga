@@ -18,6 +18,12 @@ andre:
 	    python test/test_engine.py  ; \
 	    python examples/jobs/localjobcontainer.py
 
+mark:
+	rm -rf ~/.virtualenv/saga-python ;\
+    virtualenv-2.6 --no-site-packages ~/.virtualenv/saga-python ; \
+	source     ~/.virtualenv/saga-python/bin/activate ; \
+	easy_install . ; \
+
 pages: gh-pages
 
 gh-pages:
@@ -34,4 +40,3 @@ gh-pages:
 	git rebase devel
 	git co devel
 	git push --all
-
