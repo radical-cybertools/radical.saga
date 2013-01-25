@@ -47,7 +47,7 @@ class pty_process (object) :
     #
     # read a line from a given file descriptor.  The intermittent read result is
     # cached, and lines are actually extracted from that read cache as needed.
-    def readline (self) :
+    def readline (self, timeout=0) :
 
         if not self.child :
             return None
@@ -55,16 +55,25 @@ class pty_process (object) :
         if self.child.poll () is not None :
             return None
 
+        start = time.time ()
+
         # check if we still have a full line in cache
         while not '\n' in self.cache :
         
             # if not, do an idle wait 'til the next data chunk arrives
             rlist, wlist, xlist = select.select([self.master_out], [], [], 0.01)
 
+            if timeout > 0 :
+                now = time.time ()
+                if (now-start) > timeout :
+                    return self.cache
+
             # got some data - read them into the cache
             for f in rlist:
                 buf = os.read (f, self.chunk)
                 self.cache += buf
+
+
 
         # at this point, we are sure to have a newline in the cache, and thus can
         # extract a line from the beginning of the cache
@@ -78,29 +87,52 @@ class pty_process (object) :
 
     # ----------------------------------------------------------------
     #
-    def findline (self, pattern, timeout=0) :
+    def findline (self, patterns, timeout=0) :
         """
         This methods reads lines from the child process until a line matching
-        the given pattern is found.  If that is found, all read lines (minus the
-        matching one) are returned as a list of lines, the matching line itself
-        is guaranteed to be the last line of the list.  This call never returns
-        an empty list (the matching line is at least a linebreak).
+        any of the given patterns is found.  If that is found, all read lines
+        (minus the matching one) are returned as a list of lines, the matching
+        line itself is guaranteed to be the last line of the list.  This call
+        never returns an empty list (the matching line is at least a linebreak).
         """
-        start = time.time ()
-        patt  = re.compile (pattern)
-        line  = self.readline ()
-        ret   = [line]
 
-        while not patt.search (ret[-1]) :
-            line = self.readline ()
-            ret.append (line)
+        start = time.time ()            # startup timestamp to compare timeout against
+        ret   = []                      # array of read lines
+        patts = []                      # compiled patterns
+        line  = self.readline (timeout) # first line to check
 
+        # pre-compile the given pattern, to speed up matching
+        for pattern in patterns :
+            patts.append (re.compile (pattern))
+
+        # we wait forever -- there are two ways out though: a line matches
+        # a pattern, or timeout passes
+        while True :
+
+            print "> %s" %line
+
+            # skip non-lines
+            if  None == line :
+                continue
+
+            # check current line for any matching pattern
+            for n in range (0, len(patts)) :
+                if patts[n].search (line) :
+                    # a pattern matched the current line: return a tuple of
+                    # pattern index, matching line, and previous lines.
+                    return (n, line, ret)
+
+            # if a timeout is given, and actually passed, return a non-match,
+            # and the set of lines found so far
             if timeout > 0 :
                 now = time.time ()
                 if (now-start) > timeout :
-                    return None
+                    return (None, None, ret)
 
-        return ret
+            # append the current (non-matching) line to ret, and get a new line to test
+            ret.append (line)
+            line = self.readline (timeout)
+
 
 
     # ----------------------------------------------------------------
@@ -110,15 +142,16 @@ class pty_process (object) :
         if self.child.poll () is not None :
             return
 
+
         done = False
           
         while not done :
 
-            rlist, wlist, xlist = select.select([], [self.master_in], [], 1)
-
-            # got some data - read them into the cache
-            for f in wlist:
-                buf = os.write (f, "%s\n" % line)
+            ret  = os.write (self.master_in, "%s\r\n" % line)
+            print " > (%3d == %3d) %s" % (ret, len(line)+2, line)
+            if ret < len(line)+2 :
+                line = line[ret:]
+            else :
                 done = True
 
 

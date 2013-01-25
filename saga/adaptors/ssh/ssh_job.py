@@ -122,20 +122,55 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self._rm      = rm_url
         self._session = session
 
-      # self.pty = ssh_pty.pty_process ("python ssh_wrapper.py")
-        self.pty = ssh_pty.pty_process ("/usr/bin/ssh localhost /bin/sh /home/merzky/saga/saga-python/saga/adaptors/ssh/wrapper.sh")
+      # self.pty = ssh_pty.pty_process ("/usr/bin/ssh -t localhost /home/merzky/saga/saga-python/saga/adaptors/ssh/wrapper.sh")
+        self.pty = ssh_pty.pty_process ("/usr/bin/ssh -ttt localhost")
         self.pty.run ()
 
-        self.pty.findline ('^CMD\s*$')
+        print 1
+        find_prompt = True
+
+        (n, match, lines) = self.pty.findline (['password\s*:\s*$', 
+                                                'want to continue connecting', 
+                                                'Last login'])
+        print 2
+        while find_prompt :
+
+            if n == 0 :
+                self.pty.writeline ('secret')
+                (n, match, lines) = self.pty.findline (['password\s*:\s*$', 
+                                                        'want to continue connecting', 
+                                                        'Last login'])
+            elif n == 1 :
+                self.pty.writeline ('yes')
+                (n, match, lines) = self.pty.findline (['password\s*:\s*$', 
+                                                        'want to continue connecting', 
+                                                        'Last login'])
+            elif n == 2 :
+                self.pty.writeline ("export PS1='prompt>\n'")
+                (n, match, lines) = self.pty.findline (['^prompt>'])
+                find_prompt = False
+        
+        print " ---------------------- "
+        self.pty.writeline ('cat > /tmp/script <<EOT')
+        time.sleep (0.1)
+        if True :
+            import ssh_wrapper
+            lines = ssh_wrapper._MANAGER.split ('\n')
+            for line in lines :
+                print " ~~~~~~~~~~~~"
+                self.pty.writeline (line)
+            self.pty.writeline ("EOT")
+            print " ---------------------- "
+            self.pty.writeline ("/bin/date >> /tmp/script")
+            self.pty.writeline ("/bin/sleep 12345")
+            print " ---------------------- "
+
 
         i = 0
         while self.pty.poll () is None:
             i += 1
-        #   self.pty.writeline ("NOOP")
-            self.pty.writeline ("RUN /bin/echo %d" % i)
-            print " : %d" % i
-        #   time.sleep (0.01)
-            self.pty.findline ('^CMD\s*$')
+          # self.pty.writeline ("RUN /bin/sleep %d" % i)
+            (n, match, lines) = self.pty.findline (['.'])
         
         time.sleep (1)
 

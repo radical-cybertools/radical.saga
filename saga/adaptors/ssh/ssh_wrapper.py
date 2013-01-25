@@ -40,8 +40,10 @@ verify_pid () {
 }
 # --------------------------------------------------------------------
 cmd_run () {
+  echo " run 1" >> /tmp/t
   cmd_run_process $args &
   RETVAL=$!
+  echo " run 2" >> /tmp/t
 }
 
 cmd_run_process () {
@@ -204,9 +206,13 @@ cmd_purge () {
 # --------------------------------------------------------------------
 listen() {
   
+  t=/tmp/t
+
   echo "CMD"
 
   while read LINE; do
+
+    echo "ECHO $LINE" >> /tmp/t
     ERROR="OK"
     RETVAL=""
 
@@ -214,7 +220,8 @@ listen() {
     get_args $LINE ; args=$RETVAL
 
     if ! test $ERROR = "OK"; then
-      echo "ERROR"; echo $ERROR
+      echo "ERROR"     ; echo $ERROR
+      echo "ERROR" >>$t; echo $ERROR >>$t
       continue
     fi
 
@@ -229,21 +236,26 @@ listen() {
       STDERR  ) cmd_stderr  $args ;; 
       LIST    ) cmd_list    $args ;; 
       PURGE   ) cmd_purge   $args ;; 
+      NOOP    )                   ;;
       QUIT    ) echo "OK"; exit 0 ;;
       *       ) ERROR="$cmd unknown ($LINE)" ;; 
     esac
 
     if ! test "$ERROR" = "OK"; then
-      echo "ERROR"; echo $ERROR
+      echo "ERROR"     ; echo $ERROR
+      echo "ERROR" >>$t; echo $ERROR >>$t
     else
-      echo "OK";    echo "$RETVAL"
+      echo "OK"        ; echo "$RETVAL"
+      echo "OK"    >>$t; echo "$RETVAL" >>$t
     fi
+    echo "CMD" >>$t
     echo "CMD"
   done
 }
 # --------------------------------------------------------------------
 listen
 # --------------------------------------------------------------------
+
 
 '''
 
