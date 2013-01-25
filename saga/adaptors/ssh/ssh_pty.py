@@ -147,9 +147,8 @@ class pty_process (object) :
           
         while not done :
 
-            ret  = os.write (self.master_in, "%s\r\n" % line)
-            print " > (%3d == %3d) %s" % (ret, len(line)+2, line)
-            if ret < len(line)+2 :
+            ret = os.write (self.master_in, "%s\n" % line)
+            if ret < len(line)+1 :
                 line = line[ret:]
             else :
                 done = True

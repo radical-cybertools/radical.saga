@@ -151,26 +151,14 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
                 find_prompt = False
         
         print " ---------------------- "
-        self.pty.writeline ('cat > /tmp/script <<EOT')
-        time.sleep (0.1)
-        if True :
-            import ssh_wrapper
-            lines = ssh_wrapper._MANAGER.split ('\n')
-            for line in lines :
-                print " ~~~~~~~~~~~~"
-                self.pty.writeline (line)
-            self.pty.writeline ("EOT")
-            print " ---------------------- "
-            self.pty.writeline ("/bin/date >> /tmp/script")
-            self.pty.writeline ("/bin/sleep 12345")
-            print " ---------------------- "
-
+        self.pty.writeline ('wget -q https://raw.github.com/saga-project/saga-python/feature/sshjob/saga/adaptors/ssh/wrapper.sh -O /tmp/script')
+        self.pty.writeline ('/bin/sh /tmp/script')
 
         i = 0
         while self.pty.poll () is None:
             i += 1
-          # self.pty.writeline ("RUN /bin/sleep %d" % i)
-            (n, match, lines) = self.pty.findline (['.'])
+            (n, match, lines) = self.pty.findline (['CMD'])
+            self.pty.writeline ("RUN /bin/sleep %d" % i)
         
         time.sleep (1)
 

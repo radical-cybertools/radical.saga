@@ -213,7 +213,7 @@ listen() {
     get_cmd  $LINE ; cmd=$RETVAL
     get_args $LINE ; args=$RETVAL
 
-    if ! test $ERROR = "OK"; then
+    if ! test "$ERROR" = "OK"; then
       echo "ERROR"     ; echo $ERROR
       echo "ERROR" >>$t; echo $ERROR >>$t
       continue
