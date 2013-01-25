@@ -1,7 +1,9 @@
 
 """ SSH job adaptor implementation """
 
-from   saga.utils.which import which
+from   saga.utils.which       import which
+
+from   saga.utils.pty_process import pty_process
 
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
@@ -9,7 +11,6 @@ import saga.adaptors.cpi.job
 import ssh_pty
 import time
 
-from   ssh_wrapper import *
 
 SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
@@ -127,57 +128,49 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self._rm      = rm_url
         self._session = session
 
-      # self.pty = ssh_pty.pty_process ("/usr/bin/ssh -t localhost /home/merzky/saga/saga-python/saga/adaptors/ssh/wrapper.sh")
-        self.pty = ssh_pty.pty_process ("/usr/bin/ssh -ttt localhost")
-        self.pty.run ()
+        self.pty = pty_process ("/usr/bin/ssh -ttt localhost")
 
-        print 1
         find_prompt = True
 
         (n, match, lines) = self.pty.findline (['password\s*:\s*$', 
                                                 'want to continue connecting', 
                                                 'Last login'])
-        print 2
         while find_prompt :
 
             if n == 0 :
-                self.pty.writeline ('secret')
+                self.pty.write ("secret\n")
                 (n, match, lines) = self.pty.findline (['password\s*:\s*$', 
                                                         'want to continue connecting', 
                                                         'Last login'])
             elif n == 1 :
-                self.pty.writeline ('yes')
+                self.pty.write ("yes\n")
                 (n, match, lines) = self.pty.findline (['password\s*:\s*$', 
                                                         'want to continue connecting', 
                                                         'Last login'])
             elif n == 2 :
-                self.pty.writeline ("export PS1='prompt>\n'")
-                (n, match, lines) = self.pty.findline (['^prompt>'])
+                self.pty.write ("export PS1='prompt>'\n")
+                (n, match) = self.pty.findstring (['^prompt>$'], 10.0)
                 find_prompt = False
         
-        print " ---------------------- "
-        self.pty.writeline ('wget -q %s -O - > $HOME/.saga/adaptors/ssh_job/wrapper.sh' % _WRAPPER_SH)
-        self.pty.writeline ('/bin/sh           $HOME/.saga/adaptors/ssh_job/wrapper.sh')
+        self.pty.write ("wget -q %s -O - > $HOME/.saga/adaptors/ssh_job/wrapper.sh\n" % _WRAPPER_SH)
+        self.pty.write ("/bin/sh           $HOME/.saga/adaptors/ssh_job/wrapper.sh\n")
+
+        self._run_job ('true')
+
+
+    def _run_job (self, command) :
+        """ runs a job on the wrapper via pty, and returns the job id """
 
         i = 0
-        while self.pty.poll () is None:
+        while self.pty.alive () :
             i += 1
             (n, match, lines) = self.pty.findline (['CMD'])
-            self.pty.writeline ("RUN /bin/sleep %d" % i)
+            print lines
+            self.pty.write ("RUN /bin/sleep %d\n" % i)
         
         time.sleep (1)
 
         return self._api
-
-
-    def _register_job(self, job_obj):
-        """ Register job and job id with this service instance.  
-
-            This is a convenience method and not part of the CPI.  A job can be
-            registered repeatedly, in particular for delayed assignment of job
-            IDs.
-        """
-        self._jobs[job_obj] = job_obj._id
 
 
     @SYNC_CALL

@@ -600,4 +600,18 @@ We advice to use the log levels as indicated below:
    +---------------------+------------------------------------+
 
 
+.. _adaptor_process:
+
+External Processes
+------------------
+
+For many adaptor implementations, it is beneficial to interface to external
+processes.  In particular, all adaptors performing remote interactions over ssh
+or gsissh secured connections will likely need to interact with the remote user
+shell.  The :class:`saga.utils.pty_process` class is designed to simplify those
+interactions, and at the same time be more performant than, for example,
+pexpect.
+
+
+.. autoclass:: saga.utils.pty_process
 

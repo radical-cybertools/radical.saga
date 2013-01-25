@@ -597,6 +597,189 @@ adaptor debugging (lots of output).</td>
 </table>
 </div></blockquote>
 </div>
+<div class="section" id="external-processes">
+<span id="adaptor-process"></span><h2>1.10. External Processes<a class="headerlink" href="#external-processes" title="Permalink to this headline">¶</a></h2>
+<p>For many adaptor implementations, it is beneficial to interface to external
+processes.  In particular, all adaptors performing remote interactions over ssh
+or gsissh secured connections will likely need to interact with the remote user
+shell.  The <a class="reference internal" href="#saga.utils.pty_process" title="saga.utils.pty_process"><tt class="xref py py-class docutils literal"><span class="pre">saga.utils.pty_process</span></tt></a> class is designed to simplify those
+interactions, and at the same time be more performant than, for example,
+pexpect.</p>
+<dl class="class">
+<dt id="saga.utils.pty_process">
+<em class="property">class </em><tt class="descclassname">saga.utils.</tt><tt class="descname">pty_process</tt><big>(</big><em>command</em><big>)</big><a class="headerlink" href="#saga.utils.pty_process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<blockquote>
+<div><p>This method spawns a process, providing that child with a pty.  It will then
+maintain stdin, stdout and stderr channels to the child.  All write*
+operations operate on the stdin, all read* operations operate on the stdout
+stream.  Data from the stderr stream are at this point not exposed.</p>
+<dl class="docutils">
+<dt>FIXME: never reading from stderr might fill the stderr buffer, effectively</dt>
+<dd>blocking the child process.  Reads should attempt to clean out the
+stderr stream (into an err cache?), or the class needs to make sure
+that stderr is discarded.</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python"><pre>pty = ssh_pty.pty_process ("/usr/bin/ssh -ttt localhost")
+pty.run ()
+
+(n, match) = pty.findstring (['password\s*:\s*$', 
+                                   'want to continue connecting.*\(yes/no\)\s*$', 
+                                   '[\$#&gt;]\s*$'])
+
+while True :
+
+    if n == 0 :
+        # found password prompt
+        pty.write ("secret</pre>
+</div>
+</div></blockquote>
+<dl class="docutils">
+<dt>&#8221;)</dt>
+<dd><blockquote class="first">
+<div><dl class="docutils">
+<dt>(n, match) = pty.findstring ([&#8216;passwords*:s*$&#8217;, </dt>
+<dd>&#8216;want to continue connecting.*(yes/no)s*$&#8217;, 
+&#8216;[$#&gt;]s*$&#8217;])</dd>
+</dl>
+</div></blockquote>
+<dl class="last docutils">
+<dt>elif n == 1 :</dt>
+<dd># found request to accept host key
+pty.write (&#8220;yes</dd>
+</dl>
+</dd>
+<dt>&#8221;)</dt>
+<dd><blockquote class="first">
+<div><blockquote>
+<div><dl class="docutils">
+<dt>(n, match) = pty.findstring ([&#8216;passwords*:s*$&#8217;, </dt>
+<dd>&#8216;want to continue connecting.*(yes/no)s*$&#8217;, 
+&#8216;[$#&gt;]s*$&#8217;])</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>elif n == 2 :</dt>
+<dd># found some prompt
+break</dd>
+</dl>
+</div></blockquote>
+<p>i = 0
+while pty.alive () is None:</p>
+<blockquote class="last">
+<div>i += 1
+# send sleeps as quickly as possible, forever...
+(n, match) = pty.findstring ([&#8216;[$#&gt;]s*$&#8217;])
+pty.write (&#8220;/bin/sleep %d</div></blockquote>
+</dd>
+</dl>
+<p>&#8221; % i)</p>
+<dl class="method">
+<dt id="saga.utils.pty_process.alive">
+<tt class="descname">alive</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.utils.pty_process.alive" title="Permalink to this definition">¶</a></dt>
+<dd><p>alive() checks if the child gave an exit value &#8211; if none, it is assumed
+to be still alive.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_process.read">
+<tt class="descname">read</tt><big>(</big><em>size=1024</em>, <em>timeout=0</em><big>)</big><a class="headerlink" href="#saga.utils.pty_process.read" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>read some data from the child.  By default, the method reads a full</dt>
+<dd><p class="first">chunk, but other read sizes can be specified.</p>
+<p>The method will return whatever data is has at timeout.</p>
+<dl class="docutils">
+<dt>timeout == 0 <span class="classifier-delimiter">:</span> <span class="classifier">return the content of the first successful read, with</span></dt>
+<dd>whatever data up to &#8216;size&#8217; have been found.</dd>
+<dt>timeout &lt;  0 <span class="classifier-delimiter">:</span> <span class="classifier">return after first read attempt, even if no data have been</span></dt>
+<dd>available.</dd>
+</dl>
+<p>If no data are found, the method returns an empty string (not None).</p>
+<p>This method will not fill the cache, but will just read whatever data it
+needs (FIXME).</p>
+<p class="last">Note: the returned lines do <em>not</em> get &#8216;</p>
+</dd>
+</dl>
+<p>&#8216; stripped.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_process.readline">
+<tt class="descname">readline</tt><big>(</big><em>timeout=0</em><big>)</big><a class="headerlink" href="#saga.utils.pty_process.readline" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>read a line from the child.  This method will read data into the cache,</dt>
+<dd>and return whatever it finds up to (but not including) the first newline
+(</dd>
+<dt>).  When timeout is met, the method will return None, and leave all</dt>
+<dd><p class="first">data in the cache.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>timeout &lt;  0: reads are blocking until data arrive, and call will</dt>
+<dd>only return when any complete line has been found (which
+may be never)</dd>
+<dt>timeout == 0: reads do not block, and the call will only be successful</dt>
+<dd>if a complete line is already in the cache, or is found
+on the first read attempt.</dd>
+<dt>timeout &gt;  0: read calls block up to timeout, and reading is attempted</dt>
+<dd>until timeout is reached, or a complete line is found,
+whatever comes first.</dd>
+</dl>
+</div></blockquote>
+<p class="last">Note: the returned lines get &#8216;</p>
+</dd>
+</dl>
+<p>&#8216; stripped.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_process.findline">
+<tt class="descname">findline</tt><big>(</big><em>patterns</em>, <em>timeout=0</em><big>)</big><a class="headerlink" href="#saga.utils.pty_process.findline" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>This methods reads lines from the child process until a line matching</dt>
+<dd><p class="first">any of the given patterns is found.  If that is found, all read lines
+(minus the matching one) are returned as a list of lines, the matching
+line itself is guaranteed to be the last line of the list.  This call
+never returns an empty list (the matching line is at least a linebreak).</p>
+<p class="last">Note: the returned lines get &#8216;</p>
+</dd>
+</dl>
+<p>&#8216; stripped.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_process.findstring">
+<tt class="descname">findstring</tt><big>(</big><em>patterns</em>, <em>timeout=0</em><big>)</big><a class="headerlink" href="#saga.utils.pty_process.findstring" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>This methods reads bytes from the child process until a string matching</dt>
+<dd><p class="first">any of the given patterns is found.  If that is found, all read data are
+returned as a string, up to (and including) the match.  Note that
+pattern can match an empty string, and the call then will return just
+that, an empty string.  If all patterns end with matching a newline,
+this method is effectively matching lines &#8211; but note that &#8216;$&#8217; will also
+match the end of the (currently available) data stream.</p>
+<p>The call actually returns a tuple, containing the index of the matching
+pattern, and the string up to the match as described above.</p>
+<p>If no pattern is found before timeout, the call returns (None, None).</p>
+<p>Note that the pattern are interpreted with the re.M (multi-line) and
+re.S (dot matches all) regex flags.</p>
+<p>Performance: the call is doing repeated string regex searches over
+whatever data it finds.  On complex regexes, and large data, and small
+read buffers, this method can be expensive.</p>
+<p class="last">Note: the returned data get &#8216;</p>
+</dd>
+</dl>
+<p>&#8216; stripped.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_process.write">
+<tt class="descname">write</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#saga.utils.pty_process.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -617,6 +800,7 @@ adaptor debugging (lots of output).</td>
 <li><a class="reference internal" href="#asynchronous-methods">1.7. Asynchronous Methods</a></li>
 <li><a class="reference internal" href="#bulk-operations">1.8. Bulk Operations:</a></li>
 <li><a class="reference internal" href="#adaptor-logging">1.9. Adaptor Logging</a></li>
+<li><a class="reference internal" href="#external-processes">1.10. External Processes</a></li>
 </ul>
 </li>
 </ul>
