@@ -19,6 +19,9 @@ class SubprocessCommandLineWrapper(object):
         # no need to open. not a persistent connection
         pass
 
+    def get_pipe (self) :
+        return None
+
     def close(self):
         # no need to close. not a persistent connection
         pass

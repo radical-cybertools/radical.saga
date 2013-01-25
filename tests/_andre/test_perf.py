@@ -15,6 +15,9 @@ def get_mem () :
 
 try :
 
+  e = saga.engine.engine.Engine ()
+  e._dump ()
+
   print ""
   print "init : %s" % (get_mem())
 
@@ -22,7 +25,7 @@ try :
   jd.executable = '/bin/date'
 
   for i in range (0, 10001) :
-      tmp = saga.job.Service ("fork://localhost")
+      tmp = saga.job.Service ("ssh://localhost")
 
   print "check: %s" % (get_mem())
 

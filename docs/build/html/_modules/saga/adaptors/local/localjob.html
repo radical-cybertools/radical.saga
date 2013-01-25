@@ -285,12 +285,12 @@
         <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">CPIBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
     <span class="nd">@SYNC_CALL</span>
-    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_info</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">):</span>
 <div class="viewcode-block" id="LocalJob.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.localjob.html#saga.adaptors.local.localjob.LocalJob.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.init_instance()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>         <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;session&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_jd</span>              <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;job_description&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_parent_service</span>  <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;job_service&#39;</span><span class="p">]</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>         <span class="o">=</span> <span class="n">adaptor_state</span><span class="p">[</span><span class="s">&#39;session&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_jd</span>              <span class="o">=</span> <span class="n">adaptor_state</span><span class="p">[</span><span class="s">&#39;job_description&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parent_service</span>  <span class="o">=</span> <span class="n">adaptor_state</span><span class="p">[</span><span class="s">&#39;job_service&#39;</span><span class="p">]</span> 
 
         <span class="c"># the _parent_service is responsible for job bulk operations -- which</span>
         <span class="c"># for jobs only work for run()</span>

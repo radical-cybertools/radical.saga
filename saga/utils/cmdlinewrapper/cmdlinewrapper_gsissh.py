@@ -16,6 +16,9 @@ class GSISSHCommandLineWrapper(object):
     def __init__(self, host, port, username, userproxies):
         ''' Create a new wrapper instance.
         '''
+
+        if not port : port = 22
+
         self.host = host
         self.port = port
         self.userproxies = userproxies
@@ -31,6 +34,9 @@ class GSISSHCommandLineWrapper(object):
         self._connection = SSHConnection(executable=gsissh_executable, gsissh=True)
         self._connection.login(hostname=self.host, port=self.port,
                                username=self.username, password=None)
+
+    def get_pipe (self) :
+        return self._connection.get_pxssh ()
 
     def close(self):
         self._connection.logout()

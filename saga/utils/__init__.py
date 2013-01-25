@@ -10,6 +10,7 @@ import threads
 import config
 import contrib
 
+from   pty_process import *
 from   singleton   import *
 from   exception   import *
 from   misc        import *

@@ -1,74 +1,75 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2011-2012, The SAGA Project"
-__license__   = "MIT"
+""" SSH job adaptor implementation """
 
-""" Local job adaptor implementation 
-"""
+from   saga.utils.which       import which
 
-import os, time, socket, signal, subprocess
-
-from saga.utils.job.jobid import JobId
-from saga.utils.which     import which
+from   saga.utils.pty_process import pty_process
 
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
+import time
+
+
 SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 
-################################################################################
-## the adaptor name                                                           ## 
-##                                                                            ##
-_ADAPTOR_NAME          = 'saga.adaptor.localjob'
-_ADAPTOR_SCHEMAS       = ['fork', 'local']
+
+# --------------------------------------------------------------------
+# some private defs
+#
+_WRAPPER_SH = "https://raw.github.com/saga-project/saga-python/feature/sshjob/saga/adaptors/ssh/wrapper.sh"
+
+# --------------------------------------------------------------------
+# the adaptor name
+#
+_ADAPTOR_NAME          = 'saga.adaptor.ssh_job'
+_ADAPTOR_SCHEMAS       = ['ssh', 'gsissh']
 _ADAPTOR_OPTIONS       = []
 
-################################################################################
-## the adaptor capabilities & supported attributes                            ##
-##                                                                            ##
+# --------------------------------------------------------------------
+# the adaptor capabilities & supported attributes
+#
 _ADAPTOR_CAPABILITIES  = {
     'jdes_attributes'  : [saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
-                          saga.job.WORKING_DIRECTORY,
                           saga.job.INPUT,
                           saga.job.OUTPUT,
-                          saga.job.ERROR,
-                          saga.job.SPMD_VARIATION,
-                          saga.job.NUMBER_OF_PROCESSES],
+                          saga.job.ERROR],
     'job_attributes'   : [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
                           saga.job.CREATED,
                           saga.job.STARTED,
                           saga.job.FINISHED],
-    'metrics'          : [saga.job.STATE],
-    'contexts'         : {'None' : """this adaptor works in the same security
-                                      context as the application process itself."""
-    }
+    'metrics'          : [saga.job.STATE, 
+                          saga.job.STATE_DETAIL],
+    'contexts'         : {'ssh'      : "public/private keypair",
+                          'x509'     : "X509 proxy for gsissh",
+                          'userpass' : "username/password pair for simple ssh"}
 }
 
-################################################################################
-## the adaptor documentation                                                  ##
-##                                                                            ##
+# --------------------------------------------------------------------
+# the adaptor documentation
+#
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : """ 
-        The local job adaptor. This adaptor uses subprocesses to run jobs on the 
-        local machine.
+        The SSH job adaptor. This adaptor uses the ssh command line tools to run
+        remote jobs.
         """,
     'details'          : """ 
         A more elaborate description....
         """,
-    'schemas'          : {'fork'  :'desc', 
-                          'local' :'same as fork'},
+    'schemas'          : {'ssh'    :'use ssh to run a remote job', 
+                          'gsissh' :'use gsissh to run a remote job'}
 }
 
-################################################################################
-## the adaptor info is used to register the adaptor with SAGA                 ##
-##                                                                            ##
+# --------------------------------------------------------------------
+# the adaptor info is used to register the adaptor with SAGA
+
 _ADAPTOR_INFO          = {
     'name'             : _ADAPTOR_NAME,
     'version'          : 'v0.1',
@@ -76,11 +77,11 @@ _ADAPTOR_INFO          = {
     'cpis'             : [
         { 
         'type'         : 'saga.job.Service',
-        'class'        : 'LocalJobService'
+        'class'        : 'SSHJobService'
         }, 
         { 
         'type'         : 'saga.job.Job',
-        'class'        : 'LocalJob'
+        'class'        : 'SSHJob'
         }
     ]
 }
@@ -95,62 +96,80 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     provide the adaptor's functionality.
     """
 
+
     def __init__ (self) :
 
         saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
-        # we only need to call gethostname once 
-        self.hostname = socket.gethostname()
-
 
     def sanity_check (self) :
+
+        # FIXME: also check for gsissh
+
         pass
 
 
 
 ###############################################################################
 #
-class LocalJobService (saga.adaptors.cpi.job.Service) :
-    """ Implements saga.adaptors.cpi.job.Service
-    """
+class SSHJobService (saga.adaptors.cpi.job.Service) :
+    """ Implements saga.adaptors.cpi.job.Service """
+
     def __init__ (self, api, adaptor) :
-        """ Implements saga.adaptors.cpi.job.Service.__init__
-        """
+
         saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL
     def init_instance (self, adaptor_state, rm_url, session) :
-        """ Service instance constructor
-        """
-
-        print " state  : %s " % str(adaptor_state)
-        print " rm_url : %s " % str(rm_url)
-        print " session: %s " % str(session)
-
-        # check that the hostname is supported
-        fqhn = Adaptor().hostname
-        if rm_url.host != 'localhost' and rm_url.host != fqhn:
-            msg = "Only 'localhost' and '%s' hostnames supported by this adaptor'" % (fqhn)
-            raise saga.BadParameter._log (self._logger, msg)
+        """ Service instance constructor """
 
         self._rm      = rm_url
         self._session = session
 
-        # holds the jobs that were started via this instance
-        self._jobs = dict() # {job_obj:id, ...}
+        self.pty = pty_process ("/usr/bin/ssh -ttt localhost")
+
+        find_prompt = True
+
+        (n, match, lines) = self.pty.findline (['password\s*:\s*$', 
+                                                'want to continue connecting', 
+                                                'Last login'])
+        while find_prompt :
+
+            if n == 0 :
+                self.pty.write ("secret\n")
+                (n, match, lines) = self.pty.findline (['password\s*:\s*$', 
+                                                        'want to continue connecting', 
+                                                        'Last login'])
+            elif n == 1 :
+                self.pty.write ("yes\n")
+                (n, match, lines) = self.pty.findline (['password\s*:\s*$', 
+                                                        'want to continue connecting', 
+                                                        'Last login'])
+            elif n == 2 :
+                self.pty.write ("export PS1='prompt>'\n")
+                (n, match) = self.pty.findstring (['^prompt>$'], 10.0)
+                find_prompt = False
+        
+        self.pty.write ("wget -q %s -O - > $HOME/.saga/adaptors/ssh_job/wrapper.sh\n" % _WRAPPER_SH)
+        self.pty.write ("/bin/sh           $HOME/.saga/adaptors/ssh_job/wrapper.sh\n")
+
+        self._run_job ('true')
+
+
+    def _run_job (self, command) :
+        """ runs a job on the wrapper via pty, and returns the job id """
+
+        i = 0
+        while self.pty.alive () :
+            i += 1
+            (n, match, lines) = self.pty.findline (['CMD'])
+            print lines
+            self.pty.write ("RUN /bin/sleep %d\n" % i)
+        
+        time.sleep (1)
 
         return self._api
-
-
-    def _register_job(self, job_obj):
-        """ Register job and job id with this service instance.  
-
-            This is a convenience method and not part of the CPI.  A job can be
-            registered repeatedly, in particular for delayed assignment of job
-            IDs.
-        """
-        self._jobs[job_obj] = job_obj._id
 
 
     @SYNC_CALL
@@ -223,7 +242,7 @@ class LocalJobService (saga.adaptors.cpi.job.Service) :
 
 ###############################################################################
 #
-class LocalJob (saga.adaptors.cpi.job.Job) :
+class SSHJob (saga.adaptors.cpi.job.Job) :
     """ Implements saga.adaptors.cpi.job.Job
     """
     def __init__ (self, api, adaptor) :
@@ -232,12 +251,12 @@ class LocalJob (saga.adaptors.cpi.job.Job) :
         saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
     @SYNC_CALL
-    def init_instance (self, adaptor_state):
+    def init_instance (self, job_info):
         """ Implements saga.adaptors.cpi.job.Job.init_instance()
         """
-        self._session         = adaptor_state['session']
-        self._jd              = adaptor_state['job_description']
-        self._parent_service  = adaptor_state['job_service'] 
+        self._session         = job_info['session']
+        self._jd              = job_info['job_description']
+        self._parent_service  = job_info['job_service'] 
 
         # the _parent_service is responsible for job bulk operations -- which
         # for jobs only work for run()

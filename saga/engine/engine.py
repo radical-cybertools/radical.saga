@@ -471,9 +471,6 @@ class Engine(Configurable):
         adaptor.
         '''
 
-
-        print "schema: %s" % schema
-
         if not ctype in self._adaptor_registry :
             raise NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
                                % (ctype, schema))
