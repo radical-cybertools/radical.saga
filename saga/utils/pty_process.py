@@ -40,13 +40,13 @@ class pty_process (object) :
 
             if n == 0 :
                 # found password prompt
-                pty.write ("secret\n")
+                pty.write ("secret\\n")
                 (n, match) = pty.findstring (['password\s*:\s*$', 
                                              'want to continue connecting.*\(yes/no\)\s*$', 
                                              '[\$#>]\s*$'])
             elif n == 1 :
                 # found request to accept host key
-                pty.write ("yes\n")
+                pty.write ("yes\\n")
                 (n, match) = pty.findstring (['password\s*:\s*$', 
                                              'want to continue connecting.*\(yes/no\)\s*$', 
                                              '[\$#>]\s*$'])
@@ -59,7 +59,7 @@ class pty_process (object) :
             i += 1
             # send sleeps as quickly as possible, forever...
             (n, match) = pty.findstring (['[\$#>]\s*$'])
-            pty.write ("/bin/sleep %d\n" % i)
+            pty.write ("/bin/sleep %d\\n" % i)
     """
 
     # ----------------------------------------------------------------
@@ -117,19 +117,19 @@ class pty_process (object) :
         read some data from the child.  By default, the method reads a full
         chunk, but other read sizes can be specified.  
         
-        The method will return whatever data is has at timeout.  
+        The method will return whatever data is has at timeout::
         
-        timeout == 0 : return the content of the first successful read, with
-                       whatever data up to 'size' have been found.
-        timeout <  0 : return after first read attempt, even if no data have been
-                       available.
+          timeout == 0 : return the content of the first successful read, with
+                         whatever data up to 'size' have been found.
+          timeout <  0 : return after first read attempt, even if no data have been
+                         available.
 
         If no data are found, the method returns an empty string (not None).
 
         This method will not fill the cache, but will just read whatever data it
         needs (FIXME).
 
-        Note: the returned lines do *not* get '\r' stripped.
+        Note: the returned lines do *not* get '\\\\r' stripped.
         """
 
         # start the timeout timer right now.  Note that if timeout is short, and
@@ -210,8 +210,8 @@ class pty_process (object) :
         """
         read a line from the child.  This method will read data into the cache,
         and return whatever it finds up to (but not including) the first newline
-        (\n).  When timeout is met, the method will return None, and leave all
-        data in the cache.
+        (\\\\n).  When timeout is met, the method will return None, and leave all
+        data in the cache::
 
           timeout <  0: reads are blocking until data arrive, and call will
                         only return when any complete line has been found (which
@@ -225,7 +225,7 @@ class pty_process (object) :
                         until timeout is reached, or a complete line is found,
                         whatever comes first.
 
-        Note: the returned lines get '\r' stripped.
+        Note: the returned lines get '\\\\r' stripped.
         """
 
         # start the timeout timer right now.  Note that if timeout is short, and
@@ -294,7 +294,7 @@ class pty_process (object) :
         line itself is guaranteed to be the last line of the list.  This call
         never returns an empty list (the matching line is at least a linebreak).
 
-        Note: the returned lines get '\r' stripped.
+        Note: the returned lines get '\\\\r' stripped.
         """
 
         start = time.time ()            # startup timestamp to compare timeout against
@@ -359,7 +359,7 @@ class pty_process (object) :
         whatever data it finds.  On complex regexes, and large data, and small
         read buffers, this method can be expensive.  
 
-        Note: the returned data get '\r' stripped.
+        Note: the returned data get '\\\\r' stripped.
         """
 
         start = time.time ()                       # startup timestamp to compare timeout against
@@ -401,6 +401,10 @@ class pty_process (object) :
     # ----------------------------------------------------------------
     #
     def write (self, data) :
+        """
+        This method will repeatedly attempt to push the given data into the
+        child's stdin pipe, until it succeeds to write all data.
+        """
 
         if not self.alive () :
             return
