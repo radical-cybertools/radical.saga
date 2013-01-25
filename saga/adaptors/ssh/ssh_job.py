@@ -16,6 +16,11 @@ ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 
 
 # --------------------------------------------------------------------
+# some private defs
+#
+_WRAPPER_SH = "https://raw.github.com/saga-project/saga-python/feature/sshjob/saga/adaptors/ssh/wrapper.sh"
+
+# --------------------------------------------------------------------
 # the adaptor name
 #
 _ADAPTOR_NAME          = 'saga.adaptor.ssh_job'
@@ -151,8 +156,8 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
                 find_prompt = False
         
         print " ---------------------- "
-        self.pty.writeline ('wget -q https://raw.github.com/saga-project/saga-python/feature/sshjob/saga/adaptors/ssh/wrapper.sh -O /tmp/script')
-        self.pty.writeline ('/bin/sh /tmp/script')
+        self.pty.writeline ('wget -q %s -O - > $HOME/.saga/adaptors/ssh_job/wrapper.sh' % _WRAPPER_SH)
+        self.pty.writeline ('/bin/sh           $HOME/.saga/adaptors/ssh_job/wrapper.sh')
 
         i = 0
         while self.pty.poll () is None:
