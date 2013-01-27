@@ -32,24 +32,24 @@ class pty_process (object) :
         pty = pty_process ("/usr/bin/ssh -ttt localhost")
         pty.run ()
 
-        (n, match) = pty.findstring (['password\s*:\s*$', 
-                                           'want to continue connecting.*\(yes/no\)\s*$', 
-                                           '[\$#>]\s*$'])
+        (n, match) = pty.find (['password\s*:\s*$', 
+                                'want to continue connecting.*\(yes/no\)\s*$', 
+                                '[\$#>]\s*$'])
 
         while True :
 
             if n == 0 :
                 # found password prompt
                 pty.write ("secret\\n")
-                (n, match) = pty.findstring (['password\s*:\s*$', 
-                                             'want to continue connecting.*\(yes/no\)\s*$', 
-                                             '[\$#>]\s*$'])
+                (n, match) = pty.find (['password\s*:\s*$', 
+                                        'want to continue connecting.*\(yes/no\)\s*$', 
+                                        '[\$#>]\s*$'])
             elif n == 1 :
                 # found request to accept host key
                 pty.write ("yes\\n")
-                (n, match) = pty.findstring (['password\s*:\s*$', 
-                                             'want to continue connecting.*\(yes/no\)\s*$', 
-                                             '[\$#>]\s*$'])
+                (n, match) = pty.find (['password\s*:\s*$', 
+                                        'want to continue connecting.*\(yes/no\)\s*$', 
+                                        '[\$#>]\s*$'])
             elif n == 2 :
                 # found some prompt
                 break
@@ -58,7 +58,7 @@ class pty_process (object) :
         while pty.alive () is None:
             i += 1
             # send sleeps as quickly as possible, forever...
-            (n, match) = pty.findstring (['[\$#>]\s*$'])
+            (n, match) = pty.find (['[\$#>]\s*$'])
             pty.write ("/bin/sleep %d\\n" % i)
     """
 
@@ -95,6 +95,13 @@ class pty_process (object) :
                                        stderr  = self.slave_out, 
                                        shell   = False,           # we don't run shell commands
                                        bufsize = 0)               # unbuffered I/O
+
+    # --------------------------------------------------------------------
+    #
+    def __del__ (self) :
+        self.child.terminate ()
+        self.child.kill ()
+
 
     # --------------------------------------------------------------------
     #
@@ -180,7 +187,9 @@ class pty_process (object) :
             # got some data? 
             for f in rlist:
                 # read whatever we still need
-                ret += os.read (f, size-len(ret))
+                buf  = os.read (f, size-len(ret))
+              # print " > '%s'" % buf
+                ret += buf
 
             if timeout == 0 : 
                 # only return if we have data
@@ -263,7 +272,9 @@ class pty_process (object) :
 
             # got some data - read them into the cache
             for f in rlist:
-                self.cache += os.read (f, _CHUNKSIZE)
+                buf         = os.read (f, _CHUNKSIZE)
+              # print " > '%s'" % buf
+                self.cache += buf
 
             # check if we *now* have a full line in cache
             if '\n' in self.cache :
@@ -310,6 +321,8 @@ class pty_process (object) :
         # a pattern, or timeout passes
         while True :
 
+            time.sleep (0.1)
+
             # skip non-lines
             if  None == line :
                 line = self.readline (timeout)
@@ -337,7 +350,7 @@ class pty_process (object) :
 
     # ----------------------------------------------------------------
     #
-    def findstring (self, patterns, timeout=0) :
+    def find (self, patterns, timeout=0) :
         """
         This methods reads bytes from the child process until a string matching
         any of the given patterns is found.  If that is found, all read data are
@@ -365,7 +378,10 @@ class pty_process (object) :
         start = time.time ()                       # startup timestamp to compare timeout against
         ret   = []                                 # array of read lines
         patts = []                                 # compiled patterns
-        data  = self.read (_CHUNKSIZE, _POLLDELAY) # initial data to check
+        data  = self.cache                         # initial data to check
+
+        if not data : # empty cache?
+            data = self.read (_CHUNKSIZE, _POLLDELAY)
 
         # pre-compile the given pattern, to speed up matching
         for pattern in patterns :
@@ -378,14 +394,17 @@ class pty_process (object) :
             # skip non-lines
             if  None == data :
                 data += self.read (_CHUNKSIZE, _POLLDELAY)
-                continue
 
             # check current data for any matching pattern
             for n in range (0, len(patts)) :
-                if patts[n].search (data) :
+                match = patts[n].search (data)
+                if match :
                     # a pattern matched the current data: return a tuple of
-                    # pattern index and matching data.
-                    return (n, data.replace('\r', ''))
+                    # pattern index and matching data.  The remainder of the
+                    # data is cached.
+                    ret  = data[0:match.end()+1]
+                    self.cache = data[match.end()+1:] 
+                    return (n, ret.replace('\r', ''))
 
             # if a timeout is given, and actually passed, return a non-match.
             if timeout > 0 :

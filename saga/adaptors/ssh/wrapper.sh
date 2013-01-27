@@ -61,6 +61,12 @@ verify_pid () {
 # Note that the actual job is not run directly, but via nohup.  Otherwise all
 # jobs would be canceled as soon as this master script finishes...
 #
+# Note further that we perform a double fork, effectively turning the monitor
+# into a daemon.  That provides a speedup of ~300%, as the wait in cmd_run now
+# will return very quickly (it just waits on the second fork).  We can achieve
+# near same performance be removing the wait, but that will result in one zombie
+# per command, which sticks around as long as the wrapper script itself lives.
+#
 # Note that the working directory is created on the fly.  As the name of the dir
 # is the pid, it must be unique -- we thus purge whatever trace we find of an
 # earlier directory of the same name.
@@ -76,20 +82,23 @@ verify_pid () {
 # Also, the line after is when the job state is set to 'Running' -- we can't
 # really do that before, but on failure, in the worst case, we might have a job
 # with known job ID which is not marked as running.  
-#
-# Finally, the wait call must be in this shell instance -- if this instance dies
-# we will not be able to recover the exit state of the job.  We will, however,
-# be able to recover its SAGA state...
-#
-# FIXME?
 
 cmd_run () {
-  cmd_run_process $@ &
+  cmd_run2 $@ &
   RETVAL=$!
+  echo "1 $RETVAL" >> /tmp/t
+  wait $RETVAL
+}
+
+cmd_run2 () {
+  cmd_run_process $@ &
+  ppid=$!
+  echo "2 $ppid" >> /tmp/t
 }
 
 cmd_run_process () {
   PID=`sh -c 'echo $PPID'`
+  echo "3 $PID" >> /tmp/t
   DIR="$BASE/$PID"
 
   rm    -rf "$DIR"
@@ -148,6 +157,7 @@ EOT
   # the monitor script is ran asynchronously and with nohup, so that its
   # lifetime will not be bound to the manager script lifetime.
   nohup /bin/sh "$DIR/monitor.sh" 1>/dev/null 2>/dev/null 3</dev/null &
+  exit
 }
 
 

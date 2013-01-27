@@ -12,6 +12,7 @@ from saga.async           import Async
 from saga.url             import Url
 from saga.job.description import Description
 from saga.exceptions      import BadParameter
+from saga.session         import Session
 
 from saga.constants       import SYNC, ASYNC, TASK, NOTASK # task constants
 
@@ -51,7 +52,7 @@ class Service (Base, Async) :
           else                                        : print "job is already final!"
     """
 
-    def __init__ (self, url=None, session=None, 
+    def __init__ (self, url=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         """
         Create a new job.Service instance.
@@ -63,6 +64,9 @@ class Service (Base, Async) :
         # param checks
         url     = Url (url)
         scheme  = url.scheme.lower ()
+
+        if not session :
+            session = Session (default=True)
 
         Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
                        url, session, ttype=_ttype)
