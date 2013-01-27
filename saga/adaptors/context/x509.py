@@ -74,7 +74,6 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         if not self._have_defaults :
 
             p = "/tmp/x509up_u%d"  %  os.getuid()
-            print p
 
             if  os.path.exists (p) and \
                 os.path.isfile (p)     :

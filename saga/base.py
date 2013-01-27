@@ -17,7 +17,6 @@ class SimpleBase (object) :
         self._engine    = saga.engine.engine.Engine ()
         self._logger    = saga.utils.logger.getLogger (self._apitype)
 
-        print self._engine
         self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
 
 

@@ -1,9 +1,7 @@
 
 """ SSH job adaptor implementation """
 
-from   saga.utils.which       import which
-
-from   saga.utils.pty_process import pty_process
+import saga.utils
 
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
@@ -20,6 +18,7 @@ ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 #
 _WRAPPER_SH = "https://raw.github.com/saga-project/saga-python/feature/sshjob/saga/adaptors/ssh/wrapper.sh"
 _WRAPPER_SH = "/home/merzky/saga/saga-python/saga/adaptors/ssh/wrapper.sh"
+_WRAPPER_SH = "/tmp/wrapper.sh"
 
 # --------------------------------------------------------------------
 # the adaptor name
@@ -128,7 +127,37 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self._rm      = rm_url
         self._session = session
 
-        self.pty = pty_process ("/usr/bin/ssh -ttt localhost")
+        ssh_type = self._rm.schema.lower ()
+        ssh_env  = "/usr/bin/env"
+        ssh_exe  = ""
+        ssh_args = "-tt"
+
+
+        if  ssh_type == 'ssh' :
+            ssh_exe  = saga.utils.which ('ssh')
+        elif ssh_type == 'gsissh' :
+            ssh_exe = saga.utils.which ('gsissh')
+        else :
+            raise saga.BadParameter._log (self._logger, \
+            	  "SSH Job adaptor can only handle ssh schema URLs, not %s" % self._rm.schema)
+
+
+        for context in self._session.contexts :
+            if  context.type.lower () == "ssh" :
+                if  ssh_type == 'ssh' :
+                    if  context.attribute_exists ('user_id') :
+                        ssh_args += " -l %s" % context.user_id
+                    if  context.attribute_exists ('user_key') :
+                        ssh_args += " -i %s" % context.user_key
+            if  context.type.lower () == "gsissh" :
+                if  ssh_type == 'gsissh' :
+                    if  context.attribute_exists ('user_proxy') :
+                        env += " X509_PROXY=%s" % context.user_proxy
+
+        ssh_args += " %s"       %  (self._rm.host)
+        ssh_cmd   = "%s %s %s"  %  (ssh_env, ssh_exe, ssh_args)
+
+        self.pty  = saga.utils.pty_process (ssh_cmd)
 
         find_prompt = True
 
@@ -148,37 +177,106 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
                                                         'want to continue connecting', 
                                                         'Last login'])
             elif n == 2 :
-                self.pty.write ("export PS1='prompt>'\n")
-                (n, match) = self.pty.findstring (['^prompt>$'], 10.0)
+                self.pty.write ("export PS1='prompt-$?->'\n")
+                (n, match) = self.pty.find (['^prompt-[\d+]->$'], 10.0)
                 find_prompt = False
         
-      # self.pty.write ("wget -q %s -O - > $HOME/.saga/adaptors/ssh_job/wrapper.sh\n" % _WRAPPER_SH)
-        self.pty.write ("/bin/cp %s        $HOME/.saga/adaptors/ssh_job/wrapper.sh\n" % _WRAPPER_SH)
-        self.pty.write ("/bin/sh           $HOME/.saga/adaptors/ssh_job/wrapper.sh\n")
+        # we have a prompt on the remote system -- now fetch the shell wrapper
+        # script, and run it.  Once that is up and running, we can requests job
+        # start / management operations via its stdio
 
-        self._run_job ('true')
+      # self.pty.write ("mkdir   -p       $HOME/.saga/adaptors/ssh_job/ && " + \
+      #                 "wget    -q %s -O $HOME/.saga/adaptors/ssh_job/wrapper.sh\n" % _WRAPPER_SH)
+        self.pty.write ("mkdir   -p $HOME/.saga/adaptors/ssh_job/ && " + \
+                        "/bin/cp %s $HOME/.saga/adaptors/ssh_job/wrapper.sh\n" % _WRAPPER_SH)
+        
+        _, match = self.pty.find (['^prompt-[\d+]->$'], 10.0)
+
+        if not match[-4:] == "-0->" :
+            raise saga.NoSuccess ("failed to retrieve wrapper: %s" % match[:-10])
 
 
-    def _run_job (self, command) :
+        self.pty.write ("/bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh\n")
+
+        _, match = self.pty.find  (['^CMD\s*'], 10.0)
+
+
+    def _run_job (self, jd) :
         """ runs a job on the wrapper via pty, and returns the job id """
 
-        i = 0
-        while self.pty.alive () :
-            i += 1
-            (n, match, lines) = self.pty.findline (['CMD'])
-            print lines
-            self.pty.write ("RUN /bin/sleep %d\n" % i)
+        exe = jd.executable
+        arg = ""
+        env = ""
+        cwd = ""
+
+        if jd.attribute_exists ('arguments') :
+            for a in jd.arguments :
+                arg += " %s" % a
+
+        if jd.attribute_exists ('environment') :
+            env = "/usr/bin/env"
+            for e in jd.environment :
+                env += " %s=%s"  %  (e, jd.environment[e])
+            env += " "
+
+        if jd.attribute_exists ('working_directory') :
+            cwd = "cd %s && " % jd.working_directory
+
+        cmd = "%s %s %s %s"  %  (env, cwd, exe, arg)
+
+        self.pty.write ("RUN %s\n" % cmd)
+        _, match = self.pty.find (['CMD'], 10.0)
+
+
+        splitlines = match.split ('\n')
+        lines = []
+
+        for line in splitlines :
+            if len (line) :
+                lines.append (line)
+        self._logger.debug (str(lines))
+
+        if len (lines) < 3 :
+            self._logger.warn ("Cannot interpret response from wrapper.sh (%s)" % str (lines))
+            raise saga.NoSuccess ("failed to run job")
+        elif lines[1] != 'OK' :
+            self._logger.warn ("Did not find 'OK' from wrapper.sh (%s)" % str (lines))
+            raise saga.NoSuccess ("failed to run job")
+
+        job_id = "[%s]-[%s]" % (self._rm, lines[2])
+
+        self._logger.debug ("started job %s" % job_id)
+
+        return job_id
         
-        time.sleep (1)
-
-        return self._api
 
 
+    @SYNC_CALL
+    def create_job (self, jd) :
+        """ Implements saga.adaptors.cpi.job.Service.get_url()
+        """
+        # check that only supported attributes are provided
+        for attribute in jd.list_attributes():
+            if attribute not in _ADAPTOR_CAPABILITIES['jdes_attributes']:
+                msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
+                raise saga.BadParameter._log (self._logger, msg)
+
+        
+        # this dict is passed on to the job adaptor class -- use it to pass any
+        # state information you need there.
+        adaptor_state = { 'job_service'     : self, 
+                          'job_description' : jd,
+                          'job_schema'      : self._rm.schema }
+
+        return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
+
+    # ----------------------------------------------------------------
     @SYNC_CALL
     def get_url (self) :
         """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
         return self._rm
+
 
     @SYNC_CALL
     def list(self):
@@ -189,25 +287,6 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
             if job_id is not None:
                 jobids.append(job_id)
         return jobids
-
-    @SYNC_CALL
-    def create_job (self, jd) :
-        """ Implements saga.adaptors.cpi.job.Service.get_url()
-        """
-        # check that only supported attributes are provided
-        for attribute in jd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITIES['desc_attributes']:
-                msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
-                raise saga.BadParameter._log (self._logger, msg)
-
-        
-        # this dict is passed on to the job adaptor class -- use it to pass any
-        # state information you need there.
-        state = { 'job_service'     : self, 
-                  'job_description' : jd, 
-                  'session'         : self._session }
-
-        return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=state)
 
 
     @SYNC_CALL
@@ -256,7 +335,6 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
     def init_instance (self, job_info):
         """ Implements saga.adaptors.cpi.job.Job.init_instance()
         """
-        self._session         = job_info['session']
         self._jd              = job_info['job_description']
         self._parent_service  = job_info['job_service'] 
 
@@ -272,14 +350,9 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
         self._exception       = None
         self._started         = None
         self._finished        = None
-        self._execution_hosts = [Adaptor().hostname]
         
         # subprocess handle
         self._process         = None
-
-        # register ourselves with the parent service
-        # our job id is still None at this point
-        self._parent_service._register_job(self)
 
         return self._api
 
@@ -288,38 +361,11 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
     def get_state(self):
         """ Implements saga.adaptors.cpi.job.Job.get_state()
         """
-        if self._state == saga.job.RUNNING:
-            # only update if still running 
-            self._exit_code = self._process.poll() 
-            if self._exit_code is not None:
-                if self._exit_code != 0:
-                    self._exception = saga.NoSuccess ("non-zero exit code : %d" % self._exit_code)
-                    self._state     = saga.job.FAILED
-                else:
-                    self._state = saga.job.DONE
-                # TODO: this is not accurate -- job could have terminated 
-                # before 'wait' was called
-                self._finished = time.time() 
         return self._state
 
     @SYNC_CALL
     def wait(self, timeout):
-        if self._process is None:
-            msg = "Can't wait for job that has not been started"
-            raise saga.IncorrectState._log (self._logger, msg)
-        if timeout == -1:
-            self._exit_code = self._process.wait()
-        else:
-            t_beginning = time.time()
-            seconds_passed = 0
-            while True:
-                self._exit_code = self._process.poll()
-                if self._exit_code is not None:
-                    break
-                seconds_passed = time.time() - t_beginning
-                if timeout and seconds_passed > timeout:
-                    break
-                time.sleep(0.5)
+        pass
 
     @SYNC_CALL
     def get_id (self) :
@@ -361,110 +407,15 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
 
     @SYNC_CALL
     def cancel(self, timeout):
-        try:
-            os.killpg(self._process.pid, signal.SIGTERM)
-            self._exit_code = self._process.wait() # should return with the rc
-            self._state = saga.job.CANCELED
-        except OSError, ex:
-            msg = "Couldn't cancel job %s: %s" % (self._id, ex)
-            raise saga.IncorrectState._log (self._logger, msg)
+        pass
 
 
     @SYNC_CALL
     def run(self): 
         """ Implements saga.adaptors.cpi.job.Job.run()
         """
-
-        # lots of attribute checking and such 
-        executable  = self._jd.executable
-        arguments   = self._jd.arguments
-        environment = self._jd.environment
-        cwd         = self._jd.working_directory
-        
-        # check if we want to write stdout to a file
-        if self._jd.output is not None:
-            if os.path.isabs(self._jd.output):
-                self._job_output = open(jd.output,"w")  
-            else:
-                if cwd is not None:
-                    self._job_output = open(os.path.join(cwd, self._jd.output),"w")
-                else:
-                    self._job_output = open(self._jd.output,"w")  
-        else:
-            self._job_output = None 
-
-        # check if we want to write stderr to a file
-        if self._jd.error is not None:
-            if os.path.isabs(self._jd.error):
-                self._job_error = open(self._jd.error,"w")  
-            else:
-                if cwd is not None:
-                    self._job_error = open(os.path.join(self.cwd, self._jd.error),"w")
-                else:
-                    self._job_error = open(self._jd.error,"w") 
-        else:
-            self._job_error = None
-
-        # check if we want to execute via mpirun
-        if self._jd.spmd_variation is not None:
-            if jd.spmd_variation.lower() == "mpi":
-                if self._jd.number_of_processes is not None:
-                    self.number_of_processes = self._jd.number_of_processes
-                    use_mpirun = True
-                self._logger.info("SPMDVariation=%s requested. Job will execute via 'mpirun -np %d'." % (self._jd.spmd_variation, self.number_of_processes))
-            else:
-                self._logger.warning("SPMDVariation=%s: unsupported SPMD variation. Ignoring." % self._jd.spmd_variation)
-        else:
-            use_mpirun = False
-
-        # check if executable exists.
-        if which(executable) == None:
-            message = "Executable '%s' doesn't exist or is not in the path" % executable
-            self._logger.error(message)        
-            raise saga.BadParameter(message)
-
-        # check if you can do mpirun
-        if use_mpirun is True:
-            which('mpirun')
-            if mpirun == None:
-                message = "SPMDVariation=MPI set, but can't find 'mpirun' executable."
-                self._logger.error(message)        
-                raise saga.BadParameter(message) 
-            else:
-                cmdline = '%s -np %d %s' % (mpirun, self.number_of_processes, str(self.executable))
-        else:
-            cmdline = str(executable)
-        args = ""
-        if arguments is not None:
-            for arg in arguments:
-                cmdline += " %s" % arg 
-
-        # now we can finally try to run the job via subprocess
-        try:
-            self._process = subprocess.Popen(cmdline, shell=True, 
-                                             stderr=self._job_error, 
-                                             stdout=self._job_output, 
-                                             env=environment,
-                                             cwd=cwd,
-                                             preexec_fn=os.setsid)
-            self._pid = self._process.pid
-
-            jid = JobId()
-            jid.native_id   = self._pid
-            jid.backend_url = str(self._parent_service.get_url())
-
-            self._state     = saga.job.RUNNING
-            self._started   = time.time()
-            self._id        = str(jid)
-
-            self._parent_service._register_job(self)
-            self._logger.debug("Starting process '%s' was successful." % cmdline) 
-
-        except Exception, ex:
-            msg = "Starting process: '%s' failed: %s" % (cmdline, str(ex))
-            self._exception = saga.NoSuccess._log (self._logger, msg)
-            self._state     = saga.job.FAILED
-            raise self._exception
+        self._id = self._parent_service._run_job (self._jd)
+        print self._id
 
 
     @SYNC_CALL
