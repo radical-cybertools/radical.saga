@@ -61,15 +61,20 @@ class Service (Base, Async) :
         :type  url: :class:`saga.Url` 
         """
 
+        print 'y 1'
+
         # param checks
         url     = Url (url)
         scheme  = url.scheme.lower ()
 
+        print 'y 2'
         if not session :
             session = Session (default=True)
 
+        print 'y 3'
         Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
                        url, session, ttype=_ttype)
+        print 'y 4'
 
 
     @classmethod

@@ -86,19 +86,16 @@ verify_pid () {
 cmd_run () {
   cmd_run2 $@ &
   RETVAL=$!
-  echo "1 $RETVAL" >> /tmp/t
   wait $RETVAL
 }
 
 cmd_run2 () {
   cmd_run_process $@ &
   ppid=$!
-  echo "2 $ppid" >> /tmp/t
 }
 
 cmd_run_process () {
   PID=`sh -c 'echo $PPID'`
-  echo "3 $PID" >> /tmp/t
   DIR="$BASE/$PID"
 
   rm    -rf "$DIR"
