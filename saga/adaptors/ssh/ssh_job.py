@@ -124,6 +124,8 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
     def init_instance (self, adaptor_state, rm_url, session) :
         """ Service instance constructor """
 
+        print 'x 1'
+
         self._rm      = rm_url
         self._session = session
 
@@ -132,6 +134,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         ssh_exe  = ""
         ssh_args = "-tt"
 
+        print 'x 2'
 
         if  ssh_type == 'ssh' :
             ssh_exe  = saga.utils.which ('ssh')
@@ -142,6 +145,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
             	  "SSH Job adaptor can only handle ssh schema URLs, not %s" % self._rm.schema)
 
 
+        print 'x 3'
         for context in self._session.contexts :
             if  context.type.lower () == "ssh" :
                 if  ssh_type == 'ssh' :
@@ -154,10 +158,12 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
                     if  context.attribute_exists ('user_proxy') :
                         env += " X509_PROXY=%s" % context.user_proxy
 
+        print 'x 4'
         ssh_args += " %s"       %  (self._rm.host)
         ssh_cmd   = "%s %s %s"  %  (ssh_env, ssh_exe, ssh_args)
 
-        self.pty  = saga.utils.pty_process (ssh_cmd)
+        print "-------------------"
+        self.pty  = saga.utils.pty_process (ssh_cmd, logfile='/tmp/t')
 
         find_prompt = True
 
