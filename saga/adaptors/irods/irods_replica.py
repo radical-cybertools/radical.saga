@@ -12,20 +12,12 @@ import saga.url
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.replica
 import saga.utils.misc
+import shutil
+
+from   saga.utils.cmdlinewrapper import CommandLineWrapper
 
 SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
-
-class CommandWrapper () : 
-    def __init__ (self) :
-        pass
-
-    @classmethod
-    def initAsLocalWrapper (self, logger):
-        return self ()
-
-    def connect (self) : pass
-
 
 ###############################################################################
 # adaptor info
@@ -62,6 +54,83 @@ _ADAPTOR_INFO          = {
     ]
 }
 
+class irods_logical_entry():
+    '''class to hold info on an iRODS logical file or directory
+    '''
+    def __init__(self):
+        self.name = "undefined"
+        self.locations = []
+        self.size = 1234567899
+        self.owner = "undefined"
+        self.date = "1/1/1111"
+        self.is_directory = False
+
+    def __str__(self):
+        return str(self.name + " " +  \
+                   "/".join(self.locations) + " " + \
+                   str(self.size) + " " + \
+                   self.owner + " " + \
+                   self.date + " " + \
+                   str(self.is_directory))
+
+
+class irods_resource_entry (object):
+    '''class to hold info on an iRODS resource '''
+
+    # Resources (not groups) as retreived from ilsresc -l look like the following:
+    #
+    # resource name:     BNL_ATLAS_2_FTP
+    # resc id:           16214
+    # zone:              osg
+    # type:              MSS universal driver
+    # class:             compound
+    # location:          gw014k1.fnal.gov
+    # vault:             /data/cache/BNL_ATLAS_2_FTPplaceholder
+    # free space:
+    # status:            up
+    # info:
+    # comment:
+    # create time:       01343055975: 2012-07-23.09:06:15
+    # modify time:       01347480717: 2012-09-12.14:11:57
+    # ----
+
+    # Resource groups look like this (shortened):
+    #
+    # resource group:    osgGridFtpGroup
+    # Includes resource: NWICG_NotreDame_FTP
+    # Includes resource: UCSDT2-B_FTP
+    # Includes resource: UFlorida-SSERCA_FTP
+    # Includes resource: cinvestav_FTP
+    # Includes resource: SPRACE_FTP
+    # Includes resource: NYSGRID_CORNELL_NYS1_FTP
+    # Includes resource: Nebraska_FTP
+    # -----
+
+    # ----------------------------------------------------------------
+    #
+    #
+    def __init__ (self):
+        # are we a resource group? 
+        self.is_resource_group = False
+
+        # individual resource-specific properties
+        self.name              = None
+        self.zone              = None
+        self.type              = None
+        self.resource_class    = None
+        self.location          = None
+        self.vault             = None
+        self.free_space        = None
+        self.status            = None
+        self.info              = None
+        self.comment           = None
+        self.create_time       = None
+        self.modify_time       = None
+
+        # resource group-specific properties
+        self.group_members     = []
+
+
 ###############################################################################
 # The adaptor class
 
@@ -76,25 +145,23 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     #
     #
     def __init__ (self) :
-
         saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
 
     def sanity_check (self) :
-
-        cw = CommandWrapper.initAsLocalWrapper(logger=self)
-        cw.connect()
+        cw = CommandLineWrapper.init_as_subprocess_wrapper()
+        cw.open()
 
         # run ils, see if we get any errors -- if so, fail the
         # sanity check
         try:
-            result = cw.run("ils")
+            result = cw.run_sync("ils")
             if result.returncode != 0:
                 raise Exception("sanity check error")
         except Exception, ex:
             raise saga.NoSuccess ("Disabling iRODS plugin - could not access iRODS "+\
                               "filesystem through ils.  Check your iRODS "+\
-                              "environment and certificates.")
+                              "environment and certificates. %s" % ex)
 
         # try ienv or imiscsvrinfo later? ( check for error messages )
 
@@ -103,20 +170,20 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     # ----------------------------------------------------------------
     #
     #
-    def irods_get_directory_listing (self, dir) :
-
+    def irods_get_directory_listing (obj, dir, wrapper) :
         '''function takes an iRODS logical directory as an argument,
            and returns a list of irods_logical_entry instances containing
            information on files/directories found in the directory argument
         '''
-    
+
         result = []
         try:
-            cw = CommandWrapper.initAsLocalWrapper(None)
-            cw.connect()
+            cw = wrapper
+            #cw = CommandWrapper.initAsLocalWrapper(None)
+            #cw.connect()
             
             # execute the ils -L command
-            cw_result = cw.run ("ils -L %s" % dir)
+            cw_result = cw.run_sync ("ils -L %s" % dir)
     
             # make sure we ran ok
             if cw_result.returncode != 0:
@@ -185,17 +252,18 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     # ----------------------------------------------------------------
     #
     #
-    def irods_get_resource_listing(self):
+    def irods_get_resource_listing():
         ''' Return a list of irods resources and resource groups with information
             stored in irods_resource_entry format
         '''
         result = []
         try:
-            cw = CommandWrapper.initAsLocalWrapper(None)
-            cw.connect()
+            cw = CommandLineWrapper.init_as_subprocess_wrapper()
+            cw.open()
+
     
             # execute the ilsresc -l command
-            cw_result = cw.run("ilsresc -l")
+            cw_result = cw.run_sync("ilsresc -l")
     
             # make sure we ran ok
             if cw_result.returncode != 0:
@@ -279,69 +347,12 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 #
 #
 
-class irods_resource_entry (object):
-    '''class to hold info on an iRODS resource '''
-
-    # Resources (not groups) as retreived from ilsresc -l look like the following:
-    #
-    # resource name:     BNL_ATLAS_2_FTP
-    # resc id:           16214
-    # zone:              osg
-    # type:              MSS universal driver
-    # class:             compound
-    # location:          gw014k1.fnal.gov
-    # vault:             /data/cache/BNL_ATLAS_2_FTPplaceholder
-    # free space:
-    # status:            up
-    # info:
-    # comment:
-    # create time:       01343055975: 2012-07-23.09:06:15
-    # modify time:       01347480717: 2012-09-12.14:11:57
-    # ----
-
-    # Resource groups look like this (shortened):
-    #
-    # resource group:    osgGridFtpGroup
-    # Includes resource: NWICG_NotreDame_FTP
-    # Includes resource: UCSDT2-B_FTP
-    # Includes resource: UFlorida-SSERCA_FTP
-    # Includes resource: cinvestav_FTP
-    # Includes resource: SPRACE_FTP
-    # Includes resource: NYSGRID_CORNELL_NYS1_FTP
-    # Includes resource: Nebraska_FTP
-    # -----
-
-    # ----------------------------------------------------------------
-    #
-    #
-    def __init__ (self):
-        # are we a resource group? 
-        self.is_resource_group = False
-
-        # individual resource-specific properties
-        self.name              = None
-        self.zone              = None
-        self.type              = None
-        self.resource_class    = None
-        self.location          = None
-        self.vault             = None
-        self.free_space        = None
-        self.status            = None
-        self.info              = None
-        self.comment           = None
-        self.create_time       = None
-        self.modify_time       = None
-
-        # resource group-specific properties
-        self.group_members     = []
-
-
 
 ###############################################################################
 #
 # logical_directory adaptor class
 #
-class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
+class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.cpi.Async) :
 
     # ----------------------------------------------------------------
     #
@@ -354,6 +365,9 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
         self.size         = None
         self.owner        = None
         self.date         = None
+
+        self._cw = CommandLineWrapper.init_as_subprocess_wrapper()
+        self._cw.open()
 
 
     # ----------------------------------------------------------------
@@ -399,10 +413,12 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
         url   = self._url
         flags = self._flags 
 
-
-        if not os.path.isdir (path) :
-            raise saga.BadParameter ("Cannot handle url %s (is not a Logicaldirectory)"  \
-                                               %  path)
+        # TODO: verify that this is correct commented out
+        # or if i should add some alternate functionality
+        # (seems like boilerplate from local file adaptor)
+        #if not os.path.isdir (path) :
+        #    raise saga.BadParameter ("Cannot handle url %s (is not a Logicaldirectory)"  \
+        #                                       %  path)
         
         # TODO: "stat" the file
 
@@ -432,15 +448,16 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
     # ----------------------------------------------------------------
     #
     #
-    def make_dir (self, path, flags) :
+    @SYNC_CALL
+    def mkdir (self, path, flags) :
 
         #complete_path = dir_obj._url.path
-        complete_path = bliss.saga.Url(path).get_path()
-        self.log_debug("Attempting to make directory at: %s" % complete_path)
+        complete_path = saga.Url(path).get_path()
+        self._logger.debug("Attempting to make directory at: %s" % complete_path)
 
         #attempt to run iRODS mkdir command
         try:
-            cw_result = self._cw.run("imkdir %s" % complete_path)
+            cw_result = self._cw.run_sync("imkdir %s" % complete_path)
 
             if cw_result.returncode != 0:
                 raise saga.NoSuccess ("Could not create directory %s, errorcode %s: %s"\
@@ -461,14 +478,15 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
     # ----------------------------------------------------------------
     #
     #
-    def remove (self, path) :
+    @SYNC_CALL
+    def remove (self, path, flags) :
         '''This method is called upon logicaldir.remove() '''
 
-        complete_path = bliss.saga.Url(path).get_path()
-        self.log_debug("Attempting to remove directory at: %s" % complete_path)
+        complete_path = saga.Url(path).get_path()
+        self._logger.debug("Attempting to remove directory at: %s" % complete_path)
 
         try:
-            cw_result = self._cw.run("irm -r %s" % complete_path)
+            cw_result = self._cw.run_sync("irm -r %s" % complete_path)
 
             if cw_result.returncode != 0:
                 raise saga.NoSuccess ("Could not remove directory %s, errorcode %s: %s"\
@@ -491,16 +509,17 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
     # ----------------------------------------------------------------
     #
     #
-    def list (self) :
+    @SYNC_CALL
+    def list (self, npat, flags) :
        #TODO: Make this use the irods_get_directory_listing
 
         complete_path = self._url.path
         result = []
 
-        self.log_debug("Attempting to get directory listing for logical path %s" % complete_path)
+        self._logger.debug("Attempting to get directory listing for logical path %s" % complete_path)
 
         try:
-            cw_result = self._cw.run("ils %s" % complete_path)
+            cw_result = self._cw.run_sync("ils %s" % complete_path)
             
             if cw_result.returncode != 0:
                 raise Exception("Could not open directory")
@@ -527,7 +546,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
 #
 # logical_file adaptor class
 #
-class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
+class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async) :
 
     # ----------------------------------------------------------------
     #
@@ -544,7 +563,8 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
         self.is_directory = False
 
         # TODO: "stat" the file
-
+        self._cw = CommandLineWrapper.init_as_subprocess_wrapper()
+        self._cw.open()
 
 
     # ----------------------------------------------------------------
@@ -602,39 +622,42 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
         self._path = url.path
         path       = url.path
 
-        if not os.path.exists (path) :
+        # TODO: add appropriate sanity checks as may be needed for logical file
+        # (as opposed to local, which this boilerplate seems to be for)
 
-            (dirname, filename) = os.path.split (path)
+        # if not os.path.exists (path) :
 
-            if not filename :
-                raise saga.BadParameter ("Cannot handle url %s (names directory)"  \
-                                                 %  path)
+        #     (dirname, filename) = os.path.split (path)
 
-            if not os.path.exists (dirname) :
-                if saga.replica.CREATE_PARENTS & flags :
-                    try :
-                        os.makedirs (path)
-                    except Exception as e :
-                        raise saga.NoSuccess ("Could not 'mkdir -p %s': %s)"  \
-                                                        % (path, str(e)))
-                else :
-                    raise saga.BadParameter ("Cannot handle url %s (parent dir does not exist)"  \
-                                                     %  path)
+        #     if not filename :
+        #         raise saga.BadParameter ("Cannot handle url %s (names directory)"  \
+        #                                          %  path)
+
+        #     if not os.path.exists (dirname) :
+        #         if saga.replica.CREATE_PARENTS & flags :
+        #             try :
+        #                 os.makedirs (path)
+        #             except Exception as e :
+        #                 raise saga.NoSuccess ("Could not 'mkdir -p %s': %s)"  \
+        #                                                 % (path, str(e)))
+        #         else :
+        #             raise saga.BadParameter ("Cannot handle url %s (parent dir does not exist)"  \
+        #                                              %  path)
         
-            if not os.path.exists (filename) :
-                if saga.replica.CREATE & flags :
-                    try :
-                        open (path, 'w').close () # touch
-                    except Exception as e :
-                        raise saga.NoSuccess ("Could not 'touch %s': %s)"  \
-                                                        % (path, str(e)))
-                else :
-                    raise saga.BadParameter ("Cannot handle url %s (Logicalfile does not exist)"  \
-                                                     %  path)
+        #     if not os.path.exists (filename) :
+        #         if saga.replica.CREATE & flags :
+        #             try :
+        #                 open (path, 'w').close () # touch
+        #             except Exception as e :
+        #                 raise saga.NoSuccess ("Could not 'touch %s': %s)"  \
+        #                                                 % (path, str(e)))
+        #         else :
+        #             raise saga.BadParameter ("Cannot handle url %s (Logicalfile does not exist)"  \
+        #                                              %  path)
         
-        if not os.path.isfile (path) :
-            raise saga.BadParameter ("Cannot handle url %s (is not a Logicalfile)"  \
-                                               %  path)
+        # if not os.path.isfile (path) :
+        #     raise saga.BadParameter ("Cannot handle url %s (is not a Logicalfile)"  \
+        #                                        %  path)
 
     # ----------------------------------------------------------------
     #
@@ -651,36 +674,8 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
 
         t = saga.task.Task ()
 
-        t._set_state  = saga.task.Done
+        t._set_state  = saga.task.DONE
         t._set_result = self._url
-
-        return t
-
-
-    # ----------------------------------------------------------------
-    #
-    #
-    @SYNC_CALL
-    def get_size_self (self) :
-
-        path = self._url.get_path()
-        self.log_debug("Attempting to get size for logical file %s " \
-                         %  path)
-        listing = irods_get_directory_listing(self, path)
-
-        return listing[0].size
-
-
-    # ----------------------------------------------------------------
-    #
-    #
-    @ASYNC_CALL
-    def get_size_self_async (self, ttype) :
-
-        t = saga.task.Task ()
-
-        t._set_result (self.get_size_self ())
-        t._set_state  (saga.task.DONE)
 
         return t
 
@@ -709,21 +704,23 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     # ----------------------------------------------------------------
     #
     #
-    def logicalfile_list_locations (self, logicalfile_obj) :
+    @SYNC_CALL
+    def list_locations (self) :
          '''This method is called upon logicaldir.list_locations()
          '''
          #return a list of all replica locations for a file
-         path = logicalfile_obj._url.get_path()
-         self.log_debug("Attempting to get a list of replica locations for %s" \
+         path = self._url.get_path()
+         self._logger.debug("Attempting to get a list of replica locations for %s" \
                             % path)
-         listing = irods_get_directory_listing(self, path)
+         listing = self._adaptor.irods_get_directory_listing(path, self._cw)
          return listing[0].locations
 
 
     # ----------------------------------------------------------------
     #
     #
-    def logicalfile_remove_location(self, logicalfile_obj, location):
+    @SYNC_CALL
+    def remove_location(self, location):
         '''This method is called upon logicaldir.remove_locations()
         '''     
         raise saga.NotImplemented._log (self._logger, "Not implemented")
@@ -733,19 +730,20 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     # ----------------------------------------------------------------
     #
     #
-    def logicalfile_replicate(self, logicalfile_obj, target):
+    @SYNC_CALL
+    def replicate (self, target, flags):
         '''This method is called upon logicaldir.replicate()
         '''        
         #path to file we are replicating on iRODS
-        complete_path = logicalfile_obj._url.get_path()        
+        complete_path = self._url.get_path()        
 
         #TODO: Verify Correctness in the way the resource is grabbed
-        query = bliss.saga.Url(target).get_query()
+        query = saga.Url(target).get_query()
         resource = query.split("=")[1]
-        self.log_debug("Attempting to replicate logical file %s to resource/resource group %s" % (complete_path, resource))
+        self._logger.debug("Attempting to replicate logical file %s to resource/resource group %s" % (complete_path, resource))
 
         try:
-            cw_result = self._cw.run("irepl -R %s %s" % (resource, complete_path) )
+            cw_result = self._cw.run_sync("irepl -R %s %s" % (resource, complete_path) )
 
             if cw_result.returncode != 0:
                 raise Exception("Could not replicate logical file %s to resource/resource group %s, errorcode %s: %s"\
@@ -761,17 +759,18 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     #
     # TODO: This is COMPLETELY untested, as it is unsupported on the only iRODS
     # machine I have access to.
-    def move (self, target) :
+    @SYNC_CALL
+    def move_self (self, target, flags) :
         '''This method is called upon logicaldir.move() '''
 
         #path to file we are moving on iRODS
-        source_path = logicalfile_obj._url.get_path()
-        dest_path   = bliss.saga.Url(target).get_path()
+        source_path = self._url.get_path()
+        dest_path   = saga.Url(target).get_path()
 
-        self.log_debug("Attempting to move logical file %s to location %s" % (source_path, dest_path))
+        self._logger.debug("Attempting to move logical file %s to location %s" % (source_path, dest_path))
 
         try:
-            cw_result = self._cw.run("imv %s %s" % (source_path, dest_path) )
+            cw_result = self._cw.run_sync("imv %s %s" % (source_path, dest_path) )
 
             if cw_result.returncode != 0:
                 raise saga.NoSuccess ("Could not move logical file %s to location %s, errorcode %s: %s"\
@@ -792,14 +791,15 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
 
     ######################################################################
     ##
-    def remove (self) :
+    @SYNC_CALL
+    def remove_self (self, flags) :
         '''This method is called upon logicalfile.remove() '''
 
-        complete_path = logicalfile_obj._url.get_path()
-        self.log_debug("Attempting to remove file at: %s" % complete_path)
+        complete_path = self._url.get_path()
+        self._logger.debug("Attempting to remove file at: %s" % complete_path)
 
         try:
-            cw_result = self._cw.run("irm %s" % complete_path)
+            cw_result = self._cw.run_sync("irm %s" % complete_path)
 
             if cw_result.returncode != 0:
                 raise saga.NoSuccess ("Could not remove file %s, errorcode %s: %s"\
@@ -834,7 +834,8 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     #
     #
     #
-    def upload (self, source, target) :
+    @SYNC_CALL
+    def upload (self, source, target, flags) :
         '''Uploads a file from the LOCAL, PHYSICAL filesystem to
            the replica management system.
            @param source: URL (should be file:// or local path) of local file
@@ -844,35 +845,35 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
         '''
 
         #TODO: Make sure that the source URL is a local/file:// URL
-        complete_path = bliss.saga.Url(source).get_path()
+        complete_path = saga.Url(source).get_path()
         
         # extract the path from the LogicalFile object, excluding
         # the filename
-        destination_path=logicalfile_obj._url.get_path()[0:string.rfind(
-                         logicalfile_obj._url.get_path(), "/")+1]
+        destination_path=self._url.get_path()[0:string.rfind(
+                         self._url.get_path(), "/")+1]
 
         try:
             #var to hold our command result, placed here to keep in scope
             cw_result = 0
             
             #mark that this is experimental/may not be part of official API
-            self.log_debug("Beginning EXPERIMENTAL upload operation " +\
+            self._logger.debug("Beginning EXPERIMENTAL upload operation " +\
                            "will register file in logical dir: %s" %
                            destination_path)
 
             # was no resource selected?
             if target==None:
-                self.log_debug("Attempting to upload to default resource")
-                cw_result = self._cw.run("iput %s %s" %
+                self._logger.debug("Attempting to upload to default resource")
+                cw_result = self._cw.run_sync("iput %s %s" %
                                          (complete_path, destination_path))
 
             # resource was selected, have to parse it and supply to iput -R
             else:
                 #TODO: Verify correctness
-                query = bliss.saga.Url(target).get_query()
+                query = saga.Url(target).get_query()
                 resource = query.split("=")[1]
-                self.log_debug("Attempting to upload to resource %s" % resource)
-                cw_result = self._cw.run("iput -R %s %s %s" %
+                self._logger.debug("Attempting to upload to resource %s" % resource)
+                cw_result = self._cw.run_sync("iput -R %s %s %s" %
                                          (resource, complete_path, destination_path))
 
             # check our result
@@ -883,7 +884,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
 
         except Exception, ex:
             # couldn't upload for unspecificed reason
-            raise saga.NoSuccess ("Couldn't upload file.")
+            raise saga.NoSuccess._log (self._logger, "Couldn't upload file: %s" % ex)
 
         return
 
@@ -894,7 +895,8 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     # HERE BE DRAGONS, in other words...
 
     # ----------------------------------------------------------------
-    def download (self, target, source) :
+    @SYNC_CALL
+    def download (self, name, source, flags) :
         '''Downloads a file from the REMOTE REPLICA FILESYSTEM to a local
            directory.
            @param target: param containing a local path/filename
@@ -903,36 +905,38 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
                           the file from (not evaluated, yet)
         '''
 
+        target = name
+
         #TODO: Make sure that the target URL is a local/file:// URL
         # extract the path from the LogicalFile object, excluding
         # the filename
-        logical_path=logicalfile_obj._url.get_path()
+        logical_path=self._url.get_path()
 
         # fill in our local path if one was specified
         local_path = ""
         if target:
-            local_path = bliss.saga.Url(target).get_path()
+            local_path = saga.Url(target).get_path()
         
         try:
             #var to hold our command result, placed here to keep in scope
             cw_result = 0
             
             #mark that this is experimental/may not be part of official API
-            self.log_debug("Beginning EXPERIMENTAL download operation " +\
+            self._logger.debug("Beginning EXPERIMENTAL download operation " +\
                            "will download logical file: %s, specified local directory is %s" %
                            (logical_path, target) )
 
             # was no local target selected?
             if target==None:
-                self.log_debug("Attempting to download file %s with iget to current local directory" % \
+                self._logger.debug("Attempting to download file %s with iget to current local directory" % \
                                    logical_path)
-                cw_result = self._cw.run("iget %s" % \
+                cw_result = self._cw.run_sync("iget %s" % \
                                          (logical_path))
 
             # local target selected
             else:
-                self.log_debug("Attempting to download file %s with iget to %s" % (logical_path, local_path))
-                cw_result = self._cw.run("iget %s %s " %
+                self._logger.debug("Attempting to download file %s with iget to %s" % (logical_path, local_path))
+                cw_result = self._cw.run_sync("iget %s %s " %
                                          (logical_path, local_path))
 
             # check our result
@@ -943,7 +947,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
 
         except Exception, ex:
             # couldn't download for unspecificed reason
-            raise saga.NoSuccess ("Couldn't download file.")
+            raise saga.NoSuccess ("Couldn't download file. %s" % ex)
 
         return
 
