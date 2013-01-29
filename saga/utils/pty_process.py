@@ -128,12 +128,27 @@ class pty_process (object) :
     #
     def __del__ (self) :
 
+        self.quit ()
+
+
+    # --------------------------------------------------------------------
+    #
+    # free resoources
+    #
+    def quit (self) :
+
         if  self.alive () :
             self.child.terminate ()
 
         if  self.alive () :
             self.child.kill ()
 
+        os.close (self.master_in )
+        os.close (self.master_out)
+        os.close (self.master_err)
+        os.close (self.slave_in  )
+        os.close (self.slave_out )
+        os.close (self.slave_err )
 
     # --------------------------------------------------------------------
     #
@@ -477,26 +492,6 @@ class pty_process (object) :
 
     # ----------------------------------------------------------------
     #
-    def get_cache (self) :
-        """
-        Return the currently cached output
-        """
-
-        return self.cache
-
-
-    # ----------------------------------------------------------------
-    #
-    def get_cache_log (self) :
-        """
-        Return the currently cached output
-        """
-
-        return self.clog
-
-
-    # ----------------------------------------------------------------
-    #
     def write (self, data) :
         """
         This method will repeatedly attempt to push the given data into the
@@ -528,6 +523,26 @@ class pty_process (object) :
 
         except Exception as e :
             raise se.NoSuccess ("write to pty process failed (%s)" % e)
+
+
+    # ----------------------------------------------------------------
+    #
+    def get_cache (self) :
+        """
+        Return the currently cached output
+        """
+
+        return self.cache
+
+
+    # ----------------------------------------------------------------
+    #
+    def get_cache_log (self) :
+        """
+        Return the currently cached output
+        """
+
+        return self.clog
 
 
 

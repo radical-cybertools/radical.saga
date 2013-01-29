@@ -21,7 +21,7 @@ ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 _WRAPPER_SH  = "https://raw.github.com/saga-project/saga-python/feature/sshjob/saga/adaptors/ssh/wrapper.sh"
 _WRAPPER_SH  = "/home/merzky/saga/saga-python/saga/adaptors/ssh/wrapper.sh"
 _WRAPPER_SH  = "/tmp/wrapper.sh"
-_PTY_TIMEOUT = 1.0
+_PTY_TIMEOUT = 13.0
 
 # --------------------------------------------------------------------
 # the adaptor name
@@ -181,6 +181,12 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
         saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
+    def __del__ (self) :
+        print "DESTRUCTION! %s" % self.pty
+      # self.pty.write ('PURGE\n')
+        self.pty.write ('QUIT\n' )
+        self.pty.quit ()
+
 
     @SYNC_CALL
     def init_instance (self, adaptor_state, rm_url, session) :
@@ -256,10 +262,13 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
             elif n == 2 :
                 self.pty.clog += " ~~~~~ got old shell prompt\n"
                 self.pty.write ("export PS1='prompt-$?->'\n")
+                
                 (n, match) = self.pty.find (['^prompt-[\d+]->$'], _PTY_TIMEOUT)
                 find_prompt = False
-                if  not match[-4:] == "-0->" :
-                    raise saga.NoSuccess ("failed to set prompt: %s" % match[:-10])
+
+                if  not match or not match[-4:] == "-0->" :
+                    raise saga.NoSuccess ("failed to set prompt\n- log ---\n%s\n---------\n" \
+                                       % self.pty.get_cache_log ())
                 self.pty.clog += " ~~~~~ got new shell prompt\n"
         
         # we have a prompt on the remote system -- now fetch the shell wrapper
@@ -271,10 +280,10 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
         self.pty.write ("mkdir   -p %s\n" % base)
         _, match = self.pty.find (['^prompt-[\d+]->$'], _PTY_TIMEOUT)
-        print 'match: %s' % self.pty.get_cache_log ()
 
-        if  not match[-4:] == "-0->" :
-            raise saga.NoSuccess ("failed to retrieve wrapper: %s" % match[:-10])
+        if  not match or not match[-4:] == "-0->" :
+            raise saga.NoSuccess ("failed to prepare wrapper\n- log ---\n%s\n---------\n" \
+                               % self.pty.get_cache_log ())
 
 
       # self.pty.write ("test -f wget -q %s -O $HOME/.saga/adaptors/ssh_job/wrapper.sh \n" % _WRAPPER_SH)
@@ -282,15 +291,16 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
                      % (base, base, _WRAPPER_SH, base))
         _, match = self.pty.find (['^prompt-[\d+]->$'], _PTY_TIMEOUT)
 
-        if  not match[-4:] == "-0->" :
-            raise saga.NoSuccess ("failed to retrieve wrapper: %s" % match[:-10])
+        if  not match or not match[-4:] == "-0->" :
+            raise saga.NoSuccess ("failed to retrieve wrapper\n- log ---\n%s\n---------\n" \
+                               % self.pty.get_cache_log ())
 
 
         self.pty.write ("/bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh\n")
         _, match = self.pty.find  (['^CMD'], _PTY_TIMEOUT)
 
-        if  not match[-3:] == "CMD" :
-            raise saga.NoSuccess ("failed to run job service wrapper -- backend error\n- log ---\n%s\n---------\n" \
+        if  not match or not match[-3:] == "CMD" :
+            raise saga.NoSuccess ("failed to run job service wrapper\n- log ---\n%s\n---------\n" \
                                % self.pty.get_cache_log ())
     # ----------------------------------------------------------------
     #
@@ -322,7 +332,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self.pty.write ("RUN %s\n" % cmd)
         _, match = self.pty.find (['^CMD'], 10.0)
 
-        if  not match[-3:] == "CMD" :
+        if  not match or not match[-3:] == "CMD" :
             raise saga.NoSuccess ("failed to run job -- backend error\n- log ---\n%s\n---------\n" \
                                 % self.pty.get_cache_log ())
 

@@ -99,8 +99,8 @@ cmd_run_process () {
   PID=`sh -c 'echo $PPID'`
   DIR="$BASE/$PID"
 
-  rm    -rf "$DIR"
-  mkdir -p  "$DIR"  || exit 1
+  test -d "$DIR"    && rm    -rf "$DIR"
+  test -d "$DIR"    || mkdir -p  "$DIR"  || exit 1
   echo "NEW"         > "$DIR/state"
   echo "$@"          > "$DIR/cmd"
   touch                "$DIR/in"
