@@ -1,3 +1,8 @@
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
+__author__    = "Ole Weidner"
+__copyright__ = "Copyright 2012, The SAGA Project"
+__license__   = "MIT"
 
 import string
 
