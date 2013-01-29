@@ -1,0 +1,1011 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>7. File/Directory Management &mdash; SAGA 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 1.0 documentation" href="../../index.html" />
+    <link rel="up" title="2. Library Reference" href="../index.html" />
+    <link rel="next" title="8. Replica Management" href="../replica/index.html" />
+    <link rel="prev" title="6. Job Management" href="../job/index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../replica/index.html" title="8. Replica Management"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../job/index.html" title="6. Job Management"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">2. Library Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="file-directory-management">
+<span id="file-managemen"></span><h1>7. File/Directory Management<a class="headerlink" href="#file-directory-management" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>7.1. Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The file managment API provides the ability to interact with (local and
+remote) file systems via the two classes, <tt class="xref py py-class docutils literal"><span class="pre">bliss.saga.filesystem.Directory</span></tt> and
+<tt class="xref py py-class docutils literal"><span class="pre">bliss.saga.filesystem.File</span></tt>. The API provides a number of operations, which all
+behave similar to the common unix command line tools (cp, ls, rm etc).</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># get a directory handle</span>
+<span class="nb">dir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/&quot;</span><span class="p">)</span>
+
+<span class="c"># create a subdir</span>
+<span class="nb">dir</span><span class="o">.</span><span class="n">make_dir</span> <span class="p">(</span><span class="s">&quot;data/&quot;</span><span class="p">)</span>
+
+<span class="c"># list contents of the directory</span>
+<span class="n">files</span> <span class="o">=</span> <span class="nb">dir</span><span class="o">.</span><span class="n">list</span> <span class="p">()</span>
+
+<span class="c"># copy *.dat files into the subdir</span>
+<span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span> <span class="p">:</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span> <span class="p">(</span><span class="s">&#39;^.*\.dat$&#39;</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">:</span>
+        <span class="nb">dir</span><span class="o">.</span><span class="n">copy</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s">&quot;sftp://localhost/tmp/data/&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The above example covers most of the semantics of the filesystem package &#8211;
+additional capabilities, such get_size() or move(), can be found in the
+individual class documentations.</p>
+</div>
+<div class="section" id="file-saga-filesystem-file">
+<span id="file"></span><h2>7.2. File &#8211; <a class="reference internal" href="#saga.filesystem.File" title="saga.filesystem.File"><tt class="xref py py-class docutils literal"><span class="pre">saga.filesystem.File</span></tt></a><a class="headerlink" href="#file-saga-filesystem-file" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">todo:</th><td class="field-body">...</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="saga.filesystem.File">
+<em class="property">class </em><tt class="descclassname">saga.filesystem.</tt><tt class="descname">File</tt><big>(</big><em>url=None</em>, <em>flags=512</em>, <em>session=None</em>, <em>_adaptor=None</em>, <em>_adaptor_state={}</em>, <em>_ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.Base</span></tt>, <tt class="xref py py-class docutils literal"><span class="pre">saga.async.Async</span></tt></p>
+<p>Represents a SAGA file as defined in GFD.90</p>
+<p>The saga.filesystem.File class represents, as the name indicates,
+a file on some (local or remote) filesystem.  That class offers
+a number of operations on that file, such as copy, move and remove:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># get a file handle</span>
+<span class="nb">file</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/data/data.bin&quot;</span><span class="p">)</span>
+
+<span class="c"># copy the file</span>
+<span class="nb">file</span><span class="o">.</span><span class="n">copy</span> <span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/data/data.bak&quot;</span><span class="p">)</span>
+
+<span class="c"># move the file</span>
+<span class="nb">file</span><span class="o">.</span><span class="n">move</span> <span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/data/data.new&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="classmethod">
+<dt id="saga.filesystem.File.create">
+<em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>url=None</em>, <em>flags=512</em>, <em>session=None</em>, <em>ttype='Sync'</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>url:       saga.Url
+flags:     saga.filesystem.flags enum
+session:   saga.Session
+ttype:     saga.task.type enum
+ret:       saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.get_url">
+<tt class="descname">get_url</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.get_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           saga.Url / saga.Task</p>
+<p>Return the complete url pointing to the file.</p>
+<p>The call will return the complete url pointing to
+this file as a saga.Url object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># print URL of a file</span>
+<span class="nb">file</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s">&quot;sftp://localhost/etc/passwd&quot;</span><span class="p">)</span>
+<span class="k">print</span> <span class="nb">file</span><span class="o">.</span><span class="n">get_url</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.get_cwd">
+<tt class="descname">get_cwd</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.get_cwd" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           string / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.get_name">
+<tt class="descname">get_name</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.get_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           string / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.is_dir_self">
+<tt class="descname">is_dir_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.is_dir_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           bool / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.is_entry_self">
+<tt class="descname">is_entry_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.is_entry_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           bool / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.is_link_self">
+<tt class="descname">is_link_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.is_link_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           bool / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.read_link_self">
+<tt class="descname">read_link_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.read_link_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           saga.Url / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.copy_self">
+<tt class="descname">copy_self</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.copy_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>tgt:           saga.Url
+flags:         enum flags
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+<p>Copy the file to another location</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>target</strong> &#8211; Url of the copy target.</li>
+<li><strong>flags</strong> &#8211; Flags to use for the operation.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The file is copied to the given target location.  The target URL must
+be an absolute path, and can be a target file name or target
+directory name.  If the target file exists, it is overwritten:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># copy a file</span>
+<span class="nb">file</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/data/data.bin&quot;</span><span class="p">)</span>
+<span class="nb">file</span><span class="o">.</span><span class="n">copy</span> <span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/data/data.bak&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.link_self">
+<tt class="descname">link_self</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.link_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>tgt:           saga.Url
+flags:         enum flags
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.move_self">
+<tt class="descname">move_self</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.move_self" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>target</strong> &#8211; Url of the move target.</li>
+<li><strong>flags</strong> &#8211; Flags to use for the operation.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+<p>Move the file to another location</p>
+<p>The file is copied to the given target location.  The target URL must
+be an absolute path, and can be a target file name or target
+directory name.  If the target file exists, it is overwritten:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># copy a file</span>
+<span class="nb">file</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/data/data.bin&quot;</span><span class="p">)</span>
+<span class="nb">file</span><span class="o">.</span><span class="n">move</span> <span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/data/data.bak&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.remove_self">
+<tt class="descname">remove_self</tt><big>(</big><em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.remove_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>flags:         flags enum
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.close">
+<tt class="descname">close</tt><big>(</big><em>timeout=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>timeout:       float
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.filesystem.File.url">
+<tt class="descname">url</tt><a class="headerlink" href="#saga.filesystem.File.url" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           saga.Url / saga.Task</p>
+<p>Return the complete url pointing to the file.</p>
+<p>The call will return the complete url pointing to
+this file as a saga.Url object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># print URL of a file</span>
+<span class="nb">file</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s">&quot;sftp://localhost/etc/passwd&quot;</span><span class="p">)</span>
+<span class="k">print</span> <span class="nb">file</span><span class="o">.</span><span class="n">get_url</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.filesystem.File.cwd">
+<tt class="descname">cwd</tt><a class="headerlink" href="#saga.filesystem.File.cwd" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           string / saga.Task</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.filesystem.File.name">
+<tt class="descname">name</tt><a class="headerlink" href="#saga.filesystem.File.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           string / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.is_file_self">
+<tt class="descname">is_file_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.is_file_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:    saga.task.type enum
+ret:      bool / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.get_size_self">
+<tt class="descname">get_size_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.get_size_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+<p>Returns the size of a file (in bytes)</p>
+<blockquote>
+<div><p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># get a file handle</span>
+<span class="nb">file</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/data/data.bin&quot;</span><span class="p">)</span>
+
+<span class="c"># print the file&#39;s size</span>
+<span class="k">print</span> <span class="nb">file</span><span class="o">.</span><span class="n">get_size</span> <span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.read">
+<tt class="descname">read</tt><big>(</big><em>size=-1</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>size :    int
+ttype:    saga.task.type enum
+ret:      string / bytearray / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.write">
+<tt class="descname">write</tt><big>(</big><em>data</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>data :    string / bytearray
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.seek">
+<tt class="descname">seek</tt><big>(</big><em>off</em>, <em>whence='Start'</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.seek" title="Permalink to this definition">¶</a></dt>
+<dd><p>off :     int
+whence:   seek_mode enum
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.read_v">
+<tt class="descname">read_v</tt><big>(</big><em>iovecs</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.read_v" title="Permalink to this definition">¶</a></dt>
+<dd><p>iovecs:   list [tuple (int, int)]
+ttype:    saga.task.type enum
+ret:      list [bytearray] / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.write_v">
+<tt class="descname">write_v</tt><big>(</big><em>data</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.write_v" title="Permalink to this definition">¶</a></dt>
+<dd><p>data:     list [tuple (int, string / bytearray)]
+ttype:    saga.task.type enum
+ret:      list [int] / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.size_p">
+<tt class="descname">size_p</tt><big>(</big><em>pattern</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.size_p" title="Permalink to this definition">¶</a></dt>
+<dd><p>pattern:  string 
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.read_p">
+<tt class="descname">read_p</tt><big>(</big><em>pattern</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.read_p" title="Permalink to this definition">¶</a></dt>
+<dd><p>pattern:  string
+ttype:    saga.task.type enum
+ret:      string / bytearray / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.write_p">
+<tt class="descname">write_p</tt><big>(</big><em>pattern</em>, <em>data</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.write_p" title="Permalink to this definition">¶</a></dt>
+<dd><p>pattern:  string
+data:     string / bytearray
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.modes_e">
+<tt class="descname">modes_e</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.modes_e" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:    saga.task.type enum
+ret:      list [string] / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.size_e">
+<tt class="descname">size_e</tt><big>(</big><em>emode</em>, <em>spec</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.size_e" title="Permalink to this definition">¶</a></dt>
+<dd><p>emode:    string
+spec:     string
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.read_e">
+<tt class="descname">read_e</tt><big>(</big><em>emode</em>, <em>spec</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.read_e" title="Permalink to this definition">¶</a></dt>
+<dd><p>emode:    string
+spec:     string
+ttype:    saga.task.type enum
+ret:      bytearray / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.File.write_e">
+<tt class="descname">write_e</tt><big>(</big><em>emode</em>, <em>spec</em>, <em>data</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.write_e" title="Permalink to this definition">¶</a></dt>
+<dd><p>emode:    string
+spec:     string
+data:     string / bytearray
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.filesystem.File.size">
+<tt class="descname">size</tt><a class="headerlink" href="#saga.filesystem.File.size" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+<p>Returns the size of a file (in bytes)</p>
+<blockquote>
+<div><p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># get a file handle</span>
+<span class="nb">file</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/data/data.bin&quot;</span><span class="p">)</span>
+
+<span class="c"># print the file&#39;s size</span>
+<span class="k">print</span> <span class="nb">file</span><span class="o">.</span><span class="n">get_size</span> <span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.filesystem.File.modes">
+<tt class="descname">modes</tt><a class="headerlink" href="#saga.filesystem.File.modes" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:    saga.task.type enum
+ret:      list [string] / saga.Task</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="directory-saga-filesystem-directory">
+<span id="dir"></span><h2>7.3. Directory &#8211; <a class="reference internal" href="#saga.filesystem.Directory" title="saga.filesystem.Directory"><tt class="xref py py-class docutils literal"><span class="pre">saga.filesystem.Directory</span></tt></a><a class="headerlink" href="#directory-saga-filesystem-directory" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">todo:</th><td class="field-body">...</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="saga.filesystem.Directory">
+<em class="property">class </em><tt class="descclassname">saga.filesystem.</tt><tt class="descname">Directory</tt><big>(</big><em>url=None</em>, <em>flags=512</em>, <em>session=None</em>, <em>_adaptor=None</em>, <em>_adaptor_state={}</em>, <em>_ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.Base</span></tt>, <tt class="xref py py-class docutils literal"><span class="pre">saga.async.Async</span></tt></p>
+<p>Represents a SAGA directory as defined in GFD.90</p>
+<p>The saga.filesystem.Directory class represents, as the name indicates,
+a directory on some (local or remote) filesystem.  That class offers
+a number of operations on that directory, such as listing its contents,
+copying files, or creating subdirectories:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># get a directory handle</span>
+<span class="nb">dir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/&quot;</span><span class="p">)</span>
+
+<span class="c"># create a subdir</span>
+<span class="nb">dir</span><span class="o">.</span><span class="n">make_dir</span> <span class="p">(</span><span class="s">&quot;data/&quot;</span><span class="p">)</span>
+
+<span class="c"># list contents of the directory</span>
+<span class="n">files</span> <span class="o">=</span> <span class="nb">dir</span><span class="o">.</span><span class="n">list</span> <span class="p">()</span>
+
+<span class="c"># copy *.dat files into the subdir</span>
+<span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span> <span class="p">:</span>
+    <span class="k">if</span> <span class="n">f</span> <span class="o">^</span> <span class="s">&#39;^.*\.dat$&#39;</span> <span class="p">:</span>
+        <span class="nb">dir</span><span class="o">.</span><span class="n">copy</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s">&quot;sftp://localhost/tmp/data/&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="classmethod">
+<dt id="saga.filesystem.Directory.create">
+<em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>url=None</em>, <em>flags=512</em>, <em>session=None</em>, <em>ttype='Sync'</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>url:       saga.Url
+flags:     saga.filesystem.flags enum
+session:   saga.Session
+ttype:     saga.task.type enum
+ret:       saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.get_size">
+<tt class="descname">get_size</tt><big>(</big><em>path</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.get_size" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> &#8211; path of the file or directory</td>
+</tr>
+</tbody>
+</table>
+<p>flags:    saga.namespace.flags enum
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+<p>Returns the size of a file or directory (in bytes)</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># inspect a file for its size</span>
+<span class="nb">dir</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/&quot;</span><span class="p">)</span>
+<span class="n">size</span> <span class="o">=</span> <span class="nb">dir</span><span class="o">.</span><span class="n">get_size</span> <span class="p">(</span><span class="s">&#39;data/data.bin&#39;</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">size</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.is_file">
+<tt class="descname">is_file</tt><big>(</big><em>name</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.is_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>name:     saga.Url
+ttype:    saga.task.type enum
+ret:      bool / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.open_dir">
+<tt class="descname">open_dir</tt><big>(</big><em>path</em>, <em>flags=512</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.open_dir" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>path</strong> &#8211; name/path of the directory to open</li>
+<li><strong>flags</strong> &#8211; directory creation flags</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>ttype:    saga.task.type enum
+ret:      saga.filesystem.Directory / saga.Task</p>
+<p>Open and return a new directoy</p>
+<blockquote>
+<div><p>The call opens and returns a directory at the given location.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># create a subdir &#39;data&#39; in /tmp</span>
+<span class="nb">dir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/&quot;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="nb">dir</span><span class="o">.</span><span class="n">open_dir</span> <span class="p">(</span><span class="s">&#39;data/&#39;</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Create</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.open">
+<tt class="descname">open</tt><big>(</big><em>name</em>, <em>flags=512</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.open" title="Permalink to this definition">¶</a></dt>
+<dd><p>name:     saga.Url
+flags:    saga.namespace.flags enum
+ttype:    saga.task.type enum
+ret:      saga.filesystem.File / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.change_dir">
+<tt class="descname">change_dir</tt><big>(</big><em>url</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.change_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>url:           saga.Url
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.list">
+<tt class="descname">list</tt><big>(</big><em>npat='.'</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.list" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>npat</strong> &#8211; File name pattern (like POSIX &#8216;ls&#8217;, e.g. &#8216;*.txt&#8217;)</td>
+</tr>
+</tbody>
+</table>
+<p>flags:         flags enum
+ttype:         saga.task.type enum
+ret:           list [saga.Url] / saga.Task</p>
+<p>List the directory&#8217;s content</p>
+<p>The call will return a list of files and subdirectories within the
+directory:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># list contents of the directory</span>
+<span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">dir</span><span class="o">.</span><span class="n">list</span><span class="p">()</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="n">f</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.find">
+<tt class="descname">find</tt><big>(</big><em>npat</em>, <em>flags=2</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.find" title="Permalink to this definition">¶</a></dt>
+<dd><p>npat:          string
+flags:         flags enum
+ttype:         saga.task.type enum
+ret:           list [saga.Url] / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.exists">
+<tt class="descname">exists</tt><big>(</big><em>path</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.exists" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> &#8211; path of the entry to check</td>
+</tr>
+</tbody>
+</table>
+<p>ttype:         saga.task.type enum
+ret:           bool / saga.Task</p>
+<p>Returns True if path exists, False otherwise.</p>
+<p>Example:</p>
+<div class="highlight-python"><pre># inspect a file for its size
+dir  = saga.filesystem.Directory("sftp://localhost/tmp/")
+if dir.exists ('data'):
+    # do something</pre>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.is_dir">
+<tt class="descname">is_dir</tt><big>(</big><em>path</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.is_dir" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> &#8211; path of the entry to check</td>
+</tr>
+</tbody>
+</table>
+<p>ttype:         saga.task.type enum
+ret:           bool / saga.Task</p>
+<p>Returns True if path is a directory, False otherwise.</p>
+<p>Example:</p>
+<div class="highlight-python"><pre># inspect a file for its size
+dir  = saga.filesystem.Directory("sftp://localhost/tmp/")
+if dir.is_dir ('data'):
+    # do something</pre>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.is_entry">
+<tt class="descname">is_entry</tt><big>(</big><em>name</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.is_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>name:          saga.Url
+ttype:         saga.task.type enum
+ret:           bool / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.is_link">
+<tt class="descname">is_link</tt><big>(</big><em>name</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.is_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>name:          saga.Url
+ttype:         saga.task.type enum
+ret:           bool / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.read_link">
+<tt class="descname">read_link</tt><big>(</big><em>name</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.read_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>name:          saga.Url
+ttype:         saga.task.type enum
+ret:           saga.Url / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.get_num_entries">
+<tt class="descname">get_num_entries</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.get_num_entries" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           int / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.get_entry">
+<tt class="descname">get_entry</tt><big>(</big><em>num</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.get_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>num:           int 
+ttype:         saga.task.type enum
+ret:           saga.Url / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.copy">
+<tt class="descname">copy</tt><big>(</big><em>src</em>, <em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.copy" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>src</strong> &#8211; path of the file to copy</li>
+<li><strong>tgt</strong> &#8211; absolute URL of target name or directory</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>flags:         flags enum
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+<p>Copy a file from source to target</p>
+<p>The source is copied to the given target directory.  The path of the
+source can be relative:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># copy a file</span>
+<span class="nb">dir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/&quot;</span><span class="p">)</span>
+<span class="nb">dir</span><span class="o">.</span><span class="n">copy</span> <span class="p">(</span><span class="s">&quot;./data.bin&quot;</span><span class="p">,</span> <span class="s">&quot;sftp://localhost/tmp/data/&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.link">
+<tt class="descname">link</tt><big>(</big><em>src</em>, <em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.link" title="Permalink to this definition">¶</a></dt>
+<dd><p>src:           saga.Url
+tgt:           saga.Url
+flags:         flags enum
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.move">
+<tt class="descname">move</tt><big>(</big><em>src</em>, <em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.move" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>src</strong> &#8211; path of the file to copy</li>
+<li><strong>tgt</strong> &#8211; absolute URL of target directory</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>flags:         flags enum
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+<p>Move a file from source to target</p>
+<p>The source is moved to the given target directory.  The path of the
+source can be relative:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># copy a file</span>
+<span class="nb">dir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/&quot;</span><span class="p">)</span>
+<span class="nb">dir</span><span class="o">.</span><span class="n">move</span> <span class="p">(</span><span class="s">&quot;./data.bin&quot;</span><span class="p">,</span> <span class="s">&quot;sftp://localhost/tmp/data/&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.remove">
+<tt class="descname">remove</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>tgt:           saga.Url
+flags:         flags enum
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.make_dir">
+<tt class="descname">make_dir</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.make_dir" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tgt</strong> &#8211; name/path of the new directory</li>
+<li><strong>flags</strong> &#8211; directory creation flags</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+<p>Create a new directoy</p>
+<p>The call creates a directory at the given location.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># create a subdir &#39;data&#39; in /tmp</span>
+<span class="nb">dir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/&quot;</span><span class="p">)</span>
+<span class="nb">dir</span><span class="o">.</span><span class="n">make_dir</span> <span class="p">(</span><span class="s">&#39;data/&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.get_url">
+<tt class="descname">get_url</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.get_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           saga.Url / saga.Task</p>
+<p>Return the complete url pointing to the directory.</p>
+<p>The call will return the complete url pointing to
+this directory as a saga.Url object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># print URL of a directory</span>
+<span class="nb">dir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/&quot;</span><span class="p">)</span>
+<span class="k">print</span> <span class="nb">dir</span><span class="o">.</span><span class="n">get_url</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.get_cwd">
+<tt class="descname">get_cwd</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.get_cwd" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           string / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.get_name">
+<tt class="descname">get_name</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.get_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           string / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.is_dir_self">
+<tt class="descname">is_dir_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.is_dir_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           bool / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.is_entry_self">
+<tt class="descname">is_entry_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.is_entry_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           bool / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.is_link_self">
+<tt class="descname">is_link_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.is_link_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           bool / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.read_link_self">
+<tt class="descname">read_link_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.read_link_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           saga.Url / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.copy_self">
+<tt class="descname">copy_self</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.copy_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>tgt:           saga.Url
+flags:         enum flags
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.link_self">
+<tt class="descname">link_self</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.link_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>tgt:           saga.Url
+flags:         enum flags
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.move_self">
+<tt class="descname">move_self</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.move_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>tgt:           saga.Url
+flags:         flags enum
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.remove_self">
+<tt class="descname">remove_self</tt><big>(</big><em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.remove_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>flags:         flags enum
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+<p>Removes the directory</p>
+<p>If no path is given, the remote directory associated with
+the object is removed. If a relative or absolute path is given,
+that given target is removed instead.  The target must be a 
+directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> &#8211; (relative or absolute) path to a directory</td>
+</tr>
+</tbody>
+</table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># remove a subdir &#39;data&#39; in /tmp</span>
+<span class="nb">dir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/&quot;</span><span class="p">)</span>
+<span class="nb">dir</span><span class="o">.</span><span class="n">remove</span> <span class="p">(</span><span class="s">&#39;data/&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.close">
+<tt class="descname">close</tt><big>(</big><em>timeout=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>timeout:       float
+ttype:         saga.task.type enum
+ret:           None / saga.Task</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.filesystem.Directory.url">
+<tt class="descname">url</tt><a class="headerlink" href="#saga.filesystem.Directory.url" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           saga.Url / saga.Task</p>
+<p>Return the complete url pointing to the directory.</p>
+<p>The call will return the complete url pointing to
+this directory as a saga.Url object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># print URL of a directory</span>
+<span class="nb">dir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/&quot;</span><span class="p">)</span>
+<span class="k">print</span> <span class="nb">dir</span><span class="o">.</span><span class="n">get_url</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.filesystem.Directory.cwd">
+<tt class="descname">cwd</tt><a class="headerlink" href="#saga.filesystem.Directory.cwd" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           string / saga.Task</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.filesystem.Directory.name">
+<tt class="descname">name</tt><a class="headerlink" href="#saga.filesystem.Directory.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:         saga.task.type enum
+ret:           string / saga.Task</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">7. File/Directory Management</a><ul>
+<li><a class="reference internal" href="#introduction">7.1. Introduction</a></li>
+<li><a class="reference internal" href="#file-saga-filesystem-file">7.2. File &#8211; <tt class="docutils literal"><span class="pre">saga.filesystem.File</span></tt></a></li>
+<li><a class="reference internal" href="#directory-saga-filesystem-directory">7.3. Directory &#8211; <tt class="docutils literal"><span class="pre">saga.filesystem.Directory</span></tt></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../job/index.html"
+                        title="previous chapter">6. Job Management</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../replica/index.html"
+                        title="next chapter">8. Replica Management</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/library/filesystem/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../replica/index.html" title="8. Replica Management"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../job/index.html" title="6. Job Management"
+             >previous</a> |</li>
+        <li><a href="../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >2. Library Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

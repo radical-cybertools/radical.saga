@@ -1,0 +1,300 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>1. Exception Handling &mdash; SAGA 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 1.0 documentation" href="../index.html" />
+    <link rel="up" title="2. Library Reference" href="index.html" />
+    <link rel="next" title="2. Context Management" href="context.html" />
+    <link rel="prev" title="2. Library Reference" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="context.html" title="2. Context Management"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="2. Library Reference"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">2. Library Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="exception-handling">
+<h1>1. Exception Handling<a class="headerlink" href="#exception-handling" title="Permalink to this headline">¶</a></h1>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">Intro to SAGA exception handling.</p>
+</div>
+<div class="section" id="module-saga.exceptions">
+<span id="exceptions-saga-exceptions"></span><h2>1.1. Exceptions &#8211; <a class="reference internal" href="#module-saga.exceptions" title="saga.exceptions"><tt class="xref py py-mod docutils literal"><span class="pre">saga.exceptions</span></tt></a><a class="headerlink" href="#module-saga.exceptions" title="Permalink to this headline">¶</a></h2>
+<dl class="exception">
+<dt id="saga.exceptions.SagaException">
+<em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">SagaException</tt><big>(</big><em>message</em>, <em>api_object=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#SagaException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.SagaException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.utils.exception.ExceptionBase</span></tt></p>
+<p>The Exception class encapsulates information about error conditions
+encountered in SAGA.</p>
+<p>Additionally to the error message (e.message), the exception also provides
+a trace to the code location where the error condition got raised
+(e.traceback).</p>
+<p>B{Example}:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">try</span> <span class="p">:</span>
+    <span class="nb">file</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span> <span class="p">(</span><span class="s">&quot;sftp://alamo.futuregrid.org/tmp/data1.dat&quot;</span><span class="p">)</span>
+
+<span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">Timeout</span> <span class="k">as</span> <span class="n">to</span> <span class="p">:</span>
+    <span class="c"># maybe the network is down?</span>
+    <span class="k">print</span> <span class="s">&quot;connection timed out&quot;</span>
+<span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+    <span class="c"># something else went wrong</span>
+    <span class="k">print</span> <span class="s">&quot;Exception occurred: </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">traceback</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>There are cases where multiple backends can report errors at the same time.
+In that case, the saga-python implementation will collect the exceptions,
+sort them by their &#8216;rank&#8217;, and return the highest ranked one.  All other
+catched exceptions are available via <a class="reference internal" href="#saga.exceptions.SagaException.get_all_exceptions" title="saga.exceptions.SagaException.get_all_exceptions"><tt class="xref py py-func docutils literal"><span class="pre">get_all_exceptions()</span></tt></a>, or via the
+<cite>exceptions</cite> property.</p>
+<p>The rank of an exception defines its explicity: in general terms: the higher
+the rank, the better defined / known is the cause of the problem.</p>
+<dl class="method">
+<dt id="saga.exceptions.SagaException.get_message">
+<tt class="descname">get_message</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#SagaException.get_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.SagaException.get_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the exception message as a string.  That message is also
+available via the &#8216;message&#8217; property.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.exceptions.SagaException.get_object">
+<tt class="descname">get_object</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#SagaException.get_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.SagaException.get_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the object that raised this exception. An object may not
+always be available &#8211; for example, exceptions raised during object
+creation may not have the option to keep an incomplete object instance
+around.  In those cases, this method will return &#8216;None&#8217;.  Either way,
+the object is also accessible via the &#8216;object&#8217; property.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.exceptions.SagaException.get_all_exceptions">
+<tt class="descname">get_all_exceptions</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#SagaException.get_all_exceptions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.SagaException.get_all_exceptions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.exceptions.SagaException.get_all_messages">
+<tt class="descname">get_all_messages</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#SagaException.get_all_messages"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.SagaException.get_all_messages" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="saga.exceptions.SagaException.message">
+<tt class="descname">message</tt><a class="headerlink" href="#saga.exceptions.SagaException.message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the exception message as a string.  That message is also
+available via the &#8216;message&#8217; property.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.exceptions.SagaException.object">
+<tt class="descname">object</tt><a class="headerlink" href="#saga.exceptions.SagaException.object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the object that raised this exception. An object may not
+always be available &#8211; for example, exceptions raised during object
+creation may not have the option to keep an incomplete object instance
+around.  In those cases, this method will return &#8216;None&#8217;.  Either way,
+the object is also accessible via the &#8216;object&#8217; property.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.exceptions.SagaException.exceptions">
+<tt class="descname">exceptions</tt><a class="headerlink" href="#saga.exceptions.SagaException.exceptions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="saga.exceptions.SagaException.messages">
+<tt class="descname">messages</tt><a class="headerlink" href="#saga.exceptions.SagaException.messages" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="saga.exceptions.NotImplemented">
+<em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">NotImplemented</tt><big>(</big><em>msg</em>, <em>obj=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#NotImplemented"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.NotImplemented" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#saga.exceptions.SagaException" title="saga.exceptions.SagaException"><tt class="xref py py-class docutils literal"><span class="pre">saga.exceptions.SagaException</span></tt></a></p>
+<p>SAGA-Python does not implement this method or class. (rank: 11)</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="saga.exceptions.IncorrectURL">
+<em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">IncorrectURL</tt><big>(</big><em>msg</em>, <em>obj=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#IncorrectURL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.IncorrectURL" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#saga.exceptions.SagaException" title="saga.exceptions.SagaException"><tt class="xref py py-class docutils literal"><span class="pre">saga.exceptions.SagaException</span></tt></a></p>
+<p>The given URL could not be interpreted, for example due to an incorrect
+/ unknown schema. (rank: 10)</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="saga.exceptions.BadParameter">
+<em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">BadParameter</tt><big>(</big><em>msg</em>, <em>obj=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#BadParameter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.BadParameter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#saga.exceptions.SagaException" title="saga.exceptions.SagaException"><tt class="xref py py-class docutils literal"><span class="pre">saga.exceptions.SagaException</span></tt></a></p>
+<p>A given parameter is out of bound or ill formatted. (rank: 9)</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="saga.exceptions.AlreadyExists">
+<em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">AlreadyExists</tt><big>(</big><em>msg</em>, <em>obj=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#AlreadyExists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.AlreadyExists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#saga.exceptions.SagaException" title="saga.exceptions.SagaException"><tt class="xref py py-class docutils literal"><span class="pre">saga.exceptions.SagaException</span></tt></a></p>
+<p>The entity to be created already exists. (rank: 8)</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="saga.exceptions.DoesNotExist">
+<em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">DoesNotExist</tt><big>(</big><em>msg</em>, <em>obj=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#DoesNotExist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.DoesNotExist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#saga.exceptions.SagaException" title="saga.exceptions.SagaException"><tt class="xref py py-class docutils literal"><span class="pre">saga.exceptions.SagaException</span></tt></a></p>
+<p>An operation tried to access a non-existing entity. (rank: 7)</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="saga.exceptions.IncorrectState">
+<em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">IncorrectState</tt><big>(</big><em>msg</em>, <em>obj=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#IncorrectState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.IncorrectState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#saga.exceptions.SagaException" title="saga.exceptions.SagaException"><tt class="xref py py-class docutils literal"><span class="pre">saga.exceptions.SagaException</span></tt></a></p>
+<p>The operation is not allowed on the entity in its current state. (rank: 6)</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="saga.exceptions.PermissionDenied">
+<em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">PermissionDenied</tt><big>(</big><em>msg</em>, <em>obj=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#PermissionDenied"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.PermissionDenied" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#saga.exceptions.SagaException" title="saga.exceptions.SagaException"><tt class="xref py py-class docutils literal"><span class="pre">saga.exceptions.SagaException</span></tt></a></p>
+<p>The used identity is not permitted to perform the requested operation. (rank: 5)</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="saga.exceptions.AuthorizationFailed">
+<em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">AuthorizationFailed</tt><big>(</big><em>msg</em>, <em>obj=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#AuthorizationFailed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.AuthorizationFailed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#saga.exceptions.SagaException" title="saga.exceptions.SagaException"><tt class="xref py py-class docutils literal"><span class="pre">saga.exceptions.SagaException</span></tt></a></p>
+<p>The backend could not establish a valid identity. (rank: 4)</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="saga.exceptions.AuthenticationFailed">
+<em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">AuthenticationFailed</tt><big>(</big><em>msg</em>, <em>obj=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#AuthenticationFailed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.AuthenticationFailed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#saga.exceptions.SagaException" title="saga.exceptions.SagaException"><tt class="xref py py-class docutils literal"><span class="pre">saga.exceptions.SagaException</span></tt></a></p>
+<p>The backend could not establish a valid identity. (rank: 3)</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="saga.exceptions.Timeout">
+<em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">Timeout</tt><big>(</big><em>msg</em>, <em>obj=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#Timeout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.Timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#saga.exceptions.SagaException" title="saga.exceptions.SagaException"><tt class="xref py py-class docutils literal"><span class="pre">saga.exceptions.SagaException</span></tt></a></p>
+<p>The interaction with the backend times out. (rank: 2)</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="saga.exceptions.NoSuccess">
+<em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">NoSuccess</tt><big>(</big><em>msg</em>, <em>obj=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#NoSuccess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.NoSuccess" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#saga.exceptions.SagaException" title="saga.exceptions.SagaException"><tt class="xref py py-class docutils literal"><span class="pre">saga.exceptions.SagaException</span></tt></a></p>
+<p>Some other error occurred. (rank: 1)</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">1. Exception Handling</a><ul>
+<li><a class="reference internal" href="#module-saga.exceptions">1.1. Exceptions &#8211; <tt class="docutils literal"><span class="pre">saga.exceptions</span></tt></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">2. Library Reference</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="context.html"
+                        title="next chapter">2. Context Management</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/library/exceptions.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="context.html" title="2. Context Management"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="2. Library Reference"
+             >previous</a> |</li>
+        <li><a href="../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >2. Library Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
