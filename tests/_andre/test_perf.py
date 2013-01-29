@@ -23,14 +23,13 @@ def workload (service_url, s, n_jobs) :
     jd   = saga.job.Description ()
     jd.executable = '/bin/date'
     
-    print 4
     service = saga.job.Service (service_url, session=s)
-    print 5
 
     for i in range (0,n_jobs) :
         tmp_j  = service.create_job (jd)
         tmp_j.run ()
-    
+        print tmp_j.id
+
 
 def main () :
     try :
@@ -40,13 +39,10 @@ def main () :
     
         start = time.time ()
 
-        print 1
-    
         s = saga.Session ()
         c = saga.Context ('ssh')
-        c.user_id = 'amerzky'
+        c.user_id = 'merzky'
     
-        print 2
         s.add_context (c)
 
         n_jobs      = int (sys.argv[1])
@@ -54,7 +50,6 @@ def main () :
         service_url = str (sys.argv[3])
         threads     = []
 
-        print 3
         for _i in range (0, n_services) :
             thread = threading.Thread (target=workload, args=[service_url, s, n_jobs//n_services])
             thread.start ()

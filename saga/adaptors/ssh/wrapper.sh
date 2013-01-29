@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # this script uses only POSIX shell functionality, and does not rely on bash or
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
@@ -82,6 +82,7 @@ verify_pid () {
 # Also, the line after is when the job state is set to 'Running' -- we can't
 # really do that before, but on failure, in the worst case, we might have a job
 # with known job ID which is not marked as running.  
+
 
 cmd_run () {
   cmd_run2 $@ &

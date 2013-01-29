@@ -6,7 +6,7 @@ import time
 import select
 import subprocess
 
-from   saga.exceptions import *
+import saga.exceptions as se
 
 
 # --------------------------------------------------------------------
@@ -57,7 +57,7 @@ class pty_process (object) :
                 break
         
         i = 0
-        while pty.alive () is None:
+        while pty.alive () :
             i += 1
             # send sleeps as quickly as possible, forever...
             (n, match) = pty.find (['[\$#>]\s*$'])
@@ -80,22 +80,22 @@ class pty_process (object) :
             command = command.split (' ')
 
         if not isinstance (command, list) :
-            raise BadParameter ("pty_process expects string or list command")
+            raise se.BadParameter ("pty_process expects string or list command")
 
         if len(command) < 1 :
-            raise BadParameter ("pty_process expects non-empty command")
+            raise se.BadParameter ("pty_process expects non-empty command")
 
 
         try :
 
             self.command = command # list of strings too run()
             self.cache   = ""      # data cache
+            self.clog    = ""      # log the data cache
             self.child   = None    # the process as created by subprocess.Popen
-            self.log     = open (logfile, 'a+')
+          # self.log     = open (logfile, 'a+')
 
-            self.log.write ("pty_process: %s\n\n" % ' '.join ((command)))
-            self.log.flush ()
-
+          # self.log.write ("pty_process: %s\n\n" % ' '.join ((command)))
+          # self.log.flush ()
 
             # create the pty pipes (two ends, one for this process, one for the
             # child process; tree pairs, for each of the in, out and err channels)
@@ -112,17 +112,15 @@ class pty_process (object) :
                                            bufsize = 0)               # unbuffered I/O
 
             if not self.child :
-                raise NoSuccess ("Could not run (%s)" % ' '.join (command))
+                raise se.NoSuccess ("Could not run (%s)" % ' '.join (command))
 
-            print 'created'
 
             if not self.alive () :
-                raise NoSuccess ("Could not run (%s)" % ' '.join (command))
+                raise se.NoSuccess ("Could not run (%s)" % ' '.join (command))
 
-            print 'alive'
 
         except Exception as e :
-            raise NoSuccess ("pty_allocation or process creation failed (%s)" % e)
+            raise se.NoSuccess ("pty_allocation or process creation failed (%s)" % e)
 
     # --------------------------------------------------------------------
     #
@@ -144,6 +142,9 @@ class pty_process (object) :
         alive() checks if the child gave an exit value -- if none, it is assumed
         to be still alive.
         """
+
+        if not self.child :
+            return False
 
         if self.child.poll () is None :
             return True
@@ -173,12 +174,13 @@ class pty_process (object) :
         Note: the returned lines do *not* get '\\\\r' stripped.
         """
 
-        # start the timeout timer right now.  Note that if timeout is short, and
-        # child.poll is slow, we will nevertheless attempt at least one read...
+        # start the timeout timer right now.  Note that even if timeout is
+        # short, and child.poll is slow, we will nevertheless attempt at least
+        # one read...
         start = time.time ()
 
         if not self.alive () :
-            return None
+            raise se.NoSuccess ("Could not read - pty process died")
 
         ret     = ""
         sel_to  = timeout
@@ -220,9 +222,10 @@ class pty_process (object) :
                 for f in rlist:
                     # read whatever we still need
                     buf  = os.read (f, size-len(ret))
-                    self.log.write (buf)
-                    self.log.flush ()
-                    ret += buf
+                  # self.log.write (buf)
+                  # self.log.flush ()
+                    self.clog += buf
+                    ret       += buf
 
                 if timeout == 0 : 
                     # only return if we have data
@@ -243,7 +246,7 @@ class pty_process (object) :
                         return ret
 
         except Exception as e :
-            raise NoSuccess ("read from pty process failed (%s)" % e)
+            raise se.NoSuccess ("read from pty process failed (%s)" % e)
 
 
 
@@ -271,12 +274,13 @@ class pty_process (object) :
         Note: the returned lines get '\\\\r' stripped.
         """
 
-        # start the timeout timer right now.  Note that if timeout is short, and
-        # child.poll is slow, we will nevertheless attempt at least one read...
+        # start the timeout timer right now.  Note that even if timeout is
+        # short, and child.poll is slow, we will nevertheless attempt at least
+        # one read...
         start = time.time ()
 
         if not self.alive () :
-            return None
+            raise se.NoSuccess ("Could not read line - pty process died")
 
 
         # check if we still have a full line in cache
@@ -302,12 +306,12 @@ class pty_process (object) :
                 else :
                     rlist, _, _ = select.select ([self.master_out], [], [], timeout)
 
-
                 # got some data - read them into the cache
                 for f in rlist:
                     buf         = os.read (f, _CHUNKSIZE)
-                    self.log.write (buf)
-                    self.log.flush ()
+                  # self.log.write (buf)
+                  # self.log.flush ()
+                    self.clog  += buf
                     self.cache += buf
 
                 # check if we *now* have a full line in cache
@@ -327,7 +331,7 @@ class pty_process (object) :
 
 
         except Exception as e :
-            raise NoSuccess ("read from pty process failed (%s)" % e)
+            raise se.NoSuccess ("read from pty process failed (%s)" % e)
 
 
 
@@ -346,7 +350,7 @@ class pty_process (object) :
 
 
         if not self.alive () :
-            return (None, None, [])
+            raise se.NoSuccess ("Could not find line - pty process died")
 
 
         try :
@@ -389,7 +393,7 @@ class pty_process (object) :
                 line = self.readline (timeout)
 
         except Exception as e :
-            raise NoSuccess ("readline from pty process failed (%s)" % e)
+            raise se.NoSuccess ("readline from pty process failed (%s)" % e)
 
 
 
@@ -421,7 +425,7 @@ class pty_process (object) :
         """
 
         if not self.alive () :
-            return (None, None)
+            raise se.NoSuccess ("Could not find data - pty process died")
 
         try :
             start = time.time ()                       # startup timestamp to compare timeout against
@@ -459,6 +463,7 @@ class pty_process (object) :
                 if timeout > 0 :
                     now = time.time ()
                     if (now-start) > timeout :
+                        self.cache = data
                         return (None, None)
 
                 # no match yet, still time -- read more data
@@ -466,8 +471,28 @@ class pty_process (object) :
 
 
         except Exception as e :
-            raise NoSuccess ("find from pty process failed (%s)" % e)
+            raise se.NoSuccess ("find from pty process failed (%s)" % e)
 
+
+
+    # ----------------------------------------------------------------
+    #
+    def get_cache (self) :
+        """
+        Return the currently cached output
+        """
+
+        return self.cache
+
+
+    # ----------------------------------------------------------------
+    #
+    def get_cache_log (self) :
+        """
+        Return the currently cached output
+        """
+
+        return self.clog
 
 
     # ----------------------------------------------------------------
@@ -479,7 +504,7 @@ class pty_process (object) :
         """
 
         if not self.alive () :
-            return
+            raise se.NoSuccess ("Could not write data - pty process died")
 
         try :
             # attempt to write forever -- until we succeeed
@@ -498,10 +523,11 @@ class pty_process (object) :
                         return
                     
                     # otherwise, truncate by written data, and try again
+                    print "write retry: %s\n%s\n%s\n" % (len, data, data[ret:])
                     data = data[ret:]
 
         except Exception as e :
-            raise NoSuccess ("write to pty process failed (%s)" % e)
+            raise se.NoSuccess ("write to pty process failed (%s)" % e)
 
 
 

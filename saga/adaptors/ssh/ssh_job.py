@@ -1,11 +1,13 @@
 
 """ SSH job adaptor implementation """
 
-import saga.utils
+import saga.utils.which
+import saga.utils.pty_process
 
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
+import os
 import time
 
 
@@ -16,9 +18,10 @@ ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 # --------------------------------------------------------------------
 # some private defs
 #
-_WRAPPER_SH = "https://raw.github.com/saga-project/saga-python/feature/sshjob/saga/adaptors/ssh/wrapper.sh"
-_WRAPPER_SH = "/home/merzky/saga/saga-python/saga/adaptors/ssh/wrapper.sh"
-_WRAPPER_SH = "/tmp/wrapper.sh"
+_WRAPPER_SH  = "https://raw.github.com/saga-project/saga-python/feature/sshjob/saga/adaptors/ssh/wrapper.sh"
+_WRAPPER_SH  = "/home/merzky/saga/saga-python/saga/adaptors/ssh/wrapper.sh"
+_WRAPPER_SH  = "/tmp/wrapper.sh"
+_PTY_TIMEOUT = 1.0
 
 # --------------------------------------------------------------------
 # the adaptor name
@@ -62,6 +65,63 @@ _ADAPTOR_DOC           = {
         """,
     'details'          : """ 
         A more elaborate description....
+
+        Known Limitations:
+        ------------------
+
+          * number of system pty's are limited:  each job.service object bound
+            to this adaptor will use 2 pairs of pty pipes.  Systems usually
+            limit the number of available pty's to 1024 .. 4096.  Given that
+            other process also use pty's , that gives a hard limit to the number
+            of object instances which can be created concurrently.  Hitting the
+            pty limit will cause the following error message (or similar)::
+
+              NoSuccess: pty_allocation or process creation failed (ENOENT: no more ptys)
+
+            This limitation comes from saga.utils.pty_process.  On Linux
+            systems, the utilization of pty's can be monitored::
+
+               echo "allocated pty's: `cat /proc/sys/kernel/pty/nr`"
+               echo "available pty's: `cat /proc/sys/kernel/pty/max`"
+
+
+          * number of ssh connections are limited: sshd's default configuration,
+            which is in place on many systems, limits the number of concurrent
+            ssh connections to 10 per user -- beyond that, connections are
+            refused with the following error::
+
+              NoSuccess: ssh_exchange_identification: Connection closed by remote host
+
+            As the communication with the ssh channel is unbuffered, the
+            dropping of the connection will likely cause this error message to
+            be lost.  Instead, the adaptor will just see that the ssh connection
+            disappeared, and will issue an error message similar to this one::
+
+              NoSuccess: read from pty process failed (Could not read line - pty process died)
+
+ 
+          * number of processes are limited: the creation of an job.service
+            object will create one additional process on the local system, and
+            two processes on the remote system (ssh daemon clone and a shell
+            instance).  Each remote job will create three additional processes:
+            two for the job instance itself (double fork), and an additional
+            process which monitors the job for state changes etc.  Additional
+            temporary processes may be needed as well.  
+
+            While marked as 'obsolete' by POSIX, the `ulimit` command is
+            available on many systems, and reports the number of processes
+            available per user (`ulimit -u`)
+
+            On hitting process limits, the job creation will fail with an error
+            similar to either of these::
+            
+              NoSuccess: failed to run job (/bin/sh: fork: retry: Resource temporarily unavailable)
+              NoSuccess: failed to run job -- backend error
+
+
+          * Other system limits (memory, CPU, selinux, accounting etc.) apply as
+            usual.
+
         """,
     'schemas'          : {'ssh'    :'use ssh to run a remote job', 
                           'gsissh' :'use gsissh to run a remote job'}
@@ -115,6 +175,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 class SSHJobService (saga.adaptors.cpi.job.Service) :
     """ Implements saga.adaptors.cpi.job.Service """
 
+  # myid = 0
+
     def __init__ (self, api, adaptor) :
 
         saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
@@ -124,46 +186,52 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
     def init_instance (self, adaptor_state, rm_url, session) :
         """ Service instance constructor """
 
-        print 'x 1'
-
         self._rm      = rm_url
         self._session = session
 
         ssh_type = self._rm.schema.lower ()
-        ssh_env  = "/usr/bin/env"
+        ssh_env  = ""
         ssh_exe  = ""
         ssh_args = "-tt"
+        ssh_user = os.getlogin ()
 
-        print 'x 2'
 
         if  ssh_type == 'ssh' :
-            ssh_exe  = saga.utils.which ('ssh')
+            ssh_exe  = saga.utils.which.which ('ssh')
         elif ssh_type == 'gsissh' :
-            ssh_exe = saga.utils.which ('gsissh')
+            ssh_exe = saga.utils.which.which ('gsissh')
         else :
             raise saga.BadParameter._log (self._logger, \
             	  "SSH Job adaptor can only handle ssh schema URLs, not %s" % self._rm.schema)
 
 
-        print 'x 3'
         for context in self._session.contexts :
             if  context.type.lower () == "ssh" :
                 if  ssh_type == 'ssh' :
                     if  context.attribute_exists ('user_id') :
-                        ssh_args += " -l %s" % context.user_id
+                        ssh_user = context.user_id
                     if  context.attribute_exists ('user_key') :
                         ssh_args += " -i %s" % context.user_key
             if  context.type.lower () == "gsissh" :
                 if  ssh_type == 'gsissh' :
                     if  context.attribute_exists ('user_proxy') :
-                        env += " X509_PROXY=%s" % context.user_proxy
+                        if not ssh_env :
+                            ssh_env = "/usr/bin/env"
+                        ssh_env += " X509_PROXY=%s" % context.user_proxy
 
-        print 'x 4'
-        ssh_args += " %s"       %  (self._rm.host)
-        ssh_cmd   = "%s %s %s"  %  (ssh_env, ssh_exe, ssh_args)
+        if self._rm.username :
+            ssh_user = self._rm.username
 
-        print "-------------------"
-        self.pty  = saga.utils.pty_process (ssh_cmd, logfile='/tmp/t')
+      # SSHJobService.myid += 1
+      # logfile             = "/tmp/t.%d" % SSHJobService.myid
+
+        if ssh_env :
+            ssh_env += ' '
+
+        ssh_args += " %s@%s"   %  (ssh_user, self._rm.host)
+        ssh_cmd   = "%s%s %s"  %  (ssh_env, ssh_exe, ssh_args)
+
+        self.pty  = saga.utils.pty_process.pty_process (ssh_cmd) # ,logfile=logfile)
 
         find_prompt = True
 
@@ -173,40 +241,60 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         while find_prompt :
 
             if n == 0 :
+                self.pty.clog += " ~~~~~ got key shell prompt\n"
                 self.pty.write ("secret\n")
                 (n, match, lines) = self.pty.findline (['password\s*:\s*$', 
                                                         'want to continue connecting', 
                                                         'Last login'])
             elif n == 1 :
+                self.pty.clog += " ~~~~~ got pass shell prompt\n"
                 self.pty.write ("yes\n")
                 (n, match, lines) = self.pty.findline (['password\s*:\s*$', 
                                                         'want to continue connecting', 
                                                         'Last login'])
+
             elif n == 2 :
+                self.pty.clog += " ~~~~~ got old shell prompt\n"
                 self.pty.write ("export PS1='prompt-$?->'\n")
-                (n, match) = self.pty.find (['^prompt-[\d+]->$'], 10.0)
+                (n, match) = self.pty.find (['^prompt-[\d+]->$'], _PTY_TIMEOUT)
                 find_prompt = False
+                if  not match[-4:] == "-0->" :
+                    raise saga.NoSuccess ("failed to set prompt: %s" % match[:-10])
+                self.pty.clog += " ~~~~~ got new shell prompt\n"
         
         # we have a prompt on the remote system -- now fetch the shell wrapper
         # script, and run it.  Once that is up and running, we can requests job
         # start / management operations via its stdio
 
-      # self.pty.write ("mkdir   -p       $HOME/.saga/adaptors/ssh_job/ && " + \
-      #                 "wget    -q %s -O $HOME/.saga/adaptors/ssh_job/wrapper.sh\n" % _WRAPPER_SH)
-        self.pty.write ("mkdir   -p $HOME/.saga/adaptors/ssh_job/ && " + \
-                        "/bin/cp %s $HOME/.saga/adaptors/ssh_job/wrapper.sh\n" % _WRAPPER_SH)
-        
-        _, match = self.pty.find (['^prompt-[\d+]->$'], 10.0)
 
-        if not match[-4:] == "-0->" :
+        base = '$HOME/.saga/adaptors/ssh_job'
+
+        self.pty.write ("mkdir   -p %s\n" % base)
+        _, match = self.pty.find (['^prompt-[\d+]->$'], _PTY_TIMEOUT)
+        print 'match: %s' % self.pty.get_cache_log ()
+
+        if  not match[-4:] == "-0->" :
+            raise saga.NoSuccess ("failed to retrieve wrapper: %s" % match[:-10])
+
+
+      # self.pty.write ("test -f wget -q %s -O $HOME/.saga/adaptors/ssh_job/wrapper.sh \n" % _WRAPPER_SH)
+        self.pty.write ("test -f %s/wrapper.sh || (touch %s/wrapper.sh; cp %s %s/wrapper.sh)\n" \
+                     % (base, base, _WRAPPER_SH, base))
+        _, match = self.pty.find (['^prompt-[\d+]->$'], _PTY_TIMEOUT)
+
+        if  not match[-4:] == "-0->" :
             raise saga.NoSuccess ("failed to retrieve wrapper: %s" % match[:-10])
 
 
         self.pty.write ("/bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh\n")
+        _, match = self.pty.find  (['^CMD'], _PTY_TIMEOUT)
 
-        _, match = self.pty.find  (['^CMD\s*'], 10.0)
-
-
+        if  not match[-3:] == "CMD" :
+            raise saga.NoSuccess ("failed to run job service wrapper -- backend error\n- log ---\n%s\n---------\n" \
+                               % self.pty.get_cache_log ())
+    # ----------------------------------------------------------------
+    #
+    #
     def _run_job (self, jd) :
         """ runs a job on the wrapper via pty, and returns the job id """
 
@@ -230,8 +318,13 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
         cmd = "%s %s %s %s"  %  (env, cwd, exe, arg)
 
+        
         self.pty.write ("RUN %s\n" % cmd)
-        _, match = self.pty.find (['CMD'], 10.0)
+        _, match = self.pty.find (['^CMD'], 10.0)
+
+        if  not match[-3:] == "CMD" :
+            raise saga.NoSuccess ("failed to run job -- backend error\n- log ---\n%s\n---------\n" \
+                                % self.pty.get_cache_log ())
 
 
         splitlines = match.split ('\n')
@@ -243,9 +336,17 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self._logger.debug (str(lines))
 
         if len (lines) < 3 :
-            self._logger.warn ("Cannot interpret response from wrapper.sh (%s)" % str (lines))
-            raise saga.NoSuccess ("failed to run job")
-        elif lines[1] != 'OK' :
+            raise saga.NoSuccess ("failed to run job\n- log ---\n%s\n---------\n" \
+                               % '\n'.join (lines))
+
+        # FIXME: we should know which line says ok...
+        ok = False
+        for line in lines :
+            if line == 'OK' :
+                ok = True
+                break
+
+        if not ok :
             self._logger.warn ("Did not find 'OK' from wrapper.sh (%s)" % str (lines))
             raise saga.NoSuccess ("failed to run job")
 
@@ -350,7 +451,7 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
         self._method_type     = 'run'
 
         # initialize job attribute values
-        self._id              = None
+        self._id              = "default id"
         self._state           = saga.job.NEW
         self._exit_code       = None
         self._exception       = None
@@ -375,8 +476,7 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
 
     @SYNC_CALL
     def get_id (self) :
-        """ Implements saga.adaptors.cpi.job.Job.get_id()
-        """        
+        """ Implements saga.adaptors.cpi.job.Job.get_id() """        
         return self._id
 
     @SYNC_CALL
@@ -421,7 +521,6 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
         """ Implements saga.adaptors.cpi.job.Job.run()
         """
         self._id = self._parent_service._run_job (self._jd)
-        print self._id
 
 
     @SYNC_CALL

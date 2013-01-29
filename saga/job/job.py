@@ -114,7 +114,8 @@ class Job (Base, Attributes, Async) :
         ttype:     saga.task.type enum
         ret:       String / saga.Task  
         '''
-        return self._adaptor.get_id (ttype=ttype)
+        id = self._adaptor.get_id (ttype=ttype)
+        return id
 
 
     def get_description (self, ttype=None) :
