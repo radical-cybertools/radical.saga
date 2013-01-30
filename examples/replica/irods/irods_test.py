@@ -127,7 +127,10 @@ def main():
         myfile.remove_self()
 
     except Exception, ex:
-        logging.exception("An error occured while executing the test script! %s" % (str(ex)))
+        logging.exception("An error occured while executing the test script!"
+                          "Please run with SAGA_VERBOSE=4 set in the"
+                          "environment for debug output.  %s"
+                          % (str(ex)))
         sys.exit(-1)
 
     print "iRODS test script finished execution"

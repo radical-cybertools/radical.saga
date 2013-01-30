@@ -12,23 +12,12 @@ import saga.url
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.replica
 import saga.utils.misc
+import shutil
 
 from   saga.utils.cmdlinewrapper import CommandLineWrapper
 
 SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
-
-
-#class CommandWrapper () : 
-#    def __init__ (self) :
-#        pass
-#
-#    @classmethod
-#    def initAsLocalWrapper (self, logger):
-#        return self ()
-#
-#    def connect (self) : pass
-
 
 ###############################################################################
 # adaptor info
@@ -269,8 +258,9 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         '''
         result = []
         try:
-            cw = CommandWrapper.initAsLocalWrapper(None)
-            cw.connect()
+            cw = CommandLineWrapper.init_as_subprocess_wrapper()
+            cw.open()
+
     
             # execute the ilsresc -l command
             cw_result = cw.run_sync("ilsresc -l")
@@ -684,7 +674,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
 
         t = saga.task.Task ()
 
-        t._set_state  = saga.task.Done
+        t._set_state  = saga.task.DONE
         t._set_result = self._url
 
         return t

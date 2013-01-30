@@ -104,7 +104,7 @@ tools.</p>
 <dl class="class">
 <dt id="saga.adaptors.irods.irods_replica.IRODSDirectory">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.irods.irods_replica.</tt><tt class="descname">IRODSDirectory</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.replica.logical_directory.LogicalDirectory</span></tt></p>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.replica.logical_directory.LogicalDirectory</span></tt>, <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.async.Async</span></tt></p>
 <dl class="method">
 <dt id="saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance">
 <tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance" title="Permalink to this definition">¶</a></dt>
@@ -126,19 +126,18 @@ tools.</p>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="saga.adaptors.irods.irods_replica.IRODSDirectory.make_dir">
-<tt class="descname">make_dir</tt><big>(</big><em>path</em>, <em>flags</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory.make_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory.make_dir" title="Permalink to this definition">¶</a></dt>
+<dt id="saga.adaptors.irods.irods_replica.IRODSDirectory.mkdir">
+<tt class="descname">mkdir</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory.mkdir" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.adaptors.irods.irods_replica.IRODSDirectory.remove">
-<tt class="descname">remove</tt><big>(</big><em>path</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory.remove"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory.remove" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method is called upon logicaldir.remove()</p>
-</dd></dl>
+<tt class="descname">remove</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory.remove"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory.remove" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.adaptors.irods.irods_replica.IRODSDirectory.list">
-<tt class="descname">list</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory.list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory.list" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">list</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory.list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory.list" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -149,7 +148,7 @@ tools.</p>
 <dl class="class">
 <dt id="saga.adaptors.irods.irods_replica.IRODSFile">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.irods.irods_replica.</tt><tt class="descname">IRODSFile</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.replica.logical_file.LogicalFile</span></tt></p>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.replica.logical_file.LogicalFile</span></tt>, <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.async.Async</span></tt></p>
 <dl class="method">
 <dt id="saga.adaptors.irods.irods_replica.IRODSFile.init_instance">
 <tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.init_instance" title="Permalink to this definition">¶</a></dt>
@@ -171,75 +170,44 @@ tools.</p>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="saga.adaptors.irods.irods_replica.IRODSFile.get_size_self">
-<tt class="descname">get_size_self</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.get_size_self"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.get_size_self" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="saga.adaptors.irods.irods_replica.IRODSFile.get_size_self_async">
-<tt class="descname">get_size_self_async</tt><big>(</big><em>ttype</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.get_size_self_async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.get_size_self_async" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
 <dt id="saga.adaptors.irods.irods_replica.IRODSFile.copy_self">
 <tt class="descname">copy_self</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.copy_self"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.copy_self" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="saga.adaptors.irods.irods_replica.IRODSFile.logicalfile_list_locations">
-<tt class="descname">logicalfile_list_locations</tt><big>(</big><em>logicalfile_obj</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.logicalfile_list_locations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.logicalfile_list_locations" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method is called upon logicaldir.list_locations()</p>
-</dd></dl>
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.list_locations">
+<tt class="descname">list_locations</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.list_locations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
-<dt id="saga.adaptors.irods.irods_replica.IRODSFile.logicalfile_remove_location">
-<tt class="descname">logicalfile_remove_location</tt><big>(</big><em>logicalfile_obj</em>, <em>location</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.logicalfile_remove_location"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.logicalfile_remove_location" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method is called upon logicaldir.remove_locations()</p>
-</dd></dl>
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.remove_location">
+<tt class="descname">remove_location</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.remove_location" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
-<dt id="saga.adaptors.irods.irods_replica.IRODSFile.logicalfile_replicate">
-<tt class="descname">logicalfile_replicate</tt><big>(</big><em>logicalfile_obj</em>, <em>target</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.logicalfile_replicate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.logicalfile_replicate" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method is called upon logicaldir.replicate()</p>
-</dd></dl>
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.replicate">
+<tt class="descname">replicate</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.replicate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
-<dt id="saga.adaptors.irods.irods_replica.IRODSFile.move">
-<tt class="descname">move</tt><big>(</big><em>target</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.move"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.move" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method is called upon logicaldir.move()</p>
-</dd></dl>
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.move_self">
+<tt class="descname">move_self</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.move_self" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
-<dt id="saga.adaptors.irods.irods_replica.IRODSFile.remove">
-<tt class="descname">remove</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.remove"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.remove" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method is called upon logicalfile.remove()</p>
-</dd></dl>
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.remove_self">
+<tt class="descname">remove_self</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.remove_self" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.adaptors.irods.irods_replica.IRODSFile.upload">
-<tt class="descname">upload</tt><big>(</big><em>source</em>, <em>target</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.upload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.upload" title="Permalink to this definition">¶</a></dt>
-<dd><p>Uploads a file from the LOCAL, PHYSICAL filesystem to
-the replica management system.
-&#64;param source: URL (should be <a class="reference external" href="file://">file://</a> or local path) of local file
-&#64;param target: Optional param containing ?resource=myresource query</p>
-<blockquote>
-<div>This will upload the file to a specified iRODS
-resource or group.</div></blockquote>
-</dd></dl>
+<tt class="descname">upload</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.upload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.upload" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.adaptors.irods.irods_replica.IRODSFile.download">
-<tt class="descname">download</tt><big>(</big><em>target</em>, <em>source</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.download"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.download" title="Permalink to this definition">¶</a></dt>
-<dd><p>Downloads a file from the REMOTE REPLICA FILESYSTEM to a local
-directory.
-&#64;param target: param containing a local path/filename</p>
-<blockquote>
-<div>to save the file to</div></blockquote>
-<dl class="docutils">
-<dt>&#64;param source: Optional param containing a remote replica to retrieve</dt>
-<dd>the file from (not evaluated, yet)</dd>
-</dl>
-</dd></dl>
+<tt class="descname">download</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.download"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.download" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
