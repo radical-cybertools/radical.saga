@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
-'''This example runs some iRODS commands
+'''This example shows how to use the iRODS adaptor in 
+   some basic ways.  If it executes successfully, the
+   iRODS adaptor should work OK on your self.
 
    If something doesn't work as expected, try to set 
    SAGA_VERBOSE=3 in your environment before you run the
@@ -13,7 +15,7 @@
 '''
 
 __author__    = "Ashley Zebrowski"
-__copyright__ = "Copyright 2012, Ashley Zebrowski"
+__copyright__ = "Copyright 2012-2013, Ashley Zebrowski"
 __license__   = "MIT"
 
 import sys, time
@@ -26,14 +28,35 @@ FILE_SIZE = 1 # in megs, approx
 NUM_REPLICAS = 2 # num replicas to create
 TEMP_FILENAME = "test.txt" # filename to create and use for testing
 TEMP_DIR      = "/irods_test_dir/" #directory to create and use for testing
-IRODS_DIRECTORY = "/osg/home/azebro1/" #directory to store our iRODS files in, don't forget trailing and leading /
-IRODS_RESOURCE = "osgGridFtpGroup" #iRODS resource or resource group to upload files to
 
-def main():
-    # remove any intermediary files that may have been created on iRODS from an 
-    # earlier, failed run of this script
+def usage():
+    print 'Usage: python %s ' % __file__
+    print ' <IRODS_DIRECTORY> (e.x. /osg/home/username/)'
+    print ' <IRODS_RESOURCE>  (e.x. osgGridFtpGroup)>'
+    print
+    print "Please specify an iRODS resource group for <IRODS_RESOURCE> " +\
+          "if possible in order to properly test replication."
+
+def main(args):
+    # handle args
+    if len(args)!=3:
+        usage()
+        exit(-1)
+
+    # directory to store our iRODS files in, don't forget trailing and leading /
+    IRODS_DIRECTORY = args[1]
+
+    # iRODS resource or resource group to upload files to
+    IRODS_RESOURCE  = args[2]
+
+    # remove any intermediary files that may have been created on iRODS 
+    # from an earlier, failed run of this script
     try:
         subprocess.check_call(["irm", IRODS_DIRECTORY+TEMP_FILENAME])
+    except:
+        pass
+    try:
+        subprocess.check_call(["irm", '-r', IRODS_DIRECTORY+TEMP_DIR])
     except:
         pass
     try:
@@ -42,7 +65,8 @@ def main():
         pass
 
     try:
-        myfile = saga.replica.LogicalFile('irods://'+IRODS_DIRECTORY+TEMP_FILENAME)
+        myfile = saga.replica.LogicalFile('irods://' + \
+                                          IRODS_DIRECTORY+TEMP_FILENAME)
         #myfile.add_location("irods:////data/cache/AGLT2_CE_2_FTPplaceholder/whatever?resource=AGLT2_CE_2_FTP")
 
         # grab our home directory (tested on Linux)
@@ -104,9 +128,11 @@ def main():
         print "Making test dir %s on iRODS" % (IRODS_DIRECTORY+TEMP_DIR)
         mydir.make_dir("irods://"+IRODS_DIRECTORY+TEMP_DIR)
         
-        #commented because iRODS install on gw68 doesn't support move
-        #print "Moving file to %s test dir on iRODS" % (IRODS_DIRECTORY+TEMP_DIR)
-        #myfile.move("irods://"+IRODS_DIRECTORY+TEMP_DIR)
+        # test moving the logical file
+        # TODO: bug andre to make sure I am doing this right :)
+        #print "Moving file to %s test dir on iRODS"  \
+            # % (IRODS_DIRECTORY+TEMP_DIR)
+        #myfile.move_self("irods://"+IRODS_DIRECTORY+TEMP_DIR)
 
         # In case you were wondering why the function calls
         # have changed, Andre M sez:
@@ -136,4 +162,4 @@ def main():
     print "iRODS test script finished execution"
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main(sys.argv))

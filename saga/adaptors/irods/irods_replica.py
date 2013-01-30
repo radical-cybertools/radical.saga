@@ -1,5 +1,20 @@
+# TODO: Create function to check for all the iRODS error codes and give
+#       a better error readout?
 
-""" iRODS replica adaptor implementation """
+# TODO: Look into feasibility of having this access remote resources
+#       if there isn't a local iRODS install
+#       (this may be extremely difficult...)
+
+# TODO: Add debug output for -all- icommands showing how they are executed
+#       IE "[DEBUG] Executing: ils -l /mydir/"
+
+"""iRODS replica adaptor implementation 
+   Uses icommands commandline tools
+"""
+
+__author__    = "Ashley Zebrowski"
+__copyright__ = "Copyright 2012-2013, Ashley Zebrowski"
+__license__   = "MIT"
 
 import os
 import pwd
@@ -32,8 +47,8 @@ _ADAPTOR_DOC           = {
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : 'The iRODS replica adaptor.',
-    'details'          : """This adaptor interacts with the irids data
-                            management system, by using the irods command line
+    'details'          : """This adaptor interacts with the iRODS data
+                            management system, by using the iRODS command line
                             tools.""",
     'schemas'          : {'irods'  : 'irods schema'
     },
@@ -145,7 +160,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     #
     #
     def __init__ (self) :
-        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.cpi.base.AdaptorBase.__init__ (
+            self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
 
     def sanity_check (self) :
@@ -159,9 +175,9 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
             if result.returncode != 0:
                 raise Exception("sanity check error")
         except Exception, ex:
-            raise saga.NoSuccess ("Disabling iRODS plugin - could not access iRODS "+\
-                              "filesystem through ils.  Check your iRODS "+\
-                              "environment and certificates. %s" % ex)
+            raise saga.NoSuccess ("Disabling iRODS plugin - could not access "
+                              "iRODS filesystem through ils.  Check your "
+                              "iRODS environment and certificates. %s" % ex)
 
         # try ienv or imiscsvrinfo later? ( check for error messages )
 
@@ -170,10 +186,15 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     # ----------------------------------------------------------------
     #
     #
-    def irods_get_directory_listing (obj, dir, wrapper) :
-        '''function takes an iRODS logical directory as an argument,
+    def irods_get_directory_listing (self, irods_dir, wrapper) :
+        '''Function takes an iRODS logical directory as an argument,
            and returns a list of irods_logical_entry instances containing
-           information on files/directories found in the directory argument
+           information on files/directories found in the directory argument.
+           It uses the commandline tool ils.
+           :param obj: object
+           :param dir: iRODS directory we want to get a listing of
+           :param wrapper: the CommandLineWrapper we will make our iRODS
+           commands with
         '''
 
         result = []
@@ -183,12 +204,12 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
             #cw.connect()
             
             # execute the ils -L command
-            cw_result = cw.run_sync ("ils -L %s" % dir)
+            cw_result = cw.run_sync ("ils -L %s" % irods_dir)
     
             # make sure we ran ok
             if cw_result.returncode != 0:
                 raise saga.NoSuccess ("Could not open directory %s, errorcode %s: %s"\
-                                        % (dir, str(cw_result.returncode),
+                                        % (irods_dir, str(cw_result.returncode),
                                            cw_result))
     
             # strip extra linebreaks from stdout, make a list from the linebreaks that
@@ -252,9 +273,10 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     # ----------------------------------------------------------------
     #
     #
-    def irods_get_resource_listing():
-        ''' Return a list of irods resources and resource groups with information
-            stored in irods_resource_entry format
+    def irods_get_resource_listing(self):
+        ''' Return a list of irods resources and resource groups with
+            information stored in irods_resource_entry format.
+            It uses commandline tool ilsresc -l 
         '''
         result = []
         try:
@@ -352,7 +374,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 #
 # logical_directory adaptor class
 #
-class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.cpi.Async) :
+class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, 
+                      saga.adaptors.cpi.Async) :
 
     # ----------------------------------------------------------------
     #
@@ -486,6 +509,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
         self._logger.debug("Attempting to remove directory at: %s" % complete_path)
 
         try:
+            self._logger.debug("Executing: irm -r %s" % complete_path)
             cw_result = self._cw.run_sync("irm -r %s" % complete_path)
 
             if cw_result.returncode != 0:
@@ -499,7 +523,8 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
                 raise saga.DoesNotExist ("Directory %s does not exist." % (complete_path) )
 
             # couldn't delete for unspecificed reason
-            raise saga.NoSuccess ("Couldn't delete directory %s" % (complete_path))
+            raise saga.NoSuccess ("Couldn't delete directory %s because %s"\
+                                      % (complete_path, ex))
 
         return
 
@@ -546,7 +571,8 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
 #
 # logical_file adaptor class
 #
-class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async) :
+class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, 
+                 saga.adaptors.cpi.Async) :
 
     # ----------------------------------------------------------------
     #
@@ -596,7 +622,8 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
         
         t = saga.task.Task ()
 
-        t._set_result (saga.replica.LogicalFile (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
+        t._set_result (saga.replica.LogicalFile (url, flags, session,
+                                                 _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -710,7 +737,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async)
          '''
          #return a list of all replica locations for a file
          path = self._url.get_path()
-         self._logger.debug("Attempting to get a list of replica locations for %s" \
+         self._logger.debug("Attempting to get a list of replica locations for %s"
                             % path)
          listing = self._adaptor.irods_get_directory_listing(path, self._cw)
          return listing[0].locations
