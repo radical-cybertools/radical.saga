@@ -194,7 +194,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         """
         # check that only supported attributes are provided
         for attribute in jd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITIES['desc_attributes']:
+            if attribute not in _ADAPTOR_CAPABILITIES['jdes_attributes']:
                 msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
                 raise saga.BadParameter._log (self._logger, msg)
 
