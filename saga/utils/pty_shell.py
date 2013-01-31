@@ -16,9 +16,9 @@ STDERR   = 4    # fetch stderr only, discard stdout
 
 # --------------------------------------------------------------------
 #
-class pty_shell (object) :
+class PTYShell (object) :
     """
-    This class wraps a shell process and runs it as a :class:`pty_process`.  The
+    This class wraps a shell process and runs it as a :class:`PTYProcess`.  The
     user of this class can start that shell, and run arbitrary commands on it.
     The shell to be run is expected to be POSIX compliant (bash, csh, sh, zsh
     etc).
@@ -36,7 +36,7 @@ class pty_shell (object) :
         
         # need a new logger?
         if not self.logger :
-            self.logger = saga.utils.logger.getLogger ('pty_shell')
+            self.logger = saga.utils.logger.getLogger ('PTYShell')
 
         schema  = self.url.schema.lower ()
         sh_type = ""
@@ -61,17 +61,18 @@ class pty_shell (object) :
                 sh_exe =  saga.utils.which.which ("sh")
         else :
             raise saga.BadParameter._log (self.logger, \
-            	  "pty_shell utility can only handle %s schema URLs, not %s" % (_SCHEMAS, schema))
+            	  "PTYShell utility can only handle %s schema URLs, not %s" \
+                  % (_SCHEMAS, schema))
 
 
 
         # make sure we have something to run
         if not sh_exe :
             raise saga.BadParameter._log (self.logger, \
-            	  "SSH Job adaptor cannot handle the %s schema, no shell executable found" % schema)
+            	  "adaptor cannot handle %s:// , no shell exe found" % schema)
 
 
-        # depending on type, create pty_process command line (args, env etc)
+        # depending on type, create PTYProcess command line (args, env etc)
         #
         # We always set term=vt100 to avoid ansi-escape sequences in the prompt
         # and elsewhere.  Also, we have to make sure that the shell is an
@@ -81,7 +82,7 @@ class pty_shell (object) :
 
             sh_env  =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
             sh_args =  "-t "                       # force pty
-            sh_user =  ""                          # use default user as, well, default
+            sh_user =  ""                          # use default user id
 
             for context in self.contexts :
 
@@ -126,12 +127,12 @@ class pty_shell (object) :
 
 
         self.logger.info ("job service opens pty for '%s'" % sh_cmd)
-        self.pty = saga.utils.pty_process.pty_process (sh_cmd, logger=self.logger)
+        self.pty = saga.utils.pty_process.PTYProcess (sh_cmd, logger=self.logger)
 
 
-        prompt_patterns = ["password\s*:\s*$",             # password prompt
-                           "want to continue connecting",  # host key confirmation
-                           self.prompt]                    # native shell prompt 
+        prompt_patterns = ["password\s*:\s*$",            # password prompt
+                           "want to continue connecting", # hostkey confirmation
+                           self.prompt]                   # native shell prompt 
         # FIXME: consider to not do hostkey checks at all (see ssh options)
 
         if sh_type == 'sh' :
@@ -143,7 +144,7 @@ class pty_shell (object) :
 
 
         # run the shell and find prompt
-        (n, match) = self.pty.find (prompt_patterns, _PTY_TIMEOUT)
+        n, match = self.pty.find (prompt_patterns, _PTY_TIMEOUT)
 
         # this loop will run until we finally find the self.prompt.  At that
         # point, we'll try to set a different prompt, and when we found that,
@@ -155,8 +156,7 @@ class pty_shell (object) :
             # lives.
             if n == None :
                 if not self.pty.alive () :
-                    raise saga.NoSuccess ("failed to start shell\n- log ---\n%s\n---------\n" \
-                                       % self.pty.get_cache_log ())
+                    raise saga.NoSuccess ("failed to start shell (%s)" % match)
 
                 # the write below will make our live simpler, as it will
                 # eventually flush I/O buffers, and will make sure that we
@@ -168,31 +168,32 @@ class pty_shell (object) :
                 # suffice...
               # self.pty.write ("export PS1='PROMPT-$?->\\n'\n")
               # self.pty.write ("\n")
-                (n, match) = self.pty.find (prompt_patterns, _PTY_TIMEOUT)
+                n, match = self.pty.find (prompt_patterns, _PTY_TIMEOUT)
 
 
             if n == 0 :
-                self.pty.clog += "\n[pty_shell: got password prompt]\n"
+                self.pty.clog += "\n[PTYShell: got password prompt]\n"
                 if not sh_pass :
-                    raise saga.NoSuccess ("failed to start shell, prompted for unknown password\n- log ---\n%s\n---------\n" \
-                                       % self.pty.get_cache_log ())
+                    raise saga.NoSuccess ("prompted for unknown password (%s)" \
+                                       % match)
 
                 self.pty.write ("%s\n" % sh_pass)
-                (n, match) = self.pty.find (prompt_patterns, _PTY_TIMEOUT)
+                n, match = self.pty.find (prompt_patterns, _PTY_TIMEOUT)
 
 
             elif n == 1 :
-                self.pty.clog += "\n[pty_shell: got host key prompt]\n"
+                self.pty.clog += "\n[PTYShell: got host key prompt]\n"
                 self.pty.write ("yes\n")
-                (n, match) = self.pty.find (prompt_patterns, _PTY_TIMEOUT)
+                n, match = self.pty.find (prompt_patterns, _PTY_TIMEOUT)
 
 
             elif n == 2 :
-                self.pty.clog += "\n[pty_shell: got initial shell prompt]\n"
+                self.pty.clog += "\n[PTYShell: got initial shell prompt]\n"
 
                 # try to set new prompt
-                self.run_sync ("export PS1='PROMPT-$?->\\n'\n", new_prompt="PROMPT-(\d+)->\s*$")
-                self.pty.clog += "\n[pty_shell: got new shell prompt]\n"
+                self.run_sync ("export PS1='PROMPT-$?->\\n'\n", 
+                                new_prompt="PROMPT-(\d+)->\s*$")
+                self.pty.clog += "\n[PTYShell: got new shell prompt]\n"
 
                 # we are done waiting for a prompt
                 break
@@ -207,19 +208,40 @@ class pty_shell (object) :
     #
     def __del__ (self) :
 
+        self.close ()
+
+
+    # ----------------------------------------------------------------
+    #
+    def close (self) :
+
         try :
             if self.pty : 
                 del (self.pty)
-        except :
+        except Exception :
             pass
+
+
+    # ----------------------------------------------------------------
+    #
+    def alive (self) :
+        """
+        alive() checks if the shell is still alive.  duh!
+        """
+
+        if self.pty : 
+            return self.pty.alive ()
+
+        return False
+        
 
 
     # ----------------------------------------------------------------
     #
     def find_prompt (self) :
 
-        (_, match)    = self.pty.find    ([self.prompt], _PTY_TIMEOUT)
-        (txt, retval) = self.eval_prompt (match)
+        _,   match  = self.pty.find    ([self.prompt], _PTY_TIMEOUT)
+        txt, retval = self.eval_prompt (match)
 
         return (txt, retval)
 
@@ -271,18 +293,20 @@ class pty_shell (object) :
         try :
             self.pty.write ("true\n")
 
-            # FIXME: how do we know that _PTY_TIMOUT suffices?  In particular if we
-            # actually need to flush...
-            (n, match)    = self.pty.find ([self.prompt], _PTY_TIMEOUT)
-            (txt, retval) = self.eval_prompt (match)
+            # FIXME: how do we know that _PTY_TIMOUT suffices?  In particular if
+            # we actually need to flush...
+            _, match  = self.pty.find ([self.prompt], _PTY_TIMEOUT)
 
             if not match :
                 self.prompt = old_prompt
                 raise saga.BadParameter ("Cannot use prompt, could not find it")
 
+            _, retval = self.eval_prompt (match)
+
             if  retval != 0 :
                 self.prompt = old_prompt
-                raise saga.BadParameter ("Cannot use prompt, could not parse exit value (%s)" % match)
+                raise saga.BadParameter ("could not parse exit value (%s)" \
+                                      % match)
 
         except Exception as e :
             self.prompt = old_prompt
@@ -310,10 +334,12 @@ class pty_shell (object) :
             result = prompt_re.match (data)
 
             if  not result :
-                raise saga.NoSuccess ("prompt is invalid, could not parse (%s) (%s)" % (prompt, data))
+                raise saga.NoSuccess ("could not parse prompt (%s) (%s)" \
+                                   % (prompt, data))
 
             if  len (result.groups ()) != 2 :
-                raise saga.NoSuccess ("prompt is invalid, does not capture exit value (%s)" % prompt)
+                raise saga.NoSuccess ("prompt does not capture exit value (%s)"\
+                                   % prompt)
 
             text   =     result.group (1)
             retval = int(result.group (2)) 
@@ -385,7 +411,8 @@ class pty_shell (object) :
 
         command = command.strip ()
         if command.endswith ('&') :
-            raise saga.BadParameter ("run_sync can only run forground jobs, not '%s'" % command)
+            raise saga.BadParameter ("can only run foreground jobs ('%s')" \
+                                  % command)
 
         redir  = ""
         errtmp = "/tmp/saga-python.ssh-job.stderr.$$"
@@ -410,15 +437,15 @@ class pty_shell (object) :
             prompt = new_prompt
 
         self.pty.write ("%s%s\n" % (command, redir))
-        _, match = self.pty.find ([prompt], timeout=-1.0)  # this blocks forever
+        _, match = self.pty.find ([prompt], timeout=-1.0)  # blocks
 
         if not match :
             # not find prompt after blocking?  BAD!  Restart the shell
             self.close ()
-            raise saga.NoSuccess ("run_sync failed, could not find prompt again (%s)" % command)
+            raise saga.NoSuccess ("run_sync failed, no prompt (%s)" % command)
 
 
-        (txt, retval) = self.eval_prompt (match, new_prompt)
+        txt, retval = self.eval_prompt (match, new_prompt)
 
         stdout = None
         stderr = None
@@ -433,16 +460,18 @@ class pty_shell (object) :
             stdout =  txt
 
             self.pty.write ("cat %s\n" % errtmp)
-            _, match = self.pty.find ([self.prompt], timeout=-1.0)  # this blocks forever
+            _, match = self.pty.find ([self.prompt], timeout=-1.0)  # blocks
 
             if not match :
                 # not find prompt after blocking?  BAD!  Restart the shell
                 self.close ()
-                raise saga.NoSuccess ("run_sync failed, could not find prompt after stderr fetching (%s)" % command)
+                raise saga.NoSuccess ("run_sync failed, no prompt (%s)" \
+                                    % command)
 
-            (stderrtmp, retvaltmp) = self.eval_prompt (match)
+            stderrtmp, retvaltmp = self.eval_prompt (match)
             if  retvaltmp :
-                raise saga.NoSuccess ("run_sync failed, could fetch stderr (%s: %s)" % (retval, stderrtmp))
+                raise saga.NoSuccess ("run_sync failed, no stderr (%s: %s)" \
+                                   % (retval, stderrtmp))
 
             stderr =  stderrtmp
 

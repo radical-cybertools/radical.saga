@@ -7,7 +7,6 @@ import time
 import shlex
 import select
 import signal
-import subprocess
 
 import saga.exceptions as se
 
@@ -20,9 +19,9 @@ _POLLDELAY = 0.0001 # seconds in between read attempts
 
 # --------------------------------------------------------------------
 #
-class pty_process (object) :
+class PTYProcess (object) :
     """
-    This method spawns a process, providing that child with a pty.  It will then
+    This class spawns a process, providing that child with a pty.  It will then
     maintain stdin, stdout and stderr channels to the child.  All write*
     operations operate on the stdin, all read* operations operate on the stdout
     stream.  Data from the stderr stream are at this point not exposed.
@@ -34,27 +33,27 @@ class pty_process (object) :
 
     Example::
 
-        pty = pty_process ("/usr/bin/ssh -t localhost")
+        pty = PTYProcess ("/usr/bin/ssh -t localhost")
         pty.run ()
 
-        (n, match) = pty.find (['password\s*:\s*$', 
-                                'want to continue connecting.*\(yes/no\)\s*$', 
-                                '[\$#>]\s*$'])
+        n, match = pty.find (['password\s*:\s*$', 
+                              'want to continue connecting.*\(yes/no\)\s*$', 
+                              '[\$#>]\s*$'])
 
         while True :
 
             if n == 0 :
                 # found password prompt
                 pty.write ("secret\\n")
-                (n, match) = pty.find (['password\s*:\s*$', 
-                                        'want to continue connecting.*\(yes/no\)\s*$', 
-                                        '[\$#>]\s*$'])
+                n, match = pty.find (['password\s*:\s*$', 
+                                      'want to continue connecting.*\(yes/no\)\s*$', 
+                                      '[\$#>]\s*$'])
             elif n == 1 :
                 # found request to accept host key
                 pty.write ("yes\\n")
-                (n, match) = pty.find (['password\s*:\s*$', 
-                                        'want to continue connecting.*\(yes/no\)\s*$', 
-                                        '[\$#>]\s*$'])
+                n, match = pty.find (['password\s*:\s*$', 
+                                      'want to continue connecting.*\(yes/no\)\s*$', 
+                                      '[\$#>]\s*$'])
             elif n == 2 :
                 # found some prompt
                 break
@@ -63,7 +62,7 @@ class pty_process (object) :
         while pty.alive () :
             i += 1
             # send sleeps as quickly as possible, forever...
-            (n, match) = pty.find (['[\$#>]\s*$'])
+            n, match = pty.find (['[\$#>]\s*$'])
             pty.write ("/bin/sleep %d\\n" % i)
     """
 
@@ -83,10 +82,10 @@ class pty_process (object) :
             command = shlex.split (command)
 
         if not isinstance (command, list) :
-            raise se.BadParameter ("pty_process expects string or list command")
+            raise se.BadParameter ("PTYProcess expects string or list command")
 
         if len(command) < 1 :
-            raise se.BadParameter ("pty_process expects non-empty command")
+            raise se.BadParameter ("PTYProcess expects non-empty command")
 
 
         try :
@@ -97,7 +96,7 @@ class pty_process (object) :
             self.child   = None    # the process as created by subprocess.Popen
             self.logger  = logger
 
-            self.logger.debug ("pty_process: %s\n\n" % ' '.join ((command)))
+            self.logger.debug ("PTYProcess: %s\n\n" % ' '.join ((command)))
 
             self.parent_in,  self.child_in  = pty.openpty ()
             self.parent_out, self.child_out = pty.openpty ()
@@ -107,7 +106,8 @@ class pty_process (object) :
             try :
                 self.child = os.fork ()
             except Exception as e:
-                raise se.NoSuccess ("Could not run (%s): %s" % (' '.join (command), e))
+                raise se.NoSuccess ("Could not run (%s): %s" \
+                                 % (' '.join (command), e))
             
             if not self.child :
                 try :
@@ -138,8 +138,9 @@ class pty_process (object) :
 
                     os.execvpe (self.command[0], self.command, os.environ)
 
-                except Exception as e:
-                    self.logger.error ("Could not execute (%s): %s" % (' '.join (command), e))
+                except OSError as e:
+                    self.logger.error ("Could not execute (%s): %s" \
+                                    % (' '.join (command), e))
                     sys.exit (-1)
 
             else :
@@ -147,7 +148,6 @@ class pty_process (object) :
                 os.close (self.child_in)
                 os.close (self.child_out)
               # os.close (self.child_err)
-                pass
 
 
             if not self.alive () :
@@ -155,7 +155,7 @@ class pty_process (object) :
 
 
         except Exception as e :
-            raise se.NoSuccess ("pty_allocation or process creation failed (%s)" % e)
+            raise se.NoSuccess ("pty or process creation failed (%s)" % e)
 
     # --------------------------------------------------------------------
     #
@@ -165,47 +165,58 @@ class pty_process (object) :
 
         self.logger.debug ("__del__")
 
+        self.close ()
+
+
+    # --------------------------------------------------------------------
+    #
+    # kill the child, close all I/O channels
+    #
+    def close (self) :
+
         try :
             if  self.alive () :
                 os.kill (self.child, signal.SIGTERM)
-        except :
+        except OSError :
             pass
 
         try :
             if  self.alive () :
                 os.kill (self.child, signal.SIGKILL)
-        except :
+        except OSError :
             pass
+
+        self.child = None
 
         try : 
             os.close (self.parent_in)  
-        except : 
+        except OSError :
             pass
 
         try : 
-            os.close (self.child_i)    
-        except : 
+            os.close (self.child_in)    
+        except OSError :
             pass
 
         try : 
             os.close (self.parent_out) 
-        except : 
+        except OSError :
             pass
 
         try : 
-            os.close (self.child_ou)   
-        except : 
+            os.close (self.child_out)   
+        except OSError :
             pass
 
-        try : 
-            os.close (self.parent_err) 
-        except : 
-            pass
-
-        try : 
-            os.close (self.child_er)   
-        except : 
-            pass
+      # try : 
+      #     os.close (self.parent_err) 
+      # except OSError :
+      #     pass
+      #
+      # try : 
+      #     os.close (self.child_err)   
+      # except OSError :
+      #     pass
 
 
     # --------------------------------------------------------------------
@@ -220,7 +231,7 @@ class pty_process (object) :
             return False
 
         try :
-            (pid, status) = os.waitpid (self.child, os.WNOHANG)
+            pid, status = os.waitpid (self.child, os.WNOHANG)
 
             if (pid, status) == (0, 0) :
                 return True
@@ -248,8 +259,8 @@ class pty_process (object) :
         
           timeout == 0 : return the content of the first successful read, with
                          whatever data up to 'size' have been found.
-          timeout <  0 : return after first read attempt, even if no data have been
-                         available.
+          timeout <  0 : return after first read attempt, even if no data have 
+                         been available.
 
         If no data are found, the method returns an empty string (not None).
 
@@ -301,7 +312,7 @@ class pty_process (object) :
             # read until we have enough data, or hit timeout ceiling...
             while True :
             
-                # do an idle wait 'til the next data chunk arrives, or 'til sel_to
+                # idle wait 'til the next data chunk arrives, or 'til sel_to
                 rlist, _, _ = select.select ([self.parent_out], [], [], sel_to)
 
                 # got some data? 
@@ -341,8 +352,8 @@ class pty_process (object) :
         """
         read a line from the child.  This method will read data into the cache,
         and return whatever it finds up to (but not including) the first newline
-        (\\\\n).  When timeout is met, the method will return None, and leave all
-        data in the cache::
+        (\\\\n).  When timeout is met, the method will return None, and leave 
+        all data in the cache::
 
           timeout <  0: reads are blocking until data arrive, and call will
                         only return when any complete line has been found (which
@@ -410,7 +421,7 @@ class pty_process (object) :
                 # if not, check if we hit timeout
                 now = time.time ()
                 if (now-start) > timeout :
-                    # timeout hit, but nothing found -- leave cache alone and return
+                    # timeout, but nothing found -- leave cache alone and return
                     return None
 
 
@@ -438,7 +449,7 @@ class pty_process (object) :
 
 
         try :
-            start = time.time ()            # startup timestamp to compare timeout against
+            start = time.time ()            # startup timestamp
             ret   = []                      # array of read lines
             patts = []                      # compiled patterns
             line  = self.readline (timeout) # first line to check
@@ -468,14 +479,14 @@ class pty_process (object) :
                         # pattern index, matching line, and previous lines.
                         return (n, line.replace('\r', ''), ret)
 
-                # if a timeout is given, and actually passed, return a non-match,
+                # if a timeout is given, and actually passed, return a non-match
                 # and the set of lines found so far
                 if timeout > 0 :
                     now = time.time ()
                     if (now-start) > timeout :
                         return (None, None, ret)
 
-                # append the current (non-matching) line to ret, and get a new line to test
+                # append current (non-matching) line to ret, and get new line 
                 ret.append (line.replace('\r', ''))
                 line = self.readline (timeout)
 
@@ -516,7 +527,7 @@ class pty_process (object) :
             raise se.NoSuccess ("Could not find data - pty process died")
 
         try :
-            start = time.time ()                       # startup timestamp to compare timeout against
+            start = time.time ()                       # startup timestamp
             ret   = []                                 # array of read lines
             patts = []                                 # compiled patterns
             data  = self.cache                         # initial data to check
@@ -554,7 +565,7 @@ class pty_process (object) :
                         self.cache = data[match.end()+1:] 
                         return (n, ret.replace('\r', ''))
 
-                # if a timeout is given, and actually passed, return a non-match.
+                # if a timeout is given, and actually passed, return a non-match
                 if timeout == 0 :
                     return (None, None)
 
