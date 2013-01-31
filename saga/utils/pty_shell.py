@@ -271,7 +271,7 @@ class pty_shell (object) :
                 raise saga.NoSuccess ("prompt is invalid, does not capture exit value (%s)" % prompt)
 
             text   =     result.group (1)
-            retval = int(result.group (2))
+            retval = int(result.group (2)) 
 
         except Exception as e :
             self.logger.debug ("data   : %s" % data)

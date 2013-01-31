@@ -271,7 +271,7 @@ class pty_process (object) :
         ret     = ""
         sel_to  = timeout
 
-        # the select timeout cannot be negative -- 0 is non-blocking...
+        # the select timeout cannot be negative -- 0 is non-blocking... 
         if  sel_to < 0 : 
             sel_to = 0
 
@@ -451,12 +451,9 @@ class pty_process (object) :
             # a pattern, or timeout passes
             while True :
 
-<<<<<<< HEAD
                 if not self.alive () :
                     break
 
-=======
->>>>>>> c147969f7387375cdd73ca761c5879e07e4f0630
                 time.sleep (0.1)
 
                 # skip non-lines
@@ -535,17 +532,13 @@ class pty_process (object) :
             # a pattern, or timeout passes
             while True :
 
-<<<<<<< HEAD
               # time.sleep (0.3)
 
-=======
->>>>>>> c147969f7387375cdd73ca761c5879e07e4f0630
                 # skip non-lines
                 if  None == data :
                     data += self.read (_CHUNKSIZE, _POLLDELAY)
 
                 # check current data for any matching pattern
-<<<<<<< HEAD
               # print ">>%s<<" % data
                 for n in range (0, len(patts)) :
                     match = patts[n].search (data)
@@ -554,11 +547,6 @@ class pty_process (object) :
                       # print "~~match!~~ %s" % data[match.start():match.end()]
                       # print "~~match!~~ %s" % (len(data))
                       # print "~~match!~~ %s" % (str(match.span()))
-=======
-                for n in range (0, len(patts)) :
-                    match = patts[n].search (data)
-                    if match :
->>>>>>> c147969f7387375cdd73ca761c5879e07e4f0630
                         # a pattern matched the current data: return a tuple of
                         # pattern index and matching data.  The remainder of the
                         # data is cached.
@@ -567,7 +555,6 @@ class pty_process (object) :
                         return (n, ret.replace('\r', ''))
 
                 # if a timeout is given, and actually passed, return a non-match.
-<<<<<<< HEAD
                 if timeout == 0 :
                     return (None, None)
 
@@ -583,41 +570,7 @@ class pty_process (object) :
 
         except Exception as e :
             raise se.NoSuccess ("find from pty process failed (%s)" % e)
-=======
-                if timeout > 0 :
-                    now = time.time ()
-                    if (now-start) > timeout :
-                        self.cache = data
-                        return (None, None)
 
-                # no match yet, still time -- read more data
-                data += self.read (_CHUNKSIZE, _POLLDELAY)
-
-
-        except Exception as e :
-            raise se.NoSuccess ("find from pty process failed (%s)" % e)
-
-
-
-    # ----------------------------------------------------------------
-    #
-    def get_cache (self) :
-        """
-        Return the currently cached output
-        """
-
-        return self.cache
-
->>>>>>> c147969f7387375cdd73ca761c5879e07e4f0630
-
-    # ----------------------------------------------------------------
-    #
-    def get_cache_log (self) :
-        """
-        Return the currently cached output
-        """
-
-        return self.clog
 
 
     # ----------------------------------------------------------------
@@ -632,7 +585,6 @@ class pty_process (object) :
             raise se.NoSuccess ("Could not write data - pty process died")
 
         try :
-<<<<<<< HEAD
             self.logger.debug ("Write: '%s'" % data)
 
             # attempt to write forever -- until we succeeed
@@ -640,18 +592,10 @@ class pty_process (object) :
 
                 # check if the pty pipe is ready for data
                 _, wlist, _ = select.select ([], [self.parent_in], [], _POLLDELAY)
-=======
-            # attempt to write forever -- until we succeeed
-            while True :
-
-                # check if the pty pipe is ready for data
-                _, wlist, _ = select.select ([], [self.master_in], [], _POLLDELAY)
->>>>>>> c147969f7387375cdd73ca761c5879e07e4f0630
 
                 for f in wlist :
                     
                     # write will report the number of written bytes
-<<<<<<< HEAD
                     size = os.write (f, "%s" % data)
 
                     # otherwise, truncate by written data, and try again
@@ -680,20 +624,6 @@ class pty_process (object) :
         """
 
         return self.clog
-=======
-                    ret = os.write (f, "%s" % data)
-
-                    # if all data are written, we are done
-                    if ret == len(data) :
-                        return
-                    
-                    # otherwise, truncate by written data, and try again
-                    print "write retry: %s\n%s\n%s\n" % (len, data, data[ret:])
-                    data = data[ret:]
-
-        except Exception as e :
-            raise se.NoSuccess ("write to pty process failed (%s)" % e)
->>>>>>> c147969f7387375cdd73ca761c5879e07e4f0630
 
 
 

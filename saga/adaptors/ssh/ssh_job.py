@@ -229,7 +229,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
             raise saga.NoSuccess ("failed to fetch wrapper.sh (%s)(%s)(%s)" % (ret, out, err))
 
 
-        (ret, out, err) = self.pty.run_sync ("/bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh")
+        (ret, out, err) = self.pty.run_sync ("exec /bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh")
         if  ret != 0 :
             raise saga.NoSuccess ("failed to fetch wrapper.sh (%s)(%s)(%s)" % (ret, out, err))
 
@@ -237,8 +237,6 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self._logger.debug ("got cmd prompt (%s - %s - %s)" % (ret, out, err))
 
 
-        self.pty.write ("/bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh\n")
-        _, match = self.pty.find  (['^CMD'], _PTY_TIMEOUT)
 
     # ----------------------------------------------------------------
     #
