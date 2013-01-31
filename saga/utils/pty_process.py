@@ -164,11 +164,48 @@ class pty_process (object) :
     def __del__ (self) :
 
         self.logger.debug ("__del__")
-        if  self.alive () :
-            os.kill (self.child, signal.SIGTERM)
 
-        if  self.alive () :
-            os.kill (self.child, signal.SIGKILL)
+        try :
+            if  self.alive () :
+                os.kill (self.child, signal.SIGTERM)
+        except :
+            pass
+
+        try :
+            if  self.alive () :
+                os.kill (self.child, signal.SIGKILL)
+        except :
+            pass
+
+        try : 
+            os.close (self.parent_in)  
+        except : 
+            pass
+
+        try : 
+            os.close (self.child_i)    
+        except : 
+            pass
+
+        try : 
+            os.close (self.parent_out) 
+        except : 
+            pass
+
+        try : 
+            os.close (self.child_ou)   
+        except : 
+            pass
+
+        try : 
+            os.close (self.parent_err) 
+        except : 
+            pass
+
+        try : 
+            os.close (self.child_er)   
+        except : 
+            pass
 
 
     # --------------------------------------------------------------------
@@ -495,14 +532,21 @@ class pty_process (object) :
             # a pattern, or timeout passes
             while True :
 
+              # time.sleep (0.3)
+
                 # skip non-lines
                 if  None == data :
                     data += self.read (_CHUNKSIZE, _POLLDELAY)
 
                 # check current data for any matching pattern
+              # print ">>%s<<" % data
                 for n in range (0, len(patts)) :
                     match = patts[n].search (data)
+                  # print "==%s==" % patterns[n]
                     if match :
+                      # print "~~match!~~ %s" % data[match.start():match.end()]
+                      # print "~~match!~~ %s" % (len(data))
+                      # print "~~match!~~ %s" % (str(match.span()))
                         # a pattern matched the current data: return a tuple of
                         # pattern index and matching data.  The remainder of the
                         # data is cached.
@@ -541,7 +585,7 @@ class pty_process (object) :
             raise se.NoSuccess ("Could not write data - pty process died")
 
         try :
-            self.logger.debug ("write: '%s'" % data)
+            self.logger.debug ("Write: '%s'" % data)
 
             # attempt to write forever -- until we succeeed
             while data :

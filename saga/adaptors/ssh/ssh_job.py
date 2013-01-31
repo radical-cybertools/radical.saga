@@ -2,7 +2,7 @@
 """ SSH job adaptor implementation """
 
 import saga.utils.which
-import saga.utils.pty_process
+import saga.utils.pty_shell
 
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
@@ -21,7 +21,7 @@ ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 _WRAPPER_SH  = "https://raw.github.com/saga-project/saga-python/feature/sshjob/saga/adaptors/ssh/wrapper.sh"
 _WRAPPER_SH  = "/home/merzky/saga/saga-python/saga/adaptors/ssh/wrapper.sh"
 _WRAPPER_SH  = "/tmp/wrapper.sh"
-_PTY_TIMEOUT = 1.0
+_PTY_TIMEOUT = 2.0
 
 # --------------------------------------------------------------------
 # the adaptor name
@@ -183,165 +183,58 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
     def __del__ (self) :
+
         # FIXME: not sure if we should PURGE here -- that removes states which
         # might not be evaluated, yet.  Should we mark state evaluation
-        # seperately? (cmd_state () { touch $DIR/purgeable; ... })?  When?
-        self.pty.write ("PURGE\n")
-        self.pty.write ("QUIT\n" )
+        # separately? 
+        #   cmd_state () { touch $DIR/purgeable; ... }
+        # When should that be done?
+
+        try :
+            if self.pty : self.pty.write ("PURGE\n")
+            if self.pty : self.pty.write ("QUIT\n" )
+        except :
+            pass
+
+        try :
+            if self.pty : del (self.pty)
+        except :
+            pass
 
 
     @SYNC_CALL
     def init_instance (self, adaptor_state, rm_url, session) :
         """ Service instance constructor """
 
-        self._rm      = rm_url
-        self._session = session
+        self.rm      = rm_url
+        self.session = session
 
-        schema  = self._rm.schema.lower ()
-        sh_type = ""
-        sh_exe  = ""
+        self.pty = saga.utils.pty_shell.pty_shell (self.rm, self.session.contexts, self._logger)
 
-        if  schema   == "ssh" :
-            sh_type  =  "ssh"
-            sh_exe   =  saga.utils.which.which ("ssh")
-
-        elif schema  == "gsissh" :
-            sh_type  =  "ssh"
-            sh_exe   =  saga.utils.which.which ("gsissh")
-
-        elif schema  == "fork" :
-            sh_type  =  "sh"
-            if  "SHELL" in os.environ :
-                sh_exe =  saga.utils.which.which (os.environ["SHELL"])
-            else :
-                sh_exe =  saga.utils.which.which ("sh")
-        else :
-            raise saga.BadParameter._log (self._logger, \
-            	  "SSH Job adaptor can only handle %s schema URLs, not %s" % (_ADAPTOR_SCHEMAS, schema))
-
-        if not sh_exe :
-            raise saga.BadParameter._log (self._logger, \
-            	  "SSH Job adaptor cannot handle the %s schema, no shell executable found" % schema)
-
-
-        if  sh_type == "ssh" :
-
-            sh_env  =  "/usr/bin/env TERM=vt100 "
-            sh_args =  "-t "
-
-            for context in self._session.contexts :
-                if  context.type.lower () == "ssh" :
-                    if  schema == "ssh" :
-                        if  context.attribute_exists ("user_id") :
-                            sh_args = "-l %s " % context.user_id
-                        if  context.attribute_exists ("user_key") :
-                            sh_args += "-i %s " % context.user_key
-                if  context.type.lower () == "gsissh" :
-                    if  schema == "gsissh" :
-                        if  context.attribute_exists ("user_proxy") :
-                            sh_env = "X509_PROXY='%s' " % context.user_proxy
-
-            if self._rm.username :
-                sh_args += "-l %s " % self._rm.username
-
-            sh_cmd   =  "%s %s %s %s" % (sh_env, sh_exe, sh_args, self._rm.host)
-
-        elif sh_type == "sh" :
-            sh_args  =  "-l -i"
-            sh_env   =  "/usr/bin/env TERM=vt100"
-            sh_cmd   =  "%s %s %s" % (sh_env, sh_exe, sh_args)
-
-
-        self._logger.info ("job service opens pty for '%s'" % sh_cmd)
-        self.pty = saga.utils.pty_process.pty_process (sh_cmd, logger=self._logger)
-
-        find_prompt    = True
-      # initial_prompt = "Last login"
-        initial_prompt = "^.*[\]\$#>]\s*$"
-
-      # if sh_type == "sh" :
-      #   initial_prompt = "^.*[\]\$#>]\s*$"
-
-        (n, match) = self.pty.find (["password\s*:\s*$", 
-                                     "want to continue connecting", 
-                                     initial_prompt], _PTY_TIMEOUT)
-        while find_prompt :
-
-
-            if n == None :
-                if not self.pty.alive () :
-                    raise saga.NoSuccess ("failed to start shell\n- log ---\n%s\n---------\n" \
-                                       % self.pty.get_cache_log ())
-                else :
-                    # the write below will make our live simpler, as it will
-                    # eventually flush I/O buffers, and will make sure that we
-                    # get a decent prompt -- no matter what stupi^H^H^H^H^H nice
-                    # PS1 the user invented...
-                    self.pty.write ("export PS1='prompt-$?->'\n")
-                    (n, match) = self.pty.find (["password\s*:\s*$", 
-                                                 "want to continue connecting", 
-                                                 initial_prompt], _PTY_TIMEOUT)
-
-            if n == 0 :
-                self.pty.clog += "\n~~~~~ got key shell prompt\n"
-                self.pty.write ("secret\n")
-                (n, match) = self.pty.find (["password\s*:\s*$", 
-                                             "want to continue connecting", 
-                                             initial_prompt], _PTY_TIMEOUT)
-            elif n == 1 :
-                self.pty.clog += "\n~~~~~ got pass shell prompt\n"
-                self.pty.write ("yes\n")
-                (n, match) = self.pty.find (["password\s*:\s*$", 
-                                             "want to continue connecting", 
-                                             initial_prompt], _PTY_TIMEOUT)
-
-            elif n == 2 :
-                self.pty.clog += "\n~~~~~ got initial shell prompt\n"
-                find_prompt = False
-
-                # need to set new prompt
-                self.pty.write ("export PS1='prompt-$?->'\n")
-                
-                (n, match) = self.pty.find (["^prompt-[\d+]->$"], _PTY_TIMEOUT)
-
-                if  not match or not match[-4:] == "-0->" :
-                    raise saga.NoSuccess ("failed to set prompt\n- log ---\n%s\n---------\n" \
-                                       % self.pty.get_cache_log ())
-                self.pty.clog += "\n~~~~~ got new shell prompt\n"
-        
-        # we have a prompt on the remote system -- now fetch the shell wrapper
+        # -- now fetch the shell wrapper
         # script, and run it.  Once that is up and running, we can requests job
         # start / management operations via its stdio
 
-
         base = "$HOME/.saga/adaptors/ssh_job"
 
-        self.pty.write ("mkdir   -p %s\n" % base)
-        _, match = self.pty.find (["^prompt-[\d+]->$"], _PTY_TIMEOUT)
+        (ret, out, err) = self.pty.run_sync ("mkdir -p %s" % base)
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)(%s)" % (ret, out, err))
 
-        if  not match or not match[-4:] == "-0->" :
-            raise saga.NoSuccess ("failed to prepare wrapper\n- log ---\n%s\n---------\n" \
-                               % self.pty.get_cache_log ())
-
-
-      # self.pty.write ("test -f wget -q %s -O $HOME/.saga/adaptors/ssh_job/wrapper.sh \n" % _WRAPPER_SH)
-        self.pty.write ("test -f %s/wrapper.sh || (touch %s/wrapper.sh; cp %s %s/wrapper.sh)\n" \
-                     % (base, base, _WRAPPER_SH, base))
-        _, match = self.pty.find (["^prompt-[\d+]->$"], _PTY_TIMEOUT)
-
-        if  not match or not match[-4:] == "-0->" :
-            raise saga.NoSuccess ("failed to retrieve wrapper\n- log ---\n%s\n---------\n" \
-                               % self.pty.get_cache_log ())
+      # (ret, out, err) = self.pty.run_sync ("test -f wget -q %s -O $HOME/.saga/adaptors/ssh_job/wrapper.sh \n" % _WRAPPER_SH)
+      # (ret, out, err) = self.pty.run_sync ("test -f %s/wrapper.sh || (touch %s/wrapper.sh; cp %s %s/wrapper.sh)" \
+      #                                   % (base, base, _WRAPPER_SH, base))
+        (ret, out, err) = self.pty.run_sync ("cp -v %s %s/wrapper.sh" % (_WRAPPER_SH, base))
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to fetch wrapper.sh (%s)(%s)(%s)" % (ret, out, err))
 
 
-        self.pty.write ("/bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh\n")
-        _, match = self.pty.find  (["^CMD"], _PTY_TIMEOUT)
+        (ret, out, err) = self.pty.run_sync ("/bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh")
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to fetch wrapper.sh (%s)(%s)(%s)" % (ret, out, err))
 
-        if  not match or not match[-3:] == "CMD" :
-            raise saga.NoSuccess ("failed to run job service wrapper\n- log ---\n%s\n---------\n" \
-                               % self.pty.get_cache_log ())
 
-        self.pty.clog += "\n~~~~~ got cmd prompt\n"
+        self._logger.debug ("got cmd prompt (%s - %s - %s)" % (ret, out, err))
 
 
 
@@ -374,57 +267,20 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
         cmd = "%s %s %s %s"  %  (env, cwd, exe, arg)
 
-        # make sure we did not yet get a timeout
-        _, match = self.pty.find (["^IDLE TIMEOUT"])
-        if match :
-            # shell timed out, need to restart
-            self.pty.clog += "\n~~~~~ got timeout\n"
-            self._logger.info ("restarting remote shell wrapper")
+        (ret, out, err) = self.pty.run_sync ("RUN %s" % cmd)
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to run job '%s': (%s)(%s)(%s)" % (cmd, ret, out, err))
 
-            self.pty.write ("/bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh\n")
-            _, match = self.pty.find  (["^CMD"], _PTY_TIMEOUT)
+        lines = filter (None, out.split ("\n"))
+        self._logger.debug (lines)
 
-            if  not match or not match[-3:] == "CMD" :
-                raise saga.NoSuccess ("failed to run job service wrapper\n- log ---\n%s\n---------\n" \
-                                   % self.pty.get_cache_log ())
+        if  len (lines) < 2 :
+            raise saga.NoSuccess ("failed to run job (%s)" % lines)
 
-            self.pty.clog += "\n~~~~~ got cmd prompt\n"
-        else :
-            self.pty.clog += "\n~~~~~ no timeout\n"
-        
-        self.pty.write ("RUN %s\n" % cmd)
-        _, match = self.pty.find (["^CMD"], _PTY_TIMEOUT)
+        if lines[-2] != "OK" :
+            raise saga.NoSuccess ("failed to run job (%s)" % lines)
 
-        if  not match or not match[-3:] == "CMD" :
-            raise saga.NoSuccess ("failed to run job -- backend error\n- log ---\n%s\n---------\n" \
-                                % self.pty.get_cache_log ())
-
-
-        splitlines = match.split ("\n")
-        lines = []
-
-        for line in splitlines :
-            if len (line) :
-                lines.append (line)
-        self._logger.debug (str(lines))
-
-        if len (lines) < 3 :
-            raise saga.NoSuccess ("failed to run job\n- log ---\n%s\n---------\n" \
-                               % "\n".join (lines))
-
-        # FIXME: we should know which line says ok...
-        ok = False
-        for line in lines :
-            if line == "OK" :
-                ok = True
-                break
-
-        if not ok :
-            self._logger.warn ("Did not find 'OK' from wrapper.sh (%s)" % str (lines))
-            raise saga.NoSuccess ("failed to run job\n- log ---\n%s\n---------\n" \
-                               % "\n".join (lines))
-
-        job_id = "[%s]-[%s]" % (self._rm, lines[2])
+        job_id = "[%s]-[%s]" % (self.rm, lines[-1])
 
         self._logger.debug ("started job %s" % job_id)
 
@@ -447,7 +303,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # state information you need there.
         adaptor_state = { "job_service"     : self, 
                           "job_description" : jd,
-                          "job_schema"      : self._rm.schema }
+                          "job_schema"      : self.rm.schema }
 
         return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
@@ -456,7 +312,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
     def get_url (self) :
         """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
-        return self._rm
+        return self.rm
 
 
     @SYNC_CALL

@@ -16,7 +16,7 @@ RETVAL=""
 BASE=$HOME/.saga/adaptors/ssh_job/
 
 # this process will terminate when idle for longer than TIMEOUT seconds
-TIMEOUT=3
+TIMEOUT=30
 
 
 
@@ -58,8 +58,8 @@ idle_checker () {
 # utility call which extracts the first argument and returns it.
 #
 get_cmd () {
-  if test -z $1 ; then ERROR="no command given"; return; 
-  else                 RETVAL=$1;                fi
+  if test -z $1 ; then RETVAL="NOOP"; return; 
+  else                 RETVAL=$1;     fi
 }
 
 
@@ -69,8 +69,8 @@ get_cmd () {
 # remaining ones in a space separated string
 #
 get_args () {
-  if test -z $1 ; then ERROR="no command given"; return; 
-  else                 shift; RETVAL=$@;         fi 
+  if test -z $1 ; then        RETVAL="";  return; 
+  else                 shift; RETVAL=$@;  fi 
 }
 
 
@@ -136,6 +136,7 @@ cmd_run2 () {
   # this is the second part of the double fork -- run the actual workload in the
   # background and return - voila!  Note, no wait here, as the spawned script is
   # supposed to stay alive with the job.
+  SAGA_PID=`sh -c 'echo $PPID'`
   cmd_run_process $@ &
   ppid=$!
 }
@@ -144,7 +145,7 @@ cmd_run2 () {
 cmd_run_process () {
   # this command runs the job.  PPID will point to the id of the spawning
   # script, which, coincidentally, we designated as job ID -- nice:
-  PID=`sh -c 'echo $PPID'`
+  PID=$SAGA_PID
   DIR="$BASE/$PID"
 
   test -d "$DIR"    && rm    -rf "$DIR"
@@ -182,21 +183,28 @@ EOT
       # waiting...
       if test -e "\$DIR/suspended"
       then
+        rm -f "\$DIR/suspended"
         # need to wait again
-        sleep 1
-      else
-        # evaluate exit val
-        echo \$retv > "\$DIR/exit"
-        test \$retv = 0           && echo DONE      > "\$DIR/state"
-        test \$retv = 0           || echo FAILED    > "\$DIR/state"
-
-        # capture canceled state
-        test -e "\$DIR/canceled"  && echo CANCELED  > "\$DIR/state"
-        test -e "\$DIR/canceled"  && rm -f            "\$DIR/canceled"
-
-        # done waiting
-        break
+        continue
       fi
+      if test -e "\$DIR/resumed"
+      then
+        rm -f "\$DIR/resumed"
+        # need to wait again
+        continue
+      fi
+      
+      # real exit -- evaluate exit val
+      echo \$retv > "\$DIR/exit"
+      test \$retv = 0           && echo DONE      > "\$DIR/state"
+      test \$retv = 0           || echo FAILED    > "\$DIR/state"
+
+      # capture canceled state
+      test -e "\$DIR/canceled"  && echo CANCELED  > "\$DIR/state"
+      test -e "\$DIR/canceled"  && rm -f            "\$DIR/canceled"
+
+      # done waiting
+      break
     done
 
 EOT
@@ -276,7 +284,7 @@ cmd_resume () {
   if test "$ECODE" = "0" 
   then
     mv    "$DIR/state.susp" "$DIR/state"
-    rm -f "$DIR/suspended"
+    touch "$DIR/resumed"
     RETVAL="$1 resumed"
   else
     ERROR="resume failed ($ECODE): $RETVAL"
@@ -402,11 +410,14 @@ cmd_purge () {
 #
 listen() {
   
+  # we need our home base...
+  test -d "$BASE" || mkdir -p  "$BASE"  || exit 1
+
   # make sure we get killed when idle
   idle_checker $$ &
 
   # prompt for commands...
-  echo "CMD"
+  echo "PROMPT-0->"
 
   # and read those from stdin
   while read LINE
@@ -443,8 +454,10 @@ listen() {
       LOG     ) echo LOG    $args ;; 
       NOOP    )                   ;;
       QUIT    ) echo "OK"; exit 0 ;;
-      *       ) ERROR="$cmd unknown ($LINE)" ;; 
+      *       ) ERROR="$cmd unknown ($LINE)"; false ;; 
     esac
+
+    EXITVAL=$?
 
     # the called function will report state and results in 'ERROR' and 'RETVAL'
     if ! test "$ERROR" = "OK"; then
@@ -459,7 +472,7 @@ listen() {
     rm -f "$BASE/idle.$$"
 
     # well done - prompt for next command
-    echo "CMD"
+    echo "PROMPT-$EXITVAL->"
 
   done
 }
