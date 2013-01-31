@@ -14,7 +14,7 @@ SEPARATE = 2    # fetch stdout and stderr individually (one more hop)
 STDOUT   = 3    # fetch stdout only, discard stderr
 STDERR   = 4    # fetch stderr only, discard stdout
 
-###############################################################################
+# --------------------------------------------------------------------
 #
 class pty_shell (object) :
     """
@@ -24,6 +24,8 @@ class pty_shell (object) :
     etc).
     """
 
+    # ----------------------------------------------------------------
+    #
     def __init__ (self, url, contexts=[], logger=None) :
 
         self.url       = url               # describes the shell to run
@@ -201,6 +203,19 @@ class pty_shell (object) :
         self.clog = self.pty.clog
 
 
+    # ----------------------------------------------------------------
+    #
+    def __del__ (self) :
+
+        try :
+            if self.pty : 
+                del (self.pty)
+        except :
+            pass
+
+
+    # ----------------------------------------------------------------
+    #
     def find_prompt (self) :
 
         (_, match)    = self.pty.find    ([self.prompt], _PTY_TIMEOUT)
@@ -209,16 +224,44 @@ class pty_shell (object) :
         return (txt, retval)
 
 
+    # ----------------------------------------------------------------
+    #
     def set_prompt (self, prompt) :
         """
-        The prompt is expected to be a regular expression with one set of
-        catching brackets, which MUST return the previous command's exit
-        status.
-        This method will send a newline to the client, and expects to find the
-        prompt with the exit value '0'.
+        :type  iomode:  string containing a regular expression.
+        :param iomode:  The prompt regex is expected to be a regular expression
+        with one set of catching brackets, which MUST return the previous
+        command's exit status.  This method will send a newline to the client,
+        and expects to find the prompt with the exit value '0'.
 
         As a side effect, this method will discard all previous data on the pty,
         thus effectively flushing the pty output.  
+
+        By encoding the exit value in the command prompt, we safe one roundtrip.
+        The prompt on Posix compliant shells can be set, for example, via::
+
+          set PS1='PROMPT-$?->\\n'; export PS1
+
+        The newline in the example above allows to nicely anchor the regular
+        expression, which would look like::
+
+          PROMPT-(\d+)->\s*$
+
+        The regex is compiled with 're.DOTALL', so the dot character matches
+        all characters, including line breaks.  Be careful not to match more
+        than the exact prompt -- otherwise, a prompt search will swallow stdout
+        data.  For example, the following regex::
+
+          PROMPT-(.+)->\s*$
+
+        would acpture arbitrary strings, and would thus match *all* of::
+
+          PROMPT-0-> ls
+          data/ info
+          PROMPT-0->
+
+        and thus swallow the ls output...
+
         """
 
         old_prompt     = self.prompt
@@ -247,6 +290,8 @@ class pty_shell (object) :
 
 
 
+    # ----------------------------------------------------------------
+    #
     def eval_prompt (self, data, new_prompt=None) :
         """
         This method will match the given data against the current prompt regex,
@@ -295,15 +340,49 @@ class pty_shell (object) :
 
 
 
+    # ----------------------------------------------------------------
+    #
     def run_sync (self, command, iomode=MERGED, new_prompt=None) :
+        """
+        Run a shell command, and report exit code, stdout and stderr (all three
+        will be returned in a tuple).  The call will block until the command
+        finishes (more exactly, until we find the prompt again on the shell's IO
+        stream), and cannot be interrupted.
 
-        # we expect the command to not to do stdio redirection, as
-        # this is we want to capture that separately.  We *do* allow pipes 
-        # and stdin/stdout redirection.  Note that SEPARATE mode will break if
-        # the job is run in the background
-        #
-        # FIXME: document this!
-        
+        :type  command: string
+        :param command: shell command to run.  We expect the command to not to
+        do stdio redirection, as this is we want to capture that separately.  We
+        *do* allow pipes and stdin/stdout redirection.  Note that SEPARATE mode
+        will break if the job is run in the background
+
+        :type  iomode:  enum
+        :param iomode:  Defines how stdout and stderr are captured.  The
+        following values are valid:
+
+          * *IGNORE:*   both stdout and stderr are discarded, `None` will be
+                        returned for each.
+          * *MERGED:*   both streams will be merged and returned as stdout; 
+          *             stderr will be `None`.  This is the default.
+          * *SEPARATE:* stdout and stderr will be captured separately, and
+                        returned individually.  Note that this will require 
+                        at least one more network hop!  
+          * *STDOUT:*   only stdout is captured, stderr will be `None`.
+          * *STDERR:*   only stderr is captured, stdout will be `None`.
+
+        If any of the requested output streams does not return any data, an
+        empty string is returned.
+
+        :type  iomode:  string containing a regular expression.
+        :param iomode:  If the command to be run changes the prompt to be
+        expected for the shell, this parameter MUST contain the regex to be
+        expected.  The same conventions as for set_prompt() hold -- i.e. we
+        expect the prompt regex to capture the exit status of the process.
+
+        If this method is called, but the shell connection has died, it will be
+        restarted.  If that is not desired, the user should check connection
+        availability before, via :func:`alive`.
+        """
+
         command = command.strip ()
         if command.endswith ('&') :
             raise saga.BadParameter ("run_sync can only run forground jobs, not '%s'" % command)
@@ -334,7 +413,7 @@ class pty_shell (object) :
         _, match = self.pty.find ([prompt], timeout=-1.0)  # this blocks forever
 
         if not match :
-            # not find prompt after blocking?  BAD!  restart the shell
+            # not find prompt after blocking?  BAD!  Restart the shell
             self.close ()
             raise saga.NoSuccess ("run_sync failed, could not find prompt again (%s)" % command)
 
@@ -357,7 +436,7 @@ class pty_shell (object) :
             _, match = self.pty.find ([self.prompt], timeout=-1.0)  # this blocks forever
 
             if not match :
-                # not find prompt after blocking?  BAD!  restart the shell
+                # not find prompt after blocking?  BAD!  Restart the shell
                 self.close ()
                 raise saga.NoSuccess ("run_sync failed, could not find prompt after stderr fetching (%s)" % command)
 
@@ -376,118 +455,6 @@ class pty_shell (object) :
 
 
         return (retval, stdout, stderr)
-
-
-    def __del__ (self) :
-
-        try :
-            if self.pty : 
-                del (self.pty)
-        except :
-            pass
-
-
-    def find (self, patterns, timeout=0) :
-        return self.pty.find (patterns, timeout)
-
-    def write (self, data) :
-        return self.pty.write (data)
-
-    def get_cache_log (self) :
-        return self.pty.get_cache_log ()
-
-     
-
-
-    # ----------------------------------------------------------------
-    #
-    #
-    def _run_job (self, jd) :
-        """ runs a job on the wrapper via pty, and returns the job id """
-
-        exe = jd.executable
-        arg = ""
-        env = ""
-        cwd = ""
-
-        if  not self.pty :
-            raise saga.IncorrectState ("job service is not connected to backend")
-
-        if jd.attribute_exists ("arguments") :
-            for a in jd.arguments :
-                arg += " %s" % a
-
-        if jd.attribute_exists ("environment") :
-            env = "/usr/bin/env"
-            for e in jd.environment :
-                env += " %s=%s"  %  (e, jd.environment[e])
-            env += " "
-
-        if jd.attribute_exists ("working_directory") :
-            cwd = "cd %s && " % jd.working_directory
-
-        cmd = "%s %s %s %s"  %  (env, cwd, exe, arg)
-
-        # make sure we did not yet get a timeout
-        _, match = self.pty.find (["^IDLE TIMEOUT"])
-        if match :
-            # shell timed out, need to restart
-            self.pty.clog += "\n~~~~~ got timeout\n"
-            self.logger.info ("restarting remote shell wrapper")
-
-            self.pty.write ("/bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh\n")
-            _, match = self.pty.find  (["PROMPT"], _PTY_TIMEOUT)
-
-            if  not match or not match[-3:] == "PROMPT" :
-                raise saga.NoSuccess ("failed to run job service wrapper\n- log ---\n%s\n---------\n" \
-                                   % self.pty.get_cache_log ())
-
-            self.pty.clog += "\n~~~~~ got cmd prompt\n"
-        else :
-            # self.pty.clog += "\n~~~~~ no timeout\n"
-            pass
-        
-        self.pty.write ("RUN %s\n" % cmd)
-        _, match = self.pty.find (["PROMPT"], _PTY_TIMEOUT)
-
-        if  not match :
-            raise saga.NoSuccess ("failed to run job -- backend error\n- log ---\n%s\n---------\n" \
-                               % self.pty.get_cache_log ())
-        if  not match[-3:] == "PROMPT" :
-            raise saga.NoSuccess ("failed to run job -- backend error (%s)\n- log ---\n%s\n---------\n" \
-                               % (match, self.pty.get_cache_log ()))
-
-
-        splitlines = match.split ("\n")
-        lines = []
-
-        for line in splitlines :
-            if len (line) :
-                lines.append (line)
-        self.logger.debug (str(lines))
-
-        if len (lines) < 3 :
-            raise saga.NoSuccess ("failed to run job\n- log ---\n%s\n---------\n" \
-                               % "\n".join (lines))
-
-        # FIXME: we should know which line says ok...
-        ok = False
-        for line in lines :
-            if line == "OK" :
-                ok = True
-                break
-
-        if not ok :
-            self.logger.warn ("Did not find 'OK' from wrapper.sh (%s)" % str (lines))
-            raise saga.NoSuccess ("failed to run job\n- log ---\n%s\n---------\n" \
-                               % "\n".join (lines))
-
-        job_id = "[%s]-[%s]" % (self.url, lines[2])
-
-        self.logger.debug ("started job %s" % job_id)
-
-        return job_id
-        
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

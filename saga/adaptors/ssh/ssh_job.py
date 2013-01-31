@@ -191,8 +191,8 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # When should that be done?
 
         try :
-            if self.pty : self.pty.write ("PURGE\n")
-            if self.pty : self.pty.write ("QUIT\n" )
+            if self.pty : self.pty.run_sync ("PURGE")
+            if self.pty : self.pty.run_sync ("QUIT" )
         except :
             pass
 
