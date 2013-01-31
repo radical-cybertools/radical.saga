@@ -8,8 +8,6 @@ __license__   = "MIT"
 
 import os
 import sys
-import shutil
-import fileinput
 
 from distutils.core import setup
 from distutils.command.install_data import install_data
@@ -39,13 +37,12 @@ except IOError:
 
 scripts = [] # ["bin/bliss-run"]
 
-import sys
 if sys.hexversion < 0x02050000:
     raise RuntimeError, "SAGA requires Python 2.5 or higher"
 
 class our_install_data(install_data):
 
-    def finalize_options(self):
+    def finalize_options(self): 
         self.set_undefined_options('install',
             ('install_lib', 'install_dir'),
         )
