@@ -15,6 +15,43 @@ RETVAL=""
 # this is where this 'daemon' keeps state for all started jobs
 BASE=$HOME/.saga/adaptors/ssh_job/
 
+# this process will terminate when idle for longer than TIMEOUT seconds
+TIMEOUT=3
+
+
+
+# --------------------------------------------------------------------
+#
+# idle_checker is running in the background, and will terminate the wrapper
+# shell if it is idle for longer than TIMEOUT seconds
+#
+trap idle_handler ALRM
+
+idle_handler (){
+  echo "IDLE TIMEOUT"
+  rm -f "$BASE/idle.$ppid"
+  touch "$BASE/timed_out.$ppid"
+  exit 0
+}
+
+idle_checker () {
+
+  ppid=$1
+
+  while true
+  do
+    sleep $TIMEOUT
+
+    if test -e "$BASE/idle.$ppid"
+    then
+      kill -s ALRM $ppid
+      exit 0
+    fi
+
+    touch   "$BASE/idle.$ppid"
+  done
+}
+
 
 # --------------------------------------------------------------------
 #
@@ -71,10 +108,11 @@ verify_pid () {
 # is the pid, it must be unique -- we thus purge whatever trace we find of an
 # earlier directory of the same name.
 #
+#
 # Known limitations:
 #
 # The script has a small race condition, between starting the job (the 'nohup'
-# line), and the next line where the jobs now know pid is stored away.  I don't
+# line), and the next line where the jobs now known pid is stored away.  I don't
 # see an option to make those two ops atomic, or resilient against script
 # failure - so, in worst case, you might get a running job for which the job id
 # is not stored (i.e. not known).  
@@ -82,20 +120,30 @@ verify_pid () {
 # Also, the line after is when the job state is set to 'Running' -- we can't
 # really do that before, but on failure, in the worst case, we might have a job
 # with known job ID which is not marked as running.  
-
+#
+# Bottom line: full disk will screw with state consistency -- which is no
+# surprise really...
 
 cmd_run () {
+  # do a double fork to avoid zombies (need to do a wait in this process)
   cmd_run2 $@ &
-  RETVAL=$!
-  wait $RETVAL
+  RETVAL=$!     # this is the (native) job id!
+  wait $RETVAL  # this will return very quickly -- look at cmd_run2... ;-)
 }
 
+
 cmd_run2 () {
+  # this is the second part of the double fork -- run the actual workload in the
+  # background and return - voila!  Note, no wait here, as the spawned script is
+  # supposed to stay alive with the job.
   cmd_run_process $@ &
   ppid=$!
 }
 
+
 cmd_run_process () {
+  # this command runs the job.  PPID will point to the id of the spawning
+  # script, which, coincidentally, we designated as job ID -- nice:
   PID=`sh -c 'echo $PPID'`
   DIR="$BASE/$PID"
 
@@ -132,7 +180,8 @@ EOT
       # if wait failed for other reason than job finishing, i.e. due to
       # suspend/resume, then we need to wait again, otherwise we are done
       # waiting...
-      if test -e "\$DIR/suspended"; then
+      if test -e "\$DIR/suspended"
+      then
         # need to wait again
         sleep 1
       else
@@ -182,7 +231,8 @@ cmd_suspend () {
   state=`cat "$DIR/state"`
   rpid=`cat "$DIR/pid"`
 
-  if ! test "$state" = "RUNNING"; then
+  if ! test "$state" = "RUNNING"
+  then
     ERROR="job $1 in incorrect state ($state != RUNNING)"
     return
   fi
@@ -191,7 +241,8 @@ cmd_suspend () {
   RETVAL=`kill -STOP $rpid 2>&1`
   ECODE=$?
 
-  if test "$ECODE" = "0" ; then
+  if test "$ECODE" = "0" 
+  then
     mv    "$DIR/state" "$DIR/state.susp"
     echo SUSPENDED >   "$DIR/state"
     RETVAL="$1 suspended"
@@ -213,7 +264,8 @@ cmd_resume () {
   state=`cat $DIR/state`
   rpid=`cat $DIR/pid`
 
-  if ! test "$state" = "SUSPENDED"; then
+  if ! test "$state" = "SUSPENDED"
+  then
     ERROR="job $1 in incorrect state ($state != SUSPENDED)"
     return
   fi
@@ -221,7 +273,8 @@ cmd_resume () {
   RETVAL=`kill -CONT $rpid 2>&1`
   ECODE=$?
 
-  if test "$ECODE" = "0" ; then
+  if test "$ECODE" = "0" 
+  then
     mv    "$DIR/state.susp" "$DIR/state"
     rm -f "$DIR/suspended"
     RETVAL="$1 resumed"
@@ -244,7 +297,8 @@ cmd_cancel () {
   state=`cat $DIR/state`
   rpid=`cat $DIR/pid`
 
-  if test "$state" != "SUSPENDED" -a "$state" != "RUNNING"; then
+  if test "$state" != "SUSPENDED" -a "$state" != "RUNNING"
+  then
     ERROR="job $1 in incorrect state ('$state' != 'SUSPENDED|RUNNING')"
     return
   fi
@@ -253,7 +307,8 @@ cmd_cancel () {
   RETVAL=`kill -KILL $rpid 2>&1`
   ECODE=$?
 
-  if test "$ECODE" = "0" ; then
+  if test "$ECODE" = "0" 
+  then
     RETVAL="$1 canceled"
   else
     # kill failed!
@@ -306,7 +361,8 @@ cmd_stderr () {
 # list all job IDs
 #
 cmd_list () {
-  for d in "$BASE"/*; do
+  for d in "$BASE"/*
+  do
     RETVAL="$RETVAL`basename $d` "
   done
 
@@ -320,8 +376,10 @@ cmd_list () {
 #
 cmd_purge () {
 
-  if test -z "$1" ; then
-    for d in `grep -l -e 'DONE' -e 'FAILED' -e 'CANCELED' "$BASE"/*/state`; do
+  if test -z "$1" 
+  then
+    for d in `grep -l -e 'DONE' -e 'FAILED' -e 'CANCELED' "$BASE"/*/state`
+    do
       dir=`dirname $d`
       id=`basename $dir`
       rm -rf "$BASE/$id"
@@ -344,21 +402,33 @@ cmd_purge () {
 #
 listen() {
   
+  # make sure we get killed when idle
+  idle_checker $$ &
+
+  # prompt for commands...
   echo "CMD"
 
-  while read LINE; do
+  # and read those from stdin
+  while read LINE
+  do
 
+    # reset err state for each command
     ERROR="OK"
     RETVAL=""
 
     get_cmd  $LINE ; cmd=$RETVAL
     get_args $LINE ; args=$RETVAL
 
-    if ! test "$ERROR" = "OK"; then
-      echo "ERROR"     ; echo $ERROR
+    # did we find command and args?  Note that args may be empty, e.g. for QUIT
+    if ! test "$ERROR" = "OK"
+    then
+      echo "ERROR"
+      echo "$ERROR"
       continue
     fi
 
+    # simply invoke the right function for each command, or complain if command
+    # is not known
     case $cmd in
       RUN     ) cmd_run     $args ;; 
       SUSPEND ) cmd_suspend $args ;; 
@@ -370,17 +440,25 @@ listen() {
       STDERR  ) cmd_stderr  $args ;; 
       LIST    ) cmd_list    $args ;; 
       PURGE   ) cmd_purge   $args ;; 
+      LOG     ) echo LOG    $args ;; 
       NOOP    )                   ;;
       QUIT    ) echo "OK"; exit 0 ;;
       *       ) ERROR="$cmd unknown ($LINE)" ;; 
     esac
 
+    # the called function will report state and results in 'ERROR' and 'RETVAL'
     if ! test "$ERROR" = "OK"; then
-      echo "ERROR"     ; echo $ERROR
+      echo "ERROR"     
+      echo "$ERROR"
     else
-      echo "OK"        ; echo "$RETVAL"
+      echo "OK"        
+      echo "$RETVAL"
     fi
 
+    # we did hard work - make sure we are not getting killed for idleness!
+    rm -f "$BASE/idle.$$"
+
+    # well done - prompt for next command
     echo "CMD"
 
   done

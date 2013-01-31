@@ -60,7 +60,46 @@
             
   <div class="section" id="saga-adaptor-ssh-job">
 <h1>7. saga.adaptor.ssh_job<a class="headerlink" href="#saga-adaptor-ssh-job" title="Permalink to this headline">¶</a></h1>
-<p>A more elaborate description....</p>
+<p>A more elaborate description....
+Known Limitations:
+&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;
+* number of system pty&#8217;s are limited:  each job.service object bound
+to this adaptor will use 2 pairs of pty pipes.  Systems usually
+limit the number of available pty&#8217;s to 1024 .. 4096.  Given that
+other process also use pty&#8217;s , that gives a hard limit to the number
+of object instances which can be created concurrently.  Hitting the
+pty limit will cause the following error message (or similar)::
+NoSuccess: pty_allocation or process creation failed (ENOENT: no more ptys)
+This limitation comes from saga.utils.pty_process.  On Linux
+systems, the utilization of pty&#8217;s can be monitored::
+echo &#8220;allocated pty&#8217;s: <cite>cat /proc/sys/kernel/pty/nr</cite>&#8221;
+echo &#8220;available pty&#8217;s: <cite>cat /proc/sys/kernel/pty/max</cite>&#8221;
+* number of ssh connections are limited: sshd&#8217;s default configuration,
+which is in place on many systems, limits the number of concurrent
+ssh connections to 10 per user &#8211; beyond that, connections are
+refused with the following error::
+NoSuccess: ssh_exchange_identification: Connection closed by remote host
+As the communication with the ssh channel is unbuffered, the
+dropping of the connection will likely cause this error message to
+be lost.  Instead, the adaptor will just see that the ssh connection
+disappeared, and will issue an error message similar to this one::
+NoSuccess: read from pty process failed (Could not read line - pty process died)
+* number of processes are limited: the creation of an job.service
+object will create one additional process on the local system, and
+two processes on the remote system (ssh daemon clone and a shell
+instance).  Each remote job will create three additional processes:
+two for the job instance itself (double fork), and an additional
+process which monitors the job for state changes etc.  Additional
+temporary processes may be needed as well.
+While marked as &#8216;obsolete&#8217; by POSIX, the <cite>ulimit</cite> command is
+available on many systems, and reports the number of processes
+available per user (<cite>ulimit -u</cite>)
+On hitting process limits, the job creation will fail with an error
+similar to either of these::
+NoSuccess: failed to run job (/bin/sh: fork: retry: Resource temporarily unavailable)
+NoSuccess: failed to run job &#8211; backend error
+* Other system limits (memory, CPU, selinux, accounting etc.) apply as
+usual.</p>
 <div class="section" id="version">
 <h2>7.1. Version<a class="headerlink" href="#version" title="Permalink to this headline">¶</a></h2>
 <p>v0.1</p>
@@ -69,8 +108,9 @@
 <h2>7.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
-<li><strong>gsissh</strong> : use gsissh to run a remote job</li>
-<li><strong>ssh</strong> : use ssh to run a remote job</li>
+<li><strong>fork</strong> : use /bin/sh to run jobs</li>
+<li><strong>gsissh</strong> : use gsissh to run remote jobs</li>
+<li><strong>ssh</strong> : use ssh to run remote jobs</li>
 </ul>
 </div></blockquote>
 </div>

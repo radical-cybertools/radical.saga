@@ -117,7 +117,7 @@ class ContextSSH (saga.adaptors.cpi.Context) :
             raise saga.exceptions.BadParameter \
                     ("the ssh context adaptor only handles ssh contexts - duh!")
 
-        self._api.type = type
+        self.get_api ().type = type
 
         return self
 
@@ -126,13 +126,13 @@ class ContextSSH (saga.adaptors.cpi.Context) :
     def _initialize (self, session) :
 
         # make sure we have can access the proxy
-        api = self._api
+        api = self.get_api ()
 
-        # if not self._api.user_proxy :
-        #   self._api.user_proxy = "x509up_u%d"  %  os.getuid()
+        # if  not api.user_proxy :
+        #     api.user_proxy = "x509up_u%d"  %  os.getuid()
 
-        # if not os.path.exists (api.user_proxy) or \
-        #    not os.path.isfile (api.user_proxy)    :
+        # if  not os.path.exists (api.user_proxy) or \
+        #     not os.path.isfile (api.user_proxy)    :
         #     raise saga.exceptions.BadParameter ("X509 proxy does not exist: %s"
         #                                          % api.user_proxy)
 

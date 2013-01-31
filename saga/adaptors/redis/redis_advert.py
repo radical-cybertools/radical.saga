@@ -167,7 +167,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory, saga.adaptors.cpi.Asyn
         self._set_session (session)
         self._init_check  ()
 
-        return self._api
+        return self.get_api ()
 
 
     @ASYNC_CALL
@@ -219,7 +219,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory, saga.adaptors.cpi.Asyn
 
     @SYNC_CALL
     def attribute_caller (self, key, id, cb) :
-        self._nsdir.manage_callback (key, id, cb, self._api)
+        self._nsdir.manage_callback (key, id, cb, self.get_api ())
 
 
     @SYNC_CALL
@@ -334,7 +334,7 @@ class RedisEntry (saga.adaptors.cpi.advert.Entry) :
 
     @SYNC_CALL
     def attribute_caller (self, key, id, cb) :
-        self._nsentry.manage_callback (key, id, cb, self._api)
+        self._nsentry.manage_callback (key, id, cb, self.get_api ())
 
 
     @SYNC_CALL

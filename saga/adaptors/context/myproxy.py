@@ -93,7 +93,7 @@ class ContextMyProxy (saga.adaptors.cpi.Context) :
             raise saga.exceptions.BadParameter \
                     ("the MyProxy context adaptor only handles MyProxy contexts - duh!")
 
-        self._api.type = type
+        self.get_api ().type = type
 
         return self
 
@@ -102,7 +102,7 @@ class ContextMyProxy (saga.adaptors.cpi.Context) :
     def _initialize (self, session) :
 
         # make sure we have server, username, password
-        api = self._api
+        api = self.get_api ()
 
 
         # set up the myproxy command

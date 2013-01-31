@@ -193,7 +193,7 @@
         <span class="c"># holds the jobs that were started via this instance</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_jobs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span> <span class="c"># {job_obj:id, ...}</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
 
     <span class="k">def</span> <span class="nf">_register_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_obj</span><span class="p">):</span></div>
@@ -252,7 +252,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">for</span> <span class="p">(</span><span class="n">job_obj</span><span class="p">,</span> <span class="n">job_id</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jobs</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">job_id</span> <span class="o">==</span> <span class="n">jobid</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="n">job_obj</span><span class="o">.</span><span class="n">_api</span>
+                    <span class="k">return</span> <span class="n">job_obj</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
 
     <span class="k">def</span> <span class="nf">container_run</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobs</span><span class="p">)</span> <span class="p">:</span></div>
@@ -313,7 +313,7 @@
         <span class="c"># our job id is still None at this point</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_parent_service</span><span class="o">.</span><span class="n">_register_job</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
 
     <span class="nd">@SYNC_CALL</span></div>

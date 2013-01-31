@@ -74,49 +74,49 @@
 <span class="n">_WRAPPER_SH</span>  <span class="o">=</span> <span class="s">&quot;https://raw.github.com/saga-project/saga-python/feature/sshjob/saga/adaptors/ssh/wrapper.sh&quot;</span>
 <span class="n">_WRAPPER_SH</span>  <span class="o">=</span> <span class="s">&quot;/home/merzky/saga/saga-python/saga/adaptors/ssh/wrapper.sh&quot;</span>
 <span class="n">_WRAPPER_SH</span>  <span class="o">=</span> <span class="s">&quot;/tmp/wrapper.sh&quot;</span>
-<span class="n">_PTY_TIMEOUT</span> <span class="o">=</span> <span class="mf">13.0</span>
+<span class="n">_PTY_TIMEOUT</span> <span class="o">=</span> <span class="mf">1.0</span>
 
 <span class="c"># --------------------------------------------------------------------</span>
 <span class="c"># the adaptor name</span>
 <span class="c">#</span>
-<span class="n">_ADAPTOR_NAME</span>          <span class="o">=</span> <span class="s">&#39;saga.adaptor.ssh_job&#39;</span>
-<span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&#39;ssh&#39;</span><span class="p">,</span> <span class="s">&#39;gsissh&#39;</span><span class="p">]</span>
+<span class="n">_ADAPTOR_NAME</span>          <span class="o">=</span> <span class="s">&quot;saga.adaptor.ssh_job&quot;</span>
+<span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&quot;fork&quot;</span><span class="p">,</span> <span class="s">&quot;ssh&quot;</span><span class="p">,</span> <span class="s">&quot;gsissh&quot;</span><span class="p">]</span>
 <span class="n">_ADAPTOR_OPTIONS</span>       <span class="o">=</span> <span class="p">[]</span>
 
 <span class="c"># --------------------------------------------------------------------</span>
 <span class="c"># the adaptor capabilities &amp; supported attributes</span>
 <span class="c">#</span>
 <span class="n">_ADAPTOR_CAPABILITIES</span>  <span class="o">=</span> <span class="p">{</span>
-    <span class="s">&#39;jdes_attributes&#39;</span>  <span class="p">:</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXECUTABLE</span><span class="p">,</span>
+    <span class="s">&quot;jdes_attributes&quot;</span>  <span class="p">:</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXECUTABLE</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">ARGUMENTS</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">ENVIRONMENT</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">INPUT</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">OUTPUT</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">ERROR</span><span class="p">],</span>
-    <span class="s">&#39;job_attributes&#39;</span>   <span class="p">:</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXIT_CODE</span><span class="p">,</span>
+    <span class="s">&quot;job_attributes&quot;</span>   <span class="p">:</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXIT_CODE</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXECUTION_HOSTS</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CREATED</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">STARTED</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FINISHED</span><span class="p">],</span>
-    <span class="s">&#39;metrics&#39;</span>          <span class="p">:</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">STATE</span><span class="p">,</span> 
+    <span class="s">&quot;metrics&quot;</span>          <span class="p">:</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">STATE</span><span class="p">,</span> 
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">STATE_DETAIL</span><span class="p">],</span>
-    <span class="s">&#39;contexts&#39;</span>         <span class="p">:</span> <span class="p">{</span><span class="s">&#39;ssh&#39;</span>      <span class="p">:</span> <span class="s">&quot;public/private keypair&quot;</span><span class="p">,</span>
-                          <span class="s">&#39;x509&#39;</span>     <span class="p">:</span> <span class="s">&quot;X509 proxy for gsissh&quot;</span><span class="p">,</span>
-                          <span class="s">&#39;userpass&#39;</span> <span class="p">:</span> <span class="s">&quot;username/password pair for simple ssh&quot;</span><span class="p">}</span>
+    <span class="s">&quot;contexts&quot;</span>         <span class="p">:</span> <span class="p">{</span><span class="s">&quot;ssh&quot;</span>      <span class="p">:</span> <span class="s">&quot;public/private keypair&quot;</span><span class="p">,</span>
+                          <span class="s">&quot;x509&quot;</span>     <span class="p">:</span> <span class="s">&quot;X509 proxy for gsissh&quot;</span><span class="p">,</span>
+                          <span class="s">&quot;userpass&quot;</span> <span class="p">:</span> <span class="s">&quot;username/password pair for simple ssh&quot;</span><span class="p">}</span>
 <span class="p">}</span>
 
 <span class="c"># --------------------------------------------------------------------</span>
 <span class="c"># the adaptor documentation</span>
 <span class="c">#</span>
 <span class="n">_ADAPTOR_DOC</span>           <span class="o">=</span> <span class="p">{</span>
-    <span class="s">&#39;name&#39;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
-    <span class="s">&#39;cfg_options&#39;</span>      <span class="p">:</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">,</span> 
-    <span class="s">&#39;capabilities&#39;</span>     <span class="p">:</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
-    <span class="s">&#39;description&#39;</span>      <span class="p">:</span> <span class="s">&quot;&quot;&quot; </span>
+    <span class="s">&quot;name&quot;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&quot;cfg_options&quot;</span>      <span class="p">:</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">,</span> 
+    <span class="s">&quot;capabilities&quot;</span>     <span class="p">:</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
+    <span class="s">&quot;description&quot;</span>      <span class="p">:</span> <span class="s">&quot;&quot;&quot; </span>
 <span class="s">        The SSH job adaptor. This adaptor uses the ssh command line tools to run</span>
 <span class="s">        remote jobs.</span>
 <span class="s">        &quot;&quot;&quot;</span><span class="p">,</span>
-    <span class="s">&#39;details&#39;</span>          <span class="p">:</span> <span class="s">&quot;&quot;&quot; </span>
+    <span class="s">&quot;details&quot;</span>          <span class="p">:</span> <span class="s">&quot;&quot;&quot; </span>
 <span class="s">        A more elaborate description....</span>
 
 <span class="s">        Known Limitations:</span>
@@ -176,25 +176,26 @@
 <span class="s">            usual.</span>
 
 <span class="s">        &quot;&quot;&quot;</span><span class="p">,</span>
-    <span class="s">&#39;schemas&#39;</span>          <span class="p">:</span> <span class="p">{</span><span class="s">&#39;ssh&#39;</span>    <span class="p">:</span><span class="s">&#39;use ssh to run a remote job&#39;</span><span class="p">,</span> 
-                          <span class="s">&#39;gsissh&#39;</span> <span class="p">:</span><span class="s">&#39;use gsissh to run a remote job&#39;</span><span class="p">}</span>
+    <span class="s">&quot;schemas&quot;</span>          <span class="p">:</span> <span class="p">{</span><span class="s">&quot;fork&quot;</span>   <span class="p">:</span><span class="s">&quot;use /bin/sh to run jobs&quot;</span><span class="p">,</span> 
+                          <span class="s">&quot;ssh&quot;</span>    <span class="p">:</span><span class="s">&quot;use ssh to run remote jobs&quot;</span><span class="p">,</span> 
+                          <span class="s">&quot;gsissh&quot;</span> <span class="p">:</span><span class="s">&quot;use gsissh to run remote jobs&quot;</span><span class="p">}</span>
 <span class="p">}</span>
 
 <span class="c"># --------------------------------------------------------------------</span>
 <span class="c"># the adaptor info is used to register the adaptor with SAGA</span>
 
 <span class="n">_ADAPTOR_INFO</span>          <span class="o">=</span> <span class="p">{</span>
-    <span class="s">&#39;name&#39;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
-    <span class="s">&#39;version&#39;</span>          <span class="p">:</span> <span class="s">&#39;v0.1&#39;</span><span class="p">,</span>
-    <span class="s">&#39;schemas&#39;</span>          <span class="p">:</span> <span class="n">_ADAPTOR_SCHEMAS</span><span class="p">,</span>
-    <span class="s">&#39;cpis&#39;</span>             <span class="p">:</span> <span class="p">[</span>
+    <span class="s">&quot;name&quot;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&quot;version&quot;</span>          <span class="p">:</span> <span class="s">&quot;v0.1&quot;</span><span class="p">,</span>
+    <span class="s">&quot;schemas&quot;</span>          <span class="p">:</span> <span class="n">_ADAPTOR_SCHEMAS</span><span class="p">,</span>
+    <span class="s">&quot;cpis&quot;</span>             <span class="p">:</span> <span class="p">[</span>
         <span class="p">{</span> 
-        <span class="s">&#39;type&#39;</span>         <span class="p">:</span> <span class="s">&#39;saga.job.Service&#39;</span><span class="p">,</span>
-        <span class="s">&#39;class&#39;</span>        <span class="p">:</span> <span class="s">&#39;SSHJobService&#39;</span>
+        <span class="s">&quot;type&quot;</span>         <span class="p">:</span> <span class="s">&quot;saga.job.Service&quot;</span><span class="p">,</span>
+        <span class="s">&quot;class&quot;</span>        <span class="p">:</span> <span class="s">&quot;SSHJobService&quot;</span>
         <span class="p">},</span> 
         <span class="p">{</span> 
-        <span class="s">&#39;type&#39;</span>         <span class="p">:</span> <span class="s">&#39;saga.job.Job&#39;</span><span class="p">,</span>
-        <span class="s">&#39;class&#39;</span>        <span class="p">:</span> <span class="s">&#39;SSHJob&#39;</span>
+        <span class="s">&quot;type&quot;</span>         <span class="p">:</span> <span class="s">&quot;saga.job.Job&quot;</span><span class="p">,</span>
+        <span class="s">&quot;class&quot;</span>        <span class="p">:</span> <span class="s">&quot;SSHJob&quot;</span>
         <span class="p">}</span>
     <span class="p">]</span>
 <span class="p">}</span>
@@ -235,10 +236,11 @@
         <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">CPIBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__del__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;DESTRUCTION! </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span>
-      <span class="c"># self.pty.write (&#39;PURGE\n&#39;)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&#39;QUIT</span><span class="se">\n</span><span class="s">&#39;</span> <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">quit</span> <span class="p">()</span>
+        <span class="c"># FIXME: not sure if we should PURGE here -- that removes states which</span>
+        <span class="c"># might not be evaluated, yet.  Should we mark state evaluation</span>
+        <span class="c"># seperately? (cmd_state () { touch $DIR/purgeable; ... })?  When?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;PURGE</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;QUIT</span><span class="se">\n</span><span class="s">&quot;</span> <span class="p">)</span>
 
 
     <span class="nd">@SYNC_CALL</span>
@@ -248,91 +250,127 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_rm</span>      <span class="o">=</span> <span class="n">rm_url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
 
-        <span class="n">ssh_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rm</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span>
-        <span class="n">ssh_env</span>  <span class="o">=</span> <span class="s">&quot;&quot;</span>
-        <span class="n">ssh_exe</span>  <span class="o">=</span> <span class="s">&quot;&quot;</span>
-        <span class="n">ssh_args</span> <span class="o">=</span> <span class="s">&quot;-tt&quot;</span>
-        <span class="n">ssh_user</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getlogin</span> <span class="p">()</span>
+        <span class="n">schema</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rm</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span>
+        <span class="n">sh_type</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="n">sh_exe</span>  <span class="o">=</span> <span class="s">&quot;&quot;</span>
 
+        <span class="k">if</span>  <span class="n">schema</span>   <span class="o">==</span> <span class="s">&quot;ssh&quot;</span> <span class="p">:</span>
+            <span class="n">sh_type</span>  <span class="o">=</span>  <span class="s">&quot;ssh&quot;</span>
+            <span class="n">sh_exe</span>   <span class="o">=</span>  <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">which</span><span class="o">.</span><span class="n">which</span> <span class="p">(</span><span class="s">&quot;ssh&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span>  <span class="n">ssh_type</span> <span class="o">==</span> <span class="s">&#39;ssh&#39;</span> <span class="p">:</span>
-            <span class="n">ssh_exe</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">which</span><span class="o">.</span><span class="n">which</span> <span class="p">(</span><span class="s">&#39;ssh&#39;</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">ssh_type</span> <span class="o">==</span> <span class="s">&#39;gsissh&#39;</span> <span class="p">:</span>
-            <span class="n">ssh_exe</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">which</span><span class="o">.</span><span class="n">which</span> <span class="p">(</span><span class="s">&#39;gsissh&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">schema</span>  <span class="o">==</span> <span class="s">&quot;gsissh&quot;</span> <span class="p">:</span>
+            <span class="n">sh_type</span>  <span class="o">=</span>  <span class="s">&quot;ssh&quot;</span>
+            <span class="n">sh_exe</span>   <span class="o">=</span>  <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">which</span><span class="o">.</span><span class="n">which</span> <span class="p">(</span><span class="s">&quot;gsissh&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">schema</span>  <span class="o">==</span> <span class="s">&quot;fork&quot;</span> <span class="p">:</span>
+            <span class="n">sh_type</span>  <span class="o">=</span>  <span class="s">&quot;sh&quot;</span>
+            <span class="k">if</span>  <span class="s">&quot;SHELL&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span> <span class="p">:</span>
+                <span class="n">sh_exe</span> <span class="o">=</span>  <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">which</span><span class="o">.</span><span class="n">which</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&quot;SHELL&quot;</span><span class="p">])</span>
+            <span class="k">else</span> <span class="p">:</span>
+                <span class="n">sh_exe</span> <span class="o">=</span>  <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">which</span><span class="o">.</span><span class="n">which</span> <span class="p">(</span><span class="s">&quot;sh&quot;</span><span class="p">)</span>
         <span class="k">else</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> \
-            	  <span class="s">&quot;SSH Job adaptor can only handle ssh schema URLs, not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rm</span><span class="o">.</span><span class="n">schema</span><span class="p">)</span>
+            	  <span class="s">&quot;SSH Job adaptor can only handle </span><span class="si">%s</span><span class="s"> schema URLs, not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">_ADAPTOR_SCHEMAS</span><span class="p">,</span> <span class="n">schema</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sh_exe</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> \
+            	  <span class="s">&quot;SSH Job adaptor cannot handle the </span><span class="si">%s</span><span class="s"> schema, no shell executable found&quot;</span> <span class="o">%</span> <span class="n">schema</span><span class="p">)</span>
 
 
-        <span class="k">for</span> <span class="n">context</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">contexts</span> <span class="p">:</span>
-            <span class="k">if</span>  <span class="n">context</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="o">==</span> <span class="s">&quot;ssh&quot;</span> <span class="p">:</span>
-                <span class="k">if</span>  <span class="n">ssh_type</span> <span class="o">==</span> <span class="s">&#39;ssh&#39;</span> <span class="p">:</span>
-                    <span class="k">if</span>  <span class="n">context</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&#39;user_id&#39;</span><span class="p">)</span> <span class="p">:</span>
-                        <span class="n">ssh_user</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">user_id</span>
-                    <span class="k">if</span>  <span class="n">context</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&#39;user_key&#39;</span><span class="p">)</span> <span class="p">:</span>
-                        <span class="n">ssh_args</span> <span class="o">+=</span> <span class="s">&quot; -i </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">context</span><span class="o">.</span><span class="n">user_key</span>
-            <span class="k">if</span>  <span class="n">context</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="o">==</span> <span class="s">&quot;gsissh&quot;</span> <span class="p">:</span>
-                <span class="k">if</span>  <span class="n">ssh_type</span> <span class="o">==</span> <span class="s">&#39;gsissh&#39;</span> <span class="p">:</span>
-                    <span class="k">if</span>  <span class="n">context</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&#39;user_proxy&#39;</span><span class="p">)</span> <span class="p">:</span>
-                        <span class="k">if</span> <span class="ow">not</span> <span class="n">ssh_env</span> <span class="p">:</span>
-                            <span class="n">ssh_env</span> <span class="o">=</span> <span class="s">&quot;/usr/bin/env&quot;</span>
-                        <span class="n">ssh_env</span> <span class="o">+=</span> <span class="s">&quot; X509_PROXY=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">context</span><span class="o">.</span><span class="n">user_proxy</span>
+        <span class="k">if</span>  <span class="n">sh_type</span> <span class="o">==</span> <span class="s">&quot;ssh&quot;</span> <span class="p">:</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rm</span><span class="o">.</span><span class="n">username</span> <span class="p">:</span>
-            <span class="n">ssh_user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rm</span><span class="o">.</span><span class="n">username</span>
+            <span class="n">sh_env</span>  <span class="o">=</span>  <span class="s">&quot;/usr/bin/env TERM=vt100 &quot;</span>
+            <span class="n">sh_args</span> <span class="o">=</span>  <span class="s">&quot;-t &quot;</span>
 
-      <span class="c"># SSHJobService.myid += 1</span>
-      <span class="c"># logfile             = &quot;/tmp/t.%d&quot; % SSHJobService.myid</span>
+            <span class="k">for</span> <span class="n">context</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">contexts</span> <span class="p">:</span>
+                <span class="k">if</span>  <span class="n">context</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="o">==</span> <span class="s">&quot;ssh&quot;</span> <span class="p">:</span>
+                    <span class="k">if</span>  <span class="n">schema</span> <span class="o">==</span> <span class="s">&quot;ssh&quot;</span> <span class="p">:</span>
+                        <span class="k">if</span>  <span class="n">context</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;user_id&quot;</span><span class="p">)</span> <span class="p">:</span>
+                            <span class="n">sh_args</span> <span class="o">=</span> <span class="s">&quot;-l </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">context</span><span class="o">.</span><span class="n">user_id</span>
+                        <span class="k">if</span>  <span class="n">context</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;user_key&quot;</span><span class="p">)</span> <span class="p">:</span>
+                            <span class="n">sh_args</span> <span class="o">+=</span> <span class="s">&quot;-i </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">context</span><span class="o">.</span><span class="n">user_key</span>
+                <span class="k">if</span>  <span class="n">context</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="o">==</span> <span class="s">&quot;gsissh&quot;</span> <span class="p">:</span>
+                    <span class="k">if</span>  <span class="n">schema</span> <span class="o">==</span> <span class="s">&quot;gsissh&quot;</span> <span class="p">:</span>
+                        <span class="k">if</span>  <span class="n">context</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;user_proxy&quot;</span><span class="p">)</span> <span class="p">:</span>
+                            <span class="n">sh_env</span> <span class="o">=</span> <span class="s">&quot;X509_PROXY=&#39;</span><span class="si">%s</span><span class="s">&#39; &quot;</span> <span class="o">%</span> <span class="n">context</span><span class="o">.</span><span class="n">user_proxy</span>
 
-        <span class="k">if</span> <span class="n">ssh_env</span> <span class="p">:</span>
-            <span class="n">ssh_env</span> <span class="o">+=</span> <span class="s">&#39; &#39;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rm</span><span class="o">.</span><span class="n">username</span> <span class="p">:</span>
+                <span class="n">sh_args</span> <span class="o">+=</span> <span class="s">&quot;-l </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rm</span><span class="o">.</span><span class="n">username</span>
 
-        <span class="n">ssh_args</span> <span class="o">+=</span> <span class="s">&quot; </span><span class="si">%s</span><span class="s">@</span><span class="si">%s</span><span class="s">&quot;</span>   <span class="o">%</span>  <span class="p">(</span><span class="n">ssh_user</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rm</span><span class="o">.</span><span class="n">host</span><span class="p">)</span>
-        <span class="n">ssh_cmd</span>   <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">ssh_env</span><span class="p">,</span> <span class="n">ssh_exe</span><span class="p">,</span> <span class="n">ssh_args</span><span class="p">)</span>
+            <span class="n">sh_cmd</span>   <span class="o">=</span>  <span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sh_env</span><span class="p">,</span> <span class="n">sh_exe</span><span class="p">,</span> <span class="n">sh_args</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rm</span><span class="o">.</span><span class="n">host</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">pty</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_process</span><span class="o">.</span><span class="n">pty_process</span> <span class="p">(</span><span class="n">ssh_cmd</span><span class="p">)</span> <span class="c"># ,logfile=logfile)</span>
+        <span class="k">elif</span> <span class="n">sh_type</span> <span class="o">==</span> <span class="s">&quot;sh&quot;</span> <span class="p">:</span>
+            <span class="n">sh_args</span>  <span class="o">=</span>  <span class="s">&quot;-l -i&quot;</span>
+            <span class="n">sh_env</span>   <span class="o">=</span>  <span class="s">&quot;/usr/bin/env TERM=vt100&quot;</span>
+            <span class="n">sh_cmd</span>   <span class="o">=</span>  <span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sh_env</span><span class="p">,</span> <span class="n">sh_exe</span><span class="p">,</span> <span class="n">sh_args</span><span class="p">)</span>
 
-        <span class="n">find_prompt</span> <span class="o">=</span> <span class="bp">True</span>
 
-        <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">match</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">findline</span> <span class="p">([</span><span class="s">&#39;password\s*:\s*$&#39;</span><span class="p">,</span> 
-                                                <span class="s">&#39;want to continue connecting&#39;</span><span class="p">,</span> 
-                                                <span class="s">&#39;Last login&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;job service opens pty for &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="n">sh_cmd</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pty</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_process</span><span class="o">.</span><span class="n">pty_process</span> <span class="p">(</span><span class="n">sh_cmd</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+
+        <span class="n">find_prompt</span>    <span class="o">=</span> <span class="bp">True</span>
+      <span class="c"># initial_prompt = &quot;Last login&quot;</span>
+        <span class="n">initial_prompt</span> <span class="o">=</span> <span class="s">&quot;^.*[\]\$#&gt;]\s*$&quot;</span>
+
+      <span class="c"># if sh_type == &quot;sh&quot; :</span>
+      <span class="c">#   initial_prompt = &quot;^.*[\]\$#&gt;]\s*$&quot;</span>
+
+        <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">match</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&quot;password\s*:\s*$&quot;</span><span class="p">,</span> 
+                                     <span class="s">&quot;want to continue connecting&quot;</span><span class="p">,</span> 
+                                     <span class="n">initial_prompt</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
         <span class="k">while</span> <span class="n">find_prompt</span> <span class="p">:</span>
 
+
+            <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">alive</span> <span class="p">()</span> <span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to start shell</span><span class="se">\n</span><span class="s">- log ---</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s">---------</span><span class="se">\n</span><span class="s">&quot;</span> \
+                                       <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">get_cache_log</span> <span class="p">())</span>
+                <span class="k">else</span> <span class="p">:</span>
+                    <span class="c"># the write below will make our live simpler, as it will</span>
+                    <span class="c"># eventually flush I/O buffers, and will make sure that we</span>
+                    <span class="c"># get a decent prompt -- no matter what stupi^H^H^H^H^H nice</span>
+                    <span class="c"># PS1 the user invented...</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;export PS1=&#39;prompt-$?-&gt;&#39;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+                    <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">match</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&quot;password\s*:\s*$&quot;</span><span class="p">,</span> 
+                                                 <span class="s">&quot;want to continue connecting&quot;</span><span class="p">,</span> 
+                                                 <span class="n">initial_prompt</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">clog</span> <span class="o">+=</span> <span class="s">&quot; ~~~~~ got key shell prompt</span><span class="se">\n</span><span class="s">&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">clog</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">~~~~~ got key shell prompt</span><span class="se">\n</span><span class="s">&quot;</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;secret</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
-                <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">match</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">findline</span> <span class="p">([</span><span class="s">&#39;password\s*:\s*$&#39;</span><span class="p">,</span> 
-                                                        <span class="s">&#39;want to continue connecting&#39;</span><span class="p">,</span> 
-                                                        <span class="s">&#39;Last login&#39;</span><span class="p">])</span>
+                <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">match</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&quot;password\s*:\s*$&quot;</span><span class="p">,</span> 
+                                             <span class="s">&quot;want to continue connecting&quot;</span><span class="p">,</span> 
+                                             <span class="n">initial_prompt</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">clog</span> <span class="o">+=</span> <span class="s">&quot; ~~~~~ got pass shell prompt</span><span class="se">\n</span><span class="s">&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">clog</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">~~~~~ got pass shell prompt</span><span class="se">\n</span><span class="s">&quot;</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;yes</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
-                <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">match</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">findline</span> <span class="p">([</span><span class="s">&#39;password\s*:\s*$&#39;</span><span class="p">,</span> 
-                                                        <span class="s">&#39;want to continue connecting&#39;</span><span class="p">,</span> 
-                                                        <span class="s">&#39;Last login&#39;</span><span class="p">])</span>
+                <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">match</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&quot;password\s*:\s*$&quot;</span><span class="p">,</span> 
+                                             <span class="s">&quot;want to continue connecting&quot;</span><span class="p">,</span> 
+                                             <span class="n">initial_prompt</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
 
             <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">2</span> <span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">clog</span> <span class="o">+=</span> <span class="s">&quot; ~~~~~ got old shell prompt</span><span class="se">\n</span><span class="s">&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">clog</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">~~~~~ got initial shell prompt</span><span class="se">\n</span><span class="s">&quot;</span>
+                <span class="n">find_prompt</span> <span class="o">=</span> <span class="bp">False</span>
+
+                <span class="c"># need to set new prompt</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;export PS1=&#39;prompt-$?-&gt;&#39;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
                 
-                <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">match</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&#39;^prompt-[\d+]-&gt;$&#39;</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
-                <span class="n">find_prompt</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">match</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&quot;^prompt-[\d+]-&gt;$&quot;</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
 
                 <span class="k">if</span>  <span class="ow">not</span> <span class="n">match</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">match</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;-0-&gt;&quot;</span> <span class="p">:</span>
                     <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to set prompt</span><span class="se">\n</span><span class="s">- log ---</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s">---------</span><span class="se">\n</span><span class="s">&quot;</span> \
                                        <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">get_cache_log</span> <span class="p">())</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">clog</span> <span class="o">+=</span> <span class="s">&quot; ~~~~~ got new shell prompt</span><span class="se">\n</span><span class="s">&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">clog</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">~~~~~ got new shell prompt</span><span class="se">\n</span><span class="s">&quot;</span>
         
         <span class="c"># we have a prompt on the remote system -- now fetch the shell wrapper</span>
         <span class="c"># script, and run it.  Once that is up and running, we can requests job</span>
         <span class="c"># start / management operations via its stdio</span>
 
 
-        <span class="n">base</span> <span class="o">=</span> <span class="s">&#39;$HOME/.saga/adaptors/ssh_job&#39;</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="s">&quot;$HOME/.saga/adaptors/ssh_job&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;mkdir   -p </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">base</span><span class="p">)</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&#39;^prompt-[\d+]-&gt;$&#39;</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&quot;^prompt-[\d+]-&gt;$&quot;</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
 
         <span class="k">if</span>  <span class="ow">not</span> <span class="n">match</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">match</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;-0-&gt;&quot;</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to prepare wrapper</span><span class="se">\n</span><span class="s">- log ---</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s">---------</span><span class="se">\n</span><span class="s">&quot;</span> \
@@ -342,7 +380,7 @@
       <span class="c"># self.pty.write (&quot;test -f wget -q %s -O $HOME/.saga/adaptors/ssh_job/wrapper.sh \n&quot; % _WRAPPER_SH)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;test -f </span><span class="si">%s</span><span class="s">/wrapper.sh || (touch </span><span class="si">%s</span><span class="s">/wrapper.sh; cp </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">/wrapper.sh)</span><span class="se">\n</span><span class="s">&quot;</span> \
                      <span class="o">%</span> <span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">_WRAPPER_SH</span><span class="p">,</span> <span class="n">base</span><span class="p">))</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&#39;^prompt-[\d+]-&gt;$&#39;</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&quot;^prompt-[\d+]-&gt;$&quot;</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
 
         <span class="k">if</span>  <span class="ow">not</span> <span class="n">match</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">match</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;-0-&gt;&quot;</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to retrieve wrapper</span><span class="se">\n</span><span class="s">- log ---</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s">---------</span><span class="se">\n</span><span class="s">&quot;</span> \
@@ -350,11 +388,16 @@
 
 
         <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;/bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span>  <span class="p">([</span><span class="s">&#39;^CMD&#39;</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span>  <span class="p">([</span><span class="s">&quot;^CMD&quot;</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
 
         <span class="k">if</span>  <span class="ow">not</span> <span class="n">match</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">match</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;CMD&quot;</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to run job service wrapper</span><span class="se">\n</span><span class="s">- log ---</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s">---------</span><span class="se">\n</span><span class="s">&quot;</span> \
                                <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">get_cache_log</span> <span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">clog</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">~~~~~ got cmd prompt</span><span class="se">\n</span><span class="s">&quot;</span>
+
+
+
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="c">#</span>
@@ -366,31 +409,51 @@
         <span class="n">env</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
         <span class="n">cwd</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&#39;arguments&#39;</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;job service is not connected to backend&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;arguments&quot;</span><span class="p">)</span> <span class="p">:</span>
             <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span> <span class="p">:</span>
                 <span class="n">arg</span> <span class="o">+=</span> <span class="s">&quot; </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">a</span>
 
-        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&#39;environment&#39;</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;environment&quot;</span><span class="p">)</span> <span class="p">:</span>
             <span class="n">env</span> <span class="o">=</span> <span class="s">&quot;/usr/bin/env&quot;</span>
             <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">environment</span> <span class="p">:</span>
                 <span class="n">env</span> <span class="o">+=</span> <span class="s">&quot; </span><span class="si">%s</span><span class="s">=</span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">environment</span><span class="p">[</span><span class="n">e</span><span class="p">])</span>
             <span class="n">env</span> <span class="o">+=</span> <span class="s">&quot; &quot;</span>
 
-        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&#39;working_directory&#39;</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;working_directory&quot;</span><span class="p">)</span> <span class="p">:</span>
             <span class="n">cwd</span> <span class="o">=</span> <span class="s">&quot;cd </span><span class="si">%s</span><span class="s"> &amp;&amp; &quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span>
 
         <span class="n">cmd</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">cwd</span><span class="p">,</span> <span class="n">exe</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
 
+        <span class="c"># make sure we did not yet get a timeout</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&quot;^IDLE TIMEOUT&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">match</span> <span class="p">:</span>
+            <span class="c"># shell timed out, need to restart</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">clog</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">~~~~~ got timeout</span><span class="se">\n</span><span class="s">&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;restarting remote shell wrapper&quot;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;/bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span>  <span class="p">([</span><span class="s">&quot;^CMD&quot;</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
+
+            <span class="k">if</span>  <span class="ow">not</span> <span class="n">match</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">match</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;CMD&quot;</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to run job service wrapper</span><span class="se">\n</span><span class="s">- log ---</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s">---------</span><span class="se">\n</span><span class="s">&quot;</span> \
+                                   <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">get_cache_log</span> <span class="p">())</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">clog</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">~~~~~ got cmd prompt</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">clog</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">~~~~~ no timeout</span><span class="se">\n</span><span class="s">&quot;</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;RUN </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&#39;^CMD&#39;</span><span class="p">],</span> <span class="mf">10.0</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&quot;^CMD&quot;</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
 
         <span class="k">if</span>  <span class="ow">not</span> <span class="n">match</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">match</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;CMD&quot;</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to run job -- backend error</span><span class="se">\n</span><span class="s">- log ---</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s">---------</span><span class="se">\n</span><span class="s">&quot;</span> \
                                 <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty</span><span class="o">.</span><span class="n">get_cache_log</span> <span class="p">())</span>
 
 
-        <span class="n">splitlines</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">splitlines</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
         <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">splitlines</span> <span class="p">:</span>
@@ -400,18 +463,19 @@
 
         <span class="k">if</span> <span class="nb">len</span> <span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to run job</span><span class="se">\n</span><span class="s">- log ---</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s">---------</span><span class="se">\n</span><span class="s">&quot;</span> \
-                               <span class="o">%</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span> <span class="p">(</span><span class="n">lines</span><span class="p">))</span>
+                               <span class="o">%</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">join</span> <span class="p">(</span><span class="n">lines</span><span class="p">))</span>
 
         <span class="c"># FIXME: we should know which line says ok...</span>
         <span class="n">ok</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span> <span class="p">:</span>
-            <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">&#39;OK&#39;</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">&quot;OK&quot;</span> <span class="p">:</span>
                 <span class="n">ok</span> <span class="o">=</span> <span class="bp">True</span>
                 <span class="k">break</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span> <span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warn</span> <span class="p">(</span><span class="s">&quot;Did not find &#39;OK&#39; from wrapper.sh (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="nb">str</span> <span class="p">(</span><span class="n">lines</span><span class="p">))</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to run job&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to run job</span><span class="se">\n</span><span class="s">- log ---</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s">---------</span><span class="se">\n</span><span class="s">&quot;</span> \
+                               <span class="o">%</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">join</span> <span class="p">(</span><span class="n">lines</span><span class="p">))</span>
 
         <span class="n">job_id</span> <span class="o">=</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">]-[</span><span class="si">%s</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rm</span><span class="p">,</span> <span class="n">lines</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
 
@@ -427,16 +491,16 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># check that only supported attributes are provided</span>
         <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">list_attributes</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">attribute</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">[</span><span class="s">&#39;jdes_attributes&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">attribute</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">[</span><span class="s">&quot;jdes_attributes&quot;</span><span class="p">]:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;&#39;JobDescription.</span><span class="si">%s</span><span class="s">&#39; is not supported by this adaptor&quot;</span> <span class="o">%</span> <span class="n">attribute</span>
                 <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
 
         
         <span class="c"># this dict is passed on to the job adaptor class -- use it to pass any</span>
         <span class="c"># state information you need there.</span>
-        <span class="n">adaptor_state</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;job_service&#39;</span>     <span class="p">:</span> <span class="bp">self</span><span class="p">,</span> 
-                          <span class="s">&#39;job_description&#39;</span> <span class="p">:</span> <span class="n">jd</span><span class="p">,</span>
-                          <span class="s">&#39;job_schema&#39;</span>      <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rm</span><span class="o">.</span><span class="n">schema</span> <span class="p">}</span>
+        <span class="n">adaptor_state</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&quot;job_service&quot;</span>     <span class="p">:</span> <span class="bp">self</span><span class="p">,</span> 
+                          <span class="s">&quot;job_description&quot;</span> <span class="p">:</span> <span class="n">jd</span><span class="p">,</span>
+                          <span class="s">&quot;job_schema&quot;</span>      <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rm</span><span class="o">.</span><span class="n">schema</span> <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span> <span class="p">(</span><span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">,</span> <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
 
@@ -469,7 +533,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">for</span> <span class="p">(</span><span class="n">job_obj</span><span class="p">,</span> <span class="n">job_id</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jobs</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">job_id</span> <span class="o">==</span> <span class="n">jobid</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="n">job_obj</span><span class="o">.</span><span class="n">_api</span>
+                    <span class="k">return</span> <span class="n">job_obj</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
 
     <span class="k">def</span> <span class="nf">container_run</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobs</span><span class="p">)</span> <span class="p">:</span></div>
@@ -505,13 +569,13 @@
     <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_info</span><span class="p">):</span>
 <div class="viewcode-block" id="SSHJob.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.ssh_job.html#saga.adaptors.ssh.ssh_job.SSHJob.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.init_instance()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_jd</span>              <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;job_description&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_parent_service</span>  <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;job_service&#39;</span><span class="p">]</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_jd</span>              <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&quot;job_description&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parent_service</span>  <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&quot;job_service&quot;</span><span class="p">]</span> 
 
         <span class="c"># the _parent_service is responsible for job bulk operations -- which</span>
         <span class="c"># for jobs only work for run()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_container</span>       <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent_service</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_method_type</span>     <span class="o">=</span> <span class="s">&#39;run&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_method_type</span>     <span class="o">=</span> <span class="s">&quot;run&quot;</span>
 
         <span class="c"># initialize job attribute values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_id</span>              <span class="o">=</span> <span class="s">&quot;default id&quot;</span>
@@ -524,7 +588,7 @@
         <span class="c"># subprocess handle</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_process</span>         <span class="o">=</span> <span class="bp">None</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
 
     <span class="nd">@SYNC_CALL</span></div>

@@ -1,9 +1,12 @@
 
 import re
 import os
+import sys
 import pty
 import time
+import shlex
 import select
+import signal
 import subprocess
 
 import saga.exceptions as se
@@ -31,7 +34,7 @@ class pty_process (object) :
 
     Example::
 
-        pty = pty_process ("/usr/bin/ssh -ttt localhost")
+        pty = pty_process ("/usr/bin/ssh -t localhost")
         pty.run ()
 
         (n, match) = pty.find (['password\s*:\s*$', 
@@ -66,7 +69,7 @@ class pty_process (object) :
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, command, logfile='/dev/null') :
+    def __init__ (self, command, logger=None) :
         """
         The pty class constructor.
 
@@ -77,7 +80,7 @@ class pty_process (object) :
         """
 
         if isinstance (command, basestring) :
-            command = command.split (' ')
+            command = shlex.split (command)
 
         if not isinstance (command, list) :
             raise se.BadParameter ("pty_process expects string or list command")
@@ -92,27 +95,59 @@ class pty_process (object) :
             self.cache   = ""      # data cache
             self.clog    = ""      # log the data cache
             self.child   = None    # the process as created by subprocess.Popen
-          # self.log     = open (logfile, 'a+')
+            self.logger  = logger
 
-          # self.log.write ("pty_process: %s\n\n" % ' '.join ((command)))
-          # self.log.flush ()
+            self.logger.debug ("pty_process: %s\n\n" % ' '.join ((command)))
 
-            # create the pty pipes (two ends, one for this process, one for the
-            # child process; tree pairs, for each of the in, out and err channels)
-            self.master_in,  self.slave_in  = pty.openpty ()
-            self.master_out, self.slave_out = pty.openpty ()
-          # self.master_err, self.slave_err = pty.openpty ()
+            self.parent_in,  self.child_in  = pty.openpty ()
+            self.parent_out, self.child_out = pty.openpty ()
+         #  self.parent_err, self.child_err = pty.openpty ()
 
-            # run the child, feeding it the slave ends of the pty pipes...
-            self.child = subprocess.Popen (self.command, 
-                                           stdin   = self.slave_in,
-                                           stdout  = self.slave_out, 
-                                           stderr  = self.slave_out, 
-                                           shell   = False,           # we don't run shell commands
-                                           bufsize = 0)               # unbuffered I/O
-
+            # create the child
+            try :
+                self.child = os.fork ()
+            except Exception as e:
+                raise se.NoSuccess ("Could not run (%s): %s" % (' '.join (command), e))
+            
             if not self.child :
-                raise se.NoSuccess ("Could not run (%s)" % ' '.join (command))
+                try :
+                    # this is the child
+                    os.close (self.parent_in)
+                    os.close (self.parent_out)
+                  # os.close (self.parent_err)
+                    
+                  # # reopen stdio unbuffered
+                  # # 
+                  # # this mechanism is actually useful, but, for some obscure
+                  # # (to me) reason fails badly if the applications stdio is
+                  # # redirected -- which is a very valid use case.  So, we
+                  # # keep I/O buffered, and need to get pipes flushed otherwise
+                  # # (newlines much?)
+                  # unbuf_in  = os.fdopen (sys.stdin.fileno(),  'r+', 0)
+                  # unbuf_out = os.fdopen (sys.stdout.fileno(), 'w+', 0)
+                  # unbuf_err = os.fdopen (sys.stderr.fileno(), 'w+', 0)
+                  #
+                  # os.dup2 (self.child_in,  unbuf_in.fileno())
+                  # os.dup2 (self.child_out, unbuf_out.fileno())
+                  # os.dup2 (self.child_out, unbuf_err.fileno())
+
+                    # redirect stdio
+                    os.dup2 (self.child_in,  sys.stdin.fileno())
+                    os.dup2 (self.child_out, sys.stdout.fileno())
+                    os.dup2 (self.child_out, sys.stderr.fileno())
+
+                    os.execvpe (self.command[0], self.command, os.environ)
+
+                except Exception as e:
+                    self.logger.error ("Could not execute (%s): %s" % (' '.join (command), e))
+                    sys.exit (-1)
+
+            else :
+                # parent
+                os.close (self.child_in)
+                os.close (self.child_out)
+              # os.close (self.child_err)
+                pass
 
 
             if not self.alive () :
@@ -128,27 +163,13 @@ class pty_process (object) :
     #
     def __del__ (self) :
 
-        self.quit ()
-
-
-    # --------------------------------------------------------------------
-    #
-    # free resoources
-    #
-    def quit (self) :
+        self.logger.debug ("__del__")
+        if  self.alive () :
+            os.kill (self.child, signal.SIGTERM)
 
         if  self.alive () :
-            self.child.terminate ()
+            os.kill (self.child, signal.SIGKILL)
 
-        if  self.alive () :
-            self.child.kill ()
-
-        os.close (self.master_in )
-        os.close (self.master_out)
-        os.close (self.master_err)
-        os.close (self.slave_in  )
-        os.close (self.slave_out )
-        os.close (self.slave_err )
 
     # --------------------------------------------------------------------
     #
@@ -161,15 +182,27 @@ class pty_process (object) :
         if not self.child :
             return False
 
-        if self.child.poll () is None :
-            return True
-        else :
-            return False
+        try :
+            (pid, status) = os.waitpid (self.child, os.WNOHANG)
+
+            if (pid, status) == (0, 0) :
+                return True
+            else :
+                # get last data into clog, if any
+                self.read (timeout=0.01, _force=True)
+
+                # avoid any further activity, inclusive waitpid
+                self.child = None
+
+                return False
+
+        except Exception as e :
+            raise se.NoSuccess ("cannot check child status (%s)" % e)
 
 
     # --------------------------------------------------------------------
     #
-    def read (self, size=_CHUNKSIZE, timeout=0) :
+    def read (self, size=_CHUNKSIZE, timeout=0, _force=False) :
         """ 
         read some data from the child.  By default, the method reads a full
         chunk, but other read sizes can be specified.  
@@ -194,8 +227,9 @@ class pty_process (object) :
         # one read...
         start = time.time ()
 
-        if not self.alive () :
-            raise se.NoSuccess ("Could not read - pty process died")
+        if not _force :
+            if not self.alive () :
+                raise se.NoSuccess ("Could not read - pty process died")
 
         ret     = ""
         sel_to  = timeout
@@ -231,14 +265,13 @@ class pty_process (object) :
             while True :
             
                 # do an idle wait 'til the next data chunk arrives, or 'til sel_to
-                rlist, _, _ = select.select ([self.master_out], [], [], sel_to)
+                rlist, _, _ = select.select ([self.parent_out], [], [], sel_to)
 
                 # got some data? 
                 for f in rlist:
                     # read whatever we still need
                     buf  = os.read (f, size-len(ret))
-                  # self.log.write (buf)
-                  # self.log.flush ()
+                    self.logger.debug ("read: '%s'" % buf)
                     self.clog += buf
                     ret       += buf
 
@@ -317,15 +350,14 @@ class pty_process (object) :
                 # do an idle wait 'til the next data chunk arrives
                 rlist = []
                 if timeout < 0 :
-                    rlist, _, _ = select.select ([self.master_out], [], [])
+                    rlist, _, _ = select.select ([self.parent_out], [], [])
                 else :
-                    rlist, _, _ = select.select ([self.master_out], [], [], timeout)
+                    rlist, _, _ = select.select ([self.parent_out], [], [], timeout)
 
                 # got some data - read them into the cache
                 for f in rlist:
                     buf         = os.read (f, _CHUNKSIZE)
-                  # self.log.write (buf)
-                  # self.log.flush ()
+                    self.logger.debug ("read: '%s'" % buf)
                     self.clog  += buf
                     self.cache += buf
 
@@ -382,6 +414,9 @@ class pty_process (object) :
             # a pattern, or timeout passes
             while True :
 
+                if not self.alive () :
+                    break
+
                 time.sleep (0.1)
 
                 # skip non-lines
@@ -428,6 +463,7 @@ class pty_process (object) :
         pattern, and the string up to the match as described above.
 
         If no pattern is found before timeout, the call returns (None, None).
+        Negative timeouts will block until a match is found
 
         Note that the pattern are interpreted with the re.M (multi-line) and
         re.S (dot matches all) regex flags.
@@ -475,6 +511,9 @@ class pty_process (object) :
                         return (n, ret.replace('\r', ''))
 
                 # if a timeout is given, and actually passed, return a non-match.
+                if timeout == 0 :
+                    return (None, None)
+
                 if timeout > 0 :
                     now = time.time ()
                     if (now-start) > timeout :
@@ -502,24 +541,22 @@ class pty_process (object) :
             raise se.NoSuccess ("Could not write data - pty process died")
 
         try :
+            self.logger.debug ("write: '%s'" % data)
+
             # attempt to write forever -- until we succeeed
-            while True :
+            while data :
 
                 # check if the pty pipe is ready for data
-                _, wlist, _ = select.select ([], [self.master_in], [], _POLLDELAY)
+                _, wlist, _ = select.select ([], [self.parent_in], [], _POLLDELAY)
 
                 for f in wlist :
                     
                     # write will report the number of written bytes
-                    ret = os.write (f, "%s" % data)
+                    size = os.write (f, "%s" % data)
 
-                    # if all data are written, we are done
-                    if ret == len(data) :
-                        return
-                    
                     # otherwise, truncate by written data, and try again
-                    print "write retry: %s\n%s\n%s\n" % (len, data, data[ret:])
-                    data = data[ret:]
+                    data = data[size:]
+
 
         except Exception as e :
             raise se.NoSuccess ("write to pty process failed (%s)" % e)
