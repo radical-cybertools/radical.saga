@@ -9,9 +9,9 @@ from saga.base       import Base
 from saga.constants  import *
 
 
-class Context (Base, Attributes) :
+class Context (Base, Attributes):
 
-    def __init__ (self, type=None, _adaptor=None, _adaptor_state={}) : 
+    def __init__ (self, type=None, _adaptor=None, _adaptor_state={}): 
         '''
         type: string
         ret:  None
@@ -19,7 +19,7 @@ class Context (Base, Attributes) :
 
         Base.__init__ (self, type.lower(), _adaptor, _adaptor_state, type, ttype=None)
 
-        # set attribute interface properties
+        # set attribute interface propertiesP
         self._attributes_extensible  (False)
         self._attributes_camelcasing (True)
 
