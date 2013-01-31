@@ -15,7 +15,27 @@ from distutils.core                 import setup
 from distutils.command.install_data import install_data
 from distutils.command.sdist        import sdist
 
-from saga import version
+version = "latest"
+
+try:
+    fn = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'saga/VERSION')
+    version = open(fn).read().strip()
+except IOError:
+    from subprocess import Popen, PIPE, STDOUT
+    import re
+
+    VERSION_MATCH = re.compile(r'\d+\.\d+\.\d+(\w|-)*')
+
+    try:
+        p = Popen(['git', 'describe', '--tags', '--always'], stdout=PIPE, stderr=STDOUT)
+        out = p.communicate()[0]
+
+        if (not p.returncode) and out:
+            v = VERSION_MATCH.search(out)
+            if v:
+                version = v.group()
+    except OSError:
+        pass
 
 scripts = [] # ["bin/bliss-run"]
 
@@ -132,9 +152,9 @@ except ImportError:
     pass
 else:
     setup_args['install_requires'] = [
-        'pexpect', 'colorama'
+        'colorama',
+        'pexpect'
     ]
-    
 
     if os.getenv('SAGA_NO_INSTALL_REQS'):
         setup_args['install_requires'] = None
