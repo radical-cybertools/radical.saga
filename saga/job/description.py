@@ -13,6 +13,7 @@ class Description (saga.Attributes) :
     def __init__(self):
 
         # set attribute interface properties
+
         import saga.attributes as sa
 
         self._attributes_extensible  (False)
