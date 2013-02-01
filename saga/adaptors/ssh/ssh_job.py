@@ -473,13 +473,13 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
   # def wait(self, timeout):
   #     pass
   #
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def get_id (self) :
-  #     """ Implements saga.adaptors.cpi.job.Job.get_id() """        
-  #     return self._id
-  #
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_id (self) :
+        """ Implements saga.adaptors.cpi.job.Job.get_id() """        
+        return self._id
+   
   # # ----------------------------------------------------------------
   # #
   # @SYNC_CALL
