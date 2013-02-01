@@ -1,10 +1,7 @@
 
 # --------------------------------------------------------------------
 # server side job management script
-_PROMPT     = "PROMPT-0->"
-_PROMPT_OK  = "OK"
-_PROMPT_ERR = "ERROR"
-_MANAGER    = '''#!/bin/sh
+_WRAPPER_SCRIPT = '''#!/bin/sh
 
 # this script uses only POSIX shell functionality, and does not rely on bash or
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
@@ -22,7 +19,7 @@ RETVAL=""
 BASE=$HOME/.saga/adaptors/ssh_job/
 
 # this process will terminate when idle for longer than TIMEOUT seconds
-TIMEOUT=3
+TIMEOUT=30
 
 
 
@@ -142,6 +139,7 @@ cmd_run2 () {
   # this is the second part of the double fork -- run the actual workload in the
   # background and return - voila!  Note, no wait here, as the spawned script is
   # supposed to stay alive with the job.
+  SAGA_PID=`sh -c 'echo $PPID'`
   cmd_run_process $@ &
   ppid=$!
 }
@@ -150,7 +148,7 @@ cmd_run2 () {
 cmd_run_process () {
   # this command runs the job.  PPID will point to the id of the spawning
   # script, which, coincidentally, we designated as job ID -- nice:
-  PID=`sh -c 'echo $PPID'`
+  PID=$SAGA_PID
   DIR="$BASE/$PID"
 
   test -d "$DIR"    && rm    -rf "$DIR"
@@ -415,6 +413,9 @@ cmd_purge () {
 #
 listen() {
   
+  # we need our home base...
+  test -d "$BASE" || mkdir -p  "$BASE"  || exit 1
+
   # make sure we get killed when idle
   idle_checker $$ &
 

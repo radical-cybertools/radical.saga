@@ -10,6 +10,7 @@ import saga.adaptors.cpi.job
 import os
 import time
 
+import ssh_wrapper
 
 SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
@@ -18,9 +19,6 @@ ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 # --------------------------------------------------------------------
 # some private defs
 #
-_WRAPPER_SH  = "https://raw.github.com/saga-project/saga-python/feature/sshjob/saga/adaptors/ssh/wrapper.sh"
-_WRAPPER_SH  = "/home/merzky/saga/saga-python/saga/adaptors/ssh/wrapper.sh"
-_WRAPPER_SH  = "/tmp/wrapper.sh"
 _PTY_TIMEOUT = 2.0
 
 # --------------------------------------------------------------------
@@ -191,13 +189,13 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # When should that be done?
 
         try :
-            if self.pty : self.pty.run_sync ("PURGE")
-            if self.pty : self.pty.run_sync ("QUIT" )
+            if self.shell : self.shell.run_sync ("PURGE", iomode=None)
+            if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
         except :
             pass
 
         try :
-            if self.pty : del (self.pty)
+            if self.shell : del (self.shell)
         except :
             pass
 
@@ -209,33 +207,61 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self.rm      = rm_url
         self.session = session
 
-        self.pty = saga.utils.pty_shell.pty_shell (self.rm, self.session.contexts, self._logger)
+        self._open ()
 
-        # -- now fetch the shell wrapper
-        # script, and run it.  Once that is up and running, we can requests job
-        # start / management operations via its stdio
+    def _open (self) :
+
+        # start the shell, find its prompt.  If that is up and running, we can
+        # bootstrap our wrapper script, and then run jobs etc.
+        self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session.contexts, self._logger)
+
+        # -- now stage the shell wrapper script, and run it.  Once that is up
+        # and running, we can requests job start / management operations via its
+        # stdio.
 
         base = "$HOME/.saga/adaptors/ssh_job"
 
-        (ret, out, err) = self.pty.run_sync ("mkdir -p %s" % base)
+        ret, out, _ = self.shell.run_sync ("mkdir -p %s" % base)
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)(%s)" % (ret, out, err))
+            raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" % (ret, out))
 
-      # (ret, out, err) = self.pty.run_sync ("test -f wget -q %s -O $HOME/.saga/adaptors/ssh_job/wrapper.sh \n" % _WRAPPER_SH)
-      # (ret, out, err) = self.pty.run_sync ("test -f %s/wrapper.sh || (touch %s/wrapper.sh; cp %s %s/wrapper.sh)" \
-      #                                   % (base, base, _WRAPPER_SH, base))
-        (ret, out, err) = self.pty.run_sync ("cp -v %s %s/wrapper.sh" % (_WRAPPER_SH, base))
+        # FIXME: this is a race condition is multiple job services stage the
+        # script at the same time.  We should make that atomic by
+        #
+        #   cat > .../wrapper.sh.$$ ... ; mv .../wrapper.sh.$$ .../wrapper.sh
+        #
+        # which should work nicely as long as compatible versions of the script
+        # are staged.  Oh well...
+        #
+        # TODO: replace some constants in the script with values from config
+        # files, such as 'timeout' or 'purge_on_quit' ...
+        #
+        self.shell.run_async ("cat > %s/wrapper.sh" % base)
+        self.shell.send      (ssh_wrapper._WRAPPER_SCRIPT)
+        self.shell.send      ("\n\4")
+        ret, txt = self.shell.find_prompt ()
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to fetch wrapper.sh (%s)(%s)(%s)" % (ret, out, err))
+            raise saga.NoSuccess ("failed to stage wrapper (%s)(%s)" % (ret, txt))
 
-
-        (ret, out, err) = self.pty.run_sync ("exec /bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh")
+        # we run the script.  In principle, we should set a new prompt -- but,
+        # due to some strange and very unlikely coincidence, the script has the
+        # same prompt as the previous shell... - go figure ;-)
+        #
+        # Note that we use 'exec' - so the script replaces the shell process.
+        # Thus, when the script times out, the shell dies and the connection
+        # drops -- that will free all associated resources, and allows for
+        # a clean reconnect.
+        ret, out, _ = self.shell.run_sync ("sh -c '(/bin/sh %s/wrapper.sh && kill -9 $PPID)' || false" % base)
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to fetch wrapper.sh (%s)(%s)(%s)" % (ret, out, err))
+            raise saga.NoSuccess ("failed to run wrapper (%s)(%s)" % (ret, out))
 
 
-        self._logger.debug ("got cmd prompt (%s - %s - %s)" % (ret, out, err))
+        self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
 
+
+    def _close (self) :
+        del (self.shell)
+        self.shell = None
 
 
     # ----------------------------------------------------------------
@@ -244,12 +270,24 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
     def _run_job (self, jd) :
         """ runs a job on the wrapper via pty, and returns the job id """
 
+
+        try :
+            return self._try_run_job (jd)
+        except Exception :
+            # did not work -- try to restart shell and try again
+            self._logger.info ("restarting shell")
+            self._close ()
+            self._open  ()
+            return self._try_run_job (jd)
+
+
+    def _try_run_job (self, jd) :
         exe = jd.executable
         arg = ""
         env = ""
         cwd = ""
 
-        if  not self.pty :
+        if  not self.shell :
             raise saga.IncorrectState ("job service is not connected to backend")
 
         if jd.attribute_exists ("arguments") :
@@ -267,9 +305,9 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
         cmd = "%s %s %s %s"  %  (env, cwd, exe, arg)
 
-        (ret, out, err) = self.pty.run_sync ("RUN %s" % cmd)
+        ret, out, _ = self.shell.run_sync ("RUN %s" % cmd)
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to run job '%s': (%s)(%s)(%s)" % (cmd, ret, out, err))
+            raise saga.NoSuccess ("failed to run job '%s': (%s)(%s)" % (cmd, ret, out))
 
         lines = filter (None, out.split ("\n"))
         self._logger.debug (lines)
@@ -388,9 +426,6 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
         self._started         = None
         self._finished        = None
         
-        # subprocess handle
-        self._process         = None
-
         return self.get_api ()
 
 
