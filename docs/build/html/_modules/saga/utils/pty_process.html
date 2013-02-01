@@ -28,7 +28,7 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../_static/sidebar.js"></script>
     <link rel="top" title="SAGA 1.0 documentation" href="../../../index.html" />
-    <link rel="up" title="saga.utils" href="../utils.html" /> 
+    <link rel="up" title="saga" href="../../saga.html" /> 
   </head>
   <body>
     <div class="related">
@@ -42,8 +42,7 @@
              >modules</a> |</li>
         <li><a href="../../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
-          <li><a href="../../saga.html" >saga</a> &raquo;</li>
-          <li><a href="../utils.html" accesskey="U">saga.utils</a> &raquo;</li> 
+          <li><a href="../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -223,15 +222,7 @@
 <span class="sd">        them (see cat /proc/sys/kernel/pty/max)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;__del__&quot;</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">close</span> <span class="p">()</span>
-
-
-    <span class="c"># --------------------------------------------------------------------</span>
-    <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">close</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="PTYProcess.close"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.close">[docs]</a>        <span class="sd">&quot;&quot;&quot; kill the child, close all I/O channels &quot;&quot;&quot;</span>
+        <span class="c"># kill the child, close all I/O channels</span>
 
         <span class="k">try</span> <span class="p">:</span>
             <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="p">()</span> <span class="p">:</span>
@@ -280,7 +271,7 @@
 
     <span class="c"># --------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">alive</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+    <span class="k">def</span> <span class="nf">alive</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="PTYProcess.alive"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.alive">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        alive() checks if the child gave an exit value -- if none, it is assumed</span>
 <span class="sd">        to be still alive.</span>
@@ -421,8 +412,8 @@
 
     <span class="c"># --------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">readline</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="p">:</span></div>
-<div class="viewcode-block" id="PTYProcess.readline"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.readline">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_readline</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="p">:</span></div>
+        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        read a line from the child.  This method will read data into the cache,</span>
 <span class="sd">        and return whatever it finds up to (but not including) the first newline</span>
 <span class="sd">        (\\\\n).  When timeout is met, the method will return None, and leave </span>
@@ -513,8 +504,8 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">findline</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="p">:</span></div>
-<div class="viewcode-block" id="PTYProcess.findline"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.findline">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_findline</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This methods reads lines from the child process until a line matching</span>
 <span class="sd">        any of the given patterns is found.  If that is found, all read lines</span>
 <span class="sd">        (minus the matching one) are returned as a list of lines, the matching</span>
@@ -530,10 +521,10 @@
 
 
         <span class="k">try</span> <span class="p">:</span>
-            <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>            <span class="c"># startup timestamp</span>
-            <span class="n">ret</span>   <span class="o">=</span> <span class="p">[]</span>                      <span class="c"># array of read lines</span>
-            <span class="n">patts</span> <span class="o">=</span> <span class="p">[]</span>                      <span class="c"># compiled patterns</span>
-            <span class="n">line</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readline</span> <span class="p">(</span><span class="n">timeout</span><span class="p">)</span> <span class="c"># first line to check</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>             <span class="c"># startup timestamp</span>
+            <span class="n">ret</span>   <span class="o">=</span> <span class="p">[]</span>                       <span class="c"># array of read lines</span>
+            <span class="n">patts</span> <span class="o">=</span> <span class="p">[]</span>                       <span class="c"># compiled patterns</span>
+            <span class="n">line</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_readline</span> <span class="p">(</span><span class="n">timeout</span><span class="p">)</span> <span class="c"># first line to check</span>
 
             <span class="c"># pre-compile the given pattern, to speed up matching</span>
             <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">patterns</span> <span class="p">:</span>
@@ -550,7 +541,7 @@
 
                 <span class="c"># skip non-lines</span>
                 <span class="k">if</span>  <span class="bp">None</span> <span class="o">==</span> <span class="n">line</span> <span class="p">:</span>
-                    <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readline</span> <span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_readline</span> <span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
                     <span class="k">continue</span>
 
                 <span class="c"># check current line for any matching pattern</span>
@@ -569,16 +560,16 @@
 
                 <span class="c"># append current (non-matching) line to ret, and get new line </span>
                 <span class="n">ret</span><span class="o">.</span><span class="n">append</span> <span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
-                <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readline</span> <span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_readline</span> <span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;readline from pty process failed (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;_readline from pty process failed (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
 
 
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">find</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="p">:</span></div>
+    <span class="k">def</span> <span class="nf">find</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="PTYProcess.find"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.find">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This methods reads bytes from the child process until a string matching</span>
 <span class="sd">        any of the given patterns is found.  If that is found, all read data are</span>
@@ -710,29 +701,9 @@
             <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;write to pty process failed (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
 
 
-    <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_get_cache</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Return the currently cached output</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
-
-
-    <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_get_cache_log</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Return the currently cached output</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">clog</span>
-
-
 
 <span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
-</pre></div></div>
+</pre></div></div></div>
 
           </div>
         </div>
@@ -767,8 +738,7 @@
              >modules</a> |</li>
         <li><a href="../../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
-          <li><a href="../../saga.html" >saga</a> &raquo;</li>
-          <li><a href="../utils.html" >saga.utils</a> &raquo;</li> 
+          <li><a href="../../saga.html" >saga</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

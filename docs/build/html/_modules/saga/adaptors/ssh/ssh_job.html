@@ -332,8 +332,8 @@
         <span class="c"># TODO: replace some constants in the script with values from config</span>
         <span class="c"># files, such as &#39;timeout&#39; or &#39;purge_on_quit&#39; ...</span>
         <span class="c">#</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_from_string</span> <span class="p">(</span><span class="n">src</span> <span class="o">=</span> <span class="n">ssh_wrapper</span><span class="o">.</span><span class="n">_WRAPPER_SCRIPT</span><span class="p">,</span> 
-                                      <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">/wrapper.sh&quot;</span> <span class="o">%</span> <span class="n">base</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_to_file</span> <span class="p">(</span><span class="n">src</span> <span class="o">=</span> <span class="n">ssh_wrapper</span><span class="o">.</span><span class="n">_WRAPPER_SCRIPT</span><span class="p">,</span> 
+                                  <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">/wrapper.sh&quot;</span> <span class="o">%</span> <span class="n">base</span><span class="p">)</span>
 
         <span class="c"># we run the script.  In principle, we should set a new / different</span>
         <span class="c"># prompt -- but, due to some strange and very unlikely coincidence, the</span>
