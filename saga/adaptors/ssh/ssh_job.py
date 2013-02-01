@@ -9,7 +9,9 @@ import saga.adaptors.cpi.job
 
 import os
 import time
+import subprocess
 
+import ssh_wrapper
 
 SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
@@ -18,9 +20,6 @@ ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 # --------------------------------------------------------------------
 # some private defs
 #
-_WRAPPER_SH  = "https://raw.github.com/saga-project/saga-python/feature/sshjob/saga/adaptors/ssh/wrapper.sh"
-_WRAPPER_SH  = "/home/merzky/saga/saga-python/saga/adaptors/ssh/wrapper.sh"
-_WRAPPER_SH  = "/tmp/wrapper.sh"
 _PTY_TIMEOUT = 2.0
 
 # --------------------------------------------------------------------
@@ -212,11 +211,14 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self._open ()
 
     def _open (self) :
+
+        # start the shell, find its prompt.  If that is up and running, we can
+        # bootstrap our wrapper script, and then run jobs etc.
         self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session.contexts, self._logger)
 
-        # -- now fetch the shell wrapper
-        # script, and run it.  Once that is up and running, we can requests job
-        # start / management operations via its stdio
+        # -- now stage the shell wrapper script, and run it.  Once that is up
+        # and running, we can requests job start / management operations via its
+        # stdio.
 
         base = "$HOME/.saga/adaptors/ssh_job"
 
@@ -224,17 +226,35 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         if  ret != 0 :
             raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" % (ret, out))
 
-      # ret, out, _ = self.shell.run_sync ("test -f wget -q %s -O $HOME/.saga/adaptors/ssh_job/wrapper.sh \n" % _WRAPPER_SH)
-      # ret, out, _ = self.shell.run_sync ("test -f %s/wrapper.sh || (touch %s/wrapper.sh; cp %s %s/wrapper.sh)" \
-      #                                   % (base, base, _WRAPPER_SH, base))
-        ret, out, _ = self.shell.run_sync ("cp -v %s %s/wrapper.sh" % (_WRAPPER_SH, base))
+        # FIXME: this is a race condition is multiple job services stage the
+        # script at the same time.  We should make that atomic by
+        #
+        #   cat > .../wrapper.sh.$$ ... ; mv .../wrapper.sh.$$ .../wrapper.sh
+        #
+        # which should work nicely as long as compatible versions of the script
+        # are staged.  Oh well...
+        #
+        # TODO: replace some constants in the script with values from config
+        # files, such as 'timeout' or 'purge_on_quit' ...
+        #
+        self.shell.run_async ("cat > %s/wrapper.sh" % base)
+        self.shell.send      (ssh_wrapper._WRAPPER_SCRIPT)
+        self.shell.send      ("\n\4")
+        ret, txt = self.shell.find_prompt ()
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to fetch wrapper.sh (%s)(%s)" % (ret, out))
+            raise saga.NoSuccess ("failed to stage wrapper (%s)(%s)" % (ret, txt))
 
-
-        ret, out, _ = self.shell.run_sync ("exec /bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh")
+        # we run the script.  In principle, we should set a new prompt -- but,
+        # due to some strange and very unlikely coincidence, the script has the
+        # same prompt as the previous shell... - go figure ;-)
+        #
+        # Note that we use 'exec' - so the script replaces the shell process.
+        # Thus, when the script times out, the shell dies and the connection
+        # drops -- that will free all associated resources, and allows for
+        # a clean reconnect.
+        ret, out, _ = self.shell.run_sync ("exec /bin/sh %s/wrapper.sh" % base)
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to fetch wrapper.sh (%s)(%s)" % (ret, out))
+            raise saga.NoSuccess ("failed to run wrapper (%s)(%s)" % (ret, out))
 
 
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))

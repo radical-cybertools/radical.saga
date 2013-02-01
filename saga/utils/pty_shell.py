@@ -257,12 +257,19 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
+    def send (self, data) :
+
+        return self.pty.write (data)
+
+
+    # ----------------------------------------------------------------
+    #
     def find_prompt (self) :
 
-        _,   match  = self.pty.find    ([self.prompt], _PTY_TIMEOUT)
-        txt, retval = self.eval_prompt (match)
+        _,   match = self.pty.find    ([self.prompt], _PTY_TIMEOUT)
+        ret, txt   = self.eval_prompt (match)
 
-        return (txt, retval)
+        return (ret, txt)
 
 
     # ----------------------------------------------------------------
@@ -320,9 +327,9 @@ class PTYShell (object) :
                 self.prompt = old_prompt
                 raise saga.BadParameter ("Cannot use prompt, could not find it")
 
-            _, retval = self.eval_prompt (match)
+            ret, _ = self.eval_prompt (match)
 
-            if  retval != 0 :
+            if  ret != 0 :
                 self.prompt = old_prompt
                 raise saga.BadParameter ("could not parse exit value (%s)" \
                                       % match)
@@ -360,8 +367,8 @@ class PTYShell (object) :
                 raise saga.NoSuccess ("prompt does not capture exit value (%s)"\
                                    % prompt)
 
-            text   =     result.group (1)
-            retval = int(result.group (2)) 
+            txt =     result.group (1)
+            ret = int(result.group (2)) 
 
         except Exception as e :
             self.logger.debug ("data   : %s" % data)
@@ -378,7 +385,7 @@ class PTYShell (object) :
         if  new_prompt :
             self.set_prompt (new_prompt)
 
-        return (text, retval)
+        return (ret, txt)
 
 
 
@@ -424,10 +431,6 @@ class PTYShell (object) :
         expected for the shell, this parameter MUST contain the regex to be
         expected.  The same conventions as for set_prompt() hold -- i.e. we
         expect the prompt regex to capture the exit status of the process.
-
-        If this method is called, but the shell connection has died, it will be
-        restarted.  If that is not desired, the user should check connection
-        availability before, via :func:`alive`.
         """
 
         command = command.strip ()
@@ -435,8 +438,8 @@ class PTYShell (object) :
             raise saga.BadParameter ("can only run foreground jobs ('%s')" \
                                   % command)
 
-        redir  = ""
-        errtmp = "/tmp/saga-python.ssh-job.stderr.$$"
+        redir = ""
+        _err  = "/tmp/saga-python.ssh-job.stderr.$$"
 
         if  iomode == IGNORE :
             redir  =  " 1>>/dev/null 2>>/dev/null"
@@ -445,7 +448,7 @@ class PTYShell (object) :
             redir  =  " 2>&1"
 
         if  iomode == SEPARATE :
-            redir  =  " 2>%s" % errtmp
+            redir  =  " 2>%s" % _err
 
         if  iomode == STDOUT :
             redir  =  " 2>/dev/null"
@@ -473,7 +476,7 @@ class PTYShell (object) :
             raise saga.NoSuccess ("run_sync failed, no prompt (%s)" % command)
 
 
-        txt, retval = self.eval_prompt (match, new_prompt)
+        ret, txt = self.eval_prompt (match, new_prompt)
 
         stdout = None
         stderr = None
@@ -487,7 +490,7 @@ class PTYShell (object) :
         if  iomode == SEPARATE :
             stdout =  txt
 
-            self.pty.write ("cat %s\n" % errtmp)
+            self.pty.write ("cat %s\n" % _err)
             _, match = self.pty.find ([self.prompt], timeout=-1.0)  # blocks
 
             if not match :
@@ -496,11 +499,11 @@ class PTYShell (object) :
                 raise saga.NoSuccess ("run_sync failed, no prompt (%s)" \
                                     % command)
 
-            stderrtmp, retvaltmp = self.eval_prompt (match)
-            if  retvaltmp :
+            _ret, _stderr = self.eval_prompt (match)
+            if  _ret :
                 raise saga.NoSuccess ("run_sync failed, no stderr (%s: %s)" \
-                                   % (retval, stderrtmp))
-            stderr =  stderrtmp
+                                   % (_ret, _stderr))
+            stderr =  _stderr
 
 
         if  iomode == STDOUT :
@@ -513,7 +516,26 @@ class PTYShell (object) :
             pass
 
 
-        return (retval, stdout, stderr)
+        return (ret, stdout, stderr)
+
+
+    # ----------------------------------------------------------------
+    #
+    def run_async (self, command) :
+        """
+        Run a shell command, but don't wait for prompt -- just return.  It is up
+        to caller to eventually search for the prompt again.  Meanwhile, the
+        caller can interact with the called command, via the io channels.
+
+        :type  command: string
+        :param command: shell command to run.  We don't care if the command is
+        doing i redirection or not.
+        """
+
+        command = command.strip ()
+        self.pty.write ("%s\n" % command)
+
+        return
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

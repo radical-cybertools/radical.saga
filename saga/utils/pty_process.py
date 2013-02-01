@@ -618,7 +618,7 @@ class PTYProcess (object) :
                 for f in wlist :
                     
                     # write will report the number of written bytes
-                    size = os.write (f, "%s" % data)
+                    size = os.write (f, data)
 
                     # otherwise, truncate by written data, and try again
                     data = data[size:]
