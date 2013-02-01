@@ -19,8 +19,8 @@ andre:
 	    python examples/jobs/localjobcontainer.py
 
 mark:
-	source     ~/.virtualenv/saga-python/bin/activate ; \
-	    rm -rf ~.virtualenv/saga-python/lib/python*/site-packages/saga-1.0-py2.6.egg/  ; \
+	source     ~/.virtualenv/saga/bin/activate ; \
+	    rm -rf ~/.virtualenv/saga/lib/python*/site-packages/saga-1.0-py2.6.egg/  ; \
 	    easy_install . ; \
 
 pages: gh-pages
