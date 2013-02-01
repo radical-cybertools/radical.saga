@@ -1,0 +1,703 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>saga.adaptors.ssh.ssh_job &mdash; SAGA 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 1.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="saga" href="../../../saga.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for saga.adaptors.ssh.ssh_job</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot; SSH job adaptor implementation &quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">saga.utils.which</span>
+<span class="kn">import</span> <span class="nn">saga.utils.pty_shell</span>
+
+<span class="kn">import</span> <span class="nn">saga.adaptors.cpi.base</span>
+<span class="kn">import</span> <span class="nn">saga.adaptors.cpi.job</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">ssh_wrapper</span>
+
+<span class="n">SYNC_CALL</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">SYNC_CALL</span>
+<span class="n">ASYNC_CALL</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">ASYNC_CALL</span>
+
+
+<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># some private defs</span>
+<span class="c">#</span>
+<span class="n">_PTY_TIMEOUT</span> <span class="o">=</span> <span class="mf">2.0</span>
+
+<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># the adaptor name</span>
+<span class="c">#</span>
+<span class="n">_ADAPTOR_NAME</span>          <span class="o">=</span> <span class="s">&quot;saga.adaptor.ssh_job&quot;</span>
+<span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&quot;fork&quot;</span><span class="p">,</span> <span class="s">&quot;ssh&quot;</span><span class="p">,</span> <span class="s">&quot;gsissh&quot;</span><span class="p">]</span>
+<span class="n">_ADAPTOR_OPTIONS</span>       <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># the adaptor capabilities &amp; supported attributes</span>
+<span class="c">#</span>
+<span class="n">_ADAPTOR_CAPABILITIES</span>  <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;jdes_attributes&quot;</span>  <span class="p">:</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXECUTABLE</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">ARGUMENTS</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">ENVIRONMENT</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">INPUT</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">OUTPUT</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">ERROR</span><span class="p">],</span>
+    <span class="s">&quot;job_attributes&quot;</span>   <span class="p">:</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXIT_CODE</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXECUTION_HOSTS</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CREATED</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">STARTED</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FINISHED</span><span class="p">],</span>
+    <span class="s">&quot;metrics&quot;</span>          <span class="p">:</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">STATE</span><span class="p">,</span> 
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">STATE_DETAIL</span><span class="p">],</span>
+    <span class="s">&quot;contexts&quot;</span>         <span class="p">:</span> <span class="p">{</span><span class="s">&quot;ssh&quot;</span>      <span class="p">:</span> <span class="s">&quot;public/private keypair&quot;</span><span class="p">,</span>
+                          <span class="s">&quot;x509&quot;</span>     <span class="p">:</span> <span class="s">&quot;X509 proxy for gsissh&quot;</span><span class="p">,</span>
+                          <span class="s">&quot;userpass&quot;</span> <span class="p">:</span> <span class="s">&quot;username/password pair for simple ssh&quot;</span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># the adaptor documentation</span>
+<span class="c">#</span>
+<span class="n">_ADAPTOR_DOC</span>           <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;name&quot;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&quot;cfg_options&quot;</span>      <span class="p">:</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">,</span> 
+    <span class="s">&quot;capabilities&quot;</span>     <span class="p">:</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
+    <span class="s">&quot;description&quot;</span>      <span class="p">:</span> <span class="s">&quot;&quot;&quot; </span>
+<span class="s">        The SSH job adaptor. This adaptor uses the ssh command line tools to run</span>
+<span class="s">        remote jobs.</span>
+<span class="s">        &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;details&quot;</span>          <span class="p">:</span> <span class="s">&quot;&quot;&quot; </span>
+<span class="s">        A more elaborate description....</span>
+
+<span class="s">        Known Limitations:</span>
+<span class="s">        ------------------</span>
+
+<span class="s">          * number of system pty&#39;s are limited:  each job.service object bound</span>
+<span class="s">            to this adaptor will use 2 pairs of pty pipes.  Systems usually</span>
+<span class="s">            limit the number of available pty&#39;s to 1024 .. 4096.  Given that</span>
+<span class="s">            other process also use pty&#39;s , that gives a hard limit to the number</span>
+<span class="s">            of object instances which can be created concurrently.  Hitting the</span>
+<span class="s">            pty limit will cause the following error message (or similar)::</span>
+
+<span class="s">              NoSuccess: pty_allocation or process creation failed (ENOENT: no more ptys)</span>
+
+<span class="s">            This limitation comes from saga.utils.pty_process.  On Linux</span>
+<span class="s">            systems, the utilization of pty&#39;s can be monitored::</span>
+
+<span class="s">               echo &quot;allocated pty&#39;s: `cat /proc/sys/kernel/pty/nr`&quot;</span>
+<span class="s">               echo &quot;available pty&#39;s: `cat /proc/sys/kernel/pty/max`&quot;</span>
+
+
+<span class="s">          * number of ssh connections are limited: sshd&#39;s default configuration,</span>
+<span class="s">            which is in place on many systems, limits the number of concurrent</span>
+<span class="s">            ssh connections to 10 per user -- beyond that, connections are</span>
+<span class="s">            refused with the following error::</span>
+
+<span class="s">              NoSuccess: ssh_exchange_identification: Connection closed by remote host</span>
+
+<span class="s">            As the communication with the ssh channel is unbuffered, the</span>
+<span class="s">            dropping of the connection will likely cause this error message to</span>
+<span class="s">            be lost.  Instead, the adaptor will just see that the ssh connection</span>
+<span class="s">            disappeared, and will issue an error message similar to this one::</span>
+
+<span class="s">              NoSuccess: read from pty process failed (Could not read line - pty process died)</span>
+
+<span class="s"> </span>
+<span class="s">          * number of processes are limited: the creation of an job.service</span>
+<span class="s">            object will create one additional process on the local system, and</span>
+<span class="s">            two processes on the remote system (ssh daemon clone and a shell</span>
+<span class="s">            instance).  Each remote job will create three additional processes:</span>
+<span class="s">            two for the job instance itself (double fork), and an additional</span>
+<span class="s">            process which monitors the job for state changes etc.  Additional</span>
+<span class="s">            temporary processes may be needed as well.  </span>
+
+<span class="s">            While marked as &#39;obsolete&#39; by POSIX, the `ulimit` command is</span>
+<span class="s">            available on many systems, and reports the number of processes</span>
+<span class="s">            available per user (`ulimit -u`)</span>
+
+<span class="s">            On hitting process limits, the job creation will fail with an error</span>
+<span class="s">            similar to either of these::</span>
+<span class="s">            </span>
+<span class="s">              NoSuccess: failed to run job (/bin/sh: fork: retry: Resource temporarily unavailable)</span>
+<span class="s">              NoSuccess: failed to run job -- backend error</span>
+
+
+<span class="s">          * Other system limits (memory, CPU, selinux, accounting etc.) apply as</span>
+<span class="s">            usual.</span>
+
+<span class="s">        &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;schemas&quot;</span>          <span class="p">:</span> <span class="p">{</span><span class="s">&quot;fork&quot;</span>   <span class="p">:</span><span class="s">&quot;use /bin/sh to run jobs&quot;</span><span class="p">,</span> 
+                          <span class="s">&quot;ssh&quot;</span>    <span class="p">:</span><span class="s">&quot;use ssh to run remote jobs&quot;</span><span class="p">,</span> 
+                          <span class="s">&quot;gsissh&quot;</span> <span class="p">:</span><span class="s">&quot;use gsissh to run remote jobs&quot;</span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># the adaptor info is used to register the adaptor with SAGA</span>
+
+<span class="n">_ADAPTOR_INFO</span>          <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;name&quot;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&quot;version&quot;</span>          <span class="p">:</span> <span class="s">&quot;v0.1&quot;</span><span class="p">,</span>
+    <span class="s">&quot;schemas&quot;</span>          <span class="p">:</span> <span class="n">_ADAPTOR_SCHEMAS</span><span class="p">,</span>
+    <span class="s">&quot;cpis&quot;</span>             <span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span> 
+        <span class="s">&quot;type&quot;</span>         <span class="p">:</span> <span class="s">&quot;saga.job.Service&quot;</span><span class="p">,</span>
+        <span class="s">&quot;class&quot;</span>        <span class="p">:</span> <span class="s">&quot;SSHJobService&quot;</span>
+        <span class="p">},</span> 
+        <span class="p">{</span> 
+        <span class="s">&quot;type&quot;</span>         <span class="p">:</span> <span class="s">&quot;saga.job.Job&quot;</span><span class="p">,</span>
+        <span class="s">&quot;class&quot;</span>        <span class="p">:</span> <span class="s">&quot;SSHJob&quot;</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="c">###############################################################################</span>
+<span class="c"># The adaptor class</span>
+
+<span class="k">class</span> <span class="nc">Adaptor</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AdaptorBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">    This is the actual adaptor class, which gets loaded by SAGA (i.e. by the</span>
+<span class="sd">    SAGA engine), and which registers the CPI implementation classes which</span>
+<span class="sd">    provide the adaptor&#39;s functionality.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AdaptorBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_ADAPTOR_INFO</span><span class="p">,</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">id_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span> <span class="p">(</span><span class="s">&#39;^\[(.*)\]-\[(.*?)\]$&#39;</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">sanity_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="c"># FIXME: also check for gsissh</span>
+
+        <span class="k">pass</span>
+
+
+    <span class="k">def</span> <span class="nf">parse_id</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span> <span class="p">:</span>
+        <span class="c"># split the id &#39;[rm]-[pid]&#39; in its parts, and return them.</span>
+
+        <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_re</span><span class="o">.</span><span class="n">match</span> <span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+
+        <span class="k">if</span>  <span class="ow">not</span> <span class="n">match</span> <span class="ow">or</span> <span class="nb">len</span> <span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">())</span> <span class="o">!=</span> <span class="mi">2</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot parse job id &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="nb">id</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span> <span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+
+
+<span class="c">###############################################################################</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">SSHJobService</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SSHJobService"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.ssh_job.html#saga.adaptors.ssh.ssh_job.SSHJobService">[docs]</a>    <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service &quot;&quot;&quot;</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">CPIBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__del__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="c"># FIXME: not sure if we should PURGE here -- that removes states which</span>
+        <span class="c"># might not be evaluated, yet.  Should we mark state evaluation</span>
+        <span class="c"># separately? </span>
+        <span class="c">#   cmd_state () { touch $DIR/purgeable; ... }</span>
+        <span class="c"># When should that be done?</span>
+
+      <span class="c"># try :</span>
+      <span class="c">#   # if self.shell : self.shell.run_sync (&quot;PURGE&quot;, iomode=None)</span>
+      <span class="c">#   # self._logger.trace ()</span>
+      <span class="c">#   # self._logger.breakpoint ()</span>
+      <span class="c">#     if self.shell : self.shell.run_sync (&quot;QUIT&quot; , iomode=None)</span>
+      <span class="c"># except :</span>
+      <span class="c">#     pass</span>
+
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="p">:</span> <span class="k">del</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">:</span>
+            <span class="k">pass</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">rm_url</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SSHJobService.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.ssh_job.html#saga.adaptors.ssh.ssh_job.SSHJobService.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; Service instance constructor &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rm</span>      <span class="o">=</span> <span class="n">rm_url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_open</span> <span class="p">()</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_alive</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+
+        <span class="k">if</span>  <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">alive</span> <span class="p">()</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;shell is dead - long live the shell&quot;</span><span class="p">)</span>
+            
+            <span class="k">try</span> <span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_close</span> <span class="p">()</span>  <span class="c"># for cleanup...</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_open</span>  <span class="p">()</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="p">:</span>
+                <span class="c"># did not work for good - give up</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;job service is not connected, can&#39;t reconnect&quot;</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_open</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="c"># start the shell, find its prompt.  If that is up and running, we can</span>
+        <span class="c"># bootstrap our wrapper script, and then run jobs etc.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">contexts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+
+        <span class="c"># -- now stage the shell wrapper script, and run it.  Once that is up</span>
+        <span class="c"># and running, we can requests job start / management operations via its</span>
+        <span class="c"># stdio.</span>
+
+        <span class="n">base</span> <span class="o">=</span> <span class="s">&quot;$HOME/.saga/adaptors/ssh_job&quot;</span>
+
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;mkdir -p </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">base</span><span class="p">)</span>
+        <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to prepare base dir (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+
+        <span class="c"># FIXME: this is a race condition is multiple job services stage the</span>
+        <span class="c"># script at the same time.  We should make that atomic by</span>
+        <span class="c">#</span>
+        <span class="c">#   cat &gt; .../wrapper.sh.$$ ... ; mv .../wrapper.sh.$$ .../wrapper.sh</span>
+        <span class="c">#</span>
+        <span class="c"># which should work nicely as long as compatible versions of the script</span>
+        <span class="c"># are staged.  Oh well...</span>
+        <span class="c">#</span>
+        <span class="c"># TODO: replace some constants in the script with values from config</span>
+        <span class="c"># files, such as &#39;timeout&#39; or &#39;purge_on_quit&#39; ...</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_from_string</span> <span class="p">(</span><span class="n">src</span> <span class="o">=</span> <span class="n">ssh_wrapper</span><span class="o">.</span><span class="n">_WRAPPER_SCRIPT</span><span class="p">,</span> 
+                                      <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">/wrapper.sh&quot;</span> <span class="o">%</span> <span class="n">base</span><span class="p">)</span>
+
+        <span class="c"># we run the script.  In principle, we should set a new / different</span>
+        <span class="c"># prompt -- but, due to some strange and very unlikely coincidence, the</span>
+        <span class="c"># script has the same prompt as the previous shell... - go figure ;-)</span>
+        <span class="c">#</span>
+        <span class="c"># Note that we use &#39;exec&#39; - so the script replaces the shell process.</span>
+        <span class="c"># Thus, when the script times out, the shell dies and the connection</span>
+        <span class="c"># drops -- that will free all associated resources, and allows for</span>
+        <span class="c"># a clean reconnect.</span>
+      <span class="c"># ret, out, _ = self.shell.run_sync (&quot;exec sh %s/wrapper.sh&quot; % base)</span>
+      
+        <span class="c"># Well, actually, we do not use exec, as that does not give us good</span>
+        <span class="c"># feedback on failures (the shell just quits) -- so we replace it with</span>
+        <span class="c"># this poor-man&#39;s version...</span>
+      <span class="c"># ret, out, _ = self.shell.run_sync (&quot;sh -c &#39;(/bin/sh %s/wrapper.sh &amp;&amp; kill -9 $PPID)&#39; || false&quot; % base)</span>
+
+        <span class="c"># well, this version logs an sh-x trace to wrapper.log, w/o disturbing</span>
+        <span class="c"># stdout/stderr...</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;exec sh -x </span><span class="si">%s</span><span class="s">/wrapper.sh 2&gt;&amp;1 | tee </span><span class="si">%s</span><span class="s">/wrapper.log | grep -v -e &#39;^</span><span class="se">\\</span><span class="s">+&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">base</span><span class="p">))</span>
+
+        <span class="c"># either way, we somehow ran the script, and just need to check if it</span>
+        <span class="c"># came up all right...</span>
+        <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to run wrapper (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got cmd prompt (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_close</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">del</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="bp">None</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_job_run</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jd</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; runs a job on the wrapper via pty, and returns the job id &quot;&quot;&quot;</span>
+
+
+        <span class="n">exe</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>
+        <span class="n">arg</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="n">cwd</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alive</span> <span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;arguments&quot;</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span> <span class="p">:</span>
+                <span class="n">arg</span> <span class="o">+=</span> <span class="s">&quot; </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">a</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;environment&quot;</span><span class="p">)</span> <span class="p">:</span>
+            <span class="n">env</span> <span class="o">=</span> <span class="s">&quot;/usr/bin/env&quot;</span>
+            <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">environment</span> <span class="p">:</span>
+                <span class="n">env</span> <span class="o">+=</span> <span class="s">&quot; </span><span class="si">%s</span><span class="s">=</span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">environment</span><span class="p">[</span><span class="n">e</span><span class="p">])</span>
+            <span class="n">env</span> <span class="o">+=</span> <span class="s">&quot; &quot;</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;working_directory&quot;</span><span class="p">)</span> <span class="p">:</span>
+            <span class="n">cwd</span> <span class="o">=</span> <span class="s">&quot;cd </span><span class="si">%s</span><span class="s"> &amp;&amp; &quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span>
+
+        <span class="n">cmd</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">cwd</span><span class="p">,</span> <span class="n">exe</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;RUN </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
+        <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to run job &#39;</span><span class="si">%s</span><span class="s">&#39;: (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+
+        <span class="n">lines</span> <span class="o">=</span> <span class="nb">filter</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+        <span class="k">if</span>  <span class="nb">len</span> <span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to run job (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">lines</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">lines</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&quot;OK&quot;</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to run job (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">lines</span><span class="p">)</span>
+
+        <span class="n">job_id</span> <span class="o">=</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">]-[</span><span class="si">%s</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">lines</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;started job </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job_id</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">job_id</span>
+        
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_job_get_state</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; get the job state from the wrapper shell &quot;&quot;&quot;</span>
+
+        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span> <span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;STATE </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">pid</span><span class="p">)</span>
+        <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to get job state for &#39;</span><span class="si">%s</span><span class="s">&#39;: (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                               <span class="o">%</span> <span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+
+        <span class="n">lines</span> <span class="o">=</span> <span class="nb">filter</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+        <span class="k">if</span>  <span class="nb">len</span> <span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="p">:</span>
+            <span class="k">del</span> <span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">if</span>  <span class="nb">len</span> <span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to get job state for &#39;</span><span class="si">%s</span><span class="s">&#39;: (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">lines</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&quot;OK&quot;</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to get valid job state for &#39;</span><span class="si">%s</span><span class="s">&#39; (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">lines</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">create_job</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jd</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SSHJobService.create_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.ssh_job.html#saga.adaptors.ssh.ssh_job.SSHJobService.create_job">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_url()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># check that only supported attributes are provided</span>
+        <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">list_attributes</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">attribute</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">[</span><span class="s">&quot;jdes_attributes&quot;</span><span class="p">]:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;&#39;JobDescription.</span><span class="si">%s</span><span class="s">&#39; is not supported by this adaptor&quot;</span> <span class="o">%</span> <span class="n">attribute</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+
+        
+        <span class="c"># this dict is passed on to the job adaptor class -- use it to pass any</span>
+        <span class="c"># state information you need there.</span>
+        <span class="n">adaptor_state</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&quot;job_service&quot;</span>     <span class="p">:</span> <span class="bp">self</span><span class="p">,</span> 
+                          <span class="s">&quot;job_description&quot;</span> <span class="p">:</span> <span class="n">jd</span><span class="p">,</span>
+                          <span class="s">&quot;job_schema&quot;</span>      <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">schema</span> <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span> <span class="p">(</span><span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">,</span> <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SSHJobService.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.ssh_job.html#saga.adaptors.ssh.ssh_job.SSHJobService.get_url">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_url()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span>
+
+
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># @SYNC_CALL</span>
+  <span class="c"># def list(self):</span>
+  <span class="c">#     &quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.list()</span>
+  <span class="c">#     &quot;&quot;&quot;</span>
+  <span class="c">#     jobids = list()</span>
+  <span class="c">#     for (job_obj, job_id) in self._jobs.iteritems():</span>
+  <span class="c">#         if job_id is not None:</span>
+  <span class="c">#             jobids.append(job_id)</span>
+  <span class="c">#     return jobids</span>
+  <span class="c">#</span>
+  <span class="c">#</span>
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># @SYNC_CALL</span>
+  <span class="c"># def get_job (self, jobid):</span>
+  <span class="c">#     &quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_url()</span>
+  <span class="c">#     &quot;&quot;&quot;</span>
+  <span class="c">#     if jobid not in self._jobs.values():</span>
+  <span class="c">#         msg = &quot;Service instance doesn&#39;t know a Job with ID &#39;%s&#39;&quot; % (jobid)</span>
+  <span class="c">#         raise saga.BadParameter._log (self._logger, msg)</span>
+  <span class="c">#     else:</span>
+  <span class="c">#         for (job_obj, job_id) in self._jobs.iteritems():</span>
+  <span class="c">#             if job_id == jobid:</span>
+  <span class="c">#                 return job_obj.get_api ()</span>
+  <span class="c">#</span>
+  <span class="c">#</span>
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># def container_run (self, jobs) :</span>
+  <span class="c">#     self._logger.debug(&quot;container run: %s&quot;  %  str(jobs))</span>
+  <span class="c">#     # TODO: this is not optimized yet</span>
+  <span class="c">#     for job in jobs:</span>
+  <span class="c">#         job.run()</span>
+  <span class="c">#</span>
+  <span class="c">#</span>
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># def container_wait (self, jobs, mode, timeout) :</span>
+  <span class="c">#     self._logger.debug(&quot;container wait: %s&quot;  %  str(jobs))</span>
+  <span class="c">#     # TODO: this is not optimized yet</span>
+  <span class="c">#     for job in jobs:</span>
+  <span class="c">#         job.wait()</span>
+  <span class="c">#</span>
+  <span class="c">#</span>
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># def container_cancel (self, jobs) :</span>
+  <span class="c">#     self._logger.debug(&quot;container cancel: %s&quot;  %  str(jobs))</span>
+  <span class="c">#     raise saga.NoSuccess(&quot;Not Implemented&quot;);</span>
+
+
+<span class="c">###############################################################################</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">SSHJob</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">)</span> <span class="p">:</span></div></div>
+<div class="viewcode-block" id="SSHJob"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.ssh_job.html#saga.adaptors.ssh.ssh_job.SSHJob">[docs]</a>    <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.__init__()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">CPIBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_info</span><span class="p">):</span>
+<div class="viewcode-block" id="SSHJob.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.ssh_job.html#saga.adaptors.ssh.ssh_job.SSHJob.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.init_instance()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jd</span> <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&quot;job_description&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">js</span> <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&quot;job_service&quot;</span><span class="p">]</span> 
+
+        <span class="c"># the js is responsible for job bulk operations -- which</span>
+        <span class="c"># for jobs only work for run()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_container</span>       <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_method_type</span>     <span class="o">=</span> <span class="s">&quot;run&quot;</span>
+
+        <span class="c"># initialize job attribute values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span>              <span class="o">=</span> <span class="s">&quot;default id&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span>           <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NEW</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exit_code</span>       <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exception</span>       <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_started</span>         <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_finished</span>        <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SSHJob.get_state"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.ssh_job.html#saga.adaptors.ssh.ssh_job.SSHJob.get_state">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_state()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_state</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span>
+  
+
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># @SYNC_CALL</span>
+  <span class="c"># def wait(self, timeout):</span>
+  <span class="c">#     pass</span>
+  <span class="c">#</span>
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_id</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SSHJob.get_id"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.ssh_job.html#saga.adaptors.ssh.ssh_job.SSHJob.get_id">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_id() &quot;&quot;&quot;</span>        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span>
+   
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># @SYNC_CALL</span>
+  <span class="c"># def get_exit_code(self) :</span>
+  <span class="c">#     &quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_exit_code()</span>
+  <span class="c">#     &quot;&quot;&quot;        </span>
+  <span class="c">#     return self._exit_code</span>
+  <span class="c">#</span>
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># @SYNC_CALL</span>
+  <span class="c"># def get_created(self) :</span>
+  <span class="c">#     &quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_started()</span>
+  <span class="c">#     &quot;&quot;&quot;     </span>
+  <span class="c">#     # for local jobs started == created. for other adaptors </span>
+  <span class="c">#     # this is not necessarily true   </span>
+  <span class="c">#     return self._started</span>
+  <span class="c">#</span>
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># @SYNC_CALL</span>
+  <span class="c"># def get_started(self) :</span>
+  <span class="c">#     &quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_started()</span>
+  <span class="c">#     &quot;&quot;&quot;        </span>
+  <span class="c">#     return self._started</span>
+  <span class="c">#</span>
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># @SYNC_CALL</span>
+  <span class="c"># def get_finished(self) :</span>
+  <span class="c">#     &quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_finished()</span>
+  <span class="c">#     &quot;&quot;&quot;        </span>
+  <span class="c">#     return self._finished</span>
+  <span class="c"># </span>
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># @SYNC_CALL</span>
+  <span class="c"># def get_execution_hosts(self) :</span>
+  <span class="c">#     &quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_execution_hosts()</span>
+  <span class="c">#     &quot;&quot;&quot;        </span>
+  <span class="c">#     return self._execution_hosts</span>
+  <span class="c">#</span>
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># @SYNC_CALL</span>
+  <span class="c"># def cancel(self, timeout):</span>
+  <span class="c">#     pass</span>
+  <span class="c">#</span>
+  <span class="c">#</span>
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
+<div class="viewcode-block" id="SSHJob.run"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.ssh_job.html#saga.adaptors.ssh.ssh_job.SSHJob.run">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.run()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_run</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span>
+
+
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># @SYNC_CALL</span>
+  <span class="c"># def re_raise(self):</span>
+  <span class="c">#     return self._exception</span>
+
+
+<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
