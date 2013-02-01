@@ -26,7 +26,8 @@ adaptor_registry = [
                     "saga.adaptors.local.dummyfile",
                     "saga.adaptors.ssh.ssh_job",
                     "saga.adaptors.redis.redis_advert",
-                    "saga.adaptors.irods.irods_replica"
+                    "saga.adaptors.irods.irods_replica",
+                    "saga.adaptors.srm.srmfile"
                    ]
 
 
