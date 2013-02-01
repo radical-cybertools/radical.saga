@@ -166,7 +166,6 @@ cmd_run2 () {
 
   cmd_run_process $@ &
   ppid=$!
-  echo "3 $ppid" >> /tmp/t
   return $ppid
 }
 
