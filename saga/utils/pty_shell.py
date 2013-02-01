@@ -248,8 +248,8 @@ class PTYShell (object) :
         alive() checks if the shell is still alive.  duh!
         """
 
-        if self.pty : 
-            return self.pty.alive ()
+        if self.pty and self.pty.alive () :
+            return True
 
         return False
         
@@ -356,7 +356,12 @@ class PTYShell (object) :
             prompt    = new_prompt
             prompt_re = re.compile ("^(.*)%s\s*$" % prompt, re.DOTALL)
 
+        result = None
         try :
+            if  not data :
+                raise saga.NoSuccess ("could not parse prompt on empty string (%s) (%s)" \
+                                   % (prompt, data))
+
             result = prompt_re.match (data)
 
             if  not result :
@@ -536,6 +541,31 @@ class PTYShell (object) :
         self.pty.write ("%s\n" % command)
 
         return
+
+
+    # ----------------------------------------------------------------
+    #
+    def stage_from_string (self, src, tgt) :
+
+        self.run_async ("cat > %s" % tgt)
+        self.send      (src)
+        self.send      ("\n\4")  # send CTRL-D
+
+        ret, txt = self.find_prompt ()
+
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to stage string to file (%s)(%s)" % (ret, txt))
+
+    # ----------------------------------------------------------------
+    #
+    def stage_to_string (self, src) :
+
+        ret, out, _ = self.run_sync ("cat %s" % src)
+
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to stage file to string (%s)(%s)" % (ret, out))
+
+        return out
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

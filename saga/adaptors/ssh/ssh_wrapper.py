@@ -161,10 +161,7 @@ cmd_run_process () {
   # script's shell instance with the job executable, leaving the I/O
   # redirections intact.
   cat                > "$DIR/job.sh" <<EOT
-  exec $@            \
-    <  "$DIR/in"     \
-    >  "$DIR/out"    \
-    2> "$DIR/err"
+  exec $@            < "$DIR/in" >  "$DIR/out" 2> "$DIR/err"
 EOT
   
   # the job script above is started by this startup script, which makes sure

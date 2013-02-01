@@ -476,7 +476,7 @@ class PTYProcess (object) :
                 if not self.alive () :
                     break
 
-                time.sleep (0.1)
+                # time.sleep (0.1)
 
                 # skip non-lines
                 if  None == line :
@@ -554,7 +554,7 @@ class PTYProcess (object) :
             # a pattern, or timeout passes
             while True :
 
-              # time.sleep (0.3)
+              # time.sleep (0.1)
 
                 # skip non-lines
                 if  None == data :
@@ -574,6 +574,7 @@ class PTYProcess (object) :
                         # data is cached.
                         ret  = data[0:match.end()+1]
                         self.cache = data[match.end()+1:] 
+                      # print "~~match!~~ %s" % (ret)
                         return (n, ret.replace('\r', ''))
 
                 # if a timeout is given, and actually passed, return a non-match
@@ -604,7 +605,7 @@ class PTYProcess (object) :
         """
 
         if not self.alive () :
-            raise se.NoSuccess ("Could not write data - pty process died")
+            raise se.NoSuccess ("Could not write data - pty not alive")
 
         try :
             self.logger.debug ("write: '%s'" % data)
