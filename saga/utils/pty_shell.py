@@ -127,19 +127,30 @@ class PTYShell (object) :
                 sh_args += "-l %s " % sh_user
 
             # build the ssh command line
-            sh_cmd   =  "%s %s %s %s" % (sh_env, sh_exe, sh_args, self.url.host)
-
+            sh_cmd  =  "%s %s %s %s" % (sh_env, sh_exe, sh_args, self.url.host)
 
         # a local shell
-        # Make sure we have an interactive login shell w/o ansi escapes.
         elif sh_type == "sh" :
-            sh_args  =  "-l -i"
-            sh_env   =  "/usr/bin/env TERM=vt100"
-            sh_cmd   =  "%s %s %s" % (sh_env, sh_exe, sh_args)
+            # Make sure we have an interactive login shell w/o ansi escapes.
+            sh_args =  "-l -i"
+            sh_env  =  "/usr/bin/env TERM=vt100"
+            sh_cmd  =  "%s %s %s" % (sh_env, sh_exe, sh_args)
+
+        self.sh_type = sh_type
+        self.sh_cmd  = sh_cmd
+
+        # we got the shell command - now run it!
+        self.open ()
 
 
-        self.logger.info ("job service opens pty for '%s'" % sh_cmd)
-        self.pty = saga.utils.pty_process.PTYProcess (sh_cmd, logger=self.logger)
+    # ----------------------------------------------------------------
+    #
+    def open (self) :
+
+
+        self.logger.info ("job service opens pty for '%s'" % self.sh_cmd)
+        self.pty = saga.utils.pty_process.PTYProcess (self.sh_cmd, 
+                                                      logger=self.logger)
 
 
         prompt_patterns = ["password\s*:\s*$",            # password prompt
@@ -147,12 +158,13 @@ class PTYShell (object) :
                            self.prompt]                   # native shell prompt 
         # FIXME: consider to not do hostkey checks at all (see ssh options)
 
-        if sh_type == 'sh' :
-            # self.prompt is all we need for local shell, but we keep the
-            # others around so that the switch in the while loop below is the
+        if self.sh_type == 'sh' :
+            # self.prompt is all we need for local shell, but we keep the other
+            # pattern around so that the switch in the while loop below is the
             # same for both shell types
-            pass
+            #
             # prompt_patterns = [self.prompt] 
+            pass
 
 
         # run the shell and find prompt
@@ -184,7 +196,7 @@ class PTYShell (object) :
 
 
             if n == 0 :
-                self.pty.clog += "\n[PTYShell: got password prompt]\n"
+                self.logger.debug ("got password prompt")
                 if not sh_pass :
                     raise saga.NoSuccess ("prompted for unknown password (%s)" \
                                        % match)
@@ -194,27 +206,22 @@ class PTYShell (object) :
 
 
             elif n == 1 :
-                self.pty.clog += "\n[PTYShell: got host key prompt]\n"
+                self.logger.debug ("got hostkey prompt")
                 self.pty.write ("yes\n")
                 n, match = self.pty.find (prompt_patterns, _PTY_TIMEOUT)
 
 
             elif n == 2 :
-                self.pty.clog += "\n[PTYShell: got initial shell prompt]\n"
+                self.logger.debug ("got initial shell prompt")
 
                 # try to set new prompt
                 self.run_sync ("PS1='PROMPT-$?->\\n'; export PS1\n", 
                                 new_prompt="PROMPT-(\d+)->\s*$")
-                self.pty.clog += "\n[PTYShell: got new shell prompt]\n"
+                self.logger.debug ("got new shell prompt")
 
                 # we are done waiting for a prompt
                 break
         
-        # we have a prompt on the remote system, and can now run commands.
-
-        # FIXME: 
-        self.clog = self.pty.clog
-
 
     # ----------------------------------------------------------------
     #
@@ -449,11 +456,15 @@ class PTYShell (object) :
         if  iomode == None :
             redir  =  ""
 
+        self.pty.write ("%s%s\n" % (command, redir))
+
+
+        # If given, switch to new prompt pattern right now...
         prompt = self.prompt
         if  new_prompt :
             prompt = new_prompt
 
-        self.pty.write ("%s%s\n" % (command, redir))
+        # command has been started - now find prompt again.  
         _, match = self.pty.find ([prompt], timeout=-1.0)  # blocks
 
         if not match :

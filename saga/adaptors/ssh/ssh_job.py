@@ -209,6 +209,9 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self.rm      = rm_url
         self.session = session
 
+        self._open ()
+
+    def _open (self) :
         self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session.contexts, self._logger)
 
         # -- now fetch the shell wrapper
@@ -237,6 +240,10 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
 
 
+    def _close (self) :
+        del (self.shell)
+        self.shell = None
+
 
     # ----------------------------------------------------------------
     #
@@ -244,6 +251,18 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
     def _run_job (self, jd) :
         """ runs a job on the wrapper via pty, and returns the job id """
 
+
+        try :
+            return self._try_run_job (jd)
+        except Exception :
+            # did not work -- try to restart shell and try again
+            self._logger.info ("restarting shell")
+            self._close ()
+            self._open  ()
+            return self._try_run_job (jd)
+
+
+    def _try_run_job (self, jd) :
         exe = jd.executable
         arg = ""
         env = ""

@@ -607,7 +607,7 @@ class PTYProcess (object) :
             raise se.NoSuccess ("Could not write data - pty process died")
 
         try :
-            self.logger.debug ("Write: '%s'" % data)
+            self.logger.debug ("write: '%s'" % data)
 
             # attempt to write forever -- until we succeeed
             while data :
@@ -625,7 +625,6 @@ class PTYProcess (object) :
 
 
         except Exception as e :
-            print "alive: %s" % self.alive ()
             raise se.NoSuccess ("write to pty process failed (%s)" % e)
 
 
