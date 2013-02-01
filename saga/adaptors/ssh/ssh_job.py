@@ -7,6 +7,7 @@ import saga.utils.pty_shell
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
+import re
 import os
 import time
 
@@ -162,6 +163,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
         saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
+        self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
+
 
     # ----------------------------------------------------------------
     #
@@ -171,6 +174,16 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
         pass
 
+
+    def parse_id (self, id) :
+        # split the id '[rm]-[pid]' in its parts, and return them.
+
+        match = self.id_re.match (id)
+
+        if  not match or len (match.groups()) != 2 :
+            raise saga.BadParameter ("Cannot parse job id '%s'" % id)
+
+        return (match.group(1), match.group (2))
 
 
 ###############################################################################
@@ -196,7 +209,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # When should that be done?
 
         try :
-            if self.shell : self.shell.run_sync ("PURGE", iomode=None)
+          # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
             if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
         except :
             pass
@@ -293,7 +306,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
     # ----------------------------------------------------------------
     #
     #
-    def _run_job (self, jd) :
+    def _job_run (self, jd) :
         """ runs a job on the wrapper via pty, and returns the job id """
 
 
@@ -337,6 +350,35 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self._logger.debug ("started job %s" % job_id)
 
         return job_id
+        
+
+
+    # ----------------------------------------------------------------
+    #
+    #
+    def _job_get_state (self, id) :
+        """ get the job state from the wrapper shell """
+
+        rm, pid = self._adaptor.parse_id (id)
+
+        ret, out, _ = self.shell.run_sync ("STATE %s\n" % pid)
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to get job state for '%s': (%s)(%s)" \
+                               % (id, ret, out))
+
+        lines = filter (None, out.split ("\n"))
+        self._logger.debug (lines)
+
+        if  len (lines) == 3 :
+            del (lines[0])
+
+        if  len (lines) != 2 :
+            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % (id, lines))
+
+        if lines[0] != "OK" :
+            raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
+
+        return lines[1]
         
 
 
@@ -440,12 +482,12 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
     def init_instance (self, job_info):
         """ Implements saga.adaptors.cpi.job.Job.init_instance()
         """
-        self._jd              = job_info["job_description"]
-        self._parent_service  = job_info["job_service"] 
+        self.jd = job_info["job_description"]
+        self.js = job_info["job_service"] 
 
-        # the _parent_service is responsible for job bulk operations -- which
+        # the js is responsible for job bulk operations -- which
         # for jobs only work for run()
-        self._container       = self._parent_service
+        self._container       = self.js
         self._method_type     = "run"
 
         # initialize job attribute values
@@ -459,14 +501,16 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
         return self.get_api ()
 
 
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def get_state(self):
-  #     """ Implements saga.adaptors.cpi.job.Job.get_state()
-  #     """
-  #     return self._state
-  #
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_state(self):
+        """ Implements saga.adaptors.cpi.job.Job.get_state()
+        """
+        self._state = self.js._job_get_state (self._id)
+        return self._state
+  
+
   # # ----------------------------------------------------------------
   # #
   # @SYNC_CALL
@@ -535,7 +579,7 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
     def run(self): 
         """ Implements saga.adaptors.cpi.job.Job.run()
         """
-        self._id = self._parent_service._run_job (self._jd)
+        self._id = self.js._job_run (self.jd)
 
 
   # # ----------------------------------------------------------------

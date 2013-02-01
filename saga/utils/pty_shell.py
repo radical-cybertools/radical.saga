@@ -399,7 +399,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def run_sync (self, command, iomode=MERGED, new_prompt=None) :
+    def run_sync (self, command, iomode=None, new_prompt=None) :
         """
         Run a shell command, and report exit code, stdout and stderr (all three
         will be returned in a tuple).  The call will block until the command
@@ -425,8 +425,8 @@ class PTYShell (object) :
                         at least one more network hop!  
           * *STDOUT:*   only stdout is captured, stderr will be `None`.
           * *STDERR:*   only stderr is captured, stdout will be `None`.
-          * *`None`:*   do not perform anu redirection -- this is effectively
-                        the same as `IGNORE`
+          * *`None`:*   do not perform any redirection -- this is effectively
+                        the same as `MERGED`
 
         If any of the requested output streams does not return any data, an
         empty string is returned.
@@ -518,7 +518,7 @@ class PTYShell (object) :
             stderr =  txt
 
         if  iomode == None :
-            pass
+            stdout =  txt
 
 
         return (ret, stdout, stderr)
