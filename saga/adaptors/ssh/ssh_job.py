@@ -208,13 +208,11 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         #   cmd_state () { touch $DIR/purgeable; ... }
         # When should that be done?
 
-      # try :
-      #   # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
-      #   # self._logger.trace ()
-      #   # self._logger.breakpoint ()
-      #     if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
-      # except :
-      #     pass
+        try :
+          # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
+            if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
+        except :
+            pass
 
         try :
             if self.shell : del (self.shell)
