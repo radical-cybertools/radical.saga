@@ -477,7 +477,7 @@ class PTYShell (object) :
 
         if not match :
             # not find prompt after blocking?  BAD!  Restart the shell
-            self.close ()
+          # self.close ()
             raise saga.NoSuccess ("run_sync failed, no prompt (%s)" % command)
 
 
@@ -500,7 +500,7 @@ class PTYShell (object) :
 
             if not match :
                 # not find prompt after blocking?  BAD!  Restart the shell
-                self.close ()
+              # self.close ()
                 raise saga.NoSuccess ("run_sync failed, no prompt (%s)" \
                                     % command)
 

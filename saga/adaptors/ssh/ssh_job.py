@@ -208,11 +208,13 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         #   cmd_state () { touch $DIR/purgeable; ... }
         # When should that be done?
 
-        try :
-          # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
-            if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
-        except :
-            pass
+      # try :
+      #   # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
+      #   # self._logger.trace ()
+      #   # self._logger.breakpoint ()
+      #     if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
+      # except :
+      #     pass
 
         try :
             if self.shell : del (self.shell)
@@ -280,15 +282,27 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self.shell.stage_from_string (src = ssh_wrapper._WRAPPER_SCRIPT, 
                                       tgt = "%s/wrapper.sh" % base)
 
-        # we run the script.  In principle, we should set a new prompt -- but,
-        # due to some strange and very unlikely coincidence, the script has the
-        # same prompt as the previous shell... - go figure ;-)
+        # we run the script.  In principle, we should set a new / different
+        # prompt -- but, due to some strange and very unlikely coincidence, the
+        # script has the same prompt as the previous shell... - go figure ;-)
         #
         # Note that we use 'exec' - so the script replaces the shell process.
         # Thus, when the script times out, the shell dies and the connection
         # drops -- that will free all associated resources, and allows for
         # a clean reconnect.
-        ret, out, _ = self.shell.run_sync ("sh -c '(/bin/sh %s/wrapper.sh && kill -9 $PPID)' || false" % base)
+      # ret, out, _ = self.shell.run_sync ("exec sh %s/wrapper.sh" % base)
+      
+        # Well, actually, we do not use exec, as that does not give us good
+        # feedback on failures (the shell just quits) -- so we replace it with
+        # this poor-man's version...
+      # ret, out, _ = self.shell.run_sync ("sh -c '(/bin/sh %s/wrapper.sh && kill -9 $PPID)' || false" % base)
+
+        # well, this version logs an sh-x trace to wrapper.log, w/o disturbing
+        # stdout/stderr...
+        ret, out, _ = self.shell.run_sync ("exec sh -x %s/wrapper.sh 2>&1 | tee %s/wrapper.log | grep -v -e '^\\+'" % (base, base))
+
+        # either way, we somehow ran the script, and just need to check if it
+        # came up all right...
         if  ret != 0 :
             raise saga.NoSuccess ("failed to run wrapper (%s)(%s)" % (ret, out))
 

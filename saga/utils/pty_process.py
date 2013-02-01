@@ -330,9 +330,17 @@ class PTYProcess (object) :
                 for f in rlist:
                     # read whatever we still need
                     buf  = os.read (f, size-len(ret))
-                    self.logger.debug ("read: '%s'" % buf)
                     self.clog += buf
                     ret       += buf
+
+                    buf = buf.replace ('\n', '\\n')
+                    buf = buf.replace ('\r', '')
+                    if  len(buf) > 40 :
+                        self.logger.debug ("read : [%5d] (%s ... %s)" \
+                                        % (len(buf), buf[:20], buf[-20:]))
+                    else :
+                        self.logger.debug ("read : [%5d] (%s)" \
+                                        % (len(buf), buf))
 
                 if timeout == 0 : 
                     # only return if we have data
@@ -416,9 +424,17 @@ class PTYProcess (object) :
                 # got some data - read them into the cache
                 for f in rlist:
                     buf         = os.read (f, _CHUNKSIZE)
-                    self.logger.debug ("read: '%s'" % buf)
                     self.clog  += buf
                     self.cache += buf
+
+                    buf = buf.replace ('\n', '\\n')
+                    buf = buf.replace ('\r', '')
+                    if  len(buf) > 40 :
+                        self.logger.debug ("read : [%5d] (%s ... %s)" \
+                                        % (len(buf), buf[:20], buf[-20:]))
+                    else :
+                        self.logger.debug ("read : [%5d] (%s)" \
+                                        % (len(buf), buf))
 
                 # check if we *now* have a full line in cache
                 if '\n' in self.cache :
@@ -608,7 +624,15 @@ class PTYProcess (object) :
             raise se.NoSuccess ("Could not write data - pty not alive")
 
         try :
-            self.logger.debug ("write: '%s'" % data)
+
+            buf = data.replace ('\n', '\\n')
+            buf =  buf.replace ('\r', '')
+            if  len(buf) > 40 :
+                self.logger.debug ("write: [%5d] (%s ... %s)" \
+                                % (len(data), buf[:20], buf[-20:]))
+            else :
+                self.logger.debug ("write: [%5d] (%s)" \
+                                % (len(data), buf))
 
             # attempt to write forever -- until we succeeed
             while data :
@@ -623,6 +647,9 @@ class PTYProcess (object) :
 
                     # otherwise, truncate by written data, and try again
                     data = data[size:]
+
+                    if data :
+                        self.logger.info ("write: [%5d]" % size)
 
 
         except Exception as e :
