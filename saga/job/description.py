@@ -15,7 +15,7 @@ class Description (saga.Attributes) :
     def __init__(self):
 
         # set attribute interface properties
-        from saga.attributes import *
+        from saga.attributes import ANY, BOOL, ENUM, INT, SCALAR, STRING, TIME, VECTOR, WRITEABLE
 
         self._attributes_extensible  (False)
         self._attributes_camelcasing (True)
