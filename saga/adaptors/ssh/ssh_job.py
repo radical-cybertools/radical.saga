@@ -9,7 +9,6 @@ import saga.adaptors.cpi.job
 
 import os
 import time
-import subprocess
 
 import ssh_wrapper
 
@@ -252,7 +251,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # Thus, when the script times out, the shell dies and the connection
         # drops -- that will free all associated resources, and allows for
         # a clean reconnect.
-        ret, out, _ = self.shell.run_sync ("exec /bin/sh %s/wrapper.sh" % base)
+        ret, out, _ = self.shell.run_sync ("exec /bin/sh %s/wrapper.shx | false" % base)
         if  ret != 0 :
             raise saga.NoSuccess ("failed to run wrapper (%s)(%s)" % (ret, out))
 
@@ -427,9 +426,6 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
         self._started         = None
         self._finished        = None
         
-        # subprocess handle
-        self._process         = None
-
         return self.get_api ()
 
 
