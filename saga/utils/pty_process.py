@@ -8,6 +8,7 @@ import shlex
 import select
 import signal
 
+import saga.utils.logger
 import saga.exceptions as se
 
 
@@ -21,15 +22,11 @@ _POLLDELAY = 0.0001 # seconds in between read attempts
 #
 class PTYProcess (object) :
     """
-    This class spawns a process, providing that child with a pty.  It will then
-    maintain stdin, stdout and stderr channels to the child.  All write*
-    operations operate on the stdin, all read* operations operate on the stdout
-    stream.  Data from the stderr stream are at this point not exposed.
-
-    FIXME: never reading from stderr might fill the stderr buffer, effectively
-           blocking the child process.  Reads should attempt to clean out the
-           stderr stream (into an err cache?), or the class needs to make sure
-           that stderr is discarded.
+    This class spawns a process, providing that child with pty io channels --
+    it will maintain stdin, stdout and stderr channels to the child.  All
+    write* operations operate on the stdin, all read* operations operate on the
+    stdout stream.  Data from the stderr stream are at this point redirected to
+    the stdout channel.
 
     Example::
 
@@ -58,24 +55,28 @@ class PTYProcess (object) :
                 # found some prompt
                 break
         
-        i = 0
         while pty.alive () :
-            i += 1
             # send sleeps as quickly as possible, forever...
-            n, match = pty.find (['[\$#>]\s*$'])
-            pty.write ("/bin/sleep %d\\n" % i)
+            pty.find (['[\$#>]\s*$'])
+            pty.write ("/bin/sleep 10\\n")
     """
 
     # ----------------------------------------------------------------
     #
     def __init__ (self, command, logger=None) :
         """
-        The pty class constructor.
+        The class constructor, which runs (execvpe) command in a separately
+        forked process.  The bew process will inherit the environment of the
+        application process.
 
-        The given command is what is run as a child, and fed/drained via pty
-        pipes.  If given as string, command is split into an array of strings
-        (simple splis on white space), as that is what :func:`subprocess.Popen`
-        wants.
+        :type  command: string or list of strings
+        :param command: The given command is what is run as a child, and
+        fed/drained via pty pipes.  If given as string, command is split into an
+        array of strings (simple splis on white space), as that is what
+        :func:`subprocess.Popen` wants.
+
+        :type  command: string or list of strings
+        :param command: The given command is what is run as a child, and
         """
 
         if isinstance (command, basestring) :
@@ -95,6 +96,9 @@ class PTYProcess (object) :
             self.clog    = ""      # log the data cache
             self.child   = None    # the process as created by subprocess.Popen
             self.logger  = logger
+
+            if not self.logger :
+                self.logger = saga.utils.logger.getLogger ('PTYProcess')
 
             self.logger.debug ("PTYProcess: %s\n\n" % ' '.join ((command)))
 
@@ -159,9 +163,11 @@ class PTYProcess (object) :
 
     # --------------------------------------------------------------------
     #
-    # we need to free pty's...
-    #
     def __del__ (self) :
+        """ 
+        Need to free pty's on destruction, otherwise we might ran out of
+        them (see cat /proc/sys/kernel/pty/max)
+        """
 
         self.logger.debug ("__del__")
 
@@ -170,9 +176,8 @@ class PTYProcess (object) :
 
     # --------------------------------------------------------------------
     #
-    # kill the child, close all I/O channels
-    #
     def close (self) :
+        """ kill the child, close all I/O channels """
 
         try :
             if  self.alive () :
@@ -235,17 +240,23 @@ class PTYProcess (object) :
 
             if (pid, status) == (0, 0) :
                 return True
-            else :
-                # get last data into clog, if any
-                self.read (timeout=0.01, _force=True)
 
-                # avoid any further activity, inclusive waitpid
-                self.child = None
+        except OSError as e :
+            self.logger.debug ("cannot check child status (%s)" % e)
 
-                return False
 
-        except Exception as e :
-            raise se.NoSuccess ("cannot check child status (%s)" % e)
+        # child is dead -- get last data into clog, if any
+        try :
+            self.read (timeout=0.01, _force=True)
+        except OSError :
+            pass
+        except se.SagaException :
+            pass
+
+        # avoid any further activity, inclusive waitpid
+        self.child = None
+
+        return False
 
 
     # --------------------------------------------------------------------
@@ -614,12 +625,13 @@ class PTYProcess (object) :
 
 
         except Exception as e :
+            print "alive: %s" % self.alive ()
             raise se.NoSuccess ("write to pty process failed (%s)" % e)
 
 
     # ----------------------------------------------------------------
     #
-    def get_cache (self) :
+    def _get_cache (self) :
         """
         Return the currently cached output
         """
@@ -629,7 +641,7 @@ class PTYProcess (object) :
 
     # ----------------------------------------------------------------
     #
-    def get_cache_log (self) :
+    def _get_cache_log (self) :
         """
         Return the currently cached output
         """

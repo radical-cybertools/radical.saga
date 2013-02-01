@@ -20,8 +20,20 @@ class PTYShell (object) :
     """
     This class wraps a shell process and runs it as a :class:`PTYProcess`.  The
     user of this class can start that shell, and run arbitrary commands on it.
+
     The shell to be run is expected to be POSIX compliant (bash, csh, sh, zsh
-    etc).
+    etc) -- in particular, we expect the following features:
+
+      * $?
+      * >& 
+      * >>
+      * >
+      * <
+      * 2>&1
+      * |
+      * ||
+      * &&
+
     """
 
     # ----------------------------------------------------------------
@@ -166,7 +178,7 @@ class PTYShell (object) :
                 # FIXME: make sure this does not interfere with the host
                 # key and password prompts.  For ssh's, a simple '\n' might
                 # suffice...
-              # self.pty.write ("export PS1='PROMPT-$?->\\n'\n")
+              # self.pty.write ("PS1='PROMPT-$?->\\n'\nexport PS1\n")
               # self.pty.write ("\n")
                 n, match = self.pty.find (prompt_patterns, _PTY_TIMEOUT)
 
@@ -191,7 +203,7 @@ class PTYShell (object) :
                 self.pty.clog += "\n[PTYShell: got initial shell prompt]\n"
 
                 # try to set new prompt
-                self.run_sync ("export PS1='PROMPT-$?->\\n'\n", 
+                self.run_sync ("PS1='PROMPT-$?->\\n'; export PS1\n", 
                                 new_prompt="PROMPT-(\d+)->\s*$")
                 self.pty.clog += "\n[PTYShell: got new shell prompt]\n"
 
@@ -262,7 +274,7 @@ class PTYShell (object) :
         By encoding the exit value in the command prompt, we safe one roundtrip.
         The prompt on Posix compliant shells can be set, for example, via::
 
-          set PS1='PROMPT-$?->\\n'; export PS1
+          PS1='PROMPT-$?->\\n'; export PS1
 
         The newline in the example above allows to nicely anchor the regular
         expression, which would look like::
@@ -394,6 +406,8 @@ class PTYShell (object) :
                         at least one more network hop!  
           * *STDOUT:*   only stdout is captured, stderr will be `None`.
           * *STDERR:*   only stderr is captured, stdout will be `None`.
+          * *`None`:*   do not perform anu redirection -- this is effectively
+                        the same as `IGNORE`
 
         If any of the requested output streams does not return any data, an
         empty string is returned.
@@ -431,6 +445,9 @@ class PTYShell (object) :
 
         if  iomode == STDERR :
             redir  =  " 2>&1 1>/dev/null"
+
+        if  iomode == None :
+            redir  =  ""
 
         prompt = self.prompt
         if  new_prompt :
@@ -472,7 +489,6 @@ class PTYShell (object) :
             if  retvaltmp :
                 raise saga.NoSuccess ("run_sync failed, no stderr (%s: %s)" \
                                    % (retval, stderrtmp))
-
             stderr =  stderrtmp
 
 
@@ -481,6 +497,9 @@ class PTYShell (object) :
 
         if  iomode == STDERR :
             stderr =  txt
+
+        if  iomode == None :
+            pass
 
 
         return (retval, stdout, stderr)

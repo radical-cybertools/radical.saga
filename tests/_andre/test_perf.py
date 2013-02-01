@@ -35,7 +35,7 @@ def workload (url, n_jobs) :
       # time.sleep (1)
 
   # sys.stdout.write ('\n')
-    del (service)
+  # del (service)
 
 
 def perf (n_jobs, urls) :

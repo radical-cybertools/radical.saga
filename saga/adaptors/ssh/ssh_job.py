@@ -191,13 +191,13 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # When should that be done?
 
         try :
-            if self.pty : self.pty.run_sync ("PURGE")
-            if self.pty : self.pty.run_sync ("QUIT" )
+            if self.shell : self.shell.run_sync ("PURGE", iomode=None)
+            if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
         except :
             pass
 
         try :
-            if self.pty : del (self.pty)
+            if self.shell : del (self.shell)
         except :
             pass
 
@@ -209,7 +209,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self.rm      = rm_url
         self.session = session
 
-        self.pty = saga.utils.pty_shell.PTYShell (self.rm, self.session.contexts, self._logger)
+        self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session.contexts, self._logger)
 
         # -- now fetch the shell wrapper
         # script, and run it.  Once that is up and running, we can requests job
@@ -217,19 +217,19 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
         base = "$HOME/.saga/adaptors/ssh_job"
 
-        ret, out, _ = self.pty.run_sync ("mkdir -p %s" % base)
+        ret, out, _ = self.shell.run_sync ("mkdir -p %s" % base)
         if  ret != 0 :
             raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" % (ret, out))
 
-      # ret, out, _ = self.pty.run_sync ("test -f wget -q %s -O $HOME/.saga/adaptors/ssh_job/wrapper.sh \n" % _WRAPPER_SH)
-      # ret, out, _ = self.pty.run_sync ("test -f %s/wrapper.sh || (touch %s/wrapper.sh; cp %s %s/wrapper.sh)" \
+      # ret, out, _ = self.shell.run_sync ("test -f wget -q %s -O $HOME/.saga/adaptors/ssh_job/wrapper.sh \n" % _WRAPPER_SH)
+      # ret, out, _ = self.shell.run_sync ("test -f %s/wrapper.sh || (touch %s/wrapper.sh; cp %s %s/wrapper.sh)" \
       #                                   % (base, base, _WRAPPER_SH, base))
-        ret, out, _ = self.pty.run_sync ("cp -v %s %s/wrapper.sh" % (_WRAPPER_SH, base))
+        ret, out, _ = self.shell.run_sync ("cp -v %s %s/wrapper.sh" % (_WRAPPER_SH, base))
         if  ret != 0 :
             raise saga.NoSuccess ("failed to fetch wrapper.sh (%s)(%s)" % (ret, out))
 
 
-        ret, out, _ = self.pty.run_sync ("exec /bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh")
+        ret, out, _ = self.shell.run_sync ("exec /bin/sh $HOME/.saga/adaptors/ssh_job/wrapper.sh")
         if  ret != 0 :
             raise saga.NoSuccess ("failed to fetch wrapper.sh (%s)(%s)" % (ret, out))
 
@@ -249,7 +249,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         env = ""
         cwd = ""
 
-        if  not self.pty :
+        if  not self.shell :
             raise saga.IncorrectState ("job service is not connected to backend")
 
         if jd.attribute_exists ("arguments") :
@@ -267,7 +267,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
         cmd = "%s %s %s %s"  %  (env, cwd, exe, arg)
 
-        ret, out, _ = self.pty.run_sync ("RUN %s" % cmd)
+        ret, out, _ = self.shell.run_sync ("RUN %s" % cmd)
         if  ret != 0 :
             raise saga.NoSuccess ("failed to run job '%s': (%s)(%s)" % (cmd, ret, out))
 
