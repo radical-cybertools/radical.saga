@@ -169,15 +169,7 @@ class PTYProcess (object) :
         them (see cat /proc/sys/kernel/pty/max)
         """
 
-        self.logger.debug ("__del__")
-
-        self.close ()
-
-
-    # --------------------------------------------------------------------
-    #
-    def close (self) :
-        """ kill the child, close all I/O channels """
+        # kill the child, close all I/O channels
 
         try :
             if  self.alive () :
@@ -367,7 +359,7 @@ class PTYProcess (object) :
 
     # --------------------------------------------------------------------
     #
-    def readline (self, timeout=0) :
+    def _readline (self, timeout=0) :
         """
         read a line from the child.  This method will read data into the cache,
         and return whatever it finds up to (but not including) the first newline
@@ -459,7 +451,7 @@ class PTYProcess (object) :
 
     # ----------------------------------------------------------------
     #
-    def findline (self, patterns, timeout=0) :
+    def _findline (self, patterns, timeout=0) :
         """
         This methods reads lines from the child process until a line matching
         any of the given patterns is found.  If that is found, all read lines
@@ -476,10 +468,10 @@ class PTYProcess (object) :
 
 
         try :
-            start = time.time ()            # startup timestamp
-            ret   = []                      # array of read lines
-            patts = []                      # compiled patterns
-            line  = self.readline (timeout) # first line to check
+            start = time.time ()             # startup timestamp
+            ret   = []                       # array of read lines
+            patts = []                       # compiled patterns
+            line  = self._readline (timeout) # first line to check
 
             # pre-compile the given pattern, to speed up matching
             for pattern in patterns :
@@ -496,7 +488,7 @@ class PTYProcess (object) :
 
                 # skip non-lines
                 if  None == line :
-                    line = self.readline (timeout)
+                    line = self._readline (timeout)
                     continue
 
                 # check current line for any matching pattern
@@ -515,10 +507,10 @@ class PTYProcess (object) :
 
                 # append current (non-matching) line to ret, and get new line 
                 ret.append (line.replace('\r', ''))
-                line = self.readline (timeout)
+                line = self._readline (timeout)
 
         except Exception as e :
-            raise se.NoSuccess ("readline from pty process failed (%s)" % e)
+            raise se.NoSuccess ("_readline from pty process failed (%s)" % e)
 
 
 
@@ -654,26 +646,6 @@ class PTYProcess (object) :
 
         except Exception as e :
             raise se.NoSuccess ("write to pty process failed (%s)" % e)
-
-
-    # ----------------------------------------------------------------
-    #
-    def _get_cache (self) :
-        """
-        Return the currently cached output
-        """
-
-        return self.cache
-
-
-    # ----------------------------------------------------------------
-    #
-    def _get_cache_log (self) :
-        """
-        Return the currently cached output
-        """
-
-        return self.clog
 
 
 

@@ -279,8 +279,8 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # TODO: replace some constants in the script with values from config
         # files, such as 'timeout' or 'purge_on_quit' ...
         #
-        self.shell.stage_from_string (src = ssh_wrapper._WRAPPER_SCRIPT, 
-                                      tgt = "%s/wrapper.sh" % base)
+        self.shell.stage_to_file (src = ssh_wrapper._WRAPPER_SCRIPT, 
+                                  tgt = "%s/wrapper.sh" % base)
 
         # we run the script.  In principle, we should set a new / different
         # prompt -- but, due to some strange and very unlikely coincidence, the
