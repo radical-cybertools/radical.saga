@@ -13,12 +13,8 @@ class Description (saga.Attributes) :
     def __init__(self):
 
         # set attribute interface properties
-<<<<<<< HEAD
 
         import saga.attributes as sa
-=======
-        from saga.attributes import *
->>>>>>> parent of 479fab7... Fix imports.
 
         self._attributes_extensible  (False)
         self._attributes_camelcasing (True)
