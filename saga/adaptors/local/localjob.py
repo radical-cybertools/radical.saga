@@ -140,7 +140,7 @@ class LocalJobService (saga.adaptors.cpi.job.Service) :
         # holds the jobs that were started via this instance
         self._jobs = dict() # {job_obj:id, ...}
 
-        return self._api
+        return self.get_api ()
 
 
     def _register_job(self, job_obj):
@@ -199,7 +199,7 @@ class LocalJobService (saga.adaptors.cpi.job.Service) :
         else:
             for (job_obj, job_id) in self._jobs.iteritems():
                 if job_id == jobid:
-                    return job_obj._api
+                    return job_obj.get_api ()
 
 
     def container_run (self, jobs) :
@@ -260,7 +260,7 @@ class LocalJob (saga.adaptors.cpi.job.Job) :
         # our job id is still None at this point
         self._parent_service._register_job(self)
 
-        return self._api
+        return self.get_api ()
 
 
     @SYNC_CALL

@@ -8,6 +8,7 @@ __license__   = "MIT"
 
 import re
 import inspect
+import weakref
 
 import saga.utils.singleton as saga_singleton
 import saga.utils.logger    as saga_logger
@@ -101,11 +102,20 @@ class CPIBase (saga_config.Configurable) :
 
     def __init__ (self, api, adaptor) :
 
-        self._api       = api
         self._session   = None
         self._adaptor   = adaptor
         self._cpi_cname = self.__class__.__name__
         self._logger    = saga_logger.getLogger (self._cpi_cname)
+
+        # The API object must obviously keep an adaptor instance.  If we also
+        # keep an API instance ref in this adaptor base, we create a ref cycle
+        # which will annoy (i.e. disable) garbage collection.  We thus use weak
+        # references to break that cycle.  The inheriting classes MUST use
+        # get_api() to obtain the API reference.
+        if api :
+            self._api   = weakref.ref (api)
+        else :
+            self._api   = None
 
         # by default, we assume that no bulk optimizations are supported by the
         # adaptor class.  Any adaptor class supporting bulks ops must overwrite
@@ -121,6 +131,17 @@ class CPIBase (saga_config.Configurable) :
 
     def get_cpi_cname (self) :
         return self._cpi_cname
+
+
+    def get_api (self) :
+        if self._api :
+            # get api from weakref.  We can be quite confident that the api
+            # object has *not* been garbage collected, yet, as it obviously is
+            # still binding this adaptor instance.
+            return self._api ()
+        else :
+            # no need to de-weakref 'None'
+            return self._api
 
 
     def get_adaptor_name (self) :
@@ -190,7 +211,7 @@ def CPI_SYNC_CALL (cpi_sync_function) :
 
     def wrap_function (self, *args, **kwargs) :
         raise NotImplemented ("%s.%s is not implemented for %s.%s" \
-                %  (self._api.__class__.__name__, 
+                %  (self.get_api ().__class__.__name__, 
                     inspect.stack ()[1][3],
                     self._adaptor._name, 
                     self.__class__.__name__))

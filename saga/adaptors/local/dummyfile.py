@@ -109,7 +109,7 @@ class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         self._init_check ()
 
-        return self._api
+        return self.get_api ()
 
 
     @ASYNC_CALL
