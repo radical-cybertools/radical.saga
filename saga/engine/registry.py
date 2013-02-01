@@ -19,8 +19,9 @@ configure options, or due to missing pre-requisites.
 adaptor_registry = [
                     "saga.adaptors.context.myproxy",
                     "saga.adaptors.context.x509",
+                    "saga.adaptors.context.ssh",
                     "saga.adaptors.context.userpass",
-                    "saga.adaptors.local.localjob",
+                  # "saga.adaptors.local.localjob",
                     "saga.adaptors.local.localfile",
                     "saga.adaptors.local.dummyfile",
                     "saga.adaptors.ssh.ssh_job",

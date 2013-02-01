@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # this script uses only POSIX shell functionality, and does not rely on bash or
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
@@ -15,51 +15,14 @@ RETVAL=""
 # this is where this 'daemon' keeps state for all started jobs
 BASE=$HOME/.saga/adaptors/ssh_job/
 
-# this process will terminate when idle for longer than TIMEOUT seconds
-TIMEOUT=30
-
-
-
-# --------------------------------------------------------------------
-#
-# idle_checker is running in the background, and will terminate the wrapper
-# shell if it is idle for longer than TIMEOUT seconds
-#
-trap idle_handler ALRM
-
-idle_handler (){
-  echo "IDLE TIMEOUT"
-  rm -f "$BASE/idle.$ppid"
-  touch "$BASE/timed_out.$ppid"
-  exit 0
-}
-
-idle_checker () {
-
-  ppid=$1
-
-  while true
-  do
-    sleep $TIMEOUT
-
-    if test -e "$BASE/idle.$ppid"
-    then
-      kill -s ALRM $ppid
-      exit 0
-    fi
-
-    touch   "$BASE/idle.$ppid"
-  done
-}
-
 
 # --------------------------------------------------------------------
 #
 # utility call which extracts the first argument and returns it.
 #
 get_cmd () {
-  if test -z $1 ; then RETVAL="NOOP"; return; 
-  else                 RETVAL=$1;     fi
+  if test -z $1 ; then ERROR="no command given"; return; 
+  else                 RETVAL=$1;                fi
 }
 
 
@@ -69,8 +32,8 @@ get_cmd () {
 # remaining ones in a space separated string
 #
 get_args () {
-  if test -z $1 ; then        RETVAL="";  return; 
-  else                 shift; RETVAL=$@;  fi 
+  if test -z $1 ; then ERROR="no command given"; return; 
+  else                 shift; RETVAL=$@;         fi 
 }
 
 
@@ -98,21 +61,14 @@ verify_pid () {
 # Note that the actual job is not run directly, but via nohup.  Otherwise all
 # jobs would be canceled as soon as this master script finishes...
 #
-# Note further that we perform a double fork, effectively turning the monitor
-# into a daemon.  That provides a speedup of ~300%, as the wait in cmd_run now
-# will return very quickly (it just waits on the second fork).  We can achieve
-# near same performance be removing the wait, but that will result in one zombie
-# per command, which sticks around as long as the wrapper script itself lives.
-#
 # Note that the working directory is created on the fly.  As the name of the dir
 # is the pid, it must be unique -- we thus purge whatever trace we find of an
 # earlier directory of the same name.
 #
-#
 # Known limitations:
 #
 # The script has a small race condition, between starting the job (the 'nohup'
-# line), and the next line where the jobs now known pid is stored away.  I don't
+# line), and the next line where the jobs now know pid is stored away.  I don't
 # see an option to make those two ops atomic, or resilient against script
 # failure - so, in worst case, you might get a running job for which the job id
 # is not stored (i.e. not known).  
@@ -121,35 +77,24 @@ verify_pid () {
 # really do that before, but on failure, in the worst case, we might have a job
 # with known job ID which is not marked as running.  
 #
-# Bottom line: full disk will screw with state consistency -- which is no
-# surprise really...
+# Finally, the wait call must be in this shell instance -- if this instance dies
+# we will not be able to recover the exit state of the job.  We will, however,
+# be able to recover its SAGA state...
+#
+# FIXME?
 
 cmd_run () {
-  # do a double fork to avoid zombies (need to do a wait in this process)
-  cmd_run2 $@ &
-  RETVAL=$!     # this is the (native) job id!
-  wait $RETVAL  # this will return very quickly -- look at cmd_run2... ;-)
-}
-
-
-cmd_run2 () {
-  # this is the second part of the double fork -- run the actual workload in the
-  # background and return - voila!  Note, no wait here, as the spawned script is
-  # supposed to stay alive with the job.
-  SAGA_PID=`sh -c 'echo $PPID'`
   cmd_run_process $@ &
-  ppid=$!
+  RETVAL=$!
+  wait $RETVAL
 }
-
 
 cmd_run_process () {
-  # this command runs the job.  PPID will point to the id of the spawning
-  # script, which, coincidentally, we designated as job ID -- nice:
-  PID=$SAGA_PID
+  PID=`sh -c 'echo $PPID'`
   DIR="$BASE/$PID"
 
-  test -d "$DIR"    && rm    -rf "$DIR"
-  test -d "$DIR"    || mkdir -p  "$DIR"  || exit 1
+  rm    -rf "$DIR"
+  mkdir -p  "$DIR"  || exit 1
   echo "NEW"         > "$DIR/state"
   echo "$@"          > "$DIR/cmd"
   touch                "$DIR/in"
@@ -181,30 +126,22 @@ EOT
       # if wait failed for other reason than job finishing, i.e. due to
       # suspend/resume, then we need to wait again, otherwise we are done
       # waiting...
-      if test -e "\$DIR/suspended"
-      then
-        rm -f "\$DIR/suspended"
+      if test -e "\$DIR/suspended"; then
         # need to wait again
-        continue
-      fi
-      if test -e "\$DIR/resumed"
-      then
-        rm -f "\$DIR/resumed"
-        # need to wait again
-        continue
-      fi
-      
-      # real exit -- evaluate exit val
-      echo \$retv > "\$DIR/exit"
-      test \$retv = 0           && echo DONE      > "\$DIR/state"
-      test \$retv = 0           || echo FAILED    > "\$DIR/state"
+        sleep 1
+      else
+        # evaluate exit val
+        echo \$retv > "\$DIR/exit"
+        test \$retv = 0           && echo DONE      > "\$DIR/state"
+        test \$retv = 0           || echo FAILED    > "\$DIR/state"
 
-      # capture canceled state
-      test -e "\$DIR/canceled"  && echo CANCELED  > "\$DIR/state"
-      test -e "\$DIR/canceled"  && rm -f            "\$DIR/canceled"
+        # capture canceled state
+        test -e "\$DIR/canceled"  && echo CANCELED  > "\$DIR/state"
+        test -e "\$DIR/canceled"  && rm -f            "\$DIR/canceled"
 
-      # done waiting
-      break
+        # done waiting
+        break
+      fi
     done
 
 EOT
@@ -239,8 +176,7 @@ cmd_suspend () {
   state=`cat "$DIR/state"`
   rpid=`cat "$DIR/pid"`
 
-  if ! test "$state" = "RUNNING"
-  then
+  if ! test "$state" = "RUNNING"; then
     ERROR="job $1 in incorrect state ($state != RUNNING)"
     return
   fi
@@ -249,8 +185,7 @@ cmd_suspend () {
   RETVAL=`kill -STOP $rpid 2>&1`
   ECODE=$?
 
-  if test "$ECODE" = "0" 
-  then
+  if test "$ECODE" = "0" ; then
     mv    "$DIR/state" "$DIR/state.susp"
     echo SUSPENDED >   "$DIR/state"
     RETVAL="$1 suspended"
@@ -272,8 +207,7 @@ cmd_resume () {
   state=`cat $DIR/state`
   rpid=`cat $DIR/pid`
 
-  if ! test "$state" = "SUSPENDED"
-  then
+  if ! test "$state" = "SUSPENDED"; then
     ERROR="job $1 in incorrect state ($state != SUSPENDED)"
     return
   fi
@@ -281,10 +215,9 @@ cmd_resume () {
   RETVAL=`kill -CONT $rpid 2>&1`
   ECODE=$?
 
-  if test "$ECODE" = "0" 
-  then
+  if test "$ECODE" = "0" ; then
     mv    "$DIR/state.susp" "$DIR/state"
-    touch "$DIR/resumed"
+    rm -f "$DIR/suspended"
     RETVAL="$1 resumed"
   else
     ERROR="resume failed ($ECODE): $RETVAL"
@@ -305,8 +238,7 @@ cmd_cancel () {
   state=`cat $DIR/state`
   rpid=`cat $DIR/pid`
 
-  if test "$state" != "SUSPENDED" -a "$state" != "RUNNING"
-  then
+  if test "$state" != "SUSPENDED" -a "$state" != "RUNNING"; then
     ERROR="job $1 in incorrect state ('$state' != 'SUSPENDED|RUNNING')"
     return
   fi
@@ -315,8 +247,7 @@ cmd_cancel () {
   RETVAL=`kill -KILL $rpid 2>&1`
   ECODE=$?
 
-  if test "$ECODE" = "0" 
-  then
+  if test "$ECODE" = "0" ; then
     RETVAL="$1 canceled"
   else
     # kill failed!
@@ -369,8 +300,7 @@ cmd_stderr () {
 # list all job IDs
 #
 cmd_list () {
-  for d in "$BASE"/*
-  do
+  for d in "$BASE"/*; do
     RETVAL="$RETVAL`basename $d` "
   done
 
@@ -384,10 +314,8 @@ cmd_list () {
 #
 cmd_purge () {
 
-  if test -z "$1" 
-  then
-    for d in `grep -l -e 'DONE' -e 'FAILED' -e 'CANCELED' "$BASE"/*/state`
-    do
+  if test -z "$1" ; then
+    for d in `grep -l -e 'DONE' -e 'FAILED' -e 'CANCELED' "$BASE"/*/state`; do
       dir=`dirname $d`
       id=`basename $dir`
       rm -rf "$BASE/$id"
@@ -404,88 +332,22 @@ cmd_purge () {
 }
 
 
-# --------------------------------------------------------------------
-#
-# main even loop -- wait for incoming command lines, and react on them
-#
-listen() {
-  
-  # we need our home base...
-  test -d "$BASE" || mkdir -p  "$BASE"  || exit 1
+cmd_run /bin/sleep 100
+echo $RETVAL
+ps -ef --forest | grep -C 4 $RETVAL
 
-  # make sure we get killed when idle
-  idle_checker $$ &
+cmd_run /bin/sleep 100
+echo $RETVAL
+ps -ef --forest | grep -C 4 $RETVAL
 
-  # prompt for commands...
-  echo "PROMPT-0->"
+cmd_run /bin/sleep 1
+echo $RETVAL
+ps -ef --forest | grep -C 4 $RETVAL
 
-  # and read those from stdin
-  while read LINE
-  do
-
-    # reset err state for each command
-    ERROR="OK"
-    RETVAL=""
-
-    get_cmd  $LINE ; cmd=$RETVAL
-    get_args $LINE ; args=$RETVAL
-
-    # did we find command and args?  Note that args may be empty, e.g. for QUIT
-    if ! test "$ERROR" = "OK"
-    then
-      echo "ERROR"
-      echo "$ERROR"
-      continue
-    fi
-
-    # simply invoke the right function for each command, or complain if command
-    # is not known
-    case $cmd in
-      RUN     ) cmd_run     $args ;; 
-      SUSPEND ) cmd_suspend $args ;; 
-      RESUME  ) cmd_resume  $args ;; 
-      CANCEL  ) cmd_cancel  $args ;; 
-      STATE   ) cmd_state   $args ;; 
-      STDIN   ) cmd_stdin   $args ;; 
-      STDOUT  ) cmd_stdout  $args ;; 
-      STDERR  ) cmd_stderr  $args ;; 
-      LIST    ) cmd_list    $args ;; 
-      PURGE   ) cmd_purge   $args ;; 
-      LOG     ) echo LOG    $args ;; 
-      NOOP    )                   ;;
-      QUIT    ) echo "OK"; exit 0 ;;
-      *       ) ERROR="$cmd unknown ($LINE)"; false ;; 
-    esac
-
-    EXITVAL=$?
-
-    # the called function will report state and results in 'ERROR' and 'RETVAL'
-    if ! test "$ERROR" = "OK"; then
-      echo "ERROR"     
-      echo "$ERROR"
-    else
-      echo "OK"        
-      echo "$RETVAL"
-    fi
-
-    # we did hard work - make sure we are not getting killed for idleness!
-    rm -f "$BASE/idle.$$"
-
-    # well done - prompt for next command
-    echo "PROMPT-$EXITVAL->"
-
-  done
-}
+cmd_run /bin/sleep 1
+echo $RETVAL
+ps -ef --forest | grep -C 4 $RETVAL
 
 
-# --------------------------------------------------------------------
-#
-# run the main loop -- that will live forever, until a 'QUIT' command is
-# encountered.
-#
-listen
-#
-# --------------------------------------------------------------------
-
-# vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2
+sleep 1000
 

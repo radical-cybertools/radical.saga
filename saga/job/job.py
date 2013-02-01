@@ -73,9 +73,11 @@ class Job (Base, Attributes, Async) :
 
         # We need to specify a schema for adaptor selection -- and
         # simply choose the first one the adaptor offers.
-        scheme = 'fork' # _adaptor.get_schemas()[0]
+        schema = 'fork' # _adaptor.get_schemas()[0]
+        if  'job_schema' in _adaptor_state :
+            schema = _adaptor_state['job_schema']
 
-        Base.__init__ (self, scheme, _adaptor, _adaptor_state, ttype=None)
+        Base.__init__ (self, schema, _adaptor, _adaptor_state, ttype=None)
 
 
         # set attribute interface properties
@@ -112,7 +114,8 @@ class Job (Base, Attributes, Async) :
         ttype:     saga.task.type enum
         ret:       String / saga.Task  
         '''
-        return self._adaptor.get_id (ttype=ttype)
+        id = self._adaptor.get_id (ttype=ttype)
+        return id
 
 
     def get_description (self, ttype=None) :

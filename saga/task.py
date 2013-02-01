@@ -30,7 +30,7 @@ class Task (SimpleBase, Attributes) :
 
         ``_adaptor`` references the adaptor class instance from which this
         task was created via an asynchronous function.  Note that the API level
-        object instance can be inferred via ``_adaptor._api``.  Further, the
+        object instance can be inferred via ``_adaptor.get_api ()``.  Further, the
         adaptor will reference an _adaptor._container class, which will be
         considered the target for bulk operations for this task.
 

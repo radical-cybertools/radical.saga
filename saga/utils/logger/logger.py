@@ -167,7 +167,7 @@ def getLogger (name='saga-python'):
         # the debug handler
         def mk_trace (logger) :
             def trace () :
-                logger.debug (get_traceback (1))
+                logger.debug (get_traceback (0))
             return trace
         _logger.__dict__['trace'] = mk_trace (_logger)
 

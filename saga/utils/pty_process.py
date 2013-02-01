@@ -1,10 +1,15 @@
 
 import re
 import os
+import sys
 import pty
 import time
+import shlex
 import select
+import signal
 import subprocess
+
+import saga.exceptions as se
 
 
 # --------------------------------------------------------------------
@@ -29,42 +34,42 @@ class pty_process (object) :
 
     Example::
 
-        pty = pty_process ("/usr/bin/ssh -ttt localhost")
+        pty = pty_process ("/usr/bin/ssh -t localhost")
         pty.run ()
 
-        (n, match) = pty.findstring (['password\s*:\s*$', 
-                                           'want to continue connecting.*\(yes/no\)\s*$', 
-                                           '[\$#>]\s*$'])
+        (n, match) = pty.find (['password\s*:\s*$', 
+                                'want to continue connecting.*\(yes/no\)\s*$', 
+                                '[\$#>]\s*$'])
 
         while True :
 
             if n == 0 :
                 # found password prompt
                 pty.write ("secret\\n")
-                (n, match) = pty.findstring (['password\s*:\s*$', 
-                                             'want to continue connecting.*\(yes/no\)\s*$', 
-                                             '[\$#>]\s*$'])
+                (n, match) = pty.find (['password\s*:\s*$', 
+                                        'want to continue connecting.*\(yes/no\)\s*$', 
+                                        '[\$#>]\s*$'])
             elif n == 1 :
                 # found request to accept host key
                 pty.write ("yes\\n")
-                (n, match) = pty.findstring (['password\s*:\s*$', 
-                                             'want to continue connecting.*\(yes/no\)\s*$', 
-                                             '[\$#>]\s*$'])
+                (n, match) = pty.find (['password\s*:\s*$', 
+                                        'want to continue connecting.*\(yes/no\)\s*$', 
+                                        '[\$#>]\s*$'])
             elif n == 2 :
                 # found some prompt
                 break
         
         i = 0
-        while pty.alive () is None:
+        while pty.alive () :
             i += 1
             # send sleeps as quickly as possible, forever...
-            (n, match) = pty.findstring (['[\$#>]\s*$'])
+            (n, match) = pty.find (['[\$#>]\s*$'])
             pty.write ("/bin/sleep %d\\n" % i)
     """
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, command) :
+    def __init__ (self, command, logger=None) :
         """
         The pty class constructor.
 
@@ -75,26 +80,133 @@ class pty_process (object) :
         """
 
         if isinstance (command, basestring) :
-            command = command.split (' ')
+            command = shlex.split (command)
 
-        self.command = command # list of strings too run()
-        self.cache   = ""      # data cache
-        self.child   = None    # the process as created by subprocess.Popen
+        if not isinstance (command, list) :
+            raise se.BadParameter ("pty_process expects string or list command")
+
+        if len(command) < 1 :
+            raise se.BadParameter ("pty_process expects non-empty command")
 
 
-        # create the pty pipes (two ends, one for this process, one for the
-        # child process; tree pairs, for each of the in, out and err channels)
-        self.master_in,  self.slave_in  = pty.openpty ()
-        self.master_out, self.slave_out = pty.openpty ()
-        self.master_err, self.slave_err = pty.openpty ()
+        try :
 
-        # run the child, feeding it the slave ends of the pty pipes...
-        self.child = subprocess.Popen (self.command, 
-                                       stdin   = self.slave_in,
-                                       stdout  = self.slave_out, 
-                                       stderr  = self.slave_out, 
-                                       shell   = False,           # we don't run shell commands
-                                       bufsize = 0)               # unbuffered I/O
+            self.command = command # list of strings too run()
+            self.cache   = ""      # data cache
+            self.clog    = ""      # log the data cache
+            self.child   = None    # the process as created by subprocess.Popen
+            self.logger  = logger
+
+            self.logger.debug ("pty_process: %s\n\n" % ' '.join ((command)))
+
+            self.parent_in,  self.child_in  = pty.openpty ()
+            self.parent_out, self.child_out = pty.openpty ()
+         #  self.parent_err, self.child_err = pty.openpty ()
+
+            # create the child
+            try :
+                self.child = os.fork ()
+            except Exception as e:
+                raise se.NoSuccess ("Could not run (%s): %s" % (' '.join (command), e))
+            
+            if not self.child :
+                try :
+                    # this is the child
+                    os.close (self.parent_in)
+                    os.close (self.parent_out)
+                  # os.close (self.parent_err)
+                    
+                  # # reopen stdio unbuffered
+                  # # 
+                  # # this mechanism is actually useful, but, for some obscure
+                  # # (to me) reason fails badly if the applications stdio is
+                  # # redirected -- which is a very valid use case.  So, we
+                  # # keep I/O buffered, and need to get pipes flushed otherwise
+                  # # (newlines much?)
+                  # unbuf_in  = os.fdopen (sys.stdin.fileno(),  'r+', 0)
+                  # unbuf_out = os.fdopen (sys.stdout.fileno(), 'w+', 0)
+                  # unbuf_err = os.fdopen (sys.stderr.fileno(), 'w+', 0)
+                  #
+                  # os.dup2 (self.child_in,  unbuf_in.fileno())
+                  # os.dup2 (self.child_out, unbuf_out.fileno())
+                  # os.dup2 (self.child_out, unbuf_err.fileno())
+
+                    # redirect stdio
+                    os.dup2 (self.child_in,  sys.stdin.fileno())
+                    os.dup2 (self.child_out, sys.stdout.fileno())
+                    os.dup2 (self.child_out, sys.stderr.fileno())
+
+                    os.execvpe (self.command[0], self.command, os.environ)
+
+                except Exception as e:
+                    self.logger.error ("Could not execute (%s): %s" % (' '.join (command), e))
+                    sys.exit (-1)
+
+            else :
+                # parent
+                os.close (self.child_in)
+                os.close (self.child_out)
+              # os.close (self.child_err)
+                pass
+
+
+            if not self.alive () :
+                raise se.NoSuccess ("Could not run (%s)" % ' '.join (command))
+
+
+        except Exception as e :
+            raise se.NoSuccess ("pty_allocation or process creation failed (%s)" % e)
+
+    # --------------------------------------------------------------------
+    #
+    # we need to free pty's...
+    #
+    def __del__ (self) :
+
+        self.logger.debug ("__del__")
+
+        try :
+            if  self.alive () :
+                os.kill (self.child, signal.SIGTERM)
+        except :
+            pass
+
+        try :
+            if  self.alive () :
+                os.kill (self.child, signal.SIGKILL)
+        except :
+            pass
+
+        try : 
+            os.close (self.parent_in)  
+        except : 
+            pass
+
+        try : 
+            os.close (self.child_i)    
+        except : 
+            pass
+
+        try : 
+            os.close (self.parent_out) 
+        except : 
+            pass
+
+        try : 
+            os.close (self.child_ou)   
+        except : 
+            pass
+
+        try : 
+            os.close (self.parent_err) 
+        except : 
+            pass
+
+        try : 
+            os.close (self.child_er)   
+        except : 
+            pass
+
 
     # --------------------------------------------------------------------
     #
@@ -104,15 +216,30 @@ class pty_process (object) :
         to be still alive.
         """
 
-        if self.child.poll () is None :
-            return True
-        else :
+        if not self.child :
             return False
+
+        try :
+            (pid, status) = os.waitpid (self.child, os.WNOHANG)
+
+            if (pid, status) == (0, 0) :
+                return True
+            else :
+                # get last data into clog, if any
+                self.read (timeout=0.01, _force=True)
+
+                # avoid any further activity, inclusive waitpid
+                self.child = None
+
+                return False
+
+        except Exception as e :
+            raise se.NoSuccess ("cannot check child status (%s)" % e)
 
 
     # --------------------------------------------------------------------
     #
-    def read (self, size=_CHUNKSIZE, timeout=0) :
+    def read (self, size=_CHUNKSIZE, timeout=0, _force=False) :
         """ 
         read some data from the child.  By default, the method reads a full
         chunk, but other read sizes can be specified.  
@@ -132,20 +259,19 @@ class pty_process (object) :
         Note: the returned lines do *not* get '\\\\r' stripped.
         """
 
-        # start the timeout timer right now.  Note that if timeout is short, and
-        # child.poll is slow, we will nevertheless attempt at least one read...
+        # start the timeout timer right now.  Note that even if timeout is
+        # short, and child.poll is slow, we will nevertheless attempt at least
+        # one read...
         start = time.time ()
 
-        if not self.child :
-            return None
-
-        if not self.alive () :
-            return None
+        if not _force :
+            if not self.alive () :
+                raise se.NoSuccess ("Could not read - pty process died")
 
         ret     = ""
         sel_to  = timeout
 
-        # the select timeout cannot be negative -- 0 is non-blocking...
+        # the select timeout cannot be negative -- 0 is non-blocking... 
         if  sel_to < 0 : 
             sel_to = 0
 
@@ -171,37 +297,42 @@ class pty_process (object) :
                 self.cache = ""
 
 
-        # read until we have enough data, or hit timeout ceiling...
-        while True :
-        
-            # do an idle wait 'til the next data chunk arrives, or 'til sel_to
-            rlist, _, _ = select.select ([self.master_out], [], [], sel_to)
+        try:
+            # read until we have enough data, or hit timeout ceiling...
+            while True :
+            
+                # do an idle wait 'til the next data chunk arrives, or 'til sel_to
+                rlist, _, _ = select.select ([self.parent_out], [], [], sel_to)
 
-            # got some data? 
-            for f in rlist:
-                # read whatever we still need
-                ret += os.read (f, size-len(ret))
+                # got some data? 
+                for f in rlist:
+                    # read whatever we still need
+                    buf  = os.read (f, size-len(ret))
+                    self.logger.debug ("read: '%s'" % buf)
+                    self.clog += buf
+                    ret       += buf
 
-            if timeout == 0 : 
-                # only return if we have data
-                if len (ret) :
+                if timeout == 0 : 
+                    # only return if we have data
+                    if len (ret) :
+                        return ret
+
+                elif timeout < 0 :
+                    # return immediately
                     return ret
 
-            elif timeout < 0 :
-                # return immediately
-                return ret
+                else : # timeout > 0
+                    # return if timeout is reached, or if data size is reached
+                    if len (ret) >= size :
+                        return ret
 
-            else : # timeout > 0
-                # return if timeout is reached, or if data size is reached
-                if len (ret) >= size :
-                    return ret
+                    now = time.time ()
+                    if (now-start) > timeout :
+                        return ret
 
-                now = time.time ()
-                if (now-start) > timeout :
-                    return ret
+        except Exception as e :
+            raise se.NoSuccess ("read from pty process failed (%s)" % e)
 
-
-        # we should never get here...
 
 
     # --------------------------------------------------------------------
@@ -228,18 +359,17 @@ class pty_process (object) :
         Note: the returned lines get '\\\\r' stripped.
         """
 
-        # start the timeout timer right now.  Note that if timeout is short, and
-        # child.poll is slow, we will nevertheless attempt at least one read...
+        # start the timeout timer right now.  Note that even if timeout is
+        # short, and child.poll is slow, we will nevertheless attempt at least
+        # one read...
         start = time.time ()
 
-        if not self.child :
-            return None
-
         if not self.alive () :
-            return None
+            raise se.NoSuccess ("Could not read line - pty process died")
 
 
         # check if we still have a full line in cache
+        # FIXME: what happens if cache == '\n' ?
         if '\n' in self.cache :
 
             idx = self.cache.index ('\n')
@@ -249,38 +379,43 @@ class pty_process (object) :
             return ret.replace('\r', '')
 
 
-        # the cache is depleted, we need to read new data until we find
-        # a newline, or until timeout
-        while True :
-        
-            # do an idle wait 'til the next data chunk arrives
-            rlist = []
-            if timeout < 0 :
-                rlist, _, _ = select.select ([self.master_out], [], [])
-            else :
-                rlist, _, _ = select.select ([self.master_out], [], [], timeout)
+        try :
+            # the cache is depleted, we need to read new data until we find
+            # a newline, or until timeout
+            while True :
+            
+                # do an idle wait 'til the next data chunk arrives
+                rlist = []
+                if timeout < 0 :
+                    rlist, _, _ = select.select ([self.parent_out], [], [])
+                else :
+                    rlist, _, _ = select.select ([self.parent_out], [], [], timeout)
+
+                # got some data - read them into the cache
+                for f in rlist:
+                    buf         = os.read (f, _CHUNKSIZE)
+                    self.logger.debug ("read: '%s'" % buf)
+                    self.clog  += buf
+                    self.cache += buf
+
+                # check if we *now* have a full line in cache
+                if '\n' in self.cache :
+
+                    idx = self.cache.index ('\n')
+                    ret = self.cache[:idx-1]
+                    rem = self.cache[idx+1:]
+                    self.cache = rem  # store the remainder back into the cache
+                    return ret.replace('\r', '')
+
+                # if not, check if we hit timeout
+                now = time.time ()
+                if (now-start) > timeout :
+                    # timeout hit, but nothing found -- leave cache alone and return
+                    return None
 
 
-            # got some data - read them into the cache
-            for f in rlist:
-                self.cache += os.read (f, _CHUNKSIZE)
-
-            # check if we *now* have a full line in cache
-            if '\n' in self.cache :
-
-                idx = self.cache.index ('\n')
-                ret = self.cache[:idx-1]
-                rem = self.cache[idx+1:]
-                self.cache = rem  # store the remainder back into the cache
-                return ret.replace('\r', '')
-
-            # if not, check if we hit timeout
-            now = time.time ()
-            if (now-start) > timeout :
-                # timeout hit, but nothing found -- leave cache alone and return
-                return None
-
-        # we should never get here
+        except Exception as e :
+            raise se.NoSuccess ("read from pty process failed (%s)" % e)
 
 
 
@@ -297,47 +432,61 @@ class pty_process (object) :
         Note: the returned lines get '\\\\r' stripped.
         """
 
-        start = time.time ()            # startup timestamp to compare timeout against
-        ret   = []                      # array of read lines
-        patts = []                      # compiled patterns
-        line  = self.readline (timeout) # first line to check
 
-        # pre-compile the given pattern, to speed up matching
-        for pattern in patterns :
-            patts.append (re.compile (pattern))
+        if not self.alive () :
+            raise se.NoSuccess ("Could not find line - pty process died")
 
-        # we wait forever -- there are two ways out though: a line matches
-        # a pattern, or timeout passes
-        while True :
 
-            # skip non-lines
-            if  None == line :
+        try :
+            start = time.time ()            # startup timestamp to compare timeout against
+            ret   = []                      # array of read lines
+            patts = []                      # compiled patterns
+            line  = self.readline (timeout) # first line to check
+
+            # pre-compile the given pattern, to speed up matching
+            for pattern in patterns :
+                patts.append (re.compile (pattern))
+
+            # we wait forever -- there are two ways out though: a line matches
+            # a pattern, or timeout passes
+            while True :
+
+                if not self.alive () :
+                    break
+
+                time.sleep (0.1)
+
+                # skip non-lines
+                if  None == line :
+                    line = self.readline (timeout)
+                    continue
+
+                # check current line for any matching pattern
+                for n in range (0, len(patts)) :
+                    if patts[n].search (line) :
+                        # a pattern matched the current line: return a tuple of
+                        # pattern index, matching line, and previous lines.
+                        return (n, line.replace('\r', ''), ret)
+
+                # if a timeout is given, and actually passed, return a non-match,
+                # and the set of lines found so far
+                if timeout > 0 :
+                    now = time.time ()
+                    if (now-start) > timeout :
+                        return (None, None, ret)
+
+                # append the current (non-matching) line to ret, and get a new line to test
+                ret.append (line.replace('\r', ''))
                 line = self.readline (timeout)
-                continue
 
-            # check current line for any matching pattern
-            for n in range (0, len(patts)) :
-                if patts[n].search (line) :
-                    # a pattern matched the current line: return a tuple of
-                    # pattern index, matching line, and previous lines.
-                    return (n, line.replace('\r', ''), ret)
-
-            # if a timeout is given, and actually passed, return a non-match,
-            # and the set of lines found so far
-            if timeout > 0 :
-                now = time.time ()
-                if (now-start) > timeout :
-                    return (None, None, ret)
-
-            # append the current (non-matching) line to ret, and get a new line to test
-            ret.append (line.replace('\r', ''))
-            line = self.readline (timeout)
+        except Exception as e :
+            raise se.NoSuccess ("readline from pty process failed (%s)" % e)
 
 
 
     # ----------------------------------------------------------------
     #
-    def findstring (self, patterns, timeout=0) :
+    def find (self, patterns, timeout=0) :
         """
         This methods reads bytes from the child process until a string matching
         any of the given patterns is found.  If that is found, all read data are
@@ -351,6 +500,7 @@ class pty_process (object) :
         pattern, and the string up to the match as described above.
 
         If no pattern is found before timeout, the call returns (None, None).
+        Negative timeouts will block until a match is found
 
         Note that the pattern are interpreted with the re.M (multi-line) and
         re.S (dot matches all) regex flags.
@@ -362,39 +512,64 @@ class pty_process (object) :
         Note: the returned data get '\\\\r' stripped.
         """
 
-        start = time.time ()                       # startup timestamp to compare timeout against
-        ret   = []                                 # array of read lines
-        patts = []                                 # compiled patterns
-        data  = self.read (_CHUNKSIZE, _POLLDELAY) # initial data to check
+        if not self.alive () :
+            raise se.NoSuccess ("Could not find data - pty process died")
 
-        # pre-compile the given pattern, to speed up matching
-        for pattern in patterns :
-            patts.append (re.compile (pattern, re.MULTILINE | re.DOTALL))
+        try :
+            start = time.time ()                       # startup timestamp to compare timeout against
+            ret   = []                                 # array of read lines
+            patts = []                                 # compiled patterns
+            data  = self.cache                         # initial data to check
 
-        # we wait forever -- there are two ways out though: data matches
-        # a pattern, or timeout passes
-        while True :
+            if not data : # empty cache?
+                data = self.read (_CHUNKSIZE, _POLLDELAY)
 
-            # skip non-lines
-            if  None == data :
-                data += self.read (_CHUNKSIZE, _POLLDELAY)
-                continue
+            # pre-compile the given pattern, to speed up matching
+            for pattern in patterns :
+                patts.append (re.compile (pattern, re.MULTILINE | re.DOTALL))
 
-            # check current data for any matching pattern
-            for n in range (0, len(patts)) :
-                if patts[n].search (data) :
-                    # a pattern matched the current data: return a tuple of
-                    # pattern index and matching data.
-                    return (n, data.replace('\r', ''))
+            # we wait forever -- there are two ways out though: data matches
+            # a pattern, or timeout passes
+            while True :
 
-            # if a timeout is given, and actually passed, return a non-match.
-            if timeout > 0 :
-                now = time.time ()
-                if (now-start) > timeout :
+              # time.sleep (0.3)
+
+                # skip non-lines
+                if  None == data :
+                    data += self.read (_CHUNKSIZE, _POLLDELAY)
+
+                # check current data for any matching pattern
+              # print ">>%s<<" % data
+                for n in range (0, len(patts)) :
+                    match = patts[n].search (data)
+                  # print "==%s==" % patterns[n]
+                    if match :
+                      # print "~~match!~~ %s" % data[match.start():match.end()]
+                      # print "~~match!~~ %s" % (len(data))
+                      # print "~~match!~~ %s" % (str(match.span()))
+                        # a pattern matched the current data: return a tuple of
+                        # pattern index and matching data.  The remainder of the
+                        # data is cached.
+                        ret  = data[0:match.end()+1]
+                        self.cache = data[match.end()+1:] 
+                        return (n, ret.replace('\r', ''))
+
+                # if a timeout is given, and actually passed, return a non-match.
+                if timeout == 0 :
                     return (None, None)
 
-            # no match yet, still time -- read more data
-            data += self.read (_CHUNKSIZE, _POLLDELAY)
+                if timeout > 0 :
+                    now = time.time ()
+                    if (now-start) > timeout :
+                        self.cache = data
+                        return (None, None)
+
+                # no match yet, still time -- read more data
+                data += self.read (_CHUNKSIZE, _POLLDELAY)
+
+
+        except Exception as e :
+            raise se.NoSuccess ("find from pty process failed (%s)" % e)
 
 
 
@@ -407,25 +582,49 @@ class pty_process (object) :
         """
 
         if not self.alive () :
-            return
+            raise se.NoSuccess ("Could not write data - pty process died")
 
-        # attempt to write forever -- until we succeeed
-        while True :
+        try :
+            self.logger.debug ("Write: '%s'" % data)
 
-            # check if the pty pipe is ready for data
-            _, wlist, _ = select.select ([], [self.master_in], [], _POLLDELAY)
+            # attempt to write forever -- until we succeeed
+            while data :
 
-            for f in wlist :
-                
-                # write will report the number of written bytes
-                ret = os.write (f, "%s" % data)
+                # check if the pty pipe is ready for data
+                _, wlist, _ = select.select ([], [self.parent_in], [], _POLLDELAY)
 
-                # if all data are written, we are done
-                if ret == len(data) :
-                    return
-                
-                # otherwise, truncate by written data, and try again
-                data = data[ret:]
+                for f in wlist :
+                    
+                    # write will report the number of written bytes
+                    size = os.write (f, "%s" % data)
+
+                    # otherwise, truncate by written data, and try again
+                    data = data[size:]
+
+
+        except Exception as e :
+            raise se.NoSuccess ("write to pty process failed (%s)" % e)
+
+
+    # ----------------------------------------------------------------
+    #
+    def get_cache (self) :
+        """
+        Return the currently cached output
+        """
+
+        return self.cache
+
+
+    # ----------------------------------------------------------------
+    #
+    def get_cache_log (self) :
+        """
+        Return the currently cached output
+        """
+
+        return self.clog
+
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

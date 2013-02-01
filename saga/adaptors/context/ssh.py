@@ -12,8 +12,8 @@ ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
 #
 # adaptor meta data
 #
-_ADAPTOR_NAME          = 'saga.adaptor.x509'
-_ADAPTOR_SCHEMAS       = ['X509']
+_ADAPTOR_NAME          = 'saga.adaptor.ssh'
+_ADAPTOR_SCHEMAS       = ['ssh']
 _ADAPTOR_OPTIONS       = []
 
 # FIXME: complete attribute list
@@ -27,11 +27,10 @@ _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
-    'description'      : 'The X509 context adaptor.',
-    'details'          : """This adaptor points to a X509 proxy, or certificate,
-                            be used for backend connections.  Note that this
-                            context can be created by a MyProxy context instance.""",
-    'schemas'          : {'x509' : 'x509 token information.'},
+    'description'      : 'The SSH context adaptor.',
+    'details'          : """This adaptor points to a ssh public/private keypair and 
+                            user_id to be used for backend connections.""",
+    'schemas'          : {'ssh' : 'ssh private/public and userid information.'},
 }
 
 _ADAPTOR_INFO          = {
@@ -40,7 +39,7 @@ _ADAPTOR_INFO          = {
     'schemas'          : _ADAPTOR_SCHEMAS,
     'cpis'             : [{ 
         'type'         : 'saga.Context',
-        'class'        : 'ContextX509'
+        'class'        : 'ContextSSH'
         }
     ]
 }
@@ -71,29 +70,29 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
     def _get_default_contexts (self) :
 
-        if not self._have_defaults :
+        # if not self._have_defaults :
 
-            p = "/tmp/x509up_u%d"  %  os.getuid()
+        #     p = "/tmp/x509up_u%d"  %  os.getuid()
 
-            if  os.path.exists (p) and \
-                os.path.isfile (p)     :
+        #     if  os.path.exists (p) and \
+        #         os.path.isfile (p)     :
 
-                try :
-                    fh = open (p)
+        #         try :
+        #             fh = open (p)
 
-                except Exception as e:
-                    pass
+        #         except Exception as e:
+        #             pass
 
-                else :
-                    fh.close ()
+        #         else :
+        #             fh.close ()
 
-                    c = saga.Context ('X509')
-                    c.user_proxy = p
+        #             c = saga.Context ('X509')
+        #             c.user_proxy = p
 
-                    self._logger.info ("default X509 context for proxy at %s"  %  p)
+        #             self._logger.info ("default X509 context for proxy at %s"  %  p)
 
-                    self._default_contexts.append (c)
-                    self._have_defaults = True
+        #             self._default_contexts.append (c)
+        #             self._have_defaults = True
 
         # have defaults, and can return them...
         return self._default_contexts
@@ -104,7 +103,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 #
 # job adaptor class
 #
-class ContextX509 (saga.adaptors.cpi.Context) :
+class ContextSSH (saga.adaptors.cpi.Context) :
 
     def __init__ (self, api, adaptor) :
 
@@ -114,9 +113,9 @@ class ContextX509 (saga.adaptors.cpi.Context) :
     @SYNC_CALL
     def init_instance (self, adaptor_state, type) :
 
-        if  not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
+        if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
             raise saga.exceptions.BadParameter \
-                    ("the x509 context adaptor only handles x509 contexts - duh!")
+                    ("the ssh context adaptor only handles ssh contexts - duh!")
 
         self.get_api ().type = type
 
@@ -129,21 +128,21 @@ class ContextX509 (saga.adaptors.cpi.Context) :
         # make sure we have can access the proxy
         api = self.get_api ()
 
-        if  not api.user_proxy :
-            api.user_proxy = "x509up_u%d"  %  os.getuid()
+        # if  not api.user_proxy :
+        #     api.user_proxy = "x509up_u%d"  %  os.getuid()
 
-        if  not os.path.exists (api.user_proxy) or \
-            not os.path.isfile (api.user_proxy)    :
-            raise saga.exceptions.BadParameter ("X509 proxy does not exist: %s"
-                                                 % api.user_proxy)
+        # if  not os.path.exists (api.user_proxy) or \
+        #     not os.path.isfile (api.user_proxy)    :
+        #     raise saga.exceptions.BadParameter ("X509 proxy does not exist: %s"
+        #                                          % api.user_proxy)
 
-        try :
-            fh = open (api.user_proxy)
-        except Exception as e:
-            raise saga.exceptions.PermissionDenied ("X509 proxy '%s' not readable: %s"
-                                                 % (api.user_proxy, str(e)))
-        else :
-            fh.close ()
+        # try :
+        #     fh = open (api.user_proxy)
+        # except Exception as e:
+        #     raise saga.exceptions.PermissionDenied ("X509 proxy '%s' not readable: %s"
+        #                                          % (api.user_proxy, str(e)))
+        # else :
+        #     fh.close ()
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
