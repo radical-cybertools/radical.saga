@@ -251,7 +251,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # Thus, when the script times out, the shell dies and the connection
         # drops -- that will free all associated resources, and allows for
         # a clean reconnect.
-        ret, out, _ = self.shell.run_sync ("exec /bin/sh %s/wrapper.sh | false" % base)
+        ret, out, _ = self.shell.run_sync ("sh -c '(/bin/sh %s/wrapper.sh && kill -9 $PPID)' || false" % base)
         if  ret != 0 :
             raise saga.NoSuccess ("failed to run wrapper (%s)(%s)" % (ret, out))
 
