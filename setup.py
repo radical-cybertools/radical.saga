@@ -120,6 +120,7 @@ setup_args = {
         "saga.adaptors.redis",
         "saga.adaptors.ssh",
         "saga.adaptors.irods",
+        "saga.adaptors.srm",
         "saga.engine",
         "saga.utils",
         "saga.utils.contrib",
