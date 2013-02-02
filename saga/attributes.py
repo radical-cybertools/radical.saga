@@ -1,9 +1,8 @@
-
 __author__    = "Andre Merzky"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-""" SAGA attribute interface """
+""" Attribute interface """
 
 from saga.exceptions import *
 
