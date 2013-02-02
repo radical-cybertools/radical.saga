@@ -34,6 +34,7 @@ def usage():
     print ' <IRODS_DIRECTORY> (e.x. /osg/home/username/)'
     print ' <IRODS_RESOURCE>  (e.x. osgGridFtpGroup)>'
     print
+    print "For example: python %s " % __file__ + "/irods/mydir/ irodsResourceGroup"
     print "Please specify an iRODS resource group for <IRODS_RESOURCE> " +\
           "if possible in order to properly test replication."
 

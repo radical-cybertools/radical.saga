@@ -8,6 +8,8 @@
 # TODO: Add debug output for -all- icommands showing how they are executed
 #       IE "[DEBUG] Executing: ils -l /mydir/"
 
+# TODO: Implement resource package and use it to grab resource information
+
 """iRODS replica adaptor implementation 
    Uses icommands commandline tools
 """
@@ -29,7 +31,7 @@ import saga.adaptors.cpi.replica
 import saga.utils.misc
 import shutil
 
-from   saga.utils.cmdlinewrapper import CommandLineWrapper
+from saga.utils.cmdlinewrapper import CommandLineWrapper
 
 SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
@@ -69,7 +71,7 @@ _ADAPTOR_INFO          = {
     ]
 }
 
-class irods_logical_entry():
+class irods_logical_entry:
     '''class to hold info on an iRODS logical file or directory
     '''
     def __init__(self):
@@ -89,9 +91,9 @@ class irods_logical_entry():
                    str(self.is_directory))
 
 
-class irods_resource_entry (object):
-    '''class to hold info on an iRODS resource '''
-
+class irods_resource_entry:
+    '''class to hold info on an iRODS resource 
+    '''
     # Resources (not groups) as retreived from ilsresc -l look like the following:
     #
     # resource name:     BNL_ATLAS_2_FTP
@@ -191,7 +193,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
            and returns a list of irods_logical_entry instances containing
            information on files/directories found in the directory argument.
            It uses the commandline tool ils.
-           :param obj: object
+           :param self: reference to adaptor which called this function
            :param dir: iRODS directory we want to get a listing of
            :param wrapper: the CommandLineWrapper we will make our iRODS
            commands with
@@ -277,12 +279,12 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         ''' Return a list of irods resources and resource groups with
             information stored in irods_resource_entry format.
             It uses commandline tool ilsresc -l 
+            :param self: reference to adaptor which called this function
         '''
         result = []
         try:
             cw = CommandLineWrapper.init_as_subprocess_wrapper()
             cw.open()
-
     
             # execute the ilsresc -l command
             cw_result = cw.run_sync("ilsresc -l")
@@ -343,8 +345,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
                     # continue processing ilsresc -l results until we
                     # are at the end of the resource group information
                     # ----- is not printed if there are no further entries
-                    # so we have to make sure to check we don't pop off an empty
-                    # stack too
+                    # so we have to make sure to check we don't pop off
+                    # an empty stack too
                     #
                     # TODO: ACTUALLY SAVE THE LIST OF RESOURCES IN A RESOURCE GROUP
                     while len(cw_result_list)>0 and (not line.startswith("-----")):
@@ -352,8 +354,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     
                     result.append(entry)
     
-                # for some reason, we're at a line which we have no idea how to handle
-                # this is bad -- throw an error
+                # for some reason, we're at a line which we have 
+                # no idea how to handle this is bad -- throw an error
                 else:
                     raise saga.NoSuccess ("Error parsing iRODS ilsresc -l information!")
                     
@@ -417,12 +419,11 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory,
         self._url     = url
         self._flags   = flags
         self._session = session
-
         self._init_check ()
         
         t = saga.task.Task ()
-
-        t._set_result (saga.replica.LogicalDirectory (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
+        t._set_result (saga.replica.LogicalDirectory(
+                url, flags, session, _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -451,7 +452,6 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory,
     #
     @SYNC_CALL
     def get_url (self) :
-
         return self._url
 
 
@@ -464,7 +464,8 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory,
         if not url.scheme and not url.host : 
             url = saga.url.Url (str(self._url) + '/' + str(url))
 
-        f = saga.replica.LogicalFile (url, flags, self._session, _adaptor_name=_ADAPTOR_NAME)
+        f = saga.replica.LogicalFile (url, flags, self._session,
+                                      _adaptor_name=_ADAPTOR_NAME)
         return f
 
 
@@ -541,7 +542,8 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory,
         complete_path = self._url.path
         result = []
 
-        self._logger.debug("Attempting to get directory listing for logical path %s" % complete_path)
+        self._logger.debug("Attempting to get directory listing for logical"
+                           "path %s" % complete_path)
 
         try:
             cw_result = self._cw.run_sync("ils %s" % complete_path)
@@ -767,10 +769,13 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile,
         #TODO: Verify Correctness in the way the resource is grabbed
         query = saga.Url(target).get_query()
         resource = query.split("=")[1]
-        self._logger.debug("Attempting to replicate logical file %s to resource/resource group %s" % (complete_path, resource))
+        self._logger.debug("Attempting to replicate logical file %s to "
+                           "resource/resource group %s" 
+                           % (complete_path, resource))
 
         try:
-            cw_result = self._cw.run_sync("irepl -R %s %s" % (resource, complete_path) )
+            cw_result = self._cw.run_sync("irepl -R %s %s" 
+                                          % (resource, complete_path) )
 
             if cw_result.returncode != 0:
                 raise Exception("Could not replicate logical file %s to resource/resource group %s, errorcode %s: %s"\
@@ -778,7 +783,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile,
                                        cw_result))
 
         except Exception, ex:
-            raise saga.NoSuccess._log (self._logger, "Couldn't replicate file.")
+            raise saga.NoSuccess._log (self._logger, "Couldn't replicate file. %s" % ex)
         return
 
 
@@ -805,7 +810,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile,
                                        cw_result))
 
         except Exception, ex:
-            raise saga.NoSuccess ("Couldn't move file.")
+            raise saga.NoSuccess ("Couldn't move file. %s" % ex)
 
         return
 
@@ -835,7 +840,8 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile,
 
         except Exception, ex:
             # couldn't delete for unspecificed reason
-            raise saga.NoSuccess ("Couldn't delete file %s" % (complete_path))
+            raise saga.NoSuccess ("Couldn't delete file %s %s"
+                                  % (complete_path, ex))
 
         return
 
@@ -854,13 +860,6 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile,
     # myfile.upload("file://home/ashley/my/local/filesystem/irods.tar.gz",
     #               "irods://.../?resource=host3")
     # 
-    # THIS IS A FUNCTION FOR A **PROPOSED** PART OF THE SAGA API!!!
-    # HERE BE DRAGONS, in other words...
-
-    # ----------------------------------------------------------------
-    #
-    #
-    #
     @SYNC_CALL
     def upload (self, source, target, flags) :
         '''Uploads a file from the LOCAL, PHYSICAL filesystem to
@@ -915,13 +914,6 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile,
 
         return
 
-
-    ######################################################################
-    ##   
-    # THIS IS A FUNCTION FOR A **PROPOSED** PART OF THE SAGA API!!!
-    # HERE BE DRAGONS, in other words...
-
-    # ----------------------------------------------------------------
     @SYNC_CALL
     def download (self, name, source, flags) :
         '''Downloads a file from the REMOTE REPLICA FILESYSTEM to a local
