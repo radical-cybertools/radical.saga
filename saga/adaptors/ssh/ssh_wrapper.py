@@ -78,16 +78,51 @@ get_args () {
 
 
 # --------------------------------------------------------------------
-#
-# utility call which ensures that a given job id points to a viable working
-# directory
-#
-verify_pid () {
+# ensure that a given job id points to a viable working directory
+verify_dir () {
   if test -z $1 ;            then ERROR="no pid given";              return 1; fi 
   DIR="$BASE/$1"
   if ! test -d "$DIR";       then ERROR="pid $1 not known";          return 1; fi 
-  if ! test -r "$DIR/pid";   then ERROR="pid $1 in incorrect state"; return 1; fi 
-  if ! test -r "$DIR/state"; then ERROR="pid $1 In incorrect state"; return 1; fi
+}
+
+
+# --------------------------------------------------------------------
+# ensure that given job id has valid pid file
+verify_pid () {
+  verify_dir $1
+  if ! test -r "$DIR/pid";   then ERROR="pid $1 has no process id"; return 1; fi 
+}
+
+
+# --------------------------------------------------------------------
+# ensure that given job id has valid state file
+verify_state () {
+  verify_dir $1
+  if ! test -r "$DIR/state"; then ERROR="pid $1 has no state"; return 1; fi
+}
+
+
+# --------------------------------------------------------------------
+# ensure that given job id has valid stdin file
+verify_in () {
+  verify_dir $1
+  if ! test -r "$DIR/in"; then ERROR="pid $1 has no stdin"; return 1; fi
+}
+
+
+# --------------------------------------------------------------------
+# ensure that given job id has valid stdou file
+verify_out () {
+  verify_dir $1
+  if ! test -r "$DIR/out"; then ERROR="pid $1 has no stdout"; return 1; fi
+}
+
+
+# --------------------------------------------------------------------
+# ensure that given job id has valid stderr file
+verify_err () {
+  verify_dir $1
+  if ! test -r "$DIR/err"; then ERROR="stderr $1 has no sterr"; return 1; fi
 }
 
 
@@ -244,7 +279,7 @@ EOT
 # inspect job state
 #
 cmd_state () {
-  verify_pid $1 || return
+  verify_state $1 || return
 
   DIR="$BASE/$1"
   RETVAL=`cat "$DIR/state"`
@@ -256,7 +291,8 @@ cmd_state () {
 # suspend a running job
 #
 cmd_suspend () {
-  verify_pid $1 || return
+  verify_state $1 || return
+  verify_pid   $1 || return
 
   DIR="$BASE/$1"
   state=`cat "$DIR/state"`
@@ -289,7 +325,8 @@ cmd_suspend () {
 # resume a suspended job
 #
 cmd_resume () {
-  verify_pid $1 || return
+  verify_state $1 || return
+  verify_pid   $1 || return
 
   DIR="$BASE/$1"
   state=`cat $DIR/state`
@@ -321,7 +358,8 @@ cmd_resume () {
 # kill a job, and set state to canceled
 #
 cmd_cancel () {
-  verify_pid $1 || return
+  verify_state $1 || return
+  verify_pid   $1 || return
 
   DIR="$BASE/$1"
 
@@ -354,7 +392,7 @@ cmd_cancel () {
 # feed given string to job's stdin stream
 # 
 cmd_stdin () {
-  verify_pid $1 || return
+  verify_in $1 || return
 
   DIR="$BASE/$1"
   shift
@@ -368,7 +406,7 @@ cmd_stdin () {
 # print uuencoded string of job's stdout
 #
 cmd_stdout () {
-  verify_pid $1 || return
+  verify_out $1 || return
 
   DIR="$BASE/$1"
   RETVAL=`uuencode "$DIR/out" "/dev/stdout"`
@@ -380,7 +418,7 @@ cmd_stdout () {
 # print uuencoded string of job's stderr
 #
 cmd_stderr () {
-  verify_pid $1 || return
+  verify_err $1 || return
 
   DIR="$BASE/$1"
   RETVAL=`uuencode "$DIR/err" "/dev/stdout"`
@@ -418,8 +456,6 @@ cmd_purge () {
     RETVAL="purged finished jobs"
     return
   fi
-
-  verify_pid $1 || return
 
   DIR="$BASE/$1"
   rm -rf "$DIR"

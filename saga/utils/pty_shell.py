@@ -556,6 +556,10 @@ class PTYShell (object) :
         if  ret != 0 :
             raise saga.NoSuccess ("failed to stage string to file (%s)(%s)" % (ret, txt))
 
+        self.run_sync ("sync")
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to sync staged string to file (%s)(%s)" % (ret, txt))
+
     # ----------------------------------------------------------------
     #
     def stage_to_string (self, src) :

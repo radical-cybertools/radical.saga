@@ -82,11 +82,11 @@ print "services      jobs  time             jobs/sec           memory  urls"
 # perf (    1,  1*['ssh://amerzky@cyder.cct.lsu.edu/'])
 # perf (    1,  1*['ssh://merzky@repex1.tacc.utexas.edu/'])
 
-perf (  10,  2*['fork://localhost/'])
+# perf (  10,  2*['fork://localhost/'])
 perf (  10,  2*['ssh://localhost/'])
 perf (  10,  2*['ssh://amerzky@cyder.cct.lsu.edu/'])
-perf (  10,  2*['ssh://merzky@repex1.tacc.utexas.edu/'])
-perf (  10,  2*['gsissh://tg-login.ranger.tacc.teragrid.org/'])
+# perf (  10,  2*['ssh://merzky@repex1.tacc.utexas.edu/'])
+# perf (  10,  2*['gsissh://tg-login.ranger.tacc.teragrid.org/'])
  
 # perf (  100,  1*['ssh://merzky@localhost/'])
 

@@ -297,7 +297,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
         # well, this version logs an sh-x trace to wrapper.log, w/o disturbing
         # stdout/stderr...
-        ret, out, _ = self.shell.run_sync ("exec sh -x %s/wrapper.sh 2>&1 | tee %s/wrapper.log | grep -v -e '^\\+'" % (base, base))
+        ret, out, _ = self.shell.run_sync ("exec sh -x %s/wrapper.sh 2>&1 | tee %s/wrapper.$$.log | grep -v -e '^\\+'" % (base, base))
 
         # either way, we somehow ran the script, and just need to check if it
         # came up all right...
