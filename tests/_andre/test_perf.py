@@ -23,19 +23,25 @@ def get_mem () :
 
 def workload (url, n_jobs) :
 
-    jd   = saga.job.Description ()
-    jd.executable = '/bin/date'
-    
-    service = saga.job.Service (url)
+    try :
+        jd   = saga.job.Description ()
+        jd.executable = '/bin/date'
+        
+        service = saga.job.Service (url)
 
-    for id in range (1, n_jobs+1) :
-        tmp_j     = service.create_job (jd)
-        tmp_j.run ()
-        print "id: %5d : %s" % (id, tmp_j.id)
-      # time.sleep (1)
+        for id in range (1, n_jobs+1) :
+            tmp_j     = service.create_job (jd)
+            tmp_j.run ()
+            print "id: %5d : %s  [%s]" % (id, tmp_j.id, tmp_j.get_state ())
 
-  # sys.stdout.write ('\n')
-  # del (service)
+          # time.sleep (1)
+
+      # sys.stdout.write ('\n')
+      # del (service)
+
+    except Exception as e :
+        print "wokload exception: %s" % e
+        raise e
 
 
 def perf (n_jobs, urls) :
@@ -77,16 +83,16 @@ print "services      jobs  time             jobs/sec           memory  urls"
 # perf (100, 2*['fork://localhost/'])
 # perf (100, 2*['ssh://merzky@localhost/'])
 
-perf (    1,  1*['fork://localhost/'])
+# perf (    1,  1*['fork://localhost/'])
 # perf (    1,  1*['ssh://merzky@localhost/'])
 # perf (    1,  1*['ssh://amerzky@cyder.cct.lsu.edu/'])
 # perf (    1,  1*['ssh://merzky@repex1.tacc.utexas.edu/'])
 
-# perf (  10,  1*['fork://localhost/'])
-# perf (  10,  1*['ssh://localhost/'])
-# perf (  10,  1*['ssh://amerzky@cyder.cct.lsu.edu/'])
-# perf (  10,  1*['ssh://merzky@repex1.tacc.utexas.edu/'])
-# perf (  10,  1*['gsissh://tg-login.ranger.tacc.teragrid.org/'])
+perf (  100,  1*['fork://localhost/'])
+perf (  100,  1*['ssh://localhost/'])
+perf (  100,  1*['ssh://amerzky@cyder.cct.lsu.edu/'])
+perf (  100,  1*['ssh://merzky@repex1.tacc.utexas.edu/'])
+perf (  100,  1*['gsissh://tg-login.ranger.tacc.teragrid.org/'])
  
 # perf (  100,  1*['ssh://merzky@localhost/'])
 

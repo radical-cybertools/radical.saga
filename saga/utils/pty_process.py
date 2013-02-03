@@ -169,15 +169,7 @@ class PTYProcess (object) :
         them (see cat /proc/sys/kernel/pty/max)
         """
 
-        self.logger.debug ("__del__")
-
-        self.close ()
-
-
-    # --------------------------------------------------------------------
-    #
-    def close (self) :
-        """ kill the child, close all I/O channels """
+        # kill the child, close all I/O channels
 
         try :
             if  self.alive () :
@@ -330,9 +322,17 @@ class PTYProcess (object) :
                 for f in rlist:
                     # read whatever we still need
                     buf  = os.read (f, size-len(ret))
-                    self.logger.debug ("read: '%s'" % buf)
                     self.clog += buf
                     ret       += buf
+
+                    buf = buf.replace ('\n', '\\n')
+                    buf = buf.replace ('\r', '')
+                    if  len(buf) > 40 :
+                        self.logger.debug ("read : [%5d] (%s ... %s)" \
+                                        % (len(buf), buf[:20], buf[-20:]))
+                    else :
+                        self.logger.debug ("read : [%5d] (%s)" \
+                                        % (len(buf), buf))
 
                 if timeout == 0 : 
                     # only return if we have data
@@ -359,7 +359,7 @@ class PTYProcess (object) :
 
     # --------------------------------------------------------------------
     #
-    def readline (self, timeout=0) :
+    def _readline (self, timeout=0) :
         """
         read a line from the child.  This method will read data into the cache,
         and return whatever it finds up to (but not including) the first newline
@@ -416,9 +416,17 @@ class PTYProcess (object) :
                 # got some data - read them into the cache
                 for f in rlist:
                     buf         = os.read (f, _CHUNKSIZE)
-                    self.logger.debug ("read: '%s'" % buf)
                     self.clog  += buf
                     self.cache += buf
+
+                    buf = buf.replace ('\n', '\\n')
+                    buf = buf.replace ('\r', '')
+                    if  len(buf) > 40 :
+                        self.logger.debug ("read : [%5d] (%s ... %s)" \
+                                        % (len(buf), buf[:20], buf[-20:]))
+                    else :
+                        self.logger.debug ("read : [%5d] (%s)" \
+                                        % (len(buf), buf))
 
                 # check if we *now* have a full line in cache
                 if '\n' in self.cache :
@@ -443,7 +451,7 @@ class PTYProcess (object) :
 
     # ----------------------------------------------------------------
     #
-    def findline (self, patterns, timeout=0) :
+    def _findline (self, patterns, timeout=0) :
         """
         This methods reads lines from the child process until a line matching
         any of the given patterns is found.  If that is found, all read lines
@@ -460,10 +468,10 @@ class PTYProcess (object) :
 
 
         try :
-            start = time.time ()            # startup timestamp
-            ret   = []                      # array of read lines
-            patts = []                      # compiled patterns
-            line  = self.readline (timeout) # first line to check
+            start = time.time ()             # startup timestamp
+            ret   = []                       # array of read lines
+            patts = []                       # compiled patterns
+            line  = self._readline (timeout) # first line to check
 
             # pre-compile the given pattern, to speed up matching
             for pattern in patterns :
@@ -476,11 +484,11 @@ class PTYProcess (object) :
                 if not self.alive () :
                     break
 
-                time.sleep (0.1)
+                # time.sleep (0.1)
 
                 # skip non-lines
                 if  None == line :
-                    line = self.readline (timeout)
+                    line = self._readline (timeout)
                     continue
 
                 # check current line for any matching pattern
@@ -499,10 +507,10 @@ class PTYProcess (object) :
 
                 # append current (non-matching) line to ret, and get new line 
                 ret.append (line.replace('\r', ''))
-                line = self.readline (timeout)
+                line = self._readline (timeout)
 
         except Exception as e :
-            raise se.NoSuccess ("readline from pty process failed (%s)" % e)
+            raise se.NoSuccess ("_readline from pty process failed (%s)" % e)
 
 
 
@@ -554,7 +562,7 @@ class PTYProcess (object) :
             # a pattern, or timeout passes
             while True :
 
-              # time.sleep (0.3)
+              # time.sleep (0.1)
 
                 # skip non-lines
                 if  None == data :
@@ -574,6 +582,7 @@ class PTYProcess (object) :
                         # data is cached.
                         ret  = data[0:match.end()+1]
                         self.cache = data[match.end()+1:] 
+                      # print "~~match!~~ %s" % (ret)
                         return (n, ret.replace('\r', ''))
 
                 # if a timeout is given, and actually passed, return a non-match
@@ -604,10 +613,18 @@ class PTYProcess (object) :
         """
 
         if not self.alive () :
-            raise se.NoSuccess ("Could not write data - pty process died")
+            raise se.NoSuccess ("Could not write data - pty not alive")
 
         try :
-            self.logger.debug ("write: '%s'" % data)
+
+            buf = data.replace ('\n', '\\n')
+            buf =  buf.replace ('\r', '')
+            if  len(buf) > 40 :
+                self.logger.debug ("write: [%5d] (%s ... %s)" \
+                                % (len(data), buf[:20], buf[-20:]))
+            else :
+                self.logger.debug ("write: [%5d] (%s)" \
+                                % (len(data), buf))
 
             # attempt to write forever -- until we succeeed
             while data :
@@ -623,29 +640,12 @@ class PTYProcess (object) :
                     # otherwise, truncate by written data, and try again
                     data = data[size:]
 
+                    if data :
+                        self.logger.info ("write: [%5d]" % size)
+
 
         except Exception as e :
             raise se.NoSuccess ("write to pty process failed (%s)" % e)
-
-
-    # ----------------------------------------------------------------
-    #
-    def _get_cache (self) :
-        """
-        Return the currently cached output
-        """
-
-        return self.cache
-
-
-    # ----------------------------------------------------------------
-    #
-    def _get_cache_log (self) :
-        """
-        Return the currently cached output
-        """
-
-        return self.clog
 
 
 

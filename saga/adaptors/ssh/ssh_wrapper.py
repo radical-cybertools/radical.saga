@@ -47,7 +47,7 @@ idle_checker () {
 
     if test -e "$BASE/idle.$ppid"
     then
-      kill -s ALRM $ppid
+      kill -s ALRM $ppid >/dev/null 2>&1
       exit 0
     fi
 
@@ -87,7 +87,7 @@ verify_pid () {
   DIR="$BASE/$1"
   if ! test -d "$DIR";       then ERROR="pid $1 not known";          return 1; fi 
   if ! test -r "$DIR/pid";   then ERROR="pid $1 in incorrect state"; return 1; fi 
-  if ! test -r "$DIR/state"; then ERROR="pid $1 in incorrect state"; return 1; fi
+  if ! test -r "$DIR/state"; then ERROR="pid $1 In incorrect state"; return 1; fi
 }
 
 
@@ -128,10 +128,28 @@ verify_pid () {
 # surprise really...
 
 cmd_run () {
+  #
   # do a double fork to avoid zombies (need to do a wait in this process)
+  #
+  # FIXME: do some checks here, such as if executable exists etc.
+  # FIXME: do some checks here, such as if executable exists etc.
+  # 
+  # FIXME: Now, this is *the* *strangest* *error* I *ever* saw... - the above
+  # two comment lines are, in source, identical -- but for local bash
+  # connections, when written to disk via cat, the second line will have only 14
+  # characters!  I see the correct data given to os.write(), and that is the
+  # *only* place data are missing - but why?  It seems to be an offset problem:
+  # removing a character earlier in this string will extend the shortened line
+  # by one character.  Sooo, basically this long comment here will (a) document
+  # the problem, and (b) shield the important code below from truncation.
+  #
+  # go figure...
+
   cmd_run2 $@ &
-  RETVAL=$!     # this is the (native) job id!
-  wait $RETVAL  # this will return very quickly -- look at cmd_run2... ;-)
+  pid=$!      # this is the (native) job id!
+  wait $pid   # this will return very quickly -- look at cmd_run2... ;-)
+  sync
+  RETVAL=$pid # report id
 }
 
 
@@ -140,8 +158,15 @@ cmd_run2 () {
   # background and return - voila!  Note, no wait here, as the spawned script is
   # supposed to stay alive with the job.
   SAGA_PID=`sh -c 'echo $PPID'`
+  DIR="$BASE/$SAGA_PID"
+
+  test -d "$DIR"    && rm    -rf "$DIR"  # re-use old pid's
+  test -d "$DIR"    || mkdir -p  "$DIR"  || exit 1
+  echo "NEW"         > "$DIR/state"
+
   cmd_run_process $@ &
   ppid=$!
+  return $ppid
 }
 
 
@@ -151,9 +176,6 @@ cmd_run_process () {
   PID=$SAGA_PID
   DIR="$BASE/$PID"
 
-  test -d "$DIR"    && rm    -rf "$DIR"
-  test -d "$DIR"    || mkdir -p  "$DIR"  || exit 1
-  echo "NEW"         > "$DIR/state"
   echo "$@"          > "$DIR/cmd"
   touch                "$DIR/in"
 
@@ -161,10 +183,7 @@ cmd_run_process () {
   # script's shell instance with the job executable, leaving the I/O
   # redirections intact.
   cat                > "$DIR/job.sh" <<EOT
-  exec $@            \
-    <  "$DIR/in"     \
-    >  "$DIR/out"    \
-    2> "$DIR/err"
+  exec $@            < "$DIR/in" >  "$DIR/out" 2> "$DIR/err"
 EOT
   
   # the job script above is started by this startup script, which makes sure
@@ -409,6 +428,20 @@ cmd_purge () {
 
 # --------------------------------------------------------------------
 #
+# quit this script gracefully
+#
+cmd_quit () {
+
+  # kill idle checker
+  kill $1 >/dev/null 2>&1
+  rm -f "$BASE/idle.$$"
+
+  exit 0
+}
+
+
+# --------------------------------------------------------------------
+#
 # main even loop -- wait for incoming command lines, and react on them
 #
 listen() {
@@ -417,7 +450,8 @@ listen() {
   test -d "$BASE" || mkdir -p  "$BASE"  || exit 1
 
   # make sure we get killed when idle
-  idle_checker $$ &
+  idle_checker $$ >/dev/null 2>&1 &
+  idle=$!
 
   # prompt for commands...
   echo "PROMPT-0->"
@@ -454,9 +488,9 @@ listen() {
       STDERR  ) cmd_stderr  $args ;; 
       LIST    ) cmd_list    $args ;; 
       PURGE   ) cmd_purge   $args ;; 
+      QUIT    ) cmd_quit    $idle ;; 
       LOG     ) echo LOG    $args ;; 
       NOOP    )                   ;;
-      QUIT    ) echo "OK"; exit 0 ;;
       *       ) ERROR="$cmd unknown ($LINE)"; false ;; 
     esac
 

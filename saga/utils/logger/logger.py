@@ -15,7 +15,7 @@ from   saga.utils.logger.filehandler        import FileHandler
 from   saga.utils.logger.defaultformatter   import DefaultFormatter
 from   saga.utils.singleton                 import Singleton
 from   saga.utils.exception                 import ExceptionBase
-from   saga.utils.exception                 import get_traceback
+from   saga.utils.exception                 import get_traceback, breakpoint
 
 
 ############# These are all supported options for saga.logging #################
@@ -163,13 +163,20 @@ def getLogger (name='saga-python'):
         _logger.setLevel(_Logger().loglevel)
         _logger.propagate = 0 # Don't bubble up to the root logger
 
-        # we add a 'trace' method to the system logger, which prints a traceback on
-        # the debug handler
+        # we add a 'trace' and 'breakpoint' methods to the system logger, which 
+        # prints a traceback on the debug handler / enters the debugger
         def mk_trace (logger) :
             def trace () :
                 logger.debug (get_traceback (0))
             return trace
-        _logger.__dict__['trace'] = mk_trace (_logger)
+
+        def mk_breakpoint (logger) :
+            def breakpoint () :
+                logger.debug (breakpoint ())
+            return breakpoint
+
+        _logger.__dict__['trace']      = mk_trace      (_logger)
+        _logger.__dict__['breakpoint'] = mk_breakpoint (_logger)
 
     
     # setup done - we can return the logger

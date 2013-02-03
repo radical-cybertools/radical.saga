@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # this script uses only POSIX shell functionality, and does not rely on bash or
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
@@ -84,7 +84,7 @@ verify_pid () {
   DIR="$BASE/$1"
   if ! test -d "$DIR";       then ERROR="pid $1 not known";          return 1; fi 
   if ! test -r "$DIR/pid";   then ERROR="pid $1 in incorrect state"; return 1; fi 
-  if ! test -r "$DIR/state"; then ERROR="pid $1 in incorrect state"; return 1; fi
+  if ! test -r "$DIR/state"; then ERROR="pid $1 In incorrect state"; return 1; fi
 }
 
 
@@ -137,6 +137,12 @@ cmd_run2 () {
   # background and return - voila!  Note, no wait here, as the spawned script is
   # supposed to stay alive with the job.
   SAGA_PID=`sh -c 'echo $PPID'`
+  DIR="$BASE/$SAGA_PID"
+
+  test -d "$DIR"    && rm    -rf "$DIR"  # re-use old pid's
+  test -d "$DIR"    || mkdir -p  "$DIR"  || exit 1
+  echo "NEW"         > "$DIR/state"
+
   cmd_run_process $@ &
   ppid=$!
 }
@@ -148,9 +154,6 @@ cmd_run_process () {
   PID=$SAGA_PID
   DIR="$BASE/$PID"
 
-  test -d "$DIR"    && rm    -rf "$DIR"
-  test -d "$DIR"    || mkdir -p  "$DIR"  || exit 1
-  echo "NEW"         > "$DIR/state"
   echo "$@"          > "$DIR/cmd"
   touch                "$DIR/in"
 
@@ -158,10 +161,7 @@ cmd_run_process () {
   # script's shell instance with the job executable, leaving the I/O
   # redirections intact.
   cat                > "$DIR/job.sh" <<EOT
-  exec $@            \
-    <  "$DIR/in"     \
-    >  "$DIR/out"    \
-    2> "$DIR/err"
+  exec $@            < "$DIR/in" >  "$DIR/out" 2> "$DIR/err"
 EOT
   
   # the job script above is started by this startup script, which makes sure

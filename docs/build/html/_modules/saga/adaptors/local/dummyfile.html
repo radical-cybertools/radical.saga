@@ -1,0 +1,435 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>saga.adaptors.local.dummyfile &mdash; SAGA 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 1.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="saga" href="../../../saga.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for saga.adaptors.local.dummyfile</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot; dummy filesystem adaptor implementation &quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+
+<span class="kn">import</span> <span class="nn">saga.url</span>
+<span class="kn">import</span> <span class="nn">saga.adaptors.cpi.base</span>
+<span class="kn">import</span> <span class="nn">saga.adaptors.cpi.filesystem</span>
+<span class="kn">import</span> <span class="nn">saga.utils.misc</span>
+
+<span class="n">SYNC_CALL</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">SYNC_CALL</span>
+<span class="n">ASYNC_CALL</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">ASYNC_CALL</span>
+
+
+<span class="c">###############################################################################</span>
+<span class="c"># adaptor info</span>
+<span class="c">#</span>
+
+<span class="n">_ADAPTOR_NAME</span>          <span class="o">=</span> <span class="s">&#39;saga.adaptor.dummysystem.local&#39;</span>
+<span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&#39;dummy&#39;</span><span class="p">]</span>
+<span class="n">_ADAPTOR_OPTIONS</span>       <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span> 
+    <span class="s">&#39;category&#39;</span>         <span class="p">:</span> <span class="s">&#39;saga.engine&#39;</span><span class="p">,</span>
+    <span class="s">&#39;name&#39;</span>             <span class="p">:</span> <span class="s">&#39;enable_ctrl_c&#39;</span><span class="p">,</span> 
+    <span class="s">&#39;type&#39;</span>             <span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> 
+    <span class="s">&#39;default&#39;</span>          <span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+    <span class="s">&#39;valid_options&#39;</span>    <span class="p">:</span> <span class="p">[</span><span class="bp">True</span><span class="p">,</span> <span class="bp">False</span><span class="p">],</span>
+    <span class="s">&#39;documentation&#39;</span>    <span class="p">:</span> <span class="s">&#39;install SIGINT signal handler to abort application.&#39;</span><span class="p">,</span>
+    <span class="s">&#39;env_variable&#39;</span>     <span class="p">:</span> <span class="bp">None</span>
+    <span class="p">},</span>
+    <span class="p">{</span> 
+    <span class="s">&#39;category&#39;</span>         <span class="p">:</span> <span class="s">&#39;saga.engine&#39;</span><span class="p">,</span>
+    <span class="s">&#39;name&#39;</span>             <span class="p">:</span> <span class="s">&#39;load_beta_adaptors&#39;</span><span class="p">,</span> 
+    <span class="s">&#39;type&#39;</span>             <span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> 
+    <span class="s">&#39;default&#39;</span>          <span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="s">&#39;valid_options&#39;</span>    <span class="p">:</span> <span class="p">[</span><span class="bp">True</span><span class="p">,</span> <span class="bp">False</span><span class="p">],</span>
+    <span class="s">&#39;documentation&#39;</span>    <span class="p">:</span> <span class="s">&#39;load adaptors which are marked as beta (i.e. not released).&#39;</span><span class="p">,</span>
+    <span class="s">&#39;env_variable&#39;</span>     <span class="p">:</span> <span class="bp">None</span>
+    <span class="p">}</span>
+<span class="p">]</span>
+<span class="n">_ADAPTOR_CAPABILITIES</span>  <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">_ADAPTOR_DOC</span>           <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;name&#39;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&#39;cfg_options&#39;</span>      <span class="p">:</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">,</span> 
+    <span class="s">&#39;capabilities&#39;</span>     <span class="p">:</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
+    <span class="s">&#39;description&#39;</span>      <span class="p">:</span> <span class="s">&#39;The local filesystem adaptor.&#39;</span><span class="p">,</span>
+    <span class="s">&#39;details&#39;</span>          <span class="p">:</span> <span class="s">&quot;&quot;&quot;This adaptor interacts with local filesystem, by</span>
+<span class="s">                            using the (POSIX like) os and shutil Python packages.</span>
+<span class="s">                            It is named &#39;dummy&#39;, as this adaptor is only used</span>
+<span class="s">                            for testing and debugging -- it is *not* good for</span>
+<span class="s">                            production.</span>
+<span class="s">                            &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&#39;schemas&#39;</span>          <span class="p">:</span> <span class="p">{</span><span class="s">&#39;dummy&#39;</span> <span class="p">:</span> <span class="s">&#39;an invented schema.&#39;</span><span class="p">},</span>
+<span class="p">}</span>
+
+<span class="n">_ADAPTOR_INFO</span>          <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;name&#39;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&#39;version&#39;</span>          <span class="p">:</span> <span class="s">&#39;v0.1beta&#39;</span><span class="p">,</span>
+    <span class="s">&#39;schemas&#39;</span>          <span class="p">:</span> <span class="n">_ADAPTOR_SCHEMAS</span><span class="p">,</span>
+    <span class="s">&#39;cpis&#39;</span>             <span class="p">:</span> <span class="p">[{</span>
+        <span class="s">&#39;type&#39;</span>         <span class="p">:</span> <span class="s">&#39;saga.filesystem.Directory&#39;</span><span class="p">,</span>
+        <span class="s">&#39;class&#39;</span>        <span class="p">:</span> <span class="s">&#39;DummyDirectory&#39;</span>
+        <span class="p">},</span> 
+        <span class="p">{</span>
+        <span class="s">&#39;type&#39;</span>         <span class="p">:</span> <span class="s">&#39;saga.filesystem.File&#39;</span><span class="p">,</span>
+        <span class="s">&#39;class&#39;</span>        <span class="p">:</span> <span class="s">&#39;DummyFile&#39;</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+
+<span class="c">###############################################################################</span>
+<span class="c"># The adaptor class</span>
+
+<span class="k">class</span> <span class="nc">Adaptor</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AdaptorBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">    This is the actual adaptor class, which gets loaded by SAGA (i.e. by the</span>
+<span class="sd">    SAGA engine), and which registers the CPI implementation classes which</span>
+<span class="sd">    provide the adaptor&#39;s functionality.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AdaptorBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_ADAPTOR_INFO</span><span class="p">,</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">sanity_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">pass</span>
+
+
+
+<span class="c">###############################################################################</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">DummyDirectory</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="DummyDirectory"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyDirectory">[docs]</a>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">CPIBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+
+
+    <span class="nd">@SYNC_CALL</span>
+    <span class="c"># FIXME: where are the flags?</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="DummyDirectory.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyDirectory.init_instance">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_check</span> <span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
+
+
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="DummyDirectory.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyDirectory.init_instance_async">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_check</span> <span class="p">()</span>
+        
+        <span class="n">t</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;init_instance&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;ttype&#39;</span>   <span class="p">:</span> <span class="n">ttype</span><span class="p">,</span> 
+                                                    <span class="s">&#39;url&#39;</span>     <span class="p">:</span> <span class="n">url</span><span class="p">,</span> 
+                                                    <span class="s">&#39;flags&#39;</span>   <span class="p">:</span> <span class="n">flags</span><span class="p">,</span> 
+                                                    <span class="s">&#39;session&#39;</span> <span class="p">:</span> <span class="n">session</span><span class="p">})</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">dummysystem</span><span class="o">.</span><span class="n">Directory</span> <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">_adaptor_name</span><span class="o">=</span><span class="n">_ADAPTOR_NAME</span><span class="p">))</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_state</span>  <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+
+    <span class="k">def</span> <span class="nf">_init_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+
+        <span class="n">url</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span> 
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (not local)&quot;</span>     <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">port</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has port)&quot;</span>      <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">fragment</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has fragment)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">query</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has query)&quot;</span>     <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">username</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has username)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">password</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has password)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">path</span>       <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">path</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">saga</span><span class="o">.</span><span class="n">dummysystem</span><span class="o">.</span><span class="n">CREATE</span> <span class="o">&amp;</span> <span class="n">flags</span> <span class="p">:</span>
+                <span class="k">if</span> <span class="n">saga</span><span class="o">.</span><span class="n">dummysystem</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="o">&amp;</span> <span class="n">flags</span> <span class="p">:</span>
+                    <span class="k">try</span> <span class="p">:</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not &#39;mkdir -p </span><span class="si">%s</span><span class="s">&#39;: </span><span class="si">%s</span><span class="s">)&quot;</span>  \
+                                                        <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+                <span class="k">else</span> <span class="p">:</span>
+                    <span class="k">try</span> <span class="p">:</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not &#39;mkdir </span><span class="si">%s</span><span class="s">&#39;: </span><span class="si">%s</span><span class="s">)&quot;</span>  \
+                                                        <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+            <span class="k">else</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (directory does not exist)&quot;</span>  \
+                                                   <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (is not a directory)&quot;</span>  \
+                                               <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+        
+
+
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="DummyDirectory.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyDirectory.get_url">[docs]</a>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+
+
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">open</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="DummyDirectory.open"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyDirectory.open">[docs]</a>        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">host</span> <span class="p">:</span> 
+            <span class="n">url</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
+
+        <span class="n">f</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">dummysystem</span><span class="o">.</span><span class="n">File</span> <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">_adaptor_name</span><span class="o">=</span><span class="n">_ADAPTOR_NAME</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span>
+
+
+<span class="c">######################################################################</span>
+<span class="c">#</span>
+<span class="c"># file adaptor class</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">DummyFile</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span><span class="p">)</span> <span class="p">:</span></div></div>
+<div class="viewcode-block" id="DummyFile"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile">[docs]</a>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">CPIBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+
+
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="DummyFile.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile.init_instance">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_check</span> <span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="DummyFile.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile.init_instance_async">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_check</span> <span class="p">()</span>
+        
+        <span class="n">t</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">()</span>
+
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">dummysystem</span><span class="o">.</span><span class="n">File</span> <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">_adaptor_name</span><span class="o">=</span><span class="n">_ADAPTOR_NAME</span><span class="p">))</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_state</span>  <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+
+    <span class="k">def</span> <span class="nf">_init_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+
+        <span class="n">url</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span> 
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (not local)&quot;</span>     <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">port</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has port)&quot;</span>      <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">fragment</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has fragment)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">query</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has query)&quot;</span>     <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">username</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has username)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">password</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has password)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">path</span>       <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">path</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="p">:</span>
+
+            <span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">filename</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (names directory)&quot;</span>  \
+                                                 <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">dirname</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">if</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="o">&amp;</span> <span class="n">flags</span> <span class="p">:</span>
+                    <span class="k">try</span> <span class="p">:</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not &#39;mkdir -p </span><span class="si">%s</span><span class="s">&#39;: </span><span class="si">%s</span><span class="s">)&quot;</span>  \
+                                                        <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+                <span class="k">else</span> <span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (parent dir does not exist)&quot;</span>  \
+                                                     <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+        
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">if</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE</span> <span class="o">&amp;</span> <span class="n">flags</span> <span class="p">:</span>
+                    <span class="k">try</span> <span class="p">:</span>
+                        <span class="nb">open</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">close</span> <span class="p">()</span> <span class="c"># touch</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not &#39;touch </span><span class="si">%s</span><span class="s">&#39;: </span><span class="si">%s</span><span class="s">)&quot;</span>  \
+                                                        <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+                <span class="k">else</span> <span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (file does not exist)&quot;</span>  \
+                                                     <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (is not a file)&quot;</span>  \
+                                               <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="DummyFile.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile.get_url">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_url_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="DummyFile.get_url_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile.get_url_async">[docs]</a>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">()</span>
+
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_state</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Done</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_size_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="DummyFile.get_size_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile.get_size_self">[docs]</a>        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+
+
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_size_self_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="DummyFile.get_size_self_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile.get_size_self_async">[docs]</a>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">()</span>
+
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_state</span>  <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">copy_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="DummyFile.copy_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile.copy_self">[docs]</a>
+        <span class="n">tgt_url</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="n">tgt</span>     <span class="o">=</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">src</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span>
+
+        <span class="k">if</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">schema</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">schema</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (unknown schema)&quot;</span> <span class="o">%</span>  <span class="n">target</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">tgt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;/&#39;</span> <span class="p">:</span>
+            <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">&quot;</span>   <span class="o">%</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span> <span class="p">(</span><span class="n">src</span><span class="p">),</span> <span class="n">tgt</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="s">&quot; copy </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+
+
+<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
