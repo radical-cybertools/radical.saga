@@ -32,11 +32,11 @@ def workload (url, n_jobs) :
     for id in range (1, n_jobs+1) :
         tmp_j     = service.create_job (jd)
         tmp_j.run ()
-        print "id: %5d : %s  [%s]" % (id, tmp_j.id, tmp_j.get_state ())
+        print "id: %5d : %s  [%s] [%s]" % (id, tmp_j.id, tmp_j.get_state (), get_mem ())
 
-  # time.sleep (1)
-  # sys.stdout.write ('\n')
-  # del (service)
+    time.sleep (1)
+    sys.stdout.write ('\n')
+    del (service)
 
 
 def perf (n_jobs, urls) :
@@ -83,8 +83,10 @@ print "services      jobs  time             jobs/sec           memory  urls"
 # perf (    1,  1*['ssh://amerzky@cyder.cct.lsu.edu/'])
 # perf (    1,  1*['ssh://merzky@repex1.tacc.utexas.edu/'])
 
-# perf (  1000,  10*['fork://localhost/'])
-perf (  1000,  10*['ssh://localhost/'])
+# perf (  1000,  10*['ssh://localhost/'])
+# perf (  1000,  10*['ssh://localhost/'])
+perf (  10,  10*['fork://localhost/'])
+perf (  10,  10*['fork://localhost/'])
 # perf (  100,  2*['ssh://amerzky@cyder.cct.lsu.edu/'])
 # perf (  10,  2*['ssh://merzky@repex1.tacc.utexas.edu/'])
 # perf (  10,  2*['gsissh://tg-login.ranger.tacc.teragrid.org/'])
