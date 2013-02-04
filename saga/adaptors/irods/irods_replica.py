@@ -10,7 +10,7 @@
 
 # TODO: Implement resource package and use it to grab resource information
 
-# TODO: Implement Andre's changes in the iRODS adaptors
+# TODO: Implement Andre's changes in the iRODS adaptors!
 
 """iRODS replica adaptor implementation 
    Uses icommands commandline tools
