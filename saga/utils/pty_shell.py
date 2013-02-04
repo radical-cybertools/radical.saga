@@ -227,6 +227,9 @@ class PTYShell (object) :
     #
     def __del__ (self) :
 
+        self.logger.error ("shell dying...")
+        self.logger.trace ()
+
         self.close ()
 
 
@@ -403,8 +406,8 @@ class PTYShell (object) :
         """
         Run a shell command, and report exit code, stdout and stderr (all three
         will be returned in a tuple).  The call will block until the command
-        finishes (more exactly, until we find the prompt again on the shell's IO
-        stream), and cannot be interrupted.
+        finishes (more exactly, until we find the prompt again on the shell's
+        I/O stream), and cannot be interrupted.
 
         :type  command: string
         :param command: shell command to run.  We expect the command to not to
@@ -464,7 +467,8 @@ class PTYShell (object) :
         if  iomode == None :
             redir  =  ""
 
-        self.pty.write ("%s%s\n" % (command, redir))
+        self.logger.info ('run_sync: %s%s'   % (command, redir))
+        self.pty.write   (          "%s%s\n" % (command, redir))
 
 
         # If given, switch to new prompt pattern right now...
@@ -530,15 +534,17 @@ class PTYShell (object) :
         """
         Run a shell command, but don't wait for prompt -- just return.  It is up
         to caller to eventually search for the prompt again.  Meanwhile, the
-        caller can interact with the called command, via the io channels.
+        caller can interact with the called command, via the I/O channels.
 
         :type  command: string
         :param command: shell command to run.  We don't care if the command is
-        doing i redirection or not.
+        doing I/O redirection or not.
         """
 
         command = command.strip ()
-        self.pty.write ("%s\n" % command)
+
+        self.logger.info ('run_sync: %s'   % command)
+        self.pty.write   (          "%s\n" % command)
 
         return
 
@@ -547,18 +553,20 @@ class PTYShell (object) :
     #
     def stage_from_string (self, src, tgt) :
 
-        self.run_async ("cat > %s" % tgt)
+        size = len(src)
+        self.run_async ("cat > %s.$$" % tgt)
         self.send      (src)
-        self.send      ("\n\4")  # send CTRL-D
+        self.send      ("\n\4mv %s.$$ %s\n" % (tgt, tgt))  
+
+        # we send two commands at once (cat, mv), so need to find two prompts
+        ret, txt = self.find_prompt ()
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to stage (cat) string to file (%s)(%s)" % (ret, txt))
 
         ret, txt = self.find_prompt ()
-
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to stage string to file (%s)(%s)" % (ret, txt))
+            raise saga.NoSuccess ("failed to stage (mv) string to file (%s)(%s)" % (ret, txt))
 
-        self.run_sync ("sync")
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to sync staged string to file (%s)(%s)" % (ret, txt))
 
     # ----------------------------------------------------------------
     #

@@ -27,7 +27,35 @@ _PTY_TIMEOUT = 2.0
 #
 _ADAPTOR_NAME          = "saga.adaptor.ssh_job"
 _ADAPTOR_SCHEMAS       = ["fork", "ssh", "gsissh"]
-_ADAPTOR_OPTIONS       = []
+_ADAPTOR_OPTIONS       = [
+    { 
+    'category'         : 'saga.adaptor.ssh_job',
+    'name'             : 'enable_debug_trace', 
+    'type'             : bool, 
+    'default'          : False,
+    'valid_options'    : [True, False],
+    'documentation'    : '''Create a detailed debug trace on the remote host.
+                          Note that the log is *not* removed, and can be large!
+                          A log message on INFO level will be issued which
+                          provides the location of the log file.''',
+    'env_variable'     : None
+    },
+    { 
+    'category'         : 'saga.adaptor.ssh_job',
+    'name'             : 'enable_notifications', 
+    'type'             : bool, 
+    'default'          : False,
+    'valid_options'    : [True, False],
+    'documentation'    : '''Enable support for job state notifications.  Note that
+                          enabling this option will create a local thread, a remote 
+                          shell process, and an additional network connection.
+                          In particular for ssh/gsissh where the number of
+                          concurrent connections is limited to 10, this
+                          effectively halfs the number of available job service
+                          instances per remote host.''',
+    'env_variable'     : None
+    }
+]
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -164,6 +192,12 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
+        self.opts  = self.get_config ()
+
+        self.debug_trace   = self.opts['enable_debug_trace'  ].get_value ()
+        self.notifications = self.opts['enable_notifications'].get_value ()
+
+        self._logger.info ('debug trace: %s', self.debug_trace)
 
 
     # ----------------------------------------------------------------
@@ -207,6 +241,8 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # separately? 
         #   cmd_state () { touch $DIR/purgeable; ... }
         # When should that be done?
+        self._logger.error ("adaptor dying... %s" % self.njobs)
+        self._logger.trace ()
 
         try :
           # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
@@ -228,6 +264,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
         self.rm      = rm_url
         self.session = session
+        self.njobs   = 0
 
         self._open ()
 
@@ -280,6 +317,20 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self.shell.stage_from_string (src = ssh_wrapper._WRAPPER_SCRIPT, 
                                       tgt = "%s/wrapper.sh" % base)
 
+        # if debug_trace is set, we add some magic redirection to the shell
+        # command: we run it with 'sh -x' which creates a trace, and pipe to
+        # 'tree $base/wrapper.$$.log', which will save the trace in the log
+        # file.  We still need the wrapper's output on stdout, so we filter out
+        # the trace from the output (grep -v -e '^\\+'), and send the remainder
+        # to the default output channel
+        shell = '/bin/sh'
+        redir = ''
+        if self._adaptor.debug_trace :
+            trace  = "%s/wrapper.$$.log" % base
+            shell += " -x"
+            redir  = "2>&1 | tee %s | grep -v -e '^\\+'" % trace
+
+
         # we run the script.  In principle, we should set a new / different
         # prompt -- but, due to some strange and very unlikely coincidence, the
         # script has the same prompt as the previous shell... - go figure ;-)
@@ -293,17 +344,26 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # Well, actually, we do not use exec, as that does not give us good
         # feedback on failures (the shell just quits) -- so we replace it with
         # this poor-man's version...
-      # ret, out, _ = self.shell.run_sync ("sh -c '(/bin/sh %s/wrapper.sh && kill -9 $PPID)' || false" % base)
-
-        # well, this version logs an sh-x trace to wrapper.log, w/o disturbing
-        # stdout/stderr...
-        ret, out, _ = self.shell.run_sync ("exec sh -x %s/wrapper.sh 2>&1 | tee %s/wrapper.$$.log | grep -v -e '^\\+'" % (base, base))
+        ret, out, _ = self.shell.run_sync ("/bin/sh -c '(%s %s/wrapper.sh $$ && kill -9 $PPID) %s' || false" \
+                                        % (shell, base, redir))
 
         # either way, we somehow ran the script, and just need to check if it
         # came up all right...
         if  ret != 0 :
             raise saga.NoSuccess ("failed to run wrapper (%s)(%s)" % (ret, out))
 
+        # if debug trace was requested, we now should know its name and can
+        # report it.
+        if self._adaptor.debug_trace :
+
+            wrapper_pid = '?'
+            for line in out.split ('\n') :
+
+                if re.match ('^PID: \d+$', line) :
+                    wrapper_pid = line[5:]
+              
+            trace = "%s/wrapper.%s.log" % (base, wrapper_pid)
+            self._logger.error ('remote trace: %s : %s', self.rm, trace)
 
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
 
@@ -360,6 +420,8 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         job_id = "[%s]-[%s]" % (self.rm, lines[-1])
 
         self._logger.debug ("started job %s" % job_id)
+
+        self.njobs += 1
 
         return job_id
         
@@ -591,6 +653,7 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
     def run(self): 
         """ Implements saga.adaptors.cpi.job.Job.run()
         """
+        # FIXME: verify id format!
         self._id = self.js._job_run (self.jd)
 
 

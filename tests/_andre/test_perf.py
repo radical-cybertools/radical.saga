@@ -1,5 +1,6 @@
 
-import gc
+# import gc
+
 import os
 import sys
 import time
@@ -82,9 +83,9 @@ print "services      jobs  time             jobs/sec           memory  urls"
 # perf (    1,  1*['ssh://amerzky@cyder.cct.lsu.edu/'])
 # perf (    1,  1*['ssh://merzky@repex1.tacc.utexas.edu/'])
 
-# perf (  10,  2*['fork://localhost/'])
-perf (  10,  2*['ssh://localhost/'])
-perf (  10,  2*['ssh://amerzky@cyder.cct.lsu.edu/'])
+# perf (  1000,  10*['fork://localhost/'])
+perf (  1000,  10*['ssh://localhost/'])
+# perf (  100,  2*['ssh://amerzky@cyder.cct.lsu.edu/'])
 # perf (  10,  2*['ssh://merzky@repex1.tacc.utexas.edu/'])
 # perf (  10,  2*['gsissh://tg-login.ranger.tacc.teragrid.org/'])
  
