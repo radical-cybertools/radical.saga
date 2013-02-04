@@ -17,7 +17,6 @@ class SimpleBase (object) :
         self._engine    = saga.engine.engine.Engine ()
         self._logger    = saga.utils.logger.getLogger (self._apitype)
 
-        print self._engine
         self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
 
 
@@ -61,11 +60,9 @@ class Base (SimpleBase) :
 
     def __init__  (self, schema, adaptor, adaptor_state, *args, **kwargs) :
 
-        print "schema2: %s" % schema
         SimpleBase.__init__ (self)
 
         self._adaptor = adaptor
-        print "schema3: %s" % schema
         self._adaptor = self._engine.bind_adaptor   (self, self._apitype, schema, adaptor)
 
         self._init_task = self._adaptor.init_instance (adaptor_state, *args, **kwargs)

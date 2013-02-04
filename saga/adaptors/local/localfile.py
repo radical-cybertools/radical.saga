@@ -149,7 +149,7 @@ class LocalDirectory (saga.adaptors.cpi.filesystem.Directory, saga.adaptors.cpi.
 
         self._init_check ()
 
-        return self._api
+        return self.get_api ()
 
 
     @ASYNC_CALL
@@ -312,7 +312,7 @@ class LocalDirectory (saga.adaptors.cpi.filesystem.Directory, saga.adaptors.cpi.
         elif call == 'init_instance' :
             try :
                 self.init_instance ({}, c['url'], c['flags'], c['session'])
-                task._set_result (self._api)
+                task._set_result (self.get_api ())
                 task._set_state  (saga.task.DONE)
             except Exception as e :
                 task._set_exception (e)

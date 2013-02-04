@@ -16,6 +16,9 @@ class SSHCommandLineWrapper(object):
     def __init__(self, host, port, username, password, userkeys):
         ''' Create a new wrapper instance.
         '''
+
+        if not port : port = 22
+
         self.host = host
         self.port = port
         self.password = password
@@ -33,6 +36,8 @@ class SSHCommandLineWrapper(object):
         self._connection.login(hostname=self.host, port=self.port,
                                username=self.username, password=self.password)
 
+    def get_pipe (self) :
+        return self._connection.get_pxssh ()
 
     def close(self):
         self._connection.logout()

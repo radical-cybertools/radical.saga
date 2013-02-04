@@ -1,7 +1,7 @@
 
 from saga.utils.cmdlinewrapper import CommandLineWrapper
 
-clw = CommandLineWrapper.init_as_ssh_wrapper(host='localhost')
+clw = CommandLineWrapper(scheme="ssh", host='localhost')
 
 clw.open()
 

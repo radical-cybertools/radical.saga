@@ -577,6 +577,7 @@ class Attributes (_AttributesBase) :
             try :
                 d['attributes'][key]['recursion'] = True
                 val=all_getter (key)
+                d['attributes'][key]['value'] = val
             except Exception as e :
                 can_ignore -= 1
                 if not can_ignore : raise e
@@ -586,7 +587,8 @@ class Attributes (_AttributesBase) :
         if key_getter :
             try :
                 d['attributes'][key]['recursion'] = True
-                key_getter ()
+                val=key_getter ()
+                d['attributes'][key]['value'] = val
             except Exception as e :
                 can_ignore -= 1
                 if not can_ignore : raise e

@@ -3,13 +3,11 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-import os
-from pexpect import *
+import  os
+from    pexpect import *
 import  pxssh 
-from pxssh import ExceptionPxssh
-import time
-import pexpect
-import getpass
+import  time
+import  getpass
 
 import socket
 socket.setdefaulttimeout(20) #default timeout for connect()
@@ -19,7 +17,6 @@ from saga.utils.exception import ExceptionBase
 class _pxssh (spawn):
     """This class extends / modifies pxssh. It adds support 
     for custom ssh keys, gsissh and some other stuff.
-
 
     This class extends pexpect.spawn to specialize setting up SSH
     connections. This adds methods for login, logout, and expecting the shell
@@ -363,6 +360,9 @@ class SSHConnection(object):
                 self.logout()
             except Exception, e:
                 pass
+
+    def get_pxssh (self) :
+        return self._ssh
 
     def login(self, hostname, port='', username='', password=''):
         ''' Open a new SSH or GSISSH connection.

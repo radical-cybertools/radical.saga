@@ -7,86 +7,101 @@ __license__   = "MIT"
     wrapper, like GSISSH and SSH. 
 '''
 
-from saga.utils.exception import ExceptionBase, get_traceback
+from saga.utils.exception      import ExceptionBase, get_traceback
 
 from cmdlinewrapper_subprocess import SubprocessCommandLineWrapper
-from cmdlinewrapper_gsissh import GSISSHCommandLineWrapper
-from cmdlinewrapper_ssh import SSHCommandLineWrapper
+from cmdlinewrapper_gsissh     import GSISSHCommandLineWrapper
+from cmdlinewrapper_ssh        import SSHCommandLineWrapper
 
+# --------------------------------------------------------------------
+#
 class CLWException(ExceptionBase):
     ''' Raised for CommandLineWrapper exceptions.
     '''
 
+# --------------------------------------------------------------------
+#
 class CommandWrapperResult(object):
-    ''' A 4-tuple returned by CommandLineWrapper.run().
+    ''' A 5-tuple returned by CommandLineWrapper.run().
     '''
+    # ----------------------------------------------------------------
+    #
     def __init__(self, command, stdout=None, stderr=None, returncode=None, ttc=-1):
 
-        self._command = command
-        self._stdout = stdout
-        self._stderr = stderr
+        self._command    = command
+        self._stdout     = stdout
+        self._stderr     = stderr
         self._returncode = returncode
-        self._ttc = ttc
+        self._ttc        = ttc
 
+    # ----------------------------------------------------------------
+    #
     @property
     def command(self):
         return self._command
 
+    # ----------------------------------------------------------------
+    #
     @property
     def stdout(self):
         return self._stdout
 
+    # ----------------------------------------------------------------
+    #
     @property
     def stderr(self):
         return self._stderr
 
+    # ----------------------------------------------------------------
+    #
     @property
     def returncode(self):
         return self._returncode
 
+    # ----------------------------------------------------------------
+    #
     @property
     def ttc(self):
         return self._ttc
 
+    # ----------------------------------------------------------------
+    #
     def __str__(self):
         str = "{'command' : '%s', 'stdout': '%s', 'stderr' : %s, 'returncode' : '%s', 'ttc' : '%s'}" \
             % (self.command, self.stdout, self.stderr, self.returncode, self.ttc)
         return str
 
 
+# --------------------------------------------------------------------
+#
 class CommandLineWrapper(object):
 
-    def __init__(self):
+    # ----------------------------------------------------------------
+    #
+    def __init__(self, scheme='shell', host='localhost', port=None, 
+                 username=None, password=None, userkeys=[], userproxies=[]):
+
         self._is_open = False
         self._wrapper = None
+
+        if  scheme.lower() == "fork"    or \
+            scheme.lower() == "shell"   or \
+            scheme.lower() == "local"   or \
+            scheme.lower() == "subprocess" :
+            self._wrapper = SubprocessCommandLineWrapper()
+
+        elif scheme.lower() == "ssh" :
+            self._wrapper = SSHCommandLineWrapper   (host, port, username, password, userkeys)
     
-    @classmethod
-    def init_as_subprocess_wrapper(self):
-        ''' Return a new SubprocessCommandLineWrapper.
-        '''
-        clw = CommandLineWrapper()
-        clw._wrapper = SubprocessCommandLineWrapper()
-        return clw
-
-    @classmethod
-    def init_as_ssh_wrapper(self, host, port=22, username=None, 
-                            password=None, userkeys=[]):
-        ''' Return a new SSHCommandLineWrapper.
-        '''
-        clw = CommandLineWrapper()
-        clw._wrapper = SSHCommandLineWrapper(host, port, username, password,
-                                             userkeys)
-        return clw
-
-    @classmethod
-    def init_as_gsissh_wrapper(self, host, port=22, username=None, 
-                               userproxies=[]):
-        ''' Return a new GSISSHCommandLineWrapper.
-        '''
-        clw = CommandLineWrapper()
-        clw._wrapper = GSISSHCommandLineWrapper(host, port, username, userproxies)
-        return clw
-
+        elif scheme.lower() == "gsissh" :
+            self._wrapper = GSISSHCommandLineWrapper(host, port, userproxies)
+    
+        else :
+            raise CLWException("scheme %s is not supported." % scheme)
+            
+    
+    # ----------------------------------------------------------------
+    #
     def open(self):
         if self._is_open is True:
             raise CLWException("%s has already been opened." 
@@ -98,6 +113,13 @@ class CommandLineWrapper(object):
             except Exception, ex:
                 raise CLWException('%s - %s' % (self._wrapper.__class__.__name__, ex))
 
+    # ----------------------------------------------------------------
+    #
+    def get_pipe(self):
+        return self._wrapper.get_pipe ()
+
+    # ----------------------------------------------------------------
+    #
     def close(self):
         if self._is_open is False:
             raise CLWException("%s is not in 'open' state." 
@@ -109,21 +131,24 @@ class CommandLineWrapper(object):
             except Exception, ex:
                 raise CLWException('%s - %s' % (self._wrapper.__class__.__name__, ex))
 
-    def run_sync(self, executable, arguments=[], environemnt={}):
+    # ----------------------------------------------------------------
+    #
+    def run_sync(self, exe, args=[], env={}):
         if self._is_open == False:
             raise CLWException("%s is not in 'open' state." 
                 % self._wrapper.__class__.__name__)
         else:
             try:
-                import pprint
-                (cmd, stdout, stderr, rc, duration) = self._wrapper.run_sync(executable, arguments, environemnt)
-                return CommandWrapperResult(cmd, stdout, stderr, rc, duration)
+                return CommandWrapperResult(self._wrapper.run_sync(exe, args, env))
             except Exception, ex:
                 print get_traceback ()
                 raise CLWException('%s - %s' % (self._wrapper.__class__.__name__, ex))
 
-    def run_async(self, executable, arguments=[], environemnt={}):
-        raise Exception('Not Implemented')
+    # ----------------------------------------------------------------
+    #
+    # def run_async(self, exe, args=[], env={}):
+    #     raise Exception('Not Implemented')
+
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
