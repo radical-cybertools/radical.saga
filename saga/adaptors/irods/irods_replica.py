@@ -30,6 +30,7 @@ import errno
 import saga.url
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.replica
+import saga.utils.pty_shell
 import saga.utils.misc
 import shutil
 
@@ -169,8 +170,11 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
 
     def sanity_check (self) :
-        cw = CommandLineWrapper.init_as_subprocess_wrapper()
+        cw = CommandLineWrapper()
         cw.open()
+        print cw.run_sync("ls")
+        self.shell = saga.utils.pty_shell.PTYShell ("ssh://localhost")
+        exit(0)
 
         # run ils, see if we get any errors -- if so, fail the
         # sanity check
@@ -285,7 +289,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         '''
         result = []
         try:
-            cw = CommandLineWrapper.init_as_subprocess_wrapper()
+            cw = CommandLineWrapper()
             cw.open()
     
             # execute the ilsresc -l command
@@ -479,8 +483,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory,
 
         #complete_path = dir_obj._url.path
         complete_path = saga.Url(path).get_path()
-        self._logger.debug("Attempting to make directory at: %s" % complete_path)
-
+        self._logger.debug("TEST: Attempting to make directory at: %s" % complete_path)
         #attempt to run iRODS mkdir command
         try:
             cw_result = self._cw.run_sync("imkdir %s" % complete_path)

@@ -3,8 +3,8 @@
 saga.adaptor.replica.irods
 **************************
 
-This adaptor interacts with the irids data
-management system, by using the irods command line
+This adaptor interacts with the iRODS data
+management system, by using the iRODS command line
 tools.
 
 Version

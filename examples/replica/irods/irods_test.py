@@ -4,7 +4,7 @@
 
 '''This example shows how to use the iRODS adaptor in 
    some basic ways.  If it executes successfully, the
-   iRODS adaptor should work OK on your self.
+   iRODS adaptor should work OK on your setup.
 
    If something doesn't work as expected, try to set 
    SAGA_VERBOSE=3 in your environment before you run the
@@ -44,6 +44,18 @@ def main(args):
         usage()
         exit(-1)
 
+    
+    #import saga.utils.pty_shell
+    #print saga.Url("ssh://localhost")
+    #self.shell = saga.utils.pty_shell.PTYShell (saga.Url("ssh://localhost"))
+    
+    # -- now stage the shell wrapper script, and run it.  Once that is up                                                                                                                                        
+    # and running, we can requests job start / management operations via its                                                                                                                                     
+    # stdio.                                                                                                                                                                                                     
+
+    #base = "$HOME/.saga/adaptors/ssh_job"
+    #ret, out, _ = self.shell.run_sync ("mkdir -p %s" % base)
+
     # directory to store our iRODS files in, don't forget trailing and leading /
     IRODS_DIRECTORY = args[1]
 
@@ -66,8 +78,7 @@ def main(args):
         pass
 
     try:
-        myfile = saga.replica.LogicalFile('irods://' + \
-                                          IRODS_DIRECTORY+TEMP_FILENAME)
+        myfile = saga.replica.LogicalFile('irods://' + IRODS_DIRECTORY+TEMP_FILENAME)
         #myfile.add_location("irods:////data/cache/AGLT2_CE_2_FTPplaceholder/whatever?resource=AGLT2_CE_2_FTP")
 
         # grab our home directory (tested on Linux)
@@ -123,7 +134,7 @@ def main(args):
         #print "Deleting downloaded file locally : %s" % (os.getcwd() + TEMP_FILENAME)
         #os.remove(os.getcwd() +"/" + TEMP_FILENAME)
 
-        print "Deleting downloaded file locally : %s" % ("/tmp" + TEMP_FILENAME)
+        print "Deleting downloaded file locally: %s" % ("/tmp" + TEMP_FILENAME)
         os.remove("/tmp/" + TEMP_FILENAME)
 
         print "Making test dir %s on iRODS" % (IRODS_DIRECTORY+TEMP_DIR)
