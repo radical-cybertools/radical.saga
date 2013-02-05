@@ -192,6 +192,8 @@ cmd_run2 () {
   # this is the second part of the double fork -- run the actual workload in the
   # background and return - voila!  Note: no wait here, as the spawned script is
   # supposed to stay alive with the job.
+  #
+  # FIXME: not sure if the error reporting on mkdir problems actually works...
 
   set +x # turn of debug tracing -- stdout interleaving will mess with parsing.
 
@@ -199,7 +201,7 @@ cmd_run2 () {
   DIR="$BASE/$SAGA_PID"
 
   test -d "$DIR"    && rm    -rf "$DIR"  # re-use old pid's
-  test -d "$DIR"    || mkdir -p  "$DIR"  || (ERROR "cannot use job id"; return 0)
+  test -d "$DIR"    || mkdir -p  "$DIR"  || (ERROR="cannot use job id"; return 0)
   echo "NEW "       >> "$DIR/state"
 
   cmd_run_process $@ 1>/dev/null 2>/dev/null 3</dev/null &
@@ -283,7 +285,45 @@ cmd_state () {
   verify_state $1 || return
 
   DIR="$BASE/$1"
-  RETVAL=`grep -e ' $' $DIR/state | tail -n 1`
+  RETVAL=`grep -e ' $' "$DIR/state" | tail -n 1`
+}
+
+
+# --------------------------------------------------------------------
+#
+# wait for job to finish.  Arguments are pid, and time to wait in seconds
+# (forever by default).  Note that a '
+#
+cmd_wait () {
+  verify_state $1 || return
+
+  DIR="$BASE/$1"
+  RETVAL=`grep -e ' $' "$DIR/state" | tail -n 1`
+}
+
+
+# --------------------------------------------------------------------
+#
+# get exit code
+#
+cmd_result () {
+  verify_state $1 || return
+
+  DIR="$BASE/$1"
+  state=`grep -e ' $' $DIR/state | tail -n 1`
+
+  if test "$state" != "DONE" -a "$state" != "FAILED" -a "$state" != "CANCELED"
+  then 
+    ERROR="job $1 in incorrect state ($state != RUNNING)"
+    return
+  fi
+
+  if ! test -r "$DIR/exit"
+  then
+    ERROR="job $1 in incorrect state -- no exit code available"
+  fi
+
+  RETVAL=`cat "$DIR/exit"`
 }
 
 
@@ -528,7 +568,9 @@ listen() {
       SUSPEND ) cmd_suspend $args ;;
       RESUME  ) cmd_resume  $args ;;
       CANCEL  ) cmd_cancel  $args ;;
+      RESULT  ) cmd_result  $args ;;
       STATE   ) cmd_state   $args ;;
+      WAIT    ) cmd_wait    $args ;;
       STDIN   ) cmd_stdin   $args ;;
       STDOUT  ) cmd_stdout  $args ;;
       STDERR  ) cmd_stderr  $args ;;

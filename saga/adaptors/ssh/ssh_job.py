@@ -149,6 +149,18 @@ _ADAPTOR_DOC           = {
           * Other system limits (memory, CPU, selinux, accounting etc.) apply as
             usual.
 
+          
+          * thread safety: it is safe to create multiple :class:`job.Service`
+            instances to the same target host at a time -- they should not
+            interfere with each other, but ``list()`` will list jobs created by
+            either instance (if those use the same target host user account).
+
+            It is **not** safe to use the *same* :class:`job.Service` instance
+            from multiple threads concurrently -- the communication on the I/O
+            channel will likely get screwed up.  This limitation may be removed
+            in future versions of the adaptor.  Non-concurrent (i.e. serialized)
+            use should work as expected though.
+
         """,
     "schemas"          : {"fork"   :"use /bin/sh to run jobs", 
                           "ssh"    :"use ssh to run remote jobs", 
@@ -381,7 +393,6 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
     def _job_run (self, jd) :
         """ runs a job on the wrapper via pty, and returns the job id """
 
-
         exe = jd.executable
         arg = ""
         env = ""
@@ -417,7 +428,9 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         if lines[-2] != "OK" :
             raise saga.NoSuccess ("failed to run job (%s)" % lines)
 
-        job_id = "[%s]-[%s]" % (self.rm, lines[-1])
+        # FIXME: verify format of returned pid (\d+)!
+        pid    = lines[-1].strip ()
+        job_id = "[%s]-[%s]" % (self.rm, pid)
 
         self._logger.debug ("started job %s" % job_id)
 
@@ -444,6 +457,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self._logger.debug (lines)
 
         if  len (lines) == 3 :
+            # shell did not manage to do 'stty -echo'?
             del (lines[0])
 
         if  len (lines) != 2 :
@@ -452,9 +466,95 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
 
-        return lines[1]
+        return lines[1].strip ()
         
 
+    # ----------------------------------------------------------------
+    #
+    # TODO: this should also fetch the (final) state, to safe a hop
+    #
+    def _job_get_exit_code (self, id) :
+        """ get the job's exit code from the wrapper shell """
+
+        rm, pid = self._adaptor.parse_id (id)
+
+        ret, out, _ = self.shell.run_sync ("RESULT %s\n" % pid)
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to get job exit code for '%s': (%s)(%s)" \
+                               % (id, ret, out))
+
+        lines = filter (None, out.split ("\n"))
+        self._logger.debug (lines)
+
+        if  len (lines) == 3 :
+            # shell did not manage to do 'stty -echo'?
+            del (lines[0])
+
+        if  len (lines) != 2 :
+            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % (id, lines))
+
+        if lines[0] != "OK" :
+            raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
+
+        return lines[1].strip ()
+        
+
+    # ----------------------------------------------------------------
+    #
+    # TODO: this should also fetch the (final) state, to safe a hop
+    #
+    def _job_cancel (self, id) :
+
+        rm, pid = self._adaptor.parse_id (id)
+
+        ret, out, _ = self.shell.run_sync ("CANCEL %s\n" % pid)
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to cancel job '%s': (%s)(%s)" \
+                               % (id, ret, out))
+
+        lines = filter (None, out.split ("\n"))
+        self._logger.debug (lines)
+
+        if  len (lines) == 2 :
+            # shell did not manage to do 'stty -echo'?
+            del (lines[0])
+
+        if  len (lines) != 1 :
+            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % (id, lines))
+
+        if lines[0] != "OK" :
+            raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
+
+
+    # ----------------------------------------------------------------
+    #
+    # TODO: this should also fetch the (final) state, to safe a hop
+    # TODO: implement via notifications
+    #
+    def _job_wait (self, id, timeout) :
+        """ 
+        A call to the shell to do the WAIT would block the shell for any
+        other interactions.  In particular, it would practically kill it if the
+        Wait waits forever...
+
+        So we implement the wait via a state pull.  The *real* solution is, of
+        course, to implement state notifications, and wait for such
+        a notification to arrive within timeout seconds...
+        """
+
+        time_start = time.time ()
+        time_now   = time_start
+        rm, pid    = self._adaptor.parse_id (id)
+
+        while True :
+            state = _job_get_state (id)
+            if  state == saga.job.Done     or \
+                state == saga.job.Failed   or \
+                state == saga.job.Canceled    :
+                    return True
+
+        if  time_now - time_start > timeout :
+            return False
 
     # ----------------------------------------------------------------
     #
@@ -488,13 +588,13 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
   # # ----------------------------------------------------------------
   # #
   # @SYNC_CALL
-  # def list(self):
+  # def list (self):
   #     """ Implements saga.adaptors.cpi.job.Service.list()
   #     """
-  #     jobids = list()
-  #     for (job_obj, job_id) in self._jobs.iteritems():
+  #     jobids = list ()
+  #     for (job_obj, job_id) in self._jobs.iteritems ():
   #         if job_id is not None:
-  #             jobids.append(job_id)
+  #             jobids.append (job_id)
   #     return jobids
   #
   #
@@ -504,11 +604,11 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
   # def get_job (self, jobid):
   #     """ Implements saga.adaptors.cpi.job.Service.get_url()
   #     """
-  #     if jobid not in self._jobs.values():
+  #     if jobid not in self._jobs.values ():
   #         msg = "Service instance doesn't know a Job with ID '%s'" % (jobid)
   #         raise saga.BadParameter._log (self._logger, msg)
   #     else:
-  #         for (job_obj, job_id) in self._jobs.iteritems():
+  #         for (job_obj, job_id) in self._jobs.iteritems ():
   #             if job_id == jobid:
   #                 return job_obj.get_api ()
   #
@@ -516,26 +616,26 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
   # # ----------------------------------------------------------------
   # #
   # def container_run (self, jobs) :
-  #     self._logger.debug("container run: %s"  %  str(jobs))
+  #     self._logger.debug ("container run: %s"  %  str(jobs))
   #     # TODO: this is not optimized yet
   #     for job in jobs:
-  #         job.run()
+  #         job.run ()
   #
   #
   # # ----------------------------------------------------------------
   # #
   # def container_wait (self, jobs, mode, timeout) :
-  #     self._logger.debug("container wait: %s"  %  str(jobs))
+  #     self._logger.debug ("container wait: %s"  %  str(jobs))
   #     # TODO: this is not optimized yet
   #     for job in jobs:
-  #         job.wait()
+  #         job.wait ()
   #
   #
   # # ----------------------------------------------------------------
   # #
   # def container_cancel (self, jobs) :
-  #     self._logger.debug("container cancel: %s"  %  str(jobs))
-  #     raise saga.NoSuccess("Not Implemented");
+  #     self._logger.debug ("container cancel: %s"  %  str(jobs))
+  #     raise saga.NoSuccess ("Not Implemented");
 
 
 ###############################################################################
@@ -578,19 +678,19 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_state(self):
+    def get_state (self):
         """ Implements saga.adaptors.cpi.job.Job.get_state()
         """
         self._state = self.js._job_get_state (self._id)
         return self._state
   
 
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def wait(self, timeout):
-  #     pass
-  #
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def wait (self, timeout):
+        return self.js._job_wait (self._id, timeout)
+   
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -598,18 +698,25 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
         """ Implements saga.adaptors.cpi.job.Job.get_id() """        
         return self._id
    
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_exit_code (self) :
+        """ Implements saga.adaptors.cpi.job.Job.get_exit_code() """
+
+        if self._exit_code != None :
+            return self._exit_code
+
+        self._exit_code = self.js._job_get_exit_code (self._id)
+
+        return self._exit_code
+   
   # # ----------------------------------------------------------------
   # #
-  # @SYNC_CALL
-  # def get_exit_code(self) :
-  #     """ Implements saga.adaptors.cpi.job.Job.get_exit_code()
-  #     """        
-  #     return self._exit_code
-  #
-  # # ----------------------------------------------------------------
+  # # TODO: the values below should be fetched with every get_state...
   # #
   # @SYNC_CALL
-  # def get_created(self) :
+  # def get_created (self) :
   #     """ Implements saga.adaptors.cpi.job.Job.get_started()
   #     """     
   #     # for local jobs started == created. for other adaptors 
@@ -619,7 +726,7 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
   # # ----------------------------------------------------------------
   # #
   # @SYNC_CALL
-  # def get_started(self) :
+  # def get_started (self) :
   #     """ Implements saga.adaptors.cpi.job.Job.get_started()
   #     """        
   #     return self._started
@@ -627,7 +734,7 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
   # # ----------------------------------------------------------------
   # #
   # @SYNC_CALL
-  # def get_finished(self) :
+  # def get_finished (self) :
   #     """ Implements saga.adaptors.cpi.job.Job.get_finished()
   #     """        
   #     return self._finished
@@ -635,33 +742,31 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
   # # ----------------------------------------------------------------
   # #
   # @SYNC_CALL
-  # def get_execution_hosts(self) :
+  # def get_execution_hosts (self) :
   #     """ Implements saga.adaptors.cpi.job.Job.get_execution_hosts()
   #     """        
   #     return self._execution_hosts
   #
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def cancel(self, timeout):
-  #     pass
-  #
-  #
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def run(self): 
-        """ Implements saga.adaptors.cpi.job.Job.run()
-        """
-        # FIXME: verify id format!
+    def cancel (self, timeout):
+        self._id = self.js._job_cancel (self.jd)
+   
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def run (self): 
         self._id = self.js._job_run (self.jd)
 
 
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def re_raise(self):
-  #     return self._exception
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def re_raise (self):
+        # nothing to do here actually, as run () is synchronous...
+        return self._exception
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
