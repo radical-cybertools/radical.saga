@@ -219,7 +219,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
 ###############################################################################
 #
-class LocalJob (saga.adaptors.cpi.job.Job) :
+class PBSJob (saga.adaptors.cpi.job.Job) :
     """ Implements saga.adaptors.cpi.job.Job
     """
     def __init__ (self, api, adaptor) :

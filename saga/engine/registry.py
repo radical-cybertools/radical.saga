@@ -22,6 +22,7 @@ adaptor_registry = [
                     "saga.adaptors.context.ssh",
                     "saga.adaptors.context.userpass",
                     "saga.adaptors.local.localjob",
+                    "saga.adaptors.pbs.pbsjob",
                     "saga.adaptors.local.localfile",
                     "saga.adaptors.local.dummyfile",
                     "saga.adaptors.ssh.ssh_job",

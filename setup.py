@@ -122,6 +122,7 @@ setup_args = {
         "saga.adaptors.cpi.advert",
         "saga.adaptors.context",
         "saga.adaptors.local",
+        "saga.adaptors.pbs",
         "saga.adaptors.redis",
         "saga.adaptors.ssh",
         "saga.adaptors.irods",
