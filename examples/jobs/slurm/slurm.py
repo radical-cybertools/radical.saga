@@ -27,9 +27,9 @@ TEMP_FILENAME = "test.txt" # filename to create and use for testing
 
 def main(args):
     try:
-                # create a job service for the local machine. both, 'fork' and 
+        # create a job service for the local machine. both, 'fork' and 
         # 'local' schemes trigger the local job adaptor. 
-        js = saga.job.Service("fork://localhost")
+        js = saga.job.Service("ssh://localhost")
 
         # describe our job
         jd = saga.job.Description()
