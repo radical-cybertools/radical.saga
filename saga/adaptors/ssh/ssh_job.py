@@ -505,7 +505,7 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
         self._method_type     = "run"
 
         # initialize job attribute values
-        self._id              = "default id"
+        self._id              = None
         self._state           = saga.job.NEW
         self._exit_code       = None
         self._exception       = None
