@@ -1,6 +1,6 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2011-2012, The SAGA Project"
+__author__    = "Ole Weidner"
+__copyright__ = "Copyright 2011-2013, The SAGA Project"
 __license__   = "MIT"
 
 import os

@@ -352,7 +352,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # TODO: replace some constants in the script with values from config
         # files, such as 'timeout' or 'purge_on_quit' ...
         #
-        self.shell.stage_from_string (src = ssh_wrapper._WRAPPER_SCRIPT, 
+        self.shell.stage_to_file (src = ssh_wrapper._WRAPPER_SCRIPT, 
                                       tgt = "%s/wrapper.sh" % base)
 
         # if debug_trace is set, we add some magic redirection to the shell
@@ -431,15 +431,13 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
                 arg += " %s" % a
 
         if jd.attribute_exists ("environment") :
-            env = "/usr/bin/env"
             for e in jd.environment :
-                env += " %s=%s"  %  (e, jd.environment[e])
-            env += " "
+                env += "export %s=%s; "  %  (e, jd.environment[e])
 
         if jd.attribute_exists ("working_directory") :
             cwd = "cd %s && " % jd.working_directory
 
-        cmd = "%s %s %s %s"  %  (env, cwd, exe, arg)
+        cmd = "(%s %s %s %s)"  %  (env, cwd, exe, arg)
 
         ret, out, _ = self.shell.run_sync ("RUN %s" % cmd)
         if  ret != 0 :
@@ -582,9 +580,10 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
             time.sleep (0.5)
 
             # check if we hit timeout
-            time_now = time.time ()
-            if  time_now - time_start > timeout :
-                return False
+            if  timeout >= 0 :
+                time_now = time.time ()
+                if  time_now - time_start > timeout :
+                    return False
 
     # ----------------------------------------------------------------
     #
@@ -621,9 +620,6 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
     def list (self):
 
         ret, out, _ = self.shell.run_sync ("LIST\n")
-        print " ---------------------- "
-        print out
-        print " ---------------------- "
         if  ret != 0 :
             raise saga.NoSuccess ("failed to list jobs: (%s)(%s)" \
                                % (ret, out))
@@ -715,7 +711,7 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
         self._method_type     = "run"
 
         # initialize job attribute values
-        self._id              = "default id"
+        self._id              = None
         self._state           = saga.job.NEW
         self._exit_code       = None
         self._exception       = None
@@ -731,8 +727,17 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
     def get_state (self):
         """ Implements saga.adaptors.cpi.job.Job.get_state()
         """
-        self._state = self.js._job_get_state (self._id)
-        return self._state
+
+        # we may not yet have a backend representation...
+        try :
+            self._state = self.js._job_get_state (self._id)
+            return self._state
+        except Exception as e :
+            if self._id == None :
+                return self._state
+            else :
+                raise e
+
   
 
     # ----------------------------------------------------------------
