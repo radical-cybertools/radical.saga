@@ -1,29 +1,34 @@
+#!/usr/bin/env python
+# encoding: utf-8
 
 """ This examples shows how to run a job on the local machine
-    using the 'local' job adaptor. 
+    using the 'local' job adaptor.
 """
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-import sys, saga
+import sys
+import saga
+
 
 def main():
-    
+
     try:
-        # create a job service for the local machine. both, 'fork' and 
-        # 'local' schemes trigger the local job adaptor. 
+        # create a job service for the local machine. both, 'fork' and
+        # 'local' schemes trigger the local job adaptor.
         js = saga.job.Service("fork://localhost")
 
         # describe our job
         jd = saga.job.Description()
 
-        # environment, executable & arguments
-        jd.environment = {'CATME':'10'}       
+        # environment, executable & arguments. We use '/bin/sleep' to simulate
+        # a job that runs for $RUNTIME seconds.
+        jd.environment = {'RUNTIME': '10'}
         jd.executable  = '/bin/sleep'
-        jd.arguments   = ['$CATME']
-        
+        jd.arguments   = ['$RUNTIME']
+
         # output options (will just be empty files for /bin/sleep)
         jd.output = "saga_localjob.stdout"
         jd.error  = "saga_localjob.stderr"
@@ -54,13 +59,10 @@ def main():
 
     except saga.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))
-        # get the whole traceback in case of an exception - 
+        # get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
-        print " *** %s" % saga.utils.exception.get_traceback()
+        print " *** %s" % ex.traceback
         sys.exit(-1)
 
 if __name__ == "__main__":
     main()
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
