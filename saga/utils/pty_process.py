@@ -164,16 +164,16 @@ class PTYProcess (object) :
 
     # --------------------------------------------------------------------
     #
-    def __del__ (self) :
-        """ 
-        Need to free pty's on destruction, otherwise we might ran out of
-        them (see cat /proc/sys/kernel/pty/max)
-        """
+    # def __del__ (self) :
+    #     """ 
+    #     Need to free pty's on destruction, otherwise we might ran out of
+    #     them (see cat /proc/sys/kernel/pty/max)
+    #     """
 
-        self.logger.error ("pty dying...")
-        self.logger.trace ()
+    #     self.logger.error ("pty dying...")
+    #     self.logger.trace ()
 
-        self.close ()
+    #     self.close ()
 
 
     # --------------------------------------------------------------------

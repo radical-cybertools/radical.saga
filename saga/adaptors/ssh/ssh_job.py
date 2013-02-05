@@ -234,26 +234,26 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
     # ----------------------------------------------------------------
     #
-    def __del__ (self) :
+    # def __del__ (self) :
 
-        # FIXME: not sure if we should PURGE here -- that removes states which
-        # might not be evaluated, yet.  Should we mark state evaluation
-        # separately? 
-        #   cmd_state () { touch $DIR/purgeable; ... }
-        # When should that be done?
-        self._logger.error ("adaptor dying... %s" % self.njobs)
-        self._logger.trace ()
+    #     # FIXME: not sure if we should PURGE here -- that removes states which
+    #     # might not be evaluated, yet.  Should we mark state evaluation
+    #     # separately? 
+    #     #   cmd_state () { touch $DIR/purgeable; ... }
+    #     # When should that be done?
+    #     self._logger.error ("adaptor dying... %s" % self.njobs)
+    #     self._logger.trace ()
 
-        try :
-          # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
-            if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
-        except :
-            pass
+    #     try :
+    #       # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
+    #         if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
+    #     except :
+    #         pass
 
-        try :
-            if self.shell : del (self.shell)
-        except :
-            pass
+    #     try :
+    #         if self.shell : del (self.shell)
+    #     except :
+    #         pass
 
 
     # ----------------------------------------------------------------

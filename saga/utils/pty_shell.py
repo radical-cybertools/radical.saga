@@ -225,12 +225,12 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def __del__ (self) :
+    # def __del__ (self) :
 
-        self.logger.error ("shell dying...")
-        self.logger.trace ()
+    #     self.logger.error ("shell dying...")
+    #     self.logger.trace ()
 
-        self.close ()
+    #     self.close ()
 
 
     # ----------------------------------------------------------------
@@ -269,8 +269,12 @@ class PTYShell (object) :
     #
     def find_prompt (self) :
 
-        _,   match = self.pty.find    ([self.prompt], _PTY_TIMEOUT)
-        ret, txt   = self.eval_prompt (match)
+        match = None
+
+        while not match :
+            _, match = self.pty.find    ([self.prompt], _PTY_TIMEOUT)
+
+        ret, txt = self.eval_prompt (match)
 
         return (ret, txt)
 

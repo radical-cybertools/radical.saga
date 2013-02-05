@@ -22,21 +22,28 @@ def get_mem () :
     return 0
 
 
-def workload (url, n_jobs) :
+def create_service (url, services) :
+
+    service = saga.job.Service (url)
+  # print "%s : %s" % (service.get_url (), id(service))
+    services.append (service)
+
+
+
+def run_jobs (service, n_jobs) :
 
     jd   = saga.job.Description ()
     jd.executable = '/bin/date'
     
-    service = saga.job.Service (url)
-
     for id in range (1, n_jobs+1) :
         tmp_j     = service.create_job (jd)
         tmp_j.run ()
-        print "id: %5d : %s  [%s] [%s]" % (id, tmp_j.id, tmp_j.get_state (), get_mem ())
+    #   print "id: %5d : %s  [%s] [%s]" % (id, tmp_j.id, tmp_j.get_state (), get_mem ())
 
-    time.sleep (1)
-    sys.stdout.write ('\n')
-    del (service)
+    # time.sleep (1)
+    # sys.stdout.write ('\n')
+    # del (service)
+
 
 
 def perf (n_jobs, urls) :
@@ -45,12 +52,23 @@ def perf (n_jobs, urls) :
 
         s = saga.Session ()
 
-        start      = time.time ()
         threads    = []
         n_services = len(urls)
+        services    = []
 
         for url in urls :
-            thread = threading.Thread (target=workload, args=[url, n_jobs//n_services])
+            thread = threading.Thread (target=create_service, args=[url, services])
+            thread.start ()
+            threads.append (thread)
+
+        for thread in threads :
+            thread.join ()
+
+        threads = []
+
+        start      = time.time ()
+        for service in services :
+            thread = threading.Thread (target=run_jobs, args=[service, n_jobs // n_services])
             thread.start ()
             threads.append (thread)
 
@@ -83,13 +101,13 @@ print "services      jobs  time             jobs/sec           memory  urls"
 # perf (    1,  1*['ssh://amerzky@cyder.cct.lsu.edu/'])
 # perf (    1,  1*['ssh://merzky@repex1.tacc.utexas.edu/'])
 
-# perf (  1000,  10*['ssh://localhost/'])
-# perf (  1000,  10*['ssh://localhost/'])
-perf (  10,  10*['fork://localhost/'])
-perf (  10,  10*['fork://localhost/'])
-# perf (  100,  2*['ssh://amerzky@cyder.cct.lsu.edu/'])
-# perf (  10,  2*['ssh://merzky@repex1.tacc.utexas.edu/'])
-# perf (  10,  2*['gsissh://tg-login.ranger.tacc.teragrid.org/'])
+perf (  100,  10*['ssh://amerzky@cyder.cct.lsu.edu/'])
+perf (  100,  10*['ssh://localhost/'])
+perf (  100,  10*['ssh://localhost/'])
+perf (  100,  10*['fork://localhost/'])
+perf (  100,  10*['fork://localhost/'])
+perf (  100,  10*['ssh://merzky@repex1.tacc.utexas.edu/'])
+perf (  100,  10*['gsissh://tg-login.ranger.tacc.teragrid.org/'])
  
 # perf (  100,  1*['ssh://merzky@localhost/'])
 
