@@ -7,9 +7,12 @@ import saga.utils.pty_shell
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
+from   saga.job.constants import *
+
 import re
 import os
 import time
+import threading
 
 import ssh_wrapper
 
@@ -145,6 +148,20 @@ _ADAPTOR_DOC           = {
               NoSuccess: failed to run job (/bin/sh: fork: retry: Resource temporarily unavailable)
               NoSuccess: failed to run job -- backend error
 
+          * number of files are limited, as is disk space: the job.service will
+            
+            keep job state on the remote disk, in ``$HOME/.saga/adaptors/ssh_job/``.
+            Quota limitations may limit the number of files created there,
+            and/or the total size of that directory.  
+
+            On quota or disk space limits, you may see error messages similar to
+            the following ones::
+            
+              NoSuccess: read from pty process failed ([Errno 5] Quota exceeded)
+              NoSuccess: read from pty process failed ([Errno 5] Input/output error)
+              NoSuccess: find from pty process [Thread-5] failed (Could not read - pty process died)
+              
+
 
           * Other system limits (memory, CPU, selinux, accounting etc.) apply as
             usual.
@@ -160,6 +177,14 @@ _ADAPTOR_DOC           = {
             channel will likely get screwed up.  This limitation may be removed
             in future versions of the adaptor.  Non-concurrent (i.e. serialized)
             use should work as expected though.
+
+         
+          * the adaptor option ``enable_debug_trace`` will create a detailed
+            trace of the remote shell execution, on the remote host.  This will
+            interfere with the shell's stdio though, and may cause unexpected
+            failures.  Debugging should only be enabled as last resort, e.g.
+            when logging on DEBUG level remains inconclusive, and should
+            **never** be used in production mode.
 
         """,
     "schemas"          : {"fork"   :"use /bin/sh to run jobs", 
@@ -209,7 +234,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         self.debug_trace   = self.opts['enable_debug_trace'  ].get_value ()
         self.notifications = self.opts['enable_notifications'].get_value ()
 
-        self._logger.info ('debug trace: %s', self.debug_trace)
+        self._logger.info  ('debug trace : %s' % self.debug_trace)
+        self._logger.debug ('threading id: %s' % threading.current_thread ().name)
 
 
     # ----------------------------------------------------------------
@@ -547,14 +573,18 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         rm, pid    = self._adaptor.parse_id (id)
 
         while True :
-            state = _job_get_state (id)
-            if  state == saga.job.Done     or \
-                state == saga.job.Failed   or \
-                state == saga.job.Canceled    :
+            state = self._job_get_state (id)
+            if  state == 'DONE'     or \
+                state == 'FAILED'   or \
+                state == 'CANCELED'    :
                     return True
+            # avoid busy poll
+            time.sleep (0.5)
 
-        if  time_now - time_start > timeout :
-            return False
+            # check if we hit timeout
+            time_now = time.time ()
+            if  time_now - time_start > timeout :
+                return False
 
     # ----------------------------------------------------------------
     #
@@ -585,19 +615,39 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         return self.rm
 
 
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def list (self):
-  #     """ Implements saga.adaptors.cpi.job.Service.list()
-  #     """
-  #     jobids = list ()
-  #     for (job_obj, job_id) in self._jobs.iteritems ():
-  #         if job_id is not None:
-  #             jobids.append (job_id)
-  #     return jobids
-  #
-  #
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def list (self):
+
+        ret, out, _ = self.shell.run_sync ("LIST\n")
+        print " ---------------------- "
+        print out
+        print " ---------------------- "
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to list jobs: (%s)(%s)" \
+                               % (ret, out))
+
+        lines = filter (None, out.split ("\n"))
+        self._logger.debug (lines)
+
+        if lines[0] != "OK" :
+            raise saga.NoSuccess ("failed to list jobs (%s)" % (lines))
+
+        del lines[0]
+        self._ids = []
+
+        for line in lines :
+            try :
+                pid    = int(line.strip ())
+                job_id = "[%s]-[%s]" % (self.rm, pid)
+                self._ids.append (job_id)
+            except Exception as e:
+                self._logger.error ("Ignore non-int job pid (%s) (%s)" % (line, e))
+
+        return self._ids
+   
+   
   # # ----------------------------------------------------------------
   # #
   # @SYNC_CALL

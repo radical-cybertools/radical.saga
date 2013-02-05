@@ -195,7 +195,7 @@ cmd_run2 () {
   #
   # FIXME: not sure if the error reporting on mkdir problems actually works...
 
-  set +x # turn of debug tracing -- stdout interleaving will mess with parsing.
+  set +x # turn off debug tracing -- stdout interleaving will mess with parsing.
 
   SAGA_PID=`sh -c 'echo $PPID'`
   DIR="$BASE/$SAGA_PID"
@@ -228,7 +228,7 @@ EOT
   # the job script above is started by this startup script, which makes sure
   # that the job state is properly watched and captured.
   cat                >  "$DIR/monitor.sh" <<EOT
-    DIR=$DIR
+    DIR="$DIR"
     nohup /bin/sh       "\$DIR/job.sh" 1>/dev/null 2>/dev/null 3</dev/null &
     rpid=\$!
     echo \$rpid      >  "\$DIR/pid"
@@ -310,7 +310,7 @@ cmd_result () {
   verify_state $1 || return
 
   DIR="$BASE/$1"
-  state=`grep -e ' $' $DIR/state | tail -n 1`
+  state=`grep -e ' $' "$DIR/state" | tail -n 1`
 
   if test "$state" != "DONE" -a "$state" != "FAILED" -a "$state" != "CANCELED"
   then 
@@ -336,7 +336,7 @@ cmd_suspend () {
   verify_pid   $1 || return
 
   DIR="$BASE/$1"
-  state=`grep -e ' $' $DIR/state | tail -n 1`
+  state=`grep -e ' $' "$DIR/state" | tail -n 1`
   rpid=`cat "$DIR/pid"`
 
   if ! test "$state" = "RUNNING"
@@ -370,8 +370,8 @@ cmd_resume () {
   verify_pid   $1 || return
 
   DIR="$BASE/$1"
-  state=`grep -e ' $' $DIR/state | tail -n 1`
-  rpid=`cat $DIR/pid`
+  state=`grep -e ' $' "$DIR/state" | tail -n 1`
+  rpid=`cat "$DIR/pid"`
 
   if ! test "$state" = "SUSPENDED"
   then
@@ -406,8 +406,8 @@ cmd_cancel () {
 
   DIR="$BASE/$1"
 
-  state=`grep -e ' $' $DIR/state | tail -n 1`
-  rpid=`cat $DIR/pid`
+  state=`grep -e ' $' "$DIR/state" | tail -n 1`
+  rpid=`cat "$DIR/pid"`
 
   if test "$state" != "SUSPENDED" -a "$state" != "RUNNING"
   then
@@ -473,12 +473,7 @@ cmd_stderr () {
 # list all job IDs
 #
 cmd_list () {
-  for d in "$BASE"/*
-  do
-    RETVAL="$RETVAL`basename $d` "
-  done
-
-  if test "$RETVAL" = "* "; then RETVAL=""; fi
+  RETVAL=`(cd "$BASE" ; ls -C1 -d */) | cut -f 1 -d '/'`
 }
 
 
@@ -490,11 +485,11 @@ cmd_purge () {
 
   if test -z "$1"
   then
-    # FIXME
+    # FIXME - this is slow
     for d in `grep -l -e 'DONE' -e 'FAILED' -e 'CANCELED' "$BASE"/*/state`
     do
-      dir=`dirname $d`
-      id=`basename $dir`
+      dir=`dirname "$d"`
+      id=`basename "$dir"`
       rm -rf "$BASE/$id"
     done
     RETVAL="purged finished jobs"
