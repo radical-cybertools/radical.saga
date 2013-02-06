@@ -104,7 +104,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 #
 # job adaptor class
 #
-class ContextX509 (saga.adaptors.cpi.Context) :
+class ContextX509 (saga.adaptors.cpi.context.Context) :
 
     def __init__ (self, api, adaptor) :
 

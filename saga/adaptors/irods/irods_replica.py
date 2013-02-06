@@ -352,7 +352,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 #
 # logical_directory adaptor class
 #
-class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.cpi.Async) :
+class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
 
     # ----------------------------------------------------------------
     #
@@ -546,7 +546,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory, saga.adaptors.
 #
 # logical_file adaptor class
 #
-class IRODSFile (saga.adaptors.cpi.replica.LogicalFile, saga.adaptors.cpi.Async) :
+class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
 
     # ----------------------------------------------------------------
     #

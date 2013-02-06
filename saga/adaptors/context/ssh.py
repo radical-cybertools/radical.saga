@@ -103,7 +103,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 #
 # job adaptor class
 #
-class ContextSSH (saga.adaptors.cpi.Context) :
+class ContextSSH (saga.adaptors.cpi.context.Context) :
 
     def __init__ (self, api, adaptor) :
 

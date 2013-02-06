@@ -9,6 +9,7 @@ import traceback
 import saga.url
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.filesystem
+
 import saga.utils.misc
 
 SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
@@ -132,11 +133,11 @@ class BulkDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
 ###############################################################################
 #
-class LocalDirectory (saga.adaptors.cpi.filesystem.Directory, saga.adaptors.cpi.Async) :
+class LocalDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     def __init__ (self, api, adaptor) :
 
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.base.CPIBase.__init__ (self, api, adaptor)
 
 
     @SYNC_CALL
@@ -244,7 +245,6 @@ class LocalDirectory (saga.adaptors.cpi.filesystem.Directory, saga.adaptors.cpi.
     @SYNC_CALL
     def copy (self, source, target, flags) :
 
-
         src_url = saga.url.Url (source)
         src     = src_url.path
         tgt_url = saga.url.Url (target)
@@ -259,7 +259,9 @@ class LocalDirectory (saga.adaptors.cpi.filesystem.Directory, saga.adaptors.cpi.
             raise saga.exceptions.BadParameter ("Cannot handle url %s (not local)"     %  source)
 
         if src[0] != '/' :
-            src = "%s/%s"   % (os.path.dirname (src), src)
+            if not src_url.scheme and not src_url.host :
+                if self._url.path[0] == '/' :
+                    src = "%s/%s"   % (self._url.path, src)
 
 
         if tgt_url.schema :
@@ -270,10 +272,28 @@ class LocalDirectory (saga.adaptors.cpi.filesystem.Directory, saga.adaptors.cpi.
             raise saga.exceptions.BadParameter ("Cannot handle url %s (not local)"     %  target)
 
         if tgt[0] != '/' :
-            tgt = "%s/%s"   % (os.path.dirname (src), tgt)
+            if not tgt_url.scheme and not tgt_url.host :
+                if self._url.path[0] == '/' :
+                    tgt = "%s/%s"   % (self._url.path, tgt)
 
-        print "sync copy %s -> %s" % (src, tgt)
-        shutil.copy2 (src, tgt)
+
+        # FIXME: eval flags, check for existence, etc.
+
+
+        if os.path.isdir (src) :
+            print "sync copy tree %s -> %s" % (src, tgt)
+            shutil.copytree (src, tgt)
+
+        else : 
+            print "sync copy %s -> %s" % (src, tgt)
+            shutil.copy2 (src, tgt)
+
+
+
+    @SYNC_CALL
+    def copy_self (self, target, flags) :
+
+        return self.copy (self._url, target, flags)
 
 
     @ASYNC_CALL
@@ -337,7 +357,7 @@ class LocalDirectory (saga.adaptors.cpi.filesystem.Directory, saga.adaptors.cpi.
 class LocalFile (saga.adaptors.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.base.CPIBase.__init__ (self, api, adaptor)
 
 
     def _dump (self) :

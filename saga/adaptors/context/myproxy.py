@@ -79,7 +79,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 #
 # job adaptor class
 #
-class ContextMyProxy (saga.adaptors.cpi.Context) :
+class ContextMyProxy (saga.adaptors.cpi.context.Context) :
 
     def __init__ (self, api, adaptor) :
         saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)

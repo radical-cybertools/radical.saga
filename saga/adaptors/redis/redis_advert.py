@@ -150,7 +150,7 @@ class BulkDirectory (saga.adaptors.cpi.advert.Directory) :
 
 ###############################################################################
 #
-class RedisDirectory (saga.adaptors.cpi.advert.Directory, saga.adaptors.cpi.Async) :
+class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
 
     def __init__ (self, api, adaptor) :
 
