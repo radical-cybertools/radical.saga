@@ -124,10 +124,6 @@ class LocalJobService (saga.adaptors.cpi.job.Service) :
         """ Service instance constructor
         """
 
-        print " state  : %s " % str(adaptor_state)
-        print " rm_url : %s " % str(rm_url)
-        print " session: %s " % str(session)
-
         # check that the hostname is supported
         fqhn = Adaptor().hostname
         if rm_url.host != 'localhost' and rm_url.host != fqhn:
