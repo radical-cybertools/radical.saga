@@ -312,9 +312,9 @@ cmd_result () {
   DIR="$BASE/$1"
   state=`grep -e ' $' "$DIR/state" | tail -n 1`
 
-  if test "$state" != "DONE" -a "$state" != "FAILED" -a "$state" != "CANCELED"
+  if test "$state" != "DONE " -a "$state" != "FAILED " -a "$state" != "CANCELED "
   then 
-    ERROR="job $1 in incorrect state ($state != RUNNING)"
+    ERROR="job $1 in incorrect state ($state != DONE|FAILED|CANCELED)"
     return
   fi
 
@@ -339,7 +339,7 @@ cmd_suspend () {
   state=`grep -e ' $' "$DIR/state" | tail -n 1`
   rpid=`cat "$DIR/pid"`
 
-  if ! test "$state" = "RUNNING"
+  if ! test "$state" = "RUNNING "
   then
     ERROR="job $1 in incorrect state ($state != RUNNING)"
     return
@@ -373,7 +373,7 @@ cmd_resume () {
   state=`grep -e ' $' "$DIR/state" | tail -n 1`
   rpid=`cat "$DIR/pid"`
 
-  if ! test "$state" = "SUSPENDED"
+  if ! test "$state" = "SUSPENDED "
   then
     ERROR="job $1 in incorrect state ($state != SUSPENDED)"
     return
@@ -409,7 +409,7 @@ cmd_cancel () {
   state=`grep -e ' $' "$DIR/state" | tail -n 1`
   rpid=`cat "$DIR/pid"`
 
-  if test "$state" != "SUSPENDED" -a "$state" != "RUNNING"
+  if test "$state" != "SUSPENDED " -a "$state" != "RUNNING "
   then
     ERROR="job $1 in incorrect state ('$state' != 'SUSPENDED|RUNNING')"
     return

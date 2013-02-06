@@ -707,7 +707,7 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
 
         # the js is responsible for job bulk operations -- which
         # for jobs only work for run()
-        self._container       = self.js
+      # self._container       = self.js
         self._method_type     = "run"
 
         # initialize job attribute values
