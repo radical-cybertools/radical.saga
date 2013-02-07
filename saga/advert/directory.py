@@ -28,9 +28,6 @@ class Directory (saga.namespace.directory.Directory,
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
 
-        Attributes.__init__ (self, ttype=_ttype)
-
-
         # set attribute interface properties
         self._attributes_allow_private (True)
         self._attributes_camelcasing   (True)
@@ -47,8 +44,8 @@ class Directory (saga.namespace.directory.Directory,
         self._attributes_register   (EXPIRES,   None, sa.STRING, sa.SCALAR, sa.READONLY)
         self._attributes_register   (TTL,       None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
 
-        self._attributes_set_setter (TTL, self.set_ttl_self)
-        self._attributes_set_getter (TTL, self.get_ttl_self)
+        self._attributes_set_setter (TTL, self.set_ttl)
+        self._attributes_set_getter (TTL, self.get_ttl)
 
 
 

@@ -32,14 +32,14 @@ class Entry (cpi_ns.entry.Entry,
     # advert methods
     #
     @SYNC
-    def set_ttl_self            (self, ttl, ttype=None)              : pass
+    def set_ttl                 (self, ttl, ttype=None)              : pass
     @ASYNC
-    def set_ttl_self_async      (self, ttl, ttype=None)              : pass
+    def set_ttl_async           (self, ttl, ttype=None)              : pass
 
     @SYNC
-    def get_ttl_self            (self, ttype)                        : pass
+    def get_ttl                 (self, ttype)                        : pass
     @ASYNC
-    def get_ttl_self_async      (self, ttype)                        : pass
+    def get_ttl_async           (self, ttype)                        : pass
 
     @SYNC
     def store_object            (self, object, ttype)                : pass
