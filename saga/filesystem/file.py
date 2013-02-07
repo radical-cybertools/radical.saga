@@ -53,15 +53,16 @@ class File (saga.namespace.entry.Entry) :
         # param checks
         url = saga.url.Url (url)
 
-        saga.namespace.entry.Entry.__init__ (self, url, flags, session,
-                                             _adaptor, _adaptor_state, _ttype=_ttype)
+        self._nsentry = super  (Directory, self)
+        self._nsentry.__init__ (url, flags, session, 
+                                _adaptor, _adaptor_state, _ttype=_ttype)
 
 
     # ----------------------------------------------------------------
     #
     # filesystem methods
     #
-    def is_file_self (self, ttype=None) :
+    def is_file (self, ttype=None) :
         '''
         ttype:    saga.task.type enum
         ret:      bool / saga.Task
@@ -69,7 +70,7 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.is_file_self (ttype=ttype)
 
   
-    def get_size_self (self, ttype=None) :
+    def get_size (self, ttype=None) :
         '''
         ttype:    saga.task.type enum
         ret:      int / saga.Task
@@ -201,8 +202,8 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.read_e (emode, spec, data, ttype=ttype)
 
   
-    size  = property (get_size_self)  # int
-    modes = property (modes_e)        # list [string]
+    size  = property (get_size)  # int
+    modes = property (modes_e)   # list [string]
   
   
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

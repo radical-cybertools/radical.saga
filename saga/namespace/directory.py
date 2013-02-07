@@ -31,6 +31,15 @@ class Directory (entry.Entry) :
         for f in entries :
             if f ^ '^.*\.dat$' :
                 dir.copy (f, "sftp://localhost/tmp/data/")
+
+
+    Implementation note:
+    ^^^^^^^^^^^^^^^^^^^^
+
+    The SAGA API Specification (GFD.90) prescribes method overloading on method
+    signatures, but that is not supported by Python (Python only does method
+    overwriting).  So we implement one generic method version here, and do the
+    case switching based on the provided parameter set.
     '''
 
     def __init__ (self, url=None, flags=READ, session=None, 
@@ -62,8 +71,9 @@ class Directory (entry.Entry) :
 
         # FIXME: param checks
 
-        entry.Entry.__init__ (self, url, flags, session, 
-                              _adaptor, _adaptor_state, _ttype=_ttype)
+        self._nsentry = super  (Directory, self)
+        self._nsentry.__init__ (url, flags, session, 
+                                _adaptor, _adaptor_state, _ttype=_ttype)
 
 
     @classmethod
@@ -119,6 +129,27 @@ class Directory (entry.Entry) :
     #
     # namespace directory methods
     #
+    def make_dir (self, tgt, flags=None, ttype=None) :
+        '''
+        :param tgt:   name/path of the new directory
+        :param flags: directory creation flags
+
+        ttype:         saga.task.type enum
+        ret:           None / saga.Task
+        
+        Create a new directoy
+
+        The call creates a directory at the given location.
+
+        Example::
+
+            # create a subdir 'data' in /tmp
+            dir = saga.namespace.Directory("sftp://localhost/tmp/")
+            dir.make_dir ('data/')
+        '''
+        return self._adaptor.make_dir (tgt, flags, ttype=ttype)
+  
+    
     def change_dir (self, url, ttype=None) :
         '''
         url:           saga.Url
@@ -146,18 +177,8 @@ class Directory (entry.Entry) :
                 print f
         '''
         return self._adaptor.list (npat, flags, ttype=ttype)
-  
-    
-    def find (self, npat, flags=RECURSIVE, ttype=None) :
-        '''
-        npat:          string
-        flags:         flags enum
-        ttype:         saga.task.type enum
-        ret:           list [saga.Url] / saga.Task
-        '''
-        return self._adaptor.find (npat, flags, ttype=ttype)
-  
-    
+
+
     def exists (self, path, ttype=None) :
 
         '''
@@ -176,54 +197,18 @@ class Directory (entry.Entry) :
             if dir.exists ('data'):
                 # do something
         '''
-    
         return self._adaptor.exists (path, ttype=ttype)
   
-    
-    def is_dir (self, path, ttype=None) :
-        '''
-        :param path: path of the entry to check
-
-        ttype:         saga.task.type enum
-        ret:           bool / saga.Task
-        
-        Returns True if path is a directory, False otherwise. 
-
-        Example::
-
-            # inspect an entry
-            dir  = saga.namespace.Directory("sftp://localhost/tmp/")
-            if dir.is_dir ('data'):
-                # do something
-        '''
-        return self._adaptor.is_dir (name, ttype=ttype)
   
     
-    def is_entry (self, name, ttype=None) :
+    def find (self, npat, flags=RECURSIVE, ttype=None) :
         '''
-        name:          saga.Url
+        npat:          string
+        flags:         flags enum
         ttype:         saga.task.type enum
-        ret:           bool / saga.Task
+        ret:           list [saga.Url] / saga.Task
         '''
-        return self._adaptor.is_entry (name, ttype=ttype)
-  
-    
-    def is_link (self, name, ttype=None) :
-        '''
-        name:          saga.Url
-        ttype:         saga.task.type enum
-        ret:           bool / saga.Task
-        '''
-        return self._adaptor.is_link (name, ttype=ttype)
-  
-    
-    def read_link (self, name, ttype=None) :
-        '''
-        name:          saga.Url
-        ttype:         saga.task.type enum
-        ret:           saga.Url / saga.Task
-        '''
-        return self._adaptor.read_link (name, ttype=ttype)
+        return self._adaptor.find (npat, flags, ttype=ttype)
   
     
     def get_num_entries (self, ttype=None) :
@@ -241,15 +226,21 @@ class Directory (entry.Entry) :
         ret:           saga.Url / saga.Task
         '''
         return self._adaptor.get_entry (num, ttype=ttype)
-  
-    
+
+
+    # ----------------------------------------------------------------
+    #
+    # methods overloaded from namespace.Entry
+    #
     def copy (self, url_1, url_2=None, flags=None, ttype=None) :
         '''
         :param src: path of the entry to copy
         :param tgt: absolute URL of target name or directory
         
-        flags:         flags enum
-        ttype:         saga.task.type enum
+        url_1:         saga.Url
+        url_2:         saga.Url / None
+        flags:         flags enum / None
+        ttype:         saga.task.type enum / None
         ret:           None / saga.Task
         
         Copy an entry from source to target
@@ -262,20 +253,13 @@ class Directory (entry.Entry) :
             dir.copy ("./data.bin", "sftp://localhost/tmp/data/")
         '''
 
-        if  url_1 and url_2 :
-            return self._adaptor.copy      (url_1, url_2, flags, ttype=ttype)
+        # FIXME: re-implement the url switching (commented out below)
 
-        if  url_1 :
-            return self._adaptor.copy_self (url_1,        flags, ttype=ttype)
+        if url_2  :  return self._adaptor.copy (url_1, url_2, flags, ttype=ttype) 
+        else      :  return self._nsentry.copy (url_1,        flags, ttype=ttype)
+
     
-        raise BadParameter ("signature mismatch: copy (url, [url], flags, ttype)")
-
-      # return self._adaptor.copy (src, tgt, flags, ttype=ttype)
-
-
-  
-    
-    def link (self, src, tgt, flags=None, ttype=None) :
+    def link (self, url_1, url_2, flags=None, ttype=None) :
         '''
         src:           saga.Url
         tgt:           saga.Url
@@ -283,10 +267,11 @@ class Directory (entry.Entry) :
         ttype:         saga.task.type enum
         ret:           None / saga.Task
         '''
-        return self._adaptor.link (src, tgt, flags, ttype=ttype)
+        if url_2  :  return self._adaptor.link (url_1, url_2, flags, ttype=ttype)
+        else      :  return self._nsentry.link (url_1,        flags, ttype=ttype)
   
     
-    def move (self, src, tgt, flags=None, ttype=None) :
+    def move (self, url_1, url_2, flags=None, ttype=None) :
         '''
         :param src: path of the entry to copy
         :param tgt: absolute URL of target directory
@@ -305,7 +290,8 @@ class Directory (entry.Entry) :
             dir.move ("./data.bin", "sftp://localhost/tmp/data/")
 
         '''
-        return self._adaptor.move (src, tgt, flags, ttype=ttype)
+        if url_2  :  return self._adaptor.move (url_1, url_2, flags, ttype=ttype)
+        else      :  return self._nsentry.move (url_1,        flags, ttype=ttype)
   
     
     def remove (self, tgt, flags=None, ttype=None) :
@@ -315,159 +301,59 @@ class Directory (entry.Entry) :
         ttype:         saga.task.type enum
         ret:           None / saga.Task
         '''
-        return self._adaptor.remove (tgt, flags, ttype=ttype)
+        if tgt    :  return self._adaptor.remove (tgt, flags, ttype=ttype)
+        else      :  return self._nsentry.remove (     flags, ttype=ttype)
   
     
-    def make_dir (self, tgt, flags=None, ttype=None) :
+    def is_dir (self, tgt=None, ttype=None) :
         '''
-        :param tgt:   name/path of the new directory
-        :param flags: directory creation flags
-
+        tgt:           saga.Url / None
         ttype:         saga.task.type enum
-        ret:           None / saga.Task
+        ret:           bool / saga.Task
         
-        Create a new directoy
-
-        The call creates a directory at the given location.
+        Returns True if path is a directory, False otherwise. 
 
         Example::
 
-            # create a subdir 'data' in /tmp
-            dir = saga.namespace.Directory("sftp://localhost/tmp/")
-            dir.make_dir ('data/')
+            # inspect an entry
+            dir  = saga.namespace.Directory("sftp://localhost/tmp/")
+            if dir.is_dir ('data'):
+                # do something
         '''
-
-        return self._adaptor.make_dir (tgt, flags, ttype=ttype)
+        if tgt    :  return self._adaptor.is_dir (tgt, ttype=ttype)
+        else      :  return self._nsentry.is_dir (     ttype=ttype)
   
     
-    # ----------------------------------------------------------------
-    #
-    # namespace entry methods
-    #
-    def get_url (self, ttype=None) :
+    def is_entry (self, tgt=None, ttype=None) :
         '''
-        ttype:         saga.task.type enum
-        ret:           saga.Url / saga.Task
-        
-        Return the complete url pointing to the directory.
-
-        The call will return the complete url pointing to
-        this directory as a saga.Url object::
-
-            # print URL of a directory
-            dir = saga.namespace.Directory("sftp://localhost/tmp/")
-            print dir.get_url()
-        '''
-        return self._adaptor.get_url (ttype=ttype)
-
-  
-    def get_cwd (self, ttype=None) :
-        '''
-        ttype:         saga.task.type enum
-        ret:           string / saga.Task
-        '''
-        return self._adaptor.get_cwd (ttype=ttype)
-  
-    
-    def get_name (self, ttype=None) :
-        '''
-        ttype:         saga.task.type enum
-        ret:           string / saga.Task
-        '''
-        return self._adaptor.get_name (ttype=ttype)
-  
-    
-    def is_dir_self (self, ttype=None) :
-        '''
+        tgt:           saga.Url / None
         ttype:         saga.task.type enum
         ret:           bool / saga.Task
         '''
-        return self._adaptor.is_dir_self (ttype=ttype)
+        if tgt    :  return self._adaptor.is_entry (tgt, ttype=ttype)
+        else      :  return self._nsentry.is_entry (     ttype=ttype)
   
     
-    def is_entry_self (self, ttype=None) :
+    def is_link (self, tgt=None, ttype=None) :
         '''
+        tgt:           saga.Url / None
         ttype:         saga.task.type enum
         ret:           bool / saga.Task
         '''
-        return self._adaptor.is_entry_self (ttype=ttype)
+        if tgt    :  return self._adaptor.is_link (tgt, ttype=ttype)
+        else      :  return self._nsentry.is_link (     ttype=ttype)
   
     
-    def is_link_self (self, ttype=None) :
+    def read_link (self, tgt=None, ttype=None) :
         '''
-        ttype:         saga.task.type enum
-        ret:           bool / saga.Task
-        '''
-        return self._adaptor.is_link_self (ttype=ttype)
-  
-    
-    def read_link_self (self, ttype=None) :
-        '''
+        tgt:           saga.Url / None
         ttype:         saga.task.type enum
         ret:           saga.Url / saga.Task
         '''
-        return self._adaptor.read_link_self (ttype=ttype)
+
+        if tgt    :  return self._adaptor.read_link (tgt, ttype=ttype)
+        else      :  return self._nsentry.read_link (     ttype=ttype)
   
-    
-    def link_self (self, tgt, flags=None, ttype=None) :
-        '''
-        tgt:           saga.Url
-        flags:         enum flags
-        ttype:         saga.task.type enum
-        ret:           None / saga.Task
-        '''
-        return self._adaptor.link_self (tgt, flags, ttype=ttype)
-  
-    
-    def move_self (self, tgt, flags=None, ttype=None) :
-        '''
-        tgt:           saga.Url
-        flags:         flags enum
-        ttype:         saga.task.type enum
-        ret:           None / saga.Task
-        '''
-        return self._adaptor.move_self (tgt, flags, ttype=ttype)
-  
-    
-    def remove_self (self, flags=None, ttype=None) :
-        '''
-        flags:         flags enum
-        ttype:         saga.task.type enum
-        ret:           None / saga.Task
-        
-        Removes the directory
-
-        If no path is given, the remote directory associated with
-        the object is removed. If a relative or absolute path is given,
-        that given target is removed instead.  The target must be a 
-        directory.
-
-        :param path: (relative or absolute) path to a directory
-
-       
-        Example::
-
-            # remove a subdir 'data' in /tmp
-            dir = saga.namespace.Directory("sftp://localhost/tmp/")
-            dir.remove ('data/')
-        '''
-        return self._adaptor.remove_self (flags, ttype=ttype)
-  
-    
-    def close (self, timeout=None, ttype=None) :
-        '''
-        timeout:       float
-        ttype:         saga.task.type enum
-        ret:           None / saga.Task
-        '''
-        return self._adaptor.close (timeout, ttype=ttype)
-  
-    
-    url  = property (get_url)   # saga.Url
-    cwd  = property (get_cwd)   # string
-    name = property (get_name)  # string
-
-
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

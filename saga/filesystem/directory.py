@@ -59,17 +59,18 @@ class Directory (saga.namespace.directory.Directory) :
         # param checks
         url = saga.url.Url (url)
 
-        saga.namespace.directory.Directory.__init__ (self, url, flags, session,
-                                                     _adaptor, _adaptor_state, _ttype=_ttype)
+        self._nsdirec = super  (Directory, self)
+        self._nsdirec.__init__ (url, flags, session, 
+                                _adaptor, _adaptor_state, _ttype=_ttype)
 
 
     # ----------------------------------------------------------------
     #
     # filesystem directory methods
     #
-    def get_size (self, path, flags=None, ttype=None) :
+    def get_size (self, tgt, flags=None, ttype=None) :
         '''
-        :param path: path of the file or directory
+        :param tgt: path of the file or directory
 
         flags:    saga.namespace.flags enum
         ttype:    saga.task.type enum
@@ -84,16 +85,18 @@ class Directory (saga.namespace.directory.Directory) :
             size = dir.get_size ('data/data.bin')
             print size
         '''
-        return self._adaptor.get_size (name, ttype=ttype)
+        if tgt    :  return self._adaptor.get_size (tgt, ttype=ttype)
+        else      :  return self._nsdirec.get_size (     ttype=ttype)
 
 
-    def is_file (self, name, ttype=None) :
+    def is_file (self, tgt=None, ttype=None) :
         '''
-        name:     saga.Url
+        tgt:      saga.Url
         ttype:    saga.task.type enum
         ret:      bool / saga.Task
         '''
-        return self._adaptor.is_file (name, ttype=ttype)
+        if tgt    :  return self._adaptor.is_file (tgt, ttype=ttype)
+        else      :  return self._nsdirec.is_file (     ttype=ttype)
 
     
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

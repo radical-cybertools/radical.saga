@@ -1,16 +1,15 @@
 
-
-from   saga.task                 import SYNC, ASYNC, TASK
-from   saga.url                  import Url
-from   saga.advert.constants import *
-from   saga.base                 import Base
-from   saga.async                import Async
-from   saga.attributes           import *
-
+import saga.url
 import saga.exceptions
+import saga.namespace.entry
+import saga.attributes as sa
+
+from   saga.advert.constants import *
 
 
-class Entry (Base, Attributes, Async) :
+# keep order of inheritance!  super() below uses MRO
+class Entry (saga.namespace.entry.Entry,
+             saga.attributes.Attributes) :
 
 
     def __init__ (self, url=None, flags=READ, session=None, 
@@ -23,11 +22,12 @@ class Entry (Base, Attributes, Async) :
         '''
 
         # param checks
-        url     = Url (url)
-        scheme  = url.scheme.lower ()
+        url = saga.url.Url (url)
 
-        Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
-                       url, flags, session, ttype=_ttype)
+        self._nsentry = super  (Entry, self)
+        self._nsentry.__init__ (url, flags, session, 
+                                _adaptor, _adaptor_state, _ttype=_ttype)
+
 
         # set attribute interface properties
         self._attributes_allow_private (True)
@@ -38,10 +38,10 @@ class Entry (Base, Attributes, Async) :
                                               caller=self._attribute_caller)
 
         # register properties with the attribute interface 
-        self._attributes_register   (ATTRIBUTE, None, STRING, SCALAR, READONLY)
-        self._attributes_register   (OBJECT,    None, ANY,    SCALAR, READONLY)
-        self._attributes_register   (EXPIRES,   None, STRING, SCALAR, READONLY)
-        self._attributes_register   (TTL,       None, INT,    SCALAR, WRITEABLE)
+        self._attributes_register   (ATTRIBUTE, None, sa.STRING, sa.SCALAR, sa.READONLY)
+        self._attributes_register   (OBJECT,    None, sa.ANY,    sa.SCALAR, sa.READONLY)
+        self._attributes_register   (EXPIRES,   None, sa.STRING, sa.SCALAR, sa.READONLY)
+        self._attributes_register   (TTL,       None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
 
         self._attributes_set_setter (TTL,    self.set_ttl_self)
         self._attributes_set_getter (TTL,    self.get_ttl_self)
@@ -52,7 +52,7 @@ class Entry (Base, Attributes, Async) :
 
 
     @classmethod
-    def create (cls, url=None, flags=READ, session=None, ttype=SYNC) :
+    def create (cls, url=None, flags=READ, session=None, ttype=None) :
         '''
         url:       saga.Url
         flags:     saga.advert.flags enum
