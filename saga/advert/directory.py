@@ -8,7 +8,7 @@ from   saga.advert.constants import *
 
 
 # keep order of inheritance!  super() below uses MRO
-class Directory (saga.namespace.entry.Directory,
+class Directory (saga.namespace.directory.Directory,
                  saga.attributes.Attributes) :
 
     def __init__ (self, url=None, flags=READ, session=None, 

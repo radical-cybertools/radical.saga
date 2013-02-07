@@ -1,12 +1,15 @@
 
-import saga.adaptors.cpi.decorators as CPI
-import saga.adaptors.cpi.namespace  as ns_cpi
-import saga.adaptors.cpi.attributes as ns_att
+import saga.adaptors.cpi.decorators as cpi_dec
+import saga.adaptors.cpi.namespace  as cpi_ns
+import saga.adaptors.cpi.attributes as cpi_att
+
+SYNC  = cpi_dec.CPI_SYNC_CALL
+ASYNC = cpi_dec.CPI_ASYNC_CALL
 
 
 # keep order of inheritance!  super() below uses MRO
-class Entry (ns_cpi.entry.Entry, 
-             ns_att.attrbutes.Attributes) :
+class Entry (cpi_ns.entry.Entry, 
+             cpi_att.Attributes) :
 
     # ----------------------------------------------------------------
     #
@@ -18,9 +21,9 @@ class Entry (ns_cpi.entry.Entry,
         self._cpi_nsentry.__init__ (api, adaptor)
 
 
-    @CPI.SYNC
+    @SYNC
     def init_instance         (self, url, flags, session)      : pass
-    @CPI.ASYNC
+    @ASYNC
     def init_instance_async   (self, url, flags, session)      : pass
 
 
@@ -28,29 +31,29 @@ class Entry (ns_cpi.entry.Entry,
     #
     # advert methods
     #
-    @CPI.SYNC
+    @SYNC
     def set_ttl_self            (self, ttl, ttype=None)              : pass
-    @CPI.ASYNC
+    @ASYNC
     def set_ttl_self_async      (self, ttl, ttype=None)              : pass
 
-    @CPI.SYNC
+    @SYNC
     def get_ttl_self            (self, ttype)                        : pass
-    @CPI.ASYNC
+    @ASYNC
     def get_ttl_self_async      (self, ttype)                        : pass
 
-    @CPI.SYNC
+    @SYNC
     def store_object            (self, object, ttype)                : pass
-    @CPI.ASYNC
+    @ASYNC
     def store_object_async      (self, object, ttype)                : pass
 
-    @CPI.SYNC
+    @SYNC
     def retrieve_object         (self, ttype)                        : pass
-    @CPI.ASYNC
+    @ASYNC
     def retrieve_object_async   (self, ttype)                        : pass
 
-    @CPI.SYNC
+    @SYNC
     def delete_object           (self, ttype)                        : pass
-    @CPI.ASYNC
+    @ASYNC
     def delete_object_async     (self, ttype)                        : pass
 
 

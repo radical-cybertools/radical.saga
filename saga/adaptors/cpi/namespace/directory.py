@@ -1,6 +1,10 @@
 
-import saga.adaptors.cpi.decorators as CPI
+import saga.adaptors.cpi.decorators as cpi_dec
 import entry
+
+SYNC  = cpi_dec.CPI_SYNC_CALL
+ASYNC = cpi_dec.CPI_ASYNC_CALL
+
 
 # keep order of inheritance!  super() below uses MRO
 class Directory (entry.Entry) :
@@ -14,9 +18,9 @@ class Directory (entry.Entry) :
         self._cpi_nsentry = super  (Directory, self)
         self._cpi_nsentry.__init__ (api, adaptor)
 
-    @CPI.SYNC
+    @SYNC
     def init_instance           (self, url, flags, session)    : pass
-    @CPI.ASYNC
+    @ASYNC
     def init_instance_async     (self, url, flags, session)    : pass 
 
 
@@ -24,80 +28,80 @@ class Directory (entry.Entry) :
     #
     # namespace directory methods
     #
-    @CPI.SYNC
+    @SYNC
     def change_dir              (self, url, ttype)             : pass
-    @CPI.ASYNC
+    @ASYNC
     def change_dir_async        (self, url, ttype)             : pass
 
-    @CPI.SYNC
+    @SYNC
     def list                    (self, npat, ttype)            : pass
-    @CPI.ASYNC
+    @ASYNC
     def list_async              (self, npat, ttype)            : pass
 
-    @CPI.SYNC
+    @SYNC
     def find                    (self, npat, flags, ttype)     : pass
-    @CPI.ASYNC
+    @ASYNC
     def find_async              (self, npat, flags, ttype)     : pass
 
-    @CPI.SYNC
+    @SYNC
     def exists                  (self, name, ttype)            : pass
-    @CPI.ASYNC
+    @ASYNC
     def exists_async            (self, name, ttype)            : pass
 
 
-    @CPI.SYNC
+    @SYNC
     def is_dir                  (self, name, ttype)            : pass
-    @CPI.ASYNC
+    @ASYNC
     def is_dir_async            (self, name, ttype)            : pass
 
-    @CPI.SYNC
+    @SYNC
     def is_entry                (self, name, ttype)            : pass
-    @CPI.ASYNC
+    @ASYNC
     def is_entry_async          (self, name, ttype)            : pass
 
-    @CPI.SYNC
+    @SYNC
     def is_link                 (self, name, ttype)            : pass
-    @CPI.ASYNC
+    @ASYNC
     def is_link_async           (self, name, ttype)            : pass
 
-    @CPI.SYNC
+    @SYNC
     def read_link               (self, name, ttype)            : pass
-    @CPI.ASYNC
+    @ASYNC
     def read_link_async         (self, name, ttype)            : pass
 
-    @CPI.SYNC
+    @SYNC
     def get_num_entries         (self, ttype)                  : pass
-    @CPI.ASYNC
+    @ASYNC
     def get_num_entries_async   (self, ttype)                  : pass
 
-    @CPI.SYNC
+    @SYNC
     def get_entry               (self, num, ttype)             : pass
-    @CPI.ASYNC
+    @ASYNC
     def get_entry_async         (self, num, ttype)             : pass
 
-    @CPI.SYNC
+    @SYNC
     def copy                    (self, src, tgt, flags, ttype) : pass
-    @CPI.ASYNC
+    @ASYNC
     def copy_async              (self, src, tgt, flags, ttype) : pass
 
-    @CPI.SYNC
+    @SYNC
     def link                    (self, src, tgt, flags, ttype) : pass
-    @CPI.ASYNC
+    @ASYNC
     def link_async              (self, src, tgt, flags, ttype) : pass
 
-    @CPI.SYNC
+    @SYNC
     def move                    (self, src, tgt, flags, ttype) : pass
-    @CPI.ASYNC
+    @ASYNC
     def move_async              (self, src, tgt, flags, ttype) : pass
 
-    @CPI.SYNC
+    @SYNC
     def remove                  (self, tgt, flags, ttype)      : pass
-    @CPI.ASYNC
+    @ASYNC
     def remove_async            (self, tgt, flags, ttype)      : pass
 
-    @CPI.SYNC
+    @SYNC
     def make_dir                (self, tgt, flags, ttype)      : pass
-    @CPI.ASYNC
+    @ASYNC
     def make_dir_async          (self, tgt, flags, ttype)      : pass
 
 

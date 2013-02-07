@@ -1,10 +1,13 @@
 
-import saga.adaptors.cpi.decorators as CPI
-import saga.adaptors.cpi.namespace  as ns_cpi
+import saga.adaptors.cpi.decorators as cpi_dec
+import saga.adaptors.cpi.namespace  as cpi_ns
+
+SYNC  = cpi_dec.CPI_SYNC_CALL
+ASYNC = cpi_dec.CPI_ASYNC_CALL
 
 
 # keep order of inheritance!  super() below uses MRO
-class Directory (ns_cpi.directory.Directory) :
+class Directory (cpi_ns.directory.Directory) :
 
     # ----------------------------------------------------------------
     #
@@ -15,9 +18,9 @@ class Directory (ns_cpi.directory.Directory) :
         self._cpi_nsdirec = super  (Directory, self)
         self._cpi_nsdirec.__init__ (api, adaptor)
 
-    @CPI.SYNC
+    @SYNC
     def init_instance         (self, url, flags, session) : pass
-    @CPI.ASYNC
+    @ASYNC
     def init_instance_async   (self, url, flags, session) : pass
 
 
@@ -25,24 +28,24 @@ class Directory (ns_cpi.directory.Directory) :
     #
     # add filesystem directory methods
     #
-    @CPI.SYNC
+    @SYNC
     def get_size              (self, name, flags, ttype)  : pass
-    @CPI.ASYNC
+    @ASYNC
     def get_size_async        (self, name, flags, ttype)  : pass
 
-    @CPI.SYNC
+    @SYNC
     def get_size_self         (self,       flags, ttype)  : pass
-    @CPI.ASYNC                                
+    @ASYNC                                
     def get_size__self_async  (self,       flags, ttype)  : pass
 
-    @CPI.SYNC
+    @SYNC
     def is_file               (self, name,        ttype)  : pass
-    @CPI.ASYNC
+    @ASYNC
     def is_file_async         (self, name,        ttype)  : pass
 
-    @CPI.SYNC
+    @SYNC
     def is_file_self          (self,              ttype)  : pass
-    @CPI.ASYNC                                        
+    @ASYNC                                        
     def is_file_self_async    (self,              ttype)  : pass
 
 

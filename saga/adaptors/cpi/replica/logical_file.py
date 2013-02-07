@@ -1,10 +1,15 @@
 
-import saga.adaptors.cpi.decorators as CPI
-import saga.adaptors.cpi.namespace  as ns_cpi
+import saga.adaptors.cpi.decorators as cpi_dec
+import saga.adaptors.cpi.namespace  as cpi_ns
+import saga.adaptors.cpi.attributes as cpi_att
+
+SYNC  = cpi_dec.CPI_SYNC_CALL
+ASYNC = cpi_dec.CPI_ASYNC_CALL
 
 
 # keep order of inheritance!  super() below uses MRO
-class LogicalFile (ns_cpi.entry.Entry) :
+class LogicalFile (cpi_ns.entry.Entry, 
+                   cpi_att.Attributes) :
 
     # ----------------------------------------------------------------
     #
@@ -16,9 +21,9 @@ class LogicalFile (ns_cpi.entry.Entry) :
         self._cpi_nsentry.__init__ (api, adaptor)
 
 
-    @CPI.SYNC
+    @SYNC
     def init_instance         (self, url, flags, session)      : pass
-    @CPI.ASYNC
+    @ASYNC
     def init_instance_async   (self, url, flags, session)      : pass
 
 
@@ -26,44 +31,44 @@ class LogicalFile (ns_cpi.entry.Entry) :
     #
     # replica methods
     #
-    @CPI.SYNC
+    @SYNC
     def is_file_self          (self, ttype)                    : pass
-    @CPI.ASYNC
+    @ASYNC
     def is_file_self_async    (self, ttype)                    : pass
 
-    @CPI.SYNC
+    @SYNC
     def add_location          (self, name, ttype)              : pass
-    @CPI.ASYNC
+    @ASYNC
     def add_location_async    (self, name, ttype)              : pass
 
-    @CPI.SYNC
+    @SYNC
     def remove_location       (self, name, ttype)              : pass
-    @CPI.ASYNC
+    @ASYNC
     def remove_location_async (self, name, ttype)              : pass
 
-    @CPI.SYNC
+    @SYNC
     def update_location       (self, old, new, ttype)          : pass
-    @CPI.ASYNC
+    @ASYNC
     def update_location_async (self, old, new, ttype)          : pass
 
-    @CPI.SYNC
+    @SYNC
     def list_locations        (self, ttype)                    : pass
-    @CPI.ASYNC
+    @ASYNC
     def list_locations_async  (self, ttype)                    : pass
 
-    @CPI.SYNC
+    @SYNC
     def replicate             (self, name, flags, ttype)       : pass
-    @CPI.ASYNC
+    @ASYNC
     def replicate_async       (self, name, flags, ttype)       : pass
 
-    @CPI.SYNC
+    @SYNC
     def upload                (self, name, tgt, flags, ttype)  : pass
-    @CPI.ASYNC
+    @ASYNC
     def upload_async          (self, name, tgt, flags, ttype)  : pass
 
-    @CPI.SYNC
+    @SYNC
     def download              (self, name, src, flags, ttype)  : pass
-    @CPI.ASYNC
+    @ASYNC
     def download_async        (self, name, src, flags, ttype)  : pass
 
 

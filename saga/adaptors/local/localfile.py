@@ -12,8 +12,8 @@ import saga.adaptors.cpi.filesystem
 
 import saga.utils.misc
 
-SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
 ###############################################################################
@@ -94,21 +94,21 @@ class BulkDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
 
     def container_wait (self, tasks, mode, timeout) :
-        print " ~ bulk wait ~~~~~~~~~~~~~~~~~~~~~ "
-        pprint.pprint (tasks)
+      # print " ~ bulk wait ~~~~~~~~~~~~~~~~~~~~~ "
+      # pprint.pprint (tasks)
         if timeout >= 0 :
             raise saga.exceptions.BadParameter ("Cannot handle timeouts > 0")
         for task in tasks :
             task.wait ()
-        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+      # print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
 
     def container_cancel (self, tasks) :
-        print " ~ bulk wait ~~~~~~~~~~~~~~~~~~~~~ "
-        pprint.pprint (tasks)
+      # print " ~ bulk wait ~~~~~~~~~~~~~~~~~~~~~ "
+      # pprint.pprint (tasks)
         for task in tasks :
             task.cancel ()
-        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+      # print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
 
     def container_copy (self, tasks) :
@@ -118,11 +118,11 @@ class BulkDirectory (saga.adaptors.cpi.filesystem.Directory) :
         individual tasks, falling back to the default non-bulk asynchronous copy
         operation...
         """
-        print " ~ bulk copy ~~~~~~~~~~~~~~~~~~~~~ "
-        pprint.pprint (tasks)
+      # print " ~ bulk copy ~~~~~~~~~~~~~~~~~~~~~ "
+      # pprint.pprint (tasks)
         for task in tasks :
             task.run ()
-        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+      # print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
 
     # the container methods for the other calls are obviously similar, and left
@@ -137,7 +137,8 @@ class LocalDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     def __init__ (self, api, adaptor) :
 
-        saga.adaptors.cpi.base.CPIBase.__init__ (self, api, adaptor)
+        self._cpi_base = super  (LocalDirectory, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
@@ -222,7 +223,7 @@ class LocalDirectory (saga.adaptors.cpi.filesystem.Directory) :
     @SYNC_CALL
     def open (self, url, flags) :
 
-        print "sync open: - '%s' - '%s' - "  %  (url, flags)
+      # print "sync open: - '%s' - '%s' - "  %  (url, flags)
         
         if not url.scheme and not url.host : 
             url = saga.url.Url (str(self._url) + '/' + str(url))
@@ -281,11 +282,11 @@ class LocalDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
 
         if os.path.isdir (src) :
-            print "sync copy tree %s -> %s" % (src, tgt)
+          # print "sync copy tree %s -> %s" % (src, tgt)
             shutil.copytree (src, tgt)
 
         else : 
-            print "sync copy %s -> %s" % (src, tgt)
+          # print "sync copy %s -> %s" % (src, tgt)
             shutil.copy2 (src, tgt)
 
 
@@ -299,7 +300,7 @@ class LocalDirectory (saga.adaptors.cpi.filesystem.Directory) :
     @ASYNC_CALL
     def copy_async (self, src, tgt, flags, ttype) :
 
-        print "async copy %s -> %s [%s]" % (src, tgt, ttype)
+      # print "async copy %s -> %s [%s]" % (src, tgt, ttype)
 
         c = { 'src'     : src,
               'tgt'     : tgt,
@@ -357,7 +358,9 @@ class LocalDirectory (saga.adaptors.cpi.filesystem.Directory) :
 class LocalFile (saga.adaptors.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
-        saga.adaptors.cpi.base.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (LocalFile, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     def _dump (self) :
@@ -507,7 +510,7 @@ class LocalFile (saga.adaptors.cpi.filesystem.File) :
         if tgt[0] != '/' :
             tgt = "%s/%s"   % (os.path.dirname (src), tgt)
 
-        print " copy %s %s" % (self._url, tgt)
+      # print " copy %s %s" % (self._url, tgt)
         shutil.copy2 (src, tgt)
 
 

@@ -16,8 +16,8 @@ import shutil
 
 from   saga.utils.cmdlinewrapper import CommandLineWrapper
 
-SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 ###############################################################################
 # adaptor info
@@ -359,12 +359,13 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
     #
     def __init__ (self, api, adaptor) :
 
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+        self._cpi_base = super  (IRODSDirectory, self)
+        self._cpi_base.__init__ (api, adaptor)
 
-        self.name         = None
-        self.size         = None
-        self.owner        = None
-        self.date         = None
+        self.name  = None
+        self.size  = None
+        self.owner = None
+        self.date  = None
 
         self._cw = CommandLineWrapper.init_as_subprocess_wrapper()
         self._cw.open()
@@ -553,7 +554,8 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     #
     def __init__ (self, api, adaptor) :
 
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+        self._cpi_base = super  (IRODSFile, self)
+        self._cpi_base.__init__ (api, adaptor)
 
         self.name         = None
         self.locations    = []

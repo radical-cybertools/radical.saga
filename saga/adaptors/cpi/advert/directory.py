@@ -1,12 +1,15 @@
 
-import saga.adaptors.cpi.decorators as CPI
-import saga.adaptors.cpi.namespace  as ns_cpi
-import saga.adaptors.cpi.attributes as ns_att
+import saga.adaptors.cpi.decorators as cpi_dec
+import saga.adaptors.cpi.namespace  as cpi_ns
+import saga.adaptors.cpi.attributes as cpi_att
+
+SYNC  = cpi_dec.CPI_SYNC_CALL
+ASYNC = cpi_dec.CPI_ASYNC_CALL
 
 
 # keep order of inheritance!  super() below uses MRO
-class Directory (ns_cpi.directory.Directory,
-                 ns_att.attrbutes.Attributes) :
+class Directory (cpi_ns.directory.Directory,
+                 cpi_att.Attributes) :
 
     # ----------------------------------------------------------------
     #
@@ -17,9 +20,9 @@ class Directory (ns_cpi.directory.Directory,
         self._cpi_nsdirec = super  (Directory, self)
         self._cpi_nsdirec.__init__ (api, adaptor)
 
-    @CPI.SYNC
+    @SYNC
     def init_instance           (self, url, flags, session)          : pass
-    @CPI.ASYNC
+    @ASYNC
     def init_instance_async     (self, url, flags, session)          : pass
 
 
@@ -27,30 +30,30 @@ class Directory (ns_cpi.directory.Directory,
     #
     # advert methods
     #
-    @CPI.SYNC
+    @SYNC
     def set_ttl_self            (self, ttl, ttype=None)              : pass
-    @CPI.ASYNC
+    @ASYNC
     def set_ttl_self_async      (self, ttl, ttype=None)              : pass
 
-    @CPI.SYNC
+    @SYNC
     def get_ttl_self            (self, ttype)                        : pass
-    @CPI.ASYNC
+    @ASYNC
     def get_ttl_self_async      (self, ttype)                        : pass
 
-    @CPI.SYNC
+    @SYNC
     def set_ttl                 (self, tgt, ttl, ttype)              : pass
-    @CPI.ASYNC
+    @ASYNC
     def set_ttl_async           (self, tgt, ttl, ttype)              : pass
 
-    @CPI.SYNC
+    @SYNC
     def get_ttl                 (self, tgt, ttype)                   : pass
-    @CPI.ASYNC
+    @ASYNC
     def get_ttl_async           (self, tgt, ttype)                   : pass
 
-    @CPI.SYNC
+    @SYNC
     def find_adverts            (self, name_pattern, attr_pattern,
                                  obj_type, flags, ttype)             : pass
-    @CPI.ASYNC
+    @ASYNC
     def find_adverts_async      (self, name_pattern, attr_pattern,
                                  obj_type, flags, ttype)             : pass
 

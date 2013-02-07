@@ -1,10 +1,15 @@
 
-import saga.adaptors.cpi.decorators as CPI
-import saga.adaptors.cpi.namespace  as ns_cpi
+import saga.adaptors.cpi.decorators as cpi_dec
+import saga.adaptors.cpi.namespace  as cpi_ns
+import saga.adaptors.cpi.attributes as cpi_att
+
+SYNC  = cpi_dec.CPI_SYNC_CALL
+ASYNC = cpi_dec.CPI_ASYNC_CALL
 
 
 # keep order of inheritance!  super() below uses MRO
-class LogicalDirectory (ns_cpi.directory.Directory) :
+class LogicalDirectory (cpi_ns.directory.Directory, 
+                        cpi_att.Attributes) :
 
     # ----------------------------------------------------------------
     #
@@ -15,9 +20,9 @@ class LogicalDirectory (ns_cpi.directory.Directory) :
         self._cpi_nsdirec = super  (LogicalDirectory, self)
         self._cpi_nsdirec.__init__ (api, adaptor)
 
-    @CPI.SYNC
+    @SYNC
     def init_instance           (self, url, flags, session)          : pass
-    @CPI.ASYNC
+    @ASYNC
     def init_instance_async     (self, url, flags, session)          : pass
 
 
@@ -25,19 +30,19 @@ class LogicalDirectory (ns_cpi.directory.Directory) :
     #
     # replica methods
     #
-    @CPI.SYNC
+    @SYNC
     def is_file                 (self, tgt, ttype)                   : pass
-    @CPI.ASYNC
+    @ASYNC
     def is_file_async           (self, tgt, ttype)                   : pass
 
-    @CPI.SYNC
+    @SYNC
     def is_file_self            (self, ttype)                        : pass
-    @CPI.ASYNC
+    @ASYNC
     def is_file_self_async      (self, ttype)                        : pass
 
-    @CPI.SYNC
+    @SYNC
     def find_replicas       (self, name_pattern, attr_pattern, flags, ttype)  : pass
-    @CPI.ASYNC
+    @ASYNC
     def find_replicas_async (self, name_pattern, attr_pattern, flags, ttype)  : pass
 
 

@@ -53,7 +53,7 @@ class File (saga.namespace.entry.Entry) :
         # param checks
         url = saga.url.Url (url)
 
-        self._nsentry = super  (Directory, self)
+        self._nsentry = super  (File, self)
         self._nsentry.__init__ (url, flags, session, 
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 

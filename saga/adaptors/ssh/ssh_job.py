@@ -16,8 +16,8 @@ import threading
 
 import ssh_wrapper
 
-SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
 # --------------------------------------------------------------------
@@ -267,7 +267,8 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
     #
     def __init__ (self, api, adaptor) :
 
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+        self._cpi_base = super  (SSHJobService, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     # ----------------------------------------------------------------
@@ -692,9 +693,10 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
     # ----------------------------------------------------------------
     #
     def __init__ (self, api, adaptor) :
-        """ Implements saga.adaptors.cpi.job.Job.__init__()
-        """
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (SSHJob, self)
+        self._cpi_base.__init__ (api, adaptor)
+
 
     # ----------------------------------------------------------------
     #
