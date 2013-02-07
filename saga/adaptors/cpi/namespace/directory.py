@@ -1,186 +1,104 @@
 
-from   saga.adaptors.cpi.base   import CPIBase
-from   saga.adaptors.cpi.base   import CPI_SYNC_CALL  as sync
-from   saga.adaptors.cpi.base   import CPI_ASYNC_CALL as async
-from   saga.adaptors.cpi.async  import Async
+import saga.adaptors.cpi.decorators as CPI
+import entry
 
-
-class Directory (CPIBase, Async) :
-
-    @sync
-    def init_instance           (self, url, flags, session)    : pass
-    @async
-    def init_instance_async     (self, url, flags, session)    : pass 
-
+# keep order of inheritance!  super() below uses MRO
+class Directory (entry.Entry) :
 
     # ----------------------------------------------------------------
     #
-    # filesystem directory methods
+    # initialization methods
     #
-    @sync
-    def get_size                (self, name, flags, ttype)     : pass
-    @async
-    def get_size_async          (self, name, flags, ttype)     : pass
+    def __init__ (self, api, adaptor) :
 
-    @sync
-    def is_file                 (self, name, ttype)            : pass
-    @async
-    def is_file_async           (self, name, ttype)            : pass
+        self._cpi_nsentry = super  (Directory, self)
+        self._cpi_nsentry.__init__ (api, adaptor)
 
-    @sync
-    def open_dir                (self, name, flags, ttype)     : pass
-    @async
-    def open_dir_async          (self, name, flags, ttype)     : pass
-
-    @sync
-    def open                    (self, name, flags, ttype)     : pass
-    @async
-    def open_async              (self, name, flags, ttype)     : pass
+    @CPI.SYNC
+    def init_instance           (self, url, flags, session)    : pass
+    @CPI.ASYNC
+    def init_instance_async     (self, url, flags, session)    : pass 
 
 
     # ----------------------------------------------------------------
     #
     # namespace directory methods
     #
-    @sync
+    @CPI.SYNC
     def change_dir              (self, url, ttype)             : pass
-    @async
+    @CPI.ASYNC
     def change_dir_async        (self, url, ttype)             : pass
 
-    @sync
+    @CPI.SYNC
     def list                    (self, npat, ttype)            : pass
-    @async
+    @CPI.ASYNC
     def list_async              (self, npat, ttype)            : pass
 
-    @sync
+    @CPI.SYNC
     def find                    (self, npat, flags, ttype)     : pass
-    @async
+    @CPI.ASYNC
     def find_async              (self, npat, flags, ttype)     : pass
 
-    @sync
+    @CPI.SYNC
     def exists                  (self, name, ttype)            : pass
-    @async
+    @CPI.ASYNC
     def exists_async            (self, name, ttype)            : pass
 
-    @sync
+
+    @CPI.SYNC
     def is_dir                  (self, name, ttype)            : pass
-    @async
+    @CPI.ASYNC
     def is_dir_async            (self, name, ttype)            : pass
 
-    @sync
+    @CPI.SYNC
     def is_entry                (self, name, ttype)            : pass
-    @async
+    @CPI.ASYNC
     def is_entry_async          (self, name, ttype)            : pass
 
-    @sync
+    @CPI.SYNC
     def is_link                 (self, name, ttype)            : pass
-    @async
+    @CPI.ASYNC
     def is_link_async           (self, name, ttype)            : pass
 
-    @sync
+    @CPI.SYNC
     def read_link               (self, name, ttype)            : pass
-    @async
+    @CPI.ASYNC
     def read_link_async         (self, name, ttype)            : pass
 
-    @sync
+    @CPI.SYNC
     def get_num_entries         (self, ttype)                  : pass
-    @async
+    @CPI.ASYNC
     def get_num_entries_async   (self, ttype)                  : pass
 
-    @sync
+    @CPI.SYNC
     def get_entry               (self, num, ttype)             : pass
-    @async
+    @CPI.ASYNC
     def get_entry_async         (self, num, ttype)             : pass
 
-    @sync
+    @CPI.SYNC
     def copy                    (self, src, tgt, flags, ttype) : pass
-    @async
+    @CPI.ASYNC
     def copy_async              (self, src, tgt, flags, ttype) : pass
 
-    @sync
+    @CPI.SYNC
     def link                    (self, src, tgt, flags, ttype) : pass
-    @async
+    @CPI.ASYNC
     def link_async              (self, src, tgt, flags, ttype) : pass
 
-    @sync
+    @CPI.SYNC
     def move                    (self, src, tgt, flags, ttype) : pass
-    @async
+    @CPI.ASYNC
     def move_async              (self, src, tgt, flags, ttype) : pass
 
-    @sync
+    @CPI.SYNC
     def remove                  (self, tgt, flags, ttype)      : pass
-    @async
+    @CPI.ASYNC
     def remove_async            (self, tgt, flags, ttype)      : pass
 
-    @sync
+    @CPI.SYNC
     def make_dir                (self, tgt, flags, ttype)      : pass
-    @async
+    @CPI.ASYNC
     def make_dir_async          (self, tgt, flags, ttype)      : pass
-
-
-    # ----------------------------------------------------------------
-    #
-    # namespace entry methods
-    #
-    @sync
-    def get_url                 (self, ttype)                  : pass
-    @async
-    def get_url_async           (self, ttype)                  : pass
-
-    @sync
-    def get_cwd                 (self, ttype)                  : pass
-    @async
-    def get_cwd_async           (self, ttype)                  : pass
-
-    @sync
-    def get_name                (self, ttype)                  : pass
-    @async
-    def get_name_async          (self, ttype)                  : pass
-
-    @sync
-    def is_dir_self             (self, ttype)                  : pass
-    @async
-    def is_dir_self_async       (self, ttype)                  : pass
-
-    @sync
-    def is_entry_self           (self, ttype)                  : pass
-    @async
-    def is_entry_self_async     (self, ttype)                  : pass
-
-    @sync
-    def is_link_self            (self, ttype)                  : pass
-    @async
-    def is_link_self_async      (self, ttype)                  : pass
-
-    @sync
-    def read_link_self          (self, ttype)                  : pass
-    @async
-    def read_link_self_async    (self, ttype)                  : pass
-
-    @sync
-    def copy_self               (self, tgt, flags, ttype)      : pass
-    @async
-    def copy_self_async         (self, tgt, flags, ttype)      : pass
-
-    @sync
-    def link_self               (self, tgt, flags, ttype)      : pass
-    @async
-    def link_self_async         (self, tgt, flags, ttype)      : pass
-
-    @sync
-    def move_self               (self, tgt, flags, ttype)      : pass
-    @async
-    def move_self_async         (self, tgt, flags, ttype)      : pass
-
-    @sync
-    def remove_self             (self, flags, ttype)           : pass
-    @async
-    def remove_self_async       (self, flags, ttype)           : pass
-
-    @sync
-    def close                   (self, timeout, ttype)         : pass
-    @async
-    def close_async             (self, timeout, ttype)         : pass
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

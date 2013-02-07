@@ -57,8 +57,8 @@ class LogicalDirectory (saga.namespace.directory.Directory,
         ret:            list [saga.Url] / saga.Task
 
         '''
-        if attr_pattern  :  return self._adaptor.find (name_pattern, attr_pattern, flags, ttype=ttype)
-        else             :  return self._nsdirec.find (name_pattern,               flags, ttype=ttype)
+        if attr_pattern  :  return self._adaptor.find_replicas (name_pattern, attr_pattern, flags, ttype=ttype)
+        else             :  return self._nsdirec.find          (name_pattern,               flags, ttype=ttype)
 
     
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

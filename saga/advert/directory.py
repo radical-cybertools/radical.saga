@@ -127,9 +127,9 @@ class Directory (saga.namespace.entry.Directory,
         """
         
         if attr_pattern or obj_type : 
-            return self._adaptor.find (name_pattern, attr_pattern, obj_type, flags, ttype=ttype)
+            return self._adaptor.find_adverts (name_pattern, attr_pattern, obj_type, flags, ttype=ttype)
         else :
-            return self._nsdirec.find (name_pattern,                         flags, ttype=ttype)
+            return self._nsdirec.find         (name_pattern,                         flags, ttype=ttype)
 
 
 
