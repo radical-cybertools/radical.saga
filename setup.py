@@ -1,13 +1,12 @@
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+#!/usr/bin/env python
+# encoding: utf-8
 
-__author__    = "Ole Christian Weidner"
+__author__    = "Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-''' Setup script.
-
-    This script is used by pip and easy_install.
-'''
+""" Setup script. Used by easy_install and pip.
+"""
 
 import os
 import sys
@@ -112,12 +111,14 @@ setup_args = {
     'packages': [
         "saga",
         "saga.job",
+        "saga.namespace",
         "saga.filesystem",
         "saga.replica",
         "saga.advert",
         "saga.adaptors",
         "saga.adaptors.cpi",
         "saga.adaptors.cpi.job",
+        "saga.adaptors.cpi.namespace",
         "saga.adaptors.cpi.filesystem",
         "saga.adaptors.cpi.replica",
         "saga.adaptors.cpi.advert",

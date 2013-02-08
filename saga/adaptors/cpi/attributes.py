@@ -1,21 +1,22 @@
 
-from   saga.adaptors.cpi.base   import CPIBase
-from   saga.adaptors.cpi.base   import CPI_SYNC_CALL  as sync
-from   saga.adaptors.cpi.base   import CPI_ASYNC_CALL as async
+import saga.adaptors.cpi.decorators as cpi_dec
+
+SYNC  = cpi_dec.CPI_SYNC_CALL
+ASYNC = cpi_dec.CPI_ASYNC_CALL
 
 
 class Attributes (object) :
     
-    @sync
+    @SYNC
     def attribute_getter    (self, key)         : pass
 
-    @sync
+    @SYNC
     def attribute_setter    (self, key, val)    : pass
 
-    @sync
+    @SYNC
     def attribute_lister    (self)              : pass
 
-    @sync
+    @SYNC
     def attribute_caller    (self, key, id, cb) : pass
 
 
