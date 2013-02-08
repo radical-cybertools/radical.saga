@@ -123,6 +123,7 @@ setup_args = {
         "saga.adaptors.context",
         "saga.adaptors.local",
         "saga.adaptors.redis",
+        "saga.adaptors.slurm",
         "saga.adaptors.ssh",
         "saga.adaptors.irods",
         "saga.engine",
