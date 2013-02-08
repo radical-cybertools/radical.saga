@@ -8,8 +8,6 @@ __license__   = "MIT"
 import inspect
 import Queue
 
-import saga.job.job
-
 import saga.base          as sbase
 import saga.exceptions    as se
 import saga.attributes    as satt
@@ -267,9 +265,11 @@ class Container (sbase.SimpleBase, satt.Attributes) :
     #
     def add (self, t) :
 
+        import saga.job as sjob
+
         # AM: oh I hate that we don't use proper inheritance...
         if  not isinstance (t, Task) and \
-            not isinstance (t, saga.job.job.Job)      :
+            not isinstance (t, sjob.Job) :
             
             raise se.BadParameter ("Container handles jobs or tasks, not %s" \
                                 % (type(t)))
