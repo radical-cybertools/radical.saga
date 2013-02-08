@@ -1,11 +1,13 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-""" SAGA exception classes """
+""" Exception classes 
+"""
 
 
+import weakref
 import operator
 
 import saga.utils.exception
@@ -56,12 +58,15 @@ class SagaException(saga.utils.exception.ExceptionBase):
         saga.utils.exception.ExceptionBase.__init__ (self, message)
 
         self._message       = message
-        self._object        = api_object
         self._messages      = [message]
         self._exceptions    = [self]
         self._top_exception = self
         self._traceback     = saga.utils.exception.get_traceback (1)
 
+        if api_object : 
+            self._object    = weakref.ref (api_object)
+        else :
+            self._object    = None
 
     # ----------------------------------------------------------------
     #
@@ -93,7 +98,17 @@ class SagaException(saga.utils.exception.ExceptionBase):
         around.  In those cases, this method will return 'None'.  Either way,
         the object is also accessible via the 'object' property.
         """
-        return self._object
+        o = None
+
+        if self._object :
+            o = self._object ()
+
+            if o is None:
+                # object has been garbage collected - we simply won't return
+                # anything then...
+                pass
+
+        return o
 
 
     # ----------------------------------------------------------------

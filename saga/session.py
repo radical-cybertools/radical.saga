@@ -1,8 +1,16 @@
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
 
 import saga.utils.singleton
 import saga.utils.logger
 import saga.engine.engine
 import saga.base
+
 
 class _DefaultSession (object) :
 
@@ -85,7 +93,7 @@ class Session (saga.base.SimpleBase) :
         ret:     None
         """
 
-        SimpleBase.__init__ (self)
+        saga.base.SimpleBase.__init__ (self)
 
         # if the default session is expected, we point our context list to the
         # shared list of the default session singleton.  Otherwise, we create
@@ -117,7 +125,16 @@ class Session (saga.base.SimpleBase) :
         """
 
         if ctx not in self.contexts :
-            ctx._initialize (self)
+
+            # try to initialize that context, i.e. evaluate its attributes and
+            # infer additional runtime information as needed
+            try :
+                ctx._initialize (self)
+            except saga.exceptions.SagaException as e :
+                msg = "Cannot add context, initialization failed (%s)"  %  str(e)
+                raise saga.exceptions.BadParameter (msg)
+
+            # context initialized ok, add it to the session
             self.contexts.append (ctx)
 
 

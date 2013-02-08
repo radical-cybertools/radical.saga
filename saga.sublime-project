@@ -1,0 +1,23 @@
+{
+	"folders":
+	[
+		{
+			"path": ".",
+            "folder_exclude_patterns": ["build", "*.egg-info", "test", "temp",
+                                        "venv", "egg*"]
+		}
+	],
+
+    "settings":
+    {
+        "SublimeLinter":
+        {
+
+                "pep8_ignore":
+                [
+                    "E221", "E501"
+                ]
+        }
+    }
+
+}

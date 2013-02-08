@@ -1,9 +1,8 @@
-
 __author__    = "Andre Merzky"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-""" SAGA attribute interface """
+""" Attribute interface """
 
 from saga.exceptions import *
 
@@ -577,6 +576,7 @@ class Attributes (_AttributesBase) :
             try :
                 d['attributes'][key]['recursion'] = True
                 val=all_getter (key)
+                d['attributes'][key]['value'] = val
             except Exception as e :
                 can_ignore -= 1
                 if not can_ignore : raise e
@@ -586,7 +586,8 @@ class Attributes (_AttributesBase) :
         if key_getter :
             try :
                 d['attributes'][key]['recursion'] = True
-                key_getter ()
+                val=key_getter ()
+                d['attributes'][key]['value'] = val
             except Exception as e :
                 can_ignore -= 1
                 if not can_ignore : raise e

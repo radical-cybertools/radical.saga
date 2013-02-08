@@ -597,6 +597,343 @@ adaptor debugging (lots of output).</td>
 </table>
 </div></blockquote>
 </div>
+<div class="section" id="external-processes">
+<span id="adaptor-process"></span><h2>1.10. External Processes<a class="headerlink" href="#external-processes" title="Permalink to this headline">¶</a></h2>
+<p>For many adaptor implementations, it is beneficial to interface to external
+processes.  In particular, all adaptors performing remote interactions over ssh
+or gsissh secured connections will likely need to interact with the remote user
+shell.  The classes <a class="reference internal" href="#saga.utils.pty_process.PTYProcess" title="saga.utils.pty_process.PTYProcess"><tt class="xref py py-class docutils literal"><span class="pre">saga.utils.pty_process.PTYProcess</span></tt></a> and (on top of
+PTYProcess) <a class="reference internal" href="#saga.utils.pty_shell.PTYShell" title="saga.utils.pty_shell.PTYShell"><tt class="xref py py-class docutils literal"><span class="pre">saga.utils.pty_shell.PTYShell</span></tt></a> are designed to simplify
+those interactions, and at the same time be more performant than, for example,
+pexpect.</p>
+<dl class="class">
+<dt id="saga.utils.pty_shell.PTYShell">
+<em class="property">class </em><tt class="descclassname">saga.utils.pty_shell.</tt><tt class="descname">PTYShell</tt><big>(</big><em>url</em>, <em>contexts=</em><span class="optional">[</span><span class="optional">]</span>, <em>logger=None</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>This class wraps a shell process and runs it as a <tt class="xref py py-class docutils literal"><span class="pre">PTYProcess</span></tt>.  The
+user of this class can start that shell, and run arbitrary commands on it.</p>
+<p>The shell to be run is expected to be POSIX compliant (bash, csh, sh, zsh
+etc) &#8211; in particular, we expect the following features:
+<cite>$?</cite>,
+<cite>$!</cite>,
+<cite>$*</cite>,
+<cite>$#</cite>,
+<cite>$&#64;</cite>,
+<cite>$PPID</cite>,
+<cite>&gt;&amp;</cite>,
+<cite>&gt;&gt;</cite>,
+<cite>&gt;</cite>,
+<cite>&lt;</cite>,
+<cite>2&gt;&amp;1</cite>,
+<cite>|</cite>,
+<cite>||</cite>,
+<cite>&amp;&amp;</cite>,
+<cite>wait</cite>,
+<cite>kill</cite>,
+<cite>nohup</cite>, and
+<cite>shift</cite></p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># start the shell, find its prompt.  </span>
+<span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="s">&quot;ssh://user@remote.host.net/&quot;</span><span class="p">,</span> <span class="n">contexts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+
+<span class="c"># run a simple shell command, merge stderr with stdout.  $$ is the pid</span>
+<span class="c"># of the shell instance.</span>
+<span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;mkdir -p /tmp/data.$$/&quot;</span> <span class="p">)</span>
+
+<span class="c"># check if mkdir reported success</span>
+<span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to prepare base dir (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+
+<span class="c"># stage some data from a local string variable into a file on the remote system</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_to_file</span> <span class="p">(</span><span class="n">src</span> <span class="o">=</span> <span class="n">pbs_job_script</span><span class="p">,</span> 
+                          <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;/tmp/data.$$/job_1.pbs&quot;</span><span class="p">)</span>
+
+<span class="c"># check size of staged script</span>
+<span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;stat -c &#39;</span><span class="si">%s</span><span class="s">&#39; /tmp/data.$$/job_1.pbs&quot;</span> <span class="p">)</span>
+<span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to check size (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+
+<span class="k">assert</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pbs_job_script</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">out</span><span class="p">))</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="saga.utils.pty_shell.PTYShell.alive">
+<tt class="descname">alive</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.alive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.alive" title="Permalink to this definition">¶</a></dt>
+<dd><p>alive() checks if the shell is still alive.  duh!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_shell.PTYShell.find_prompt">
+<tt class="descname">find_prompt</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.find_prompt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.find_prompt" title="Permalink to this definition">¶</a></dt>
+<dd><p>If run_async was called, a command is running on the shell.  find_prompt
+can be used to collect its output up to the point where the shell prompt
+re-appears (i.e. when the command finishes).</p>
+<p>Note that this method blocks until the command finishes.  Future
+versions of this call may add a timeout parameter.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_shell.PTYShell.set_prompt">
+<tt class="descname">set_prompt</tt><big>(</big><em>prompt</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.set_prompt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.set_prompt" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>prompt</strong> (<a class="reference external" href="http://docs.python.org/library/string.html#string" title="(in Python v2.7)"><em>string</em></a>) &#8211; a regular expression matching the shell prompt</td>
+</tr>
+</tbody>
+</table>
+<p>The prompt regex is expected to be a regular expression with one set of
+catching brackets, which MUST return the previous command&#8217;s exit status.
+This method will send a newline to the client, and expects to find the
+prompt with the exit value &#8216;0&#8217;.</p>
+<p>As a side effect, this method will discard all previous data on the pty,
+thus effectively flushing the pty output.</p>
+<p>By encoding the exit value in the command prompt, we safe one roundtrip.
+The prompt on Posix compliant shells can be set, for example, via:</p>
+<div class="highlight-python"><pre>PS1='PROMPT-$?-&gt;\n'; export PS1</pre>
+</div>
+<p>The newline in the example above allows to nicely anchor the regular
+expression, which would look like:</p>
+<div class="highlight-python"><pre>PROMPT-(\d+)-&gt;\s*$</pre>
+</div>
+<p>The regex is compiled with &#8216;re.DOTALL&#8217;, so the dot character matches
+all characters, including line breaks.  Be careful not to match more
+than the exact prompt &#8211; otherwise, a prompt search will swallow stdout
+data.  For example, the following regex:</p>
+<div class="highlight-python"><pre>PROMPT-(.+)-&gt;\s*$</pre>
+</div>
+<p>would capture arbitrary strings, and would thus match <em>all</em> of:</p>
+<div class="highlight-python"><pre>PROMPT-0-&gt; ls
+data/ info
+PROMPT-0-&gt;</pre>
+</div>
+<p>and thus swallow the ls output...</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_shell.PTYShell.run_sync">
+<tt class="descname">run_sync</tt><big>(</big><em>command</em>, <em>iomode=None</em>, <em>new_prompt=None</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.run_sync"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.run_sync" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a shell command, and report exit code, stdout and stderr (all three
+will be returned in a tuple).  The call will block until the command
+finishes (more exactly, until we find the prompt again on the shell&#8217;s IO
+stream), and cannot be interrupted.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>command</strong> (<a class="reference external" href="http://docs.python.org/library/string.html#string" title="(in Python v2.7)"><em>string</em></a>) &#8211; shell command to run.</li>
+<li><strong>iomode</strong> (<em>enum</em>) &#8211; Defines how stdout and stderr are captured.</li>
+<li><strong>new_prompt</strong> (<a class="reference external" href="http://docs.python.org/library/string.html#string" title="(in Python v2.7)"><em>string</em></a>) &#8211; regular expression matching the prompt after</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>command succeeded.</p>
+<p>We expect the <tt class="docutils literal"><span class="pre">command</span></tt> to not to do stdio redirection, as this is we want
+to capture that separately.  We <em>do</em> allow pipes and stdin/stdout
+redirection.  Note that SEPARATE mode will break if the job is run in
+the background</p>
+<p>The following iomode values are valid:</p>
+<blockquote>
+<div><ul>
+<li><dl class="first docutils">
+<dt><em>IGNORE:</em>   both stdout and stderr are discarded, <cite>None</cite> will be</dt>
+<dd><p class="first last">returned for each.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><em>MERGED:</em>   both streams will be merged and returned as stdout; </dt>
+<dd><p class="first last">stderr will be <cite>None</cite>.  This is the default.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><em>SEPARATE:</em> stdout and stderr will be captured separately, and</dt>
+<dd><p class="first last">returned individually.  Note that this will require 
+at least one more network hop!</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><em>STDOUT:</em>   only stdout is captured, stderr will be <cite>None</cite>.</p>
+</li>
+<li><p class="first"><em>STDERR:</em>   only stderr is captured, stdout will be <cite>None</cite>.</p>
+</li>
+<li><dl class="first docutils">
+<dt><em>None:</em>     do not perform any redirection &#8211; this is effectively</dt>
+<dd><p class="first last">the same as <cite>MERGED</cite></p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<p>If any of the requested output streams does not return any data, an
+empty string is returned.</p>
+<p>If the command to be run changes the prompt to be expected for the
+shell, the <tt class="docutils literal"><span class="pre">new_prompt</span></tt> parameter MUST contain a regex to match the
+new prompt.  The same conventions as for set_prompt() hold &#8211; i.e. we
+expect the prompt regex to capture the exit status of the process.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_shell.PTYShell.run_async">
+<tt class="descname">run_async</tt><big>(</big><em>command</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.run_async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.run_async" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a shell command, but don&#8217;t wait for prompt &#8211; just return.  It
+is up to caller to eventually search for the prompt again (see
+<tt class="xref py py-func docutils literal"><span class="pre">find_prompt()</span></tt>.  Meanwhile, the caller can interact with the called
+command, via the io channels.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>command</strong> (<a class="reference external" href="http://docs.python.org/library/string.html#string" title="(in Python v2.7)"><em>string</em></a>) &#8211; shell command to run.</td>
+</tr>
+</tbody>
+</table>
+<p>For async execution, we don&#8217;t care if the command is doing i/o redirection or not.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_shell.PTYShell.stage_to_file">
+<tt class="descname">stage_to_file</tt><big>(</big><em>src</em>, <em>tgt</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.stage_to_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.stage_to_file" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>src</strong> (<a class="reference external" href="http://docs.python.org/library/string.html#string" title="(in Python v2.7)"><em>string</em></a>) &#8211; data to be staged into the target file</li>
+<li><strong>tgt</strong> (<a class="reference external" href="http://docs.python.org/library/string.html#string" title="(in Python v2.7)"><em>string</em></a>) &#8211; path to file to be staged</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The content of the given string is pasted into a file (specified by tgt)
+on the remote system.  If that file exists, it is overwritten.
+A NoSuccess exception is raised if writing the file was not possible
+(missing permissions, incorrect path, etc.).</p>
+<p>See also <tt class="xref py py-func docutils literal"><span class="pre">stage_from_file()</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_shell.PTYShell.stage_from_file">
+<tt class="descname">stage_from_file</tt><big>(</big><em>src</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.stage_from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.stage_from_file" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>src</strong> (<a class="reference external" href="http://docs.python.org/library/string.html#string" title="(in Python v2.7)"><em>string</em></a>) &#8211; path to file to be fetched</td>
+</tr>
+</tbody>
+</table>
+<p>This is inverse to <tt class="xref py py-func docutils literal"><span class="pre">stage_to_file()</span></tt>: the content of a remote file
+specified by <cite>src</cite> will be returned as string.  A NoSuccess exception is
+raised if reading the file was not possible (missing permissions,
+incorrect path, etc.).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="saga.utils.pty_process.PTYProcess">
+<em class="property">class </em><tt class="descclassname">saga.utils.pty_process.</tt><tt class="descname">PTYProcess</tt><big>(</big><em>command</em>, <em>logger=None</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_process.html#PTYProcess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_process.PTYProcess" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>This class spawns a process, providing that child with pty io channels &#8211;
+it will maintain stdin, stdout and stderr channels to the child.  All
+write* operations operate on the stdin, all read* operations operate on the
+stdout stream.  Data from the stderr stream are at this point redirected to
+the stdout channel.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">pty</span> <span class="o">=</span> <span class="n">PTYProcess</span> <span class="p">(</span><span class="s">&quot;/usr/bin/ssh -t localhost&quot;</span><span class="p">)</span>
+<span class="n">pty</span><span class="o">.</span><span class="n">run</span> <span class="p">()</span>
+
+<span class="n">n</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&#39;password\s*:\s*$&#39;</span><span class="p">,</span> 
+                      <span class="s">&#39;want to continue connecting.*\(yes/no\)\s*$&#39;</span><span class="p">,</span> 
+                      <span class="s">&#39;[\$#&gt;]\s*$&#39;</span><span class="p">])</span>
+
+<span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
+
+    <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span>
+        <span class="c"># found password prompt</span>
+        <span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;secret</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&#39;password\s*:\s*$&#39;</span><span class="p">,</span> 
+                              <span class="s">&#39;want to continue connecting.*\(yes/no\)\s*$&#39;</span><span class="p">,</span> 
+                              <span class="s">&#39;[\$#&gt;]\s*$&#39;</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">:</span>
+        <span class="c"># found request to accept host key</span>
+        <span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;yes</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&#39;password\s*:\s*$&#39;</span><span class="p">,</span> 
+                              <span class="s">&#39;want to continue connecting.*\(yes/no\)\s*$&#39;</span><span class="p">,</span> 
+                              <span class="s">&#39;[\$#&gt;]\s*$&#39;</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">2</span> <span class="p">:</span>
+        <span class="c"># found some prompt</span>
+        <span class="k">break</span>
+
+<span class="k">while</span> <span class="n">pty</span><span class="o">.</span><span class="n">alive</span> <span class="p">()</span> <span class="p">:</span>
+    <span class="c"># send sleeps as quickly as possible, forever...</span>
+    <span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&#39;[\$#&gt;]\s*$&#39;</span><span class="p">])</span>
+    <span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;/bin/sleep 10</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="saga.utils.pty_process.PTYProcess.alive">
+<tt class="descname">alive</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_process.html#PTYProcess.alive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.alive" title="Permalink to this definition">¶</a></dt>
+<dd><p>alive() checks if the child gave an exit value &#8211; if none, it is assumed
+to be still alive.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_process.PTYProcess.read">
+<tt class="descname">read</tt><big>(</big><em>size=1024</em>, <em>timeout=0</em>, <em>_force=False</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_process.html#PTYProcess.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>read some data from the child.  By default, the method reads a full
+chunk, but other read sizes can be specified.</p>
+<p>The method will return whatever data is has at timeout:</p>
+<div class="highlight-python"><pre>timeout == 0 : return the content of the first successful read, with
+               whatever data up to 'size' have been found.
+timeout &lt;  0 : return after first read attempt, even if no data have 
+               been available.</pre>
+</div>
+<p>If no data are found, the method returns an empty string (not None).</p>
+<p>This method will not fill the cache, but will just read whatever data it
+needs (FIXME).</p>
+<p>Note: the returned lines do <em>not</em> get &#8216;\r&#8217; stripped.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_process.PTYProcess.find">
+<tt class="descname">find</tt><big>(</big><em>patterns</em>, <em>timeout=0</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_process.html#PTYProcess.find"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.find" title="Permalink to this definition">¶</a></dt>
+<dd><p>This methods reads bytes from the child process until a string matching
+any of the given patterns is found.  If that is found, all read data are
+returned as a string, up to (and including) the match.  Note that
+pattern can match an empty string, and the call then will return just
+that, an empty string.  If all patterns end with matching a newline,
+this method is effectively matching lines &#8211; but note that &#8216;$&#8217; will also
+match the end of the (currently available) data stream.</p>
+<p>The call actually returns a tuple, containing the index of the matching
+pattern, and the string up to the match as described above.</p>
+<p>If no pattern is found before timeout, the call returns (None, None).
+Negative timeouts will block until a match is found</p>
+<p>Note that the pattern are interpreted with the re.M (multi-line) and
+re.S (dot matches all) regex flags.</p>
+<p>Performance: the call is doing repeated string regex searches over
+whatever data it finds.  On complex regexes, and large data, and small
+read buffers, this method can be expensive.</p>
+<p>Note: the returned data get &#8216;\r&#8217; stripped.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_process.PTYProcess.write">
+<tt class="descname">write</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_process.html#PTYProcess.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will repeatedly attempt to push the given data into the
+child&#8217;s stdin pipe, until it succeeds to write all data.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -617,6 +954,7 @@ adaptor debugging (lots of output).</td>
 <li><a class="reference internal" href="#asynchronous-methods">1.7. Asynchronous Methods</a></li>
 <li><a class="reference internal" href="#bulk-operations">1.8. Bulk Operations:</a></li>
 <li><a class="reference internal" href="#adaptor-logging">1.9. Adaptor Logging</a></li>
+<li><a class="reference internal" href="#external-processes">1.10. External Processes</a></li>
 </ul>
 </li>
 </ul>

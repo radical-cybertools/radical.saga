@@ -193,7 +193,7 @@
         <span class="c"># holds the jobs that were started via this instance</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_jobs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span> <span class="c"># {job_obj:id, ...}</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
 
     <span class="k">def</span> <span class="nf">_register_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_obj</span><span class="p">):</span></div>
@@ -228,7 +228,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># check that only supported attributes are provided</span>
         <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">list_attributes</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">attribute</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">[</span><span class="s">&#39;desc_attributes&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">attribute</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">[</span><span class="s">&#39;jdes_attributes&#39;</span><span class="p">]:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;&#39;JobDescription.</span><span class="si">%s</span><span class="s">&#39; is not supported by this adaptor&quot;</span> <span class="o">%</span> <span class="n">attribute</span>
                 <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
 
@@ -252,7 +252,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">for</span> <span class="p">(</span><span class="n">job_obj</span><span class="p">,</span> <span class="n">job_id</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jobs</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">job_id</span> <span class="o">==</span> <span class="n">jobid</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="n">job_obj</span><span class="o">.</span><span class="n">_api</span>
+                    <span class="k">return</span> <span class="n">job_obj</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
 
     <span class="k">def</span> <span class="nf">container_run</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobs</span><span class="p">)</span> <span class="p">:</span></div>
@@ -285,12 +285,12 @@
         <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">CPIBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
     <span class="nd">@SYNC_CALL</span>
-    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_info</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">):</span>
 <div class="viewcode-block" id="LocalJob.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.localjob.html#saga.adaptors.local.localjob.LocalJob.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.init_instance()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>         <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;session&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_jd</span>              <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;job_description&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_parent_service</span>  <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;job_service&#39;</span><span class="p">]</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>         <span class="o">=</span> <span class="n">adaptor_state</span><span class="p">[</span><span class="s">&#39;session&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_jd</span>              <span class="o">=</span> <span class="n">adaptor_state</span><span class="p">[</span><span class="s">&#39;job_description&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parent_service</span>  <span class="o">=</span> <span class="n">adaptor_state</span><span class="p">[</span><span class="s">&#39;job_service&#39;</span><span class="p">]</span> 
 
         <span class="c"># the _parent_service is responsible for job bulk operations -- which</span>
         <span class="c"># for jobs only work for run()</span>
@@ -313,7 +313,7 @@
         <span class="c"># our job id is still None at this point</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_parent_service</span><span class="o">.</span><span class="n">_register_job</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
 
     <span class="nd">@SYNC_CALL</span></div>

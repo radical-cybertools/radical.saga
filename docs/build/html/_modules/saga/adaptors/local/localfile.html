@@ -202,7 +202,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_check</span> <span class="p">()</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
 
     <span class="nd">@ASYNC_CALL</span></div>
@@ -365,7 +365,7 @@
         <span class="k">elif</span> <span class="n">call</span> <span class="o">==</span> <span class="s">&#39;init_instance&#39;</span> <span class="p">:</span>
             <span class="k">try</span> <span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">init_instance</span> <span class="p">({},</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;url&#39;</span><span class="p">],</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;flags&#39;</span><span class="p">],</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;session&#39;</span><span class="p">])</span>
-                <span class="n">task</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_api</span><span class="p">)</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">())</span>
                 <span class="n">task</span><span class="o">.</span><span class="n">_set_state</span>  <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
                 <span class="n">task</span><span class="o">.</span><span class="n">_set_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>

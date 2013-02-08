@@ -59,6 +59,7 @@
 <span class="sd">&quot;&quot;&quot; SAGA exception classes &quot;&quot;&quot;</span>
 
 
+<span class="kn">import</span> <span class="nn">weakref</span>
 <span class="kn">import</span> <span class="nn">operator</span>
 
 <span class="kn">import</span> <span class="nn">saga.utils.exception</span>
@@ -109,12 +110,15 @@
         <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">ExceptionBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_message</span>       <span class="o">=</span> <span class="n">message</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_object</span>        <span class="o">=</span> <span class="n">api_object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_messages</span>      <span class="o">=</span> <span class="p">[</span><span class="n">message</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_exceptions</span>    <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_top_exception</span> <span class="o">=</span> <span class="bp">self</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_traceback</span>     <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">get_traceback</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="n">api_object</span> <span class="p">:</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">_object</span>    <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span> <span class="p">(</span><span class="n">api_object</span><span class="p">)</span>
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_object</span>    <span class="o">=</span> <span class="bp">None</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -146,7 +150,17 @@
 <span class="sd">        around.  In those cases, this method will return &#39;None&#39;.  Either way,</span>
 <span class="sd">        the object is also accessible via the &#39;object&#39; property.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_object</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_object</span> <span class="p">:</span>
+            <span class="n">o</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_object</span> <span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">o</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="c"># object has been garbage collected - we simply won&#39;t return</span>
+                <span class="c"># anything then...</span>
+                <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="n">o</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>

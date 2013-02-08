@@ -127,7 +127,6 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_defaults</span> <span class="p">:</span>
 
             <span class="n">p</span> <span class="o">=</span> <span class="s">&quot;/tmp/x509up_u</span><span class="si">%d</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="n">os</span><span class="o">.</span><span class="n">getuid</span><span class="p">()</span>
-            <span class="k">print</span> <span class="n">p</span>
 
             <span class="k">if</span>  <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="ow">and</span> \
                 <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span> <span class="p">(</span><span class="n">p</span><span class="p">)</span>     <span class="p">:</span>
@@ -168,11 +167,11 @@
     <span class="nd">@SYNC_CALL</span>
     <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="ContextX509.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.x509.html#saga.adaptors.context.x509.ContextX509.init_instance">[docs]</a>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="n">schema</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">schema</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="ow">not</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="n">schema</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">schema</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span><span class="p">)</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> \
                     <span class="p">(</span><span class="s">&quot;the x509 context adaptor only handles x509 contexts - duh!&quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_api</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
 
         <span class="k">return</span> <span class="bp">self</span>
 
@@ -181,13 +180,13 @@
     <span class="k">def</span> <span class="nf">_initialize</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
 
         <span class="c"># make sure we have can access the proxy</span>
-        <span class="n">api</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api</span>
+        <span class="n">api</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api</span><span class="o">.</span><span class="n">user_proxy</span> <span class="p">:</span>
-          <span class="bp">self</span><span class="o">.</span><span class="n">_api</span><span class="o">.</span><span class="n">user_proxy</span> <span class="o">=</span> <span class="s">&quot;x509up_u</span><span class="si">%d</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="n">os</span><span class="o">.</span><span class="n">getuid</span><span class="p">()</span>
+        <span class="k">if</span>  <span class="ow">not</span> <span class="n">api</span><span class="o">.</span><span class="n">user_proxy</span> <span class="p">:</span>
+            <span class="n">api</span><span class="o">.</span><span class="n">user_proxy</span> <span class="o">=</span> <span class="s">&quot;x509up_u</span><span class="si">%d</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="n">os</span><span class="o">.</span><span class="n">getuid</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">user_proxy</span><span class="p">)</span> <span class="ow">or</span> \
-           <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span> <span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">user_proxy</span><span class="p">)</span>    <span class="p">:</span>
+        <span class="k">if</span>  <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">user_proxy</span><span class="p">)</span> <span class="ow">or</span> \
+            <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span> <span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">user_proxy</span><span class="p">)</span>    <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;X509 proxy does not exist: </span><span class="si">%s</span><span class="s">&quot;</span>
                                                  <span class="o">%</span> <span class="n">api</span><span class="o">.</span><span class="n">user_proxy</span><span class="p">)</span>
 

@@ -146,7 +146,7 @@
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> \
                     <span class="p">(</span><span class="s">&quot;the MyProxy context adaptor only handles MyProxy contexts - duh!&quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_api</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
 
         <span class="k">return</span> <span class="bp">self</span>
 
@@ -155,7 +155,7 @@
     <span class="k">def</span> <span class="nf">_initialize</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
 
         <span class="c"># make sure we have server, username, password</span>
-        <span class="n">api</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api</span>
+        <span class="n">api</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
 
         <span class="c"># set up the myproxy command</span>

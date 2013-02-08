@@ -207,13 +207,13 @@ class Engine(Configurable):
 
             # first, import the module
             adaptor_module = None
-            try :
-                adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
+            # try :
+            adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
 
-            except Exception as e:
-                self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
-                self._logger.trace ()
-                continue # skip to next adaptor
+            # except Exception as e:
+            #     self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
+            #     self._logger.trace ()
+            #     continue # skip to next adaptor
 
 
             # we expect the module to have an 'Adaptor' class
@@ -228,7 +228,7 @@ class Engine(Configurable):
 
             except SagaException as e:
                 self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
-                self._logger.debug (e.traceback)
+                self._logger.trace ()
                 continue # skip to next adaptor
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
@@ -245,7 +245,7 @@ class Engine(Configurable):
 
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: failed self test: %s" % (module_name, e))
-                self._logger.trace ()
+              # self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -296,7 +296,7 @@ class Engine(Configurable):
 
             except SagaException as e:
                 self._logger.error ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
-                self._logger.debug (e.traceback)
+                self._logger.trace ()
                 continue # skip to next adaptor
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
@@ -471,9 +471,6 @@ class Engine(Configurable):
         adaptor.
         '''
 
-
-        print "schema: %s" % schema
-
         if not ctype in self._adaptor_registry :
             raise NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
                                % (ctype, schema))
@@ -516,9 +513,9 @@ class Engine(Configurable):
             except SagaException as e :
                 # adaptor class initialization failed - try next one
                 exception._add_exception (e)
-                self._logger.info ("bind_adaptor adaptor class ctor failed : %s.%s: %s" \
-                                % (adaptor_name, cpi_class, str(e)))
-                self._logger.debug(e.traceback)
+                self._logger.info  ("bind_adaptor adaptor class ctor failed : %s.%s: %s" \
+                                 % (adaptor_name, cpi_class, str(e)))
+                self._logger.trace ()
                 continue
             except Exception as e :
                 exception._add_exception (saga.NoSuccess (str(e), api_instance))

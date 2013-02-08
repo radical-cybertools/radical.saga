@@ -1,27 +1,52 @@
+#!/usr/bin/env python
+# encoding: utf-8
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-''' SAGA Setup script.
-'''
+""" Setup script. Used by easy_install and pip.
+"""
 
 import os
 import sys
-import shutil
-import fileinput
 
-from distutils.core                 import setup
+from distutils.core import setup
 from distutils.command.install_data import install_data
-from distutils.command.sdist        import sdist
+from distutils.command.sdist import sdist
 
-from saga import version
+# figure out the current version. saga-python's
+# version is defined in saga/VERSION
+version = "latest"
 
-scripts = [] # ["bin/bliss-run"]
+try:
+    cwd = os.path.dirname(os.path.abspath(__file__))
+    fn = os.path.join(cwd, 'saga/VERSION')
+    version = open(fn).read().strip()
+except IOError:
+    from subprocess import Popen, PIPE, STDOUT
+    import re
 
-import sys
+    VERSION_MATCH = re.compile(r'\d+\.\d+\.\d+(\w|-)*')
+
+    try:
+        p = Popen(['git', 'describe', '--tags', '--always'],
+            stdout=PIPE, stderr=STDOUT)
+        out = p.communicate()[0]
+
+        if (not p.returncode) and out:
+            v = VERSION_MATCH.search(out)
+            if v:
+                version = v.group()
+    except OSError:
+        pass
+
+scripts = []  # ["bin/bliss-run"]
+
+# check python version. we need > 2.5
 if sys.hexversion < 0x02050000:
-    raise RuntimeError, "SAGA requires Python 2.5 or higher"
+    raise RuntimeError("SAGA requires Python 2.5 or higher")
+
 
 class our_install_data(install_data):
 
@@ -37,6 +62,7 @@ class our_install_data(install_data):
         fn = os.path.join(self.install_dir, 'saga', 'VERSION')
         open(fn, 'w').write(version)
         self.outfiles.append(fn)
+
 
 class our_sdist(sdist):
 
@@ -82,22 +108,24 @@ setup_args = {
         'Operating System :: POSIX :: SunOS/Solaris',
         'Operating System :: Unix'
         ],
-
     'packages': [
         "saga",
         "saga.job",
+        "saga.namespace",
         "saga.filesystem",
         "saga.replica",
         "saga.advert",
         "saga.adaptors",
         "saga.adaptors.cpi",
         "saga.adaptors.cpi.job",
+        "saga.adaptors.cpi.namespace",
         "saga.adaptors.cpi.filesystem",
         "saga.adaptors.cpi.replica",
         "saga.adaptors.cpi.advert",
         "saga.adaptors.context",
         "saga.adaptors.local",
         "saga.adaptors.redis",
+        "saga.adaptors.ssh",
         "saga.adaptors.irods",
         "saga.engine",
         "saga.utils",
@@ -123,52 +151,10 @@ setup_args = {
 if sys.platform == "win32":
     setup_args['zip_safe'] = False
 
-try:
-    # If setuptools is installed, then we'll add setuptools-specific arguments
-    # to the setup args.
-    import setuptools #@UnusedImport
-except ImportError:
-    pass
 else:
     setup_args['install_requires'] = [
-        'pexpect', 'colorama'
+        'colorama',
+        'pexpect'
     ]
-    
-
-    if os.getenv('SAGA_NO_INSTALL_REQS'):
-        setup_args['install_requires'] = None
-
-##
-## PROCESS SETUP OPTIONS FOR DIFFERENT BACKENDS
-##
-
-# process AIR_AMQP_HOSTNAME and AIR_AMQP_PORT
-#air_amqp_hostname = os.getenv('AIR_AMQP_HOST')
-#air_amqp_port = os.getenv('AIR_AMQP_PORT')
-#
-#if not air_amqp_hostname:
-#   air_amqp_hostname = "localhost"
-#
-#print "setting default amqp hostname to '%s' in air/scripts/config.py" % air_amqp_hostname
-#
-#if not air_amqp_port:
-#   air_amqp_port = "5672"
-#
-#print "setting default amqp port to '%s' in air/scripts/config.py" % air_amqp_port
-#
-#
-#shutil.copyfile("./air/scripts/config.py.in", "./air/scripts/config.py")
-
-
-#s = open("./air/scripts/config.py.in").read()
-#s = s.replace('###REPLACE_WITH_AMQP_HOSTNAME###', str(air_amqp_hostname))
-#s = s.replace('###REPLACE_WITH_AMQP_PORT###', str(air_amqp_port))
-#f = open("./air/scripts/config.py", 'w')
-#f.write(s)
-#f.close()
-
 
 setup(**setup_args)
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-

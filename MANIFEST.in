@@ -3,6 +3,7 @@ include *.py
 include saga/*.py
 
 include saga/job/*.py
+include saga/namespace/*.py
 include saga/filesystem/*.py
 include saga/replica/*.py
 include saga/advert/*.py
@@ -19,12 +20,14 @@ include saga/utils/cmdlinewrapper/*.py
 include saga/adaptors/*.py
 include saga/adaptors/cpi/*.py
 include saga/adaptors/cpi/job/*.py
+include saga/adaptors/cpi/namespace/*.py
 include saga/adaptors/cpi/filesystem/*.py
 include saga/adaptors/cpi/replica/*.py
 include saga/adaptors/cpi/advert/*.py
 include saga/adaptors/context/*.py
 include saga/adaptors/local/*.py
 include saga/adaptors/redis/*.py
+include saga/adaptors/ssh/*.py
 include saga/adaptors/irods/*.py
 
 include MANIFEST.in README.md LICENSE.md CHANGES.md

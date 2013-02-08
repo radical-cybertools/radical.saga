@@ -1,11 +1,17 @@
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
 
 from   saga.constants  import *
 
-import saga.attributes 
-import saga.base
+import saga
 
 
-class Context (saga.base.Base, saga.attributes.Attributes) :
+class Context (saga.base.Base, saga.Attributes) :
     '''A SAGA Context object as defined in GFD.90.
 
     A security context is a description of a security token.  It is important to
@@ -58,6 +64,8 @@ class Context (saga.base.Base, saga.attributes.Attributes) :
         ret:  None
         '''
 
+        import saga.attributes as sa
+
         saga.base.Base.__init__ (self, type.lower(), _adaptor, _adaptor_state, type, ttype=None)
 
         # set attribute interface properties
@@ -65,19 +73,21 @@ class Context (saga.base.Base, saga.attributes.Attributes) :
         self._attributes_camelcasing (True)
 
         # register properties with the attribute interface
-        self._attributes_register  (TYPE,            None, STRING, SCALAR, WRITEABLE)
-        self._attributes_register  (SERVER,          None, STRING, SCALAR, WRITEABLE)
-        self._attributes_register  (CERT_REPOSITORY, None, STRING, SCALAR, WRITEABLE)
-        self._attributes_register  (USER_PROXY,      None, STRING, SCALAR, WRITEABLE)
-        self._attributes_register  (USER_CERT,       None, STRING, SCALAR, WRITEABLE)
-        self._attributes_register  (USER_KEY,        None, STRING, SCALAR, WRITEABLE)
-        self._attributes_register  (USER_ID,         None, STRING, SCALAR, WRITEABLE)
-        self._attributes_register  (USER_PASS,       None, STRING, SCALAR, WRITEABLE)
-        self._attributes_register  (USER_VO,         None, STRING, SCALAR, WRITEABLE)
-        self._attributes_register  (LIFE_TIME,       -1,   INT,    SCALAR, WRITEABLE)
-        self._attributes_register  (REMOTE_ID,       None, STRING, SCALAR, WRITEABLE)
-        self._attributes_register  (REMOTE_HOST,     None, STRING, SCALAR, WRITEABLE)
-        self._attributes_register  (REMOTE_PORT,     None, STRING, VECTOR, WRITEABLE)
+        self._attributes_register  (TYPE,            None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (SERVER,          None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (CERT_REPOSITORY, None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (USER_PROXY,      None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (USER_CERT,       None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (USER_KEY,        None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (USER_ID,         None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (USER_PASS,       None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (USER_VO,         None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (LIFE_TIME,       -1,   sa.INT,    sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (REMOTE_ID,       None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (REMOTE_HOST,     None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (REMOTE_PORT,     None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
+
+        self.type = type
 
 
     def _initialize (self, session) :

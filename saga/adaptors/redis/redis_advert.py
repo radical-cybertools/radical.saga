@@ -10,8 +10,8 @@ import saga.utils.misc
 
 from   redis_namespace      import *
 
-SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
 ###############################################################################
@@ -150,11 +150,12 @@ class BulkDirectory (saga.adaptors.cpi.advert.Directory) :
 
 ###############################################################################
 #
-class RedisDirectory (saga.adaptors.cpi.advert.Directory, saga.adaptors.cpi.Async) :
+class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
 
     def __init__ (self, api, adaptor) :
 
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+        self._cpi_base = super  (RedisDirectory, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
@@ -167,7 +168,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory, saga.adaptors.cpi.Asyn
         self._set_session (session)
         self._init_check  ()
 
-        return self._api
+        return self.get_api ()
 
 
     @ASYNC_CALL
@@ -219,7 +220,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory, saga.adaptors.cpi.Asyn
 
     @SYNC_CALL
     def attribute_caller (self, key, id, cb) :
-        self._nsdir.manage_callback (key, id, cb, self._api)
+        self._nsdir.manage_callback (key, id, cb, self.get_api ())
 
 
     @SYNC_CALL
@@ -289,7 +290,8 @@ class RedisEntry (saga.adaptors.cpi.advert.Entry) :
 
     def __init__ (self, api, adaptor) :
 
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+        self._cpi_base = super  (RedisEntry, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     def _dump (self) :
@@ -334,7 +336,7 @@ class RedisEntry (saga.adaptors.cpi.advert.Entry) :
 
     @SYNC_CALL
     def attribute_caller (self, key, id, cb) :
-        self._nsentry.manage_callback (key, id, cb, self._api)
+        self._nsentry.manage_callback (key, id, cb, self.get_api ())
 
 
     @SYNC_CALL

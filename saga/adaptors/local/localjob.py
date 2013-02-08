@@ -14,8 +14,8 @@ from saga.utils.which     import which
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
-SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 ################################################################################
 ## the adaptor name                                                           ## 
@@ -114,19 +114,16 @@ class LocalJobService (saga.adaptors.cpi.job.Service) :
     """ Implements saga.adaptors.cpi.job.Service
     """
     def __init__ (self, api, adaptor) :
-        """ Implements saga.adaptors.cpi.job.Service.__init__
-        """
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (LocalJobService, self)
+        self._cpi_base.__init__ (api, adaptor)
+
 
 
     @SYNC_CALL
     def init_instance (self, adaptor_state, rm_url, session) :
         """ Service instance constructor
         """
-
-        print " state  : %s " % str(adaptor_state)
-        print " rm_url : %s " % str(rm_url)
-        print " session: %s " % str(session)
 
         # check that the hostname is supported
         fqhn = Adaptor().hostname
@@ -140,7 +137,7 @@ class LocalJobService (saga.adaptors.cpi.job.Service) :
         # holds the jobs that were started via this instance
         self._jobs = dict() # {job_obj:id, ...}
 
-        return self._api
+        return self.get_api ()
 
 
     def _register_job(self, job_obj):
@@ -175,7 +172,7 @@ class LocalJobService (saga.adaptors.cpi.job.Service) :
         """
         # check that only supported attributes are provided
         for attribute in jd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITIES['desc_attributes']:
+            if attribute not in _ADAPTOR_CAPABILITIES['jdes_attributes']:
                 msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
                 raise saga.BadParameter._log (self._logger, msg)
 
@@ -199,7 +196,7 @@ class LocalJobService (saga.adaptors.cpi.job.Service) :
         else:
             for (job_obj, job_id) in self._jobs.iteritems():
                 if job_id == jobid:
-                    return job_obj._api
+                    return job_obj.get_api ()
 
 
     def container_run (self, jobs) :
@@ -227,17 +224,18 @@ class LocalJob (saga.adaptors.cpi.job.Job) :
     """ Implements saga.adaptors.cpi.job.Job
     """
     def __init__ (self, api, adaptor) :
-        """ Implements saga.adaptors.cpi.job.Job.__init__()
-        """
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (LocalJob, self)
+        self._cpi_base.__init__ (api, adaptor)
+
 
     @SYNC_CALL
-    def init_instance (self, job_info):
+    def init_instance (self, adaptor_state):
         """ Implements saga.adaptors.cpi.job.Job.init_instance()
         """
-        self._session         = job_info['session']
-        self._jd              = job_info['job_description']
-        self._parent_service  = job_info['job_service'] 
+        self._session         = adaptor_state['session']
+        self._jd              = adaptor_state['job_description']
+        self._parent_service  = adaptor_state['job_service'] 
 
         # the _parent_service is responsible for job bulk operations -- which
         # for jobs only work for run()
@@ -260,7 +258,7 @@ class LocalJob (saga.adaptors.cpi.job.Job) :
         # our job id is still None at this point
         self._parent_service._register_job(self)
 
-        return self._api
+        return self.get_api ()
 
 
     @SYNC_CALL

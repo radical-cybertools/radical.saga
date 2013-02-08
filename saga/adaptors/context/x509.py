@@ -5,8 +5,8 @@ import saga.context
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.context
 
-SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 ######################################################################
 #
@@ -74,7 +74,6 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         if not self._have_defaults :
 
             p = "/tmp/x509up_u%d"  %  os.getuid()
-            print p
 
             if  os.path.exists (p) and \
                 os.path.isfile (p)     :
@@ -105,21 +104,22 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 #
 # job adaptor class
 #
-class ContextX509 (saga.adaptors.cpi.Context) :
+class ContextX509 (saga.adaptors.cpi.context.Context) :
 
     def __init__ (self, api, adaptor) :
 
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+        self._cpi_base = super  (ContextX509, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
     def init_instance (self, adaptor_state, type) :
 
-        if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
+        if  not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
             raise saga.exceptions.BadParameter \
                     ("the x509 context adaptor only handles x509 contexts - duh!")
 
-        self._api.type = type
+        self.get_api ().type = type
 
         return self
 
@@ -128,13 +128,13 @@ class ContextX509 (saga.adaptors.cpi.Context) :
     def _initialize (self, session) :
 
         # make sure we have can access the proxy
-        api = self._api
+        api = self.get_api ()
 
-        if not self._api.user_proxy :
-          self._api.user_proxy = "x509up_u%d"  %  os.getuid()
+        if  not api.user_proxy :
+            api.user_proxy = "x509up_u%d"  %  os.getuid()
 
-        if not os.path.exists (api.user_proxy) or \
-           not os.path.isfile (api.user_proxy)    :
+        if  not os.path.exists (api.user_proxy) or \
+            not os.path.isfile (api.user_proxy)    :
             raise saga.exceptions.BadParameter ("X509 proxy does not exist: %s"
                                                  % api.user_proxy)
 
