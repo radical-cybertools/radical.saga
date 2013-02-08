@@ -111,7 +111,7 @@ class Directory (entry.Entry) :
                dir = saga.namespace.Directory("sftp://localhost/tmp/")
                data = dir.open_dir ('data/', saga.namespace.Create)
         '''
-        return self._adaptor.open_dir (name, flags, ttype=ttype)
+        return self._adaptor.open_dir (path, flags, ttype=ttype)
 
     
     def open (self, name, flags=READ, ttype=None) :

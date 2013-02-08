@@ -88,7 +88,7 @@ class Service (Base, Async) :
         url     = Url (url)
         scheme  = url.scheme.lower ()
 
-        return cls (url, flags, session, _ttype=ttype)._init_task
+        return cls (url, session, _ttype=ttype)._init_task
 
 
     def create_job (self, job_desc, ttype=None) :

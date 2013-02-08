@@ -30,7 +30,8 @@ class JobId(object):
     def __str__(self):
         return self.string
 
-    def string():
+    @property
+    def string(self):
         doc = "The string property."
         def fget(self):
             return "[%s]-[%s]" % (self._backend_url, self._native_id)
@@ -44,9 +45,9 @@ class JobId(object):
         def fdel(self):
             pass
         return locals()
-    string = property(**string())
 
-    def tuple():
+    @property
+    def tuple(self):
         doc = "The tuple property."
         def fget(self):
             return (self._backend_url, self._native_id)
@@ -57,9 +58,9 @@ class JobId(object):
         def fdel(self):
             pass
         return locals()
-    tuple = property(**tuple())
 
-    def backend_url():
+    @property
+    def backend_url(self):
         doc = "The backend-url property."
         def fget(self):
             return self._backend_url
@@ -68,9 +69,9 @@ class JobId(object):
         def fdel(self):
             pass
         return locals()
-    backend_url = property(**backend_url())
 
-    def native_id():
+    @property
+    def native_id(self):
         doc = "The native-id property."
         def fget(self):
             return self._native_id
@@ -79,7 +80,6 @@ class JobId(object):
         def fdel(self):
             pass
         return locals()
-    native_id = property(**native_id())
 
     @classmethod
     def from_string(self, jobid_string):
