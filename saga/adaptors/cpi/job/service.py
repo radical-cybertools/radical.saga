@@ -5,67 +5,85 @@ __license__   = "MIT"
 
 """ Provides the SAGA Job Service CPI """
 
-from   saga.adaptors.cpi.base   import CPIBase
-from   saga.adaptors.cpi.base   import CPI_SYNC_CALL  as sync
-from   saga.adaptors.cpi.base   import CPI_ASYNC_CALL as async
-from   saga.adaptors.cpi.async  import Async
+import saga.adaptors.cpi.decorators as cpi_dec
+import saga.adaptors.cpi.base       as cpi_base
+import saga.adaptors.cpi.async      as cpi_async
+
+SYNC  = cpi_dec.CPI_SYNC_CALL
+ASYNC = cpi_dec.CPI_ASYNC_CALL
 
 
-class Service (CPIBase, Async) :
 
-    @sync
+class Service (cpi_base.CPIBase, cpi_async.Async) :
+
+    # ----------------------------------------------------------------
+    #
+    # initialization methods
+    #
+    def __init__ (self, api, adaptor) :
+
+        self._cpi_base = super  (Service, self)
+        self._cpi_base.__init__ (api, adaptor)
+
+    @SYNC
     def init_instance              (self, rm, session)         : pass
-    @async
+    @ASYNC
     def init_instance_async        (self, rm, session)         : pass
 
-    @sync
+
+
+    # ----------------------------------------------------------------
+    #
+    # job service methods
+    #
+    @SYNC
     def create_job                 (self, jd, ttype)           : pass
-    @async
+    @ASYNC
     def create_job_async           (self, jd, ttype)           : pass
 
-    @sync
+    @SYNC
     def run_job                    (self, cmd, host, ttype)    : pass
-    @async
+    @ASYNC
     def run_job_async              (self, cmd, host, ttype)    : pass
 
-    @sync
+    @SYNC
     def list                       (self, ttype)               : pass
-    @async
+    @ASYNC
     def list_async                 (self, ttype)               : pass
 
-    @sync
+    @SYNC
     def get_url                    (self, ttype)               : pass
-    @async
+    @ASYNC
     def get_url_async              (self, ttype)               : pass
 
-    @sync
+    @SYNC
     def get_job                    (self, job_id, ttype)       : pass
-    @async
+    @ASYNC
     def get_job_async              (self, job_id, ttype)       : pass
 
-    @sync
+    @SYNC
     def get_self                   (self, ttype)               : pass
-    @async
+    @ASYNC
     def get_self_async             (self, ttype)               : pass
 
-    @sync
+    @SYNC
     def container_run              (self, jobs)                : pass
-    @async
+    @ASYNC
     def container_run_async        (self, jobs)                : pass
 
-    @sync
+    @SYNC
     def container_wait             (self, jobs, mode, timeout) : pass
-    @async
+    @ASYNC
     def container_wait_async       (self, jobs, mode, timeout) : pass
 
-    @sync
+    @SYNC
     def container_cancel           (self, jobs)                : pass
-    @async
+    @ASYNC
     def container_cancel_async     (self, jobs)                : pass
 
-    @sync
+    @SYNC
     def container_get_states       (self, jobs)                : pass
-    @async
+    @ASYNC
     def container_get_states_async (self, jobs)                : pass
 
 

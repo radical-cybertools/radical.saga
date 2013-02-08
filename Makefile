@@ -6,6 +6,18 @@ all: docs
 docs:
 	make -C docs html
 
+pylint:
+	@for f in `find saga/ -name \*.py`; do \
+	  res=`pylint -r n -f text $$f 2>&1 | grep -e '^[FE]'` ;\
+		test -z "$$res" || ( \
+		     echo '----------------------------------------------------------------------' ;\
+		     echo $$f ;\
+		     echo '-----------------------------------'   ;\
+				 echo $$res | sed -e 's/ \([FEWRC]:\)/\n\1/g' ;\
+				 echo \
+		) \
+	done
+
 clean:
 	-rm -rf build/ saga.egg-info/ temp/
 	make -C docs clean

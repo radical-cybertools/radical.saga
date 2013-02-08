@@ -99,13 +99,13 @@ try :
     print "%s : %-6s [%s]"  %  (t, t.state, t.exception)
   
   
-  print f_2.get_size_self ()
-  t_2 = f_2.get_size_self (saga.task.ASYNC)
+  print f_2.get_size ()
+  t_2 = f_2.get_size (saga.task.ASYNC)
   print t_2.state
   print t_2.result
   
-  # f_2.copy_self ('passwd.bak') 
-  f_2.copy_self ('dummy://boskop/tmp/') 
+  # f_2.copy ('passwd.bak') 
+  f_2.copy ('dummy://boskop/tmp/') 
   
   
   t_3 = saga.filesystem.Directory.create ('file://localhost/tmp/test1/test1/',
