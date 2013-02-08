@@ -31,7 +31,6 @@ def main(args):
         # 'local' schemes trigger the local job adaptor. 
         js = saga.job.Service("slurm://localhost")
         
-
         # describe our job
         jd = saga.job.Description()
 

@@ -194,9 +194,20 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     # ----------------------------------------------------------------
     #
     def _open (self) :
-
         # start the shell, find its prompt.  If that is up and running, we can
         # bootstrap our wrapper script, and then run jobs etc.
+        if self.rm.schema   == "slurm":
+            shell_type = "fork"
+        elif self.rm.schema == "slurm+ssh":
+            shell_type = "ssh"
+        elif self.rm.schema == "slurm+gsissh":
+            shell_type = "gsissh"
+        else:
+            raise saga.IncorrectURL("Schema %s not supported by SLURM adaptor."
+                                    % self.rm.schema)
+
+        self._logger.debug("Opening shell of type: %s" % self.rm)
+        exit(0)
         self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session.contexts, self._logger)
 
         # -- now stage the shell wrapper script, and run it.  Once that is up
