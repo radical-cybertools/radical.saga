@@ -10,8 +10,8 @@ import re
 import os
 import time
 
-SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
 # --------------------------------------------------------------------
@@ -136,7 +136,10 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     #
     def __init__ (self, api, adaptor) :
 
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+        #saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+        self._cpi_base = super  (SLURMJobService, self)
+        self._cpi_base.__init__ (api, adaptor)
+
 
 
     # ----------------------------------------------------------------
