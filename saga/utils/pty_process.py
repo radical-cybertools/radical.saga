@@ -7,6 +7,7 @@ import time
 import shlex
 import select
 import signal
+import threading
 
 import saga.utils.logger
 import saga.exceptions as se
@@ -22,7 +23,7 @@ _POLLDELAY = 0.0001 # seconds in between read attempts
 #
 class PTYProcess (object) :
     """
-    This class spawns a process, providing that child with pty io channels --
+    This class spawns a process, providing that child with pty I/O channels --
     it will maintain stdin, stdout and stderr channels to the child.  All
     write* operations operate on the stdin, all read* operations operate on the
     stdout stream.  Data from the stderr stream are at this point redirected to
@@ -163,13 +164,22 @@ class PTYProcess (object) :
 
     # --------------------------------------------------------------------
     #
-    def __del__ (self) :
-        """ 
-        Need to free pty's on destruction, otherwise we might ran out of
-        them (see cat /proc/sys/kernel/pty/max)
-        """
+    # def __del__ (self) :
+    #     """ 
+    #     Need to free pty's on destruction, otherwise we might ran out of
+    #     them (see cat /proc/sys/kernel/pty/max)
+    #     """
 
-        # kill the child, close all I/O channels
+    #     self.logger.error ("pty dying...")
+    #     self.logger.trace ()
+
+    #     self.close ()
+
+
+    # --------------------------------------------------------------------
+    #
+    def close (self) :
+        """ kill the child, close all I/O channels """
 
         try :
             if  self.alive () :
@@ -325,8 +335,8 @@ class PTYProcess (object) :
                     self.clog += buf
                     ret       += buf
 
-                    buf = buf.replace ('\n', '\\n')
-                    buf = buf.replace ('\r', '')
+                  # buf = buf.replace ('\n', '\\n')
+                  # buf = buf.replace ('\r', '')
                     if  len(buf) > 40 :
                         self.logger.debug ("read : [%5d] (%s ... %s)" \
                                         % (len(buf), buf[:20], buf[-20:]))
@@ -353,7 +363,8 @@ class PTYProcess (object) :
                         return ret
 
         except Exception as e :
-            raise se.NoSuccess ("read from pty process failed (%s)" % e)
+            raise se.NoSuccess ("read from pty process [%s] failed (%s)" \
+                             % (threading.current_thread().name, e))
 
 
 
@@ -445,7 +456,8 @@ class PTYProcess (object) :
 
 
         except Exception as e :
-            raise se.NoSuccess ("read from pty process failed (%s)" % e)
+            raise se.NoSuccess ("read from pty process [%s] failed (%s)" \
+                             % (threading.current_thread().name, e))
 
 
 
@@ -510,8 +522,8 @@ class PTYProcess (object) :
                 line = self._readline (timeout)
 
         except Exception as e :
-            raise se.NoSuccess ("_readline from pty process failed (%s)" % e)
-
+            raise se.NoSuccess ("readline from pty process [%s] failed (%s)" \
+                             % (threading.current_thread().name, e))
 
 
     # ----------------------------------------------------------------
@@ -600,7 +612,8 @@ class PTYProcess (object) :
 
 
         except Exception as e :
-            raise se.NoSuccess ("find from pty process failed (%s)" % e)
+            raise se.NoSuccess ("find from pty process [%s] failed (%s)" \
+                             % (threading.current_thread().name, e))
 
 
 
@@ -645,7 +658,8 @@ class PTYProcess (object) :
 
 
         except Exception as e :
-            raise se.NoSuccess ("write to pty process failed (%s)" % e)
+            raise se.NoSuccess ("write to pty process [%s] failed (%s)" \
+                             % (threading.current_thread().name, e))
 
 
 

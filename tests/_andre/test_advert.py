@@ -36,7 +36,7 @@ def test () :
     e = Engine ()
     e._dump()
     
-    d_1 = saga.advert.Directory ('redis://:securedis@localhost/tmp/test1/test1/',
+    d_1 = saga.advert.Directory ('redis://localhost/tmp/test1/test1/',
                                      saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS)
     print d_1
     print d_1.get_url ()
@@ -65,7 +65,7 @@ def test () :
   
   
   
-    e_1 = saga.advert.Entry ('redis://:securedis@localhost/tmp/test1/test1/passwd', 
+    e_1 = saga.advert.Entry ('redis://localhost/tmp/test1/test1/passwd', 
                              saga.filesystem.CREATE)
     print e_1
     print e_1.get_url ()
@@ -74,7 +74,7 @@ def test () :
     e_1.foo = 'baz'
     print e_1.foo
   
-    e_2 = saga.advert.Entry ('redis://:securedis@localhost/tmp/test1/test1/groups', 
+    e_2 = saga.advert.Entry ('redis://localhost/tmp/test1/test1/groups', 
                              saga.filesystem.CREATE)
     print e_2
     print e_2.get_url ()
@@ -139,13 +139,13 @@ def test () :
       print "%s : %-6s [%s]"  %  (t, t.state, t.exception)
     
     
-    print f_2.get_size_self ()
-    t_2 = f_2.get_size_self (saga.task.ASYNC)
+    print f_2.get_size ()
+    t_2 = f_2.get_size (saga.task.ASYNC)
     print t_2.state
     print t_2.result
     
-    # f_2.copy_self ('passwd.bak') 
-    f_2.copy_self ('dummy://boskop/tmp/') 
+    # f_2.copy ('passwd.bak') 
+    f_2.copy ('dummy://boskop/tmp/') 
     
     
     t_3 = saga.filesystem.Directory.create ('file://localhost/tmp/test1/test1/',

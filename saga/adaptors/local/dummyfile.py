@@ -9,8 +9,8 @@ import saga.adaptors.cpi.base
 import saga.adaptors.cpi.filesystem
 import saga.utils.misc
 
-SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
 ###############################################################################
@@ -96,7 +96,9 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     def __init__ (self, api, adaptor) :
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (DummyDirectory, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
@@ -199,7 +201,9 @@ class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
 class DummyFile (saga.adaptors.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (DummyFile, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL

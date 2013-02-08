@@ -1,18 +1,19 @@
 
-from   saga.adaptors.cpi.base   import CPIBase
-from   saga.adaptors.cpi.base   import CPI_SYNC_CALL  as sync
-from   saga.adaptors.cpi.base   import CPI_ASYNC_CALL as async
+import saga.adaptors.cpi.decorators as cpi_dec
+import saga.adaptors.cpi.base       as cpi_base
 
+SYNC  = cpi_dec.CPI_SYNC_CALL
+ASYNC = cpi_dec.CPI_ASYNC_CALL
 
-class Context (CPIBase) :
+class Context (cpi_base.CPIBase) :
     
-    @sync
+    @SYNC
     def init_instance         (self, type)    : pass
 
-    @sync
+    @SYNC
     def _initialize           (self, session) : pass
 
-    @sync
+    @SYNC
     def _get_default_contexts (self, session) : pass
 
 

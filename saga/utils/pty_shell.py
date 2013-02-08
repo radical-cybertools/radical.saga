@@ -65,7 +65,6 @@ class PTYShell (object) :
             raise saga.NoSuccess ("failed to check size (%s)(%s)" % (ret, out))
 
         assert (len(pbs_job_script) == int(out))
-
     """
 
     # ----------------------------------------------------------------
@@ -298,12 +297,17 @@ class PTYShell (object) :
         can be used to collect its output up to the point where the shell prompt
         re-appears (i.e. when the command finishes).
 
+
         Note that this method blocks until the command finishes.  Future
         versions of this call may add a timeout parameter.
         """
 
-        _,   match = self.pty.find     ([self.prompt], _PTY_TIMEOUT)
-        ret, txt   = self._eval_prompt (match)
+        match = None
+
+        while not match :
+            _, match = self.pty.find    ([self.prompt], _PTY_TIMEOUT)
+
+        ret, txt = self._eval_prompt (match)
 
         return (ret, txt)
 
@@ -440,8 +444,8 @@ class PTYShell (object) :
         """
         Run a shell command, and report exit code, stdout and stderr (all three
         will be returned in a tuple).  The call will block until the command
-        finishes (more exactly, until we find the prompt again on the shell's IO
-        stream), and cannot be interrupted.
+        finishes (more exactly, until we find the prompt again on the shell's
+        I/O stream), and cannot be interrupted.
 
         :type  command: string
         :param command: shell command to run.  
@@ -509,7 +513,8 @@ class PTYShell (object) :
         if  iomode == None :
             redir  =  ""
 
-        self.pty.write ("%s%s\n" % (command, redir))
+        self.logger.info ('run_sync: %s%s'   % (command, redir))
+        self.pty.write   (          "%s%s\n" % (command, redir))
 
 
         # If given, switch to new prompt pattern right now...
@@ -571,20 +576,23 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def run_async (self, command) : 
-        """ Run a shell command, but don't wait for prompt -- just return.  It
-        is up to caller to eventually search for the prompt again (see
+    def run_async (self, command) :
+        """
+        Run a shell command, but don't wait for prompt -- just return.  It is up
+        to caller to eventually search for the prompt again (see
         :func:`find_prompt`.  Meanwhile, the caller can interact with the called
-        command, via the io channels.
+        command, via the I/O channels.
 
         :type  command: string
         :param command: shell command to run.  
-        
+
         For async execution, we don't care if the command is doing i/o redirection or not.
         """
 
         command = command.strip ()
-        self.pty.write ("%s\n" % command)
+
+        self.logger.info ('run_sync: %s'   % command)
+        self.pty.write   (          "%s\n" % command)
 
         return
 
@@ -607,14 +615,19 @@ class PTYShell (object) :
         See also :func:`stage_from_file`.
         """
 
-        self.run_async ("cat > %s" % tgt)
+        self.run_async ("cat > %s.$$" % tgt)
         self.pty.write (src)
-        self.pty.write ("\n\4")  # send CTRL-D
+        self.pty.write ("\n\4mv %s.$$ %s\n" % (tgt, tgt))  
+
+        # we send two commands at once (cat, mv), so need to find two prompts
+        ret, txt = self.find_prompt ()
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to stage (cat) string to file (%s)(%s)" % (ret, txt))
 
         ret, txt = self.find_prompt ()
-
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to stage string to file (%s)(%s)" % (ret, txt))
+            raise saga.NoSuccess ("failed to stage (mv) string to file (%s)(%s)" % (ret, txt))
+
 
     # ----------------------------------------------------------------
     #
