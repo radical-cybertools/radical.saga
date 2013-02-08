@@ -1,9 +1,8 @@
-
 __author__    = "Andre Merzky"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-""" SAGA task interface
+""" Task interface
 """
 
 import inspect
@@ -309,7 +308,7 @@ class Container (SimpleBase, Attributes) :
             # handle all methods
             for m in buckets['bound'][c] :
 
-                tasks         = buckets['bound'][c][m]
+                tasks    = buckets['bound'][c][m]
                 m_name   = "container_%s" % m
                 m_handle = None
 

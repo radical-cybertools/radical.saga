@@ -3,7 +3,8 @@
 	[
 		{
 			"path": ".",
-            "folder_exclude_patterns": ["build", "*.egg-info", "test", "temp"]
+            "folder_exclude_patterns": ["build", "*.egg-info", "test", "temp",
+                                        "venv", "egg*"]
 		}
 	],
 

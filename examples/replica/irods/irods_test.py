@@ -146,23 +146,11 @@ def main(args):
             # % (IRODS_DIRECTORY+TEMP_DIR)
         #myfile.move_self("irods://"+IRODS_DIRECTORY+TEMP_DIR)
 
-        # In case you were wondering why the function calls
-        # have changed, Andre M sez:
-        # 
-        # The reason for the distinction of remove(tgt, flags) 
-        # versus remove_self (flags) is that you can't overload on 
-        # method signature in python, and both need to be available
-        # on the directory...
-        # the _self methods operate on the caller itself, 
-        # the methods w/o _self operate on a target which is 
-        # the first argument -- that target is then relative to 
-        # the dir the method is
-
         print "Deleting test dir %s from iRODS" % (IRODS_DIRECTORY+TEMP_DIR)
         mydir.remove("irods://"+IRODS_DIRECTORY+TEMP_DIR)
 
         print "Deleting file %s from iRODS" % (IRODS_DIRECTORY+TEMP_FILENAME)
-        myfile.remove_self()
+        myfile.remove()
 
     except Exception, ex:
         logging.exception("An error occured while executing the test script!"

@@ -14,8 +14,8 @@ from saga.utils.which     import which
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
-SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 ################################################################################
 ## the adaptor name                                                           ## 
@@ -114,19 +114,16 @@ class LocalJobService (saga.adaptors.cpi.job.Service) :
     """ Implements saga.adaptors.cpi.job.Service
     """
     def __init__ (self, api, adaptor) :
-        """ Implements saga.adaptors.cpi.job.Service.__init__
-        """
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (LocalJobService, self)
+        self._cpi_base.__init__ (api, adaptor)
+
 
 
     @SYNC_CALL
     def init_instance (self, adaptor_state, rm_url, session) :
         """ Service instance constructor
         """
-
-        print " state  : %s " % str(adaptor_state)
-        print " rm_url : %s " % str(rm_url)
-        print " session: %s " % str(session)
 
         # check that the hostname is supported
         fqhn = Adaptor().hostname
@@ -227,9 +224,10 @@ class LocalJob (saga.adaptors.cpi.job.Job) :
     """ Implements saga.adaptors.cpi.job.Job
     """
     def __init__ (self, api, adaptor) :
-        """ Implements saga.adaptors.cpi.job.Job.__init__()
-        """
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (LocalJob, self)
+        self._cpi_base.__init__ (api, adaptor)
+
 
     @SYNC_CALL
     def init_instance (self, adaptor_state):
