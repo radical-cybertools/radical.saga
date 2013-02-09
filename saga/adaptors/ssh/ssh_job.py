@@ -399,14 +399,14 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
     #
     def finalize (self, kill_shell = False) :
 
-        print "ssh shell finalize"
+        # print "ssh shell finalize"
 
         if  kill_shell :
             if  self.shell :
                 self.shell.finalize (True)
-                print "ssh shell finalize 1"
+                # print "ssh shell finalize 1"
 
-        print "ssh shell finalize done"
+        # print "ssh shell finalize done"
 
 
     # ----------------------------------------------------------------

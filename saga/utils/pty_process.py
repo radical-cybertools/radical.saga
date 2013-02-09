@@ -220,14 +220,12 @@ class PTYProcess (object) :
     def finalize (self) :
         """ kill the child, close all I/O channels """
 
-        # FIXME: lock gc
-
         # as long as the chiuld lives, run any higher level shutdown routine.
-        print "pty process finalize"
+        # print "pty process finalize"
         if  self.finalize_hook :
             self.finalize_hook ()
 
-        print "pty process finalize 1"
+        # print "pty process finalize 1"
         # now we can safely kill the child process, and close all I/O channels
         try :
             if  self.child :
@@ -258,7 +256,7 @@ class PTYProcess (object) :
       # except OSError :
       #     pass
 
-        print "pty process finalize done"
+        # print "pty process finalize done"
 
 
     # --------------------------------------------------------------------
@@ -283,84 +281,86 @@ class PTYProcess (object) :
         Note: the returned lines do *not* get '\\\\r' stripped.
         """
 
-        # start the timeout timer right now.  Note that even if timeout is
-        # short, and child.poll is slow, we will nevertheless attempt at least
-        # one read...
-        start = time.time ()
+        with self.gc.active (self) :
 
-        ret     = ""
-        sel_to  = timeout
+            # start the timeout timer right now.  Note that even if timeout is
+            # short, and child.poll is slow, we will nevertheless attempt at least
+            # one read...
+            start = time.time ()
 
-        # the select timeout cannot be negative -- 0 is non-blocking... 
-        if  sel_to < 0 : 
-            sel_to = 0
+            ret     = ""
+            sel_to  = timeout
 
-
-        # first, lets see if we still have data in the cache we can return
-        if len (self.cache) :
-
-            # we don't even need all of the cache
-            if  size < len (self.cache) :
-                ret = self.cache[:size]
-                self.cache = self.cache[size:]
-                return ret
-
-            elif size == len (self.cache) :
-                # doh!
-                ret = self.cache
-                self.cache = ""
-                return ret
-
-            else : # size > len(self.cache)
-                # just use what we have, then go on to reading data
-                ret = self.cache
-                self.cache = ""
+            # the select timeout cannot be negative -- 0 is non-blocking... 
+            if  sel_to < 0 : 
+                sel_to = 0
 
 
-        try:
-            # read until we have enough data, or hit timeout ceiling...
-            while True :
-            
-                # idle wait 'til the next data chunk arrives, or 'til sel_to
-                rlist, _, _ = select.select ([self.parent_out], [], [], sel_to)
+            # first, lets see if we still have data in the cache we can return
+            if len (self.cache) :
 
-                # got some data? 
-                for f in rlist:
-                    # read whatever we still need
-                    buf  = os.read (f, size-len(ret))
-                    self.clog += buf
-                    ret       += buf
-
-                  # buf = buf.replace ('\n', '\\n')
-                  # buf = buf.replace ('\r', '')
-                    if  len(buf) > 40 :
-                        self.logger.debug ("read : [%5d] (%s ... %s)" \
-                                        % (len(buf), buf[:20], buf[-20:]))
-                    else :
-                        self.logger.debug ("read : [%5d] (%s)" \
-                                        % (len(buf), buf))
-
-                if  timeout == 0 : 
-                    # only return if we have data
-                    if len (ret) :
-                        return ret
-
-                elif timeout < 0 :
-                    # return immediately
+                # we don't even need all of the cache
+                if  size < len (self.cache) :
+                    ret = self.cache[:size]
+                    self.cache = self.cache[size:]
                     return ret
 
-                else : # timeout > 0
-                    # return if timeout is reached, or if data size is reached
-                    if len (ret) >= size :
+                elif size == len (self.cache) :
+                    # doh!
+                    ret = self.cache
+                    self.cache = ""
+                    return ret
+
+                else : # size > len(self.cache)
+                    # just use what we have, then go on to reading data
+                    ret = self.cache
+                    self.cache = ""
+
+
+            try:
+                # read until we have enough data, or hit timeout ceiling...
+                while True :
+                
+                    # idle wait 'til the next data chunk arrives, or 'til sel_to
+                    rlist, _, _ = select.select ([self.parent_out], [], [], sel_to)
+
+                    # got some data? 
+                    for f in rlist:
+                        # read whatever we still need
+                        buf  = os.read (f, size-len(ret))
+                        self.clog += buf
+                        ret       += buf
+
+                      # buf = buf.replace ('\n', '\\n')
+                      # buf = buf.replace ('\r', '')
+                        if  len(buf) > 40 :
+                            self.logger.debug ("read : [%5d] (%s ... %s)" \
+                                            % (len(buf), buf[:20], buf[-20:]))
+                        else :
+                            self.logger.debug ("read : [%5d] (%s)" \
+                                            % (len(buf), buf))
+
+                    if  timeout == 0 : 
+                        # only return if we have data
+                        if len (ret) :
+                            return ret
+
+                    elif timeout < 0 :
+                        # return immediately
                         return ret
 
-                    now = time.time ()
-                    if (now-start) > timeout :
-                        return ret
+                    else : # timeout > 0
+                        # return if timeout is reached, or if data size is reached
+                        if len (ret) >= size :
+                            return ret
 
-        except Exception as e :
-            raise se.NoSuccess ("read from pty process [%s] failed (%s)" \
-                             % (threading.current_thread().name, e))
+                        now = time.time ()
+                        if (now-start) > timeout :
+                            return ret
+
+            except Exception as e :
+                raise se.NoSuccess ("read from pty process [%s] failed (%s)" \
+                                 % (threading.current_thread().name, e))
 
 
 
@@ -387,69 +387,71 @@ class PTYProcess (object) :
 
         Note: the returned lines get '\\\\r' stripped.
         """
+    
+        with self.gc.active (self) :
 
-        # start the timeout timer right now.  Note that even if timeout is
-        # short, and child.poll is slow, we will nevertheless attempt at least
-        # one read...
-        start = time.time ()
+            # start the timeout timer right now.  Note that even if timeout is
+            # short, and child.poll is slow, we will nevertheless attempt at least
+            # one read...
+            start = time.time ()
 
-        # check if we still have a full line in cache
-        # FIXME: what happens if cache == '\n' ?
-        if '\n' in self.cache :
+            # check if we still have a full line in cache
+            # FIXME: what happens if cache == '\n' ?
+            if '\n' in self.cache :
 
-            idx = self.cache.index ('\n')
-            ret = self.cache[:idx-1]
-            rem = self.cache[idx+1:]
-            self.cache = rem  # store the remainder back into the cache
-            return ret.replace('\r', '')
+                idx = self.cache.index ('\n')
+                ret = self.cache[:idx-1]
+                rem = self.cache[idx+1:]
+                self.cache = rem  # store the remainder back into the cache
+                return ret.replace('\r', '')
 
 
-        try :
-            # the cache is depleted, we need to read new data until we find
-            # a newline, or until timeout
-            while True :
-            
-                # do an idle wait 'til the next data chunk arrives
-                rlist = []
-                if timeout < 0 :
-                    rlist, _, _ = select.select ([self.parent_out], [], [])
-                else :
-                    rlist, _, _ = select.select ([self.parent_out], [], [], timeout)
-
-                # got some data - read them into the cache
-                for f in rlist:
-                    buf         = os.read (f, _CHUNKSIZE)
-                    self.clog  += buf
-                    self.cache += buf
-
-                    buf = buf.replace ('\n', '\\n')
-                    buf = buf.replace ('\r', '')
-                    if  len(buf) > 40 :
-                        self.logger.debug ("read : [%5d] (%s ... %s)" \
-                                        % (len(buf), buf[:20], buf[-20:]))
+            try :
+                # the cache is depleted, we need to read new data until we find
+                # a newline, or until timeout
+                while True :
+                
+                    # do an idle wait 'til the next data chunk arrives
+                    rlist = []
+                    if timeout < 0 :
+                        rlist, _, _ = select.select ([self.parent_out], [], [])
                     else :
-                        self.logger.debug ("read : [%5d] (%s)" \
-                                        % (len(buf), buf))
+                        rlist, _, _ = select.select ([self.parent_out], [], [], timeout)
 
-                # check if we *now* have a full line in cache
-                if '\n' in self.cache :
+                    # got some data - read them into the cache
+                    for f in rlist:
+                        buf         = os.read (f, _CHUNKSIZE)
+                        self.clog  += buf
+                        self.cache += buf
 
-                    idx = self.cache.index ('\n')
-                    ret = self.cache[:idx-1]
-                    rem = self.cache[idx+1:]
-                    self.cache = rem  # store the remainder back into the cache
-                    return ret.replace('\r', '')
+                        buf = buf.replace ('\n', '\\n')
+                        buf = buf.replace ('\r', '')
+                        if  len(buf) > 40 :
+                            self.logger.debug ("read : [%5d] (%s ... %s)" \
+                                            % (len(buf), buf[:20], buf[-20:]))
+                        else :
+                            self.logger.debug ("read : [%5d] (%s)" \
+                                            % (len(buf), buf))
 
-                # if not, check if we hit timeout
-                now = time.time ()
-                if (now-start) > timeout :
-                    # timeout, but nothing found -- leave cache alone and return
-                    return None
+                    # check if we *now* have a full line in cache
+                    if '\n' in self.cache :
+
+                        idx = self.cache.index ('\n')
+                        ret = self.cache[:idx-1]
+                        rem = self.cache[idx+1:]
+                        self.cache = rem  # store the remainder back into the cache
+                        return ret.replace('\r', '')
+
+                    # if not, check if we hit timeout
+                    now = time.time ()
+                    if (now-start) > timeout :
+                        # timeout, but nothing found -- leave cache alone and return
+                        return None
 
 
-        except Exception as e :
-            raise se.NoSuccess ("read from pty process [%s] failed (%s)" \
-                             % (threading.current_thread().name, e))
+            except Exception as e :
+                raise se.NoSuccess ("read from pty process [%s] failed (%s)" \
+                                 % (threading.current_thread().name, e))
 
 
 

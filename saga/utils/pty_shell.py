@@ -172,7 +172,7 @@ class PTYShell (object) :
             # does not expose stderr separately...
             self.sh_args =  "-l -i"
             self.sh_env  =  "/usr/bin/env TERM=vt100"
-            self.sh_cmd  =  "%s %s %s 2>&1" % (self.sh_env, self.sh_exe, self.sh_args)
+            self.sh_cmd  =  "%s %s %s" % (self.sh_env, self.sh_exe, self.sh_args)
 
 
 
@@ -281,18 +281,18 @@ class PTYShell (object) :
     #
     def finalize (self, kill_pty = False) :
 
-        print "pty shell finalize"
+        # print "pty shell finalize"
     
         try :
             # check if some additional initialization routines as registered
             if  self.finalize_hook :
                 self.finalize_hook ()
 
-            print "pty shell finalize 1"
+            # print "pty shell finalize 1"
 
         except Exception as e :
-            print "no finalize hook: %s" % e
-            print e._traceback
+            # print "no finalize hook: %s" % e
+            # print e._traceback
             pass
 
 
@@ -301,15 +301,15 @@ class PTYShell (object) :
                 if  self.pty :
                     self.pty.finalize ()
 
-            print "pty shell finalize 2"
+            # print "pty shell finalize 2"
 
         except Exception as e :
-            print "no finalize: %s" % e
-            print e._traceback
+            # print "no finalize: %s" % e
+            # print e._traceback
             pass
 
 
-        print "pty shell finalize done"
+        # print "pty shell finalize done"
 
 
     # ----------------------------------------------------------------
