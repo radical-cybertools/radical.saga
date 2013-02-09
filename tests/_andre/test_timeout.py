@@ -9,7 +9,7 @@ class WatchedClass () :
     self.initialize ()
 
     self.gc = togc.TimeoutGC ()
-    self.gc.register (self, self.initialize, self.finalize)
+    self.gc.register (self, self.initialize, self.finalize, timeout=5)
 
   def __del__ (self) :
     self.gc.unregister (self)
