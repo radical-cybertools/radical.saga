@@ -200,18 +200,38 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # start the shell, find its prompt.  If that is up and running, we can
         # bootstrap our wrapper script, and then run jobs etc.
         if self.rm.schema   == "slurm":
-            shell_type = "fork"
+            shell_schema = "fork://"
         elif self.rm.schema == "slurm+ssh":
-            shell_type = "ssh"
+            shell_schema = "ssh://"
         elif self.rm.schema == "slurm+gsissh":
-            shell_type = "gsissh"
+            shell_schema = "gsissh://"
         else:
             raise saga.IncorrectURL("Schema %s not supported by SLURM adaptor."
                                     % self.rm.schema)
 
-        self._logger.debug("Opening shell of type: %s" % self.rm)
-        exit(0)
-        self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session.contexts, self._logger)
+        #<scheme>://<user>:<pass>@<host>:<port>/<path>?<query>#<fragment>
+        # build our shell URL
+        shell_url = shell_schema 
+        
+        # did we provide a username and password?
+        if self.rm.username and self.rm.password:
+            shell_url += self.rm.username + ":" + self.rm.password + "@"
+
+        # only provided a username
+        if self.rm.username and not self.rm.password:
+            shell_url += self.rm.username + "@"
+
+        #add hostname
+        shell_url += self.rm.host
+
+        #add port
+        if self.rm.port:
+            shell_url += ":" + self.rm.port
+
+        shell_url = saga.url.Url(shell_url)
+
+        self._logger.debug("Opening shell of type: %s" % shell_url)
+        self.shell = saga.utils.pty_shell.PTYShell (shell_url, self.session.contexts, self._logger)
 
         # -- now stage the shell wrapper script, and run it.  Once that is up
         # and running, we can requests job start / management operations via its
