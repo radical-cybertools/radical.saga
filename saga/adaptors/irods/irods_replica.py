@@ -172,21 +172,25 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
 
     def sanity_check (self) :
+        #open a temporary shell
         self.shell = saga.utils.pty_shell.PTYShell (saga.url.Url("ssh://localhost"))
-        #cw = CommandLineWrapper()
-        #cw.open()
-        #print cw.run_sync("ls")
+
         # run ils, see if we get any errors -- if so, fail the
         # sanity check
         try:
             rc, result, _ = self.shell.run_sync("ils")
             if rc != 0:
                 raise Exception("sanity check error")
+
+            # remove our temp shell
+            del(self.shell)
+            
         except Exception, ex:
             raise saga.NoSuccess ("Disabling iRODS plugin - could not access "
                               "iRODS filesystem through ils.  Check your "
                               "iRODS environment and certificates. %s" % ex)
 
+        #close shell
         # try ienv or imiscsvrinfo later? ( check for error messages )
 
 
@@ -598,8 +602,6 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
         self.shell = saga.utils.pty_shell.PTYShell (saga.url.Url("ssh://localhost"))
 
         # TODO: "stat" the file
-        #self._cw = CommandLineWrapper.init_as_subprocess_wrapper()
-        #self._cw.open()
 
     def __del__ (self):
         self._logger.debug("Deconstructor for iRODS file")
@@ -814,12 +816,12 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
         self._logger.debug("Attempting to move logical file %s to location %s" % (source_path, dest_path))
 
         try:
-            cw_result = self._cw.run_sync("imv %s %s" % (source_path, dest_path) )
+            returncode, out, _ = self.shell.run_sync("imv %s %s" % (source_path, dest_path) )
 
-            if cw_result.returncode != 0:
+            if errorcode != 0:
                 raise saga.NoSuccess ("Could not move logical file %s to location %s, errorcode %s: %s"\
-                                    % (source_path, dest_path, str(cw_result.returncode),
-                                       cw_result))
+                                    % (source_path, dest_path, str(errorcode),
+                                       out))
 
         except Exception, ex:
             raise saga.NoSuccess ("Couldn't move file. %s" % ex)
@@ -843,12 +845,12 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
         self._logger.debug("Attempting to remove file at: %s" % complete_path)
 
         try:
-            cw_result = self._cw.run_sync("irm %s" % complete_path)
+            returncode, out, _ = self.shell.run_sync("irm %s" % complete_path)
 
-            if cw_result.returncode != 0:
+            if returncode != 0:
                 raise saga.NoSuccess ("Could not remove file %s, errorcode %s: %s"\
-                                    % (complete_path, str(cw_result.returncode),
-                                       cw_result))
+                                    % (complete_path, str(returncode),
+                                       out))
 
         except Exception, ex:
             # couldn't delete for unspecificed reason

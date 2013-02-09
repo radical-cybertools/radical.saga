@@ -45,20 +45,6 @@ def main(args):
         usage()
         exit(-1)
 
-
-
-    #self.shell = saga.utils.pty_shell.PTYShell (saga.Url("ssh://localhost"))
-    #ret, out, _ = self.shell.run_sync ("ls")
-    #print out
-    #exit(0)
-
-    # -- now stage the shell wrapper script, and run it.  Once that is up                                                                                                                                        
-    # and running, we can requests job start / management operations via its                                                                                                                                     
-    # stdio.                                                                                                                                                                                                     
-
-    #base = "$HOME/.saga/adaptors/ssh_job"
-    
-
     # directory to store our iRODS files in, don't forget trailing and leading /
     IRODS_DIRECTORY = args[1]
 
