@@ -128,10 +128,10 @@ class PTYProcess (object) :
     
         try :
             self.gc.unregister (self)
-        except Exception :
+            self.finalize ()
+        except :
             pass
     
-        self.finalize ()
     
     
 
@@ -241,15 +241,15 @@ class PTYProcess (object) :
 
         self.child = None
 
-        try : 
-            os.close (self.parent_in)  
-        except OSError :
-            pass
+     ## try : 
+     ##     os.close (self.parent_in)  
+     ## except OSError :
+     ##     pass
 
-        try : 
-            os.close (self.parent_out) 
-        except OSError :
-            pass
+     ## try : 
+     ##     os.close (self.parent_out) 
+     ## except OSError :
+     ##     pass
 
       # try : 
       #     os.close (self.parent_err) 

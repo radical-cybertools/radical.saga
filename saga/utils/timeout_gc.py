@@ -168,7 +168,7 @@ class TimeoutGC (object) :
     # --------------------------------------------------------------------------
     #
     #
-    def __init__ (self) :
+    def __del__ (self) :
         """
         On destruction, signal the watcher thread that it can finish.  Well,
         that thread will likely bail out anyway, since the destruction will
