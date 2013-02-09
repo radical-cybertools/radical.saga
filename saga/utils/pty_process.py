@@ -10,7 +10,8 @@ import signal
 import threading
 
 import saga.utils.logger
-import saga.exceptions as se
+import saga.utils.timeout_gc
+import saga.exceptions      as se
 
 
 # --------------------------------------------------------------------
@@ -56,7 +57,7 @@ class PTYProcess (object) :
                 # found some prompt
                 break
         
-        while pty.alive () :
+        while True :
             # send sleeps as quickly as possible, forever...
             pty.find (['[\$#>]\s*$'])
             pty.write ("/bin/sleep 10\\n")
@@ -90,105 +91,152 @@ class PTYProcess (object) :
             raise se.BadParameter ("PTYProcess expects non-empty command")
 
 
+        self.command = command # list of strings too run()
+        self.cache   = ""      # data cache
+        self.clog    = ""      # log the data cache
+        self.child   = None    # the process as created by subprocess.Popen
+        self.ptyio   = None    # the process' io channel, from pty.fork()
+        self.logger  = logger
+
+        self.initialize_hook = None
+        self.finalize_hook   = None
+
+        if not self.logger :
+            self.logger = saga.utils.logger.getLogger ('PTYProcess')
+
+        # register this process instance for timeout garbage collection
+        self.gc = saga.utils.timeout_gc.TimeoutGC ()
+        self.gc.register (self, self.initialize, self.finalize)
+
+
         try :
-
-            self.command = command # list of strings too run()
-            self.cache   = ""      # data cache
-            self.clog    = ""      # log the data cache
-            self.child   = None    # the process as created by subprocess.Popen
-            self.logger  = logger
-
-            if not self.logger :
-                self.logger = saga.utils.logger.getLogger ('PTYProcess')
-
-            self.logger.debug ("PTYProcess: %s\n\n" % ' '.join ((command)))
-
-            self.parent_in,  self.child_in  = pty.openpty ()
-            self.parent_out, self.child_out = pty.openpty ()
-         #  self.parent_err, self.child_err = pty.openpty ()
-
-            # create the child
-            try :
-                self.child = os.fork ()
-            except Exception as e:
-                raise se.NoSuccess ("Could not run (%s): %s" \
-                                 % (' '.join (command), e))
-            
-            if not self.child :
-                try :
-                    # this is the child
-                    os.close (self.parent_in)
-                    os.close (self.parent_out)
-                  # os.close (self.parent_err)
-                    
-                  # # reopen stdio unbuffered
-                  # # 
-                  # # this mechanism is actually useful, but, for some obscure
-                  # # (to me) reason fails badly if the applications stdio is
-                  # # redirected -- which is a very valid use case.  So, we
-                  # # keep I/O buffered, and need to get pipes flushed otherwise
-                  # # (newlines much?)
-                  # unbuf_in  = os.fdopen (sys.stdin.fileno(),  'r+', 0)
-                  # unbuf_out = os.fdopen (sys.stdout.fileno(), 'w+', 0)
-                  # unbuf_err = os.fdopen (sys.stderr.fileno(), 'w+', 0)
-                  #
-                  # os.dup2 (self.child_in,  unbuf_in.fileno())
-                  # os.dup2 (self.child_out, unbuf_out.fileno())
-                  # os.dup2 (self.child_out, unbuf_err.fileno())
-
-                    # redirect stdio
-                    os.dup2 (self.child_in,  sys.stdin.fileno())
-                    os.dup2 (self.child_out, sys.stdout.fileno())
-                    os.dup2 (self.child_out, sys.stderr.fileno())
-
-                    os.execvpe (self.command[0], self.command, os.environ)
-
-                except OSError as e:
-                    self.logger.error ("Could not execute (%s): %s" \
-                                    % (' '.join (command), e))
-                    sys.exit (-1)
-
-            else :
-                # parent
-                os.close (self.child_in)
-                os.close (self.child_out)
-              # os.close (self.child_err)
-
-
-            if not self.alive () :
-                raise se.NoSuccess ("Could not run (%s)" % ' '.join (command))
-
+            self.initialize ()
 
         except Exception as e :
             raise se.NoSuccess ("pty or process creation failed (%s)" % e)
 
     # --------------------------------------------------------------------
     #
-    # def __del__ (self) :
-    #     """ 
-    #     Need to free pty's on destruction, otherwise we might ran out of
-    #     them (see cat /proc/sys/kernel/pty/max)
-    #     """
+    def __del__ (self) :
+        """ 
+        Need to free pty's on destruction, otherwise we might ran out of
+        them (see cat /proc/sys/kernel/pty/max)
+        """
+    
+        self.logger.error ("pty dying...")
+        self.logger.trace ()
+    
+        try :
+            self.gc.unregister (self)
+        except Exception :
+            pass
+    
+        self.finalize ()
+    
+    
 
-    #     self.logger.error ("pty dying...")
-    #     self.logger.trace ()
+    # ----------------------------------------------------------------------
+    #
+    def set_initialize_hook (self, initialize_hook) :
+        self.initialize_hook = initialize_hook
 
-    #     self.close ()
+    # ----------------------------------------------------------------------
+    #
+    def set_finalize_hook (self, finalize_hook) :
+        self.finalize_hook = finalize_hook
+
+    # ----------------------------------------------------------------------
+    #
+    def initialize (self) :
+
+        self.logger.debug ("PTYProcess: %s\n\n" % ' '.join ((self.command)))
+
+    ##  The lines commented out with '##' attempt to reproduce what
+    ##  pty.fork does, but with separate stderr capture.
+    ##
+    ##  self.parent_in,  self.child_in  = pty.openpty ()
+    ##  self.parent_out, self.child_out = pty.openpty ()
+     #  self.parent_err, self.child_err = pty.openpty ()
+
+        # create the child
+        try :
+         ##  self.child               =  os.fork ()
+            (self.child, self.pty_io) = pty.fork ()
+        except Exception as e:
+            raise se.NoSuccess ("Could not run (%s): %s" \
+                             % (' '.join (self.command), e))
+        
+        if not self.child :
+            try :
+                # this is the child
+             ## os.close (self.parent_in)
+             ## os.close (self.parent_out)
+              # os.close (self.parent_err)
+                
+              # # reopen stdio unbuffered
+              # # 
+              # # this mechanism is actually useful, but, for some obscure
+              # # (to me) reason fails badly if the applications stdio is
+              # # redirected -- which is a very valid use case.  So, we
+              # # keep I/O buffered, and need to get pipes flushed otherwise
+              # # (newlines much?)
+              # unbuf_in  = os.fdopen (sys.stdin.fileno(),  'r+', 0)
+              # unbuf_out = os.fdopen (sys.stdout.fileno(), 'w+', 0)
+              # unbuf_err = os.fdopen (sys.stderr.fileno(), 'w+', 0)
+              #
+              # os.dup2 (self.child_in,  unbuf_in.fileno())
+              # os.dup2 (self.child_out, unbuf_out.fileno())
+              # os.dup2 (self.child_out, unbuf_err.fileno())
+
+                # redirect stdio
+             ## os.dup2 (self.child_in,  sys.stdin.fileno())
+             ## os.dup2 (self.child_out, sys.stdout.fileno())
+             ## os.dup2 (self.child_out, sys.stderr.fileno())
+
+                os.execvpe (self.command[0], self.command, os.environ)
+
+            except OSError as e:
+                self.logger.error ("Could not execute (%s): %s" \
+                                % (' '.join (command), e))
+                sys.exit (-1)
+
+        else :
+            # parent
+         ## os.close (self.child_in)
+         ## os.close (self.child_out)
+          # os.close (self.child_err)
+
+          self.parent_in  = self.pty_io
+          self.parent_out = self.pty_io
+          self.parent_err = self.pty_io
+
+        # check if some additional initialization routines as registered
+        if  self.initialize_hook :
+            self.initialize_hook ()
 
 
     # --------------------------------------------------------------------
     #
-    def close (self) :
+    def finalize (self) :
         """ kill the child, close all I/O channels """
 
+        # FIXME: lock gc
+
+        # as long as the chiuld lives, run any higher level shutdown routine.
+        print "pty process finalize"
+        if  self.finalize_hook :
+            self.finalize_hook ()
+
+        print "pty process finalize 1"
+        # now we can safely kill the child process, and close all I/O channels
         try :
-            if  self.alive () :
+            if  self.child :
                 os.kill (self.child, signal.SIGTERM)
         except OSError :
             pass
 
         try :
-            if  self.alive () :
+            if  self.child :
                 os.kill (self.child, signal.SIGKILL)
         except OSError :
             pass
@@ -201,17 +249,7 @@ class PTYProcess (object) :
             pass
 
         try : 
-            os.close (self.child_in)    
-        except OSError :
-            pass
-
-        try : 
             os.close (self.parent_out) 
-        except OSError :
-            pass
-
-        try : 
-            os.close (self.child_out)   
         except OSError :
             pass
 
@@ -219,46 +257,8 @@ class PTYProcess (object) :
       #     os.close (self.parent_err) 
       # except OSError :
       #     pass
-      #
-      # try : 
-      #     os.close (self.child_err)   
-      # except OSError :
-      #     pass
 
-
-    # --------------------------------------------------------------------
-    #
-    def alive (self) :
-        """
-        alive() checks if the child gave an exit value -- if none, it is assumed
-        to be still alive.
-        """
-
-        if not self.child :
-            return False
-
-        try :
-            pid, status = os.waitpid (self.child, os.WNOHANG)
-
-            if (pid, status) == (0, 0) :
-                return True
-
-        except OSError as e :
-            self.logger.debug ("cannot check child status (%s)" % e)
-
-
-        # child is dead -- get last data into clog, if any
-        try :
-            self.read (timeout=0.01, _force=True)
-        except OSError :
-            pass
-        except se.SagaException :
-            pass
-
-        # avoid any further activity, inclusive waitpid
-        self.child = None
-
-        return False
+        print "pty process finalize done"
 
 
     # --------------------------------------------------------------------
@@ -288,10 +288,6 @@ class PTYProcess (object) :
         # one read...
         start = time.time ()
 
-        if not _force :
-            if not self.alive () :
-                raise se.NoSuccess ("Could not read - pty process died")
-
         ret     = ""
         sel_to  = timeout
 
@@ -304,7 +300,7 @@ class PTYProcess (object) :
         if len (self.cache) :
 
             # we don't even need all of the cache
-            if size < len (self.cache) :
+            if  size < len (self.cache) :
                 ret = self.cache[:size]
                 self.cache = self.cache[size:]
                 return ret
@@ -344,7 +340,7 @@ class PTYProcess (object) :
                         self.logger.debug ("read : [%5d] (%s)" \
                                         % (len(buf), buf))
 
-                if timeout == 0 : 
+                if  timeout == 0 : 
                     # only return if we have data
                     if len (ret) :
                         return ret
@@ -396,10 +392,6 @@ class PTYProcess (object) :
         # short, and child.poll is slow, we will nevertheless attempt at least
         # one read...
         start = time.time ()
-
-        if not self.alive () :
-            raise se.NoSuccess ("Could not read line - pty process died")
-
 
         # check if we still have a full line in cache
         # FIXME: what happens if cache == '\n' ?
@@ -474,11 +466,6 @@ class PTYProcess (object) :
         Note: the returned lines get '\\\\r' stripped.
         """
 
-
-        if not self.alive () :
-            raise se.NoSuccess ("Could not find line - pty process died")
-
-
         try :
             start = time.time ()             # startup timestamp
             ret   = []                       # array of read lines
@@ -492,9 +479,6 @@ class PTYProcess (object) :
             # we wait forever -- there are two ways out though: a line matches
             # a pattern, or timeout passes
             while True :
-
-                if not self.alive () :
-                    break
 
                 # time.sleep (0.1)
 
@@ -553,9 +537,6 @@ class PTYProcess (object) :
 
         Note: the returned data get '\\\\r' stripped.
         """
-
-        if not self.alive () :
-            raise se.NoSuccess ("Could not find data - pty process died")
 
         try :
             start = time.time ()                       # startup timestamp
@@ -625,36 +606,35 @@ class PTYProcess (object) :
         child's stdin pipe, until it succeeds to write all data.
         """
 
-        if not self.alive () :
-            raise se.NoSuccess ("Could not write data - pty not alive")
-
         try :
 
-            buf = data.replace ('\n', '\\n')
-            buf =  buf.replace ('\r', '')
-            if  len(buf) > 40 :
-                self.logger.debug ("write: [%5d] (%s ... %s)" \
-                                % (len(data), buf[:20], buf[-20:]))
-            else :
-                self.logger.debug ("write: [%5d] (%s)" \
-                                % (len(data), buf))
+            with self.gc.active (self) :
 
-            # attempt to write forever -- until we succeeed
-            while data :
+                buf = data.replace ('\n', '\\n')
+                buf =  buf.replace ('\r', '')
+                if  len(buf) > 40 :
+                    self.logger.debug ("write: [%5d] (%s ... %s)" \
+                                    % (len(data), buf[:20], buf[-20:]))
+                else :
+                    self.logger.debug ("write: [%5d] (%s)" \
+                                    % (len(data), buf))
 
-                # check if the pty pipe is ready for data
-                _, wlist, _ = select.select ([], [self.parent_in], [], _POLLDELAY)
+                # attempt to write forever -- until we succeeed
+                while data :
 
-                for f in wlist :
-                    
-                    # write will report the number of written bytes
-                    size = os.write (f, data)
+                    # check if the pty pipe is ready for data
+                    _, wlist, _ = select.select ([], [self.parent_in], [], _POLLDELAY)
 
-                    # otherwise, truncate by written data, and try again
-                    data = data[size:]
+                    for f in wlist :
+                        
+                        # write will report the number of written bytes
+                        size = os.write (f, data)
 
-                    if data :
-                        self.logger.info ("write: [%5d]" % size)
+                        # otherwise, truncate by written data, and try again
+                        data = data[size:]
+
+                        if data :
+                            self.logger.info ("write: [%5d]" % size)
 
 
         except Exception as e :
