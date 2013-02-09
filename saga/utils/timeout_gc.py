@@ -83,9 +83,9 @@ class TimeoutGC (object) :
       * Objects which register in the garbage collector are never removed unless
         they unregister.  This can potentially lead to memory starvation, as the
         native Python garbage collector will not be able to reclaim those
-        objects.
+        objects.  Thus: unregister on ``__del__``!
 
-      * When an object's ``finalize()`` is called, die to an timeout, and that
+      * When an object's ``finalize()`` is called, due to an timeout, and that
         method raises an exception, the ``TimeoutGC`` still assumes that the
         object is dead, and will potentially attempt to revive it.  It is the
         responsibility of the watched object to handle that condition.
@@ -104,7 +104,7 @@ class TimeoutGC (object) :
     class _Activity (object) :
         """ This is an activity context manager -- it gets created by
         timeout_gc.active(obj), and on creation locks the object's lock.  The
-        __enter__ method thus does not need to lock again, but the release
+        __enter__ method thus does not need to lock again, but the __exit__
         method must do so.  
 
         This makes it imperative that the ``active()`` method is ALWAYS called in
@@ -164,8 +164,19 @@ class TimeoutGC (object) :
         self.run       = True
         self.thread    = sthread.Thread.Run (self._gc)
 
-        # print "gc init"
 
+    # --------------------------------------------------------------------------
+    #
+    #
+    def __init__ (self) :
+        """
+        On destruction, signal the watcher thread that it can finish.  Well,
+        that thread will likely bail out anyway, since the destruction will
+        suddenly remove the self members, but hey...  Since the gc is
+        a singleton though, at this point everything goes south anyway, so we
+        don't care...
+        """
+        self.run = False
 
     # --------------------------------------------------------------------------
     #
@@ -210,8 +221,8 @@ class TimeoutGC (object) :
                         # message anyway, and will continue.
                         pass
 
-            # check all objects -- time to idle for a bit...
-            time.sleep (1)
+            # checked all objects -- time to idle for a bit...
+            time.sleep (10)
 
 
     # --------------------------------------------------------------------------
@@ -302,7 +313,7 @@ class TimeoutGC (object) :
     # --------------------------------------------------------------------------
     #
     #
-    def revive (self, obj, timeout=None) :
+    def revive (self, obj) :
         """
         Re-initialize the object if needed, re-set as alive, and refresh
         timestamp. 
@@ -320,28 +331,33 @@ class TimeoutGC (object) :
 
             if not self.objects[obj]['alive'] :
                 try :
-                    self.objects[obj]['reviving'] = True
 
                     # re-initialize the object, if needed
+                    self.objects[obj]['reviving'] = True
                     self.objects[obj]['initialize']()
-                    self.objects[obj]['alive'] = True
+                    self.objects[obj]['alive']    = True
                 except :
                     # revival failed, the object remains dead...
+                    # This is bad actually, as the next activity request will
+                    # trigger *another* revival attempt -- but we hope that the
+                    # activity will, at some point, realize that the object
+                    # remained dead -- what was the point of revival otherwise
+                    # anyway??
                     pass
 
                 finally :
                     self.objects[obj]['reviving'] = False
 
             # refresh state (we do that even if the object was not revived)
-            return self.refresh (obj, timeout)
+            return self.refresh (obj)
 
 
 
     # --------------------------------------------------------------------------
     #
     #
-    def refresh (self, obj, timeout=None) :
-        """ refresh timestamp, and possibly set new timeout """
+    def refresh (self, obj) :
+        """ refresh timestamp on live objects """
 
         # make sure we know that obj
         if not obj in self.objects :
@@ -350,16 +366,10 @@ class TimeoutGC (object) :
         
         with self.objects[obj]['lock'] :
 
-            # print "gc refreshing %s" % obj
-            if not self.objects[obj]['alive'] :
-                # too late... 
-                return False
+            if self.objects[obj]['alive'] :
 
-            if timeout :
-                self.objects[obj]['timeout'] = timeout
-            self.objects[obj]['timestamp']   = time.time ()
-
-            return True
+                # *uff*, not too late... 
+                self.objects[obj]['timestamp'] = time.time ()
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
