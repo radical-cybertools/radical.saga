@@ -31,12 +31,14 @@ class TimeoutGC (object) :
       
         def __init__ (self) :
       
+          print "ctor"
           self.initialize ()
       
           self.gc = togc.TimeoutGC ()
           self.gc.register (self, self.initialize, self.finalize, timeout=5)
       
         def __del__ (self) :
+          print "dtor"
           self.gc.unregister (self)
           self.finalize ()
           pass
@@ -52,8 +54,8 @@ class TimeoutGC (object) :
           self.f.close ()
       
         def action (self) :
-          print "action"
           with self.gc.active (self) :
+            print "action"
             self.f.write ("action\n")
       
       # main
@@ -64,12 +66,17 @@ class TimeoutGC (object) :
 
     This will print::
 
+      ctor
       init
       action
       fini
       init
       action
       fini
+      dtor
+
+    (The last 'fini' and 'dtor' messages are likely missing while python
+    shuts down).
 
     The ``sleep(20)`` will cause the ``TimeoutGC``  to call the ``finalize()``
     method of the watched class.  On the next action after the sleep, the ``with
