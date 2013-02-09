@@ -23,9 +23,10 @@ import saga
 import os
 import logging
 import subprocess
+import saga.utils.pty_shell
 
 FILE_SIZE = 1 # in megs, approx
-NUM_REPLICAS = 2 # num replicas to create
+NUM_REPLICAS = 1 # num replicas to create
 TEMP_FILENAME = "test.txt" # filename to create and use for testing
 TEMP_DIR      = "/irods_test_dir/" #directory to create and use for testing
 
@@ -44,17 +45,19 @@ def main(args):
         usage()
         exit(-1)
 
-    
-    #import saga.utils.pty_shell
-    #print saga.Url("ssh://localhost")
+
+
     #self.shell = saga.utils.pty_shell.PTYShell (saga.Url("ssh://localhost"))
-    
+    #ret, out, _ = self.shell.run_sync ("ls")
+    #print out
+    #exit(0)
+
     # -- now stage the shell wrapper script, and run it.  Once that is up                                                                                                                                        
     # and running, we can requests job start / management operations via its                                                                                                                                     
     # stdio.                                                                                                                                                                                                     
 
     #base = "$HOME/.saga/adaptors/ssh_job"
-    #ret, out, _ = self.shell.run_sync ("mkdir -p %s" % base)
+    
 
     # directory to store our iRODS files in, don't forget trailing and leading /
     IRODS_DIRECTORY = args[1]
