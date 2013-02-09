@@ -469,7 +469,7 @@ class LocalFile (saga.adaptors.cpi.filesystem.File) :
         t = saga.task.Task (self, 'get_url', c, ttype)
 
         # FIXME: move to task_run...
-        t._set_state  = saga.task.Done
+        t._set_state  = saga.task.DONE
         t._set_result = self._url
 
         return t
@@ -531,7 +531,7 @@ class LocalFile (saga.adaptors.cpi.filesystem.File) :
                 task._set_state     (saga.task.FAILED)
         elif call == 'get_size' :
             try :
-                task._set_result (self.get_size ())
+                task._set_result (self.get_size_self ())
                 task._set_state  (saga.task.DONE)
             except Exception as e :
                 task._set_exception (e)

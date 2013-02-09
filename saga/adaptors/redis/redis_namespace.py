@@ -147,7 +147,6 @@ class redis_ns_monitor (threading.Thread) :
 
                             if  not match :
                                 self.logger.warn ("event parse error for %s" % args)
-                                pp (match)
                                 continue
 
                             # FIXME: error check
@@ -303,26 +302,24 @@ class redis_ns_entry :
     #
     @classmethod
     def open (self, r, path, flags) :
+        # FIXME: the checks below make open quite slow, as we travel down the
+        #        path components.  This should be done in a single pipeline.
+
     
         r.logger.debug ("redis_ns_entry.open %s" % path)
     
         # make sure parent dir exists
-        par = None
         try :
-            parent = redis_ns_parent (path)
+            parent_path = redis_ns_parent (path)
 
-            if  CREATE_PARENTS & flags    :
-                par = self.mkdir (r, parent, CREATE_PARENTS)
-            else :
-                par = redis_ns_entry (r, parent)
-                par.fetch ()
+            # go down the rabbit hole
+            parent = self.opendir (r, parent_path, flags)
 
-                if not par.isdir () :
-                    raise BadParameter ("Cannot open parent %s (not a directory)" % parent)
 
         except Exception as e :
 
             raise BadParameter ("Cannot open parent %s (%s)" % (parent, e))
+
 
         # try to open entry itself
         e = redis_ns_entry (r, path)
@@ -357,7 +354,7 @@ class redis_ns_entry :
         path = self.path
 
         if  self.valid :
-            raise IncorrectState ("mkdir on %s fails, entry already exists" %  (path, e))
+            raise IncorrectState ("mkdir on %s fails, entry already exists" %  path)
 
         self.logger.debug ("redis_ns_entry.mkdir %s" % path)
     
@@ -379,7 +376,7 @@ class redis_ns_entry :
               pe     = None
                 
               try :
-                  pe = redis_ns_entry (r, parent)
+                  pe = redis_ns_entry (self.r, parent)
                   pe.fetch ()
 
               except Exception as e :
@@ -403,7 +400,7 @@ class redis_ns_entry :
         path = self.path
 
         if  self.valid :
-            raise IncorrectState ("mkdir on %s fails, entry already exists" %  (path, e))
+            raise IncorrectState ("mkdir on %s fails, entry already exists" % path)
 
         # FIXME: need to ensure this via a WATCH call.
     
@@ -576,7 +573,7 @@ class redis_ns_entry :
         self.logger.debug ("redis_ns_entry.push %s" % (self.path))
     
         new_data  = self.data  # FIXME: is this a clone??
-        fetch ()  # can throw if entry does not exist -- use create() then
+        self.fetch ()  # can throw if entry does not exist -- use create() then
 
         # FIXME: we only fetch() for the indexes - we should optimize that again
         # by moving index consolidation into a separate thread (p.srem below)
@@ -586,22 +583,22 @@ class redis_ns_entry :
     
         p = self.r.pipeline ()
         # FIXME: add guard
-        p.hmset  (NODE+':'+path, {'mtime': time.time()})
-        p.delete (DATA+':'+path)          # simply delete old data hash...
-        p.hmset  (DATA+':'+path, data)    # ...and replace with new one
+        p.hmset  (NODE+':'+self.path, {'mtime': time.time()})
+        p.delete (DATA+':'+self.path)             # simply delete old data hash...
+        p.hmset  (DATA+':'+self.path, self.data)  # ...and replace with new one
     
         # delete old invalid index entries
         # NOTE: one could also optimize the delete by checking differenzes
         for key in old_data :
             val = old_data[key]
-            p.srem (KEYS+':'+str(key), path)
-            p.srem (VALS+':'+str(val), path)
+            p.srem (KEYS+':'+str(key), self.path)
+            p.srem (VALS+':'+str(val), self.path)
     
         # add new index entries
-        for key in data :
-            val = data[key]
-            p.sadd (KEYS+':'+str(key), path)
-            p.sadd (VALS+':'+str(val), path)
+        for key in self.data :
+            val = self.data[key]
+            p.sadd (KEYS+':'+str(key), self.path)
+            p.sadd (VALS+':'+str(val), self.path)
     
         # FIXME: eval vals
         p.execute ()
@@ -611,13 +608,13 @@ class redis_ns_entry :
         for key in self.data :
             args.append (key+'='+self.data[key])
     
-        self.logger.debug ("pub ATTRIBUTES %s [%s]"  % (path, string.join (args, '][')))
-        self.r.publish   (MON, "ATTRIBUTES %s [%s]"  % (path, string.join (args, '][')))
+        self.logger.debug ("pub ATTRIBUTES %s [%s]"  % (self.path, string.join (args, '][')))
+        self.r.publish   (MON, "ATTRIBUTES %s [%s]"  % (self.path, string.join (args, '][')))
     
         # refresh cache state
-        self.cache.set (NODE+':'+path, self.node)
-        self.cache.set (DATA+':'+path, self.data)
-        self.cache.set (KIDS+':'+path, self.kids)
+        self.cache.set (NODE+':'+self.path, self.node)
+        self.cache.set (DATA+':'+self.path, self.data)
+        self.cache.set (KIDS+':'+self.path, self.kids)
 
 
 
