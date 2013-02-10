@@ -273,26 +273,26 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
     # ----------------------------------------------------------------
     #
-    # def __del__ (self) :
+    def __del__ (self) :
 
-    #     # FIXME: not sure if we should PURGE here -- that removes states which
-    #     # might not be evaluated, yet.  Should we mark state evaluation
-    #     # separately? 
-    #     #   cmd_state () { touch $DIR/purgeable; ... }
-    #     # When should that be done?
-    #     self._logger.error ("adaptor dying... %s" % self.njobs)
-    #     self._logger.trace ()
+        # FIXME: not sure if we should PURGE here -- that removes states which
+        # might not be evaluated, yet.  Should we mark state evaluation
+        # separately? 
+        #   cmd_state () { touch $DIR/purgeable; ... }
+        # When should that be done?
+        self._logger.error ("adaptor dying... %s" % self.njobs)
+        self._logger.trace ()
+    
+        #     try :
+        #       # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
+        #         if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
+        #     except :
+        #         pass
 
-    #     try :
-    #       # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
-    #         if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
-    #     except :
-    #         pass
+        self.finalize (kill_shell=True)
+    
 
-    #     try :
-    #         if self.shell : del (self.shell)
-    #     except :
-    #         pass
+
 
 
     # ----------------------------------------------------------------
@@ -305,32 +305,20 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self.session = session
         self.njobs   = 0
 
-        self._open ()
+        self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session.contexts, 
+                                                    self._logger)
 
+        self.shell.set_initialize_hook (self.initialize)
+        self.shell.set_finalize_hook   (self.finalize)
 
-    # ----------------------------------------------------------------
-    #
-    def _alive (self) :
-
-        if  not self.shell or not self.shell.alive () :
-            self._logger.info ("shell is dead - long live the shell")
-            
-            try :
-                self._close ()  # for cleanup...
-                self._open  ()
-
-            except Exception :
-                # did not work for good - give up
-                raise saga.IncorrectState ("job service is not connected, can't reconnect")
-
+        self.initialize ()
 
     # ----------------------------------------------------------------
     #
-    def _open (self) :
+    def initialize (self) :
 
         # start the shell, find its prompt.  If that is up and running, we can
         # bootstrap our wrapper script, and then run jobs etc.
-        self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session.contexts, self._logger)
 
         # -- now stage the shell wrapper script, and run it.  Once that is up
         # and running, we can requests job start / management operations via its
@@ -409,9 +397,16 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
     # ----------------------------------------------------------------
     #
-    def _close (self) :
-        del (self.shell)
-        self.shell = None
+    def finalize (self, kill_shell = False) :
+
+        # print "ssh shell finalize"
+
+        if  kill_shell :
+            if  self.shell :
+                self.shell.finalize (True)
+                # print "ssh shell finalize 1"
+
+        # print "ssh shell finalize done"
 
 
     # ----------------------------------------------------------------
@@ -424,8 +419,6 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         arg = ""
         env = ""
         cwd = ""
-
-        self._alive ()
 
         if jd.attribute_exists ("arguments") :
             for a in jd.arguments :

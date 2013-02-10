@@ -856,8 +856,8 @@ class Attributes (_AttributesBase) :
         # character classes
         match = re.find ('[', 0)
         while match >= 0 :
-            if  re[first + 1] == '!' :
-                re[first + 1] =  '^'
+            if  re[match + 1] == '!' :
+                re[match + 1] =  '^'
             match = re.find ('[', match + 1)
 
         # find opening { and closing }
@@ -1323,7 +1323,7 @@ class Attributes (_AttributesBase) :
                 raise BadParameter ("invalid callback cookie for attribute %s"  %  key)
             else :
                 # do not pop from list, that would invalidate the id's!
-                d['attributes'][key]['callbacks'][id] = undef
+                d['attributes'][key]['callbacks'][id] = None
 
 
 

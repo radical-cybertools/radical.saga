@@ -62,7 +62,7 @@ class Entry (saga.namespace.entry.Entry,
         '''
 
         # param checks
-        url     = Url (url)
+        url     = saga.url.Url (url)
         scheme  = url.scheme.lower ()
 
         return cls (url, flags, session, _ttype=ttype)._init_task

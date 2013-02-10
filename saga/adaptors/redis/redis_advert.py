@@ -59,6 +59,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     provide the adaptor's functionality.
     """
 
+    # ----------------------------------------------------------------
+    #
     def __init__ (self) :
 
         saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
@@ -69,6 +71,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         self._redis = {}
 
 
+    # ----------------------------------------------------------------
+    #
     def get_redis (self, url) :
 
         host     = None
@@ -98,6 +102,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         return self._redis[hash]
 
 
+    # ----------------------------------------------------------------
+    #
     def sanity_check (self) :
         # nothing to check for, redis entry system should always be accessible
         pass
@@ -115,10 +121,14 @@ class BulkDirectory (saga.adaptors.cpi.advert.Directory) :
     not implement the bulk container_* methods at all.
     """
 
+    # ----------------------------------------------------------------
+    #
     def __init__ (self) : 
         pass
 
 
+    # ----------------------------------------------------------------
+    #
     def container_wait (self, tasks, mode, timeout) :
         if timeout >= 0 :
             raise saga.exceptions.BadParameter ("Cannot handle timeouts > 0")
@@ -126,11 +136,15 @@ class BulkDirectory (saga.adaptors.cpi.advert.Directory) :
             task.wait ()
 
 
+    # ----------------------------------------------------------------
+    #
     def container_cancel (self, tasks) :
         for task in tasks :
             task.cancel ()
 
 
+    # ----------------------------------------------------------------
+    #
     def container_copy (self, tasks) :
         """
         A *good* implementation would dig the entry copy operations from the
@@ -152,12 +166,16 @@ class BulkDirectory (saga.adaptors.cpi.advert.Directory) :
 #
 class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
 
+    # ----------------------------------------------------------------
+    #
     def __init__ (self, api, adaptor) :
 
         self._cpi_base = super  (RedisDirectory, self)
         self._cpi_base.__init__ (api, adaptor)
 
 
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def init_instance (self, adaptor_state, url, flags, session) :
 
@@ -171,6 +189,8 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
         return self.get_api ()
 
 
+    # ----------------------------------------------------------------
+    #
     @ASYNC_CALL
     def init_instance_async (self, adaptor_state, url, flags, session, ttype) :
 
@@ -185,12 +205,16 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
         return saga.task.Task (self, 'init_instance', c, ttype)
 
 
+    # ----------------------------------------------------------------
+    #
     def _init_check (self) :
 
         self._r     = self._adaptor.get_redis (self._url)
         self._nsdir = redis_ns_entry.opendir (self._r, self._url.path, self._flags)
 
 
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def attribute_getter (self, key) :
 
@@ -202,6 +226,8 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
             raise e
 
 
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def attribute_setter (self, key, val) :
 
@@ -213,21 +239,29 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
             raise e
 
 
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def attribute_lister (self) :
         return self._nsdir.get_data ().keys ()
 
 
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def attribute_caller (self, key, id, cb) :
         self._nsdir.manage_callback (key, id, cb, self.get_api ())
 
 
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def get_url (self) :
         return self._url
 
 
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def open (self, url, flags) :
 
@@ -237,48 +271,48 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
         return saga.advert.Entry (url, flags, self._session, _adaptor=self._adaptor)
 
 
-    ##################################################################
-    # FIXME: all below
-    @SYNC_CALL
-    def copy (self, source, target, flags) :
-        return
-
-        src_url = saga.url.Url (source)
-        src     = src_url.path
-        tgt_url = saga.url.Url (target)
-        tgt     = tgt_url.path
-
-
-        if src_url.schema :
-            if not src_url.schema.lower () in _ADAPTOR_SCHEMAS :
-                raise saga.exceptions.BadParameter ("Cannot handle url %s (not redis)" %  source)
-
-        if tgt_url.schema :
-            if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :
-                raise saga.exceptions.BadParameter ("Cannot handle url %s (not redis)" %  target)
-
-
-        # make paths absolute
-        if src[0] != '/'  :  src = "%s/%s"   % (os.path.dirname (src), src) 
-        if tgt[0] != '/'  :  tgt = "%s/%s"   % (os.path.dirname (src), tgt)
-
-        shutil.copy2 (src, tgt)
-
-
-    @ASYNC_CALL
-    def copy_async (self, src, tgt, flags, ttype) :
-
-        c = { 'src'     : src,
-              'tgt'     : tgt,
-              'flags'   : flags }
-
-        return saga.task.Task (self, 'copy', c, ttype)
-
-
-
-    def task_wait (self, task, timout) :
-        # FIXME: our task_run moves all tasks into DONE state... :-/
-        pass
+  # ##################################################################
+  # # FIXME: all below
+  # @SYNC_CALL
+  # def copy (self, source, target, flags) :
+  #     return
+  # 
+  #     src_url = saga.url.Url (source)
+  #     src     = src_url.path
+  #     tgt_url = saga.url.Url (target)
+  #     tgt     = tgt_url.path
+  # 
+  # 
+  #     if src_url.schema :
+  #         if not src_url.schema.lower () in _ADAPTOR_SCHEMAS :
+  #             raise saga.exceptions.BadParameter ("Cannot handle url %s (not redis)" %  source)
+  # 
+  #     if tgt_url.schema :
+  #         if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :
+  #             raise saga.exceptions.BadParameter ("Cannot handle url %s (not redis)" %  target)
+  # 
+  # 
+  #     # make paths absolute
+  #     if src[0] != '/'  :  src = "%s/%s"   % (os.path.dirname (src), src) 
+  #     if tgt[0] != '/'  :  tgt = "%s/%s"   % (os.path.dirname (src), tgt)
+  # 
+  #     shutil.copy2 (src, tgt)
+  # 
+  # 
+  # @ASYNC_CALL
+  # def copy_async (self, src, tgt, flags, ttype) :
+  # 
+  #     c = { 'src'     : src,
+  #           'tgt'     : tgt,
+  #           'flags'   : flags }
+  # 
+  #     return saga.task.Task (self, 'copy', c, ttype)
+  # 
+  # 
+  # 
+  # def task_wait (self, task, timout) :
+  #     # FIXME: our task_run moves all tasks into DONE state... :-/
+  #     pass
 
 
 
@@ -288,17 +322,23 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
 #
 class RedisEntry (saga.adaptors.cpi.advert.Entry) :
 
+    # ----------------------------------------------------------------
+    #
     def __init__ (self, api, adaptor) :
 
         self._cpi_base = super  (RedisEntry, self)
         self._cpi_base.__init__ (api, adaptor)
 
 
+    # ----------------------------------------------------------------
+    #
     def _dump (self) :
         self._logger.debug ("url  : %s"  % self._url)
         self._logger.debug ("flags: %s"  % self._flags)
 
 
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def init_instance (self, adaptor_state, url, flags, session) :
 
@@ -311,59 +351,74 @@ class RedisEntry (saga.adaptors.cpi.advert.Entry) :
         return self
 
 
+    # ----------------------------------------------------------------
+    #
     def _init_check (self) :
 
         self._r       = self._adaptor.get_redis (self._url)
         self._nsentry = redis_ns_entry.open (self._r, self._url.path, self._flags)
 
 
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def attribute_getter (self, key) :
 
         return self._nsentry.get_key (key)
 
 
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def attribute_setter (self, key, val) :
 
-        self._nsentry.set_key (key, val)
+        return self._nsentry.set_key (key, val)
 
 
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def attribute_lister (self) :
-        return self._nsdir.get_data ().keys ()
+
+        return self._nsentry.get_data ().keys ()
 
 
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def attribute_caller (self, key, id, cb) :
-        self._nsentry.manage_callback (key, id, cb, self.get_api ())
+
+        return self._nsentry.manage_callback (key, id, cb, self.get_api ())
 
 
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def get_url (self) :
+
         return self._url
 
 
-    ##################################################################
-    # FIXME: all below
-    @SYNC_CALL
-    def copy_self (self, target, flags) :
-
-        tgt_url = saga.url.Url (target)
-        tgt     = tgt_url.path
-        src     = self._url.path
-
-        if tgt_url.schema :
-            if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :
-                raise saga.exceptions.BadParameter ("Cannot handle url %s (not redis)" %  target)
-
-        if not saga.utils.misc.url_is_redis (tgt_url) :
-            raise saga.exceptions.BadParameter ("Cannot handle url %s (not redis)"     %  target)
-
-        # make path absolute
-        if tgt[0] != '/'  :  tgt = "%s/%s"   % (os.path.dirname (src), tgt)
-
-        shutil.copy2 (src, tgt)
+  # ##################################################################
+  # # FIXME: all below
+  # @SYNC_CALL
+  # def copy_self (self, target, flags) :
+  # 
+  #     tgt_url = saga.url.Url (target)
+  #     tgt     = tgt_url.path
+  #     src     = self._url.path
+  # 
+  #     if tgt_url.schema :
+  #         if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :
+  #             raise saga.exceptions.BadParameter ("Cannot handle url %s (not redis)" %  target)
+  # 
+  #     if not saga.utils.misc.url_is_redis (tgt_url) :
+  #         raise saga.exceptions.BadParameter ("Cannot handle url %s (not redis)"     %  target)
+  # 
+  #     # make path absolute
+  #     if tgt[0] != '/'  :  tgt = "%s/%s"   % (os.path.dirname (src), tgt)
+  # 
+  #     shutil.copy2 (src, tgt)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

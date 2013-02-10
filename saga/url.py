@@ -263,7 +263,7 @@ class Url (object):
 
     ######################################################################
     ## Query property
-    def set_query(self, path):
+    def set_query(self, query):
         """ Set the 'query' component.
         """
         newurl = urlparse.urlunparse((self._urlobj.scheme,

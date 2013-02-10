@@ -104,10 +104,10 @@ class InvalidTransferDirective(ExceptionBase):
 
 def _test_():
     tdp = TransferDirectives(["ab","a>c", "c>>d","f<a","g<<h"])
-    print tdp.in_append
-    print tdp.in_overwrite
-    print tdp.out_append
-    print tdp.out_overwrite
+    print tdp.in_append_dict
+    print tdp.in_overwrite_dict
+    print tdp.out_append_dict
+    print tdp.out_overwrite_dict
 
 
 

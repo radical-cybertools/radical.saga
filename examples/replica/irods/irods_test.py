@@ -117,7 +117,7 @@ def main():
     except Exception, ex:
         logging.exception("An error occured while executing the test script!"
                           "Please run with SAGA_VERBOSE=4 set in the"
-                          "environment for debug output.  %s"
+                          "environment for debug output.\n  %s"
                           % (str(ex)))
         sys.exit(-1)
 
