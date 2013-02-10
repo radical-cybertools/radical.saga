@@ -2,6 +2,7 @@
 import time
 import threading
 
+import saga.exceptions      as se
 import saga.utils.threads   as sthread
 import saga.utils.singleton as single
 
@@ -132,7 +133,7 @@ class TimeoutGC (object) :
             self.gc   = TimeoutGC ()
 
             if not obj in self.gc.objects :
-                raise saga.BadParameter ("object unknown to GC (%s)" % obj)
+                raise se.BadParameter ("object unknown to GC (%s)" % obj)
 
             self.lock   = self.gc.objects[obj]['lock']
             self.lock.acquire ()
@@ -274,7 +275,7 @@ class TimeoutGC (object) :
 
         # make sure we know that obj
         if not obj in self.objects :
-            raise saga.BadParameter ("object unknown to GC (%s)" % obj)
+            raise se.BadParameter ("object unknown to GC (%s)" % obj)
 
         # remove all traces of the object.  Once released, the lock will have no
         # reference anymore, and will be python-gc'ed, too.
@@ -303,7 +304,7 @@ class TimeoutGC (object) :
 
         # make sure we know that obj
         if not obj in self.objects :
-            raise saga.BadParameter ("object unknown to GC (%s)" % obj)
+            raise se.BadParameter ("object unknown to GC (%s)" % obj)
 
         with self.objects[obj]['lock'] :
 
@@ -328,7 +329,7 @@ class TimeoutGC (object) :
 
         # make sure we know that obj
         if not obj in self.objects :
-            raise saga.BadParameter ("object unknown to GC (%s)" % obj)
+            raise se.BadParameter ("object unknown to GC (%s)" % obj)
 
         with self.objects[obj]['lock'] :
         
@@ -368,7 +369,7 @@ class TimeoutGC (object) :
 
         # make sure we know that obj
         if not obj in self.objects :
-            raise saga.BadParameter ("object unknown to GC (%s)" % obj)
+            raise se.BadParameter ("object unknown to GC (%s)" % obj)
 
         
         with self.objects[obj]['lock'] :

@@ -197,7 +197,7 @@ class PTYProcess (object) :
 
             except OSError as e:
                 self.logger.error ("Could not execute (%s): %s" \
-                                % (' '.join (command), e))
+                                % (' '.join (self.command), e))
                 sys.exit (-1)
 
         else :
