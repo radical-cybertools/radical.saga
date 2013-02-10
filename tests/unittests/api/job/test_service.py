@@ -10,7 +10,6 @@ def test_create_sync_service () :
         tc = sutc.TestConfig ()
         js = saga.job.Service (tc.js_url, tc.session)
     except saga.SagaException as se:
-        print se
         assert False
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

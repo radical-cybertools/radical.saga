@@ -17,15 +17,15 @@ for test_cfg in test_cfgs :
     tc = sutc.TestConfig ()
     tc.read_config (test_cfg)
 
-    test_dirs = tc.test_dirs
+    test_suites = tc.test_suites
 
-    for test_dir in test_dirs :
+    for test_suite in test_suites :
     
         # configure the test suite 
         config = nose.config.Config ()
         
         config.verbosity  = 0
-        config.workingDir = test_base + '/' + test_dir
+        config.workingDir = test_base + '/' + test_suite
         
         # and run tests
         result = nose.core.run (config=config)

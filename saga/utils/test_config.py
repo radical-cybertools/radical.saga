@@ -85,11 +85,11 @@ _config_options = [
     },
     { 
     'category'      : 'saga.tests',
-    'name'          : 'test_dirs', 
+    'name'          : 'test_suites', 
     'type'          : list, 
     'default'       : ['utils', 'engine', 'api'],
     'documentation' : "a list of test suites to run (subdirs in tests/unittests/)",
-    'env_variable'  : "SAGA_TEST_DIRS"
+    'env_variable'  : "SAGA_TEST_SUITES"
     },
 ]
 
@@ -133,9 +133,9 @@ class TestConfig (sconf.Configurable):
     #-----------------------------------------------------------------
     # 
     @property
-    def test_dirs (self):
+    def test_suites (self):
         
-        return self._cfg['test_dirs'].get_value ()
+        return self._cfg['test_suites'].get_value ()
 
 
     #-----------------------------------------------------------------
