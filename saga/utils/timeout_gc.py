@@ -46,17 +46,17 @@ class TimeoutGC (object) :
         def initialize (self) :
           print "init"
           self.f = open('/tmp/watched.txt', 'a+')
-          self.f.write ("init\n")
+          self.f.write ("init\\n")
       
         def finalize (self) :
           print "fini"
-          self.f.write ("fini\n")
+          self.f.write ("fini\\n")
           self.f.close ()
       
         def action (self) :
           with self.gc.active (self) :
             print "action"
-            self.f.write ("action\n")
+            self.f.write ("action\\n")
       
       # main
       wc = WatchedClass ()

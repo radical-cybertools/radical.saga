@@ -608,7 +608,7 @@ those interactions, and at the same time be more performant than, for example,
 pexpect.</p>
 <dl class="class">
 <dt id="saga.utils.pty_shell.PTYShell">
-<em class="property">class </em><tt class="descclassname">saga.utils.pty_shell.</tt><tt class="descname">PTYShell</tt><big>(</big><em>url</em>, <em>contexts=</em><span class="optional">[</span><span class="optional">]</span>, <em>logger=None</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.utils.pty_shell.</tt><tt class="descname">PTYShell</tt><big>(</big><em>url</em>, <em>contexts=</em><span class="optional">[</span><span class="optional">]</span>, <em>logger=None</em>, <em>init=None</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
 <p>This class wraps a shell process and runs it as a <tt class="xref py py-class docutils literal"><span class="pre">PTYProcess</span></tt>.  The
 user of this class can start that shell, and run arbitrary commands on it.</p>
@@ -657,10 +657,27 @@ etc) &#8211; in particular, we expect the following features:
 </pre></div>
 </div>
 <dl class="method">
-<dt id="saga.utils.pty_shell.PTYShell.alive">
-<tt class="descname">alive</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.alive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.alive" title="Permalink to this definition">¶</a></dt>
-<dd><p>alive() checks if the shell is still alive.  duh!</p>
+<dt id="saga.utils.pty_shell.PTYShell.set_initialize_hook">
+<tt class="descname">set_initialize_hook</tt><big>(</big><em>initialize_hook</em><big>)</big><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.set_initialize_hook" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_shell.PTYShell.set_finalize_hook">
+<tt class="descname">set_finalize_hook</tt><big>(</big><em>finalize_hook</em><big>)</big><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.set_finalize_hook" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_shell.PTYShell.initialize">
+<tt class="descname">initialize</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>initialize the shell connection.  We expect the pty_process to be in virgin
+state, i.e. to be newly forked and executed.  We thus expect shell
+startup prompts and messages.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_shell.PTYShell.finalize">
+<tt class="descname">finalize</tt><big>(</big><em>kill_pty=False</em><big>)</big><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.finalize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.utils.pty_shell.PTYShell.find_prompt">
@@ -716,8 +733,8 @@ PROMPT-0-&gt;</pre>
 <tt class="descname">run_sync</tt><big>(</big><em>command</em>, <em>iomode=None</em>, <em>new_prompt=None</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.run_sync"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.run_sync" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run a shell command, and report exit code, stdout and stderr (all three
 will be returned in a tuple).  The call will block until the command
-finishes (more exactly, until we find the prompt again on the shell&#8217;s IO
-stream), and cannot be interrupted.</p>
+finishes (more exactly, until we find the prompt again on the shell&#8217;s
+I/O stream), and cannot be interrupted.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -781,10 +798,10 @@ expect the prompt regex to capture the exit status of the process.</p>
 <dl class="method">
 <dt id="saga.utils.pty_shell.PTYShell.run_async">
 <tt class="descname">run_async</tt><big>(</big><em>command</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.run_async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.run_async" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run a shell command, but don&#8217;t wait for prompt &#8211; just return.  It
-is up to caller to eventually search for the prompt again (see
+<dd><p>Run a shell command, but don&#8217;t wait for prompt &#8211; just return.  It is up
+to caller to eventually search for the prompt again (see
 <tt class="xref py py-func docutils literal"><span class="pre">find_prompt()</span></tt>.  Meanwhile, the caller can interact with the called
-command, via the io channels.</p>
+command, via the I/O channels.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -841,7 +858,7 @@ incorrect path, etc.).</p>
 <dt id="saga.utils.pty_process.PTYProcess">
 <em class="property">class </em><tt class="descclassname">saga.utils.pty_process.</tt><tt class="descname">PTYProcess</tt><big>(</big><em>command</em>, <em>logger=None</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_process.html#PTYProcess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_process.PTYProcess" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
-<p>This class spawns a process, providing that child with pty io channels &#8211;
+<p>This class spawns a process, providing that child with pty I/O channels &#8211;
 it will maintain stdin, stdout and stderr channels to the child.  All
 write* operations operate on the stdin, all read* operations operate on the
 stdout stream.  Data from the stderr stream are at this point redirected to
@@ -872,17 +889,31 @@ the stdout channel.</p>
         <span class="c"># found some prompt</span>
         <span class="k">break</span>
 
-<span class="k">while</span> <span class="n">pty</span><span class="o">.</span><span class="n">alive</span> <span class="p">()</span> <span class="p">:</span>
+<span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
     <span class="c"># send sleeps as quickly as possible, forever...</span>
     <span class="n">pty</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&#39;[\$#&gt;]\s*$&#39;</span><span class="p">])</span>
     <span class="n">pty</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;/bin/sleep 10</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="method">
-<dt id="saga.utils.pty_process.PTYProcess.alive">
-<tt class="descname">alive</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_process.html#PTYProcess.alive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.alive" title="Permalink to this definition">¶</a></dt>
-<dd><p>alive() checks if the child gave an exit value &#8211; if none, it is assumed
-to be still alive.</p>
+<dt id="saga.utils.pty_process.PTYProcess.set_initialize_hook">
+<tt class="descname">set_initialize_hook</tt><big>(</big><em>initialize_hook</em><big>)</big><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.set_initialize_hook" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_process.PTYProcess.set_finalize_hook">
+<tt class="descname">set_finalize_hook</tt><big>(</big><em>finalize_hook</em><big>)</big><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.set_finalize_hook" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_process.PTYProcess.initialize">
+<tt class="descname">initialize</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.utils.pty_process.PTYProcess.finalize">
+<tt class="descname">finalize</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.finalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>kill the child, close all I/O channels</p>
 </dd></dl>
 
 <dl class="method">

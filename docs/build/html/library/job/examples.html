@@ -127,31 +127,41 @@
 61
 62
 63
-64</pre></div></td><td class="code"><div class="highlight"><pre><span class="sd">&quot;&quot;&quot; This examples shows how to run a job on the local machine</span>
-<span class="sd">    using the &#39;local&#39; job adaptor. </span>
+64
+65
+66
+67
+68</pre></div></td><td class="code"><div class="highlight"><pre><span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+
+<span class="sd">&quot;&quot;&quot; This examples shows how to run a job on the local machine</span>
+<span class="sd">    using the &#39;local&#39; job adaptor.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Ole Christian Weidner&quot;</span>
-<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012, The SAGA Project&quot;</span>
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Ole Weidner&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
 
-<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">saga</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">saga</span>
+
 
 <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
-    
+
     <span class="k">try</span><span class="p">:</span>
-        <span class="c"># create a job service for the local machine. both, &#39;fork&#39; and </span>
-        <span class="c"># &#39;local&#39; schemes trigger the local job adaptor. </span>
+        <span class="c"># create a job service for the local machine. both, &#39;fork&#39; and</span>
+        <span class="c"># &#39;local&#39; schemes trigger the local job adaptor.</span>
         <span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
 
         <span class="c"># describe our job</span>
         <span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
 
-        <span class="c"># environment, executable &amp; arguments</span>
-        <span class="n">jd</span><span class="o">.</span><span class="n">environment</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;CATME&#39;</span><span class="p">:</span><span class="s">&#39;10&#39;</span><span class="p">}</span>       
+        <span class="c"># environment, executable &amp; arguments. We use &#39;/bin/sleep&#39; to simulate</span>
+        <span class="c"># a job that runs for $RUNTIME seconds.</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">environment</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RUNTIME&#39;</span><span class="p">:</span> <span class="s">&#39;10&#39;</span><span class="p">}</span>
         <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>  <span class="o">=</span> <span class="s">&#39;/bin/sleep&#39;</span>
-        <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span>   <span class="o">=</span> <span class="p">[</span><span class="s">&#39;$CATME&#39;</span><span class="p">]</span>
-        
+        <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span>   <span class="o">=</span> <span class="p">[</span><span class="s">&#39;$RUNTIME&#39;</span><span class="p">]</span>
+
         <span class="c"># output options (will just be empty files for /bin/sleep)</span>
         <span class="n">jd</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="s">&quot;saga_localjob.stdout&quot;</span>
         <span class="n">jd</span><span class="o">.</span><span class="n">error</span>  <span class="o">=</span> <span class="s">&quot;saga_localjob.stderr&quot;</span>
@@ -182,15 +192,13 @@
 
     <span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">SagaException</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
         <span class="k">print</span> <span class="s">&quot;An exception occured: </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">((</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)))</span>
-        <span class="c"># get the whole traceback in case of an exception - </span>
+        <span class="c"># get the whole traceback in case of an exception -</span>
         <span class="c"># this can be helpful for debugging the problem</span>
-        <span class="k">print</span> <span class="s">&quot; *** </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">get_traceback</span><span class="p">()</span>
+        <span class="k">print</span> <span class="s">&quot; *** </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ex</span><span class="o">.</span><span class="n">traceback</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
-
-<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -274,28 +282,38 @@
 74
 75
 76
-77</pre></div></td><td class="code"><div class="highlight"><pre><span class="sd">&quot;&quot;&quot; This examples shows how to run groups of jobs using the </span>
-<span class="sd">    &#39;local&#39; file adaptor. This example uses job containers for </span>
+77
+78
+79
+80
+81</pre></div></td><td class="code"><div class="highlight"><pre><span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+
+<span class="sd">&quot;&quot;&quot; This examples shows how to run groups of jobs using the</span>
+<span class="sd">    &#39;local&#39; file adaptor. This example uses job containers for</span>
 <span class="sd">    simplified and optimized bulk job handling.</span>
 
-<span class="sd">    Job container can be used to easily model dependencies between </span>
-<span class="sd">    groups of different jobs, e.g., in workflow scenarios. In this example, </span>
-<span class="sd">    we execute &#39;num_job_groups&#39; containers of jobs_per_group&#39; number of </span>
+<span class="sd">    Job container can be used to easily model dependencies between</span>
+<span class="sd">    groups of different jobs, e.g., in workflow scenarios. In this example,</span>
+<span class="sd">    we execute &#39;num_job_groups&#39; containers of jobs_per_group&#39; number of</span>
 <span class="sd">    parallel jobs sequentially::</span>
-<span class="sd">    </span>
-<span class="sd">      C1[j1,j2,j3,j4,...] -&gt; C2[j1,j2,j3,j4,...] -&gt; C3[j1,j2,j3,j4,...] -&gt; ... </span>
 
-<span class="sd">    Depending on the adaptor implementation, using job containers can be </span>
-<span class="sd">    quite advantageous in terms of call latency. Some adaptors implement </span>
-<span class="sd">    special bulk operations for container management, which makes them </span>
+<span class="sd">      C1[j1,j2,j3,j4,...] -&gt; C2[j1,j2,j3,j4,...] -&gt; C3[j1,j2,j3,j4,...] -&gt; ...</span>
+
+<span class="sd">    Depending on the adaptor implementation, using job containers can be</span>
+<span class="sd">    quite advantageous in terms of call latency. Some adaptors implement</span>
+<span class="sd">    special bulk operations for container management, which makes them</span>
 <span class="sd">    generally much faster than iterating over and operating on individual jobs.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Ole Christian Weidner&quot;</span>
-<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2011-2012, The SAGA Project&quot;</span>
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Ole Weidner&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
 
-<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">random</span><span class="o">,</span> <span class="nn">saga</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">saga</span>
+
 
 <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
 
@@ -303,7 +321,7 @@
     <span class="n">num_job_groups</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="c"># number of jobs per container</span>
     <span class="n">jobs_per_group</span> <span class="o">=</span> <span class="mi">1</span>
-    
+
     <span class="k">try</span><span class="p">:</span>
         <span class="c"># all jobs in this example are running on the same job service</span>
         <span class="c"># this is not a requirement though. s</span>
@@ -316,10 +334,10 @@
             <span class="c"># create containers</span>
             <span class="n">containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Container</span><span class="p">())</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">jobs_per_group</span><span class="p">):</span>
-                <span class="c"># add jobs to container. to make things a bit more </span>
+                <span class="c"># add jobs to container. to make things a bit more</span>
                 <span class="c"># interesting, we give each job a random runtime (1-60s)</span>
                 <span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
-                <span class="n">jd</span><span class="o">.</span><span class="n">environment</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RUNTIME&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">randrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">60</span><span class="p">,</span><span class="mi">1</span><span class="p">)}</span>       
+                <span class="n">jd</span><span class="o">.</span><span class="n">environment</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RUNTIME&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">randrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">1</span><span class="p">)}</span>
                 <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>  <span class="o">=</span> <span class="s">&#39;/bin/sleep&#39;</span>
                 <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span>   <span class="o">=</span> <span class="p">[</span><span class="s">&#39;$RUNTIME&#39;</span><span class="p">]</span>
                 <span class="n">j</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
@@ -330,27 +348,25 @@
             <span class="k">print</span> <span class="s">&#39;Starting container </span><span class="si">%s</span><span class="s"> ... &#39;</span> <span class="o">%</span> <span class="n">c</span>
             <span class="n">containers</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
             <span class="n">containers</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-            
+
             <span class="c"># print containers[c].get_states ()</span>
 
             <span class="c"># at this point, all jobs in the container</span>
-            <span class="c"># have finished running. we can now print some statistics </span>
+            <span class="c"># have finished running. we can now print some statistics</span>
             <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">containers</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">jobs</span><span class="p">:</span>
                 <span class="k">print</span> <span class="s">&quot;  * Job id=</span><span class="si">%s</span><span class="s"> state=</span><span class="si">%s</span><span class="s"> rc=</span><span class="si">%s</span><span class="s"> exec_host=</span><span class="si">%s</span><span class="s"> start_time=</span><span class="si">%s</span><span class="s"> end_time=</span><span class="si">%s</span><span class="s">&quot;</span> \
-                  <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">job</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">job</span><span class="o">.</span><span class="n">exit_code</span><span class="p">,</span> <span class="n">job</span><span class="o">.</span><span class="n">execution_hosts</span><span class="p">,</span> <span class="n">job</span><span class="o">.</span><span class="n">started</span><span class="p">,</span> <span class="n">job</span><span class="o">.</span><span class="n">finished</span><span class="p">)</span>
-
+                  <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">job</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">job</span><span class="o">.</span><span class="n">exit_code</span><span class="p">,</span> <span class="n">job</span><span class="o">.</span><span class="n">execution_hosts</span><span class="p">,</span>
+                     <span class="n">job</span><span class="o">.</span><span class="n">started</span><span class="p">,</span> <span class="n">job</span><span class="o">.</span><span class="n">finished</span><span class="p">)</span>
 
     <span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">SagaException</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
         <span class="k">print</span> <span class="s">&quot;An exception occured: </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">((</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)))</span>
-        <span class="c"># get the whole traceback - this might be helpful</span>
+        <span class="c"># get the whole traceback in case of an exception -</span>
+        <span class="c"># this can be helpful for debugging the problem</span>
         <span class="k">print</span> <span class="s">&quot; *** </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ex</span><span class="o">.</span><span class="n">traceback</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
-
-
-<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
 </pre></div>
 </td></tr></table></div>
 </div>

@@ -14,5 +14,6 @@ and configuration of SAGA and things that make working with SAGA easier.
    install.rst
    config.rst
    logger.rst
+   timeout_gc.rst
    examples.rst
 

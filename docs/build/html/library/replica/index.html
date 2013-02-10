@@ -102,135 +102,15 @@ documentation.</p>
 <dl class="class">
 <dt id="saga.replica.LogicalFile">
 <em class="property">class </em><tt class="descclassname">saga.replica.</tt><tt class="descname">LogicalFile</tt><big>(</big><em>url=None</em>, <em>flags=512</em>, <em>session=None</em>, <em>_adaptor=None</em>, <em>_adaptor_state={}</em>, <em>_ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.Base</span></tt>, <a class="reference internal" href="../attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a>, <tt class="xref py py-class docutils literal"><span class="pre">saga.async.Async</span></tt></p>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.namespace.entry.Entry</span></tt>, <a class="reference internal" href="../attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a></p>
 <dl class="classmethod">
 <dt id="saga.replica.LogicalFile.create">
-<em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>url=None</em>, <em>flags=512</em>, <em>session=None</em>, <em>ttype='Sync'</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.create" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>url=None</em>, <em>flags=512</em>, <em>session=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>url:       saga.Url
 flags:     saga.replica.flags enum
 session:   saga.Session
 ttype:     saga.task.type enum
 ret:       saga.Task</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.replica.LogicalFile.get_url">
-<tt class="descname">get_url</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.get_url" title="Permalink to this definition">¶</a></dt>
-<dd><p>ttype:         saga.task.type enum
-ret:           saga.Url / saga.Task</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.replica.LogicalFile.get_cwd">
-<tt class="descname">get_cwd</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.get_cwd" title="Permalink to this definition">¶</a></dt>
-<dd><p>ttype:         saga.task.type enum
-ret:           string / saga.Task</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.replica.LogicalFile.get_name">
-<tt class="descname">get_name</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.get_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>ttype:         saga.task.type enum
-ret:           string / saga.Task</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.replica.LogicalFile.is_dir_self">
-<tt class="descname">is_dir_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.is_dir_self" title="Permalink to this definition">¶</a></dt>
-<dd><p>ttype:         saga.task.type enum
-ret:           bool / saga.Task</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.replica.LogicalFile.is_entry_self">
-<tt class="descname">is_entry_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.is_entry_self" title="Permalink to this definition">¶</a></dt>
-<dd><p>ttype:         saga.task.type enum
-ret:           bool / saga.Task</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.replica.LogicalFile.is_link_self">
-<tt class="descname">is_link_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.is_link_self" title="Permalink to this definition">¶</a></dt>
-<dd><p>ttype:         saga.task.type enum
-ret:           bool / saga.Task</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.replica.LogicalFile.read_link_self">
-<tt class="descname">read_link_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.read_link_self" title="Permalink to this definition">¶</a></dt>
-<dd><p>ttype:         saga.task.type enum
-ret:           saga.Url / saga.Task</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.replica.LogicalFile.copy_self">
-<tt class="descname">copy_self</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.copy_self" title="Permalink to this definition">¶</a></dt>
-<dd><p>tgt:           saga.Url
-flags:         enum flags
-ttype:         saga.task.type enum
-ret:           None / saga.Task</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.replica.LogicalFile.link_self">
-<tt class="descname">link_self</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.link_self" title="Permalink to this definition">¶</a></dt>
-<dd><p>tgt:           saga.Url
-flags:         enum flags
-ttype:         saga.task.type enum
-ret:           None / saga.Task</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.replica.LogicalFile.move_self">
-<tt class="descname">move_self</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.move_self" title="Permalink to this definition">¶</a></dt>
-<dd><p>tgt:           saga.Url
-flags:         flags enum
-ttype:         saga.task.type enum
-ret:           None / saga.Task</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.replica.LogicalFile.remove_self">
-<tt class="descname">remove_self</tt><big>(</big><em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.remove_self" title="Permalink to this definition">¶</a></dt>
-<dd><p>flags:         flags enum
-ttype:         saga.task.type enum
-ret:           None / saga.Task</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.replica.LogicalFile.close">
-<tt class="descname">close</tt><big>(</big><em>timeout=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.close" title="Permalink to this definition">¶</a></dt>
-<dd><p>timeout:       float
-ttype:         saga.task.type enum
-ret:           None / saga.Task</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="saga.replica.LogicalFile.url">
-<tt class="descname">url</tt><a class="headerlink" href="#saga.replica.LogicalFile.url" title="Permalink to this definition">¶</a></dt>
-<dd><p>ttype:         saga.task.type enum
-ret:           saga.Url / saga.Task</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="saga.replica.LogicalFile.cwd">
-<tt class="descname">cwd</tt><a class="headerlink" href="#saga.replica.LogicalFile.cwd" title="Permalink to this definition">¶</a></dt>
-<dd><p>ttype:         saga.task.type enum
-ret:           string / saga.Task</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="saga.replica.LogicalFile.name">
-<tt class="descname">name</tt><a class="headerlink" href="#saga.replica.LogicalFile.name" title="Permalink to this definition">¶</a></dt>
-<dd><p>ttype:         saga.task.type enum
-ret:           string / saga.Task</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.replica.LogicalFile.is_file_self">
-<tt class="descname">is_file_self</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.is_file_self" title="Permalink to this definition">¶</a></dt>
-<dd><p>ttype:    saga.task.type enum
-ret:      bool / saga.Task</p>
 </dd></dl>
 
 <dl class="method">
