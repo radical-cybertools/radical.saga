@@ -2,6 +2,10 @@ __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 import string
 
 import saga.utils.logger
@@ -21,19 +25,6 @@ class SimpleBase (object) :
         self._logger    = saga.utils.logger.getLogger (self._apitype)
 
         self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
-
-
-    def get_session (self) :
-        """ 
-        Returns the session which is managing the object instance.  For objects
-        which do not accept a session handle on construction, this call returns
-        None.
-
-        The object's session is also available via the `session` property.
-        """
-        return self._adaptor.get_session ()
-
-    session = property (get_session)
 
 
     def _get_apitype (self) :
@@ -69,6 +60,20 @@ class Base (SimpleBase) :
         self._adaptor = self._engine.bind_adaptor   (self, self._apitype, schema, adaptor)
 
         self._init_task = self._adaptor.init_instance (adaptor_state, *args, **kwargs)
+
+
+    def get_session (self) :
+        """ 
+        Returns the session which is managing the object instance.  For objects
+        which do not accept a session handle on construction, this call returns
+        None.
+
+        The object's session is also available via the `session` property.
+        """
+        return self._adaptor.get_session ()
+
+    session = property (get_session)
+
 
 
 

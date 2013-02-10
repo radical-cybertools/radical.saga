@@ -8,18 +8,15 @@ __license__   = "MIT"
 import inspect
 import Queue
 
-import saga.job.job
+import saga.base          as sbase
+import saga.exceptions    as se
+import saga.attributes    as satt
 
-from   saga.base          import SimpleBase
-from   saga.exceptions    import *
 from   saga.constants     import *
-from   saga.attributes    import *
-
 from   saga.utils.threads import Thread, NEW, RUNNING, DONE, FAILED
-from   saga.utils.logger  import getLogger
 
 
-class Task (SimpleBase, Attributes) :
+class Task (sbase.SimpleBase, satt.Attributes) :
 
     # ----------------------------------------------------------------
     #
@@ -56,7 +53,8 @@ class Task (SimpleBase, Attributes) :
         a :class:`saga.util.threads.Thread` with that ``_call (_args)``.
         """
         
-        SimpleBase.__init__ (self)
+        self._base = super  (Task, self)
+        self._base.__init__ ()
 
         self._thread         = None
         self._ttype          = _ttype
@@ -70,15 +68,15 @@ class Task (SimpleBase, Attributes) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface
-        self._attributes_register   (RESULT,    None,    ANY, SCALAR, READONLY)
+        self._attributes_register   (RESULT,    None,    satt.ANY,  satt.SCALAR, satt.READONLY)
         self._attributes_set_getter (RESULT,    self.get_result)
         self._attributes_set_setter (RESULT,    self._set_result)
 
-        self._attributes_register   (EXCEPTION, None,    ANY, SCALAR, READONLY)
+        self._attributes_register   (EXCEPTION, None,    satt.ANY,  satt.SCALAR, satt.READONLY)
         self._attributes_set_getter (EXCEPTION, self.get_exception)
         self._attributes_set_setter (EXCEPTION, self._set_exception)
 
-        self._attributes_register   (STATE,     UNKNOWN, ENUM, SCALAR, READONLY)
+        self._attributes_register   (STATE,     UNKNOWN, satt.ENUM, satt.SCALAR, satt.READONLY)
         self._attributes_set_enums  (STATE,    [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED])
         self._attributes_set_getter (STATE,     self.get_state)
         self._attributes_set_setter (STATE,     self._set_state)
@@ -95,8 +93,7 @@ class Task (SimpleBase, Attributes) :
                 self._method_context['_kwargs'] = {}
 
             if  3 !=  len (self._method_context) :
-                raise saga.exceptions.BadParameter \
-                    ("invalid call context for callable task")
+                raise se.BadParameter ("invalid call context for callable task")
             
             call   = self._method_context['_call']
             args   = self._method_context['_args']
@@ -138,7 +135,7 @@ class Task (SimpleBase, Attributes) :
             return
 
         if self.state == CANCELED :
-            raise IncorrectState ("task.get_result() cannot be called on cancelled tasks")
+            raise se.IncorrectState ("task.get_result() cannot be called on cancelled tasks")
 
         if self.state == DONE :
 
@@ -153,7 +150,7 @@ class Task (SimpleBase, Attributes) :
     def _set_state (self, state) :
 
         if not state in [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED] :
-            raise BadParameter ("attempt to set invalid task state '%s'" % state)
+            raise se.BadParameter ("attempt to set invalid task state '%s'" % state)
 
         self._attributes_i_set (self._attributes_t_underscore (STATE), state, force=True)
 
@@ -232,7 +229,7 @@ class Task (SimpleBase, Attributes) :
 
 # --------------------------------------------------------------------
 #
-class Container (SimpleBase, Attributes) :
+class Container (sbase.SimpleBase, satt.Attributes) :
 
 
     # ----------------------------------------------------------------
@@ -240,7 +237,8 @@ class Container (SimpleBase, Attributes) :
     def __init__ (self) :
 
 
-        SimpleBase.__init__ (self)
+        self._base = super  (Container, self)
+        self._base.__init__ ()
 
         # set attribute interface properties
         self._attributes_allow_private (True)
@@ -248,13 +246,13 @@ class Container (SimpleBase, Attributes) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface
-        self._attributes_register   (SIZE,    0,    INT, SCALAR, READONLY)
+        self._attributes_register   (SIZE,    0,  satt.INT,  satt.SCALAR, satt.READONLY)
         self._attributes_set_getter (SIZE,    self.get_size)
 
-        self._attributes_register   (TASKS,   [],    ANY, VECTOR, READONLY)
+        self._attributes_register   (TASKS,   [], satt.ANY,  satt.VECTOR, satt.READONLY)
         self._attributes_set_getter (TASKS,   self.get_tasks)
 
-        self._attributes_register   (STATES,  [],    ENUM, VECTOR, READONLY)
+        self._attributes_register   (STATES,  [], satt.ENUM, satt.VECTOR, satt.READONLY)
         self._attributes_set_getter (STATES,  self.get_states)
 
         self._attributes_set_enums  (STATES,  [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED])
@@ -267,12 +265,14 @@ class Container (SimpleBase, Attributes) :
     #
     def add (self, t) :
 
+        import saga.job as sjob
+
         # AM: oh I hate that we don't use proper inheritance...
         if  not isinstance (t, Task) and \
-            not isinstance (t, saga.job.job.Job)      :
+            not isinstance (t, sjob.Job) :
             
-            raise BadParameter ("Container handles jobs or tasks, not %s" \
-                             % (type(t)))
+            raise se.BadParameter ("Container handles jobs or tasks, not %s" \
+                                % (type(t)))
 
         if not t in self.tasks :
             self.tasks.append (t)
@@ -308,7 +308,7 @@ class Container (SimpleBase, Attributes) :
             # handle all methods
             for m in buckets['bound'][c] :
 
-                tasks         = buckets['bound'][c][m]
+                tasks    = buckets['bound'][c][m]
                 m_name   = "container_%s" % m
                 m_handle = None
 
@@ -339,9 +339,9 @@ class Container (SimpleBase, Attributes) :
                 thread.join ()
 
             if thread.get_state () == FAILED :
-                raise NoSuccess ("thread exception: %s\n%s" \
-                        %  (str(thread.get_exception ()),
-                            str(thread.get_traceback ())))
+                raise se.NoSuccess ("thread exception: %s\n%s" \
+                                 %  (str(thread.get_exception ()),
+                                     str(thread.get_traceback ())))
 
 
     # ----------------------------------------------------------------
@@ -349,10 +349,10 @@ class Container (SimpleBase, Attributes) :
     def wait (self, mode=ALL, timeout=-1) :
 
         if not mode in [ANY, ALL] :
-            raise BadParameter ("wait mode must be saga.task.ANY or saga.task.ALL")
+            raise se.BadParameter ("wait mode must be saga.task.ANY or saga.task.ALL")
 
         if type (timeout) not in [int, long, float] : 
-            raise BadParameter ("wait timeout must be a floating point number (or integer)")
+            raise se.BadParameter ("wait timeout must be a floating point number (or integer)")
 
         if not len (self.tasks) :
             # nothing to do
@@ -381,7 +381,7 @@ class Container (SimpleBase, Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
-            threads.append (Thread.Run (c.container_wait, tasks, mode, timeout))
+            threads.append (Thread.Run (c.container_wait, tasks, ANY, timeout))
 
         
         # handle all tasks not bound to containers
@@ -449,7 +449,7 @@ class Container (SimpleBase, Attributes) :
 
     # ----------------------------------------------------------------
     #
-    def cancel (self) :
+    def cancel (self, timeout) :
 
         if not len (self.tasks) :
             # nothing to do
@@ -492,9 +492,9 @@ class Container (SimpleBase, Attributes) :
             thread.join ()
 
             if thread.get_state () == FAILED :
-                raise NoSuccess ("thread exception: %s\n%s" \
-                        %  (str(thread.get_exception ()),
-                            str(thread.get_traceback ())))
+                raise se.NoSuccess ("thread exception: %s\n%s" \
+                                 %  (str(thread.get_exception ()),
+                                     str(thread.get_traceback ())))
 
 
     # ----------------------------------------------------------------
@@ -533,7 +533,7 @@ class Container (SimpleBase, Attributes) :
 
         for task in buckets['unbound'] :
 
-            threads.append (Thread.Run (task.get_states, timeout))
+            threads.append (Thread.Run (task.get_states))
             
 
         # wait for all threads to finish
@@ -541,9 +541,9 @@ class Container (SimpleBase, Attributes) :
             thread.join ()
 
             if thread.get_state () == FAILED :
-                raise NoSuccess ("thread exception: %s\n%s" \
-                        %  (str(thread.get_exception ()),
-                            str(thread.get_traceback ())))
+                raise se.NoSuccess ("thread exception: %s\n%s" \
+                                 % (str(thread.get_exception ()),
+                                    str(thread.get_traceback ())))
 
 
         states = []

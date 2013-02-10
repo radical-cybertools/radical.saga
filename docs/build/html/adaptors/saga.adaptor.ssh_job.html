@@ -30,7 +30,7 @@
     <link rel="top" title="SAGA 1.0 documentation" href="../index.html" />
     <link rel="up" title="5. Adaptors:" href="saga.adaptor.index.html" />
     <link rel="next" title="8. saga.adaptor.advert.redis" href="saga.adaptor.advert.redis.html" />
-    <link rel="prev" title="6. saga.adaptor.dummysystem.local" href="saga.adaptor.dummysystem.local.html" /> 
+    <link rel="prev" title="6. saga.adaptors.local.dummyfile" href="saga.adaptors.local.dummyfile.html" /> 
   </head>
   <body>
     <div class="related">
@@ -46,7 +46,7 @@
           <a href="saga.adaptor.advert.redis.html" title="8. saga.adaptor.advert.redis"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.dummysystem.local.html" title="6. saga.adaptor.dummysystem.local"
+          <a href="saga.adaptors.local.dummyfile.html" title="6. saga.adaptors.local.dummyfile"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">SAGA 1.0 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" accesskey="U">5. Adaptors:</a> &raquo;</li> 
@@ -98,8 +98,32 @@ On hitting process limits, the job creation will fail with an error
 similar to either of these::
 NoSuccess: failed to run job (/bin/sh: fork: retry: Resource temporarily unavailable)
 NoSuccess: failed to run job &#8211; backend error
+* number of files are limited, as is disk space: the job.service will
+keep job state on the remote disk, in <tt class="docutils literal"><span class="pre">$HOME/.saga/adaptors/ssh_job/</span></tt>.
+Quota limitations may limit the number of files created there,
+and/or the total size of that directory.
+On quota or disk space limits, you may see error messages similar to
+the following ones::
+NoSuccess: read from pty process failed ([Errno 5] Quota exceeded)
+NoSuccess: read from pty process failed ([Errno 5] Input/output error)
+NoSuccess: find from pty process [Thread-5] failed (Could not read - pty process died)
 * Other system limits (memory, CPU, selinux, accounting etc.) apply as
-usual.</p>
+usual.
+* thread safety: it is safe to create multiple <tt class="xref py py-class docutils literal"><span class="pre">job.Service</span></tt>
+instances to the same target host at a time &#8211; they should not
+interfere with each other, but <tt class="docutils literal"><span class="pre">list()</span></tt> will list jobs created by
+either instance (if those use the same target host user account).
+It is <strong>not</strong> safe to use the <em>same</em> <tt class="xref py py-class docutils literal"><span class="pre">job.Service</span></tt> instance
+from multiple threads concurrently &#8211; the communication on the I/O
+channel will likely get screwed up.  This limitation may be removed
+in future versions of the adaptor.  Non-concurrent (i.e. serialized)
+use should work as expected though.
+* the adaptor option <tt class="docutils literal"><span class="pre">enable_debug_trace</span></tt> will create a detailed
+trace of the remote shell execution, on the remote host.  This will
+interfere with the shell&#8217;s stdio though, and may cause unexpected
+failures.  Debugging should only be enabled as last resort, e.g.
+when logging on DEBUG level remains inconclusive, and should
+<strong>never</strong> be used in production mode.</p>
 <div class="section" id="version">
 <h2>7.1. Version<a class="headerlink" href="#version" title="Permalink to this headline">¶</a></h2>
 <p>v0.1</p>
@@ -122,6 +146,35 @@ usual.</p>
 <div><ul class="simple">
 <li><strong>type</strong> : &lt;type &#8216;bool&#8217;&gt;</li>
 <li><strong>default</strong> : True</li>
+<li><strong>environment</strong> : None</li>
+<li><strong>valid options</strong> : [True, False]</li>
+</ul>
+</div></blockquote>
+<p><tt class="docutils literal"><span class="pre">enable_debug_trace</span></tt></p>
+<p>Create a detailed debug trace on the remote host.
+Note that the log is <em>not</em> removed, and can be large!
+A log message on INFO level will be issued which
+provides the location of the log file.</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>type</strong> : &lt;type &#8216;bool&#8217;&gt;</li>
+<li><strong>default</strong> : False</li>
+<li><strong>environment</strong> : None</li>
+<li><strong>valid options</strong> : [True, False]</li>
+</ul>
+</div></blockquote>
+<p><tt class="docutils literal"><span class="pre">enable_notifications</span></tt></p>
+<p>Enable support for job state notifications.  Note that
+enabling this option will create a local thread, a remote
+shell process, and an additional network connection.
+In particular for ssh/gsissh where the number of
+concurrent connections is limited to 10, this
+effectively halfs the number of available job service
+instances per remote host.</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>type</strong> : &lt;type &#8216;bool&#8217;&gt;</li>
+<li><strong>default</strong> : False</li>
 <li><strong>environment</strong> : None</li>
 <li><strong>valid options</strong> : [True, False]</li>
 </ul>
@@ -187,6 +240,16 @@ usual.</p>
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="saga.adaptors.ssh.ssh_job.SSHJobService.initialize">
+<tt class="descname">initialize</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.adaptors.ssh.ssh_job.SSHJobService.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.ssh.ssh_job.SSHJobService.finalize">
+<tt class="descname">finalize</tt><big>(</big><em>kill_shell=False</em><big>)</big><a class="headerlink" href="#saga.adaptors.ssh.ssh_job.SSHJobService.finalize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="saga.adaptors.ssh.ssh_job.SSHJobService.create_job">
 <tt class="descname">create_job</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/ssh/ssh_job.html#SSHJobService.create_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.ssh.ssh_job.SSHJobService.create_job" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -194,6 +257,11 @@ usual.</p>
 <dl class="method">
 <dt id="saga.adaptors.ssh.ssh_job.SSHJobService.get_url">
 <tt class="descname">get_url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/ssh/ssh_job.html#SSHJobService.get_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.ssh.ssh_job.SSHJobService.get_url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.ssh.ssh_job.SSHJobService.list">
+<tt class="descname">list</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.adaptors.ssh.ssh_job.SSHJobService.list" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -217,13 +285,33 @@ usual.</p>
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="saga.adaptors.ssh.ssh_job.SSHJob.wait">
+<tt class="descname">wait</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.adaptors.ssh.ssh_job.SSHJob.wait" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="saga.adaptors.ssh.ssh_job.SSHJob.get_id">
 <tt class="descname">get_id</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/ssh/ssh_job.html#SSHJob.get_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.ssh.ssh_job.SSHJob.get_id" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="saga.adaptors.ssh.ssh_job.SSHJob.get_exit_code">
+<tt class="descname">get_exit_code</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.adaptors.ssh.ssh_job.SSHJob.get_exit_code" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.ssh.ssh_job.SSHJob.cancel">
+<tt class="descname">cancel</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.adaptors.ssh.ssh_job.SSHJob.cancel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="saga.adaptors.ssh.ssh_job.SSHJob.run">
 <tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/ssh/ssh_job.html#SSHJob.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.ssh.ssh_job.SSHJob.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.ssh.ssh_job.SSHJob.re_raise">
+<tt class="descname">re_raise</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.adaptors.ssh.ssh_job.SSHJob.re_raise" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -255,8 +343,8 @@ usual.</p>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="saga.adaptor.dummysystem.local.html"
-                        title="previous chapter">6. saga.adaptor.dummysystem.local</a></p>
+  <p class="topless"><a href="saga.adaptors.local.dummyfile.html"
+                        title="previous chapter">6. saga.adaptors.local.dummyfile</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="saga.adaptor.advert.redis.html"
                         title="next chapter">8. saga.adaptor.advert.redis</a></p>
@@ -295,7 +383,7 @@ usual.</p>
           <a href="saga.adaptor.advert.redis.html" title="8. saga.adaptor.advert.redis"
              >next</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.dummysystem.local.html" title="6. saga.adaptor.dummysystem.local"
+          <a href="saga.adaptors.local.dummyfile.html" title="6. saga.adaptors.local.dummyfile"
              >previous</a> |</li>
         <li><a href="../index.html">SAGA 1.0 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" >5. Adaptors:</a> &raquo;</li> 

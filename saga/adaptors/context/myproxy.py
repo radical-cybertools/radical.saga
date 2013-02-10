@@ -4,10 +4,11 @@ import subprocess
 
 import saga.context
 import saga.adaptors.cpi.base
+import saga.adaptors.cpi.decorators
 import saga.adaptors.cpi.context
 
-SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 ######################################################################
 #
@@ -79,11 +80,12 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 #
 # job adaptor class
 #
-class ContextMyProxy (saga.adaptors.cpi.Context) :
+class ContextMyProxy (saga.adaptors.cpi.context.Context) :
 
     def __init__ (self, api, adaptor) :
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
 
+        self._cpi_base = super  (ContextMyProxy, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL

@@ -84,7 +84,7 @@ class _Logger(Configurable):
         Configurable.__init__(self, 'saga.engine.logging', _all_logging_options)    
         cfg = self.get_config()
 
-        self._loglevel = cfg['level'].get_value()
+        self._loglevel = str(cfg['level'].get_value())
         self._filters  = cfg['filters'].get_value()
         self._targets  = cfg['targets'].get_value()
         self._handlers = list()
@@ -122,7 +122,7 @@ class _Logger(Configurable):
             handler.setFormatter(DefaultFormatter)
 
             if self._filters != []:
-                handler.addFilter(_MultiNameFilter(self._filters))
+                handler.addFilter(self._MultiNameFilter(self._filters))
 
             self._handlers.append(handler)
 
@@ -137,7 +137,9 @@ class _Logger(Configurable):
 
 
 ################################################################################
-##
+#
+# FIXME: strange pylint error
+#
 def getLogger (name='saga-python'):
     ''' Get a SAGA logger.  For any new name, a new logger instance will be
     created; subsequent calls to this method with the same name argument will

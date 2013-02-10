@@ -1,3 +1,4 @@
+
 __author__    = "Ole Weidner"
 __copyright__ = "Copyright 2011-2013, The SAGA Project"
 __license__   = "MIT"
@@ -262,7 +263,7 @@ class Url (object):
 
     ######################################################################
     ## Query property
-    def set_query(self, path):
+    def set_query(self, query):
         """ Set the 'query' component.
         """
         newurl = urlparse.urlunparse((self._urlobj.scheme,

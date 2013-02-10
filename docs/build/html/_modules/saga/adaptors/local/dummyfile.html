@@ -147,7 +147,7 @@
 <span class="c">###############################################################################</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">DummyDirectory</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="DummyDirectory"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyDirectory">[docs]</a>
+<div class="viewcode-block" id="DummyDirectory"><a class="viewcode-back" href="../../../../adaptors/saga.adaptors.local.dummyfile.html#saga.adaptors.local.dummyfile.DummyDirectory">[docs]</a>
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
         <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">CPIBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
@@ -155,7 +155,7 @@
     <span class="nd">@SYNC_CALL</span>
     <span class="c"># FIXME: where are the flags?</span>
     <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="DummyDirectory.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyDirectory.init_instance">[docs]</a>
+<div class="viewcode-block" id="DummyDirectory.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptors.local.dummyfile.html#saga.adaptors.local.dummyfile.DummyDirectory.init_instance">[docs]</a>
         <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
@@ -167,7 +167,7 @@
 
     <span class="nd">@ASYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="DummyDirectory.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyDirectory.init_instance_async">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+<div class="viewcode-block" id="DummyDirectory.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptors.local.dummyfile.html#saga.adaptors.local.dummyfile.DummyDirectory.init_instance_async">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
 
@@ -231,13 +231,13 @@
 
     <span class="nd">@SYNC_CALL</span>
     <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="DummyDirectory.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyDirectory.get_url">[docs]</a>
+<div class="viewcode-block" id="DummyDirectory.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptors.local.dummyfile.html#saga.adaptors.local.dummyfile.DummyDirectory.get_url">[docs]</a>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
 
 
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">open</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="DummyDirectory.open"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyDirectory.open">[docs]</a>        
+<div class="viewcode-block" id="DummyDirectory.open"><a class="viewcode-back" href="../../../../adaptors/saga.adaptors.local.dummyfile.html#saga.adaptors.local.dummyfile.DummyDirectory.open">[docs]</a>        
         <span class="k">if</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">host</span> <span class="p">:</span> 
             <span class="n">url</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
 
@@ -250,14 +250,14 @@
 <span class="c"># file adaptor class</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">DummyFile</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span><span class="p">)</span> <span class="p">:</span></div></div>
-<div class="viewcode-block" id="DummyFile"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile">[docs]</a>
+<div class="viewcode-block" id="DummyFile"><a class="viewcode-back" href="../../../../adaptors/saga.adaptors.local.dummyfile.html#saga.adaptors.local.dummyfile.DummyFile">[docs]</a>
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
         <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">CPIBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
 
     <span class="nd">@SYNC_CALL</span>
     <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="DummyFile.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile.init_instance">[docs]</a>
+<div class="viewcode-block" id="DummyFile.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptors.local.dummyfile.html#saga.adaptors.local.dummyfile.DummyFile.init_instance">[docs]</a>
         <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
@@ -269,7 +269,7 @@
 
     <span class="nd">@ASYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="DummyFile.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile.init_instance_async">[docs]</a>
+<div class="viewcode-block" id="DummyFile.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptors.local.dummyfile.html#saga.adaptors.local.dummyfile.DummyFile.init_instance_async">[docs]</a>
         <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
@@ -341,11 +341,11 @@
 
     <span class="nd">@SYNC_CALL</span>
     <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="DummyFile.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile.get_url">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+<div class="viewcode-block" id="DummyFile.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptors.local.dummyfile.html#saga.adaptors.local.dummyfile.DummyFile.get_url">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
 
     <span class="nd">@ASYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_url_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="DummyFile.get_url_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile.get_url_async">[docs]</a>
+<div class="viewcode-block" id="DummyFile.get_url_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptors.local.dummyfile.html#saga.adaptors.local.dummyfile.DummyFile.get_url_async">[docs]</a>
         <span class="n">t</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">()</span>
 
         <span class="n">t</span><span class="o">.</span><span class="n">_set_state</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Done</span>
@@ -356,12 +356,12 @@
 
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_size_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="DummyFile.get_size_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile.get_size_self">[docs]</a>        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+<div class="viewcode-block" id="DummyFile.get_size_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptors.local.dummyfile.html#saga.adaptors.local.dummyfile.DummyFile.get_size_self">[docs]</a>        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
 
 
     <span class="nd">@ASYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_size_self_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="DummyFile.get_size_self_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile.get_size_self_async">[docs]</a>
+<div class="viewcode-block" id="DummyFile.get_size_self_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptors.local.dummyfile.html#saga.adaptors.local.dummyfile.DummyFile.get_size_self_async">[docs]</a>
         <span class="n">t</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">()</span>
 
         <span class="n">t</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
@@ -372,7 +372,7 @@
 
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">copy_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="DummyFile.copy_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.dummysystem.local.html#saga.adaptors.local.dummyfile.DummyFile.copy_self">[docs]</a>
+<div class="viewcode-block" id="DummyFile.copy_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptors.local.dummyfile.html#saga.adaptors.local.dummyfile.DummyFile.copy_self">[docs]</a>
         <span class="n">tgt_url</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">target</span><span class="p">)</span>
         <span class="n">tgt</span>     <span class="o">=</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">path</span>
         <span class="n">src</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span>

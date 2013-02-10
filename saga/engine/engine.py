@@ -12,13 +12,12 @@ import string
 import signal
 import inspect
 
-from   saga.exceptions      import *
-from   saga.utils.singleton import Singleton
-from   saga.utils.logger    import getLogger
-from   saga.utils.config    import getConfig, Configurable
+import saga.exceptions      as se
+import saga.utils.singleton as single
+import saga.utils.logger    as slog
+import saga.utils.config    as sconf
 
 import saga.engine.registry  # adaptors to load
-# import saga.adaptors.cpi              # load cpi's so that we can check what adaptors implement
 
 
 ############# These are all supported options for saga.engine ####################
@@ -54,7 +53,7 @@ def getEngine():
 
 ################################################################################
 ##
-class Engine(Configurable): 
+class Engine(sconf.Configurable): 
     """ Represents the SAGA engine runtime system.
 
         The Engine is a singleton class that takes care of adaptor
@@ -134,7 +133,7 @@ class Engine(Configurable):
                       return
     """
 
-    __metaclass__ = Singleton
+    __metaclass__ = single.Singleton
 
 
 
@@ -147,12 +146,12 @@ class Engine(Configurable):
 
 
         # set the configuration options for this object
-        Configurable.__init__(self, 'saga.engine', _config_options)
+        sconf.Configurable.__init__(self, 'saga.engine', _config_options)
         self._cfg = self.get_config()
 
 
         # Initialize the logging
-        self._logger = getLogger ('saga.engine')
+        self._logger = slog.getLogger ('saga.engine')
 
 
         # install signal handler, if requested
@@ -185,7 +184,7 @@ class Engine(Configurable):
         """
 
         # get the engine config options
-        global_config = getConfig()
+        global_config = sconf.getConfig()
 
 
         # get the list of adaptors to load
@@ -207,13 +206,13 @@ class Engine(Configurable):
 
             # first, import the module
             adaptor_module = None
-            try :
-                adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
+            # try :
+            adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
 
-            except Exception as e:
-                self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
-                self._logger.trace ()
-                continue # skip to next adaptor
+            # except Exception as e:
+            #     self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
+            #     self._logger.trace ()
+            #     continue # skip to next adaptor
 
 
             # we expect the module to have an 'Adaptor' class
@@ -226,7 +225,7 @@ class Engine(Configurable):
                 adaptor_instance = adaptor_module.Adaptor ()
                 adaptor_info     = adaptor_instance.register ()
 
-            except SagaException as e:
+            except se.SagaException as e:
                 self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
                 self._logger.trace ()
                 continue # skip to next adaptor
@@ -294,7 +293,7 @@ class Engine(Configurable):
                 adaptor_config  = global_config.get_category (adaptor_name)
                 adaptor_enabled = adaptor_config['enabled'].get_value ()
 
-            except SagaException as e:
+            except se.SagaException as e:
                 self._logger.error ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
                 self._logger.trace ()
                 continue # skip to next adaptor
@@ -454,7 +453,7 @@ class Engine(Configurable):
                     if ( info['adaptor_name'] == adaptor_name ) :
                         return info['adaptor_instance']
 
-        raise NotSucess ("No adaptor named '%s' found"  %  adaptor_name)
+        raise se.NoSuccess ("No adaptor named '%s' found"  %  adaptor_name)
 
 
 
@@ -472,12 +471,12 @@ class Engine(Configurable):
         '''
 
         if not ctype in self._adaptor_registry :
-            raise NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
-                               % (ctype, schema))
+            raise se.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
+                                  % (ctype, schema))
 
         if not schema in self._adaptor_registry[ctype] :
-            raise NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
-                               % (ctype, schema))
+            raise se.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
+                                  % (ctype, schema))
 
 
         # cycle through all applicable adaptors, and try to instantiate
@@ -510,7 +509,7 @@ class Engine(Configurable):
                 return cpi_instance
 
 
-            except SagaException as e :
+            except se.SagaException as e :
                 # adaptor class initialization failed - try next one
                 exception._add_exception (e)
                 self._logger.info  ("bind_adaptor adaptor class ctor failed : %s.%s: %s" \

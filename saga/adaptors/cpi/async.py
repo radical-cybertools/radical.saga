@@ -1,18 +1,19 @@
 
-from   saga.adaptors.cpi.base   import CPIBase
-from   saga.adaptors.cpi.base   import CPI_SYNC_CALL  as sync
-from   saga.adaptors.cpi.base   import CPI_ASYNC_CALL as async
+import saga.adaptors.cpi.decorators as cpi_dec
+
+SYNC  = cpi_dec.CPI_SYNC_CALL
+ASYNC = cpi_dec.CPI_ASYNC_CALL
 
 
 class Async (object) :
     
-    @sync
+    @SYNC
     def task_run    (self, task)          : pass
 
-    @sync
+    @SYNC
     def task_wait   (self, task, timeout) : pass
 
-    @sync
+    @SYNC
     def task_cancel (self, task)          : pass
 
 

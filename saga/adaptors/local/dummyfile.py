@@ -9,15 +9,15 @@ import saga.adaptors.cpi.base
 import saga.adaptors.cpi.filesystem
 import saga.utils.misc
 
-SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
 ###############################################################################
 # adaptor info
 #
 
-_ADAPTOR_NAME          = 'saga.adaptor.dummysystem.local'
+_ADAPTOR_NAME          = 'saga.adaptors.local.dummyfile'
 _ADAPTOR_SCHEMAS       = ['dummy']
 _ADAPTOR_OPTIONS       = [
     { 
@@ -96,7 +96,9 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     def __init__ (self, api, adaptor) :
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (DummyDirectory, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
@@ -124,7 +126,7 @@ class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
                                                     'url'     : url, 
                                                     'flags'   : flags, 
                                                     'session' : session})
-        t._set_result (saga.dummysystem.Directory (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
+        t._set_result (saga.filesystem.Directory (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -153,8 +155,8 @@ class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         if not os.path.exists (path) :
 
-            if saga.dummysystem.CREATE & flags :
-                if saga.dummysystem.CREATE_PARENTS & flags :
+            if saga.filesystem.CREATE & flags :
+                if saga.filesystem.CREATE_PARENTS & flags :
                     try :
                         os.makedirs (path)
                     except Exception as e :
@@ -188,7 +190,7 @@ class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
         if not url.scheme and not url.host : 
             url = saga.url.Url (str(self._url) + '/' + str(url))
 
-        f = saga.dummysystem.File (url, flags, self._session, _adaptor_name=_ADAPTOR_NAME)
+        f = saga.filesystem.File (url, flags, self._session, _adaptor_name=_ADAPTOR_NAME)
         return f
 
 
@@ -199,7 +201,9 @@ class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
 class DummyFile (saga.adaptors.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (DummyFile, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
@@ -225,7 +229,7 @@ class DummyFile (saga.adaptors.cpi.filesystem.File) :
         
         t = saga.task.Task ()
 
-        t._set_result (saga.dummysystem.File (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
+        t._set_result (saga.filesystem.File (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -295,7 +299,7 @@ class DummyFile (saga.adaptors.cpi.filesystem.File) :
 
         t = saga.task.Task ()
 
-        t._set_state  = saga.task.Done
+        t._set_state  = saga.task.DONE
         t._set_result = self._url
 
         return t
