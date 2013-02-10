@@ -20,8 +20,8 @@ from saga.utils.which import which
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
-SYNC_CALL  = saga.adaptors.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 ##############################################################################
 ## the adaptor name                                                         ##
