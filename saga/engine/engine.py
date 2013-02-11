@@ -161,8 +161,8 @@ class Engine(sconf.Configurable):
                 sys.stderr.write ("Ctrl+C caught. Exiting...")
                 sys.exit (0)
 
-            self._logger.debug ("installing signal handler for SIGKILL")
-            signal.signal (signal.SIGKILL, signal_handler)
+            self._logger.debug ("installing signal handler for SIGTERM")
+            signal.signal (signal.SIGTERM, signal_handler)
 
 
         # load adaptors
