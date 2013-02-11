@@ -1,1 +1,242 @@
-<h1>hi there</h1>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>saga-python: A Light-Weight Distributed Computing Infrastructure Access Layer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="css/docs.css" rel="stylesheet">
+    <link href="js/google-code-prettify/prettify.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="ico/apple-touch-icon-114-precomposed.png">
+      <link rel="apple-touch-icon-precomposed" sizes="72x72" href="ico/apple-touch-icon-72-precomposed.png">
+                    <link rel="apple-touch-icon-precomposed" href="ico/apple-touch-icon-57-precomposed.png">
+                                   <link rel="shortcut icon" href="ico/favicon.png">
+
+  </head>
+
+  <body data-spy="scroll" data-target=".bs-docs-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="./index.html">saga-python</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="active">
+                <a href="./index.html">Home</a>
+              </li>
+              <li class="">
+                <a href="./apidoc/index.html">Get Started</a>
+              </li>
+              <li class="">
+                <a href="./apidoc/index.html">Supported Middleware</a>
+              </li>
+              <li class="">
+                <a href="./examples.html">Examples</a>
+              </li>
+              <li class="">
+                <a href="./apidoc/index.html">Documentation</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<div class="jumbotron masthead">
+  <div class="container">
+    <h1>saga-python</h1>
+    <p>A Light-Weight Distributed Computing Infrastructure Access Layer</p>
+    <p>
+      <a href="bootstrap.zip" class="btn btn-primary btn-large" >Get Started</a>
+    </p>
+    <ul class="masthead-links">
+      <li>
+        <a href="https://github.com/saga-project/saga-python" >GitHub project</a>
+      </li>
+      <li>
+        <a href="./getting-started.html#examples" >Examples</a>
+      </li>
+      <!--li>
+        <a href="./extend.html" >Extend</a>
+      </li-->
+      <li>
+        Version 1.0-pre1
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="bs-docs-social">
+  <div class="container">
+    <ul class="bs-docs-social-buttons">
+      <li>
+        <iframe class="github-btn" src="http://ghbtns.com/github-btn.html?user=saga-project&repo=saga-python&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100px" height="20px"></iframe>
+      </li>
+      <li>
+        <iframe class="github-btn" src="http://ghbtns.com/github-btn.html?user=saga-project&repo=saga-python&type=fork&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="102px" height="20px"></iframe>
+      </li>
+      <li class="follow-btn">
+        <a href="https://twitter.com/sagagridapi" class="twitter-follow-button" data-link-color="#0069D6" data-show-count="true">Follow @sagagridapi</a>
+      </li>
+      <li class="tweet-btn">
+        <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://saga-project.github.com/saga-python/" data-count="horizontal" data-via="sagagridapi" data-related="mdo:SAGA Python">Tweet</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="marketing">
+
+    <!--h1>Introducing Bootstrap.</h1>
+    <p class="marketing-byline">Need reasons to love Bootstrap? Look no further.</p-->
+
+    <div class="row-fluid">
+      <div class="span12">
+        <!--img class="marketing-img" src="img/bs-docs-twitter-github.png"-->
+        <br />
+        <br />
+        <h2>About</h2>
+            <p><i>saga-python</i> provides a Python programming
+              interface (API) that is compliant with the 
+              <a href="www.ogf.org/documents/GFD.90.pdf">OGF GFD.90</a>
+              SAGA (<i>A Simple API for Grid Applications</i>) specification.
+              SAGA defines high-level access 
+              mechanisms for distributed infrastructure components like 
+              job schedulers, file transfer and resource provisioning services. 
+            </p>
+
+            <p>
+              Behind the API façade, saga-python provides a flexible plug-in or 
+              <i>adaptor</i> architecture. Adaptors are self-contained modules
+              that interface the API with specific 
+              middleware systems and services. Most application developers use 
+              the adaptors that are already part of saga-python, but you can
+              easily implement your own in case your backend system is not supported yet.
+            </p>
+
+            <p>
+              saga-python's main focus is on ease of use and simple 
+              user-space deployment in heterogeneous distributed computing 
+              environments and it supports a wide range of application use-cases. 
+              saga-python is being used on many distributed 
+              cyberinfrastructures, including <a href="">XSEDE</a>, 
+              <a href="">OSG</a> and <a href="">FutureGrid</a> where it is 
+              being used to marshal <i>tens of thousands</i> of cores and to
+              move <i>gigabytes</i> of data in production science environments.
+            </p>
+      </div>
+
+    </div>
+
+    <!--hr class="soften">
+
+    <div class="row-fluid">
+      <div class="span6">
+        <h2>By nerds, for nerds.</h2>
+        <p>Built at Twitter by <a href="http://twitter.com/mdo">@mdo</a> and <a href="http://twitter.com/fat">@fat</a>, Bootstrap utilizes <a href="http://lesscss.org">LESS CSS</a>, is compiled via <a href="http://nodejs.org">Node</a>, and is managed through <a href="http://github.com">GitHub</a> to help nerds do awesome stuff on the web.</p>
+      </div>
+      <div class="span6">
+        <h2>Made for everyone.</h2>
+        <p>Bootstrap was made to not only look and behave great in the latest desktop browsers (as well as IE7!), but in tablet and smartphone browsers via <a href="./scaffolding.html#responsive">responsive CSS</a> as well.</p>
+      </div>
+      <div class="span4">
+        <img class="marketing-img" src="img/bs-docs-bootstrap-features.png">
+        <h2>Packed with features.</h2>
+        <p>A 12-column responsive <a href="./scaffolding.html#gridSystem">grid</a>, dozens of components, <a href="./javascript.html">JavaScript plugins</a>, typography, form controls, and even a <a href="./customize.html">web-based Customizer</a> to make Bootstrap your own.</p>
+      </div>
+    </div-->
+
+    <hr class="soften">
+
+    <h1>Get Started</h1>
+    <!--p class="marketing-byline">For even more sites built with Bootstrap, <a href="http://builtwithbootstrap.tumblr.com/" target="_blank">visit the unofficial Tumblr</a> or <a href="./getting-started.html#examples">browse the examples</a>.</p>
+    <div class="row-fluid">
+      <ul class="thumbnails example-sites">
+        <li class="span3">
+          <a class="thumbnail" href="http://soundready.fm/" target="_blank">
+            <img src="img/example-sites/soundready.png" alt="SoundReady.fm">
+          </a>
+        </li>
+        <li class="span3">
+          <a class="thumbnail" href="http://kippt.com/" target="_blank">
+            <img src="img/example-sites/kippt.png" alt="Kippt">
+          </a>
+        </li>
+        <li class="span3">
+          <a class="thumbnail" href="http://www.gathercontent.com/" target="_blank">
+            <img src="img/example-sites/gathercontent.png" alt="Gather Content">
+          </a>
+        </li>
+        <li class="span3">
+          <a class="thumbnail" href="http://www.jshint.com/" target="_blank">
+            <img src="img/example-sites/jshint.png" alt="JS Hint">
+          </a>
+        </li>
+      </ul>
+     </div>
+
+  </div>
+
+</div-->
+
+
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p>Copyright &copy; 2013 The SAGA Project</p>
+        <p><a href="http://radical.rutgers.edu">RADICAL Research</a> at 
+          <a href="http://nsfcac.rutgers.edu">The Cloud and Autonomic Computing 
+          Center, Rutgers University </a>.</p>
+
+        <p>Code licensed under <a href="http://opensource.org/licenses/MIT" target="_blank">MIT License</a>, documentation under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.</p>
+        <ul class="footer-links">
+          <li><a href="https://github.com/saga-project/saga-python/wiki">Wiki</a></li>
+          <li class="muted">&middot;</li>
+          <li><a href="https://github.com/saga-project/saga-python/issues?state=open">Issues</a></li>
+          <li class="muted">&middot;</li>
+          <li><a href="https://github.com/saga-project/saga-python/blob/master/CHANGES.md">Changelog</a></li>
+        </ul>
+      </div>
+    </footer>
+
+
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>
+    <script src="js/jquery.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <script src="js/google-code-prettify/prettify.js"></script>
+
+    <script src="js/application.js"></script>
+
+
+
+  </body>
+</html>
