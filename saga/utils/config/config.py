@@ -91,12 +91,15 @@ class Configuration(object):
         # and re-_initialize the configuration object.
         self._initialize()
 
-    def _initialize(self, inject_cfg_file=None):
+    def _initialize(self, inject_cfg_file=None, add_cfg_file=None):
         """ Initialize the global configuration.
 
             :param inject_cfg_file: is used *only* for testing purposes 
              and overwrites / ignores the regular config file locations 
              /etc/saga.cfg & $HOME/.saga.cfg
+
+            :param add_cfg_file: is used *only* for testing purposes 
+             and adds a specific config file to the list of evaluated files.  
         """
         cfg_files = list()
         if inject_cfg_file is not None:
@@ -109,6 +112,9 @@ class Configuration(object):
             usr_cfg = '%s/.saga.cfg' % os.path.expanduser("~")
             if os.path.exists(usr_cfg):
                 cfg_files.append(usr_cfg)
+
+        if add_cfg_file is not None:
+            cfg_files.append(add_cfg_file)
 
         cfr = ConfigFileReader(cfg_files)
     

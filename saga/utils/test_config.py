@@ -121,7 +121,7 @@ class TestConfig (sconf.Configurable):
 
         # re-initialize config for the given configfile
         if configfile :
-            self._global_cfg._initialize (configfile)
+            self._global_cfg._initialize (add_cfg_file=configfile)
 
         # need to make a deep copy here -- otherwise later tests which
         # re-trigger the read of the saga configuration will mess with our
