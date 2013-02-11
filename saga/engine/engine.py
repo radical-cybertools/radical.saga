@@ -162,7 +162,7 @@ class Engine(sconf.Configurable):
                 sys.exit (0)
 
             self._logger.debug ("installing signal handler for SIGKILL")
-            signal.signal (signal.SIGINT, signal_handler)
+            signal.signal (signal.SIGKILL, signal_handler)
 
 
         # load adaptors
