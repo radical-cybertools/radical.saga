@@ -582,6 +582,35 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
+    def run_job (self, cmd, host) :
+        """ Implements saga.adaptors.cpi.job.Service.run_job()
+        """
+
+        if not cmd :
+            raise saga.BadParameter._log (self._logger, "run_hosts needs a command to run")
+
+        if  host and host != self.rm.host :
+            raise saga.BadParameter._log (self._logger, "Can only run jobs on %s"
+                                       % self.rm.host)
+
+        cmd_elems = cmd.split ()
+
+        if not len(cmd_elems) :
+            raise saga.BadParameter._log (self._logger, "run_hosts needs a non-empty command to run")
+
+        jd = saga.job.Description ()
+
+        jd.executable = cmd_elems[0]
+        jd.arguments  = cmd_elems[1:]
+
+        job = self.create_job (jd)
+        job.run ()
+
+        return job
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
     def create_job (self, jd) :
         """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
@@ -613,6 +642,8 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
     @SYNC_CALL
     def list (self):
 
+        # FIXME: this should also fetch job state and metadata, and cache those
+
         ret, out, _ = self.shell.run_sync ("LIST\n")
         if  ret != 0 :
             raise saga.NoSuccess ("failed to list jobs: (%s)(%s)" \
@@ -638,21 +669,29 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         return self._ids
    
    
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def get_job (self, jobid):
-  #     """ Implements saga.adaptors.cpi.job.Service.get_url()
-  #     """
-  #     if jobid not in self._jobs.values ():
-  #         msg = "Service instance doesn't know a Job with ID '%s'" % (jobid)
-  #         raise saga.BadParameter._log (self._logger, msg)
-  #     else:
-  #         for (job_obj, job_id) in self._jobs.iteritems ():
-  #             if job_id == jobid:
-  #                 return job_obj.get_api ()
-  #
-  #
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_job (self, jobid):
+        """ Implements saga.adaptors.cpi.job.Service.get_url()
+        """
+
+        known_jobs = self.list ()
+
+        if jobid not in known_jobs :
+            raise saga.BadParameter._log (self._logger, "job id %s unknown"
+                                       % jobid)
+
+        else:
+            # this dict is passed on to the job adaptor class -- use it to pass any
+            # state information you need there.
+            adaptor_state = { "job_service"     : self, 
+                              "job_id"          : jobid,
+                              "job_schema"      : self.rm.schema }
+
+            return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
+
+   
   # # ----------------------------------------------------------------
   # #
   # def container_run (self, jobs) :
@@ -697,21 +736,33 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
     def init_instance (self, job_info):
         """ Implements saga.adaptors.cpi.job.Job.init_instance()
         """
-        self.jd = job_info["job_description"]
-        self.js = job_info["job_service"] 
 
-        # the js is responsible for job bulk operations -- which
-        # for jobs only work for run()
-      # self._container       = self.js
-        self._method_type     = "run"
+        if  'job_description' in job_info :
+            # comes from job.service.create_job()
+            self.jd = job_info["job_description"]
+            self.js = job_info["job_service"] 
 
-        # initialize job attribute values
-        self._id              = None
-        self._state           = saga.job.NEW
-        self._exit_code       = None
-        self._exception       = None
-        self._started         = None
-        self._finished        = None
+            # the js is responsible for job bulk operations -- which
+            # for jobs only work for run()
+          # self._container       = self.js
+            self._method_type     = "run"
+
+            # initialize job attribute values
+            self._id              = None
+            self._state           = saga.job.NEW
+            self._exit_code       = None
+            self._exception       = None
+
+        elif 'job_id' in job_info :
+            # initialize job attribute values
+            self._id              = job_info['job_id']
+            self._state           = saga.job.UNKNOWN
+            self._exit_code       = None
+            self._exception       = None
+
+        else :
+            # don't know what to do...
+            raise saga.BadParameter ("Cannot create job, insufficient information")
         
         return self.get_api ()
 
@@ -764,32 +815,6 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
   # # ----------------------------------------------------------------
   # #
   # # TODO: the values below should be fetched with every get_state...
-  # #
-  # @SYNC_CALL
-  # def get_created (self) :
-  #     """ Implements saga.adaptors.cpi.job.Job.get_started()
-  #     """     
-  #     # for local jobs started == created. for other adaptors 
-  #     # this is not necessarily true   
-  #     return self._started
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def get_started (self) :
-  #     """ Implements saga.adaptors.cpi.job.Job.get_started()
-  #     """        
-  #     return self._started
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def get_finished (self) :
-  #     """ Implements saga.adaptors.cpi.job.Job.get_finished()
-  #     """        
-  #     return self._finished
-  # 
-  # # ----------------------------------------------------------------
   # #
   # @SYNC_CALL
   # def get_execution_hosts (self) :
