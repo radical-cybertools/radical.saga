@@ -119,33 +119,33 @@
         <br />
         <br />
         <h2>About</h2>
-            <p><i>saga-python</i> provides a Python programming
-              interface (API) that is compliant with the 
-              <a href="www.ogf.org/documents/GFD.90.pdf">OGF GFD.90</a>
-              SAGA (<i>A Simple API for Grid Applications</i>) specification.
+            <p><i>saga-python</i> provides a Python API that is compliant with 
+              the <a href="www.ogf.org/documents/GFD.90.pdf">OGF GFD.90</a>
+              SAGA (<i>Simple API for Grid Applications</i>) specification.
               SAGA defines high-level access 
               mechanisms for distributed infrastructure components like 
               job schedulers, file transfer and resource provisioning services. 
             </p>
 
             <p>
-              Behind the API façade, saga-python provides a flexible plug-in or 
-              <i>adaptor</i> architecture. Adaptors are self-contained modules
-              that interface the API with specific 
+              Behind the API façade, saga-python provides a flexible  
+              <i>adaptor</i> architecture. Adaptors are dynamically loadable modules
+              that interface the API with different 
               middleware systems and services. Most application developers use 
               the adaptors that are already part of saga-python, but you can
               easily implement your own in case your backend system is not supported yet.
             </p>
 
             <p>
-              saga-python's main focus is on ease of use and simple 
+              saga-python's main focus is ease of use and simple 
               user-space deployment in heterogeneous distributed computing 
-              environments and it supports a wide range of application use-cases. 
+              environments. It supports a wide range of application use-cases
+              from simple, uncoupled tasks to complex workflows. 
               saga-python is being used on many distributed 
               cyberinfrastructures, including <a href="">XSEDE</a>, 
-              <a href="">OSG</a> and <a href="">FutureGrid</a> where it is 
-              being used to marshal <i>tens of thousands</i> of cores and to
-              move <i>gigabytes</i> of data in production science environments.
+              <a href="">OSG</a> and <a href="">FutureGrid</a> where it  
+              marshals <i>tens of thousands</i> of cores and 
+              moves <i>terabytes</i> of data in production science applications.
             </p>
       </div>
 
