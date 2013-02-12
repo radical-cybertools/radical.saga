@@ -457,10 +457,9 @@ class Engine(sconf.Configurable):
                     if ( info['adaptor_name'] == adaptor_name ) :
                         return info['adaptor_instance']
 
-            error_msg = "No adaptor named '%s' found" % adaptor_name
-            self._logger.error(error_msg)
-            raise se.NoSuccess(error_msg)
-
+        error_msg = "No adaptor named '%s' found" % adaptor_name
+        self._logger.error(error_msg)
+        raise se.NoSuccess(error_msg)
 
 
     #-----------------------------------------------------------------

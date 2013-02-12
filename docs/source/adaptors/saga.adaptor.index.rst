@@ -12,6 +12,4 @@ Adaptors:
    saga.adaptor.userpass
    saga.adaptor.filesystem.local
    saga.adaptor.ssh_job
-   saga.adaptor.replica.irods
-
 
