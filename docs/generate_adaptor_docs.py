@@ -33,7 +33,13 @@ i.write ("\n")
 
 for a in saga.engine.registry.adaptor_registry :
 
-    m  = __import__ (a, fromlist=['Adaptor'])
+    m = None
+    try :
+        m  = __import__ (a, fromlist=['Adaptor'])
+    except Exception as e:
+        print "import from %s failed: %s" % (a, e)
+        continue
+
     n  = m._ADAPTOR_NAME
     fn = "%s/%s.rst" % (DOCROOT, n)
     print "create %s" % fn
