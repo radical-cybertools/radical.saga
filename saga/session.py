@@ -28,13 +28,14 @@ class _DefaultSession (object) :
             self._logger.warn ("no context adaptors found")
             return
 
+        ctx_adaptors = list()
         for schema in   self._engine._adaptor_registry['saga.Context'] :
-            for info in self._engine._adaptor_registry['saga.Context'][schema] :
-                self._logger.debug ("pulling defaults for context adaptors : %s [%s]"
-                               % (info['adaptor_name'], schema))
+            for info in self._engine._adaptor_registry['saga.Context'][schema]:
+                ctx_adaptors.append(info['adaptor_name'])
+                self._contexts += info['adaptor_instance']._get_default_contexts()
 
-                self._contexts += info['adaptor_instance']._get_default_contexts ()
-
+        self._logger.debug ("Adding defaults for context adaptors: %s " \
+                       % ctx_adaptors)
 
 
 class Session (saga.base.SimpleBase) :
