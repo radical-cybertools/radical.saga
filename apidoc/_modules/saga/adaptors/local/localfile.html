@@ -1,0 +1,640 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>saga.adaptors.local.localfile &mdash; SAGA 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 1.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="saga" href="../../../saga.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for saga.adaptors.local.localfile</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot; Local filesystem adaptor implementation &quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pprint</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="kn">import</span> <span class="nn">saga.url</span>
+<span class="kn">import</span> <span class="nn">saga.adaptors.cpi.base</span>
+<span class="kn">import</span> <span class="nn">saga.adaptors.cpi.filesystem</span>
+
+<span class="kn">import</span> <span class="nn">saga.utils.misc</span>
+
+<span class="n">SYNC_CALL</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">decorators</span><span class="o">.</span><span class="n">SYNC_CALL</span>
+<span class="n">ASYNC_CALL</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">decorators</span><span class="o">.</span><span class="n">ASYNC_CALL</span>
+
+
+<span class="c">###############################################################################</span>
+<span class="c"># adaptor info</span>
+<span class="c">#</span>
+
+<span class="n">_ADAPTOR_NAME</span>          <span class="o">=</span> <span class="s">&#39;saga.adaptor.filesystem.local&#39;</span>
+<span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&#39;file&#39;</span><span class="p">,</span> <span class="s">&#39;local&#39;</span><span class="p">]</span>
+<span class="n">_ADAPTOR_OPTIONS</span>       <span class="o">=</span> <span class="p">[]</span>
+<span class="n">_ADAPTOR_CAPABILITIES</span>  <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">_ADAPTOR_DOC</span>           <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;name&#39;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&#39;cfg_options&#39;</span>      <span class="p">:</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">,</span> 
+    <span class="s">&#39;capabilities&#39;</span>     <span class="p">:</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
+    <span class="s">&#39;description&#39;</span>      <span class="p">:</span> <span class="s">&#39;The local filesystem adaptor.&#39;</span><span class="p">,</span>
+    <span class="s">&#39;details&#39;</span>          <span class="p">:</span> <span class="s">&quot;&quot;&quot;This adaptor interacts with local filesystem, by</span>
+<span class="s">                            using the (POSIX like) os and shutil Python packages.&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&#39;schemas&#39;</span>          <span class="p">:</span> <span class="p">{</span><span class="s">&#39;file&#39;</span>  <span class="p">:</span> <span class="s">&#39;local filesystem.&#39;</span><span class="p">,</span> 
+                          <span class="s">&#39;local&#39;</span> <span class="p">:</span> <span class="s">&#39;alias for *file*&#39;</span> 
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="n">_ADAPTOR_INFO</span>          <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;name&#39;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&#39;version&#39;</span>          <span class="p">:</span> <span class="s">&#39;v0.2&#39;</span><span class="p">,</span>
+    <span class="s">&#39;schemas&#39;</span>          <span class="p">:</span> <span class="n">_ADAPTOR_SCHEMAS</span><span class="p">,</span>
+    <span class="s">&#39;cpis&#39;</span>             <span class="p">:</span> <span class="p">[{</span>
+        <span class="s">&#39;type&#39;</span>         <span class="p">:</span> <span class="s">&#39;saga.filesystem.Directory&#39;</span><span class="p">,</span>
+        <span class="s">&#39;class&#39;</span>        <span class="p">:</span> <span class="s">&#39;LocalDirectory&#39;</span>
+        <span class="p">},</span> 
+        <span class="p">{</span>
+        <span class="s">&#39;type&#39;</span>         <span class="p">:</span> <span class="s">&#39;saga.filesystem.File&#39;</span><span class="p">,</span>
+        <span class="s">&#39;class&#39;</span>        <span class="p">:</span> <span class="s">&#39;LocalFile&#39;</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+
+<span class="c">###############################################################################</span>
+<span class="c"># The adaptor class</span>
+
+<span class="k">class</span> <span class="nc">Adaptor</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AdaptorBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">    This is the actual adaptor class, which gets loaded by SAGA (i.e. by the</span>
+<span class="sd">    SAGA engine), and which registers the CPI implementation classes which</span>
+<span class="sd">    provide the adaptor&#39;s functionality.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AdaptorBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_ADAPTOR_INFO</span><span class="p">,</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">)</span>
+
+        <span class="c"># the adaptor *singleton* creates a (single) instance of a bulk handler</span>
+        <span class="c"># (BulkDirectory), which implements container_* bulk methods.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bulk</span> <span class="o">=</span> <span class="n">BulkDirectory</span> <span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="nf">sanity_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="c"># nothing to check for, local file system should always be accessible</span>
+        <span class="k">pass</span>
+
+
+
+
+<span class="c">###############################################################################</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">BulkDirectory</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">)</span> <span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Well, this implementation can handle bulks, but cannot optimize them.</span>
+<span class="sd">    We leave that code here anyway, for demonstration -- but those methods</span>
+<span class="sd">    are also provided as fallback, and are thusly used if the adaptor does</span>
+<span class="sd">    not implement the bulk container_* methods at all.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span> 
+        <span class="k">pass</span>
+
+
+    <span class="k">def</span> <span class="nf">container_wait</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span> <span class="p">:</span>
+      <span class="c"># print &quot; ~ bulk wait ~~~~~~~~~~~~~~~~~~~~~ &quot;</span>
+      <span class="c"># pprint.pprint (tasks)</span>
+        <span class="k">if</span> <span class="n">timeout</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle timeouts &gt; 0&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tasks</span> <span class="p">:</span>
+            <span class="n">task</span><span class="o">.</span><span class="n">wait</span> <span class="p">()</span>
+      <span class="c"># print &quot; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ &quot;</span>
+
+
+    <span class="k">def</span> <span class="nf">container_cancel</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tasks</span><span class="p">)</span> <span class="p">:</span>
+      <span class="c"># print &quot; ~ bulk wait ~~~~~~~~~~~~~~~~~~~~~ &quot;</span>
+      <span class="c"># pprint.pprint (tasks)</span>
+        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tasks</span> <span class="p">:</span>
+            <span class="n">task</span><span class="o">.</span><span class="n">cancel</span> <span class="p">()</span>
+      <span class="c"># print &quot; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ &quot;</span>
+
+
+    <span class="k">def</span> <span class="nf">container_copy</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tasks</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A *good* implementation would dig the file copy operations from the</span>
+<span class="sd">        tasks, and run them in a bulk -- we can&#39;t do that, so simply *run* the</span>
+<span class="sd">        individual tasks, falling back to the default non-bulk asynchronous copy</span>
+<span class="sd">        operation...</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+      <span class="c"># print &quot; ~ bulk copy ~~~~~~~~~~~~~~~~~~~~~ &quot;</span>
+      <span class="c"># pprint.pprint (tasks)</span>
+        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tasks</span> <span class="p">:</span>
+            <span class="n">task</span><span class="o">.</span><span class="n">run</span> <span class="p">()</span>
+      <span class="c"># print &quot; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ &quot;</span>
+
+
+    <span class="c"># the container methods for the other calls are obviously similar, and left</span>
+    <span class="c"># out here.  The :class:`saga.task.Container` implementation will fall back</span>
+    <span class="c"># to the non-bulk async calls for all then.</span>
+
+
+
+<span class="c">###############################################################################</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">LocalDirectory</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalDirectory"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalDirectory">[docs]</a>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span>  <span class="p">(</span><span class="n">LocalDirectory</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+
+
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalDirectory.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalDirectory.init_instance">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>       <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>     <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>   <span class="o">=</span> <span class="n">session</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_container</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">_bulk</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_check</span> <span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
+
+
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalDirectory.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalDirectory.init_instance_async">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
+        
+        <span class="n">c</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;url&#39;</span>     <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">,</span> 
+              <span class="s">&#39;flags&#39;</span>   <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span><span class="p">,</span>
+              <span class="s">&#39;session&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;init_instance&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_init_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+
+        <span class="n">url</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span> 
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (not local)&quot;</span>     <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">port</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has port)&quot;</span>      <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">fragment</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has fragment)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">query</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has query)&quot;</span>     <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">username</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has username)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">password</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has password)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">path</span>       <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">path</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE</span> <span class="o">&amp;</span> <span class="n">flags</span> <span class="p">:</span>
+                <span class="k">if</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="o">&amp;</span> <span class="n">flags</span> <span class="p">:</span>
+                    <span class="k">try</span> <span class="p">:</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not &#39;mkdir -p </span><span class="si">%s</span><span class="s">&#39;: </span><span class="si">%s</span><span class="s">)&quot;</span>  \
+                                                        <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+                <span class="k">else</span> <span class="p">:</span>
+                    <span class="k">try</span> <span class="p">:</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not &#39;mkdir </span><span class="si">%s</span><span class="s">&#39;: </span><span class="si">%s</span><span class="s">)&quot;</span>  \
+                                                        <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+            <span class="k">else</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (directory does not exist)&quot;</span>  \
+                                                   <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (is not a directory)&quot;</span>  \
+                                               <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+        
+
+
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalDirectory.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalDirectory.get_url">[docs]</a>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+
+
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">open</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalDirectory.open"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalDirectory.open">[docs]</a>
+      <span class="c"># print &quot;sync open: - &#39;%s&#39; - &#39;%s&#39; - &quot;  %  (url, flags)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">host</span> <span class="p">:</span> 
+            <span class="n">url</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span> <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">)</span>
+
+
+    <span class="c"># # the async call implementation works, in pair with task_run.  As it is</span>
+    <span class="c"># disabled though, the threaded async fallback from the cpi layer will be</span>
+    <span class="c"># used.</span>
+    <span class="c"># @ASYNC_CALL</span>
+    <span class="c"># def open_async (self, url, flags, ttype) :</span>
+    <span class="c">#</span>
+    <span class="c">#     c = { &#39;url&#39;     : url,</span>
+    <span class="c">#             &#39;flags&#39;   : flags}</span>
+    <span class="c">#</span>
+    <span class="c">#     return saga.task.Task (self, &#39;open&#39;, c, ttype)</span>
+
+
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">copy</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalDirectory.copy"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalDirectory.copy">[docs]</a>
+        <span class="n">src_url</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="n">src</span>     <span class="o">=</span> <span class="n">src_url</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">tgt_url</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="n">tgt</span>     <span class="o">=</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">path</span>
+
+
+        <span class="k">if</span> <span class="n">src_url</span><span class="o">.</span><span class="n">schema</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">src_url</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (not local)&quot;</span> <span class="o">%</span>  <span class="n">source</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">src_url</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (not local)&quot;</span>     <span class="o">%</span>  <span class="n">source</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">src</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;/&#39;</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">src_url</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">src_url</span><span class="o">.</span><span class="n">host</span> <span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;/&#39;</span> <span class="p">:</span>
+                    <span class="n">src</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">&quot;</span>   <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span>
+
+
+        <span class="k">if</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">schema</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (not local)&quot;</span> <span class="o">%</span>  <span class="n">target</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">tgt_url</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (not local)&quot;</span>     <span class="o">%</span>  <span class="n">target</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">tgt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;/&#39;</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">host</span> <span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;/&#39;</span> <span class="p">:</span>
+                    <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">&quot;</span>   <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+
+
+        <span class="c"># FIXME: eval flags, check for existence, etc.</span>
+
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="p">:</span>
+          <span class="c"># print &quot;sync copy tree %s -&gt; %s&quot; % (src, tgt)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copytree</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+
+        <span class="k">else</span> <span class="p">:</span> 
+          <span class="c"># print &quot;sync copy %s -&gt; %s&quot; % (src, tgt)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+
+
+
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">copy_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalDirectory.copy_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalDirectory.copy_self">[docs]</a>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+
+
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">copy_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalDirectory.copy_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalDirectory.copy_async">[docs]</a>
+      <span class="c"># print &quot;async copy %s -&gt; %s [%s]&quot; % (src, tgt, ttype)</span>
+
+        <span class="n">c</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;src&#39;</span>     <span class="p">:</span> <span class="n">src</span><span class="p">,</span>
+              <span class="s">&#39;tgt&#39;</span>     <span class="p">:</span> <span class="n">tgt</span><span class="p">,</span>
+              <span class="s">&#39;flags&#39;</span>   <span class="p">:</span> <span class="n">flags</span> <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;copy&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">task_wait</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">timout</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="LocalDirectory.task_wait"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalDirectory.task_wait">[docs]</a>        <span class="c"># FIXME: our task_run moves all tasks into DONE state... :-/</span>
+        <span class="k">pass</span>
+
+
+
+    <span class="k">def</span> <span class="nf">task_run</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="LocalDirectory.task_run"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalDirectory.task_run">[docs]</a>        <span class="c"># FIXME: that should be generalized, possibly wrapped into a thread, and</span>
+        <span class="c"># moved to CPI level</span>
+
+        <span class="n">call</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">_method_type</span>
+        <span class="n">c</span>    <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">_method_context</span>
+
+        <span class="k">if</span> <span class="n">call</span> <span class="o">==</span> <span class="s">&#39;copy&#39;</span> <span class="p">:</span>
+            <span class="k">try</span> <span class="p">:</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">copy</span> <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;src&#39;</span><span class="p">],</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;tgt&#39;</span><span class="p">],</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;flags&#39;</span><span class="p">]))</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_state</span>  <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_state</span>     <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">FAILED</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">call</span> <span class="o">==</span> <span class="s">&#39;init_instance&#39;</span> <span class="p">:</span>
+            <span class="k">try</span> <span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">init_instance</span> <span class="p">({},</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;url&#39;</span><span class="p">],</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;flags&#39;</span><span class="p">],</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;session&#39;</span><span class="p">])</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">())</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_state</span>  <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_state</span>     <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">FAILED</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">call</span> <span class="o">==</span> <span class="s">&#39;open&#39;</span> <span class="p">:</span>
+            <span class="k">try</span> <span class="p">:</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">open</span> <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;url&#39;</span><span class="p">],</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;flags&#39;</span><span class="p">]))</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_state</span>  <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_state</span>     <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">FAILED</span><span class="p">)</span>
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotImplemented</span> <span class="p">(</span><span class="s">&quot;Cannot handle </span><span class="si">%s</span><span class="s"> tasks&quot;</span> <span class="o">%</span>  <span class="n">call</span><span class="p">)</span>
+
+
+
+
+<span class="c">######################################################################</span>
+<span class="c">#</span>
+<span class="c"># file adaptor class</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">LocalFile</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span><span class="p">)</span> <span class="p">:</span></div></div>
+<div class="viewcode-block" id="LocalFile"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalFile">[docs]</a>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span>  <span class="p">(</span><span class="n">LocalFile</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_dump</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;url    : </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+        <span class="k">print</span> <span class="s">&quot;flags  : </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>
+        <span class="k">print</span> <span class="s">&quot;session: </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+
+
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalFile.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalFile.init_instance">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_check</span> <span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalFile.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalFile.init_instance_async">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
+
+        <span class="n">c</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;url&#39;</span>     <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">,</span> 
+              <span class="s">&#39;flags&#39;</span>   <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span><span class="p">,</span>
+              <span class="s">&#39;session&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="p">}</span>
+        
+        <span class="n">t</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;init_instance&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span>
+
+        <span class="c"># FIXME: move to task_run...</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_check</span> <span class="p">()</span>
+
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span> <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">))</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_state</span>  <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+
+    <span class="k">def</span> <span class="nf">_init_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+
+        <span class="n">url</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span> 
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (not local)&quot;</span>     <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">port</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has port)&quot;</span>      <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">fragment</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has fragment)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">query</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has query)&quot;</span>     <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">username</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has username)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">password</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (has password)&quot;</span>  <span class="o">%</span>  <span class="n">url</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">path</span>       <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">path</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="p">:</span>
+
+            <span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">filename</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (names directory)&quot;</span>  \
+                                                 <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">dirname</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">if</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="o">&amp;</span> <span class="n">flags</span> <span class="p">:</span>
+                    <span class="k">try</span> <span class="p">:</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not &#39;mkdir -p </span><span class="si">%s</span><span class="s">&#39;: </span><span class="si">%s</span><span class="s">)&quot;</span>  \
+                                                        <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+                <span class="k">else</span> <span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (parent dir does not exist)&quot;</span>  \
+                                                     <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+        
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">if</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE</span> <span class="o">&amp;</span> <span class="n">flags</span> <span class="p">:</span>
+                    <span class="k">try</span> <span class="p">:</span>
+                        <span class="nb">open</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">close</span> <span class="p">()</span> <span class="c"># touch</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not &#39;touch </span><span class="si">%s</span><span class="s">&#39;: </span><span class="si">%s</span><span class="s">)&quot;</span>  \
+                                                        <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+                <span class="k">else</span> <span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (file does not exist)&quot;</span>  \
+                                                     <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span> <span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (is not a file)&quot;</span>  \
+                                               <span class="o">%</span>  <span class="n">path</span><span class="p">)</span>
+
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalFile.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalFile.get_url">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_url_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalFile.get_url_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalFile.get_url_async">[docs]</a>
+        <span class="n">c</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;get_url&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span>
+
+        <span class="c"># FIXME: move to task_run...</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_state</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_size_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalFile.get_size_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalFile.get_size_self">[docs]</a>        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+
+
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_size_self_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalFile.get_size_self_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalFile.get_size_self_async">[docs]</a>
+        <span class="n">c</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;get_size&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span>
+
+        <span class="c"># FIXME: move to task_run...</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">_set_state</span>  <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">t</span>
+
+
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">copy_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="LocalFile.copy_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalFile.copy_self">[docs]</a>
+        <span class="n">tgt_url</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="n">tgt</span>     <span class="o">=</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">src</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span>
+
+        <span class="k">if</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">schema</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (not local)&quot;</span> <span class="o">%</span>  <span class="n">target</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">tgt_url</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle url </span><span class="si">%s</span><span class="s"> (not local)&quot;</span>     <span class="o">%</span>  <span class="n">target</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">tgt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;/&#39;</span> <span class="p">:</span>
+            <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">&quot;</span>   <span class="o">%</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span> <span class="p">(</span><span class="n">src</span><span class="p">),</span> <span class="n">tgt</span><span class="p">)</span>
+
+      <span class="c"># print &quot; copy %s %s&quot; % (self._url, tgt)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">task_run</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="LocalFile.task_run"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.filesystem.local.html#saga.adaptors.local.localfile.LocalFile.task_run">[docs]</a>        <span class="c"># FIXME: that should be generalized, possibly wrapped into a thread, and</span>
+        <span class="c"># moved to CPI level</span>
+
+        <span class="n">call</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">_method_type</span>
+        <span class="n">c</span>    <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">_method_context</span>
+
+        <span class="k">if</span> <span class="n">call</span> <span class="o">==</span> <span class="s">&#39;copy_self&#39;</span> <span class="p">:</span>
+            <span class="k">try</span> <span class="p">:</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">copy_self</span> <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;tgt&#39;</span><span class="p">],</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;flags&#39;</span><span class="p">]))</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_state</span>  <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_state</span>     <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">FAILED</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">call</span> <span class="o">==</span> <span class="s">&#39;get_size&#39;</span> <span class="p">:</span>
+            <span class="k">try</span> <span class="p">:</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_result</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_size_self</span> <span class="p">())</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_state</span>  <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">_set_state</span>     <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">FAILED</span><span class="p">)</span>
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotImplemented</span> <span class="p">(</span><span class="s">&quot;Cannot handle </span><span class="si">%s</span><span class="s"> tasks&quot;</span> <span class="o">%</span>  <span class="n">call</span><span class="p">)</span>
+
+
+<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

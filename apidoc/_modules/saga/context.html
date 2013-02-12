@@ -1,0 +1,198 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>saga.context &mdash; SAGA 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 1.0 documentation" href="../../index.html" />
+    <link rel="up" title="saga" href="../saga.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../saga.html" accesskey="U">saga</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for saga.context</h1><div class="highlight"><pre>
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
+<span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
+<span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
+<span class="kn">from</span>   <span class="nn">saga.constants</span>  <span class="kn">import</span> <span class="o">*</span>
+
+<span class="kn">import</span> <span class="nn">saga</span>
+
+
+<div class="viewcode-block" id="Context"><a class="viewcode-back" href="../../library/context.html#saga.context.Context">[docs]</a><span class="k">class</span> <span class="nc">Context</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">Attributes</span><span class="p">)</span> <span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;A SAGA Context object as defined in GFD.90.</span>
+
+<span class="sd">    A security context is a description of a security token.  It is important to</span>
+<span class="sd">    understand that, in general, a context really just *describes* a token, but</span>
+<span class="sd">    that a context *is not* a token (*). For example, a context may point to</span>
+<span class="sd">    a X509 certificate -- but it will in general not hold the certificate</span>
+<span class="sd">    contents.</span>
+
+<span class="sd">    Context classes are used to inform the backends used by Bliss on what</span>
+<span class="sd">    security tokens are expected to be used.  By default, Bliss will be able to</span>
+<span class="sd">    pick up such tokens from their default location, but in some cases it might</span>
+<span class="sd">    be necessary to explicitly point to them - then use a L{Session} with</span>
+<span class="sd">    context instances to do so.</span>
+
+<span class="sd">    The usage example for contexts is below::</span>
+
+<span class="sd">        # define an ssh context</span>
+<span class="sd">        c = saga.Context()</span>
+<span class="sd">        c.context_type = &#39;ssh&#39;</span>
+<span class="sd">        c.user_cert = &#39;$HOME/.ssh/special_id_rsa&#39;</span>
+<span class="sd">        c.user_key = &#39;$HOME/.ssh/special_id_rsa.pub&#39;</span>
+
+<span class="sd">        # add the context to a session</span>
+<span class="sd">        s = saga.Session()</span>
+<span class="sd">        s.contexts.append(c)</span>
+
+<span class="sd">        # create a job service in this session -- that job service can now</span>
+<span class="sd">        # *only* use that ssh context. </span>
+<span class="sd">        j = saga.job.Service(&#39;ssh://remote.host.net/&#39;, s)</span>
+
+
+<span class="sd">    The L{Session} argument to the L{job.Service} constructor is fully optional</span>
+<span class="sd">    -- if left out, Bliss will use default session, which picks up some default</span>
+<span class="sd">    contexts as described above -- that will suffice for the majority of use</span>
+<span class="sd">    cases.</span>
+
+<span class="sd">    ----</span>
+
+<span class="sd">    (*) The only exception to this rule is the &#39;UserPass&#39; key, which is used to</span>
+<span class="sd">    hold plain-text passwords.  Use this key with care -- it is not good</span>
+<span class="sd">    practice to hard-code passwords in the code base, or in config files.</span>
+<span class="sd">    Also, be aware that the password may show up in log files, when debugging or</span>
+<span class="sd">    analyzing your application.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_adaptor</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_adaptor_state</span><span class="o">=</span><span class="p">{})</span> <span class="p">:</span> 
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        type: string</span>
+<span class="sd">        ret:  None</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="kn">import</span> <span class="nn">saga.attributes</span> <span class="kn">as</span> <span class="nn">sa</span>
+
+        <span class="n">saga</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">_adaptor</span><span class="p">,</span> <span class="n">_adaptor_state</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">ttype</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+
+        <span class="c"># set attribute interface properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_extensible</span>  <span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_camelcasing</span> <span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="c"># register properties with the attribute interface</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">TYPE</span><span class="p">,</span>            <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">SERVER</span><span class="p">,</span>          <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">CERT_REPOSITORY</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">USER_PROXY</span><span class="p">,</span>      <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">USER_CERT</span><span class="p">,</span>       <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">USER_KEY</span><span class="p">,</span>        <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">USER_ID</span><span class="p">,</span>         <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">USER_PASS</span><span class="p">,</span>       <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">USER_VO</span><span class="p">,</span>         <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">LIFE_TIME</span><span class="p">,</span>       <span class="o">-</span><span class="mi">1</span><span class="p">,</span>   <span class="n">sa</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span>    <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">REMOTE_ID</span><span class="p">,</span>       <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">REMOTE_HOST</span><span class="p">,</span>     <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">REMOTE_PORT</span><span class="p">,</span>     <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">VECTOR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+
+
+    <span class="k">def</span> <span class="nf">_initialize</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        ret:  None</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">_initialize</span> <span class="p">(</span><span class="n">session</span><span class="p">)</span>
+
+
+<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../saga.html" >saga</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,180 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>2. Context Management &mdash; SAGA 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 1.0 documentation" href="../index.html" />
+    <link rel="up" title="2. Library Reference" href="index.html" />
+    <link rel="next" title="3. SAGA Session" href="session.html" />
+    <link rel="prev" title="1. Exception Handling" href="exceptions.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="session.html" title="3. SAGA Session"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="exceptions.html" title="1. Exception Handling"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">2. Library Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="context-management">
+<h1>2. Context Management<a class="headerlink" href="#context-management" title="Permalink to this headline">¶</a></h1>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">Intro to SAGA Contexts handling.</p>
+</div>
+<div class="section" id="module-saga.context">
+<span id="context-saga-context"></span><h2>2.1. Context &#8211; <a class="reference internal" href="#module-saga.context" title="saga.context"><tt class="xref py py-mod docutils literal"><span class="pre">saga.context</span></tt></a><a class="headerlink" href="#module-saga.context" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="saga.context.Context">
+<em class="property">class </em><tt class="descclassname">saga.context.</tt><tt class="descname">Context</tt><big>(</big><em>type=None</em>, <em>_adaptor=None</em>, <em>_adaptor_state={}</em><big>)</big><a class="reference internal" href="../_modules/saga/context.html#Context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.context.Context" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.Base</span></tt>, <a class="reference internal" href="attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a></p>
+<p>A SAGA Context object as defined in GFD.90.</p>
+<p>A security context is a description of a security token.  It is important to
+understand that, in general, a context really just <em>describes</em> a token, but
+that a context <em>is not</em> a token (*). For example, a context may point to
+a X509 certificate &#8211; but it will in general not hold the certificate
+contents.</p>
+<p>Context classes are used to inform the backends used by Bliss on what
+security tokens are expected to be used.  By default, Bliss will be able to
+pick up such tokens from their default location, but in some cases it might
+be necessary to explicitly point to them - then use a L{Session} with
+context instances to do so.</p>
+<p>The usage example for contexts is below:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># define an ssh context</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
+<span class="n">c</span><span class="o">.</span><span class="n">context_type</span> <span class="o">=</span> <span class="s">&#39;ssh&#39;</span>
+<span class="n">c</span><span class="o">.</span><span class="n">user_cert</span> <span class="o">=</span> <span class="s">&#39;$HOME/.ssh/special_id_rsa&#39;</span>
+<span class="n">c</span><span class="o">.</span><span class="n">user_key</span> <span class="o">=</span> <span class="s">&#39;$HOME/.ssh/special_id_rsa.pub&#39;</span>
+
+<span class="c"># add the context to a session</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+<span class="n">s</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+
+<span class="c"># create a job service in this session -- that job service can now</span>
+<span class="c"># *only* use that ssh context. </span>
+<span class="n">j</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&#39;ssh://remote.host.net/&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The L{Session} argument to the L{job.Service} constructor is fully optional
+&#8211; if left out, Bliss will use default session, which picks up some default
+contexts as described above &#8211; that will suffice for the majority of use
+cases.</p>
+<p>(*) The only exception to this rule is the &#8216;UserPass&#8217; key, which is used to
+hold plain-text passwords.  Use this key with care &#8211; it is not good
+practice to hard-code passwords in the code base, or in config files.
+Also, be aware that the password may show up in log files, when debugging or
+analyzing your application.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">2. Context Management</a><ul>
+<li><a class="reference internal" href="#module-saga.context">2.1. Context &#8211; <tt class="docutils literal"><span class="pre">saga.context</span></tt></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="exceptions.html"
+                        title="previous chapter">1. Exception Handling</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="session.html"
+                        title="next chapter">3. SAGA Session</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/library/context.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="session.html" title="3. SAGA Session"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="exceptions.html" title="1. Exception Handling"
+             >previous</a> |</li>
+        <li><a href="../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >2. Library Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

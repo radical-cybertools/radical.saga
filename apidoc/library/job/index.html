@@ -1,0 +1,1717 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>6. Job Management &mdash; SAGA 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 1.0 documentation" href="../../index.html" />
+    <link rel="up" title="2. Library Reference" href="../index.html" />
+    <link rel="next" title="7. File/Directory Management" href="../filesystem/index.html" />
+    <link rel="prev" title="5. Url Handling" href="../url.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../filesystem/index.html" title="7. File/Directory Management"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../url.html" title="5. Url Handling"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">2. Library Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="job-management">
+<span id="job-managemen"></span><h1>6. Job Management<a class="headerlink" href="#job-management" title="Permalink to this headline">¶</a></h1>
+<p>SAGA&#8217;s job management module is central to the API. It
+represents an application/executable running under the management of a resource
+manager. A resrouce manager can be anything from the local machine to a remote
+HPC queing system to grid and cloud computing services.</p>
+<p>The basic usage of the job module is as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># A job.Description object describes the executable/application and its requirements</span>
+<span class="n">job_desc</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
+<span class="n">job_desc</span><span class="o">.</span><span class="n">executable</span>  <span class="o">=</span> <span class="s">&#39;/bin/sleep&#39;</span>
+<span class="n">job_desc</span><span class="o">.</span><span class="n">arguments</span>   <span class="o">=</span> <span class="p">[</span><span class="s">&#39;10&#39;</span><span class="p">]</span>
+<span class="n">job_desc</span><span class="o">.</span><span class="n">output</span>      <span class="o">=</span> <span class="s">&#39;myjob.out&#39;</span>
+<span class="n">job_desc</span><span class="o">.</span><span class="n">error</span>       <span class="o">=</span> <span class="s">&#39;myjob.err&#39;</span>
+
+<span class="c"># A job.Service object represents the resource manager. In this example we use the &#39;local&#39; adaptor to represent the local machine</span>
+<span class="n">service</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&#39;local://localhost&#39;</span><span class="p">)</span>
+
+<span class="c"># A job is created on a service (resource manager) using the job description</span>
+<span class="n">job</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">job_desc</span><span class="p">)</span>
+
+<span class="c"># Run the job and wait for it to finish</span>
+<span class="n">job</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="k">print</span> <span class="s">&quot;Job ID    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span>
+<span class="n">job</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+
+<span class="c"># Get some info about the job</span>
+<span class="k">print</span> <span class="s">&quot;Job State : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+<span class="k">print</span> <span class="s">&quot;Exitcode  : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">exit_code</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">More examples on how to use the SAGA job module can be found in
+the <a class="reference internal" href="examples.html#code-examples-job"><em>Job Module</em></a> section of the
+<a class="reference internal" href="../../examples/index.html#chapter-code-examples"><em>Code Examples</em></a> chapter.</p>
+</div>
+<p>Like all SAGA modules, the job module relies on  middleware adaptors
+to provide bindings to a specific resource manager. Adaptors are implicitly
+selected via the <cite>scheme</cite> part of the URL, e.g., <tt class="docutils literal"><span class="pre">local://</span></tt> in the example
+above selects the <cite>local</cite> job adaptor. The <a class="reference internal" href="#job-service"><em>Job Service &#8211; saga.job.Service</em></a> section explains
+this in more detail.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">A list of available adaptors and supported resource managers can be
+found in the <a class="reference internal" href="../../developers/index.html#chapter-middleware-adaptors"><em>Developer Documentation</em></a> part of this
+documentation.</p>
+</div>
+<p>The rest of this section is structured as follows:</p>
+<div class="contents local topic" id="table-of-contents">
+<p class="topic-title first">Table of Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#job-service-saga-job-service" id="id1">Job Service &#8211; <a class="reference internal" href="#saga.job.Service" title="saga.job.Service"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Service</span></tt></a></a></li>
+<li><a class="reference internal" href="#job-description-saga-job-description" id="id2">Job Description &#8211; <a class="reference internal" href="#saga.job.Description" title="saga.job.Description"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Description</span></tt></a></a></li>
+<li><a class="reference internal" href="#jobs-saga-job-job" id="id3">Jobs &#8211; <a class="reference internal" href="#saga.job.Job" title="saga.job.Job"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Job</span></tt></a></a><ul>
+<li><a class="reference internal" href="#attributes" id="id4">Attributes</a></li>
+<li><a class="reference internal" href="#states" id="id5">States</a></li>
+<li><a class="reference internal" href="#metrics" id="id6">Metrics</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#job-containers-saga-job-container" id="id7">Job Containers &#8211; <a class="reference internal" href="#saga.job.Container" title="saga.job.Container"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Container</span></tt></a></a></li>
+</ul>
+</div>
+<div class="section" id="job-service-saga-job-service">
+<span id="job-service"></span><h2><a class="toc-backref" href="#id1">6.1. Job Service &#8211; <a class="reference internal" href="#saga.job.Service" title="saga.job.Service"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Service</span></tt></a></a><a class="headerlink" href="#job-service-saga-job-service" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">todo:</th><td class="field-body">Describe how to work with services.</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="saga.job.Service">
+<em class="property">class </em><tt class="descclassname">saga.job.</tt><tt class="descname">Service</tt><big>(</big><em>url=None</em>, <em>session=None</em>, <em>_adaptor=None</em>, <em>_adaptor_state={}</em>, <em>_ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.Base</span></tt>, <tt class="xref py py-class docutils literal"><span class="pre">saga.async.Async</span></tt></p>
+<p>The job.Service represents a resource management backend, and as such allows
+the creation, submission and management of jobs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (string or <a class="reference internal" href="../url.html#saga.Url" title="saga.Url"><tt class="xref py py-class docutils literal"><span class="pre">saga.Url</span></tt></a>) &#8211; resource manager URL</li>
+<li><strong>session</strong> (<tt class="xref py py-class docutils literal"><span class="pre">saga.Session</span></tt>) &#8211; an optional session object with security contexts</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#saga.job.Service" title="saga.job.Service"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Service</span></tt></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>A job.Service represents anything which accepts job creation requests, and
+which manages thus created <tt class="xref py py-class docutils literal"><span class="pre">bliss.saga.job.Job</span></tt> instances.  That can be a local shell, 
+a remote ssh shell, a cluster queuing system, a IaaS backend &#8211; you name it.</p>
+<p>The job.Service is identified by an URL, which usually points to the contact
+endpoint for that service.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_job_id</span> <span class="o">=</span> <span class="s">&quot;[fork://localhost]-[12345]&quot;</span>
+<span class="n">js</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+<span class="n">ids</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">my_job_id</span> <span class="ow">in</span> <span class="n">ids</span> <span class="p">:</span>
+  <span class="k">print</span> <span class="s">&quot;found my job again, wohhooo!&quot;</span>
+
+  <span class="n">j</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">get_job</span><span class="p">(</span><span class="n">my_job_id</span><span class="p">)</span>
+
+  <span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span>  <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
+  <span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span>  <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;running&quot;</span>
+  <span class="k">else</span>                                        <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;job is already final!&quot;</span>
+</pre></div>
+</div>
+<dl class="classmethod">
+<dt id="saga.job.Service.create">
+<em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>url=None</em>, <em>session=None</em>, <em>ttype=1</em><big>)</big><a class="headerlink" href="#saga.job.Service.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new job.Service instance asynchronously.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (string or <a class="reference internal" href="../url.html#saga.Url" title="saga.Url"><tt class="xref py py-class docutils literal"><span class="pre">saga.Url</span></tt></a>) &#8211; resource manager URL</li>
+<li><strong>session</strong> (<tt class="xref py py-class docutils literal"><span class="pre">saga.Session</span></tt>) &#8211; an optional session object with security contexts</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><tt class="xref py py-class docutils literal"><span class="pre">saga.Task</span></tt></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Service.create_job">
+<tt class="descname">create_job</tt><big>(</big><em>job_desc</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Service.create_job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new job.Job instance from a <a class="reference internal" href="#saga.job.Description" title="saga.job.Description"><tt class="xref py py-class docutils literal"><span class="pre">Description</span></tt></a>. The
+resulting job instance is in <a class="reference internal" href="#saga.job.NEW" title="saga.job.NEW"><tt class="xref py py-data docutils literal"><span class="pre">NEW</span></tt></a> state.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_desc</strong> (<a class="reference internal" href="#saga.job.Description" title="saga.job.Description"><tt class="xref py py-data docutils literal"><span class="pre">saga.job.Description</span></tt></a>) &#8211; job description to create the job from</li>
+<li><strong>ttype</strong> &#8211; Type of operation. Default (None) is synchronous.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#saga.job.Job" title="saga.job.Job"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Job</span></tt></a> or <tt class="xref py py-class docutils literal"><span class="pre">saga.Task</span></tt> if the operation is asynchronous.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>create_job() accepts a job description, which described the
+application instance to be created by the backend.  The create_job()
+method is not actually attempting to <em>run</em> the job, but merely parses
+the job description for syntactic and semantic consistency.  The job
+returned object is thus not in &#8216;Pending&#8217; or &#8216;Running&#8217;, but rather in
+&#8216;New&#8217; state.  The actual submission is performed by calling run() on
+the job object.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+<span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span> <span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
+<span class="n">j</span>  <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">New</span>      <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;new&quot;</span>
+<span class="k">else</span>                                        <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+
+<span class="n">j</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span>  <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
+<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span>  <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;running&quot;</span>
+<span class="k">else</span>                                        <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Service.run_job">
+<tt class="descname">run_job</tt><big>(</big><em>cmd</em>, <em>host=''</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Service.run_job" title="Permalink to this definition">¶</a></dt>
+<dd><div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">CURRENTLY NOT IMPLEMENTED / SUPPORTED</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Service.list">
+<tt class="descname">list</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Service.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of the jobs that are managed by this Service 
+instance.</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">The <a class="reference internal" href="#saga.job.Service.jobs" title="saga.job.Service.jobs"><tt class="xref py py-data docutils literal"><span class="pre">jobs</span></tt></a> property and the
+<a class="reference internal" href="#saga.job.Service.list" title="saga.job.Service.list"><tt class="xref py py-meth docutils literal"><span class="pre">list()</span></tt></a> method are semantically 
+equivalent.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Ttype :</th><td class="field-body">Type of operation. Default (None) is synchronous.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of <a class="reference internal" href="#saga.job.Job" title="saga.job.Job"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Job</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+<p>As the job.Service represents a job management backend, list() will
+return a list of job IDs for all jobs which are known to the backend,
+and which can potentially be accessed and managed by the application.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+<span class="n">ids</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">my_job_id</span> <span class="ow">in</span> <span class="n">ids</span> <span class="p">:</span>
+  <span class="k">print</span> <span class="s">&quot;found my job again, wohhooo!&quot;</span>
+
+  <span class="n">j</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">get_job</span><span class="p">(</span><span class="n">my_job_id</span><span class="p">)</span>
+
+  <span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span>  <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
+  <span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span>  <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;running&quot;</span>
+  <span class="k">else</span>                                        <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;job is already final!&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Service.jobs">
+<tt class="descname">jobs</tt><a class="headerlink" href="#saga.job.Service.jobs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of the jobs that are managed by this Service 
+instance.</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">The <a class="reference internal" href="#saga.job.Service.jobs" title="saga.job.Service.jobs"><tt class="xref py py-data docutils literal"><span class="pre">jobs</span></tt></a> property and the
+<a class="reference internal" href="#saga.job.Service.list" title="saga.job.Service.list"><tt class="xref py py-meth docutils literal"><span class="pre">list()</span></tt></a> method are semantically 
+equivalent.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Ttype :</th><td class="field-body">Type of operation. Default (None) is synchronous.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of <a class="reference internal" href="#saga.job.Job" title="saga.job.Job"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Job</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+<p>As the job.Service represents a job management backend, list() will
+return a list of job IDs for all jobs which are known to the backend,
+and which can potentially be accessed and managed by the application.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+<span class="n">ids</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">my_job_id</span> <span class="ow">in</span> <span class="n">ids</span> <span class="p">:</span>
+  <span class="k">print</span> <span class="s">&quot;found my job again, wohhooo!&quot;</span>
+
+  <span class="n">j</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">get_job</span><span class="p">(</span><span class="n">my_job_id</span><span class="p">)</span>
+
+  <span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span>  <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
+  <span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span>  <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;running&quot;</span>
+  <span class="k">else</span>                                        <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;job is already final!&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Service.get_url">
+<tt class="descname">get_url</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Service.get_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the URL this Service instance was created with.</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">The <a class="reference internal" href="#saga.job.Service.url" title="saga.job.Service.url"><tt class="xref py py-data docutils literal"><span class="pre">url</span></tt></a> property and the
+<a class="reference internal" href="#saga.job.Service.get_url" title="saga.job.Service.get_url"><tt class="xref py py-meth docutils literal"><span class="pre">get_url()</span></tt></a> method are semantically 
+equivalent and only duplicated for convenience.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Ttype :</th><td class="field-body">Type of operation. Default (None) is synchronous.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">saga.job.Url</span></tt></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Service.url">
+<tt class="descname">url</tt><a class="headerlink" href="#saga.job.Service.url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the URL this Service instance was created with.</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">The <a class="reference internal" href="#saga.job.Service.url" title="saga.job.Service.url"><tt class="xref py py-data docutils literal"><span class="pre">url</span></tt></a> property and the
+<a class="reference internal" href="#saga.job.Service.get_url" title="saga.job.Service.get_url"><tt class="xref py py-meth docutils literal"><span class="pre">get_url()</span></tt></a> method are semantically 
+equivalent and only duplicated for convenience.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Ttype :</th><td class="field-body">Type of operation. Default (None) is synchronous.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">saga.job.Url</span></tt></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Service.get_job">
+<tt class="descname">get_job</tt><big>(</big><em>job_id</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Service.get_job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the job object for a given job id.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>job_id</strong> &#8211; The id of the job to retrieve</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#saga.job.Job" title="saga.job.Job"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Job</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+<p>Job objects are a local representation of a remote stateful entity.
+The job.Service supports to reconnect to those remote entities:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+<span class="n">j</span>  <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">get_job</span><span class="p">(</span><span class="n">my_job_id</span><span class="p">)</span>
+
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span>  <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
+<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span>  <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;running&quot;</span>
+<span class="k">else</span>                                        <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;job is already final!&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="job-description-saga-job-description">
+<h2><a class="toc-backref" href="#id2">6.2. Job Description &#8211; <a class="reference internal" href="#saga.job.Description" title="saga.job.Description"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Description</span></tt></a></a><a class="headerlink" href="#job-description-saga-job-description" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">todo:</th><td class="field-body">Describe how to work with description.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Warning:</strong> There is no guarantee that all middleware adaptors implement all job
+description attributes. In case a specific attribute is not supported, the
+<a class="reference internal" href="#saga.job.Service.create_job" title="saga.job.Service.create_job"><tt class="xref py py-meth docutils literal"><span class="pre">create_job()</span></tt></a> will throw an exception. Please refer to
+the <a class="reference internal" href="../../developers/index.html#chapter-middleware-adaptors"><em>Developer Documentation</em></a> documentation for more details and
+adaptor-specific lists of supported attributes.</p>
+<dl class="class">
+<dt id="saga.job.Description">
+<em class="property">class </em><tt class="descclassname">saga.job.</tt><tt class="descname">Description</tt><a class="headerlink" href="#saga.job.Description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a></p>
+<p>The job description class.</p>
+</dd></dl>
+
+<p>SAGA defines the following constants as valid job description attributes:</p>
+<dl class="data">
+<dt id="saga.job.EXECUTABLE">
+<tt class="descclassname">saga.job.</tt><tt class="descname">EXECUTABLE</tt><em class="property"> = 'Executable'</em><a class="headerlink" href="#saga.job.EXECUTABLE" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.executable">
+<tt class="descclassname">saga.job.</tt><tt class="descname">executable</tt><a class="headerlink" href="#saga.job.executable" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.EXECUTABLE" title="saga.job.EXECUTABLE"><tt class="xref py py-data docutils literal"><span class="pre">EXECUTABLE</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.ARGUMENTS">
+<tt class="descclassname">saga.job.</tt><tt class="descname">ARGUMENTS</tt><em class="property"> = 'Arguments'</em><a class="headerlink" href="#saga.job.ARGUMENTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.arguments">
+<tt class="descclassname">saga.job.</tt><tt class="descname">arguments</tt><a class="headerlink" href="#saga.job.arguments" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.ARGUMENTS" title="saga.job.ARGUMENTS"><tt class="xref py py-data docutils literal"><span class="pre">ARGUMENTS</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">list()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.ENVIRONMENT">
+<tt class="descclassname">saga.job.</tt><tt class="descname">ENVIRONMENT</tt><em class="property"> = 'Environment'</em><a class="headerlink" href="#saga.job.ENVIRONMENT" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.environment">
+<tt class="descclassname">saga.job.</tt><tt class="descname">environment</tt><a class="headerlink" href="#saga.job.environment" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.ENVIRONMENT" title="saga.job.ENVIRONMENT"><tt class="xref py py-data docutils literal"><span class="pre">ENVIRONMENT</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">dict()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.WORKING_DIRECTORY">
+<tt class="descclassname">saga.job.</tt><tt class="descname">WORKING_DIRECTORY</tt><em class="property"> = 'WorkingDirectory'</em><a class="headerlink" href="#saga.job.WORKING_DIRECTORY" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.working_directory">
+<tt class="descclassname">saga.job.</tt><tt class="descname">working_directory</tt><a class="headerlink" href="#saga.job.working_directory" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.WORKING_DIRECTORY" title="saga.job.WORKING_DIRECTORY"><tt class="xref py py-data docutils literal"><span class="pre">WORKING_DIRECTORY</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.FILE_TRANSFER">
+<tt class="descclassname">saga.job.</tt><tt class="descname">FILE_TRANSFER</tt><em class="property"> = 'FileTransfer'</em><a class="headerlink" href="#saga.job.FILE_TRANSFER" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.file_transfer">
+<tt class="descclassname">saga.job.</tt><tt class="descname">file_transfer</tt><a class="headerlink" href="#saga.job.file_transfer" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.FILE_TRANSFER" title="saga.job.FILE_TRANSFER"><tt class="xref py py-data docutils literal"><span class="pre">FILE_TRANSFER</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">list()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.INPUT">
+<tt class="descclassname">saga.job.</tt><tt class="descname">INPUT</tt><em class="property"> = 'Input'</em><a class="headerlink" href="#saga.job.INPUT" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.input">
+<tt class="descclassname">saga.job.</tt><tt class="descname">input</tt><a class="headerlink" href="#saga.job.input" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.INPUT" title="saga.job.INPUT"><tt class="xref py py-data docutils literal"><span class="pre">INPUT</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.OUTPUT">
+<tt class="descclassname">saga.job.</tt><tt class="descname">OUTPUT</tt><em class="property"> = 'Output'</em><a class="headerlink" href="#saga.job.OUTPUT" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.output">
+<tt class="descclassname">saga.job.</tt><tt class="descname">output</tt><a class="headerlink" href="#saga.job.output" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.OUTPUT" title="saga.job.OUTPUT"><tt class="xref py py-data docutils literal"><span class="pre">OUTPUT</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.ERROR">
+<tt class="descclassname">saga.job.</tt><tt class="descname">ERROR</tt><em class="property"> = 'Error'</em><a class="headerlink" href="#saga.job.ERROR" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.error">
+<tt class="descclassname">saga.job.</tt><tt class="descname">error</tt><a class="headerlink" href="#saga.job.error" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.ERROR" title="saga.job.ERROR"><tt class="xref py py-data docutils literal"><span class="pre">ERROR</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.QUEUE">
+<tt class="descclassname">saga.job.</tt><tt class="descname">QUEUE</tt><em class="property"> = 'Queue'</em><a class="headerlink" href="#saga.job.QUEUE" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.queue">
+<tt class="descclassname">saga.job.</tt><tt class="descname">queue</tt><a class="headerlink" href="#saga.job.queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.QUEUE" title="saga.job.QUEUE"><tt class="xref py py-data docutils literal"><span class="pre">QUEUE</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.PROJECT">
+<tt class="descclassname">saga.job.</tt><tt class="descname">PROJECT</tt><em class="property"> = 'Project'</em><a class="headerlink" href="#saga.job.PROJECT" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.project">
+<tt class="descclassname">saga.job.</tt><tt class="descname">project</tt><a class="headerlink" href="#saga.job.project" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.PROJECT" title="saga.job.PROJECT"><tt class="xref py py-data docutils literal"><span class="pre">PROJECT</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.SPMD_VARIATION">
+<tt class="descclassname">saga.job.</tt><tt class="descname">SPMD_VARIATION</tt><em class="property"> = 'SPMDVariation'</em><a class="headerlink" href="#saga.job.SPMD_VARIATION" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.spmd_variation">
+<tt class="descclassname">saga.job.</tt><tt class="descname">spmd_variation</tt><a class="headerlink" href="#saga.job.spmd_variation" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.SPMD_VARIATION" title="saga.job.SPMD_VARIATION"><tt class="xref py py-data docutils literal"><span class="pre">SPMD_VARIATION</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Valid Options:</th><td class="field-body">Single (default), MPI or OpenMP</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.TOTAL_CPU_COUNT">
+<tt class="descclassname">saga.job.</tt><tt class="descname">TOTAL_CPU_COUNT</tt><em class="property"> = 'TotalCPUCount'</em><a class="headerlink" href="#saga.job.TOTAL_CPU_COUNT" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.total_cpu_count">
+<tt class="descclassname">saga.job.</tt><tt class="descname">total_cpu_count</tt><a class="headerlink" href="#saga.job.total_cpu_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.TOTAL_CPU_COUNT" title="saga.job.TOTAL_CPU_COUNT"><tt class="xref py py-data docutils literal"><span class="pre">TOTAL_CPU_COUNT</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">int() or str()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.NUMBER_OF_PROCESSES">
+<tt class="descclassname">saga.job.</tt><tt class="descname">NUMBER_OF_PROCESSES</tt><em class="property"> = 'NumberOfProcesses'</em><a class="headerlink" href="#saga.job.NUMBER_OF_PROCESSES" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.number_of_processes">
+<tt class="descclassname">saga.job.</tt><tt class="descname">number_of_processes</tt><a class="headerlink" href="#saga.job.number_of_processes" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.NUMBER_OF_PROCESSES" title="saga.job.NUMBER_OF_PROCESSES"><tt class="xref py py-data docutils literal"><span class="pre">NUMBER_OF_PROCESSES</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">int() or str()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.PROCESSES_PER_HOST">
+<tt class="descclassname">saga.job.</tt><tt class="descname">PROCESSES_PER_HOST</tt><em class="property"> = 'ProcessesPerHost'</em><a class="headerlink" href="#saga.job.PROCESSES_PER_HOST" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.processes_per_host">
+<tt class="descclassname">saga.job.</tt><tt class="descname">processes_per_host</tt><a class="headerlink" href="#saga.job.processes_per_host" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.PROCESSES_PER_HOST" title="saga.job.PROCESSES_PER_HOST"><tt class="xref py py-data docutils literal"><span class="pre">PROCESSES_PER_HOST</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">int() or str()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.THREADS_PER_PROCESS">
+<tt class="descclassname">saga.job.</tt><tt class="descname">THREADS_PER_PROCESS</tt><em class="property"> = 'ThreadsPerProcess'</em><a class="headerlink" href="#saga.job.THREADS_PER_PROCESS" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.threads_per_process">
+<tt class="descclassname">saga.job.</tt><tt class="descname">threads_per_process</tt><a class="headerlink" href="#saga.job.threads_per_process" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.THREADS_PER_PROCESS" title="saga.job.THREADS_PER_PROCESS"><tt class="xref py py-data docutils literal"><span class="pre">THREADS_PER_PROCESS</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">int() or str()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<p># NOT IMPLEMENTED.. autodata:: INTERACTIVE</p>
+<dl class="data">
+<dt id="saga.job.CLEANUP">
+<tt class="descclassname">saga.job.</tt><tt class="descname">CLEANUP</tt><em class="property"> = 'Cleanup'</em><a class="headerlink" href="#saga.job.CLEANUP" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.cleanup">
+<tt class="descclassname">saga.job.</tt><tt class="descname">cleanup</tt><a class="headerlink" href="#saga.job.cleanup" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.CLEANUP" title="saga.job.CLEANUP"><tt class="xref py py-data docutils literal"><span class="pre">CLEANUP</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">bool()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.JOB_START_TIME">
+<tt class="descclassname">saga.job.</tt><tt class="descname">JOB_START_TIME</tt><em class="property"> = 'JobStartTime'</em><a class="headerlink" href="#saga.job.JOB_START_TIME" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.job_start_time">
+<tt class="descclassname">saga.job.</tt><tt class="descname">job_start_time</tt><a class="headerlink" href="#saga.job.job_start_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.JOB_START_TIME" title="saga.job.JOB_START_TIME"><tt class="xref py py-data docutils literal"><span class="pre">JOB_START_TIME</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">UNIX timestamp</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.WALL_TIME_LIMIT">
+<tt class="descclassname">saga.job.</tt><tt class="descname">WALL_TIME_LIMIT</tt><em class="property"> = 'WallTimeLimit'</em><a class="headerlink" href="#saga.job.WALL_TIME_LIMIT" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.wall_time_limit">
+<tt class="descclassname">saga.job.</tt><tt class="descname">wall_time_limit</tt><a class="headerlink" href="#saga.job.wall_time_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.WALL_TIME_LIMIT" title="saga.job.WALL_TIME_LIMIT"><tt class="xref py py-data docutils literal"><span class="pre">WALL_TIME_LIMIT</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.TOTAL_PHYSICAL_MEMORY">
+<tt class="descclassname">saga.job.</tt><tt class="descname">TOTAL_PHYSICAL_MEMORY</tt><em class="property"> = 'TotalPhysicalMemory'</em><a class="headerlink" href="#saga.job.TOTAL_PHYSICAL_MEMORY" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.total_physical_memory">
+<tt class="descclassname">saga.job.</tt><tt class="descname">total_physical_memory</tt><a class="headerlink" href="#saga.job.total_physical_memory" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.TOTAL_PHYSICAL_MEMORY" title="saga.job.TOTAL_PHYSICAL_MEMORY"><tt class="xref py py-data docutils literal"><span class="pre">TOTAL_PHYSICAL_MEMORY</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.CPU_ARCHITECTURE">
+<tt class="descclassname">saga.job.</tt><tt class="descname">CPU_ARCHITECTURE</tt><em class="property"> = 'CPUArchitecture'</em><a class="headerlink" href="#saga.job.CPU_ARCHITECTURE" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.cpu_architecture">
+<tt class="descclassname">saga.job.</tt><tt class="descname">cpu_architecture</tt><a class="headerlink" href="#saga.job.cpu_architecture" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.CPU_ARCHITECTURE" title="saga.job.CPU_ARCHITECTURE"><tt class="xref py py-data docutils literal"><span class="pre">CPU_ARCHITECTURE</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.OPERATING_SYSTEM_TYPE">
+<tt class="descclassname">saga.job.</tt><tt class="descname">OPERATING_SYSTEM_TYPE</tt><em class="property"> = 'OperatingSystemType'</em><a class="headerlink" href="#saga.job.OPERATING_SYSTEM_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.operating_system_type">
+<tt class="descclassname">saga.job.</tt><tt class="descname">operating_system_type</tt><a class="headerlink" href="#saga.job.operating_system_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <tt class="xref py py-data docutils literal"><span class="pre">OPERATIN_SYSTEM_TYPE</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.CANDIDATE_HOSTS">
+<tt class="descclassname">saga.job.</tt><tt class="descname">CANDIDATE_HOSTS</tt><em class="property"> = 'CandidateHosts'</em><a class="headerlink" href="#saga.job.CANDIDATE_HOSTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.candidate_hosts">
+<tt class="descclassname">saga.job.</tt><tt class="descname">candidate_hosts</tt><a class="headerlink" href="#saga.job.candidate_hosts" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.CANDIDATE_HOSTS" title="saga.job.CANDIDATE_HOSTS"><tt class="xref py py-data docutils literal"><span class="pre">CANDIDATE_HOSTS</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.JOB_CONTACT">
+<tt class="descclassname">saga.job.</tt><tt class="descname">JOB_CONTACT</tt><em class="property"> = 'JobContact'</em><a class="headerlink" href="#saga.job.JOB_CONTACT" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.job_contact">
+<tt class="descclassname">saga.job.</tt><tt class="descname">job_contact</tt><a class="headerlink" href="#saga.job.job_contact" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.JOB_CONTACT" title="saga.job.JOB_CONTACT"><tt class="xref py py-data docutils literal"><span class="pre">JOB_CONTACT</span></tt></a>.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="jobs-saga-job-job">
+<span id="job-job"></span><h2><a class="toc-backref" href="#id3">6.3. Jobs &#8211; <a class="reference internal" href="#saga.job.Job" title="saga.job.Job"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Job</span></tt></a></a><a class="headerlink" href="#jobs-saga-job-job" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">todo:</th><td class="field-body">Describe how to work with jobs.</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="saga.job.Job">
+<em class="property">class </em><tt class="descclassname">saga.job.</tt><tt class="descname">Job</tt><big>(</big><em>_method_type='run'</em>, <em>_adaptor=None</em>, <em>_adaptor_state={}</em>, <em>_ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.Base</span></tt>, <a class="reference internal" href="../attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a>, <tt class="xref py py-class docutils literal"><span class="pre">saga.async.Async</span></tt></p>
+<p>Represents a SAGA job as defined in GFD.90</p>
+<p>A &#8216;Job&#8217; represents a running application instance, which may consist of one
+or more processes.  Jobs are created by submitting a Job description to
+a Job submission system &#8211; usually a queuing system, or some other service
+which spawns jobs on the user&#8217;s behalf.</p>
+<p>Jobs have a unique ID (see get_job_id()), and are stateful entities &#8211; their
+&#8216;state&#8217; attribute changes according to a well defined state model:</p>
+<p>A job as returned by job.Service.create(jd) is in &#8216;New&#8217; state &#8211; it is not
+yet submitted to the job submission backend.  Once it was submitted, via
+run(), it will enter the &#8216;Pending&#8217; state, where it waits to get actually
+executed by the backend (e.g. waiting in a queue etc).  Once the job is
+actually executed, it enters the &#8216;Running&#8217; state &#8211; only in that state is
+the job actually consuming resources (CPU, memory, ...).</p>
+<p>Jobs can leave the &#8216;Running&#8217; state in three different ways: they finish
+successfully on their own (&#8216;Done&#8217;), they finish unsuccessfully on their own,
+or get canceled by the job management backend (&#8216;Failed&#8217;), or they get
+actively canceled by the user or the application (&#8216;Canceled&#8217;).</p>
+<p>The methods defined on the Job object serve two purposes: inspecting the
+job&#8217;s state, and initiating job state transitions.</p>
+<dl class="method">
+<dt id="saga.job.Job.get_id">
+<tt class="descname">get_id</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:     saga.task.type enum
+ret:       String / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.get_description">
+<tt class="descname">get_description</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_description" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:     saga.task.type enum
+ret:       saga.job.Description / saga.Task</p>
+<p>Return the job description this job was created from.</p>
+<p>The returned description can be used to inspect job properties
+(executable name, arguments, etc.).  It can also be used to start
+identical job instances.</p>
+<p>The returned job description will in general reflect the actual state of
+the running job, and is not necessarily a simple copy of the job
+description which was used to create the job instance.  For example, the
+environment variables in the returned job description may reflect the
+actual environment of the running job instance.</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+<span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span> <span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
+
+<span class="n">j1</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+<span class="n">j1</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="n">j2</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">j1</span><span class="o">.</span><span class="n">get_description</span><span class="p">())</span>
+<span class="n">j2</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.get_stdin">
+<tt class="descname">get_stdin</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_stdin" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:     saga.task.type enum
+ret:       os.File / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.get_stdout">
+<tt class="descname">get_stdout</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_stdout" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:     saga.task.type enum
+ret:       os.File / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.get_stderr">
+<tt class="descname">get_stderr</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_stderr" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:     saga.task.type enum
+ret:       os.File / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.suspend">
+<tt class="descname">suspend</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.suspend" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:     saga.task.type enum
+ret:       None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.resume">
+<tt class="descname">resume</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.resume" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:     saga.task.type enum
+ret:       None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.checkpoint">
+<tt class="descname">checkpoint</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.checkpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:     saga.task.type enum
+ret:       None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.migrate">
+<tt class="descname">migrate</tt><big>(</big><em>jd</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.migrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>jd:        saga.job.Description  
+ttype:     saga.task.type enum
+ret:       None / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.signal">
+<tt class="descname">signal</tt><big>(</big><em>signum</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>signum:    int
+ttype:     saga.task.type enum
+ret:       None / saga.Task</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Job.description">
+<tt class="descname">description</tt><a class="headerlink" href="#saga.job.Job.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:     saga.task.type enum
+ret:       saga.job.Description / saga.Task</p>
+<p>Return the job description this job was created from.</p>
+<p>The returned description can be used to inspect job properties
+(executable name, arguments, etc.).  It can also be used to start
+identical job instances.</p>
+<p>The returned job description will in general reflect the actual state of
+the running job, and is not necessarily a simple copy of the job
+description which was used to create the job instance.  For example, the
+environment variables in the returned job description may reflect the
+actual environment of the running job instance.</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+<span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span> <span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
+
+<span class="n">j1</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+<span class="n">j1</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="n">j2</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">j1</span><span class="o">.</span><span class="n">get_description</span><span class="p">())</span>
+<span class="n">j2</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Job.stdin">
+<tt class="descname">stdin</tt><a class="headerlink" href="#saga.job.Job.stdin" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:     saga.task.type enum
+ret:       os.File / saga.Task</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Job.stdout">
+<tt class="descname">stdout</tt><a class="headerlink" href="#saga.job.Job.stdout" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:     saga.task.type enum
+ret:       os.File / saga.Task</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Job.stderr">
+<tt class="descname">stderr</tt><a class="headerlink" href="#saga.job.Job.stderr" title="Permalink to this definition">¶</a></dt>
+<dd><p>ttype:     saga.task.type enum
+ret:       os.File / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.run">
+<tt class="descname">run</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>ret:        None</p>
+<p>Execute the job via the associated job service.</p>
+<p>Request that the job is being executed by the backend.  If the backend
+is accepting this run request, the job will move to the &#8216;Pending&#8217; or
+&#8216;Running&#8217; state &#8211; otherwise this method will raise an error, and the
+job will be moved to &#8216;Failed&#8217;.</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+<span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span> <span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
+<span class="n">j</span>  <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">New</span> <span class="p">:</span> 
+    <span class="k">print</span> <span class="s">&quot;new&quot;</span>
+<span class="k">else</span> <span class="p">:</span> 
+    <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+
+<span class="n">j</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
+<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;running&quot;</span>
+<span class="k">else</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.cancel">
+<tt class="descname">cancel</tt><big>(</big><em>timeout=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>timeout:    float
+ret:        None</p>
+<p>Cancel the execution of the job.</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+<span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span> <span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
+<span class="n">j</span>  <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">New</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;new&quot;</span>
+<span class="k">else</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+
+<span class="n">j</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span>  <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
+<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;running&quot;</span>
+<span class="k">else</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+
+<span class="n">j</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Canceled</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;canceled&quot;</span>
+<span class="k">else</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.wait">
+<tt class="descname">wait</tt><big>(</big><em>timeout=-1</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>timeout:    float 
+ret:        None</p>
+<p>Wait for a running job to finish execution.</p>
+<p>The optional timeout parameter specifies the time to wait, and accepts
+the following values:</p>
+<div class="highlight-python"><pre>timeout &lt;  0  : wait forever (block)
+timeout == 0  : wait not at all (non-blocking test)
+timeout &gt;  0  : wait for 'timeout' seconds</pre>
+</div>
+<p>On a non-negative timeout, the call can thus return even if the job is
+not in final state, and the application should check the actual job
+state.  The default timeout value is &#8216;-1.0&#8217; (blocking).</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+<span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span> <span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
+<span class="n">j</span>  <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">New</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;new&quot;</span>
+<span class="k">else</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+
+<span class="n">j</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
+<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;running&quot;</span>
+<span class="k">else</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+
+<span class="n">j</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
+
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Done</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;done&quot;</span>
+<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Failed</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;failed&quot;</span>
+<span class="k">else</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.get_state">
+<tt class="descname">get_state</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>ret:        Task/Job state enum</p>
+<p>Return the current state of the job.</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+<span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span> <span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
+<span class="n">j</span>  <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">New</span> <span class="p">:</span> 
+    <span class="k">print</span> <span class="s">&quot;new&quot;</span>
+<span class="k">else</span> <span class="p">:</span> 
+    <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+
+<span class="n">j</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span> <span class="p">:</span> 
+    <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
+<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span> <span class="p">:</span> 
+    <span class="k">print</span> <span class="s">&quot;running&quot;</span>
+<span class="k">else</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.get_result">
+<tt class="descname">get_result</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>ret:        &lt;result type&gt;
+note:       this will always return None for a job.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.get_object">
+<tt class="descname">get_object</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_object" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Todo :</th><td class="field-body">describe me</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Note :</th><td class="field-body">this will return the job_service which created the job.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Job.re_raise">
+<tt class="descname">re_raise</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.job.Job.re_raise" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Todo :</th><td class="field-body">describe me</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Note :</th><td class="field-body">if job failed, that will re-raise an exception describing 
+why, if that exists.  Otherwise, the call does nothing.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Job.state">
+<tt class="descname">state</tt><a class="headerlink" href="#saga.job.Job.state" title="Permalink to this definition">¶</a></dt>
+<dd><p>ret:        Task/Job state enum</p>
+<p>Return the current state of the job.</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+<span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span> <span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
+<span class="n">j</span>  <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">New</span> <span class="p">:</span> 
+    <span class="k">print</span> <span class="s">&quot;new&quot;</span>
+<span class="k">else</span> <span class="p">:</span> 
+    <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+
+<span class="n">j</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span> <span class="p">:</span> 
+    <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
+<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span> <span class="p">:</span> 
+    <span class="k">print</span> <span class="s">&quot;running&quot;</span>
+<span class="k">else</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Job.result">
+<tt class="descname">result</tt><a class="headerlink" href="#saga.job.Job.result" title="Permalink to this definition">¶</a></dt>
+<dd><p>ret:        &lt;result type&gt;
+note:       this will always return None for a job.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Job.object">
+<tt class="descname">object</tt><a class="headerlink" href="#saga.job.Job.object" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Todo :</th><td class="field-body">describe me</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Note :</th><td class="field-body">this will return the job_service which created the job.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Job.exception">
+<tt class="descname">exception</tt><a class="headerlink" href="#saga.job.Job.exception" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Todo :</th><td class="field-body">describe me</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Note :</th><td class="field-body">if job failed, that will re-raise an exception describing 
+why, if that exists.  Otherwise, the call does nothing.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Job.ExitCode">
+<tt class="descname">ExitCode</tt><a class="headerlink" href="#saga.job.Job.ExitCode" title="Permalink to this definition">¶</a></dt>
+<dd><p>ExitCode:
+The job&#8217;s exitcode.</p>
+<p>this attribute is only meaningful if the job is in &#8216;Done&#8217; or &#8216;Final&#8217;
+state - for all other job states, this attribute value is undefined.</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+<span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span> <span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
+<span class="n">j</span>  <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+
+<span class="n">j</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="n">j</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Failed</span> <span class="p">:</span>
+  <span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">exitcode</span> <span class="o">==</span> <span class="s">&quot;42&quot;</span> <span class="p">:</span>
+      <span class="k">print</span> <span class="s">&quot;Ah, galaxy bypass error!&quot;</span>
+  <span class="k">else</span> <span class="p">:</span>
+      <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Job.JobID">
+<tt class="descname">JobID</tt><a class="headerlink" href="#saga.job.Job.JobID" title="Permalink to this definition">¶</a></dt>
+<dd><p>JobID:
+The job&#8217;s identifier.</p>
+<p>This attribute is equivalent to the value returned by job.get_job_id()</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Job.ServiceURL">
+<tt class="descname">ServiceURL</tt><a class="headerlink" href="#saga.job.Job.ServiceURL" title="Permalink to this definition">¶</a></dt>
+<dd><p>ServiceURL:
+The URL of the <tt class="xref py py-class docutils literal"><span class="pre">bliss.saga.job.Service</span></tt> instance managing this job.</p>
+<p>This attribute is represents the URL under where the job management
+service can be contacted which owns the job.  The value is equivalent to
+the service part of the job_id.</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+<span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span> <span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
+<span class="n">j</span>  <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">serviceurl</span> <span class="o">==</span> <span class="s">&quot;fork://localhost&quot;</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;yes!&quot;</span>
+<span class="k">else</span> <span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="attributes">
+<span id="job-attributes"></span><h3><a class="toc-backref" href="#id4">6.3.1. Attributes</a><a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h3>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">todo:</th><td class="field-body">Explain how to use job attributes</td>
+</tr>
+</tbody>
+</table>
+<dl class="data">
+<dt id="saga.job.ID">
+<tt class="descclassname">saga.job.</tt><tt class="descname">ID</tt><em class="property"> = 'ID'</em><a class="headerlink" href="#saga.job.ID" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.EXECUTION_HOSTS">
+<tt class="descclassname">saga.job.</tt><tt class="descname">EXECUTION_HOSTS</tt><em class="property"> = 'ExecutionHosts'</em><a class="headerlink" href="#saga.job.EXECUTION_HOSTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.CREATED">
+<tt class="descclassname">saga.job.</tt><tt class="descname">CREATED</tt><em class="property"> = 'Created'</em><a class="headerlink" href="#saga.job.CREATED" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.STARTED">
+<tt class="descclassname">saga.job.</tt><tt class="descname">STARTED</tt><em class="property"> = 'Started'</em><a class="headerlink" href="#saga.job.STARTED" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.FINISHED">
+<tt class="descclassname">saga.job.</tt><tt class="descname">FINISHED</tt><em class="property"> = 'Finished'</em><a class="headerlink" href="#saga.job.FINISHED" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.EXIT_CODE">
+<tt class="descclassname">saga.job.</tt><tt class="descname">EXIT_CODE</tt><em class="property"> = 'ExitCode'</em><a class="headerlink" href="#saga.job.EXIT_CODE" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="states">
+<span id="job-states"></span><h3><a class="toc-backref" href="#id5">6.3.2. States</a><a class="headerlink" href="#states" title="Permalink to this headline">¶</a></h3>
+<p>The job state constants defined describe the possible
+states a job can be in. The constants can be used to check / compare the state
+of a job. For example:</p>
+<div class="highlight-python"><pre>if job.state == saga.job.Pending:
+    # do_something
+elif job.state == saga.job.Running:
+    # do_something else</pre>
+</div>
+<p>The constants also define the string representation of a state:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+<span class="go">&#39;Running&#39;</span>
+</pre></div>
+</div>
+<p>SAGA defines the following constants as job states:</p>
+<dl class="data">
+<dt id="saga.job.UNKNOWN">
+<tt class="descclassname">saga.job.</tt><tt class="descname">UNKNOWN</tt><em class="property"> = 'Unknown'</em><a class="headerlink" href="#saga.job.UNKNOWN" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.NEW">
+<tt class="descclassname">saga.job.</tt><tt class="descname">NEW</tt><em class="property"> = 'New'</em><a class="headerlink" href="#saga.job.NEW" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.PENDING">
+<tt class="descclassname">saga.job.</tt><tt class="descname">PENDING</tt><em class="property"> = 'Pending'</em><a class="headerlink" href="#saga.job.PENDING" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.RUNNING">
+<tt class="descclassname">saga.job.</tt><tt class="descname">RUNNING</tt><em class="property"> = 'Running'</em><a class="headerlink" href="#saga.job.RUNNING" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.DONE">
+<tt class="descclassname">saga.job.</tt><tt class="descname">DONE</tt><em class="property"> = 'Done'</em><a class="headerlink" href="#saga.job.DONE" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.CANCELED">
+<tt class="descclassname">saga.job.</tt><tt class="descname">CANCELED</tt><em class="property"> = 'Canceled'</em><a class="headerlink" href="#saga.job.CANCELED" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.FAILED">
+<tt class="descclassname">saga.job.</tt><tt class="descname">FAILED</tt><em class="property"> = 'Failed'</em><a class="headerlink" href="#saga.job.FAILED" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.SUSPENDED">
+<tt class="descclassname">saga.job.</tt><tt class="descname">SUSPENDED</tt><em class="property"> = 'Suspended'</em><a class="headerlink" href="#saga.job.SUSPENDED" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="metrics">
+<span id="job-metrics"></span><h3><a class="toc-backref" href="#id6">6.3.3. Metrics</a><a class="headerlink" href="#metrics" title="Permalink to this headline">¶</a></h3>
+<p>Job metrics provide a way to attach callback functions to a job object. The
+registered callback functions are triggered whenever a job metric changes.</p>
+<p>Callback functions require three parameters:</p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">source:</th><td class="field-body">the watched object instance</td>
+</tr>
+<tr class="field-even field"><th class="field-name">metric:</th><td class="field-body">the watched metric (e.g. <tt class="xref py py-mod docutils literal"><span class="pre">STATE</span></tt> or <tt class="xref py py-mod docutils literal"><span class="pre">STATE_DETAIL</span></tt>)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">value:</th><td class="field-body">the new value of the watched metric</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p>Callback functions are attached to a job object via the
+<a class="reference internal" href="../attribute.html#saga.attributes.Attributes.add_callback" title="saga.attributes.Attributes.add_callback"><tt class="xref py py-meth docutils literal"><span class="pre">add_callback()</span></tt></a> method. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># create a callback function</span>
+<span class="k">def</span> <span class="nf">state_cb</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="p">:</span>
+  <span class="k">print</span> <span class="s">&quot;Job </span><span class="si">%s</span><span class="s"> state changed to </span><span class="si">%s</span><span class="s"> : </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span> <span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">main</span> <span class="p">()</span> <span class="p">:</span>
+  <span class="c"># register the callback function with the &#39;State&#39; metric</span>
+  <span class="n">job</span><span class="o">.</span><span class="n">add_callback</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">STATE</span><span class="p">,</span> <span class="n">state_cb</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Warning:</strong> There is no guarantee that all middleware adaptors implement these
+metrics. In case they are not implemented, you can still subscribe to them, but
+you won&#8217;t receive any callbacks. Please refer to the
+<a class="reference internal" href="../../developers/index.html#chapter-middleware-adaptors"><em>Developer Documentation</em></a> documentation for more details and
+adaptor-specific lists of supported metrics.</p>
+<p>SAGA defines the following constants as job metrics:</p>
+<dl class="data">
+<dt id="saga.job.STATE">
+<tt class="descclassname">saga.job.</tt><tt class="descname">STATE</tt><em class="property"> = 'State'</em><a class="headerlink" href="#saga.job.STATE" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.STATE_DETAIL">
+<tt class="descclassname">saga.job.</tt><tt class="descname">STATE_DETAIL</tt><em class="property"> = 'StateDetail'</em><a class="headerlink" href="#saga.job.STATE_DETAIL" title="Permalink to this definition">¶</a></dt>
+<dd><p>str(object) -&gt; string</p>
+<p>Return a nice string representation of the object.
+If the argument is a string, the return value is the same object.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="job-containers-saga-job-container">
+<span id="job-container"></span><h2><a class="toc-backref" href="#id7">6.4. Job Containers &#8211; <a class="reference internal" href="#saga.job.Container" title="saga.job.Container"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Container</span></tt></a></a><a class="headerlink" href="#job-containers-saga-job-container" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">todo:</th><td class="field-body">Describe how to work with job containers.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">More examples on how to use job containers can be found in
+the <a class="reference internal" href="examples.html#code-examples-job"><em>Job Module</em></a> section of the
+<a class="reference internal" href="../../examples/index.html#chapter-code-examples"><em>Code Examples</em></a> chapter.</p>
+</div>
+<dl class="class">
+<dt id="saga.job.Container">
+<em class="property">class </em><tt class="descclassname">saga.job.</tt><tt class="descname">Container</tt><a class="headerlink" href="#saga.job.Container" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.task.Container</span></tt></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Todo :</th><td class="field-body">document me</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="saga.job.Container.jobs">
+<tt class="descname">jobs</tt><a class="headerlink" href="#saga.job.Container.jobs" title="Permalink to this definition">¶</a></dt>
+<dd><p>The (read-only) <cite>jobs</cite> property returns a list of all job objects in the container.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#saga.job.Job" title="saga.job.Job"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Job</span></tt></a> list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Container.size">
+<tt class="descname">size</tt><a class="headerlink" href="#saga.job.Container.size" title="Permalink to this definition">¶</a></dt>
+<dd><p>The (read-only) <cite>size</cite> property returns the number of job objectis in the container.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.job.Container.states">
+<tt class="descname">states</tt><a class="headerlink" href="#saga.job.Container.states" title="Permalink to this definition">¶</a></dt>
+<dd><p>The (read-only) <cite>states</cite> property returns a list of states that represent the 
+states of the individual jobs in the container.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Container.get_jobs">
+<tt class="descname">get_jobs</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.job.Container.get_jobs" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is similar to get_tasks(), but returns only Job typed entries
+from the container.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">6. Job Management</a><ul>
+<li><a class="reference internal" href="#job-service-saga-job-service">6.1. Job Service &#8211; <tt class="docutils literal"><span class="pre">saga.job.Service</span></tt></a></li>
+<li><a class="reference internal" href="#job-description-saga-job-description">6.2. Job Description &#8211; <tt class="docutils literal"><span class="pre">saga.job.Description</span></tt></a></li>
+<li><a class="reference internal" href="#jobs-saga-job-job">6.3. Jobs &#8211; <tt class="docutils literal"><span class="pre">saga.job.Job</span></tt></a><ul>
+<li><a class="reference internal" href="#attributes">6.3.1. Attributes</a></li>
+<li><a class="reference internal" href="#states">6.3.2. States</a></li>
+<li><a class="reference internal" href="#metrics">6.3.3. Metrics</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#job-containers-saga-job-container">6.4. Job Containers &#8211; <tt class="docutils literal"><span class="pre">saga.job.Container</span></tt></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../url.html"
+                        title="previous chapter">5. Url Handling</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../filesystem/index.html"
+                        title="next chapter">7. File/Directory Management</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/library/job/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../filesystem/index.html" title="7. File/Directory Management"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../url.html" title="5. Url Handling"
+             >previous</a> |</li>
+        <li><a href="../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >2. Library Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

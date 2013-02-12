@@ -1,0 +1,521 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>saga.adaptors.redis.redis_advert &mdash; SAGA 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 1.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="saga" href="../../../saga.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for saga.adaptors.redis.redis_advert</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot; Redis advert adaptor implementation &quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="kn">import</span> <span class="nn">saga.url</span>
+<span class="kn">import</span> <span class="nn">saga.adaptors.cpi.base</span>
+<span class="kn">import</span> <span class="nn">saga.adaptors.cpi.advert</span>
+<span class="kn">import</span> <span class="nn">saga.utils.misc</span>
+
+<span class="kn">from</span>   <span class="nn">redis_namespace</span>      <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">SYNC_CALL</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">decorators</span><span class="o">.</span><span class="n">SYNC_CALL</span>
+<span class="n">ASYNC_CALL</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">decorators</span><span class="o">.</span><span class="n">ASYNC_CALL</span>
+
+
+<span class="c">###############################################################################</span>
+<span class="c"># adaptor info</span>
+<span class="c">#</span>
+
+<span class="n">_ADAPTOR_NAME</span>          <span class="o">=</span> <span class="s">&#39;saga.adaptor.advert.redis&#39;</span>
+<span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&#39;redis&#39;</span><span class="p">]</span>
+<span class="n">_ADAPTOR_OPTIONS</span>       <span class="o">=</span> <span class="p">[]</span>
+<span class="n">_ADAPTOR_CAPABILITIES</span>  <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">_ADAPTOR_DOC</span>           <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;name&#39;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&#39;cfg_options&#39;</span>      <span class="p">:</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">,</span> 
+    <span class="s">&#39;capabilities&#39;</span>     <span class="p">:</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
+    <span class="s">&#39;description&#39;</span>      <span class="p">:</span> <span class="s">&#39;The redis advert adaptor.&#39;</span><span class="p">,</span>
+    <span class="s">&#39;details&#39;</span>          <span class="p">:</span> <span class="s">&quot;&quot;&quot;This adaptor interacts with a redis server to</span>
+<span class="s">                            implement the advert API semantics.&quot;&quot;&quot;</span><span class="p">,</span> 
+    <span class="s">&#39;schemas&#39;</span>          <span class="p">:</span> <span class="p">{</span><span class="s">&#39;redis&#39;</span>  <span class="p">:</span> <span class="s">&#39;redis nosql backend.&#39;</span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">_ADAPTOR_INFO</span>          <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;name&#39;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&#39;version&#39;</span>          <span class="p">:</span> <span class="s">&#39;v0.2&#39;</span><span class="p">,</span>
+    <span class="s">&#39;schemas&#39;</span>          <span class="p">:</span> <span class="n">_ADAPTOR_SCHEMAS</span><span class="p">,</span>
+    <span class="s">&#39;cpis&#39;</span>             <span class="p">:</span> <span class="p">[{</span>
+        <span class="s">&#39;type&#39;</span>         <span class="p">:</span> <span class="s">&#39;saga.advert.Directory&#39;</span><span class="p">,</span>
+        <span class="s">&#39;class&#39;</span>        <span class="p">:</span> <span class="s">&#39;RedisDirectory&#39;</span>
+        <span class="p">},</span> 
+        <span class="p">{</span>
+        <span class="s">&#39;type&#39;</span>         <span class="p">:</span> <span class="s">&#39;saga.advert.Entry&#39;</span><span class="p">,</span>
+        <span class="s">&#39;class&#39;</span>        <span class="p">:</span> <span class="s">&#39;RedisEntry&#39;</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+
+<span class="c">###############################################################################</span>
+<span class="c"># The adaptor class</span>
+
+<span class="k">class</span> <span class="nc">Adaptor</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AdaptorBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">    This is the actual adaptor class, which gets loaded by SAGA (i.e. by the</span>
+<span class="sd">    SAGA engine), and which registers the CPI implementation classes which</span>
+<span class="sd">    provide the adaptor&#39;s functionality.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AdaptorBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_ADAPTOR_INFO</span><span class="p">,</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">)</span>
+
+        <span class="c"># the adaptor *singleton* creates a (single) instance of a bulk handler</span>
+        <span class="c"># (BulkDirectory), which implements container_* bulk methods.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bulk</span>  <span class="o">=</span> <span class="n">BulkDirectory</span> <span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_redis</span> <span class="o">=</span> <span class="p">{}</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">get_redis</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="n">host</span>     <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">port</span>     <span class="o">=</span> <span class="mi">6379</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span>
+     
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">host</span>     <span class="p">:</span> <span class="n">host</span>     <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">host</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">port</span>     <span class="p">:</span> <span class="n">port</span>     <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">port</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">username</span> <span class="p">:</span> <span class="n">username</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">username</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">password</span> <span class="p">:</span> <span class="n">password</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">password</span>
+
+        <span class="k">if</span> <span class="n">username</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="n">password</span> <span class="p">:</span>
+                <span class="nb">hash</span> <span class="o">=</span> <span class="s">&quot;redis://</span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">@</span><span class="si">%s</span><span class="s">:</span><span class="si">%d</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+            <span class="k">else</span> <span class="p">:</span>
+                <span class="nb">hash</span> <span class="o">=</span> <span class="s">&quot;redis://</span><span class="si">%s</span><span class="s">@</span><span class="si">%s</span><span class="s">:</span><span class="si">%d</span><span class="s">&quot;</span>     <span class="o">%</span>  <span class="p">(</span><span class="n">username</span><span class="p">,</span>           <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="n">password</span> <span class="p">:</span>
+                <span class="nb">hash</span> <span class="o">=</span> <span class="s">&quot;redis://</span><span class="si">%s</span><span class="s">@</span><span class="si">%s</span><span class="s">:</span><span class="si">%d</span><span class="s">&quot;</span>     <span class="o">%</span>  <span class="p">(</span><span class="n">password</span><span class="p">,</span>       <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+            <span class="k">else</span> <span class="p">:</span>
+                <span class="nb">hash</span> <span class="o">=</span> <span class="s">&quot;redis://</span><span class="si">%s</span><span class="s">:</span><span class="si">%d</span><span class="s">&quot;</span>        <span class="o">%</span>  <span class="p">(</span>                <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+       
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hash</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_redis</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_redis</span><span class="p">[</span><span class="nb">hash</span><span class="p">]</span> <span class="o">=</span> <span class="n">redis_ns_server</span> <span class="p">(</span><span class="n">url</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_redis</span><span class="p">[</span><span class="nb">hash</span><span class="p">]</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">sanity_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="c"># nothing to check for, redis entry system should always be accessible</span>
+        <span class="k">pass</span>
+
+
+
+
+<span class="c">###############################################################################</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">BulkDirectory</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">advert</span><span class="o">.</span><span class="n">Directory</span><span class="p">)</span> <span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Well, this implementation can handle bulks, but cannot optimize them.</span>
+<span class="sd">    We leave that code here anyway, for demonstration -- but those methods</span>
+<span class="sd">    are also provided as fallback, and are thusly used if the adaptor does</span>
+<span class="sd">    not implement the bulk container_* methods at all.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span> 
+        <span class="k">pass</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">container_wait</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">if</span> <span class="n">timeout</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot handle timeouts &gt; 0&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tasks</span> <span class="p">:</span>
+            <span class="n">task</span><span class="o">.</span><span class="n">wait</span> <span class="p">()</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">container_cancel</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tasks</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tasks</span> <span class="p">:</span>
+            <span class="n">task</span><span class="o">.</span><span class="n">cancel</span> <span class="p">()</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">container_copy</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tasks</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A *good* implementation would dig the entry copy operations from the</span>
+<span class="sd">        tasks, and run them in a bulk -- we can&#39;t do that, so simply *run* the</span>
+<span class="sd">        individual tasks, falling back to the default non-bulk asynchronous copy</span>
+<span class="sd">        operation...</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tasks</span> <span class="p">:</span>
+            <span class="n">task</span><span class="o">.</span><span class="n">run</span> <span class="p">()</span>
+
+
+    <span class="c"># the container methods for the other calls are obviously similar, and left</span>
+    <span class="c"># out here.  The :class:`saga.task.Container` implementation will fall back</span>
+    <span class="c"># to the non-bulk async calls for all then.</span>
+
+
+
+<span class="c">###############################################################################</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">RedisDirectory</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">advert</span><span class="o">.</span><span class="n">Directory</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisDirectory"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisDirectory">[docs]</a>
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span>  <span class="p">(</span><span class="n">RedisDirectory</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisDirectory.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisDirectory.init_instance">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>       <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>     <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_container</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">_bulk</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_session</span> <span class="p">(</span><span class="n">session</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_check</span>  <span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisDirectory.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisDirectory.init_instance_async">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_session</span> <span class="p">(</span><span class="n">session</span><span class="p">)</span>
+        
+        <span class="n">c</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;url&#39;</span>     <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">,</span> 
+              <span class="s">&#39;flags&#39;</span>   <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span> <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;init_instance&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_init_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_r</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">get_redis</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nsdir</span> <span class="o">=</span> <span class="n">redis_ns_entry</span><span class="o">.</span><span class="n">opendir</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">attribute_getter</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisDirectory.attribute_getter"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisDirectory.attribute_getter">[docs]</a>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsdir</span><span class="o">.</span><span class="n">get_key</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span> <span class="p">(</span><span class="s">&quot;get_key failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">attribute_setter</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisDirectory.attribute_setter"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisDirectory.attribute_setter">[docs]</a>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nsdir</span><span class="o">.</span><span class="n">set_key</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span> <span class="p">(</span><span class="s">&quot;set_key failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">attribute_lister</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisDirectory.attribute_lister"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisDirectory.attribute_lister">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsdir</span><span class="o">.</span><span class="n">get_data</span> <span class="p">()</span><span class="o">.</span><span class="n">keys</span> <span class="p">()</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">attribute_caller</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">cb</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisDirectory.attribute_caller"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisDirectory.attribute_caller">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">_nsdir</span><span class="o">.</span><span class="n">manage_callback</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">())</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisDirectory.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisDirectory.get_url">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">open</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisDirectory.open"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisDirectory.open">[docs]</a>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">host</span> <span class="p">:</span> 
+            <span class="n">url</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">advert</span><span class="o">.</span><span class="n">Entry</span> <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">)</span>
+
+
+  <span class="c"># ##################################################################</span>
+  <span class="c"># # FIXME: all below</span>
+  <span class="c"># @SYNC_CALL</span>
+  <span class="c"># def copy (self, source, target, flags) :</span>
+  <span class="c">#     return</span>
+  <span class="c"># </span>
+  <span class="c">#     src_url = saga.url.Url (source)</span>
+  <span class="c">#     src     = src_url.path</span>
+  <span class="c">#     tgt_url = saga.url.Url (target)</span>
+  <span class="c">#     tgt     = tgt_url.path</span>
+  <span class="c"># </span>
+  <span class="c"># </span>
+  <span class="c">#     if src_url.schema :</span>
+  <span class="c">#         if not src_url.schema.lower () in _ADAPTOR_SCHEMAS :</span>
+  <span class="c">#             raise saga.exceptions.BadParameter (&quot;Cannot handle url %s (not redis)&quot; %  source)</span>
+  <span class="c"># </span>
+  <span class="c">#     if tgt_url.schema :</span>
+  <span class="c">#         if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :</span>
+  <span class="c">#             raise saga.exceptions.BadParameter (&quot;Cannot handle url %s (not redis)&quot; %  target)</span>
+  <span class="c"># </span>
+  <span class="c"># </span>
+  <span class="c">#     # make paths absolute</span>
+  <span class="c">#     if src[0] != &#39;/&#39;  :  src = &quot;%s/%s&quot;   % (os.path.dirname (src), src) </span>
+  <span class="c">#     if tgt[0] != &#39;/&#39;  :  tgt = &quot;%s/%s&quot;   % (os.path.dirname (src), tgt)</span>
+  <span class="c"># </span>
+  <span class="c">#     shutil.copy2 (src, tgt)</span>
+  <span class="c"># </span>
+  <span class="c"># </span>
+  <span class="c"># @ASYNC_CALL</span>
+  <span class="c"># def copy_async (self, src, tgt, flags, ttype) :</span>
+  <span class="c"># </span>
+  <span class="c">#     c = { &#39;src&#39;     : src,</span>
+  <span class="c">#           &#39;tgt&#39;     : tgt,</span>
+  <span class="c">#           &#39;flags&#39;   : flags }</span>
+  <span class="c"># </span>
+  <span class="c">#     return saga.task.Task (self, &#39;copy&#39;, c, ttype)</span>
+  <span class="c"># </span>
+  <span class="c"># </span>
+  <span class="c"># </span>
+  <span class="c"># def task_wait (self, task, timout) :</span>
+  <span class="c">#     # FIXME: our task_run moves all tasks into DONE state... :-/</span>
+  <span class="c">#     pass</span>
+
+
+
+<span class="c">######################################################################</span>
+<span class="c">#</span>
+<span class="c"># entry adaptor class</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">RedisEntry</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">advert</span><span class="o">.</span><span class="n">Entry</span><span class="p">)</span> <span class="p">:</span></div></div>
+<div class="viewcode-block" id="RedisEntry"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisEntry">[docs]</a>
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span>  <span class="p">(</span><span class="n">RedisEntry</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_dump</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;url  : </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;flags: </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisEntry.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisEntry.init_instance">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_session</span> <span class="p">(</span><span class="n">session</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_check</span>  <span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_init_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_r</span>       <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">get_redis</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nsentry</span> <span class="o">=</span> <span class="n">redis_ns_entry</span><span class="o">.</span><span class="n">open</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">attribute_getter</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisEntry.attribute_getter"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisEntry.attribute_getter">[docs]</a>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsentry</span><span class="o">.</span><span class="n">get_key</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">attribute_setter</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisEntry.attribute_setter"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisEntry.attribute_setter">[docs]</a>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsentry</span><span class="o">.</span><span class="n">set_key</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">attribute_lister</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisEntry.attribute_lister"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisEntry.attribute_lister">[docs]</a>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsentry</span><span class="o">.</span><span class="n">get_data</span> <span class="p">()</span><span class="o">.</span><span class="n">keys</span> <span class="p">()</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">attribute_caller</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">cb</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisEntry.attribute_caller"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisEntry.attribute_caller">[docs]</a>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsentry</span><span class="o">.</span><span class="n">manage_callback</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">())</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="RedisEntry.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.advert.redis.html#saga.adaptors.redis.redis_advert.RedisEntry.get_url">[docs]</a>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+
+
+  <span class="c"># ##################################################################</span>
+  <span class="c"># # FIXME: all below</span>
+  <span class="c"># @SYNC_CALL</span>
+  <span class="c"># def copy_self (self, target, flags) :</span>
+  <span class="c"># </span>
+  <span class="c">#     tgt_url = saga.url.Url (target)</span>
+  <span class="c">#     tgt     = tgt_url.path</span>
+  <span class="c">#     src     = self._url.path</span>
+  <span class="c"># </span>
+  <span class="c">#     if tgt_url.schema :</span>
+  <span class="c">#         if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :</span>
+  <span class="c">#             raise saga.exceptions.BadParameter (&quot;Cannot handle url %s (not redis)&quot; %  target)</span>
+  <span class="c"># </span>
+  <span class="c">#     if not saga.utils.misc.url_is_redis (tgt_url) :</span>
+  <span class="c">#         raise saga.exceptions.BadParameter (&quot;Cannot handle url %s (not redis)&quot;     %  target)</span>
+  <span class="c"># </span>
+  <span class="c">#     # make path absolute</span>
+  <span class="c">#     if tgt[0] != &#39;/&#39;  :  tgt = &quot;%s/%s&quot;   % (os.path.dirname (src), tgt)</span>
+  <span class="c"># </span>
+  <span class="c">#     shutil.copy2 (src, tgt)</span>
+
+
+<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">SAGA 1.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
