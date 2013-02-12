@@ -201,7 +201,7 @@ class Engine(sconf.Configurable):
         # attempt to load all registered modules
         for module_name in registry:
 
-            self._logger.info ("Loading  adaptor %s"  %  module_name)
+            self._logger.info ("Trying to load adaptor %s"  %  module_name)
 
 
             # first, import the module
@@ -376,7 +376,8 @@ class Engine(sconf.Configurable):
 
 
                 # finally, register the cpi for all its schemas!
-                for adaptor_schema in adaptor_schemas :
+                registered_schemas = list()
+                for adaptor_schema in adaptor_schemas:
 
                     adaptor_schema = adaptor_schema.lower ()
 
@@ -403,12 +404,15 @@ class Engine(sconf.Configurable):
 
                         self._logger.error ("Skipping adaptor %s: already registered '%s - %s'" \
                                          % (module_name, cpi_class, adaptor_instance))
-                        continue # skip to next cpi info
+                        continue  # skip to next cpi info
 
+                    self._adaptor_registry[cpi_type][adaptor_schema].append(info)
+                    registered_schemas.append(str("%s://" % adaptor_schema))
 
-                    self._logger.info ("Loading  adaptor %s: '%s (%s : %s://)'" \
-                                    % (module_name, cpi_class, cpi_type, adaptor_schema))
-                    self._adaptor_registry[cpi_type][adaptor_schema].append (info)
+                self._logger.info("Registering %s for %s API with URL schema %s" %
+                                      (module_name,
+                                       cpi_type,
+                                       registered_schemas))
 
 
 
