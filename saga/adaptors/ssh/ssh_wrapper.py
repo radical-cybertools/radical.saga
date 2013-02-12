@@ -194,6 +194,9 @@ cmd_run2 () {
   # supposed to stay alive with the job.
   #
   # FIXME: not sure if the error reporting on mkdir problems actually works...
+  #
+  # NOTE: we could, in principle, separate SUBMIT from RUN -- in this case, move
+  # the job into NEW state.
 
   set +x # turn off debug tracing -- stdout interleaving will mess with parsing.
 
@@ -202,7 +205,7 @@ cmd_run2 () {
 
   test -d "$DIR"    && rm    -rf "$DIR"  # re-use old pid's
   test -d "$DIR"    || mkdir -p  "$DIR"  || (ERROR="cannot use job id"; return 0)
-  echo "NEW "       >> "$DIR/state"
+  echo "RUNNING "   >> "$DIR/state"
 
   cmd_run_process $@ 1>/dev/null 2>/dev/null 3</dev/null &
   return $!
@@ -222,7 +225,7 @@ cmd_run_process () {
   # script's shell instance with the job executable, leaving the I/O
   # redirections intact.
   cat                >  "$DIR/job.sh" <<EOT
-  exec sh -c '$@'    <  "$DIR/in" >  "$DIR/out" 2> "$DIR/err"
+  exec sh "$DIR/cmd" <  "$DIR/in" >  "$DIR/out" 2> "$DIR/err"
 EOT
 
   # the job script above is started by this startup script, which makes sure
@@ -248,6 +251,7 @@ EOT
         # need to wait again
         continue
       fi
+
       if test -e "\$DIR/resumed"
       then
         rm -f "\$DIR/resumed"
@@ -355,6 +359,7 @@ cmd_suspend () {
     echo "$state "    >   "$DIR/state.susp"
     RETVAL="$1 suspended"
   else
+    rm -f   "$DIR/suspended"
     ERROR="suspend failed ($ECODE): $RETVAL"
   fi
 
@@ -379,6 +384,7 @@ cmd_resume () {
     return
   fi
 
+  touch   "$DIR/resumed"
   RETVAL=`kill -CONT $rpid 2>&1`
   ECODE=$?
 
@@ -387,9 +393,9 @@ cmd_resume () {
     test -s "$DIR/state.susp" || echo "RUNNING "  > "$DIR/state.susp"
     cat     "$DIR/state.susp"                    >> "$DIR/state"
     rm -f   "$DIR/state.susp"
-    touch   "$DIR/resumed"
     RETVAL="$1 resumed"
   else
+    rm -f   "$DIR/resumed"
     ERROR="resume failed ($ECODE): $RETVAL"
   fi
 

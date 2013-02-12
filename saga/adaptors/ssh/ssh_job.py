@@ -399,14 +399,9 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
     #
     def finalize (self, kill_shell = False) :
 
-        # print "ssh shell finalize"
-
         if  kill_shell :
             if  self.shell :
                 self.shell.finalize (True)
-                # print "ssh shell finalize 1"
-
-        # print "ssh shell finalize done"
 
 
     # ----------------------------------------------------------------
@@ -464,9 +459,9 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
     def _job_get_state (self, id) :
         """ get the job state from the wrapper shell """
 
-        rm, pid = self._adaptor.parse_id (id)
-
+        rm, pid     = self._adaptor.parse_id (id)
         ret, out, _ = self.shell.run_sync ("STATE %s\n" % pid)
+
         if  ret != 0 :
             raise saga.NoSuccess ("failed to get job state for '%s': (%s)(%s)" \
                                % (id, ret, out))
@@ -484,7 +479,16 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
 
-        return lines[1].strip ()
+        state_str = lines[1].strip ()
+
+        if state_str.lower () == 'new'       : return saga.job.NEW
+        if state_str.lower () == 'running'   : return saga.job.RUNNING
+        if state_str.lower () == 'suspended' : return saga.job.SUSPENDED
+        if state_str.lower () == 'done'      : return saga.job.DONE
+        if state_str.lower () == 'failed'    : return saga.job.FAILED
+        if state_str.lower () == 'canceled'  : return saga.job.CANCELED
+
+        return saga.job.UNKNOWN
         
 
     # ----------------------------------------------------------------
@@ -498,7 +502,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
         ret, out, _ = self.shell.run_sync ("RESULT %s\n" % pid)
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to get job exit code for '%s': (%s)(%s)" \
+            raise saga.NoSuccess ("failed to get exit code for '%s': (%s)(%s)" \
                                % (id, ret, out))
 
         lines = filter (None, out.split ("\n"))
@@ -509,13 +513,46 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
             del (lines[0])
 
         if  len (lines) != 2 :
-            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % (id, lines))
+            raise saga.NoSuccess ("failed to get exit code for '%s': (%s)" % (id, lines))
 
         if lines[0] != "OK" :
-            raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
+            raise saga.NoSuccess ("failed to get exit code for '%s' (%s)" % (id, lines))
 
-        return lines[1].strip ()
+        exit_code = lines[1].strip ()
+
+        if not exit_code.isdigit () :
+            return None
+
+        return int(exit_code)
         
+
+    # ----------------------------------------------------------------
+    #
+    # TODO: this should also cache state
+    #
+    def _job_suspend (self, id) :
+
+        rm, pid = self._adaptor.parse_id (id)
+
+        ret, out, _ = self.shell.run_sync ("SUSPEND %s\n" % pid)
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to suspend job '%s': (%s)(%s)" \
+                               % (id, ret, out))
+
+
+    # ----------------------------------------------------------------
+    #
+    # TODO: this should also cache state
+    #
+    def _job_resume (self, id) :
+
+        rm, pid = self._adaptor.parse_id (id)
+
+        ret, out, _ = self.shell.run_sync ("RESUME %s\n" % pid)
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to resume job '%s': (%s)(%s)" \
+                               % (id, ret, out))
+
 
     # ----------------------------------------------------------------
     #
@@ -533,15 +570,16 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         lines = filter (None, out.split ("\n"))
         self._logger.debug (lines)
 
-        if  len (lines) == 2 :
+        if  len (lines) == 3 :
             # shell did not manage to do 'stty -echo'?
             del (lines[0])
 
-        if  len (lines) != 1 :
-            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % (id, lines))
+        if  len (lines) != 2 :
+            raise saga.NoSuccess ("failed to cancel job '%s': (%s)" % (id, lines))
 
         if lines[0] != "OK" :
-            raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
+            raise saga.NoSuccess ("failed to cancel job '%s' (%s)" % (id, lines))
+
 
 
     # ----------------------------------------------------------------
@@ -566,9 +604,9 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
         while True :
             state = self._job_get_state (id)
-            if  state == 'DONE'     or \
-                state == 'FAILED'   or \
-                state == 'CANCELED'    :
+            if  state == saga.job.DONE      or \
+                state == saga.job.FAILED    or \
+                state == saga.job.CANCELED     :
                     return True
             # avoid busy poll
             time.sleep (0.5)
@@ -780,6 +818,7 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
             return self._state
         except Exception as e :
             if self._id == None :
+                # no ID yet, we should still have New state...
                 return self._state
             else :
                 raise e
@@ -825,17 +864,31 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def cancel (self, timeout):
-        self._id = self.js._job_cancel (self.jd)
+    def run (self): 
+        self._id = self.js._job_run (self.jd)
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def suspend (self):
+        self.js._job_suspend (self._id)
    
    
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def run (self): 
-        self._id = self.js._job_run (self.jd)
-
-
+    def resume (self):
+        self.js._job_resume (self._id)
+   
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def cancel (self, timeout):
+        self.js._job_cancel (self._id)
+   
+   
     # ----------------------------------------------------------------
     #
     @SYNC_CALL

@@ -22,6 +22,7 @@ def test_get_url () :
         tc = sutc.TestConfig ()
         js = saga.job.Service (tc.js_url, tc.session)
         assert str(js.get_url ()) == str(tc.js_url)
+        assert str(js.url)        == str(tc.js_url)
 
     except saga.SagaException as se:
         assert False
