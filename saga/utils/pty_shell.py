@@ -614,8 +614,8 @@ class PTYShell (object) :
 
         command = command.strip ()
 
-        self.logger.info ('run_sync: %s'   % command)
-        self.pty.write   (          "%s\n" % command)
+        self.logger.info ('run_async: %s'   % command)
+        self.pty.write   (           "%s\n" % command)
 
         return
 
