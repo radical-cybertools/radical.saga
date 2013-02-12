@@ -269,7 +269,7 @@ only screen and (     -o-min-device-pixel-ratio: 2/1) {
 }
 .marketing h1 {
   margin: 60px 0 10px;
-  font-size: 60px;
+  font-size: 50px;
   font-weight: 200;
   line-height: 1;
   letter-spacing: -1px;
