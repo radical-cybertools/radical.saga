@@ -784,13 +784,13 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
             else :
                 raise e
 
-  
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def wait (self, timeout):
         return self.js._job_wait (self._id, timeout)
+
    
     # ----------------------------------------------------------------
     #
