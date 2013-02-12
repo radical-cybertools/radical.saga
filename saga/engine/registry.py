@@ -24,7 +24,7 @@ adaptor_registry = [
                   # "saga.adaptors.local.localjob",
                     "saga.adaptors.pbs.pbsjob",
                   #  "saga.adaptors.local.localfile",
-                    "saga.adaptors.ssh.ssh_job",
+                  #  "saga.adaptors.ssh.ssh_job",
                   #  "saga.adaptors.irods.irods_replica"
                    ]
 

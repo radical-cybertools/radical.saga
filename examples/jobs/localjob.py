@@ -18,7 +18,7 @@ def main():
     try:
         # create a job service for the local machine. both, 'fork' and
         # 'local' schemes trigger the local job adaptor.
-        js = saga.job.Service("fork://localhost")
+        js = saga.job.Service("fnork://localhost")
 
         # describe our job
         jd = saga.job.Description()
