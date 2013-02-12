@@ -161,8 +161,8 @@ class Engine(sconf.Configurable):
                 sys.stderr.write ("Ctrl+C caught. Exiting...")
                 sys.exit (0)
 
-            self._logger.debug ("installing signal handler for SIGKILL")
-            signal.signal (signal.SIGINT, signal_handler)
+            self._logger.debug ("installing signal handler for SIGTERM")
+            signal.signal (signal.SIGTERM, signal_handler)
 
 
         # load adaptors
@@ -206,13 +206,13 @@ class Engine(sconf.Configurable):
 
             # first, import the module
             adaptor_module = None
-            # try :
-            adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
+            try :
+                adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
 
-            # except Exception as e:
-            #     self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
-            #     self._logger.trace ()
-            #     continue # skip to next adaptor
+            except Exception as e:
+                self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
+                self._logger.trace ()
+                continue # skip to next adaptor
 
 
             # we expect the module to have an 'Adaptor' class
