@@ -409,7 +409,7 @@ class Engine(sconf.Configurable):
                     self._adaptor_registry[cpi_type][adaptor_schema].append(info)
                     registered_schemas.append(str("%s://" % adaptor_schema))
 
-                self._logger.info("Registering %s for %s API with URL schema %s" %
+                self._logger.info("Registering %s for %s API with URL scheme %s" %
                                       (module_name,
                                        cpi_type,
                                        registered_schemas))
@@ -457,7 +457,9 @@ class Engine(sconf.Configurable):
                     if ( info['adaptor_name'] == adaptor_name ) :
                         return info['adaptor_instance']
 
-        raise se.NoSuccess ("No adaptor named '%s' found"  %  adaptor_name)
+            error_msg = "No adaptor named '%s' found" % adaptor_name
+            self._logger.error(error_msg)
+            raise se.NoSuccess(error_msg)
 
 
 
@@ -474,13 +476,17 @@ class Engine(sconf.Configurable):
         adaptor.
         '''
 
-        if not ctype in self._adaptor_registry :
-            raise se.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
-                                  % (ctype, schema))
+        if not ctype in self._adaptor_registry:
+            error_msg = "No adaptor found for '%s' and URL scheme %s://" \
+                                  % (ctype, schema)
+            self._logger.error(error_msg)
+            raise se.NotImplemented(error_msg)
 
-        if not schema in self._adaptor_registry[ctype] :
-            raise se.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
-                                  % (ctype, schema))
+        if not schema in self._adaptor_registry[ctype]:
+            error_msg = "No adaptor found for '%s' and URL scheme %s://" \
+                                  % (ctype, schema)
+            self._logger.error(error_msg)
+            raise se.NotImplemented(error_msg)
 
 
         # cycle through all applicable adaptors, and try to instantiate
