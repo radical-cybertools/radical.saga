@@ -19,7 +19,7 @@ from saga.job.constants import *
 
 import re
 import time
-import threading
+from copy import deepcopy
 
 import ssh_wrapper
 
@@ -195,7 +195,20 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self.session = session
         self.njobs   = 0
 
-        self.shell = saga.utils.pty_shell.PTYShell(self.rm,
+        rm_scheme = rm_url.scheme
+        pty_url   = deepcopy(rm_url)
+
+        # we need to extrac the scheme for PTYShell. That's basically the
+        # job.Serivce Url withou the pbs+ part. We use the PTYShell to execute
+        # pbs commands either locally or via gsissh or ssh.
+        if rm_scheme == "pbs":
+            pty_url.scheme = "fork"
+        elif rm_scheme == "pbs+ssh":
+            pty_url.scheme = "ssh"
+        elif rm_scheme == "pbs+gsissh":
+            pty_url.scheme = "gsissh"
+
+        self.shell = saga.utils.pty_shell.PTYShell(pty_url,
             self.session.contexts, self._logger)
 
         self.shell.set_initialize_hook(self.initialize)
@@ -242,10 +255,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # to the default output channel
         shell = '/bin/sh'
         redir = ''
-        if self._adaptor.debug_trace :
-            trace  = "%s/wrapper.$$.log" % base
-            shell += " -x"
-            redir  = "2>&1 | tee %s | grep -v -e '^\\+'" % trace
+        #if self._adaptor.debug_trace :
+        #    trace  = "%s/wrapper.$$.log" % base
+        #    shell += " -x"
+        #    redir  = "2>&1 | tee %s | grep -v -e '^\\+'" % trace
 
 
         # we run the script.  In principle, we should set a new / different
@@ -271,16 +284,16 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         # if debug trace was requested, we now should know its name and can
         # report it.
-        if self._adaptor.debug_trace :
-
-            wrapper_pid = '?'
-            for line in out.split ('\n') :
-
-                if re.match ('^PID: \d+$', line) :
-                    wrapper_pid = line[5:]
-              
-            trace = "%s/wrapper.%s.log" % (base, wrapper_pid)
-            self._logger.error ('remote trace: %s : %s', self.rm, trace)
+        #if self._adaptor.debug_trace :
+#
+ #           wrapper_pid = '?'
+  #          for line in out.split ('\n') :
+#
+ #               if re.match ('^PID: \d+$', line) :
+  #                  wrapper_pid = line[5:]
+   #           
+    #        trace = "%s/wrapper.%s.log" % (base, wrapper_pid)
+     #       self._logger.error ('remote trace: %s : %s', self.rm, trace)
 
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
 
