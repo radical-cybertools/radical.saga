@@ -123,8 +123,8 @@ class PTYProcess (object) :
         them (see cat /proc/sys/kernel/pty/max)
         """
     
-        self.logger.error ("pty dying...")
-        self.logger.trace ()
+        self.logger.error ("pty __del__")
+      # self.logger.trace ()
     
         try :
             self.gc.unregister (self)
@@ -149,7 +149,7 @@ class PTYProcess (object) :
     #
     def initialize (self) :
 
-        self.logger.debug ("PTYProcess: %s\n\n" % ' '.join ((self.command)))
+        self.logger.debug ("PTYProcess: %s\n" % ' '.join ((self.command)))
 
     ##  The lines commented out with '##' attempt to reproduce what
     ##  pty.fork does, but with separate stderr capture.
@@ -331,8 +331,8 @@ class PTYProcess (object) :
                         self.clog += buf
                         ret       += buf
 
-                      # buf = buf.replace ('\n', '\\n')
-                      # buf = buf.replace ('\r', '')
+                        buf = buf.replace ('\n', '\\n')
+                        buf = buf.replace ('\r', '')
                         if  len(buf) > 40 :
                             self.logger.debug ("read : [%5d] (%s ... %s)" \
                                             % (len(buf), buf[:20], buf[-20:]))

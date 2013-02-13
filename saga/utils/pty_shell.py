@@ -281,18 +281,12 @@ class PTYShell (object) :
     #
     def finalize (self, kill_pty = False) :
 
-        # print "pty shell finalize"
-    
         try :
             # check if some additional initialization routines as registered
             if  self.finalize_hook :
                 self.finalize_hook ()
 
-            # print "pty shell finalize 1"
-
         except Exception as e :
-            # print "no finalize hook: %s" % e
-            # print e._traceback
             pass
 
 
@@ -301,15 +295,10 @@ class PTYShell (object) :
                 if  self.pty :
                     self.pty.finalize ()
 
-            # print "pty shell finalize 2"
 
         except Exception as e :
-            # print "no finalize: %s" % e
-            # print e._traceback
             pass
 
-
-        # print "pty shell finalize done"
 
 
     # ----------------------------------------------------------------
@@ -420,6 +409,7 @@ class PTYShell (object) :
             prompt    = new_prompt
             prompt_re = re.compile ("^(.*)%s\s*$" % prompt, re.DOTALL)
 
+
         result = None
         try :
             if  not data :
@@ -428,16 +418,18 @@ class PTYShell (object) :
 
             result = prompt_re.match (data)
 
+
             if  not result :
-                raise saga.NoSuccess ("could not parse prompt (%s) (%s)" \
-                                   % (prompt, data))
+                self.logger.debug    ("could not parse prompt (%s) (%s)" % (prompt, data))
+                raise saga.NoSuccess ("could not parse prompt (%s) (%s)" % (prompt, data))
 
             if  len (result.groups ()) != 2 :
-                raise saga.NoSuccess ("prompt does not capture exit value (%s)"\
-                                   % prompt)
+                self.logger.debug    ("prompt does not capture exit value (%s)" % prompt)
+                raise saga.NoSuccess ("prompt does not capture exit value (%s)" % prompt)
 
             txt =     result.group (1)
             ret = int(result.group (2)) 
+
 
         except Exception as e :
             self.logger.debug ("data   : %s" % data)
@@ -536,8 +528,8 @@ class PTYShell (object) :
         if  iomode == None :
             redir  =  ""
 
-        self.logger.info ('run_sync: %s%s'   % (command, redir))
-        self.pty.write   (          "%s%s\n" % (command, redir))
+        self.logger.debug ('run_sync: %s%s'   % (command, redir))
+        self.pty.write    (          "%s%s\n" % (command, redir))
 
 
         # If given, switch to new prompt pattern right now...
@@ -554,7 +546,7 @@ class PTYShell (object) :
             raise saga.NoSuccess ("run_sync failed, no prompt (%s)" % command)
 
 
-        ret, txt = self._eval_prompt (match, prompt)
+        ret, txt = self._eval_prompt (match, new_prompt)
 
         stdout = None
         stderr = None
@@ -614,8 +606,8 @@ class PTYShell (object) :
 
         command = command.strip ()
 
-        self.logger.info ('run_sync: %s'   % command)
-        self.pty.write   (          "%s\n" % command)
+        self.logger.debug ('run_async: %s'   % command)
+        self.pty.write    (           "%s\n" % command)
 
         return
 
