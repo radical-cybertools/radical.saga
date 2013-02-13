@@ -417,7 +417,9 @@ class Job (Base, Attributes, Async) :
 
 
     # ----------------------------------------------------------------
+    # 
     # attribute getters
+    #
     def _get_exit_code (self, ttype=None) :
         return self._adaptor.get_exit_code (ttype=ttype)
 
