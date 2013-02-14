@@ -11,13 +11,13 @@ import threading
 
 import saga.utils.logger
 import saga.utils.timeout_gc
-import saga.exceptions      as se
+import saga.exceptions as se
 
 
 # --------------------------------------------------------------------
 #
-_CHUNKSIZE = 1024   # default size of each read
-_POLLDELAY = 0.0001 # seconds in between read attempts
+_CHUNKSIZE = 1024  # default size of each read
+_POLLDELAY = 0.001 # seconds in between read attempts
 
 
 # --------------------------------------------------------------------

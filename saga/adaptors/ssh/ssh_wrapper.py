@@ -128,6 +128,68 @@ verify_err () {
 
 # --------------------------------------------------------------------
 #
+# create the monitor script, used by the command running routines.
+#
+create_monitor () {
+  # create the monitor wrapper script once -- this is used by all job startup
+  # scripts to actually run job.sh.  Note that SAGA_PID MUST be set before this
+  # script is running.
+  
+  cat >  "$BASE/monitor.sh" <<EOT
+
+    SAGA_PID=\$1
+    DIR="$BASE/\$SAGA_PID"
+
+    echo "PID: $SAGA_PID" >> /tmp/log.merzky
+
+    nohup /bin/sh "\$DIR/job.sh" 1>/dev/null 2>/dev/null 3</dev/null &
+
+    rpid=\$!
+    echo \$rpid      >  "\$DIR/pid"
+    echo "RUNNING "  >> "\$DIR/state"
+
+    while true
+    do
+      wait \$rpid
+      retv=\$?
+
+      # if wait failed for other reason than job finishing, i.e. due to
+      # suspend/resume, then we need to wait again, otherwise we are done
+      # waiting...
+      if test -e "\$DIR/suspended"
+      then
+        rm -f "\$DIR/suspended"
+        # need to wait again
+        continue
+      fi
+
+      if test -e "\$DIR/resumed"
+      then
+        rm -f "\$DIR/resumed"
+        # need to wait again
+        continue
+      fi
+
+      # real exit -- evaluate exit val
+      echo \$retv > "\$DIR/exit"
+      test \$retv = 0           && echo "DONE "     >> "\$DIR/state"
+      test \$retv = 0           || echo "FAILED "   >> "\$DIR/state"
+
+      # capture canceled state
+      test -e "\$DIR/canceled"  && echo "CANCELED " >> "\$DIR/state"
+      test -e "\$DIR/canceled"  && rm -f               "\$DIR/canceled"
+
+      # done waiting
+      break
+    done
+
+EOT
+
+}
+
+
+# --------------------------------------------------------------------
+#
 # run a job in the background.  Note that the returned job ID is actually the
 # pid of the shell process which wraps the actual job, monitors its state, and
 # serves its I/O channels.  The actual job id is stored in the 'pid' file in the
@@ -225,8 +287,8 @@ cmd_run2 () {
 cmd_run_process () {
   # this command runs the job.  PPID will point to the id of the spawning
   # script, which, coincidentally, we designated as job ID -- nice:
-  PID=$SAGA_PID
-  DIR="$BASE/$PID"
+  SAGA_ID=$PPID
+  DIR="$BASE/$SAGA_PID"
 
   echo "$@"          >  "$DIR/cmd"
   touch                 "$DIR/in"
@@ -238,55 +300,11 @@ cmd_run_process () {
   exec sh "$DIR/cmd" <  "$DIR/in" >  "$DIR/out" 2> "$DIR/err"
 EOT
 
-  # the job script above is started by this startup script, which makes sure
+  # the job script above is started by this monitor script, which makes sure
   # that the job state is properly watched and captured.
-  cat                >  "$DIR/monitor.sh" <<EOT
-    DIR="$DIR"
-    nohup /bin/sh       "\$DIR/job.sh" 1>/dev/null 2>/dev/null 3</dev/null &
-    rpid=\$!
-    echo \$rpid      >  "\$DIR/pid"
-    echo "RUNNING "  >> "\$DIR/state"
-
-    while true
-    do
-      wait \$rpid
-      retv=\$?
-
-      # if wait failed for other reason than job finishing, i.e. due to
-      # suspend/resume, then we need to wait again, otherwise we are done
-      # waiting...
-      if test -e "\$DIR/suspended"
-      then
-        rm -f "\$DIR/suspended"
-        # need to wait again
-        continue
-      fi
-
-      if test -e "\$DIR/resumed"
-      then
-        rm -f "\$DIR/resumed"
-        # need to wait again
-        continue
-      fi
-
-      # real exit -- evaluate exit val
-      echo \$retv > "\$DIR/exit"
-      test \$retv = 0           && echo "DONE "     >> "\$DIR/state"
-      test \$retv = 0           || echo "FAILED "   >> "\$DIR/state"
-
-      # capture canceled state
-      test -e "\$DIR/canceled"  && echo "CANCELED " >> "\$DIR/state"
-      test -e "\$DIR/canceled"  && rm -f               "\$DIR/canceled"
-
-      # done waiting
-      break
-    done
-
-EOT
-
   # the monitor script is ran asynchronously and with nohup, so that its
   # lifetime will not be bound to the manager script lifetime.
-  nohup /bin/sh "$DIR/monitor.sh" 1>/dev/null 2>/dev/null 3</dev/null &
+  nohup /bin/sh "$BASE/monitor.sh" $SAGA_PID 1>/dev/null 2>/dev/null 3</dev/null &
   exit
 }
 
@@ -627,6 +645,7 @@ listen() {
 #
 stty -echo   2> /dev/null
 stty -echonl 2> /dev/null
+create_monitor
 listen $1
 #
 # --------------------------------------------------------------------
