@@ -23,26 +23,35 @@ class PTYShell (object) :
 
     The shell to be run is expected to be POSIX compliant (bash, csh, sh, zsh
     etc) -- in particular, we expect the following features:
-    `$?`,
-    `$!`,
-    `$*`,
-    `$#`,
-    `$@`,
-    `$PPID`,
-    `>&`,
-    `>>`,
-    `>`,
-    `<`,
-    `2>&1`,
-    `|`,
-    `||`,
-    `&&`,
-    `wait`,
-    `kill`,
-    `nohup`, and
-    `shift`
+    ``$?``,
+    ``$!``,
+    ``$*``,
+    ``$#``,
+    ``$@``,
+    ``$PPID``,
+    ``>&``,
+    ``>>``,
+    ``>``,
+    ``<``,
+    ``2>&1``,
+    ``|``,
+    ``||``,
+    ``&&``,
+    ``wait``,
+    ``kill``,
+    ``nohup``,
+    ``shift``,
+    ``PS1``, and
+    ``PS2``.
 
-    Example::
+    Note that ``PTYShell`` will change the shell prompts (``PS1`` and ``PS2``),
+    to simplify output parsing.  ``PS2`` will be empty, ``PS1`` will be set
+    ``PROMPT-$?->\\n`` -- that way, the prompt will report the exit value of the
+    last command, saving an extra roundtrip.  Users of this class should be
+    careful when setting other prompts -- see :func:`set_prompt` for more
+    details.
+
+    Usage Example::
 
         # start the shell, find its prompt.  
         self.shell = saga.utils.pty_shell.PTYShell ("ssh://user@remote.host.net/", contexts, self._logger)
