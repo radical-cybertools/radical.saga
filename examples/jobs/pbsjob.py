@@ -27,6 +27,7 @@ def main():
         # environment, executable & arguments. We use '/bin/sleep' to simulate
         # a job that runs for $RUNTIME seconds.
         jd.queue       = 'batch'
+        jd.name        = 'testjob'
         jd.project     = 'TG-XXXYYYYZZZ'
         jd.environment = {'RUNTIME': '10'}
         jd.executable  = '/bin/sleep'

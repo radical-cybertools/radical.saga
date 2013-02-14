@@ -20,14 +20,14 @@ import re
 import time
 from copy import deepcopy
 
-import ssh_wrapper
-
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
+
 
 def log_error_and_raise(message, exception, logger):
     logger.error(message)
     raise exception(message)
+
 
 def _pbscript_generator(url, logger, jd):
     '''Generates a PBS script from a SAGA job description.
@@ -36,7 +36,7 @@ def _pbscript_generator(url, logger, jd):
     exec_n_args = str()
 
     if jd.executable is not None:
-        exec_n_args += "%s " % (jd.executable) 
+        exec_n_args += "%s " % (jd.executable)
     if jd.arguments is not None:
         for arg in jd.arguments:
             exec_n_args += "%s " % (arg)
@@ -48,27 +48,28 @@ def _pbscript_generator(url, logger, jd):
 
     if jd.environment is not None:
         variable_list = str()
-        for key in jd.environment.keys(): 
+        for key in jd.environment.keys():
             variable_list += "%s=%s," % (key, jd.environment[key])
         pbs_params += "#PBS -v %s \n" % variable_list
 
     if jd.working_directory is not None:
-        pbs_params += "#PBS -d %s \n" % jd.working_directory 
+        pbs_params += "#PBS -d %s \n" % jd.working_directory
     if jd.output is not None:
         pbs_params += "#PBS -o %s \n" % jd.output
     if jd.error is not None:
-        pbs_params += "#PBS -e %s \n" % jd.error 
+        pbs_params += "#PBS -e %s \n" % jd.error
     if jd.wall_time_limit is not None:
-        hours = jd.wall_time_limit/60
-        minutes = jd.wall_time_limit%60
-        pbs_params += "#PBS -l walltime=%s:%s:00 \n" % (str(hours), str(minutes))
+        hours = jd.wall_time_limit / 60
+        minutes = jd.wall_time_limit % 60
+        pbs_params += "#PBS -l walltime=%s:%s:00 \n" \
+            % (str(hours), str(minutes))
     if jd.queue is not None:
         pbs_params += "#PBS -q %s \n" % jd.queue
     if jd.project is not None:
         pbs_params += "#PBS -A %s \n" % str(jd.project)
     if jd.job_contact is not None:
         pbs_params += "#PBS -m abe \n"
-   
+
     if url.scheme in ["xt5torque", "xt5torque+ssh", 'xt5torque+gsissh']:
         # Special case for TORQUE on Cray XT5s
         logger.info("Using Cray XT5 spepcific modifications, i.e., -l size=xx instead of -l nodes=x:ppn=yy ")
@@ -78,16 +79,16 @@ def _pbscript_generator(url, logger, jd):
         # Default case (non-XT5)
         if jd.total_cpu_count is not None:
             tcc = int(jd.total_cpu_count)
-            tbd = float(tcc)/float(self._ppn)
+            tbd = float(tcc) / float(self._ppn)
             if float(tbd) > int(tbd):
-                pbs_params += "#PBS -l nodes=%s:ppn=%s" % (str(int(tbd)+1), self._ppn)
+                pbs_params += "#PBS -l nodes=%s:ppn=%s" \
+                    % (str(int(tbd) + 1), self._ppn)
             else:
-                pbs_params += "#PBS -l nodes=%s:ppn=%s" % (str(int(tbd)), self._ppn)
+                pbs_params += "#PBS -l nodes=%s:ppn=%s" \
+                    % (str(int(tbd)), self._ppn)
 
-    pbscript = "\n#!/bin/bash \n%s \n%s" % (pbs_params, exec_n_args)
-
+    pbscript = "\n#!/bin/bash \n%s%s" % (pbs_params, exec_n_args)
     return pbscript
-
 
 
 # --------------------------------------------------------------------
@@ -118,8 +119,9 @@ _ADAPTOR_OPTIONS       = [
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
 #
-_ADAPTOR_CAPABILITIES  = {
-    "jdes_attributes":   [saga.job.EXECUTABLE,
+_ADAPTOR_CAPABILITIES = {
+    "jdes_attributes":   [saga.job.NAME,
+                          saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
                           saga.job.INPUT,
@@ -157,7 +159,7 @@ _ADAPTOR_DOC = {
 # --------------------------------------------------------------------
 # the adaptor info is used to register the adaptor with SAGA
 
-_ADAPTOR_INFO          = {
+_ADAPTOR_INFO = {
     "name":    _ADAPTOR_NAME,
     "version": "v0.1",
     "schemas": _ADAPTOR_SCHEMAS,
@@ -278,8 +280,16 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                           'qstat':    None,
                           'qsub':     None}
 
+        # create a null logger to silence the PTY wrapper!
+        import logging
+        class NullHandler(logging.Handler):
+            def emit(self, record):
+                pass
+        nh = NullHandler()
+        null_logger = logging.getLogger("PTYShell").addHandler(nh)
+
         self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-            self.session.contexts, self._logger)
+            self.session.contexts, null_logger)
 
         self.shell.set_initialize_hook(self.initialize)
         self.shell.set_finalize_hook(self.finalize)
@@ -332,22 +342,16 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             % (script, self._commands['qsub']['path']))
 
         if ret != 0:
+            # something went wrong
             message = "Error running 'qsub': %s. Script was: %s" \
                 % (out, script)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
-
-
-        # FIXME: verify format of returned pid (\d+)!
-        pid    = lines[-1].strip ()
-        job_id = "[%s]-[%s]" % (self.rm, pid)
-
-        self._logger.debug ("started job %s" % job_id)
-
-        self.njobs += 1
-
-        return job_id
-        
-
+        else:
+            # stdout contains the job id
+            job_id = "[%s]-[%s]" % (self.rm, out.strip())
+            self._logger.info("Submitted PBS job with id: %s" % job_id)
+            self.njobs += 1
+            return job_id
 
     # ----------------------------------------------------------------
     #
