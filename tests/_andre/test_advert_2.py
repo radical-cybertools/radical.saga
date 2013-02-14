@@ -1,32 +1,31 @@
 
 import sys
-import time
 import saga
 
-d_1 = saga.advert.Directory ('redis://localhost/tmp/test1/test1/')
-d_1.set_attribute ('foo', 'oops3')
+start = False
+stop  = False
 
-sys.exit (0)
+for arg in sys.argv :
+    if arg == 'start' : start = True
+    if arg == 'stop'  : stop  = True
 
-arg=""
-if len (sys.argv) > 1 :
-  arg=sys.argv[1]
+# open an advert dir, and update an atrtribute as quickly as possible
+# d_1 = saga.advert.Directory ('redis://localhost/tmp/test1/test1/')
+d_1 = saga.advert.Directory ('redis://repex1.tacc.utexas.edu:10001/tmp/test1/test1/')
 
-print "start"
-t1=time.time()
+print "1"
+# should we notify the master that we are about to start?
+if start : d_1.set_attribute ('foo', 'start')
+print "2"
 
-if arg == 'start' :
-  d_1.set_attribute ('foo', 'start')
-
+# send 1000 attribute updates
 for i in xrange (10) :
-  print i
-  d_1.set_attribute ('foo', str(i))
+    d_1.set_attribute ('foo', str(i))
+    print "."
 
-t2=time.time()
-print "done"
+# should we notify the master that we are done?
+if stop : d_1.set_attribute ('foo', 'stop')
 
-if arg == 'stop' :
-  d_1.set_attribute ('foo', 'stop')
 
-print (t2-t1)
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
