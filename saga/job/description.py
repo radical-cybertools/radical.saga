@@ -7,9 +7,13 @@ __license__   = "MIT"
 
 import saga
 
+#-------------------------------------------------------------------------------
+#
 class Description (saga.Attributes) :
     """ The job description class. """
 
+    # --------------------------------------------------------------------------
+    #
     def __init__(self):
 
         # set attribute interface properties
@@ -49,6 +53,23 @@ class Description (saga.Attributes) :
         self._attributes_set_enums (saga.job.SPMD_VARIATION,      ['MPI', 'OpenMP', 'MPICH-G'])
 
         pass
+
+    # --------------------------------------------------------------------------
+    #
+    def clone (self) :
+        """ 
+        deep copy: unlike the default python assignment (copy object reference),
+        a deep copy will create a new object instance with the same state --
+        after a deep copy, a change on one instance will not affect the other.
+        """
+
+        # a job description only has attributes - so create a new instance,
+        # clone the attribs, and done.
+        ret = saga.job.Description ()
+        self._attributes_deep_copy (self, ret)
+
+        return ret
+
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

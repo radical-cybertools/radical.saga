@@ -236,7 +236,7 @@ class TimeoutGC (object) :
     # --------------------------------------------------------------------------
     #
     #
-    def register (self, obj, obj_initialize, obj_finalize, timeout=30) :
+    def register (self, obj, obj_initialize, obj_finalize, timeout=60) :
         """ 
         Register an object instance for teimout garbage collection.  The
         ``obj_finalize`` method is called when the object instance seems idle

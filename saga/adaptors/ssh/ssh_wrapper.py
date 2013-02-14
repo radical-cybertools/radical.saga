@@ -182,9 +182,19 @@ cmd_run () {
 
   cmd_run2 $@ 1>/dev/null 2>/dev/null 3</dev/null &
 
-  pid=$!      # this is the (native) job id!
-  wait $pid   # this will return very quickly -- look at cmd_run2... ;-)
-  RETVAL=$pid # report id
+  SAGA_PID=$!      # this is the (native) job id!
+  wait $SAGA_PID   # this will return very quickly -- look at cmd_run2... ;-)
+  RETVAL=$SAGA_PID # report id
+
+  # we have to wait though 'til the job enters RUNNING (this is a sync job
+  # startup)
+  DIR="$BASE/$SAGA_PID"
+
+  while true
+  do
+    grep RUNNING "$DIR/state" && break
+  done
+
 }
 
 
@@ -194,6 +204,9 @@ cmd_run2 () {
   # supposed to stay alive with the job.
   #
   # FIXME: not sure if the error reporting on mkdir problems actually works...
+  #
+  # NOTE: we could, in principle, separate SUBMIT from RUN -- in this case, move
+  # the job into NEW state.
 
   set +x # turn off debug tracing -- stdout interleaving will mess with parsing.
 
@@ -222,7 +235,7 @@ cmd_run_process () {
   # script's shell instance with the job executable, leaving the I/O
   # redirections intact.
   cat                >  "$DIR/job.sh" <<EOT
-  exec sh -c '$@'    <  "$DIR/in" >  "$DIR/out" 2> "$DIR/err"
+  exec sh "$DIR/cmd" <  "$DIR/in" >  "$DIR/out" 2> "$DIR/err"
 EOT
 
   # the job script above is started by this startup script, which makes sure
@@ -248,6 +261,7 @@ EOT
         # need to wait again
         continue
       fi
+
       if test -e "\$DIR/resumed"
       then
         rm -f "\$DIR/resumed"
@@ -355,6 +369,7 @@ cmd_suspend () {
     echo "$state "    >   "$DIR/state.susp"
     RETVAL="$1 suspended"
   else
+    rm -f   "$DIR/suspended"
     ERROR="suspend failed ($ECODE): $RETVAL"
   fi
 
@@ -379,6 +394,7 @@ cmd_resume () {
     return
   fi
 
+  touch   "$DIR/resumed"
   RETVAL=`kill -CONT $rpid 2>&1`
   ECODE=$?
 
@@ -387,9 +403,9 @@ cmd_resume () {
     test -s "$DIR/state.susp" || echo "RUNNING "  > "$DIR/state.susp"
     cat     "$DIR/state.susp"                    >> "$DIR/state"
     rm -f   "$DIR/state.susp"
-    touch   "$DIR/resumed"
     RETVAL="$1 resumed"
   else
+    rm -f   "$DIR/resumed"
     ERROR="resume failed ($ECODE): $RETVAL"
   fi
 

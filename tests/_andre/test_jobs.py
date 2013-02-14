@@ -3,7 +3,7 @@ import time
 import saga
 
 try :
-    js = saga.job.Service ('fork://localhost')
+    js = saga.job.Service ('ssh://localhost')
   
     jd = saga.job.Description ()
     jd.executable = '/bin/sleep'

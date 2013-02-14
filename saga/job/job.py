@@ -105,6 +105,7 @@ class Job (Base, Attributes, Async) :
         self._attributes_set_getter (STARTED,         self._get_started)
         self._attributes_set_getter (FINISHED,        self._get_finished)
         self._attributes_set_getter (EXECUTION_HOSTS, self._get_execution_hosts)
+        self._attributes_set_getter (SERVICE_URL    , self._get_service_url)
 
  
 
@@ -417,7 +418,9 @@ class Job (Base, Attributes, Async) :
 
 
     # ----------------------------------------------------------------
+    # 
     # attribute getters
+    #
     def _get_exit_code (self, ttype=None) :
         return self._adaptor.get_exit_code (ttype=ttype)
 
@@ -432,6 +435,9 @@ class Job (Base, Attributes, Async) :
 
     def _get_execution_hosts (self, ttype=None) :
         return self._adaptor.get_execution_hosts (ttype=ttype)
+
+    def _get_service_url (self, ttype=None) :
+        return self._adaptor.get_service_url (ttype=ttype)
 
     state     = property (get_state)       # state enum
     result    = property (get_result)      # result type    (None)
