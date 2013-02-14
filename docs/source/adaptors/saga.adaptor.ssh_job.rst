@@ -42,8 +42,32 @@ On hitting process limits, the job creation will fail with an error
 similar to either of these::
 NoSuccess: failed to run job (/bin/sh: fork: retry: Resource temporarily unavailable)
 NoSuccess: failed to run job -- backend error
+* number of files are limited, as is disk space: the job.service will
+keep job state on the remote disk, in ``$HOME/.saga/adaptors/ssh_job/``.
+Quota limitations may limit the number of files created there,
+and/or the total size of that directory.  
+On quota or disk space limits, you may see error messages similar to
+the following ones::
+NoSuccess: read from pty process failed ([Errno 5] Quota exceeded)
+NoSuccess: read from pty process failed ([Errno 5] Input/output error)
+NoSuccess: find from pty process [Thread-5] failed (Could not read - pty process died)
 * Other system limits (memory, CPU, selinux, accounting etc.) apply as
 usual.
+* thread safety: it is safe to create multiple :class:`job.Service`
+instances to the same target host at a time -- they should not
+interfere with each other, but ``list()`` will list jobs created by
+either instance (if those use the same target host user account).
+It is **not** safe to use the *same* :class:`job.Service` instance
+from multiple threads concurrently -- the communication on the I/O
+channel will likely get screwed up.  This limitation may be removed
+in future versions of the adaptor.  Non-concurrent (i.e. serialized)
+use should work as expected though.
+* the adaptor option ``enable_debug_trace`` will create a detailed
+trace of the remote shell execution, on the remote host.  This will
+interfere with the shell's stdio though, and may cause unexpected
+failures.  Debugging should only be enabled as last resort, e.g.
+when logging on DEBUG level remains inconclusive, and should
+**never** be used in production mode.
 
 
 Version
@@ -70,6 +94,31 @@ enable / disable saga.adaptor.ssh_job adaptor
 
   - **type** : <type 'bool'>
   - **default** : True
+  - **environment** : None
+  - **valid options** : [True, False]
+``enable_debug_trace``
+
+Create a detailed debug trace on the remote host.
+Note that the log is *not* removed, and can be large!
+A log message on INFO level will be issued which
+provides the location of the log file.
+
+  - **type** : <type 'bool'>
+  - **default** : False
+  - **environment** : None
+  - **valid options** : [True, False]
+``enable_notifications``
+
+Enable support for job state notifications.  Note that
+enabling this option will create a local thread, a remote 
+shell process, and an additional network connection.
+In particular for ssh/gsissh where the number of
+concurrent connections is limited to 10, this
+effectively halfs the number of available job service
+instances per remote host.
+
+  - **type** : <type 'bool'>
+  - **default** : False
   - **environment** : None
   - **valid options** : [True, False]
 

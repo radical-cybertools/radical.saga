@@ -161,8 +161,8 @@ class Engine(sconf.Configurable):
                 sys.stderr.write ("Ctrl+C caught. Exiting...")
                 sys.exit (0)
 
-            self._logger.debug ("installing signal handler for SIGKILL")
-            signal.signal (signal.SIGINT, signal_handler)
+            self._logger.debug ("installing signal handler for SIGTERM")
+            signal.signal (signal.SIGTERM, signal_handler)
 
 
         # load adaptors
@@ -201,18 +201,18 @@ class Engine(sconf.Configurable):
         # attempt to load all registered modules
         for module_name in registry:
 
-            self._logger.info ("Loading  adaptor %s"  %  module_name)
+            self._logger.info ("Trying to load adaptor %s"  %  module_name)
 
 
             # first, import the module
             adaptor_module = None
-            # try :
-            adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
+            try :
+                adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
 
-            # except Exception as e:
-            #     self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
-            #     self._logger.trace ()
-            #     continue # skip to next adaptor
+            except Exception as e:
+                self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
+                self._logger.trace ()
+                continue # skip to next adaptor
 
 
             # we expect the module to have an 'Adaptor' class
@@ -376,7 +376,8 @@ class Engine(sconf.Configurable):
 
 
                 # finally, register the cpi for all its schemas!
-                for adaptor_schema in adaptor_schemas :
+                registered_schemas = list()
+                for adaptor_schema in adaptor_schemas:
 
                     adaptor_schema = adaptor_schema.lower ()
 
@@ -403,12 +404,15 @@ class Engine(sconf.Configurable):
 
                         self._logger.error ("Skipping adaptor %s: already registered '%s - %s'" \
                                          % (module_name, cpi_class, adaptor_instance))
-                        continue # skip to next cpi info
+                        continue  # skip to next cpi info
 
+                    self._adaptor_registry[cpi_type][adaptor_schema].append(info)
+                    registered_schemas.append(str("%s://" % adaptor_schema))
 
-                    self._logger.info ("Loading  adaptor %s: '%s (%s : %s://)'" \
-                                    % (module_name, cpi_class, cpi_type, adaptor_schema))
-                    self._adaptor_registry[cpi_type][adaptor_schema].append (info)
+                self._logger.info("Registering %s for %s API with URL scheme %s" %
+                                      (module_name,
+                                       cpi_type,
+                                       registered_schemas))
 
 
 
@@ -453,8 +457,9 @@ class Engine(sconf.Configurable):
                     if ( info['adaptor_name'] == adaptor_name ) :
                         return info['adaptor_instance']
 
-        raise se.NoSuccess ("No adaptor named '%s' found"  %  adaptor_name)
-
+        error_msg = "No adaptor named '%s' found" % adaptor_name
+        self._logger.error(error_msg)
+        raise se.NoSuccess(error_msg)
 
 
     #-----------------------------------------------------------------
@@ -470,13 +475,17 @@ class Engine(sconf.Configurable):
         adaptor.
         '''
 
-        if not ctype in self._adaptor_registry :
-            raise se.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
-                                  % (ctype, schema))
+        if not ctype in self._adaptor_registry:
+            error_msg = "No adaptor found for '%s' and URL scheme %s://" \
+                                  % (ctype, schema)
+            self._logger.error(error_msg)
+            raise se.NotImplemented(error_msg)
 
-        if not schema in self._adaptor_registry[ctype] :
-            raise se.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
-                                  % (ctype, schema))
+        if not schema in self._adaptor_registry[ctype]:
+            error_msg = "No adaptor found for '%s' and URL scheme %s://" \
+                                  % (ctype, schema)
+            self._logger.error(error_msg)
+            raise se.NotImplemented(error_msg)
 
 
         # cycle through all applicable adaptors, and try to instantiate
@@ -504,8 +513,8 @@ class Engine(sconf.Configurable):
                 # instantiate cpi
                 cpi_instance = cpi_class (api_instance, adaptor_instance)
 
-                self._logger.debug ("BOUND bind_adaptor %s.%s -- success"
-                                 % (adaptor_name, cpi_cname))
+                self._logger.debug("Successfully bound %s.%s to %s" \
+                                 % (adaptor_name, cpi_cname, api_instance))
                 return cpi_instance
 
 

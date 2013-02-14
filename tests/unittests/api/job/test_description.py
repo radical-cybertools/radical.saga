@@ -1,15 +1,17 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
-__license__   = "MIT"
+import saga
 
-""" Unit tests for saga.utils.exception.py
-"""
+def test_deepcopy () :
 
-from saga.job import Description
+    try:
+        jd1 = saga.job.Description ()
+        jd1.executable = '/bin/true'
+        jd2 = jd1.clone ()
+        jd2.executable = '/bin/false'
+        assert jd1.executable != jd2.executable 
 
-def test_deepcopy():
-    assert False
+    except saga.SagaException as se:
+        assert False
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

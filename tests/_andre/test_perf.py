@@ -38,7 +38,8 @@ def run_jobs (service, n_jobs) :
     for id in range (1, n_jobs+1) :
         tmp_j     = service.create_job (jd)
         tmp_j.run ()
-        print "id: %5d : %s  [%s]" % (id, tmp_j.id, tmp_j.get_state ())
+      # print "id: %5d : %s  [%s]" % (id, tmp_j.id, tmp_j.get_state ())
+        # time.sleep (5)
 
     # time.sleep (1)
     # sys.stdout.write ('\n')
@@ -106,30 +107,33 @@ print "n_services n_jobs   time jobs/sec memory  targets"
 # perf (100, [(2, 'fork://localhost/')])
 # perf (100, [(2, 'ssh://merzky@localhost/')])
 
-# perf (    1,  [(1, 'fork://localhost/')])
-# perf (    1,  [(1, 'ssh://merzky@localhost/')])
+perf (    100,  [(1, 'fork://localhost/')])
+perf (    100,  [(1, 'ssh://merzky@localhost/')])
+perf (    100,  [(10, 'fork://localhost/')])
+perf (    100,  [(10, 'ssh://merzky@localhost/')])
 # perf (    1,  [(1, 'ssh://amerzky@cyder.cct.lsu.edu/')])
 # perf (    1,  [(1, 'ssh://repex1.tacc.utexas.edu/')])
+# perf (    1,  [(1, 'gsissh://stampede.tacc.utexas.edu/')])
 
-perf (  10,  [(10, 'fork://localhost/')])
-perf (  10,  [(10, 'fork://localhost/')])
-perf (  10,  [(10, 'fork://localhost/')])
-          
-perf (  10,  [(10, 'ssh://repex1.tacc.utexas.edu/')])
-perf (  10,  [(10, 'ssh://repex1.tacc.utexas.edu/')])
-perf (  10,  [(10, 'ssh://repex1.tacc.utexas.edu/')])
-          
-perf (  10,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/')])
-perf (  10,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/')])
-perf (  10,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/')])
-          
-perf (  10,  [(10, 'ssh://localhost/')])
-perf (  10,  [(10, 'ssh://localhost/')])
-perf (  10,  [(10, 'ssh://localhost/')])
-         
-perf (  10,  [(10, 'gsissh://ranger.tacc.utexas.edu/')])
-perf (  10,  [(10, 'gsissh://ranger.tacc.utexas.edu/')])
-perf (  10,  [(10, 'gsissh://ranger.tacc.utexas.edu/')])
+# perf (  10,  [(10, 'fork://localhost/')])
+# perf (  10,  [(10, 'fork://localhost/')])
+# perf (  10,  [(10, 'fork://localhost/')])
+#           
+# perf (  10,  [(10, 'ssh://repex1.tacc.utexas.edu/')])
+# perf (  10,  [(10, 'ssh://repex1.tacc.utexas.edu/')])
+# perf (  10,  [(10, 'ssh://repex1.tacc.utexas.edu/')])
+#           
+# perf (  10,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/')])
+# perf (  10,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/')])
+# perf (  10,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/')])
+#           
+# perf (  10,  [(10, 'ssh://localhost/')])
+# perf (  10,  [(10, 'ssh://localhost/')])
+# perf (  10,  [(10, 'ssh://localhost/')])
+#          
+# perf (  10,  [(10, 'gsissh://ranger.tacc.utexas.edu/')])
+# perf (  10,  [(10, 'gsissh://ranger.tacc.utexas.edu/')])
+# perf (  10,  [(10, 'gsissh://ranger.tacc.utexas.edu/')])
  
 # perf (  100,  [(1, 'ssh://merzky@localhost/')])
 

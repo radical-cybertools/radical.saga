@@ -33,7 +33,7 @@ class Thread (threading.Thread) :
     def Run (self, call, *args, **kwargs) :
 
         t = self (call, *args, **kwargs)
-        t.run ()
+        t.start ()
         return t
 
 

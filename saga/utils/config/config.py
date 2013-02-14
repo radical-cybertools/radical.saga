@@ -51,8 +51,8 @@ class ConfigOption(object):
     def set_value(self, value):
         # make sure we got the right value type
         if type(value) != self._val_type:
-            print str(type(value))
-            print str(self._val_type)
+          # print str(type(value))
+          # print str(self._val_type)
             raise ValueTypeError(self._category, self._name, 
               type(value), self._val_type)
 
@@ -91,12 +91,15 @@ class Configuration(object):
         # and re-_initialize the configuration object.
         self._initialize()
 
-    def _initialize(self, inject_cfg_file=None):
+    def _initialize(self, inject_cfg_file=None, add_cfg_file=None):
         """ Initialize the global configuration.
 
             :param inject_cfg_file: is used *only* for testing purposes 
              and overwrites / ignores the regular config file locations 
              /etc/saga.cfg & $HOME/.saga.cfg
+
+            :param add_cfg_file: is used *only* for testing purposes 
+             and adds a specific config file to the list of evaluated files.  
         """
         cfg_files = list()
         if inject_cfg_file is not None:
@@ -109,6 +112,9 @@ class Configuration(object):
             usr_cfg = '%s/.saga.cfg' % os.path.expanduser("~")
             if os.path.exists(usr_cfg):
                 cfg_files.append(usr_cfg)
+
+        if add_cfg_file is not None:
+            cfg_files.append(add_cfg_file)
 
         cfr = ConfigFileReader(cfg_files)
     
