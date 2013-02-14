@@ -20,6 +20,8 @@ def main():
         # 'local' schemes trigger the local job adaptor.
         js = saga.job.Service("pbs://localhost")
 
+        return 0
+
         # describe our job
         jd = saga.job.Description()
 

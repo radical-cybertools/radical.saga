@@ -1,13 +1,12 @@
-
 #!/usr/bin/env python
 # encoding: utf-8
+
+""" PBS job adaptor implementation
+"""
 
 __author__    = "Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
-
-""" PBS job adaptor implementation
-"""
 
 import saga.utils.which
 import saga.utils.pty_shell
@@ -220,93 +219,25 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def initialize (self) :
 
-        # start the shell, find its prompt.  If that is up and running, we can
-        # bootstrap our wrapper script, and then run jobs etc.
-
-        # -- now stage the shell wrapper script, and run it.  Once that is up
-        # and running, we can requests job start / management operations via its
-        # stdio.
-
-        base = "$HOME/.saga/adaptors/ssh_job"
-
-        ret, out, _ = self.shell.run_sync ("mkdir -p %s" % base)
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" % (ret, out))
-
-        # FIXME: this is a race condition is multiple job services stage the
-        # script at the same time.  We should make that atomic by
-        #
-        #   cat > .../wrapper.sh.$$ ... ; mv .../wrapper.sh.$$ .../wrapper.sh
-        #
-        # which should work nicely as long as compatible versions of the script
-        # are staged.  Oh well...
-        #
-        # TODO: replace some constants in the script with values from config
-        # files, such as 'timeout' or 'purge_on_quit' ...
-        #
-        self.shell.stage_to_file (src = ssh_wrapper._WRAPPER_SCRIPT, 
-                                  tgt = "%s/wrapper.sh" % base)
-
-        # if debug_trace is set, we add some magic redirection to the shell
-        # command: we run it with 'sh -x' which creates a trace, and pipe to
-        # 'tree $base/wrapper.$$.log', which will save the trace in the log
-        # file.  We still need the wrapper's output on stdout, so we filter out
-        # the trace from the output (grep -v -e '^\\+'), and send the remainder
-        # to the default output channel
-        shell = '/bin/sh'
-        redir = ''
-        #if self._adaptor.debug_trace :
-        #    trace  = "%s/wrapper.$$.log" % base
-        #    shell += " -x"
-        #    redir  = "2>&1 | tee %s | grep -v -e '^\\+'" % trace
+        # check if all required pbs tools are available
+        ret, out, _ = self.shell.run_sync("sdsds")
+        if ret != 0:
+            raise saga.NoSuccess("Couldn't find PBS command line tools: %s" % out)
 
 
-        # we run the script.  In principle, we should set a new / different
-        # prompt -- but, due to some strange and very unlikely coincidence, the
-        # script has the same prompt as the previous shell... - go figure ;-)
-        #
-        # Note that we use 'exec' - so the script replaces the shell process.
-        # Thus, when the script times out, the shell dies and the connection
-        # drops -- that will free all associated resources, and allows for
-        # a clean reconnect.
-      # ret, out, _ = self.shell.run_sync ("exec sh %s/wrapper.sh" % base)
-      
-        # Well, actually, we do not use exec, as that does not give us good
-        # feedback on failures (the shell just quits) -- so we replace it with
-        # this poor-man's version...
-        ret, out, _ = self.shell.run_sync ("/bin/sh -c '(%s %s/wrapper.sh $$ && kill -9 $PPID) %s' || false" \
-                                        % (shell, base, redir))
-
-        # either way, we somehow ran the script, and just need to check if it
-        # came up all right...
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to run wrapper (%s)(%s)" % (ret, out))
-
-        # if debug trace was requested, we now should know its name and can
-        # report it.
-        #if self._adaptor.debug_trace :
-#
- #           wrapper_pid = '?'
-  #          for line in out.split ('\n') :
-#
- #               if re.match ('^PID: \d+$', line) :
-  #                  wrapper_pid = line[5:]
-   #           
-    #        trace = "%s/wrapper.%s.log" % (base, wrapper_pid)
-     #       self._logger.error ('remote trace: %s : %s', self.rm, trace)
-
-        self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
+        #self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
 
 
     # ----------------------------------------------------------------
     #
     def finalize (self, kill_shell = False) :
 
+        pass
         # print "ssh shell finalize"
 
-        if  kill_shell :
-            if  self.shell :
-                self.shell.finalize (True)
+        #if  kill_shell :
+        #    if  self.shell :
+        #        self.shell.finalize (True)
                 # print "ssh shell finalize 1"
 
         # print "ssh shell finalize done"
