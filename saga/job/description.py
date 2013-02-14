@@ -24,7 +24,8 @@ class Description (saga.Attributes) :
         self._attributes_camelcasing (True)
 
         # register properties with the attribute interface
-        
+
+        self._attributes_register  (saga.job.NAME                 , None, sa.STRING, sa.SCALAR, sa.WRITEABLE) 
         self._attributes_register  (saga.job.EXECUTABLE           , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.ARGUMENTS            , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
         self._attributes_register  (saga.job.ENVIRONMENT          , None, sa.ANY,    sa.SCALAR, sa.WRITEABLE)
