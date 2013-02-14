@@ -625,8 +625,8 @@ listen() {
 # The first arg to wrapper.sh is the id of the spawning shell, which we need to
 # report, if given
 #
-stty -echo
-stty -echonl
+stty -echo   2> /dev/null
+stty -echonl 2> /dev/null
 listen $1
 #
 # --------------------------------------------------------------------
