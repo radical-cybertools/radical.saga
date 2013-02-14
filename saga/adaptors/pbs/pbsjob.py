@@ -330,7 +330,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         script = _pbscript_generator(url=self.rm, logger=self._logger, jd=jd)
         self._logger.debug("Generated PBS script: %s" % script)
 
-        ret, out, _ = self.shell.run_sync("echo \'%s\' | %s" \
+        ret, out, _ = self.shell.run_sync("echo '%s' | %s" \
             % (script, self._commands['qsub']['path']))
 
         if ret != 0:
