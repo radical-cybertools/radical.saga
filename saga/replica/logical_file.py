@@ -21,9 +21,9 @@ class LogicalFile (saga.namespace.entry.Entry,
         '''
 
         # param checks
-        url = Url (url)
+        url = saga.url.Url (url)
 
-        self._nsentry = super  (Directory, self)
+        self._nsentry = super  (LogicalFile, self)
         self._nsentry.__init__ (url, flags, session, 
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
@@ -39,7 +39,7 @@ class LogicalFile (saga.namespace.entry.Entry,
         '''
 
         # param checks
-        url     = Url (url)
+        url     = saga.url.Url (url)
         scheme  = url.scheme.lower ()
 
         return cls (url, flags, session, _ttype=ttype)._init_task

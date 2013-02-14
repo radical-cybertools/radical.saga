@@ -56,6 +56,12 @@ class Thread (threading.Thread) :
             self.join ()
 
 
+    def cancel (self) :
+        # FIXME: this is not really implementable generically, so we ignore 
+        # cancel requests for now.
+        pass
+
+
     def get_state (self) :
         return self._state 
 

@@ -1,10 +1,11 @@
 
 """ Provides a number of call decorators. """
 
+import re
 import inspect
 
-from   saga.exceptions import *
-from   saga.task       import Task, SYNC, ASYNC, TASK
+import saga.exceptions as se
+import saga.task       as st
 
 
 # ------------------------------------
@@ -16,11 +17,12 @@ def SYNC_CALL (sync_function) :
 
         if 'ttype' in kwargs and kwargs['ttype'] != None :
 
-            if not kwargs['ttype'] in (SYNC, ASYNC, TASK) :
+            if not kwargs['ttype'] in (st.SYNC, st.ASYNC, st.TASK) :
                 # cannot handle that ttype value, do not call async methods
-                msg = " %s: async %s() called with invalid tasktype (%s)" \
-                    % (self.__class__.__name__, sync_function.__name__, str(ttype))
-                raise BadParameter (msg)
+                ttype = kwargs['ttype']
+                msg   = " %s: async %s() called with invalid tasktype (%s)" \
+                      % (self.__class__.__name__, sync_function.__name__, str(ttype))
+                raise se.BadParameter (msg)
 
             # call async method flavor
             try :
@@ -30,7 +32,7 @@ def SYNC_CALL (sync_function) :
             except AttributeError :
                 msg = " %s: async %s() not implemented" \
                     % (self.__class__.__name__, sync_function.__name__)
-                raise NotImplemented (msg)
+                raise se.NotImplemented (msg)
 
             else :
                 # 'self' not needed, getattr() returns member function
@@ -59,7 +61,7 @@ def ASYNC_CALL (async_function) :
 def CPI_SYNC_CALL (cpi_sync_function) :
 
     def wrap_function (self, *args, **kwargs) :
-        raise NotImplemented ("%s.%s is not implemented for %s.%s" \
+        raise se.NotImplemented ("%s.%s is not implemented for %s.%s" \
                 %  (self.get_api ().__class__.__name__, 
                     inspect.stack ()[1][3],
                     self._adaptor._name, 
@@ -83,18 +85,18 @@ def CPI_ASYNC_CALL (cpi_async_function) :
         if not 'ttype' in kwargs :
             msg = " %s: async %s() called with no tasktype" \
                 % (self.__class__.__name__, cpi_async_function.__name__)
-            raise BadParameter (msg)
+            raise se.BadParameter (msg)
 
 
         ttype = kwargs['ttype']
         del kwargs['ttype']
 
 
-        if not ttype in (SYNC, ASYNC, TASK) :
+        if not ttype in (st.SYNC, st.ASYNC, st.TASK) :
             # cannot handle that ttype value, do not call async methods
             msg = " %s: async %s() called with invalid tasktype (%s)" \
                 % (self.__class__.__name__, cpi_async_function.__name__, str(ttype))
-            raise BadParameter (msg)
+            raise se.BadParameter (msg)
 
 
         cpi_sync_function_name = None
@@ -108,7 +110,7 @@ def CPI_ASYNC_CALL (cpi_async_function) :
         except AttributeError :
             msg = " %s: sync %s() not implemented" \
                 % (self.__class__.__name__, cpi_sync_function.__name__)
-            raise NotImplemented (msg)
+            raise se.NotImplemented (msg)
 
 
         # got the sync call, wrap it in a task
@@ -117,7 +119,7 @@ def CPI_ASYNC_CALL (cpi_async_function) :
               '_args'   : args, 
               '_kwargs' : kwargs }   # no ttype!
 
-        return Task (self, cpi_sync_function_name, c, ttype)
+        return st.Task (self, cpi_sync_function_name, c, ttype)
 
     return wrap_function
 

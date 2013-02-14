@@ -302,6 +302,26 @@ class Entry (saga.base.Base, saga.async.Async) :
   
     
     
+    def remove (self, flags=None, ttype=None) :
+        '''
+        :param flags:  Flags to use for the operation.
+
+        ttype:         saga.task.type enum
+        ret:           None / saga.Task
+        
+        Reove the entry.
+
+        The entry is removed, and this object instance is then invalid for
+        further operations.
+
+            # remove an entry
+            entry = saga.namespace.Directory("sftp://localhost/tmp/data/data.bin")
+            entry.remove ()
+        '''
+        return self._adaptor.remove_self (flags, ttype=ttype) 
+  
+    
+    
     def close (self, timeout=None, ttype=None) :
         '''
         timeout:       float
