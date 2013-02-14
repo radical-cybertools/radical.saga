@@ -777,8 +777,8 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
 
         if  'job_description' in job_info :
             # comes from job.service.create_job()
-            self.jd = job_info["job_description"]
             self.js = job_info["job_service"] 
+            self.jd = job_info["job_description"]
 
             # the js is responsible for job bulk operations -- which
             # for jobs only work for run()
@@ -793,6 +793,7 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
 
         elif 'job_id' in job_info :
             # initialize job attribute values
+            self.js               = job_info["job_service"] 
             self._id              = job_info['job_id']
             self._state           = saga.job.UNKNOWN
             self._exit_code       = None
@@ -822,6 +823,17 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
                 return self._state
             else :
                 raise e
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_service_url (self):
+
+        if not self.js :
+            raise saga.IncorrectState ("Job Service URL unknown")
+        else :
+            return self.js.get_url ()
 
 
     # ----------------------------------------------------------------

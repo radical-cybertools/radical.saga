@@ -43,14 +43,14 @@ def test_job_states () :
         assert j2.state == saga.job.CANCELED
 
 
-        j3 = js.run_job ("/bin/true")
+        j3 = js.run_job ("/bin/sleep 3 ; /bin/true")
         assert j3.state == saga.job.RUNNING
                          
         j3.wait ()       
         assert j3.state == saga.job.DONE
 
 
-        j4 = js.run_job ("/bin/false")
+        j4 = js.run_job ("/bin/sleep 3 ; /bin/false")
         assert j4.state == saga.job.RUNNING
                          
         j4.wait ()       
@@ -86,14 +86,7 @@ def test_get_service_url () :
         tc = sutc.TestConfig ()
         js = saga.job.Service (tc.js_url, tc.session)
         j  = js.run_job ("/bin/sleep 10")
-        print      j.service_url 
-        print type(j.service_url)
-
-        print      js.url
-        print type(js.url)
-
         assert j.service_url == js.url
-        assert j.id == j.get_id ()
 
     except saga.SagaException as se:
         print  se

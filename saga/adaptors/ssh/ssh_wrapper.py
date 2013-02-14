@@ -182,9 +182,19 @@ cmd_run () {
 
   cmd_run2 $@ 1>/dev/null 2>/dev/null 3</dev/null &
 
-  pid=$!      # this is the (native) job id!
-  wait $pid   # this will return very quickly -- look at cmd_run2... ;-)
-  RETVAL=$pid # report id
+  SAGA_PID=$!      # this is the (native) job id!
+  wait $SAGA_PID   # this will return very quickly -- look at cmd_run2... ;-)
+  RETVAL=$SAGA_PID # report id
+
+  # we have to wait though 'til the job enters RUNNING (this is a sync job
+  # startup)
+  DIR="$BASE/$SAGA_PID"
+
+  while true
+  do
+    grep RUNNING "$DIR/state" && break
+  done
+
 }
 
 
@@ -205,7 +215,7 @@ cmd_run2 () {
 
   test -d "$DIR"    && rm    -rf "$DIR"  # re-use old pid's
   test -d "$DIR"    || mkdir -p  "$DIR"  || (ERROR="cannot use job id"; return 0)
-  echo "RUNNING "   >> "$DIR/state"
+  echo "NEW "       >> "$DIR/state"
 
   cmd_run_process $@ 1>/dev/null 2>/dev/null 3</dev/null &
   return $!
