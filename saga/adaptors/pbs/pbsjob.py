@@ -25,6 +25,72 @@ import ssh_wrapper
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
+def log_error_and_raise(message, exception, logger):
+    logger.error(message)
+    raise exception(message)
+
+def _pbscript_generator(url, logger, jd):
+    '''Generates a PBS script from a SAGA job description.
+    '''
+    pbs_params = str()
+    exec_n_args = str()
+
+    if jd.executable is not None:
+        exec_n_args += "%s " % (jd.executable) 
+    if jd.arguments is not None:
+        for arg in jd.arguments:
+            exec_n_args += "%s " % (arg)
+
+    #if jd.name is not None:
+    #    pbs_params += "#PBS -N %s \n" % jd.name
+    #else:
+    #    pbs_params += "#PBS -N %s \n" % "bliss_job"
+
+    pbs_params += "#PBS -V     \n"
+
+    if jd.environment is not None:
+        variable_list = str()
+        for key in jd.environment.keys(): 
+            variable_list += "%s=%s," % (key, jd.environment[key])
+        pbs_params += "#PBS -v %s \n" % variable_list
+
+    if jd.working_directory is not None:
+        pbs_params += "#PBS -d %s \n" % jd.working_directory 
+    if jd.output is not None:
+        pbs_params += "#PBS -o %s \n" % jd.output
+    if jd.error is not None:
+        pbs_params += "#PBS -e %s \n" % jd.error 
+    if jd.wall_time_limit is not None:
+        hours = jd.wall_time_limit/60
+        minutes = jd.wall_time_limit%60
+        pbs_params += "#PBS -l walltime=%s:%s:00 \n" % (str(hours), str(minutes))
+    if jd.queue is not None:
+        pbs_params += "#PBS -q %s \n" % jd.queue
+    if jd.project is not None:
+        pbs_params += "#PBS -A %s \n" % str(jd.project)
+    if jd.job_contact is not None:
+        pbs_params += "#PBS -m abe \n"
+   
+    if url.scheme in ["xt5torque", "xt5torque+ssh", 'xt5torque+gsissh']:
+        # Special case for TORQUE on Cray XT5s
+        logger.info("Using Cray XT5 spepcific modifications, i.e., -l size=xx instead of -l nodes=x:ppn=yy ")
+        if jd.total_cpu_count is not None:
+            pbs_params += "#PBS -l size=%s" % jd.total_cpu_count
+    else:
+        # Default case (non-XT5)
+        if jd.total_cpu_count is not None:
+            tcc = int(jd.total_cpu_count)
+            tbd = float(tcc)/float(self._ppn)
+            if float(tbd) > int(tbd):
+                pbs_params += "#PBS -l nodes=%s:ppn=%s" % (str(int(tbd)+1), self._ppn)
+            else:
+                pbs_params += "#PBS -l nodes=%s:ppn=%s" % (str(int(tbd)), self._ppn)
+
+    pbscript = "\n#!/bin/bash \n%s \n%s" % (pbs_params, exec_n_args)
+
+    return pbscript
+
+
 
 # --------------------------------------------------------------------
 # some private defs
@@ -207,6 +273,13 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         elif rm_scheme == "pbs+gsissh":
             pty_url.scheme = "gsissh"
 
+        # these are the commands that we need in order to interact with PBS.
+        # the adaptor will try to find them during initialize(self) and bail
+        # out in case they are note avaialbe.
+        self._commands = {'pbsnodes': None,
+                          'qstat':    None,
+                          'qsub':     None}
+
         self.shell = saga.utils.pty_shell.PTYShell(pty_url,
             self.session.contexts, self._logger)
 
@@ -217,68 +290,54 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
-    def initialize (self) :
+    def initialize(self):
 
         # check if all required pbs tools are available
-        ret, out, _ = self.shell.run_sync("sdsds")
-        if ret != 0:
-            raise saga.NoSuccess("Couldn't find PBS command line tools: %s" % out)
+        for cmd in self._commands.keys():
+            ret, out, _ = self.shell.run_sync("which %s " % cmd)
+            if ret != 0:
+                message = "Error finding PBS tools: %s" % out
+                log_error_and_raise(message, saga.NoSuccess, self._logger)
+            else:
+                path = out.strip()  # strip removes newline
+                ret, out, _ = self.shell.run_sync("%s --version" % cmd)
+                if ret != 0:
+                    message = "Error finding PBS tools: %s" % out
+                    log_error_and_raise(message, saga.NoSuccess, self._logger)
+                else:
+                    # version is reported as: "version: x.y.z"
+                    version = out.strip().split()[1]  # strip removes newline
 
+                    # add path and version to the command dictionary
+                    self._commands[cmd] = {"path":    path,
+                                           "version": version}
 
-        #self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
+        # TODO: detect any other specialties of the PBS installation ?
 
+        self._logger.info("Found PBS tools: %s" % self._commands)
 
     # ----------------------------------------------------------------
     #
-    def finalize (self, kill_shell = False) :
-
+    def finalize(self, kill_shell=False):
         pass
-        # print "ssh shell finalize"
-
-        #if  kill_shell :
-        #    if  self.shell :
-        #        self.shell.finalize (True)
-                # print "ssh shell finalize 1"
-
-        # print "ssh shell finalize done"
-
 
     # ----------------------------------------------------------------
     #
-    #
-    def _job_run (self, jd) :
-        """ runs a job on the wrapper via pty, and returns the job id """
+    def _job_run(self, jd):
+        """ runs a job via PBS """
 
-        exe = jd.executable
-        arg = ""
-        env = ""
-        cwd = ""
+        # create a PBS job script from SAGA job description
+        script = _pbscript_generator(url=self.rm, logger=self._logger, jd=jd)
+        self._logger.debug("Generated PBS script: %s" % script)
 
-        if jd.attribute_exists ("arguments") :
-            for a in jd.arguments :
-                arg += " %s" % a
+        ret, out, _ = self.shell.run_sync("echo \'%s\' | %s" \
+            % (script, self._commands['qsub']['path']))
 
-        if jd.attribute_exists ("environment") :
-            for e in jd.environment :
-                env += "export %s=%s; "  %  (e, jd.environment[e])
+        if ret != 0:
+            message = "Error running 'qsub': %s. Script was: %s" \
+                % (out, script)
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        if jd.attribute_exists ("working_directory") :
-            cwd = "cd %s && " % jd.working_directory
-
-        cmd = "(%s %s %s %s)"  %  (env, cwd, exe, arg)
-
-        ret, out, _ = self.shell.run_sync ("RUN %s" % cmd)
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to run job '%s': (%s)(%s)" % (cmd, ret, out))
-
-        lines = filter (None, out.split ("\n"))
-        self._logger.debug (lines)
-
-        if  len (lines) < 2 :
-            raise saga.NoSuccess ("failed to run job (%s)" % lines)
-
-        if lines[-2] != "OK" :
-            raise saga.NoSuccess ("failed to run job (%s)" % lines)
 
         # FIXME: verify format of returned pid (\d+)!
         pid    = lines[-1].strip ()
@@ -326,7 +385,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     # TODO: this should also fetch the (final) state, to safe a hop
     #
     def _job_get_exit_code (self, id) :
-        """ get the job's exit code from the wrapper shell """
+        """ get the job's exit code from the got initial shell promptapper shell """
 
         rm, pid = self._adaptor.parse_id (id)
 
@@ -650,7 +709,3 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     def re_raise (self):
         # nothing to do here actually, as run () is synchronous...
         return self._exception
-
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-

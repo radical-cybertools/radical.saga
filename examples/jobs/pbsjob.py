@@ -18,16 +18,15 @@ def main():
     try:
         # create a job service for the local machine. both, 'fork' and
         # 'local' schemes trigger the local job adaptor.
-        js = saga.job.Service("pbs://localhost")
+        js = saga.job.Service("pbs+ssh://india.futuregrid.org")
 
-        return 0
 
         # describe our job
         jd = saga.job.Description()
 
         # environment, executable & arguments. We use '/bin/sleep' to simulate
         # a job that runs for $RUNTIME seconds.
-        jd.queue       = 'default'
+        jd.queue       = 'batch'
         jd.project     = 'TG-XXXYYYYZZZ'
         jd.environment = {'RUNTIME': '10'}
         jd.executable  = '/bin/sleep'
@@ -46,6 +45,9 @@ def main():
 
         print "\n...starting job...\n"
         catjob.run()
+
+        return 0
+
 
         print "Job ID    : %s" % (catjob.id)
         print "Job State : %s" % (catjob.state)
