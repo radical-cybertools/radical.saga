@@ -41,10 +41,8 @@ def _pbscript_generator(url, logger, jd):
         for arg in jd.arguments:
             exec_n_args += "%s " % (arg)
 
-    #if jd.name is not None:
-    #    pbs_params += "#PBS -N %s \n" % jd.name
-    #else:
-    #    pbs_params += "#PBS -N %s \n" % "bliss_job"
+    if jd.name is not None:
+        pbs_params += "#PBS -N %s \n" % jd.name
 
     pbs_params += "#PBS -V     \n"
 
