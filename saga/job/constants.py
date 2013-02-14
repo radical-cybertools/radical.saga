@@ -43,6 +43,10 @@ SUSPENDED             = 'Suspended'
 ################################################################################
 #
 # JobDescription attributes:
+NAME                  = 'Name'
+""" The name of your job. 
+"""
+
 EXECUTABLE            = 'Executable'
 """ The path to the executable. 
 """
