@@ -20,7 +20,6 @@ def main():
         # 'local' schemes trigger the local job adaptor.
         js = saga.job.Service("pbs+ssh://india.futuregrid.org")
 
-
         # describe our job
         jd = saga.job.Description()
 
@@ -50,16 +49,18 @@ def main():
         print "Job ID    : %s" % (catjob.id)
         print "Job State : %s" % (catjob.state)
 
-        print "\nListing active jobs: "
-        for job in js.list():
-            print " * %s" % job
+        #print "\nListing active jobs: "
+        #for job in js.list():
+        #    print " * %s" % job
 
         # wait for our job to complete
         print "\n...waiting for job...\n"
         catjob.wait()
 
-        print "Job State : %s" % (catjob.state)
-        print "Exitcode  : %s" % (catjob.exit_code)
+        print "Job State   : %s" % (catjob.state)
+        print "Exitcode    : %s" % (catjob.exit_code)
+        print "Exec. hosts : %s" % (catjob.execution_hosts)
+
 
     except saga.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))

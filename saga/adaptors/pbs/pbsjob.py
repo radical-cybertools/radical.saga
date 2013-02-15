@@ -29,9 +29,34 @@ def log_error_and_raise(message, exception, logger):
     raise exception(message)
 
 
+def _pbs_to_saga_jobstate(pbsjs):
+    """ translates a pbs one-letter state to saga
+    """
+    if pbsjs == 'C':
+        return saga.job.DONE
+    elif pbsjs == 'E':
+        return saga.job.RUNNING
+    elif pbsjs == 'H':
+        return saga.job.PENDING
+    elif pbsjs == 'Q':
+        return saga.job.PENDING
+    elif pbsjs == 'R':
+        return saga.job.RUNNING
+    elif pbsjs == 'T':
+        return saga.job.RUNNING
+    elif pbsjs == 'W':
+        return saga.job.PENDING
+    elif pbsjs == 'S':
+        return saga.job.PENDING
+    elif pbsjs == 'X':
+        return saga.job.CANCELED
+    else:
+        return saga.job.UNKNOWN
+
+
 def _pbscript_generator(url, logger, jd):
-    '''Generates a PBS script from a SAGA job description.
-    '''
+    """ generates a PBS script from a SAGA job description
+    """
     pbs_params = str()
     exec_n_args = str()
 
@@ -282,6 +307,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         # create a null logger to silence the PTY wrapper!
         import logging
+
         class NullHandler(logging.Handler):
             def emit(self, record):
                 pass
@@ -355,61 +381,56 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
-    def _job_get_state(self, id):
+    def _job_get_info(self, id):
         """ get the job state from the wrapper shell """
+
+        job_state   = None
+        exec_hosts  = None
+        exit_status = None
 
         rm, pid = self._adaptor.parse_id(id)
 
-        ret, out, _ = self.shell.run_sync ("STATE %s\n" % pid)
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to get job state for '%s': (%s)(%s)" \
-                               % (id, ret, out))
+        ret, out, _ = self.shell.run_sync("%s -f %s | \
+            egrep '(job_state)|(exec_host)|(exit_status)'" \
+            % (self._commands['qstat']['path'], pid))
 
-        lines = filter (None, out.split ("\n"))
-        self._logger.debug (lines)
+        if ret != 0:
+            # something went wrong
+            message = "Error retrieving job info via 'qstat': %s" % out
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        if  len (lines) == 3 :
-            # shell did not manage to do 'stty -echo'?
-            del (lines[0])
+        # parse the egrep result. this should look something like this:
+        #     job_state = C
+        #     exec_host = i72/0
+        #     exit_status = 0
+        results = out.split('\n')
+        for result in results:
+            if len(result.split()) == 3:
+                key, _, val = result.split()
+                if key == 'job_state':
+                    job_state = _pbs_to_saga_jobstate(val)
+                elif key == 'exec_host':
+                    exec_hosts = val
+                elif key == 'exit_status':
+                    exit_status = val
 
-        if  len (lines) != 2 :
-            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % (id, lines))
-
-        if lines[0] != "OK" :
-            raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
-
-        return lines[1].strip ()
-        
+        return (job_state, exec_hosts, exit_status)
 
     # ----------------------------------------------------------------
     #
-    # TODO: this should also fetch the (final) state, to safe a hop
+    def _job_get_exit_code(self, id):
+        """ get the job's exit code
+        """
+        # _job_get_info returns (job_state, exec_hosts, exit_status)
+        return self._job_get_info(id)[2]
+
+    # ----------------------------------------------------------------
     #
-    def _job_get_exit_code (self, id) :
-        """ get the job's exit code from the got initial shell promptapper shell """
-
-        rm, pid = self._adaptor.parse_id (id)
-
-        ret, out, _ = self.shell.run_sync ("RESULT %s\n" % pid)
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to get job exit code for '%s': (%s)(%s)" \
-                               % (id, ret, out))
-
-        lines = filter (None, out.split ("\n"))
-        self._logger.debug (lines)
-
-        if  len (lines) == 3 :
-            # shell did not manage to do 'stty -echo'?
-            del (lines[0])
-
-        if  len (lines) != 2 :
-            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % (id, lines))
-
-        if lines[0] != "OK" :
-            raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
-
-        return lines[1].strip ()
-        
+    def _job_get_execution_hosts(self, id):
+        """ get the job's exit code
+        """
+        # _job_get_info returns (job_state, exec_hosts, exit_status)
+        return self._job_get_info(id)[1]
 
     # ----------------------------------------------------------------
     #
@@ -437,40 +458,32 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
 
-
     # ----------------------------------------------------------------
     #
     # TODO: this should also fetch the (final) state, to safe a hop
     # TODO: implement via notifications
     #
-    def _job_wait (self, id, timeout) :
-        """ 
-        A call to the shell to do the WAIT would block the shell for any
-        other interactions.  In particular, it would practically kill it if the
-        Wait waits forever...
-
-        So we implement the wait via a state pull.  The *real* solution is, of
-        course, to implement state notifications, and wait for such
-        a notification to arrive within timeout seconds...
+    def _job_wait(self, id, timeout):
+        """
         """
 
-        time_start = time.time ()
+        time_start = time.time()
         time_now   = time_start
-        rm, pid    = self._adaptor.parse_id (id)
+        rm, pid    = self._adaptor.parse_id(id)
 
-        while True :
-            state = self._job_get_state (id)
-            if  state == 'DONE'     or \
-                state == 'FAILED'   or \
-                state == 'CANCELED'    :
+        while True:
+            state = self._job_get_info(id)[0]
+            if state == saga.job.DONE or \
+               state == saga.job.FAILED or \
+               state == saga.job.CANCELED:
                     return True
             # avoid busy poll
-            time.sleep (0.5)
+            time.sleep(0.5)
 
             # check if we hit timeout
-            if  timeout >= 0 :
-                time_now = time.time ()
-                if  time_now - time_start > timeout :
+            if timeout >= 0:
+                time_now = time.time()
+                if time_now - time_start > timeout:
                     return False
 
     # ----------------------------------------------------------------
@@ -495,9 +508,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
     # ----------------------------------------------------------------
+    #
     @SYNC_CALL
-    def get_url (self) :
-        """ Implements saga.adaptors.cpi.job.Service.get_url()
+    def get_url(self):
+        """ implements saga.adaptors.cpi.job.Service.get_url()
         """
         return self.rm
 
@@ -605,55 +619,52 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         self._exception       = None
         self._started         = None
         self._finished        = None
-        
-        return self.get_api ()
 
+        return self.get_api()
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_state (self):
+    def get_state(self):
         """ Implements saga.adaptors.cpi.job.Job.get_state()
         """
 
         # we may not yet have a backend representation...
-        try :
-            self._state = self.js._job_get_state (self._id)
+        try:
+            self._state = self.js._job_get_info(self._id)[0]
             return self._state
-        except Exception as e :
-            if self._id == None :
+        except Exception as e:
+            if self._id == None:
                 return self._state
-            else :
+            else:
                 raise e
 
-  
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def wait(self, timeout):
+        return self.js._job_wait(self._id, timeout)
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def wait (self, timeout):
-        return self.js._job_wait (self._id, timeout)
-   
-    # ----------------------------------------------------------------
-    #
-    @SYNC_CALL
-    def get_id (self) :
-        """ Implements saga.adaptors.cpi.job.Job.get_id() """        
+    def get_id(self):
+        """ Implements saga.adaptors.cpi.job.Job.get_id()
+        """
         return self._id
-   
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_exit_code (self) :
+    def get_exit_code(self):
         """ Implements saga.adaptors.cpi.job.Job.get_exit_code() """
 
-        if self._exit_code != None :
+        if self._exit_code != None:
             return self._exit_code
 
-        self._exit_code = self.js._job_get_exit_code (self._id)
-
+        self._exit_code = self.js._job_get_exit_code(self._id)
         return self._exit_code
-   
+
   # # ----------------------------------------------------------------
   # #
   # # TODO: the values below should be fetched with every get_state...
@@ -682,14 +693,20 @@ class PBSJob (saga.adaptors.cpi.job.Job):
   #     """        
   #     return self._finished
   # 
+
   # # ----------------------------------------------------------------
   # #
-  # @SYNC_CALL
-  # def get_execution_hosts (self) :
-  #     """ Implements saga.adaptors.cpi.job.Job.get_execution_hosts()
-  #     """        
-  #     return self._execution_hosts
-  #
+    @SYNC_CALL
+    def get_execution_hosts(self):
+        """ Implements saga.adaptors.cpi.job.Job.get_execution_hosts()
+        """
+
+        if self._execution_hosts != None:
+            return self._execution_hosts
+
+        self._execution_hosts = self.js._job_get_execution_hosts(self._id)
+        return self._execution_hosts
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
