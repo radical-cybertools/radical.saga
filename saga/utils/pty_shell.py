@@ -224,7 +224,7 @@ class PTYShell (object) :
         startup prompts and messages.
         """
 
-        self.prompt    = "^(.*[\$#>])\s*$" # a line ending with # $ >
+        self.prompt    = "^(.*[\$#>])\s*$" # greedy, look for line ending with # $ >
         self.prompt_re = re.compile (self.prompt, re.DOTALL)
 
         prompt_patterns = ["password\s*:\s*$",            # password prompt
@@ -372,11 +372,15 @@ class PTYShell (object) :
           PROMPT-0->
 
         and thus swallow the ls output...
+
+        Note that the string match *before* te prompt regex is non-gready -- if
+        the output contains multiple occurrences of the prompt, only the match
+        up to the first occurence is returned.
         """
 
         old_prompt     = self.prompt
         self.prompt    = prompt
-        self.prompt_re = re.compile ("^(.*)%s\s*$" % self.prompt, re.DOTALL)
+        self.prompt_re = re.compile ("^(.*?)%s\s*$" % self.prompt, re.DOTALL)
 
         try :
             self.pty.write ("\n")

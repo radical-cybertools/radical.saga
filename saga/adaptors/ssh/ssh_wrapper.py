@@ -31,10 +31,7 @@ TIMEOUT=30
 trap idle_handler ALRM
 
 idle_handler (){
-  echo "IDLE TIMEOUT"
-  rm -f "$BASE/idle.$ppid"
-  touch "$BASE/timed_out.$ppid"
-  exit 0
+  cmd_quit TIMEOUT
 }
 
 idle_checker () {
@@ -53,27 +50,6 @@ idle_checker () {
 
     touch   "$BASE/idle.$ppid"
   done
-}
-
-
-# --------------------------------------------------------------------
-#
-# utility call which extracts the first argument and returns it.
-#
-get_cmd () {
-  if test -z $1 ; then RETVAL="NOOP"; return;
-  else                 RETVAL=$1;     fi
-}
-
-
-# --------------------------------------------------------------------
-#
-# utility call which strips the first of a set of arguments, and returns the
-# remaining ones in a space separated string
-#
-get_args () {
-  if test -z $1 ; then        RETVAL="";  return;
-  else                 shift; RETVAL=$@;  fi
 }
 
 
@@ -140,13 +116,13 @@ create_monitor () {
     SAGA_PID=\$1
     DIR="$BASE/\$SAGA_PID"
 
-    echo "PID: $SAGA_PID" >> /tmp/log.merzky
+    printf "PID: $SAGA_PID\\n" >> /tmp/log.merzky
 
     nohup /bin/sh "\$DIR/job.sh" 1>/dev/null 2>/dev/null 3</dev/null &
 
     rpid=\$!
-    echo \$rpid      >  "\$DIR/pid"
-    echo "RUNNING "  >> "\$DIR/state"
+    printf "\$rpid\\n"    >  "\$DIR/pid"
+    printf "RUNNING \\n"  >> "\$DIR/state"
 
     while true
     do
@@ -171,13 +147,13 @@ create_monitor () {
       fi
 
       # real exit -- evaluate exit val
-      echo \$retv > "\$DIR/exit"
-      test \$retv = 0           && echo "DONE "     >> "\$DIR/state"
-      test \$retv = 0           || echo "FAILED "   >> "\$DIR/state"
+      printf "\$retv\\n" > "\$DIR/exit"
+      test   "\$retv"   = 0     && printf "DONE \\n"     >> "\$DIR/state"
+      test   "\$retv"   = 0     || printf "FAILED \\n"   >> "\$DIR/state"
 
       # capture canceled state
-      test -e "\$DIR/canceled"  && echo "CANCELED " >> "\$DIR/state"
-      test -e "\$DIR/canceled"  && rm -f               "\$DIR/canceled"
+      test -e "\$DIR/canceled"  && printf "CANCELED \\n" >> "\$DIR/state"
+      test -e "\$DIR/canceled"  && rm -f                    "\$DIR/canceled"
 
       # done waiting
       break
@@ -242,7 +218,7 @@ cmd_run () {
   #
   # go figure...
 
-  cmd_run2 $@ 1>/dev/null 2>/dev/null 3</dev/null &
+  cmd_run2 "$@" 1>/dev/null 2>/dev/null 3</dev/null &
 
   SAGA_PID=$!      # this is the (native) job id!
   wait $SAGA_PID   # this will return very quickly -- look at cmd_run2... ;-)
@@ -272,14 +248,15 @@ cmd_run2 () {
 
   set +x # turn off debug tracing -- stdout interleaving will mess with parsing.
 
-  SAGA_PID=`sh -c 'echo $PPID'`
+  SAGA_PID=`sh -c 'printf "$PPID"'`
   DIR="$BASE/$SAGA_PID"
 
   test -d "$DIR"    && rm    -rf "$DIR"  # re-use old pid's
   test -d "$DIR"    || mkdir -p  "$DIR"  || (ERROR="cannot use job id"; return 0)
-  echo "NEW "       >> "$DIR/state"
+  printf "NEW \\n"  >> "$DIR/state"
 
-  cmd_run_process $@ 1>/dev/null 2>/dev/null 3</dev/null &
+
+  cmd_run_process "$@" 1>/dev/null 2>/dev/null 3</dev/null &
   return $!
 }
 
@@ -290,14 +267,14 @@ cmd_run_process () {
   SAGA_ID=$PPID
   DIR="$BASE/$SAGA_PID"
 
-  echo "$@"          >  "$DIR/cmd"
-  touch                 "$DIR/in"
+  printf "$*\\n"   >  "$DIR/cmd"
+  touch               "$DIR/in"
 
   # create a script which represents the job.  The 'exec' call will replace the
   # script's shell instance with the job executable, leaving the I/O
   # redirections intact.
-  cat                >  "$DIR/job.sh" <<EOT
-  exec sh "$DIR/cmd" <  "$DIR/in" >  "$DIR/out" 2> "$DIR/err"
+  cat              >  "$DIR/job.sh" <<EOT
+exec sh "$DIR/cmd" <  "$DIR/in" >  "$DIR/out" 2> "$DIR/err"
 EOT
 
   # the job script above is started by this monitor script, which makes sure
@@ -383,8 +360,8 @@ cmd_suspend () {
 
   if test "$ECODE" = "0"
   then
-    echo "SUSPENDED " >>  "$DIR/state"
-    echo "$state "    >   "$DIR/state.susp"
+    printf "SUSPENDED \\n" >>  "$DIR/state"
+    printf "$state \\n"    >   "$DIR/state.susp"
     RETVAL="$1 suspended"
   else
     rm -f   "$DIR/suspended"
@@ -418,8 +395,8 @@ cmd_resume () {
 
   if test "$ECODE" = "0"
   then
-    test -s "$DIR/state.susp" || echo "RUNNING "  > "$DIR/state.susp"
-    cat     "$DIR/state.susp"                    >> "$DIR/state"
+    test -s "$DIR/state.susp" || printf "RUNNING \\n" >  "$DIR/state.susp"
+    cat     "$DIR/state.susp"                         >> "$DIR/state"
     rm -f   "$DIR/state.susp"
     RETVAL="$1 resumed"
   else
@@ -473,7 +450,7 @@ cmd_stdin () {
 
   DIR="$BASE/$1"
   shift
-  echo "$*" >> "$DIR/in"
+  printf "$*" >> "$DIR/in"
   RETVAL="stdin refreshed"
 }
 
@@ -542,9 +519,22 @@ cmd_purge () {
 #
 cmd_quit () {
 
+  if test "$1" = "TIMEOUT"
+  then
+    printf "IDLE TIMEOUT\\n"
+    touch "$BASE/timed_out.$$"
+  fi
+
   # kill idle checker
   kill $1 >/dev/null 2>&1
   rm -f "$BASE/idle.$$"
+
+  # clean bulk file
+  rm -rf bulk.$$
+
+  # restore shell echo
+  stty echo    >/dev/null 2>&1
+  stty echonl  >/dev/null 2>&1
 
   exit 0
 }
@@ -561,75 +551,102 @@ listen() {
 
   # make sure we get killed when idle
   idle_checker $$ 1>/dev/null 2>/dev/null 3</dev/null &
-  idle=$!
+  IDLE=$!
 
   # report our own pid
   if ! test -z $1; then
-    echo "PID: $1"
+    printf "PID: $1\\n"
   fi
 
   # prompt for commands...
-  echo "PROMPT-0->"
+  printf "PROMPT-0->\\n"
 
   # and read those from stdin
-  while read LINE
+  while read -r CMD ARGS
   do
 
-    # reset err state for each command
-    ERROR="OK"
-    RETVAL=""
 
-    get_cmd  $LINE ; cmd=$RETVAL
-    get_args $LINE ; args=$RETVAL
+    # check if we start or finish a bulk
+    case $CMD in
+      BULK     ) IN_BULK=1
+                 BULK_ERROR="OK"
+                 BULK_EXITVAL="0"
+                 ;;
+      BULK_RUN ) IN_BULK=""
+                 printf "BULK_EVAL\\n"  >> "$BASE/bulk.$$"
+                 ;;
+      *        ) printf "$CMD $ARGS\\n" >> "$BASE/bulk.$$"
+                 ;;
+    esac
 
-    # did we find command and args?  Note that args may be empty, e.g. for QUIT
-    if ! test "$ERROR" = "OK"
+    if ! test -z "$IN_BULK"
     then
-      echo "ERROR"
-      echo "$ERROR"
+      # continue to collect bulk commands
       continue
     fi
 
-    # simply invoke the right function for each command, or complain if command
-    # is not known
-    case $cmd in
-      RUN     ) cmd_run     $args ;;
-      SUSPEND ) cmd_suspend $args ;;
-      RESUME  ) cmd_resume  $args ;;
-      CANCEL  ) cmd_cancel  $args ;;
-      RESULT  ) cmd_result  $args ;;
-      STATE   ) cmd_state   $args ;;
-      WAIT    ) cmd_wait    $args ;;
-      STDIN   ) cmd_stdin   $args ;;
-      STDOUT  ) cmd_stdout  $args ;;
-      STDERR  ) cmd_stderr  $args ;;
-      LIST    ) cmd_list    $args ;;
-      PURGE   ) cmd_purge   $args ;;
-      QUIT    ) cmd_quit    $idle ;;
-      LOG     ) echo LOG    $args ;;
-      NOOP    ) ERROR="NOOP"      ;;
-      *       ) ERROR="$cmd unknown ($LINE)"; false ;;
-    esac
+    # no more bulk collection (if there ever was any) -- execute the collected
+    # command lines.
+    while read -r CMD ARGS
+    do
 
-    EXITVAL=$?
+      # reset err state for each command
+      ERROR="OK"
+      RETVAL=""
 
-    # the called function will report state and results in 'ERROR' and 'RETVAL'
-    if test "$ERROR" = "OK"; then
-      echo "OK"
-      echo "$RETVAL"
-    elif test "$ERROR" = "NOOP"; then
-      # nothing
-      true
-    else
-      echo "ERROR"
-      echo "$ERROR"
-    fi
+      # simply invoke the right function for each command, or complain if command
+      # is not known
+      case $CMD in
+        RUN       ) cmd_run     "$ARGS"  ;;
+        SUSPEND   ) cmd_suspend "$ARGS"  ;;
+        RESUME    ) cmd_resume  "$ARGS"  ;;
+        CANCEL    ) cmd_cancel  "$ARGS"  ;;
+        RESULT    ) cmd_result  "$ARGS"  ;;
+        STATE     ) cmd_state   "$ARGS"  ;;
+        WAIT      ) cmd_wait    "$ARGS"  ;;
+        STDIN     ) cmd_stdin   "$ARGS"  ;;
+        STDOUT    ) cmd_stdout  "$ARGS"  ;;
+        STDERR    ) cmd_stderr  "$ARGS"  ;;
+        LIST      ) cmd_list    "$ARGS"  ;;
+        PURGE     ) cmd_purge   "$ARGS"  ;;
+        QUIT      ) cmd_quit    "$IDLE"  ;;
+        NOOP      ) ERROR="NOOP"         ;;
+        BULK_EVAL ) ERROR="$BULK_ERROR"
+                    RETVAL="BULK COMPLETED"
+                    if test "$BULK_EXITVAL" = "OK"; then true; else false; fi
+                    ;;
+        *         ) RETVAL=$($CMD $ARGS 2>&1) || ERROR="NOK" ;;
+      esac
 
-    # we did hard work - make sure we are not getting killed for idleness!
-    rm -f "$BASE/idle.$$"
+      EXITVAL=$?
 
-    # well done - prompt for next command
-    echo "PROMPT-$EXITVAL->"
+      # the called function will report state and results in 'ERROR' and 'RETVAL'
+      if test "$ERROR" = "OK"; then
+        printf "OK\\n"
+        printf "$RETVAL\\n"
+      elif test "$ERROR" = "NOOP"; then
+        # nothing
+        true
+      else
+        printf "ERROR\\n"
+        printf "$ERROR\\n"
+        printf "$RETVAL\\n"
+        BULK_ERROR="NOK"  # a single error spoils the bulk
+        BULK_EXITVAL="$EXITVAL"
+      fi
+
+      # we did hard work - make sure we are not getting killed for idleness!
+      rm -f "$BASE/idle.$$"
+
+      # well done - prompt for next command (even in bulk mode, for easier
+      # parsing and EXITVAL communication)
+      printf "PROMPT-$EXITVAL->\\n"
+
+    # closing thye read loop for the bulk data file
+    done < "$BASE/bulk.$$"
+
+    # empty the bulk data file
+    rm -f "$BASE/bulk.$$"
 
   done
 }

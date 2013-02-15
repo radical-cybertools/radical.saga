@@ -322,8 +322,6 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self.shell.stage_to_file (src = ssh_wrapper._WRAPPER_SCRIPT, 
                                   tgt = "%s/wrapper.sh" % base)
 
-        shell = '/bin/sh'
-
         # we run the script.  In principle, we should set a new / different
         # prompt -- but, due to some strange and very unlikely coincidence, the
         # script has the same prompt as the previous shell... - go figure ;-)
@@ -337,8 +335,8 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # Well, actually, we do not use exec, as that does not give us good
         # feedback on failures (the shell just quits) -- so we replace it with
         # this poor-man's version...
-        ret, out, _ = self.shell.run_sync ("/bin/sh -c '%s %s/wrapper.sh $$ && kill -9 $PPID' || false" \
-                                        % (shell, base))
+        ret, out, _ = self.shell.run_sync ("/bin/sh -c '/bin/sh %s/wrapper.sh $$ && kill -9 $PPID' || false" \
+                                        % (base))
 
         # either way, we somehow ran the script, and just need to check if it
         # came up all right...
@@ -370,7 +368,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
         if jd.attribute_exists ("arguments") :
             for a in jd.arguments :
-                arg += " %s" % a
+                arg += ' ' + a
 
         if jd.attribute_exists ("environment") :
             for e in jd.environment :
@@ -580,6 +578,9 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         if not cmd :
             raise saga.BadParameter._log (self._logger, "run_hosts needs a command to run")
 
+        if "'" in cmd :
+            raise saga.BadParameter._log (self._logger, "shell command cannot contain \"'\"")
+
         if  host and host != self.rm.host :
             raise saga.BadParameter._log (self._logger, "Can only run jobs on %s"
                                        % self.rm.host)
@@ -591,8 +592,8 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
         jd = saga.job.Description ()
 
-        jd.executable = cmd_elems[0]
-        jd.arguments  = cmd_elems[1:]
+        jd.executable = "/bin/sh"
+        jd.arguments  = ["-c", "'%s'" % " ".join (cmd_elems)]
 
         job = self.create_job (jd)
         job.run ()

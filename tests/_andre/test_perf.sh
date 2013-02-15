@@ -37,14 +37,14 @@ echo "n_jobs: $N"
 # "
 # echo
 # 
-# echo "saga.job.Service ('fork://localhost/').run_job ()"
-# time python -c "
-# import saga
-# js = saga.job.Service ('fork://localhost/')
-# for i in range (0, $N) :
-#   j=js.run_job ('/bin/sleep 1')
-# "
-# echo
+echo "saga.job.Service ('fork://localhost/').run_job ()"
+time python -c "
+import saga
+js = saga.job.Service ('fork://localhost/')
+for i in range (0, $N) :
+  j=js.run_job ('/bin/echo %d; /bin/echo %s 1>&2' % (i, i+1))
+"
+echo
 # 
 # echo "saga.job.Service ('ssh://localhost/').create_job ()"
 # time python -c "
@@ -72,15 +72,15 @@ echo "n_jobs: $N"
 # "
 # echo
 
-echo "saga.job.Service ('gsissh://trestles-login.sdsc.edu/').create_job"
-time python -c "
-import saga
-jd = saga.job.Description ()
-jd.executable = '/bin/sleep'
-jd.arguments  = ['1']
-js = saga.job.Service ('gsissh://trestles-login.sdsc.edu/')
-for i in range (0, $N) :
-  j=js.create_job (jd)
-  j.run ()
-"
+# echo "saga.job.Service ('gsissh://trestles-login.sdsc.edu/').create_job"
+# time python -c "
+# import saga
+# jd = saga.job.Description ()
+# jd.executable = '/bin/sleep'
+# jd.arguments  = ['1']
+# js = saga.job.Service ('gsissh://trestles-login.sdsc.edu/')
+# for i in range (0, $N) :
+#   j=js.create_job (jd)
+#   j.run ()
+# "
 
