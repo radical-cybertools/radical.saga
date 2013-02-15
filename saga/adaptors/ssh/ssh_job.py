@@ -720,7 +720,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
             if  ret != 0 :
                 job._adaptor._state     = saga.job.FAILED
-                job._adaptor._exception = saga.NoSuccess ("failed to run job '%s': (%s)(%s)" % (cmd, ret, out))
+                job._adaptor._exception = saga.NoSuccess ("failed to run job: (%s)(%s)" % (ret, out))
                 continue
 
             lines = filter (None, out.split ("\n"))
@@ -788,7 +788,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
             if  ret != 0 :
                 job._adaptor._state     = saga.job.FAILED
-                job._adaptor._exception = saga.NoSuccess ("failed to wait for job '%s': (%s)(%s)" % (cmd, ret, out))
+                job._adaptor._exception = saga.NoSuccess ("failed to wait for job: (%s)(%s)" % (ret, out))
                 continue
 
             lines = filter (None, out.split ("\n"))
