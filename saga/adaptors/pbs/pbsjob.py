@@ -355,11 +355,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
-    #
-    def _job_get_state (self, id) :
+    def _job_get_state(self, id):
         """ get the job state from the wrapper shell """
 
-        rm, pid = self._adaptor.parse_id (id)
+        rm, pid = self._adaptor.parse_id(id)
 
         ret, out, _ = self.shell.run_sync ("STATE %s\n" % pid)
         if  ret != 0 :

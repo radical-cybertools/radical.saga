@@ -47,9 +47,6 @@ def main():
         print "\n...starting job...\n"
         catjob.run()
 
-        return 0
-
-
         print "Job ID    : %s" % (catjob.id)
         print "Job State : %s" % (catjob.state)
 
