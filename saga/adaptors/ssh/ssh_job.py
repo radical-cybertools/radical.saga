@@ -355,11 +355,11 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
                 self.shell.finalize (True)
 
 
+    
     # ----------------------------------------------------------------
     #
     #
-    def _job_run (self, jd) :
-        """ runs a job on the wrapper via pty, and returns the job id """
+    def _jd2cmd (self, jd) :
 
         exe = jd.executable
         arg = ""
@@ -378,6 +378,16 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
             cwd = "cd %s && " % jd.working_directory
 
         cmd = "%s%s %s %s"  %  (env, cwd, exe, arg)
+
+        return cmd
+
+    # ----------------------------------------------------------------
+    #
+    #
+    def _job_run (self, jd) :
+        """ runs a job on the wrapper via pty, and returns the job id """
+
+        cmd = self._jd2cmd (jd)
 
         ret, out, _ = self.shell.run_sync ("RUN %s" % cmd)
         if  ret != 0 :
@@ -684,29 +694,138 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
             return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
    
-  # # ----------------------------------------------------------------
-  # #
-  # def container_run (self, jobs) :
-  #     self._logger.debug ("container run: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.run ()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_wait (self, jobs, mode, timeout) :
-  #     self._logger.debug ("container wait: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.wait ()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_cancel (self, jobs) :
-  #     self._logger.debug ("container cancel: %s"  %  str(jobs))
-  #     raise saga.NoSuccess ("Not Implemented");
+    # ----------------------------------------------------------------
+    #
+    def container_run (self, jobs) :
+        """
+        From all the job descriptions in the container, build a bulk, and submit
+        as async.  The read whaterver the wrapper returns, and sort through the
+        messages, assigning job IDs etc.
+        """
+
+        self._logger.debug ("container run: %s"  %  str(jobs))
+
+        bulk = "BULK\n"
+
+        for job in jobs :
+            cmd   = self._jd2cmd (job.description)
+            bulk += "RUN %s\n" % cmd
+
+        bulk += "BULK_RUN\n"
+        self.shell.run_async (bulk)
+
+        for job in jobs :
+
+            ret, out = self.shell.find_prompt ()
+
+            if  ret != 0 :
+                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._exception = saga.NoSuccess ("failed to run job '%s': (%s)(%s)" % (cmd, ret, out))
+                continue
+
+            lines = filter (None, out.split ("\n"))
+
+            if  len (lines) < 2 :
+                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._exception = saga.NoSuccess ("failed to run job : (%s)(%s)" % (ret, out))
+                continue
+
+            if lines[-2] != "OK" :
+                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._exception = saga.NoSuccess ("failed to run job : (%s)(%s)" % (ret, out))
+                continue
+
+            # FIXME: verify format of returned pid (\d+)!
+            pid    = lines[-1].strip ()
+            job_id = "[%s]-[%s]" % (self.rm, pid)
+
+            self._logger.debug ("started job %s" % job_id)
+
+            self.njobs += 1
+
+            # FIXME: at this point we need to make sure that we actually created
+            # the job.  Well, we should make sure of this *before* we run it.
+            # But, actually, the container sorter should have done that already?
+            # Check!
+            job._adaptor._id = job_id
+
+        # we also need to find the output of the bulk op itself
+        ret, out = self.shell.find_prompt ()
+
+        if  ret != 0 :
+            self._logger.error ("failed to run (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            return
+
+        lines = filter (None, out.split ("\n"))
+
+        if  len (lines) < 2 :
+            self._logger.error ("Cannot evaluate status of bulk job submission: (%s)(%s)" % (ret, out))
+            return
+
+        if lines[-2] != "OK" :
+            self._logger.error ("failed to run (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            return
+
+
+    # ----------------------------------------------------------------
+    #
+    def container_wait (self, jobs, mode, timeout) :
+
+        self._logger.debug ("container wait: %s"  %  str(jobs))
+
+        bulk = "BULK\n"
+
+        for job in jobs :
+            rm, pid = self._adaptor.parse_id (job.id)
+            bulk   += "WAIT %s\n" % pid
+
+        bulk += "BULK_RUN\n"
+        self.shell.run_async (bulk)
+
+        for job in jobs :
+
+            ret, out = self.shell.find_prompt ()
+
+            if  ret != 0 :
+                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._exception = saga.NoSuccess ("failed to wait for job '%s': (%s)(%s)" % (cmd, ret, out))
+                continue
+
+            lines = filter (None, out.split ("\n"))
+
+            if  len (lines) < 2 :
+                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._exception = saga.NoSuccess ("failed to wait for job : (%s)(%s)" % (ret, out))
+                continue
+
+            if lines[-2] != "OK" :
+                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._exception = saga.NoSuccess ("failed to wait for job : (%s)(%s)" % (ret, out))
+                continue
+
+        # we also need to find the output of the bulk op itself
+        ret, out = self.shell.find_prompt ()
+
+        if  ret != 0 :
+            self._logger.error ("failed to wait for (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            return
+
+        lines = filter (None, out.split ("\n"))
+
+        if  len (lines) < 2 :
+            self._logger.error ("Cannot evaluate status of bulk job wait: (%s)(%s)" % (ret, out))
+            return
+
+        if lines[-2] != "OK" :
+            self._logger.error ("failed to wait for (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            return
+
+   
+    # ----------------------------------------------------------------
+    #
+    def container_cancel (self, jobs) :
+        self._logger.debug ("container cancel: %s"  %  str(jobs))
+        raise saga.NoSuccess ("Not Implemented");
 
 
 ###############################################################################
@@ -736,7 +855,7 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
 
             # the js is responsible for job bulk operations -- which
             # for jobs only work for run()
-          # self._container       = self.js
+            self._container       = self.js
             self._method_type     = "run"
 
             # initialize job attribute values
@@ -758,6 +877,13 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
             raise saga.BadParameter ("Cannot create job, insufficient information")
         
         return self.get_api ()
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_description (self):
+        return self.jd
 
 
     # ----------------------------------------------------------------

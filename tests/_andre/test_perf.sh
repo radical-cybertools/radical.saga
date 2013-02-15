@@ -1,6 +1,6 @@
 #!/bin/bash
 
-N=2
+N=1000
 TIMEFORMAT="%3Rs   %3Us   %3Ss   %P%%"
 
 echo "====================================================================="
@@ -16,14 +16,21 @@ echo "n_jobs: $N"
 #   echo "RUN sleep 1" 
 # done | sh ~/.saga/adaptors/ssh_job/wrapper.sh) > /dev/null
 # echo
-# 
-# echo "RUN sleep 1 @   cyder.cct.lsu.edu" 
-# time ((for i in $(seq 1 $N); do
-#   echo "RUN sleep 1" 
-# done ; echo "QUIT") \
-#    | ssh amerzky@cyder.cct.lsu.edu "sh ~/.saga/adaptors/ssh_job/wrapper.sh") > /dev/null
-# echo
-# 
+
+echo "/bin/sleep 1 @   cyder.cct.lsu.edu" 
+time ((for i in $(seq 1 $N); do
+  echo "/bin/sleep 1 &" 
+done) \
+   | ssh amerzky@cyder.cct.lsu.edu "sh" | wc -l) > /dev/null
+echo
+
+echo "RUN sleep 1 @   cyder.cct.lsu.edu" 
+time ((for i in $(seq 1 $N); do
+  echo "RUN sleep 1" 
+done ; echo "QUIT") \
+   | ssh amerzky@cyder.cct.lsu.edu "sh ~/.saga/adaptors/ssh_job/wrapper.sh" | wc -l) > /dev/null
+echo
+
 # echo "saga.job.Service ('fork://localhost/').create_job ()"
 # time python -c "
 # import saga
@@ -37,14 +44,14 @@ echo "n_jobs: $N"
 # "
 # echo
 # 
-echo "saga.job.Service ('fork://localhost/').run_job ()"
-time python -c "
-import saga
-js = saga.job.Service ('fork://localhost/')
-for i in range (0, $N) :
-  j=js.run_job ('/bin/echo %d; /bin/echo %s 1>&2' % (i, i+1))
-"
-echo
+# echo "saga.job.Service ('fork://localhost/').run_job ()"
+# time python -c "
+# import saga
+# js = saga.job.Service ('fork://localhost/')
+# for i in range (0, $N) :
+#   j=js.run_job ('/bin/echo %d; /bin/echo %s 1>&2' % (i, i+1))
+# "
+# echo
 # 
 # echo "saga.job.Service ('ssh://localhost/').create_job ()"
 # time python -c "

@@ -326,7 +326,7 @@ class PTYShell (object) :
         match = None
 
         while not match :
-            _, match = self.pty.find    ([self.prompt], _PTY_TIMEOUT)
+            _, match = self.pty.find ([self.prompt], _PTY_TIMEOUT)
 
         ret, txt = self._eval_prompt (match)
 

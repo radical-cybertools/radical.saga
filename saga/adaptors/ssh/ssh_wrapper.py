@@ -294,20 +294,34 @@ cmd_state () {
   verify_state $1 || return
 
   DIR="$BASE/$1"
-  RETVAL=`grep -e ' $' "$DIR/state" | tail -n 1`
+  RETVAL=`grep -e ' $' "$DIR/state" | tail -n 1 | tr -d ' '`
 }
 
 
 # --------------------------------------------------------------------
 #
 # wait for job to finish.  Arguments are pid, and time to wait in seconds
-# (forever by default).  Note that a '
+# (forever by default).  FIXME: timeout not yet implemented
 #
 cmd_wait () {
-  verify_state $1 || return
 
-  DIR="$BASE/$1"
-  RETVAL=`grep -e ' $' "$DIR/state" | tail -n 1`
+  while true
+  do
+    cmd_state $1
+
+    case "$RETVAL" in
+      DONE      ) return ;;
+      FAILED    ) return ;;
+      CANCELLED ) return ;;
+      NEW       )        ;;
+      RUNNING   )        ;;
+      SUSPENDED )        ;;
+      UNKNOWN   )        ;;
+      *         ) ERROR="NOK - invalid state '$RETVAL'";   
+    esac
+
+    sleep 1
+  done
 }
 
 
@@ -613,9 +627,9 @@ listen() {
         NOOP      ) ERROR="NOOP"         ;;
         BULK_EVAL ) ERROR="$BULK_ERROR"
                     RETVAL="BULK COMPLETED"
-                    if test "$BULK_EXITVAL" = "OK"; then true; else false; fi
+                    test "$ERROR" = OK || false
                     ;;
-        *         ) RETVAL=$($CMD $ARGS 2>&1) || ERROR="NOK" ;;
+        *         ) RETVAL=$($CMD $ARGS 2>&1) || ERROR="NOK - command '$CMD' failed" ;;
       esac
 
       EXITVAL=$?
@@ -631,7 +645,7 @@ listen() {
         printf "ERROR\\n"
         printf "$ERROR\\n"
         printf "$RETVAL\\n"
-        BULK_ERROR="NOK"  # a single error spoils the bulk
+        BULK_ERROR="NOK - bulk error '$ERROR'"  # a single error spoils the bulk
         BULK_EXITVAL="$EXITVAL"
       fi
 
