@@ -9,7 +9,8 @@ import saga.adaptors.cpi.job
 import re
 import os
 import time
-
+import textwrap
+import string
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
@@ -23,7 +24,7 @@ _PTY_TIMEOUT = 2.0
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.slurm_job"
-_ADAPTOR_SCHEMAS       = ["slurm"]
+_ADAPTOR_SCHEMAS       = ["slurm", "slurm+ssh", "slurm+gsissh"]
 _ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
@@ -31,12 +32,32 @@ _ADAPTOR_OPTIONS       = []
 #
 # TODO: FILL ALL IN FOR SLURM
 _ADAPTOR_CAPABILITIES  = {
-    "jdes_attributes"  : [saga.job.EXECUTABLE,
+    "jdes_attributes"  : [saga.job.NAME, 
+                          saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
+                          saga.job.SPMD_VARIATION,
+                          saga.job.TOTAL_CPU_COUNT, 
+                          saga.job.NUMBER_OF_PROCESSES,
+                          saga.job.PROCESSES_PER_HOST,
+                          saga.job.THREADS_PER_PROCESS, 
+                          saga.job.WORKING_DIRECTORY,
+                          #saga.job.INTERACTIVE,
                           saga.job.INPUT,
-                          saga.job.OUTPUT,
-                          saga.job.ERROR],
+                          saga.job.OUTPUT, 
+                          saga.job.ERROR,
+                          saga.job.FILE_TRANSFER,
+                          saga.job.CLEANUP,
+                          saga.job.JOB_START_TIME,
+                          saga.job.WALL_TIME_LIMIT, 
+                          saga.job.TOTAL_PHYSICAL_MEMORY, 
+                          #saga.job.CPU_ARCHITECTURE, 
+                          #saga.job.OPERATING_SYSTEM_TYPE, 
+                          #saga.job.CANDIDATE_HOSTS,
+                          saga.job.QUEUE,
+                          saga.job.PROJECT,
+                          saga.job.JOB_CONTACT],
+
     "job_attributes"   : [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
                           saga.job.CREATED,
@@ -63,7 +84,7 @@ _ADAPTOR_DOC           = {
     "details"          : """ 
         A more elaborate description....
         """,
-    "schemas"          : {"slurm"   :"use slurm to run local SLURM jobs", 
+    "schemas"          : {"slurm"        :"use slurm to run local SLURM jobs", 
                           "slurm+ssh"    :"use ssh to run remote SLURM jobs", 
                           "slurm+gsissh" :"use gsissh to run remote SLURM jobs"}
 }
@@ -139,6 +160,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         #saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
         self._cpi_base = super  (SLURMJobService, self)
         self._cpi_base.__init__ (api, adaptor)
+        self._base = base = "$HOME/.saga/adaptors/slurm_job"
 
 
 
@@ -238,50 +260,10 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # stdio.
 
         base = "$HOME/.saga/adaptors/slurm_job"
-
+        
         ret, out, _ = self.shell.run_sync ("mkdir -p %s" % base)
         if  ret != 0 :
             raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" % (ret, out))
-
-        # FIXME: this is a race condition is multiple job services stage the
-        # script at the same time.  We should make that atomic by
-        #
-        #   cat > .../wrapper.sh.$$ ... ; mv .../wrapper.sh.$$ .../wrapper.sh
-        #
-        # which should work nicely as long as compatible versions of the script
-        # are staged.  Oh well...
-        #
-        # TODO: replace some constants in the script with values from config
-        # files, such as 'timeout' or 'purge_on_quit' ...
-        #
-        self.shell.stage_to_file (src = ssh_wrapper._WRAPPER_SCRIPT, 
-                                  tgt = "%s/wrapper.sh" % base)
-
-        # we run the script.  In principle, we should set a new / different
-        # prompt -- but, due to some strange and very unlikely coincidence, the
-        # script has the same prompt as the previous shell... - go figure ;-)
-        #
-        # Note that we use 'exec' - so the script replaces the shell process.
-        # Thus, when the script times out, the shell dies and the connection
-        # drops -- that will free all associated resources, and allows for
-        # a clean reconnect.
-      # ret, out, _ = self.shell.run_sync ("exec sh %s/wrapper.sh" % base)
-      
-        # Well, actually, we do not use exec, as that does not give us good
-        # feedback on failures (the shell just quits) -- so we replace it with
-        # this poor-man's version...
-      # ret, out, _ = self.shell.run_sync ("sh -c '(/bin/sh %s/wrapper.sh && kill -9 $PPID)' || false" % base)
-
-        # well, this version logs an sh-x trace to wrapper.log, w/o disturbing
-        # stdout/stderr...
-        ret, out, _ = self.shell.run_sync ("exec sh -x %s/wrapper.sh 2>&1 | tee %s/wrapper.log | grep -v -e '^\\+'" % (base, base))
-
-        # either way, we somehow ran the script, and just need to check if it
-        # came up all right...
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to run wrapper (%s)(%s)" % (ret, out))
-
-
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
 
 
@@ -297,44 +279,237 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     #
     def _job_run (self, jd) :
         """ runs a job on the wrapper via pty, and returns the job id """
+#BJ SLURM CODE
+#         self.job_description=job_description
+#         self.bootstrap_script = self.job_description.arguments[2]
+#         self.job_id = ""
+#         self.resource_url = resource_url
+#         self.resource_url.scheme="ssh"
+#         if pilot_compute_description == None:
+#             pilot_compute_description={}
+#             pilot_compute_description['queue'] = job_description.queue
+#             pilot_compute_description['project'] = job_description.project
+#             pilot_compute_description['working_directory'] = job_description.working_directory
+#             pilot_compute_description['walltime'] = job_description.wall_time_limit
+#             pilot_compute_description['number_of_processes'] = job_description.total_cpu_count
 
+#         self.working_directory = pilot_compute_description["working_directory"]
+#         ### convert walltime in minutes to SLURM representation of time ###
+#         walltime_slurm="1:00:00"
+#         if pilot_compute_description.has_key("walltime"):
+#             hrs=int(pilot_compute_description["walltime"])/60
+#             minu=int(pilot_compute_description["walltime"])%60
+#             walltime_slurm=""+str(hrs)+":"+str(minu)+":00"
+
+#         walltime_slurm = "1:00:00"
+#         pilot_compute_description={"number_of_processes":8,
+#                                    "working_directory":"/home",
+#                                    "project":"myproject",
+#                                    "queue":"myqueue"
+#                                    }
+#         self.bootstrap_script = "mybootstrapscript"
+#         self.bootstrap_script = textwrap.dedent("""import sys
+# import os
+# import urllib
+# import sys
+# import time
+# import textwrap
+
+# sbatch_file_name="bigjob_slurm_ssh"
+# sbatch_file = open(sbatch_file_name, "w")
+# sbatch_file.write("#!/bin/bash")
+# sbatch_file.write("\\n")
+# sbatch_file.write("#SBATCH -n %s")
+# sbatch_file.write("\\n")
+# sbatch_file.write("#SBATCH -J bigjob_slurm")
+# sbatch_file.write("\\n")
+# sbatch_file.write("#SBATCH -t %s")
+# sbatch_file.write("\\n")
+# sbatch_file.write("#SBATCH -A %s")
+# sbatch_file.write("\\n")
+# sbatch_file.write("#SBATCH -o %s/stdout-bigjob_agent.txt")
+# sbatch_file.write("\\n")
+# sbatch_file.write("#SBATCH -e %s/stderr-bigjob_agent.txt")
+# sbatch_file.write("\\n")
+# sbatch_file.write("#SBATCH -p %s")
+# sbatch_file.write("\\n")
+
+# sbatch_file.write("cd %s")
+# sbatch_file.write("\\n")
+# sbatch_file.write("python -c XX" + textwrap.dedent(\"\"%s\"\") + "XX")
+# sbatch_file.close()
+# os.system( "sbatch " + sbatch_file_name)
+# """) % (str(pilot_compute_description["number_of_processes"]),str(walltime_slurm), str(pilot_compute_description["project"]), pilot_compute_description["working_directory"], pilot_compute_description["working_directory"], pilot_compute_description["queue"], pilot_compute_description["working_directory"], self.bootstrap_script)
+#        # escaping characters
+#         self.bootstrap_script = self.bootstrap_script.replace("\"","\\\"")
+#         self.bootstrap_script = self.bootstrap_script.replace("\\\\","\\\\\\\\\\")
+#         self.bootstrap_script = self.bootstrap_script.replace("XX","\\\\\\\"")
+#         self.bootstrap_script = "\"" + self.bootstrap_script+ "\""
+#         self._logger.debug(self.bootstrap_script)
 
         exe = jd.executable
         arg = ""
         env = ""
         cwd = ""
+        job_name = "SAGAPythonSLURMJob"
+        spmd_variation = None
+        total_cpu_count = None
+        number_of_processes = None
+        threads_per_process = None
+        working_directory = None
+        output = "saga-python-slurm-default.out"
+        error = None
+        file_transfer = None
+        job_start_time = None
+        wall_time_limit = None
+        queue = None
+        project = None
+        job_contact = None
 
-        self._alive ()
+        if jd.attribute_exists ("name"):
+            #TODO: alert user or quit with exception if
+            # we have to mangle the name
+            job_name = string.replace(jd.name, " ", "_")
 
         if jd.attribute_exists ("arguments") :
             for a in jd.arguments :
                 arg += " %s" % a
 
         if jd.attribute_exists ("environment") :
-            env = "/usr/bin/env"
             for e in jd.environment :
-                env += " %s=%s"  %  (e, jd.environment[e])
-            env += " "
+                env += "export %s=%s; "  %  (e, jd.environment[e])
 
-        if jd.attribute_exists ("working_directory") :
-            cwd = "cd %s && " % jd.working_directory
+        if jd.attribute_exists ("spmd_variation"):
+            spmd_variation = jd.spmd_variation
 
-        cmd = "%s %s %s %s"  %  (env, cwd, exe, arg)
+        if jd.attribute_exists ("total_cpu_count"):
+            total_cpu_count = jd.total_cpu_count
 
-        ret, out, _ = self.shell.run_sync ("RUN %s" % cmd)
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to run job '%s': (%s)(%s)" % (cmd, ret, out))
+        if jd.attribute_exists ("number_of_processes"):
+            number_of_processes = jd.number_of_processes
 
-        lines = filter (None, out.split ("\n"))
-        self._logger.debug (lines)
+        if jd.attribute_exists ("processes_per_host"):
+            processes_per_host = jd.processes_per_host
 
-        if  len (lines) < 2 :
-            raise saga.NoSuccess ("failed to run job (%s)" % lines)
+        if jd.attribute_exists ("threads_per_process"):
+            threads_per_process = jd.threads_per_process
 
-        if lines[-2] != "OK" :
-            raise saga.NoSuccess ("failed to run job (%s)" % lines)
+        if jd.attribute_exists ("working_directory"):
+            cwd = jd.working_directory
 
-        job_id = "[%s]-[%s]" % (self.rm, lines[-1])
+        if jd.attribute_exists ("output"):
+            output = jd.output
+
+        if jd.attribute_exists("error"):
+            error = jd.error
+
+        if jd.attribute_exists("wall_time_limit"):
+            wall_time_limit = jd.wall_time_limit
+
+        if jd.attribute_exists("queue"):
+            queue = jd.queue
+
+        if jd.attribute_exists("project"):
+            project = jd.project
+
+        if jd.attribute_exists("job_contact"):
+            job_contact = jd.job_contact
+
+        slurm_script = "#!/bin/bash\n"
+
+        if job_name:
+            slurm_script += '#SBATCH -J %s\n' % job_name
+
+        if spmd_variation:
+            pass #TODO
+
+        if total_cpu_count:
+            pass
+
+        if number_of_processes:
+            slurm_script += "#SBATCH -n %s\n" % number_of_processes
+
+        if threads_per_process:
+            pass
+
+        if working_directory:
+            pass
+
+        if output:
+            slurm_script+= "#SBATCH -o %s\n" % output
+        
+        if error:
+            slurm_script += "#SBATCH -e %s\n" % error
+
+        if wall_time_limit:
+            hours = wall_time_limit / 60
+            minutes = wall_time_limit % 60
+            slurm_script += "#SBATCH -t %s:%s:00\n" % (hours, minutes)
+
+        if queue:
+            slurm_script += "#SBATCH -p %s\n" % queue
+
+        if project:
+            slurm_script += "#SBATCH -A %s\n" % project
+
+        if job_contact:
+            pass
+
+        slurm_script += exe + arg
+        #SBATCH -J myMPI        # Job Name
+        #SBATCH -o myMPI.o%j    # Output and error file name (%j expands to jobID)
+        #SBATCH -n 32           # Total number of mpi tasks requested
+        #SBATCH -p development  # Queue (partition) name -- normal, development, etc.
+        #SBATCH -t 01:30:00     # Run time (hh:mm:ss) - 1.5 hours
+        ##ibrun ./a.out           # Run the MPI executable named a.out
+
+        #cmd = "(%s %s %s %s)"  %  (env, cwd, exe, arg)       
+        print slurm_script
+        self.shell.stage_to_file (src = slurm_script, 
+                                  tgt = "%s/wrapper.sh" % self._base)
+        ret, out, _ = self.shell.run_sync("exec %s/wrapper.sh" % self._base)
+        ret, out, _ = self.shell.run_sync("sbatch %s/wrapper.sh" % self._base)
+        print ret
+        print out
+
+        exit(0)
+
+        # exe = jd.executable
+        # arg = ""
+        # env = ""
+        # cwd = ""
+
+        # #self._alive ()
+
+        # if jd.attribute_exists ("arguments") :
+        #     for a in jd.arguments :
+        #         arg += " %s" % a
+
+        # if jd.attribute_exists ("environment") :
+        #     env = "/usr/bin/env"
+        #     for e in jd.environment :
+        #         env += " %s=%s"  %  (e, jd.environment[e])
+        #     env += " "
+
+        # if jd.attribute_exists ("working_directory") :
+        #     cwd = "cd %s && " % jd.working_directory
+
+        # cmd = "%s %s %s %s"  %  (env, cwd, exe, arg)
+
+        # ret, out, _ = self.shell.run_sync ("RUN %s" % cmd)
+        # if  ret != 0 :
+        #     raise saga.NoSuccess ("failed to run job '%s': (%s)(%s)" % (cmd, ret, out))
+
+        # lines = filter (None, out.split ("\n"))
+        # self._logger.debug (lines)
+
+        # if  len (lines) < 2 :
+        #     raise saga.NoSuccess ("failed to run job (%s)" % lines)
+
+        # if lines[-2] != "OK" :
+        #     raise saga.NoSuccess ("failed to run job (%s)" % lines)
+
+        # job_id = "[%s]-[%s]" % (self.rm, lines[-1])
 
         self._logger.debug ("started job %s" % job_id)
 
@@ -461,9 +636,10 @@ class SLURMJob (saga.adaptors.cpi.job.Job) :
     # ----------------------------------------------------------------
     #
     def __init__ (self, api, adaptor) :
-        """ Implements saga.adaptors.cpi.job.Job.__init__()
-        """
-        saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (SLURMJob, self)
+        self._cpi_base.__init__ (api, adaptor)
+
 
     # ----------------------------------------------------------------
     #
@@ -496,7 +672,8 @@ class SLURMJob (saga.adaptors.cpi.job.Job) :
     def get_state(self):
         """ Implements saga.adaptors.cpi.job.Job.get_state()
         """
-        self._state = self.js._job_get_state (self._id)
+        #self._state = self.js._job_get_state (self._id)
+        self._state = "TODO: IMPLEMENT JOB STATE"
         return self._state
   
 

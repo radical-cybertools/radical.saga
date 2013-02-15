@@ -21,6 +21,7 @@ import saga
 import os
 import logging
 import subprocess
+import string
 
 TEMP_FILENAME = "test.txt" # filename to create and use for testing
 #TEMP_DIR      = "/irods_test_dir/" #directory to create and use for testing
@@ -29,8 +30,10 @@ def main(args):
     try:
         # create a job service for the local machine. both, 'fork' and 
         # 'local' schemes trigger the local job adaptor. 
-        js = saga.job.Service("slurm://localhost")
+        print "Creating Job Service!"
+        js = saga.job.Service("slurm+ssh://stampede")
         
+        print "Creating Job Description!"
         # describe our job
         jd = saga.job.Description()
 
@@ -38,11 +41,17 @@ def main(args):
         jd.environment = {'CATME':'10'}       
         jd.executable  = '/bin/sleep'
         jd.arguments   = ['$CATME']
+        jd.queue = "development"
+        jd.name = "SlurmJob"
+        jd.project = "TG-ASC120003"
+        jd.wall_time_limit = "1"
+        jd.number_of_processes=1
         
         # output options (will just be empty files for /bin/sleep)
         jd.output = "saga_localjob.stdout"
         jd.error  = "saga_localjob.stderr"
 
+        print "Creating Job with Job Description!"
         # create the job (state: New)
         catjob = js.create_job(jd)
 
