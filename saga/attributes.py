@@ -568,8 +568,8 @@ class Attributes (_AttributesBase) :
         # is present, exceptions are not ignored.
         #
         # always raise and lower the recursion shield.
-        can_ignore = 0
-        if all_getter and key_getter : can_ignore = 1
+        retries = 1
+        if all_getter and key_getter : retries = 2
 
         if all_getter :
 
@@ -578,8 +578,8 @@ class Attributes (_AttributesBase) :
                 val=all_getter (key)
                 d['attributes'][key]['value'] = val
             except Exception as e :
-                can_ignore -= 1
-                if not can_ignore : raise e
+                retries -= 1
+                if not retries : raise e
             finally :
               d['attributes'][key]['recursion'] = False
 
@@ -589,8 +589,8 @@ class Attributes (_AttributesBase) :
                 val=key_getter ()
                 d['attributes'][key]['value'] = val
             except Exception as e :
-                can_ignore -= 1
-                if not can_ignore : raise e
+                retries -= 1
+                if not retries : raise e
             finally :
                 d['attributes'][key]['recursion'] = False
 
