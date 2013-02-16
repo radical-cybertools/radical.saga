@@ -218,9 +218,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
             _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts  = self.get_config()
-
-        self.foo   = self.opts['foo'].get_value()
+        self.opts = self.get_config()
+        self.foo = self.opts['foo'].get_value()
 
         #self._logger.info('debug trace : %s' % self.debug_trace)
 
@@ -303,7 +302,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # out in case they are note avaialbe.
         self._commands = {'pbsnodes': None,
                           'qstat':    None,
-                          'qsub':     None}
+                          'qsub':     None,
+                          'qdel':     None}
 
         # create a null logger to silence the PTY wrapper!
         import logging
@@ -325,7 +325,6 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def initialize(self):
-
         # check if all required pbs tools are available
         for cmd in self._commands.keys():
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
@@ -334,19 +333,19 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
             else:
                 path = out.strip()  # strip removes newline
-                ret, out, _ = self.shell.run_sync("%s --version" % cmd)
-                if ret != 0:
-                    message = "Error finding PBS tools: %s" % out
-                    log_error_and_raise(message, saga.NoSuccess, self._logger)
-                else:
-                    # version is reported as: "version: x.y.z"
-                    version = out.strip().split()[1]  # strip removes newline
+                if cmd != 'qdel':  # qdel doesn't support --version!
+                    ret, out, _ = self.shell.run_sync("%s --version" % cmd)
+                    if ret != 0:
+                        message = "Error finding PBS tools: %s" % out
+                        log_error_and_raise(message, saga.NoSuccess,
+                            self._logger)
+                    else:
+                        # version is reported as: "version: x.y.z"
+                        version = out.strip().split()[1]
 
-                    # add path and version to the command dictionary
-                    self._commands[cmd] = {"path":    path,
-                                           "version": version}
-
-        # TODO: detect any other specialties of the PBS installation ?
+                        # add path and version to the command dictionary
+                        self._commands[cmd] = {"path":    path,
+                                               "version": version}
 
         self._logger.info("Found PBS tools: %s" % self._commands)
 
@@ -387,11 +386,12 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         job_state   = None
         exec_hosts  = None
         exit_status = None
+        start_time  = None
 
         rm, pid = self._adaptor.parse_id(id)
 
         ret, out, _ = self.shell.run_sync("%s -f %s | \
-            egrep '(job_state)|(exec_host)|(exit_status)'" \
+            egrep '(job_state)|(exec_host)|(exit_status)|(start_time)'" \
             % (self._commands['qstat']['path'], pid))
 
         if ret != 0:
@@ -413,15 +413,18 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                     exec_hosts = val
                 elif key == 'exit_status':
                     exit_status = val
+                elif key == 'start_time':
+                    start_time = val
 
-        return (job_state, exec_hosts, exit_status)
+        return (job_state, exec_hosts, exit_status, start_time)
 
     # ----------------------------------------------------------------
     #
     def _job_get_exit_code(self, id):
         """ get the job's exit code
         """
-        # _job_get_info returns (job_state, exec_hosts, exit_status)
+        # _job_get_info returns (job_state, exec_hosts, exit_status,
+        #                        start_time)
         return self._job_get_info(id)[2]
 
     # ----------------------------------------------------------------
@@ -429,39 +432,24 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     def _job_get_execution_hosts(self, id):
         """ get the job's exit code
         """
-        # _job_get_info returns (job_state, exec_hosts, exit_status)
+        # _job_get_info returns (job_state, exec_hosts, exit_status,
+        #                        start_time)
         return self._job_get_info(id)[1]
 
     # ----------------------------------------------------------------
     #
-    # TODO: this should also fetch the (final) state, to safe a hop
-    #
-    def _job_cancel (self, id) :
+    def _job_cancel(self, id):
 
-        rm, pid = self._adaptor.parse_id (id)
+        rm, pid = self._adaptor.parse_id(id)
 
-        ret, out, _ = self.shell.run_sync ("CANCEL %s\n" % pid)
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to cancel job '%s': (%s)(%s)" \
-                               % (id, ret, out))
+        ret, out, _ = self.shell.run_sync("%s %s\n" \
+            % (self._commands['qdel']['path'], pid))
 
-        lines = filter (None, out.split ("\n"))
-        self._logger.debug (lines)
-
-        if  len (lines) == 2 :
-            # shell did not manage to do 'stty -echo'?
-            del (lines[0])
-
-        if  len (lines) != 1 :
-            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % (id, lines))
-
-        if lines[0] != "OK" :
-            raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
+        if ret != 0:
+            message = "Error canceling job via 'qdel': %s" % out
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
 
     # ----------------------------------------------------------------
-    #
-    # TODO: this should also fetch the (final) state, to safe a hop
-    # TODO: implement via notifications
     #
     def _job_wait(self, id, timeout):
         """
@@ -489,23 +477,25 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def create_job (self, jd) :
+    def create_job(self, jd):
         """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
         # check that only supported attributes are provided
         for attribute in jd.list_attributes():
             if attribute not in _ADAPTOR_CAPABILITIES["jdes_attributes"]:
-                msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
-                raise saga.BadParameter._log (self._logger, msg)
+                message = "'jd.%s' is not supported by this adaptor" \
+                    % attribute
+                log_error_and_raise(message, saga.BadParameter, self._logger)
 
-        
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
-        adaptor_state = { "job_service"     : self, 
-                          "job_description" : jd,
-                          "job_schema"      : self.rm.schema }
+        adaptor_state = {"job_service":     self,
+                         "job_description": jd,
+                         "job_schema":      self.rm.schema
+                        }
 
-        return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
+        return saga.job.Job(_adaptor=self._adaptor,
+                            _adaptor_state=adaptor_state)
 
     # ----------------------------------------------------------------
     #
@@ -514,7 +504,6 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """ implements saga.adaptors.cpi.job.Service.get_url()
         """
         return self.rm
-
 
     # ----------------------------------------------------------------
     #
@@ -666,12 +655,10 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         self._exit_code = self.js._job_get_exit_code(self._id)
         return self._exit_code
 
-  # # ----------------------------------------------------------------
-  # #
-  # # TODO: the values below should be fetched with every get_state...
-  # #
-  # @SYNC_CALL
-  # def get_created (self) :
+    # ----------------------------------------------------------------
+    #
+  #  @SYNC_CALL
+  #  def get_created (self) :
   #     """ Implements saga.adaptors.cpi.job.Job.get_started()
   #     """     
   #     # for local jobs started == created. for other adaptors 

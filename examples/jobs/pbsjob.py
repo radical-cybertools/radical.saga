@@ -28,7 +28,7 @@ def main():
         jd.queue       = 'batch'
         jd.name        = 'testjob'
         jd.project     = 'TG-XXXYYYYZZZ'
-        jd.environment = {'RUNTIME': '10'}
+        jd.environment = {'RUNTIME': '60'}
         jd.executable  = '/bin/sleep'
         jd.arguments   = ['$RUNTIME']
 
