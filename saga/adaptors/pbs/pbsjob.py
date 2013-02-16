@@ -619,6 +619,7 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         self._exception       = None
         self._started         = None
         self._finished        = None
+        self._execution_hosts = None
 
         return self.get_api()
 
