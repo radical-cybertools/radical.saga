@@ -142,17 +142,15 @@ _PTY_TIMEOUT = 2.0
 _ADAPTOR_NAME          = "saga.adaptor.pbsjob"
 _ADAPTOR_SCHEMAS       = ["pbs", "pbs+ssh", "pbs+gsissh"]
 _ADAPTOR_OPTIONS       = [
-    {
-    'category':      'saga.adaptor.pbsjob',
-    'name':          'foo',
-    'type':          bool,
-    'default':       False,
-    'valid_options': [True, False],
-    'documentation': """Create a detailed debug trace on the remote host.
-                        Note that the log is *not* removed, and can be large!
-                        A log message on INFO level will be issued which
-                        provides the location of the log file.""",
-    'env_variable':   None
+    # This adaptor doesn't have any options 
+    # {
+    # 'category':      'saga.adaptor.pbsjob',
+    # 'name':          'foo',
+    # 'type':          bool,
+    # 'default':       False,
+    # 'valid_options': [True, False],
+    # 'documentation': """Doc""",
+    # 'env_variable':   None
     },
 ]
 
@@ -177,11 +175,10 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.CREATED,
                           saga.job.STARTED,
                           saga.job.FINISHED],
-    "metrics":           [saga.job.STATE,
-                          saga.job.STATE_DETAIL],
-    "contexts":          {"ssh":      "SSH public/private keypair",
-                          "x509":     "X509 proxy for gsissh",
-                          "userpass": "username/password pair for simple ssh"}
+    "metrics":           [saga.job.STATE],
+    "contexts":          {"ssh": "SSH public/private keypair",
+                          "x509": "GSISSH X509 proxy context",
+                          "userpass": "username/password pair (ssh)"}
 }
 
 # --------------------------------------------------------------------
@@ -191,17 +188,17 @@ _ADAPTOR_DOC = {
     "name":          _ADAPTOR_NAME,
     "cfg_options":   _ADAPTOR_OPTIONS,
     "capabilities":  _ADAPTOR_CAPABILITIES,
-    "description":   """The PBS job adaptor. This adaptor can run jobs on
-                        PBS clusters.""",
-    "details": """ A more elaborate description....""",
-    "schemas": {"pbs":   "use a local PBS installations",
-               "pbs+ssh":    "use ssh to conenct to a remote PBS cluster",
-               "pbs+gsissh": "use gsissh to connect to a remote PBS cluster"}
+    "description":   """The PBS adaptor can run and manage jobs on local and
+                        remote PBS and TORQUE clusters.""",
+    "details": """TODO""",
+    "schemas": {"pbs":        "connect to a local PBS/TORQUE cluster",
+                "pbs+ssh":    "conenct to a remote PBS/TORQUE cluster via SSH",
+                "pbs+gsissh": "connect to a remote PBS/TORQUE cluster via GSISSH"}
 }
 
 # --------------------------------------------------------------------
 # the adaptor info is used to register the adaptor with SAGA
-
+#
 _ADAPTOR_INFO = {
     "name":    _ADAPTOR_NAME,
     "version": "v0.1",
@@ -222,10 +219,9 @@ _ADAPTOR_INFO = {
 ###############################################################################
 # The adaptor class
 class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
-    """
-    This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
-    SAGA engine), and which registers the CPI implementation classes which
-    provide the adaptor's functionality.
+    """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by 
+        the SAGA engine), and which registers the CPI implementation classes 
+        which provide the adaptor's functionality.
     """
 
     # ----------------------------------------------------------------
@@ -263,7 +259,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 ###############################################################################
 #
 class PBSJobService (saga.adaptors.cpi.job.Service):
-    """ implements saga.adaptors.cpi.job.Service """
+    """ implements saga.adaptors.cpi.job.Service 
+    """
 
     # ----------------------------------------------------------------
     #
@@ -290,7 +287,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     @SYNC_CALL
     def init_instance(self, adaptor_state, rm_url, session):
-        """ Service instance constructor """
+        """ service instance constructor
+        """
 
         self.rm      = rm_url
         self.session = session
