@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-""" PBS job adaptor implementation
+""" SGE job adaptor implementation
 """
 
 __author__    = "Ole Weidner"
@@ -151,7 +151,7 @@ _ADAPTOR_OPTIONS       = [
     # 'valid_options': [True, False],
     # 'documentation': """Doc""",
     # 'env_variable':   None
-    },
+    # },
 ]
 
 # --------------------------------------------------------------------
