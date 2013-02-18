@@ -142,15 +142,14 @@ _PTY_TIMEOUT = 2.0
 _ADAPTOR_NAME          = "saga.adaptor.pbsjob"
 _ADAPTOR_SCHEMAS       = ["pbs", "pbs+ssh", "pbs+gsissh"]
 _ADAPTOR_OPTIONS       = [
-    # This adaptor doesn't have any options 
-    # {
-    # 'category':      'saga.adaptor.pbsjob',
-    # 'name':          'foo',
-    # 'type':          bool,
-    # 'default':       False,
-    # 'valid_options': [True, False],
-    # 'documentation': """Doc""",
-    # 'env_variable':   None
+    {
+    'category':      'saga.adaptor.pbsjob',
+    'name':          'foo',
+    'type':          bool,
+    'default':       False,
+    'valid_options': [True, False],
+    'documentation': """Doc""",
+    'env_variable':   None
     },
 ]
 
