@@ -75,7 +75,14 @@ def _pbscript_generator(url, logger, jd, ppn, is_cray=False):
     if jd.name is not None:
         pbs_params += "#PBS -N %s \n" % jd.name
 
-    pbs_params += "#PBS -V     \n"
+    if is_cray is False:
+        # qsub on Cray systems complains about the -V option:
+        # Warning:
+        # Your job uses the -V option, which requests that all of your
+        # current shell environment settings (9913 bytes) be exported to
+        # it.  This is not recommended, as it causes problems for the
+        # batch environment in some cases.
+        pbs_params += "#PBS -V \n"
 
     if jd.environment is not None:
         variable_list = str()
@@ -105,7 +112,7 @@ def _pbscript_generator(url, logger, jd, ppn, is_cray=False):
     # HPC clusters:
     if is_cray is True:
         # Special case for TORQUE on Cray XT5s
-        logger.info("Using Cray XT specific flags: '-l size=xx'")
+        logger.info("Using Cray XT specific '#PBS - size=xx' flags.")
         if jd.total_cpu_count is not None:
             pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
     else:
@@ -237,11 +244,11 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     # ----------------------------------------------------------------
     #
     def sanity_check(self):
-
         # FIXME: also check for gsissh
-
         pass
 
+    # ----------------------------------------------------------------
+    #
     def parse_id(self, id):
         # split the id '[rm]-[pid]' in its parts, and return them.
 
@@ -318,11 +325,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         class NullHandler(logging.Handler):
             def emit(self, record):
                 pass
-        #nh = NullHandler()
-        #null_logger = logging.getLogger("PTYShell").addHandler(nh)
+        nh = NullHandler()
+        null_logger = logging.getLogger("PTYShell").addHandler(nh)
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-            self.session.contexts)#, null_logger)
+            self.session.contexts, null_logger)
 
         self.shell.set_initialize_hook(self.initialize)
         self.shell.set_finalize_hook(self.finalize)
@@ -366,7 +373,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         if ret != 0:
             self.is_cray = False
         else:
-            self._logger.info("System seems to be a Cray XT class machine.")
+            self._logger.info("Host '%s' seems to be a Cray XT class machine." \
+                % self.rm.host)
             self.is_cray = True
 
         # see if we can get some information about the cluster, e.g.,
@@ -416,7 +424,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         if ret != 0:
             # something went wrong
-            message = "Error running 'qsub': %s. Script was: %s" \
+            message = "Error running job via 'qsub': %s. Script was: %s" \
                 % (out, script)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
