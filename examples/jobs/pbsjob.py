@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-""" This examples shows how to run a job on the local machine
+""" This examples shows how to run a job on a remote PBS/TORQUE cluster
     using the 'local' job adaptor.
 """
 
@@ -18,7 +18,7 @@ def main():
     try:
         # create a job service for the local machine. both, 'fork' and
         # 'local' schemes trigger the local job adaptor.
-        js = saga.job.Service("pbs+ssh://alamo.futuregrid.org")
+        js = saga.job.Service("pbs+gsissh://kraken.nics.tennessee.edu")
 
         # describe our job
         jd = saga.job.Description()

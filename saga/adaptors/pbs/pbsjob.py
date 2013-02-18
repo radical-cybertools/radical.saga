@@ -60,7 +60,7 @@ def _pbs_to_saga_jobstate(pbsjs):
 
 # --------------------------------------------------------------------
 #
-def _pbscript_generator(url, logger, jd, ppn):
+def _pbscript_generator(url, logger, jd, ppn, is_cray=False):
     """ generates a PBS script from a SAGA job description
     """
     pbs_params = str()
@@ -101,13 +101,15 @@ def _pbscript_generator(url, logger, jd, ppn):
     if jd.job_contact is not None:
         pbs_params += "#PBS -m abe \n"
 
-    if url.scheme in ["xt5torque", "xt5torque+ssh", 'xt5torque+gsissh']:
+    # TORQUE on a cray requires different -l size.. arguments than regular
+    # HPC clusters:
+    if is_cray is True:
         # Special case for TORQUE on Cray XT5s
-        logger.info("Using Cray XT5 spepcific modifications, i.e., -l size=xx instead of -l nodes=x:ppn=yy ")
+        logger.info("Using Cray XT specific flags: '-l size=xx'")
         if jd.total_cpu_count is not None:
             pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
     else:
-        # Default case (non-XT5)
+        # Default case, i.e, standard HPC cluster (non-Cray XT)
         if jd.total_cpu_count is not None:
             tcc = int(jd.total_cpu_count)
             tbd = float(tcc) / float(ppn)
@@ -287,6 +289,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self.session = session
         self.njobs   = 0
         self.ppn     = 0
+        self.is_cray = False
 
         rm_scheme = rm_url.scheme
         pty_url   = deepcopy(rm_url)
@@ -315,11 +318,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         class NullHandler(logging.Handler):
             def emit(self, record):
                 pass
-        nh = NullHandler()
-        null_logger = logging.getLogger("PTYShell").addHandler(nh)
+        #nh = NullHandler()
+        #null_logger = logging.getLogger("PTYShell").addHandler(nh)
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-            self.session.contexts, null_logger)
+            self.session.contexts)#, null_logger)
 
         self.shell.set_initialize_hook(self.initialize)
         self.shell.set_finalize_hook(self.finalize)
@@ -355,6 +358,16 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                                                "version": version}
 
         self._logger.info("Found PBS tools: %s" % self._commands)
+
+        # let's try to figure out if we're working on a Cray XT machine.
+        # naively, we assume that if we can find the 'aprun' command in the
+        # path that we're logged in to a Cray machine.
+        ret, out, _ = self.shell.run_sync('which aprun')
+        if ret != 0:
+            self.is_cray = False
+        else:
+            self._logger.info("System seems to be a Cray XT class machine.")
+            self.is_cray = True
 
         # see if we can get some information about the cluster, e.g.,
         # different queues, number of processes per node, etc.
@@ -395,7 +408,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         # create a PBS job script from SAGA job description
         script = _pbscript_generator(url=self.rm, logger=self._logger, jd=jd,
-            ppn=self.ppn)
+            ppn=self.ppn, is_cray=self.is_cray)
         self._logger.debug("Generated PBS script: %s" % script)
 
         ret, out, _ = self.shell.run_sync("echo '%s' | %s" \
