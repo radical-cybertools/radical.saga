@@ -48,8 +48,8 @@ def main(args):
         jd.number_of_processes=1
         
         # output options (will just be empty files for /bin/sleep)
-        jd.output = "saga_localjob.stdout"
-        jd.error  = "saga_localjob.stderr"
+        jd.output = "saga_slurmjob.stdout"
+        jd.error  = "saga_slurmjob.stderr"
 
         print "Creating Job with Job Description!"
         # create the job (state: New)

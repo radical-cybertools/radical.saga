@@ -469,10 +469,21 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                                   tgt = "%s/wrapper.sh" % self._base)
         ret, out, _ = self.shell.run_sync("exec %s/wrapper.sh" % self._base)
         ret, out, _ = self.shell.run_sync("sbatch %s/wrapper.sh" % self._base)
-        print ret
-        print out
+        
+        # find out what our job ID will be
+        # TODO: Could make this more efficient
+        found_id = False
+        for line in out.split("\n"):
+            print ": ", line
+            if "Submitted batch job" in line:
+                self.job_id = int(line.split()[-1:][0])
+                found_id = True
 
-        exit(0)
+        if not found_id:
+            raise saga.NoSuccess._log(self._logger, 
+                             "Couldn't get job id from submitted job!")
+
+        #exit(0)
 
         # exe = jd.executable
         # arg = ""
@@ -511,9 +522,9 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         # job_id = "[%s]-[%s]" % (self.rm, lines[-1])
 
-        self._logger.debug ("started job %s" % job_id)
+        self._logger.debug ("started job %s" % self.job_id)
 
-        return job_id
+        return self.job_id
         
 
 
