@@ -18,6 +18,7 @@ from saga.job.constants import *
 
 import re
 import time
+import collections
 from copy import deepcopy
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
@@ -54,13 +55,11 @@ def _pbs_to_saga_jobstate(pbsjs):
         return saga.job.UNKNOWN
 
 
-def _pbscript_generator(url, logger, jd):
+def _pbscript_generator(url, logger, jd, ppn):
     """ generates a PBS script from a SAGA job description
     """
     pbs_params = str()
     exec_n_args = str()
-
-    _ppn = 8
 
     if jd.executable is not None:
         exec_n_args += "%s " % (jd.executable)
@@ -106,13 +105,13 @@ def _pbscript_generator(url, logger, jd):
         # Default case (non-XT5)
         if jd.total_cpu_count is not None:
             tcc = int(jd.total_cpu_count)
-            tbd = float(tcc) / float(_ppn)
+            tbd = float(tcc) / float(ppn)
             if float(tbd) > int(tbd):
                 pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
-                    % (str(int(tbd) + 1), _ppn)
+                    % (str(int(tbd) + 1), ppn)
             else:
                 pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
-                    % (str(int(tbd)), _ppn)
+                    % (str(int(tbd)), ppn)
 
     pbscript = "\n#!/bin/bash \n%s%s" % (pbs_params, exec_n_args)
     return pbscript
@@ -271,12 +270,6 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self._logger.error("adaptor dying... %s" % self.njobs)
         self._logger.trace()
 
-        #     try :
-        #       # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
-        #         if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
-        #     except :
-        #         pass
-
         self.finalize(kill_shell=True)
 
     # ----------------------------------------------------------------
@@ -288,6 +281,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self.rm      = rm_url
         self.session = session
         self.njobs   = 0
+        self.ppn     = 0
 
         rm_scheme = rm_url.scheme
         pty_url   = deepcopy(rm_url)
@@ -357,6 +351,32 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         self._logger.info("Found PBS tools: %s" % self._commands)
 
+        # see if we can get some information about the cluster, e.g.,
+        # different queues, number of processes per node, etc.
+        # TODO: this is quite a hack. however, it *seems* to work quite
+        #       well in practice.
+        ret, out, _ = self.shell.run_sync('%s -a | grep np' % \
+            self._commands['pbsnodes']['path'])
+        if ret != 0:
+            message = "Error running pbsnodes: %s" % out
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+        else:
+            # this is black magic. we just assume that the highest occurence
+            # of a specific np is the number of processors (cores) per compute
+            # node. this equals max "PPN" for job scripts
+            ppn_list = dict()
+            for line in out.split('\n'):
+                np = line.split(' = ')
+                if len(np) == 2:
+                    np = np[1].strip()
+                    if np in ppn_list:
+                        ppn_list[np] += 1
+                    else:
+                        ppn_list[np] = 1
+            self.ppn = max(ppn_list, key=ppn_list.get)
+            self._logger.debug("Found the following 'ppn' configurations: %s. Using %s as default ppn." 
+                % (ppn_list, self.ppn))
+
     # ----------------------------------------------------------------
     #
     def finalize(self, kill_shell=False):
@@ -368,7 +388,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """ runs a job via PBS """
 
         # create a PBS job script from SAGA job description
-        script = _pbscript_generator(url=self.rm, logger=self._logger, jd=jd)
+        script = _pbscript_generator(url=self.rm, logger=self._logger, jd=jd,
+            ppn=self.ppn)
         self._logger.debug("Generated PBS script: %s" % script)
 
         ret, out, _ = self.shell.run_sync("echo '%s' | %s" \
