@@ -60,6 +60,8 @@ def _pbscript_generator(url, logger, jd):
     pbs_params = str()
     exec_n_args = str()
 
+    _ppn = 8
+
     if jd.executable is not None:
         exec_n_args += "%s " % (jd.executable)
     if jd.arguments is not None:
@@ -99,18 +101,18 @@ def _pbscript_generator(url, logger, jd):
         # Special case for TORQUE on Cray XT5s
         logger.info("Using Cray XT5 spepcific modifications, i.e., -l size=xx instead of -l nodes=x:ppn=yy ")
         if jd.total_cpu_count is not None:
-            pbs_params += "#PBS -l size=%s" % jd.total_cpu_count
+            pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
     else:
         # Default case (non-XT5)
         if jd.total_cpu_count is not None:
             tcc = int(jd.total_cpu_count)
-            tbd = float(tcc) / float(self._ppn)
+            tbd = float(tcc) / float(_ppn)
             if float(tbd) > int(tbd):
-                pbs_params += "#PBS -l nodes=%s:ppn=%s" \
-                    % (str(int(tbd) + 1), self._ppn)
+                pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
+                    % (str(int(tbd) + 1), _ppn)
             else:
-                pbs_params += "#PBS -l nodes=%s:ppn=%s" \
-                    % (str(int(tbd)), self._ppn)
+                pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
+                    % (str(int(tbd)), _ppn)
 
     pbscript = "\n#!/bin/bash \n%s%s" % (pbs_params, exec_n_args)
     return pbscript
@@ -153,7 +155,10 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.OUTPUT,
                           saga.job.ERROR,
                           saga.job.QUEUE,
-                          saga.job.PROJECT],
+                          saga.job.PROJECT,
+                          saga.job.WALL_TIME_LIMIT,
+                          saga.job.WORKING_DIRECTORY,
+                          saga.job.TOTAL_CPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
                           saga.job.CREATED,
@@ -333,7 +338,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
             else:
                 path = out.strip()  # strip removes newline
-                if cmd != 'qdel':  # qdel doesn't support --version!
+                if cmd == 'qdel':  # qdel doesn't support --version!
+                    self._commands[cmd] = {"path":    path,
+                                           "version": "?"}
+                else:
                     ret, out, _ = self.shell.run_sync("%s --version" % cmd)
                     if ret != 0:
                         message = "Error finding PBS tools: %s" % out
@@ -386,12 +394,14 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         job_state   = None
         exec_hosts  = None
         exit_status = None
+        create_time = None
         start_time  = None
+        end_time    = None
 
         rm, pid = self._adaptor.parse_id(id)
 
         ret, out, _ = self.shell.run_sync("%s -f %s | \
-            egrep '(job_state)|(exec_host)|(exit_status)|(start_time)'" \
+            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" \
             % (self._commands['qstat']['path'], pid))
 
         if ret != 0:
@@ -405,18 +415,26 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         #     exit_status = 0
         results = out.split('\n')
         for result in results:
-            if len(result.split()) == 3:
-                key, _, val = result.split()
+            if len(result.split('=')) == 2:
+                key, val = result.split('=')
+                key = key.strip()  # strip() removes whitespaces at the
+                val = val.strip()  # beginning and the end of the string
+
                 if key == 'job_state':
                     job_state = _pbs_to_saga_jobstate(val)
                 elif key == 'exec_host':
                     exec_hosts = val
                 elif key == 'exit_status':
                     exit_status = val
+                elif key == 'ctime':
+                    create_time = val
                 elif key == 'start_time':
                     start_time = val
+                elif key == 'comp_time':
+                    end_time = val
 
-        return (job_state, exec_hosts, exit_status, start_time)
+        return (job_state, exec_hosts, exit_status,
+                create_time, start_time, end_time)
 
     # ----------------------------------------------------------------
     #
@@ -424,7 +442,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """ get the job's exit code
         """
         # _job_get_info returns (job_state, exec_hosts, exit_status,
-        #                        start_time)
+        #                        create_time, start_time)
         return self._job_get_info(id)[2]
 
     # ----------------------------------------------------------------
@@ -433,7 +451,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """ get the job's exit code
         """
         # _job_get_info returns (job_state, exec_hosts, exit_status,
-        #                        start_time)
+        #                        create_time, start_time)
         return self._job_get_info(id)[1]
 
     # ----------------------------------------------------------------
@@ -599,13 +617,14 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         # the js is responsible for job bulk operations -- which
         # for jobs only work for run()
       # self._container       = self.js
-        self._method_type     = "run"
+        self._method_type = "run"
 
         # initialize job attribute values
         self._id              = None
         self._state           = saga.job.NEW
         self._exit_code       = None
         self._exception       = None
+        self._created         = None
         self._started         = None
         self._finished        = None
         self._execution_hosts = None
@@ -619,15 +638,20 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         """ Implements saga.adaptors.cpi.job.Job.get_state()
         """
 
-        # we may not yet have a backend representation...
-        try:
-            self._state = self.js._job_get_info(self._id)[0]
+        # if the state is DONE, CANCELED or FAILED, it is considered
+        # final and we don't need to query the backend again
+        if self._state == saga.job.CANCELED or self._state == saga.job.FAILED \
+            or self._state == saga.job.DONE:
             return self._state
-        except Exception as e:
-            if self._id == None:
+        else:
+            try:
+                self._state = self.js._job_get_info(self._id)[0]
                 return self._state
-            else:
-                raise e
+            except Exception as e:
+                if self._id == None:
+                    return self._state
+                else:
+                    raise e
 
     # ----------------------------------------------------------------
     #
@@ -639,7 +663,7 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_id(self):
-        """ Implements saga.adaptors.cpi.job.Job.get_id()
+        """ implements saga.adaptors.cpi.job.Job.get_id()
         """
         return self._id
 
@@ -647,8 +671,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_exit_code(self):
-        """ Implements saga.adaptors.cpi.job.Job.get_exit_code() """
-
+        """ implements saga.adaptors.cpi.job.Job.get_exit_code()
+        """
         if self._exit_code != None:
             return self._exit_code
 
@@ -657,33 +681,42 @@ class PBSJob (saga.adaptors.cpi.job.Job):
 
     # ----------------------------------------------------------------
     #
-  #  @SYNC_CALL
-  #  def get_created (self) :
-  #     """ Implements saga.adaptors.cpi.job.Job.get_started()
-  #     """     
-  #     # for local jobs started == created. for other adaptors 
-  #     # this is not necessarily true   
-  #     return self._started
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def get_started (self) :
-  #     """ Implements saga.adaptors.cpi.job.Job.get_started()
-  #     """        
-  #     return self._started
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def get_finished (self) :
-  #     """ Implements saga.adaptors.cpi.job.Job.get_finished()
-  #     """        
-  #     return self._finished
-  # 
+    @SYNC_CALL
+    def get_created(self):
+        """ implements saga.adaptors.cpi.job.Job.get_created()
+        """
+        if self._created is None:
+            # _job_get_info returns (job_state, exec_hosts, exit_status,
+            #                        create_time, start_time, end_time)
+            self._created = self.js._job_get_info(self._id)[3]
+        return self._created
 
-  # # ----------------------------------------------------------------
-  # #
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_started(self):
+        """ implements saga.adaptors.cpi.job.Job.get_started()
+        """
+        if self._started is None:
+            # _job_get_info returns (job_state, exec_hosts, exit_status,
+            #                        create_time, start_time, end_time)
+            self._started = self.js._job_get_info(self._id)[4]
+        return self._started
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_finished(self):
+        """ implements saga.adaptors.cpi.job.Job.get_finished()
+        """
+        if self._finished is None:
+            # _job_get_info returns (job_state, exec_hosts, exit_status,
+            #                        create_time, start_time, end_time)
+            self._finished = self.js._job_get_info(self._id)[5]
+        return self._finished
+
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def get_execution_hosts(self):
         """ Implements saga.adaptors.cpi.job.Job.get_execution_hosts()
@@ -698,20 +731,19 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def cancel (self, timeout):
-        self._id = self.js._job_cancel (self.jd)
-   
-   
-    # ----------------------------------------------------------------
-    #
-    @SYNC_CALL
-    def run (self): 
-        self._id = self.js._job_run (self.jd)
-
+    def cancel(self, timeout):
+        self.js._job_cancel(self._id)
+        self._state = saga.job.CANCELED
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def re_raise (self):
+    def run(self):
+        self._id = self.js._job_run(self.jd)
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def re_raise(self):
         # nothing to do here actually, as run () is synchronous...
         return self._exception

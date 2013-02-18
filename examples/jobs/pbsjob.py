@@ -29,6 +29,9 @@ def main():
         jd.name        = 'testjob'
         jd.project     = 'TG-XXXYYYYZZZ'
         jd.environment = {'RUNTIME': '60'}
+        jd.wall_time_limit = 2  # minutes
+        jd.total_cpu_count = 16
+        jd.working_directory = "/tmp/"
         jd.executable  = '/bin/sleep'
         jd.arguments   = ['$RUNTIME']
 
@@ -55,12 +58,15 @@ def main():
 
         # wait for our job to complete
         print "\n...waiting for job...\n"
-        catjob.wait()
+        catjob.wait(10)
+        catjob.cancel()
 
         print "Job State   : %s" % (catjob.state)
         print "Exitcode    : %s" % (catjob.exit_code)
         print "Exec. hosts : %s" % (catjob.execution_hosts)
-
+        print "Create time : %s" % (catjob.created)
+        print "Start time  : %s" % (catjob.started)
+        print "End time    : %s" % (catjob.finished)
 
     except saga.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))
