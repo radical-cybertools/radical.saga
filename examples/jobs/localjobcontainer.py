@@ -33,12 +33,12 @@ def main():
     # number of job 'groups' / containers
     num_job_groups = 1
     # number of jobs per container
-    jobs_per_group = 1000
+    jobs_per_group = 1
 
     try:
         # all jobs in this example are running on the same job service
         # this is not a requirement though. s
-        service = saga.job.Service("ssh://amerzky@cyder.cct.lsu.edu")
+        service = saga.job.Service("ssh://localhost/")
         print service.url
 
         t1 = time.time()
@@ -51,7 +51,7 @@ def main():
                 # add jobs to container. to make things a bit more
                 # interesting, we give each job a random runtime (1-60s)
                 jd = saga.job.Description()
-                jd.environment = {'RUNTIME': random.randrange(1, 2, 1)}
+                jd.environment = {'RUNTIME': random.randrange(1000, 2000, 1)}
                 jd.executable  = '/bin/sleep'
                 jd.arguments   = ['$RUNTIME']
                 j = service.create_job(jd)
@@ -61,9 +61,11 @@ def main():
         for c in range(0, num_job_groups):
             print 'Starting container %s ... ' % c
             containers[c].run()
-            # containers[c].wait()
 
-            # # print containers[c].get_states ()
+            print containers[c].get_states ()
+            containers[c].cancel()
+            containers[c].wait()
+            print containers[c].get_states ()
 
             # # at this point, all jobs in the container
             # # have finished running. we can now print some statistics

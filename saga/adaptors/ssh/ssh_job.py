@@ -225,6 +225,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         pass
 
 
+    # ----------------------------------------------------------------
+    #
     def parse_id (self, id) :
         # split the id '[rm]-[pid]' in its parts, and return them.
 
@@ -234,6 +236,22 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
             raise saga.BadParameter ("Cannot parse job id '%s'" % id)
 
         return (match.group(1), match.group (2))
+
+
+    # ----------------------------------------------------------------
+    #
+    def string_to_state (self, state_str) :
+
+        state_str = state_str.strip ()
+
+        if state_str.lower () == 'new'       : return saga.job.NEW
+        if state_str.lower () == 'running'   : return saga.job.RUNNING
+        if state_str.lower () == 'suspended' : return saga.job.SUSPENDED
+        if state_str.lower () == 'done'      : return saga.job.DONE
+        if state_str.lower () == 'failed'    : return saga.job.FAILED
+        if state_str.lower () == 'canceled'  : return saga.job.CANCELED
+
+        return saga.job.UNKNOWN
 
 
 ###############################################################################
@@ -440,16 +458,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
 
-        state_str = lines[1].strip ()
-
-        if state_str.lower () == 'new'       : return saga.job.NEW
-        if state_str.lower () == 'running'   : return saga.job.RUNNING
-        if state_str.lower () == 'suspended' : return saga.job.SUSPENDED
-        if state_str.lower () == 'done'      : return saga.job.DONE
-        if state_str.lower () == 'failed'    : return saga.job.FAILED
-        if state_str.lower () == 'canceled'  : return saga.job.CANCELED
-
-        return saga.job.UNKNOWN
+        return self._adaptor.string_to_state (lines[1])
         
 
     # ----------------------------------------------------------------
@@ -696,6 +705,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
    
     # ----------------------------------------------------------------
     #
+    @SYNC_CALL
     def container_run (self, jobs) :
         """
         From all the job descriptions in the container, build a bulk, and submit
@@ -766,9 +776,10 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
             self._logger.error ("failed to run (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
             return
 
-
+   
     # ----------------------------------------------------------------
     #
+    @SYNC_CALL
     def container_wait (self, jobs, mode, timeout) :
 
         self._logger.debug ("container wait: %s"  %  str(jobs))
@@ -823,9 +834,121 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
    
     # ----------------------------------------------------------------
     #
-    def container_cancel (self, jobs) :
+    @SYNC_CALL
+    def container_cancel (self, jobs, timeout) :
+
         self._logger.debug ("container cancel: %s"  %  str(jobs))
-        raise saga.NoSuccess ("Not Implemented");
+
+        bulk = "BULK\n"
+
+        for job in jobs :
+            rm, pid = self._adaptor.parse_id (job.id)
+            bulk   += "CANCEL %s\n" % pid
+
+        bulk += "BULK_RUN\n"
+        self.shell.run_async (bulk)
+
+        for job in jobs :
+
+            ret, out = self.shell.find_prompt ()
+
+            if  ret != 0 :
+                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._exception = saga.NoSuccess ("failed to cancel job: (%s)(%s)" % (ret, out))
+                continue
+
+            lines = filter (None, out.split ("\n"))
+
+            if  len (lines) < 2 :
+                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._exception = saga.NoSuccess ("failed to cancel job : (%s)(%s)" % (ret, out))
+                continue
+
+            if lines[-2] != "OK" :
+                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._exception = saga.NoSuccess ("failed to cancel job : (%s)(%s)" % (ret, out))
+                continue
+
+        # we also need to find the output of the bulk op itself
+        ret, out = self.shell.find_prompt ()
+
+        if  ret != 0 :
+            self._logger.error ("failed to cancel (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            return
+
+        lines = filter (None, out.split ("\n"))
+
+        if  len (lines) < 2 :
+            self._logger.error ("Cannot evaluate status of bulk job cancel: (%s)(%s)" % (ret, out))
+            return
+
+        if lines[-2] != "OK" :
+            self._logger.error ("failed to cancel (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            return
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def container_get_states (self, jobs) :
+
+        self._logger.debug ("container get_state: %s"  %  str(jobs))
+
+        bulk   = "BULK\n"
+        states = []
+
+        for job in jobs :
+            rm, pid = self._adaptor.parse_id (job.id)
+            bulk   += "STATE %s\n" % pid
+
+        bulk += "BULK_RUN\n"
+        self.shell.run_async (bulk)
+
+        for job in jobs :
+
+            ret, out = self.shell.find_prompt ()
+
+            if  ret != 0 :
+                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._exception = saga.NoSuccess ("failed to get job state: (%s)(%s)" % (ret, out))
+                continue
+
+            lines = filter (None, out.split ("\n"))
+
+            if  len (lines) < 2 :
+                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._exception = saga.NoSuccess ("failed to get job state : (%s)(%s)" % (ret, out))
+                continue
+
+            if lines[-2] != "OK" :
+                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._exception = saga.NoSuccess ("failed to get job state : (%s)(%s)" % (ret, out))
+                continue
+
+            state = self._adaptor.string_to_state (lines[-1])
+
+            job._adaptor._state = state
+            states.append (state)
+
+
+        # we also need to find the output of the bulk op itself
+        ret, out = self.shell.find_prompt ()
+
+        if  ret != 0 :
+            self._logger.error ("failed to get state for (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            return
+
+        lines = filter (None, out.split ("\n"))
+
+        if  len (lines) < 2 :
+            self._logger.error ("Cannot evaluate status of bulk job get_state: (%s)(%s)" % (ret, out))
+            return
+
+        if lines[-2] != "OK" :
+            self._logger.error ("failed to get state for (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            return
+
+        return states
 
 
 ###############################################################################

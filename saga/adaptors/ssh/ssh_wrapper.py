@@ -44,7 +44,7 @@ idle_checker () {
 
     if test -e "$BASE/idle.$ppid"
     then
-      kill -s ALRM $ppid >/dev/null 2>&1
+      /bin/kill -s ALRM $ppid >/dev/null 2>&1
       exit 0
     fi
 
@@ -66,7 +66,7 @@ verify_dir () {
 # ensure that given job id has valid pid file
 verify_pid () {
   verify_dir $1
-  if ! test -r "$DIR/pid";   then ERROR="pid $1 has no process id"; return 1; fi
+  if ! test -r "$DIR/rpid";   then ERROR="pid $1 has no process id"; return 1; fi
 }
 
 
@@ -107,57 +107,70 @@ verify_err () {
 # create the monitor script, used by the command running routines.
 #
 create_monitor () {
+  cat > "$BASE/monitor.sh" <<EOT
+
   # create the monitor wrapper script once -- this is used by all job startup
-  # scripts to actually run job.sh.  Note that SAGA_PID MUST be set before this
-  # script is running.
+  # scripts to actually run job.sh.  The script gets SAGA_PID as argument,
+  # denoting the job to monitor.   The monitor will write 3 pids to a named pipe
+  # (listened to by the wrapper):
+  #
+  #   rpid: pid of shell running the job 
+  #   mpid: pid of this monitor.sh instance (== pid of process group for cancel)
+  SAGA_PID=\$1
+  shift
+  DIR="\$*"
+
+  # subscript which represents the job.  The 'exec' call will replace the
+  # script's shell instance with the job executable, leaving the I/O
+  # redirections intact.
+  touch "\$DIR/in"
+
+  (
+    printf  "RUNNING \\\\n" >> "\$DIR/state"  ;
+    exec sh "\$DIR/cmd"   < "\$DIR/in" > "\$DIR/out" 2> "\$DIR/err"
+  ) 1> /dev/null 2>/dev/null 3</dev/null &
+
+  RPID=\$!
+  MPID=\$\$
+
+  # we don't care when the wrapper sees these, echo can hang forever as far as
+  # we care...
+  ( printf "\$RPID \$MPID\\\\n" > "\$DIR/fifo" & )
   
-  cat >  "$BASE/monitor.sh" <<EOT
 
-    SAGA_PID=\$1
-    DIR="$BASE/\$SAGA_PID"
+  while true
+  do
+    wait \$RPID
+    retv=\$?
 
-    printf "PID: $SAGA_PID\\n" >> /tmp/log.merzky
+    # if wait failed for other reason than job finishing, i.e. due to
+    # suspend/resume, then we need to wait again, otherwise we are done
+    # waiting...
+    if test -e "\$DIR/suspended"
+    then
+      rm -f "\$DIR/suspended"
+      # need to wait again
+      continue
+    fi
 
-    nohup /bin/sh "\$DIR/job.sh" 1>/dev/null 2>/dev/null 3</dev/null &
+    if test -e "\$DIR/resumed"
+    then
+      rm -f "\$DIR/resumed"
+      # need to wait again
+      continue
+    fi
 
-    rpid=\$!
-    printf "\$rpid\\n"    >  "\$DIR/pid"
-    printf "RUNNING \\n"  >> "\$DIR/state"
+    # evaluate exit val
+    printf "\$retv\\\\n" > "\$DIR/exit"
 
-    while true
-    do
-      wait \$rpid
-      retv=\$?
+    test   "\$retv" -eq 0  && printf "DONE \\\\n"   >> "\$DIR/state"
+    test   "\$retv" -eq 0  || printf "FAILED \\\\n" >> "\$DIR/state"
 
-      # if wait failed for other reason than job finishing, i.e. due to
-      # suspend/resume, then we need to wait again, otherwise we are done
-      # waiting...
-      if test -e "\$DIR/suspended"
-      then
-        rm -f "\$DIR/suspended"
-        # need to wait again
-        continue
-      fi
+    # done waiting
+    break
+  done
 
-      if test -e "\$DIR/resumed"
-      then
-        rm -f "\$DIR/resumed"
-        # need to wait again
-        continue
-      fi
-
-      # real exit -- evaluate exit val
-      printf "\$retv\\n" > "\$DIR/exit"
-      test   "\$retv"   = 0     && printf "DONE \\n"     >> "\$DIR/state"
-      test   "\$retv"   = 0     || printf "FAILED \\n"   >> "\$DIR/state"
-
-      # capture canceled state
-      test -e "\$DIR/canceled"  && printf "CANCELED \\n" >> "\$DIR/state"
-      test -e "\$DIR/canceled"  && rm -f                    "\$DIR/canceled"
-
-      # done waiting
-      break
-    done
+  exit
 
 EOT
 
@@ -218,7 +231,7 @@ cmd_run () {
   #
   # go figure...
 
-  cmd_run2 "$@" 1>/dev/null 2>/dev/null 3</dev/null &
+  cmd_run2 "$@" &
 
   SAGA_PID=$!      # this is the (native) job id!
   wait $SAGA_PID   # this will return very quickly -- look at cmd_run2... ;-)
@@ -228,9 +241,12 @@ cmd_run () {
   # startup)
   DIR="$BASE/$SAGA_PID"
 
+  touch "$DIR/state"
+
   while true
   do
     grep RUNNING "$DIR/state" && break
+    sleep 0  # sleep 0 will wait for just some millisecs
   done
 
 }
@@ -256,7 +272,7 @@ cmd_run2 () {
   printf "NEW \\n"  >> "$DIR/state"
 
 
-  cmd_run_process "$@" 1>/dev/null 2>/dev/null 3</dev/null &
+  cmd_run_process "$SAGA_PID" "$@" &
   return $!
 }
 
@@ -264,24 +280,28 @@ cmd_run2 () {
 cmd_run_process () {
   # this command runs the job.  PPID will point to the id of the spawning
   # script, which, coincidentally, we designated as job ID -- nice:
-  SAGA_ID=$PPID
+  SAGA_PID=$1
+  shift
+
   DIR="$BASE/$SAGA_PID"
 
-  printf "$*\\n"   >  "$DIR/cmd"
-  touch               "$DIR/in"
+  mkfifo "$DIR/fifo"           # to communicate with the monitor
+  printf "$*\\n" >  "$DIR/cmd"  # job to run by the monitor
 
-  # create a script which represents the job.  The 'exec' call will replace the
-  # script's shell instance with the job executable, leaving the I/O
-  # redirections intact.
-  cat              >  "$DIR/job.sh" <<EOT
-exec sh "$DIR/cmd" <  "$DIR/in" >  "$DIR/out" 2> "$DIR/err"
-EOT
-
-  # the job script above is started by this monitor script, which makes sure
+  # start the monitor script, which makes sure
   # that the job state is properly watched and captured.
-  # the monitor script is ran asynchronously and with nohup, so that its
-  # lifetime will not be bound to the manager script lifetime.
-  nohup /bin/sh "$BASE/monitor.sh" $SAGA_PID 1>/dev/null 2>/dev/null 3</dev/null &
+  # The monitor script is ran asynchronously, so that its
+  # lifetime will not be bound to the manager script lifetime.  Also, it runs in
+  # an interactive shell, i.e. in a new process group, so that we can signal the
+  # monitor and the actual job processes all at once (think suspend, cancel).
+  ( sh -i -c "sh $BASE/monitor.sh  $SAGA_PID \"$DIR\" & exit" )
+
+  read RPID MPID < "$DIR/fifo"
+  rm -rf $DIR/fifo
+
+  printf "$RPID\\n" >  "$DIR/rpid"  # real job id
+  printf "$MPID\\n" >  "$DIR/mpid"  # monitor pid
+  
   exit
 }
 
@@ -312,12 +332,12 @@ cmd_wait () {
     case "$RETVAL" in
       DONE      ) return ;;
       FAILED    ) return ;;
-      CANCELLED ) return ;;
+      CANCELED  ) return ;;
       NEW       )        ;;
       RUNNING   )        ;;
       SUSPENDED )        ;;
       UNKNOWN   )        ;;
-      *         ) ERROR="NOK - invalid state '$RETVAL'";   
+      *         ) ERROR="NOK - invalid state '$RETVAL'"; return ;;  
     esac
 
     sleep 1
@@ -333,7 +353,7 @@ cmd_result () {
   verify_state $1 || return
 
   DIR="$BASE/$1"
-  state=`grep -e ' $' "$DIR/state" | tail -n 1`
+  state=`grep -e ' $' "$DIR/state" | tail -n 1 | tr -d ' '`
 
   if test "$state" != "DONE " -a "$state" != "FAILED " -a "$state" != "CANCELED "
   then 
@@ -359,10 +379,10 @@ cmd_suspend () {
   verify_pid   $1 || return
 
   DIR="$BASE/$1"
-  state=`grep -e ' $' "$DIR/state" | tail -n 1`
-  rpid=`cat "$DIR/pid"`
+  state=`grep -e ' $' "$DIR/state" | tail -n 1 | tr -d ' '`
+  rpid=`cat "$DIR/rpid"`
 
-  if ! test "$state" = "RUNNING "
+  if ! test "$state" = "RUNNING"
   then
     ERROR="job $1 in incorrect state ($state != RUNNING)"
     return
@@ -394,10 +414,10 @@ cmd_resume () {
   verify_pid   $1 || return
 
   DIR="$BASE/$1"
-  state=`grep -e ' $' "$DIR/state" | tail -n 1`
-  rpid=`cat "$DIR/pid"`
+  state=`grep -e ' $' "$DIR/state" | tail -n 1 | tr -d ' '`
+  rpid=`cat "$DIR/rpid"`
 
-  if ! test "$state" = "SUSPENDED "
+  if ! test "$state" = "SUSPENDED"
   then
     ERROR="job $1 in incorrect state ($state != SUSPENDED)"
     return
@@ -431,27 +451,31 @@ cmd_cancel () {
 
   DIR="$BASE/$1"
 
-  state=`grep -e ' $' "$DIR/state" | tail -n 1`
-  rpid=`cat "$DIR/pid"`
 
-  if test "$state" != "SUSPENDED " -a "$state" != "RUNNING "
+  rpid=`cat "$DIR/rpid"`
+  mpid=`cat "$DIR/mpid"`
+
+  # first kill monitor, so that it does not interfer with state management
+  /bin/kill -TERM $mpid
+  /bin/kill -KILL $mpid
+
+  # now make sure that job did not reach final state before monitor died
+  state=`grep -e ' $' "$DIR/state" | tail -n 1 | tr -d ' '`
+  if test "$state" = "FAILED" -o "$state" = "DONE" -o "$state" = "CANCELED"
   then
-    ERROR="job $1 in incorrect state ('$state' != 'SUSPENDED|RUNNING')"
+    ERROR="job $1 in incorrect state ('$state' = 'DONE|FAILED|CANCELED')"
     return
   fi
 
-  touch "$DIR/canceled"
-  RETVAL=`kill -KILL $rpid 2>&1`
-  ECODE=$?
+  # now kill the job process group, and to be sure also the job shell
+  /bin/kill -TERM -- -$mpid 
+  /bin/kill -KILL -- -$mpid 
+  /bin/kill -TERM     $rpid 
+  /bin/kill -KILL     $rpid
 
-  if test "$ECODE" = "0"
-  then
-    RETVAL="$1 canceled"
-  else
-    # kill failed!
-    rm -f "$DIR/canceled"
-    ERROR="cancel failed ($ECODE): $RETVAL"
-  fi
+  # FIXME: how can we check for success?  ps?
+  printf "CANCELED \\n" >> "$DIR/state"
+  RETVAL="$1 canceled"
 }
 
 
@@ -540,7 +564,7 @@ cmd_quit () {
   fi
 
   # kill idle checker
-  kill $1 >/dev/null 2>&1
+  /bin/kill $1 >/dev/null 2>&1
   rm -f "$BASE/idle.$$"
 
   # clean bulk file
@@ -578,7 +602,6 @@ listen() {
   # and read those from stdin
   while read -r CMD ARGS
   do
-
 
     # check if we start or finish a bulk
     case $CMD in
@@ -682,6 +705,7 @@ listen $1
 # --------------------------------------------------------------------
 
 # vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2
+
 
 '''
 
