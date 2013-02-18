@@ -24,8 +24,6 @@ adaptor_registry = [
                   # "saga.adaptors.local.localjob",
                     "saga.adaptors.local.localfile",
                     "saga.adaptors.ssh.ssh_job",
+                    "saga.adaptors.sge.sgejob"
                    ]
-
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

@@ -75,8 +75,8 @@ class our_sdist(sdist):
 setup_args = {
     'name': "saga",
     'version': version,
-    'description': "A native Python implementation of the OGF SAGA standard (GFD.90).",
-    'long_description': "SAGA-Python (a.k.a bliss) is a pragmatic and light-weight implementation of the OGF GFD.90 SAGA standard. SAGA-Python is written 100% in Python and focuses on usability and ease of deployment.",
+    'description': "A light-weight access layer for distributed computing infrastructure",
+    'long_description': "SAGA-python light-weight implementation of the OGF GFD.90 SAGA standard. SAGA-Python is written 100% in Python and focuses on usability and ease of deployment.",
     'author': "Ole Christian Weidner, et al.",
     'author_email': "ole.weidner@rutgers.edu",
     'maintainer': "Ole Christian Weidner",
@@ -126,6 +126,7 @@ setup_args = {
         "saga.adaptors.local",
         "saga.adaptors.redis",
         "saga.adaptors.ssh",
+        "saga.adaptors.sge",
         "saga.adaptors.irods",
         "saga.engine",
         "saga.utils",
