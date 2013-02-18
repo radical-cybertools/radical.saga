@@ -135,6 +135,8 @@ setup_args = {
         "saga.utils.config",
         "saga.utils.job"
     ],
+    'package_data': { '': [ '*.sh' ] },
+    'zip_safe': False,
     'scripts': scripts,
     # mention data_files, even if empty, so install_data is called and
     # VERSION gets copied
@@ -145,16 +147,11 @@ setup_args = {
         }
     }
 
-# set zip_safe to false to force Windows installs to always unpack eggs
-# into directories, which seems to work better --
-# see http://buildbot.net/trac/ticket/907
-if sys.platform == "win32":
-    setup_args['zip_safe'] = False
-
-else:
+if sys.platform != "win32":
     setup_args['install_requires'] = [
         'colorama',
         'pexpect'
     ]
 
 setup(**setup_args)
+
