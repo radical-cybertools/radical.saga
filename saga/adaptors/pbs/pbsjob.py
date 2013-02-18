@@ -20,7 +20,7 @@ import re
 import time
 from copy import deepcopy
 
-SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
@@ -568,7 +568,6 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         else:
             jobid = "[%s]-[%s]" % (self.rm, out.split()[0])
             ids.append(jobid)
-            print ids
 
         return ids
 

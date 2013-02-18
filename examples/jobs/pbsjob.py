@@ -18,7 +18,7 @@ def main():
     try:
         # create a job service for the local machine. both, 'fork' and
         # 'local' schemes trigger the local job adaptor.
-        js = saga.job.Service("pbs+ssh://india.futuregrid.org")
+        js = saga.job.Service("pbs+ssh://alamo.futuregrid.org")
 
         # describe our job
         jd = saga.job.Description()
@@ -40,17 +40,17 @@ def main():
         jd.error  = "saga_pbsjob.stderr"
 
         # create the job (state: New)
-        catjob = js.create_job(jd)
+        sleepjob = js.create_job(jd)
 
         # check our job's id and state
-        print "Job ID    : %s" % (catjob.id)
-        print "Job State : %s" % (catjob.state)
+        print "Job ID    : %s" % (sleepjob.id)
+        print "Job State : %s" % (sleepjob.state)
 
         print "\n...starting job...\n"
-        catjob.run()
+        sleepjob.run()
 
-        print "Job ID    : %s" % (catjob.id)
-        print "Job State : %s" % (catjob.state)
+        print "Job ID    : %s" % (sleepjob.id)
+        print "Job State : %s" % (sleepjob.state)
 
         print "\nListing active jobs: "
         for job in js.list():
@@ -58,15 +58,15 @@ def main():
 
         # wait for our job to complete
         print "\n...waiting for job...\n"
-        catjob.wait(10)
-        catjob.cancel()
+        sleepjob.wait(10)
+        sleepjob.cancel()
 
-        print "Job State   : %s" % (catjob.state)
-        print "Exitcode    : %s" % (catjob.exit_code)
-        print "Exec. hosts : %s" % (catjob.execution_hosts)
-        print "Create time : %s" % (catjob.created)
-        print "Start time  : %s" % (catjob.started)
-        print "End time    : %s" % (catjob.finished)
+        print "Job State   : %s" % (sleepjob.state)
+        print "Exitcode    : %s" % (sleepjob.exit_code)
+        print "Exec. hosts : %s" % (sleepjob.execution_hosts)
+        print "Create time : %s" % (sleepjob.created)
+        print "Start time  : %s" % (sleepjob.started)
+        print "End time    : %s" % (sleepjob.finished)
 
     except saga.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))
