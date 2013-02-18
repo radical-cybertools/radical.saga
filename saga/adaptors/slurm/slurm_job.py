@@ -266,6 +266,14 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" % (ret, out))
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
 
+        # yank out username if it wasn't made explicit
+        if not self.rm.username:
+            self._logger.debug ("No username provided in URL %s, so we are"
+                                "going to find it with whoami" % shell_url)
+            ret, out, _ = self.shell.run_sync("whoami")
+            self.rm.username = out
+            self._logger.debug("Username detected as: %s", self.rm.username)
+
 
     # ----------------------------------------------------------------
     #
@@ -279,74 +287,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     #
     def _job_run (self, jd) :
         """ runs a job on the wrapper via pty, and returns the job id """
-#BJ SLURM CODE
-#         self.job_description=job_description
-#         self.bootstrap_script = self.job_description.arguments[2]
-#         self.job_id = ""
-#         self.resource_url = resource_url
-#         self.resource_url.scheme="ssh"
-#         if pilot_compute_description == None:
-#             pilot_compute_description={}
-#             pilot_compute_description['queue'] = job_description.queue
-#             pilot_compute_description['project'] = job_description.project
-#             pilot_compute_description['working_directory'] = job_description.working_directory
-#             pilot_compute_description['walltime'] = job_description.wall_time_limit
-#             pilot_compute_description['number_of_processes'] = job_description.total_cpu_count
-
-#         self.working_directory = pilot_compute_description["working_directory"]
-#         ### convert walltime in minutes to SLURM representation of time ###
-#         walltime_slurm="1:00:00"
-#         if pilot_compute_description.has_key("walltime"):
-#             hrs=int(pilot_compute_description["walltime"])/60
-#             minu=int(pilot_compute_description["walltime"])%60
-#             walltime_slurm=""+str(hrs)+":"+str(minu)+":00"
-
-#         walltime_slurm = "1:00:00"
-#         pilot_compute_description={"number_of_processes":8,
-#                                    "working_directory":"/home",
-#                                    "project":"myproject",
-#                                    "queue":"myqueue"
-#                                    }
-#         self.bootstrap_script = "mybootstrapscript"
-#         self.bootstrap_script = textwrap.dedent("""import sys
-# import os
-# import urllib
-# import sys
-# import time
-# import textwrap
-
-# sbatch_file_name="bigjob_slurm_ssh"
-# sbatch_file = open(sbatch_file_name, "w")
-# sbatch_file.write("#!/bin/bash")
-# sbatch_file.write("\\n")
-# sbatch_file.write("#SBATCH -n %s")
-# sbatch_file.write("\\n")
-# sbatch_file.write("#SBATCH -J bigjob_slurm")
-# sbatch_file.write("\\n")
-# sbatch_file.write("#SBATCH -t %s")
-# sbatch_file.write("\\n")
-# sbatch_file.write("#SBATCH -A %s")
-# sbatch_file.write("\\n")
-# sbatch_file.write("#SBATCH -o %s/stdout-bigjob_agent.txt")
-# sbatch_file.write("\\n")
-# sbatch_file.write("#SBATCH -e %s/stderr-bigjob_agent.txt")
-# sbatch_file.write("\\n")
-# sbatch_file.write("#SBATCH -p %s")
-# sbatch_file.write("\\n")
-
-# sbatch_file.write("cd %s")
-# sbatch_file.write("\\n")
-# sbatch_file.write("python -c XX" + textwrap.dedent(\"\"%s\"\") + "XX")
-# sbatch_file.close()
-# os.system( "sbatch " + sbatch_file_name)
-# """) % (str(pilot_compute_description["number_of_processes"]),str(walltime_slurm), str(pilot_compute_description["project"]), pilot_compute_description["working_directory"], pilot_compute_description["working_directory"], pilot_compute_description["queue"], pilot_compute_description["working_directory"], self.bootstrap_script)
-#        # escaping characters
-#         self.bootstrap_script = self.bootstrap_script.replace("\"","\\\"")
-#         self.bootstrap_script = self.bootstrap_script.replace("\\\\","\\\\\\\\\\")
-#         self.bootstrap_script = self.bootstrap_script.replace("XX","\\\\\\\"")
-#         self.bootstrap_script = "\"" + self.bootstrap_script+ "\""
-#         self._logger.debug(self.bootstrap_script)
-
+        
+        #define a bunch of default args
         exe = jd.executable
         arg = ""
         env = ""
@@ -365,6 +307,9 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         queue = None
         project = None
         job_contact = None
+        
+        # check to see what's available in our job description
+        # to override defaults
 
         if jd.attribute_exists ("name"):
             #TODO: alert user or quit with exception if
@@ -474,7 +419,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # TODO: Could make this more efficient
         found_id = False
         for line in out.split("\n"):
-            print ": ", line
             if "Submitted batch job" in line:
                 self.job_id = int(line.split()[-1:][0])
                 found_id = True
@@ -531,29 +475,60 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     # ----------------------------------------------------------------
     #
     #
+    
+    # FROM STAMPEDE'S SQUEUE MAN PAGE
+    # 
+    # JOB STATE CODES
+    #    Jobs typically pass through several states in the course of their execution.  The typical states are PENDING, RUNNING, SUSPENDED, COMPLETING, and COMPLETED.   An  explanation  of  each
+    #    state follows.
+
+    #    CA  CANCELLED       Job was explicitly cancelled by the user or system administrator.  The job may or may not have been initiated.
+
+    #    CD  COMPLETED       Job has terminated all processes on all nodes.
+
+    #    CF  CONFIGURING     Job has been allocated resources, but are waiting for them to become ready for use (e.g. booting).
+
+    #    CG  COMPLETING      Job is in the process of completing. Some processes on some nodes may still be active.
+
+    #    F   FAILED          Job terminated with non-zero exit code or other failure condition.
+
+    #    NF  NODE_FAIL       Job terminated due to failure of one or more allocated nodes.
+
+    #    PD  PENDING         Job is awaiting resource allocation.
+
+    #    PR  PREEMPTED       Job terminated due to preemption.
+
+    #    R   RUNNING         Job currently has an allocation.
+
+    #    S   SUSPENDED       Job has an allocation, but execution has been suspended.
+
+    #    TO  TIMEOUT         Job terminated upon reaching its time limit.
+
     def _job_get_state (self, id) :
         """ get the job state from the wrapper shell """
+        
+        return "Cats"
 
-        rm, pid = self._adaptor.parse_id (id)
+        # rm, pid = self._adaptor.parse_id (id)
 
-        ret, out, _ = self.shell.run_sync ("STATE %s\n" % pid)
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to get job state for '%s': (%s)(%s)" \
-                               % (id, ret, out))
+        # ret, out, _ = self.shell.run_sync ("STATE %s\n" % pid)
+        # if  ret != 0 :
+        #     raise saga.NoSuccess ("failed to get job state for '%s': (%s)(%s)" \
+        #                        % (id, ret, out))
 
-        lines = filter (None, out.split ("\n"))
-        self._logger.debug (lines)
+        # lines = filter (None, out.split ("\n"))
+        # self._logger.debug (lines)
 
-        if  len (lines) == 3 :
-            del (lines[0])
+        # if  len (lines) == 3 :
+        #     del (lines[0])
 
-        if  len (lines) != 2 :
-            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % (id, lines))
+        # if  len (lines) != 2 :
+        #     raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % (id, lines))
 
-        if lines[0] != "OK" :
-            raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
+        # if lines[0] != "OK" :
+        #     raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
 
-        return lines[1]
+        # return lines[1]
         
 
 
@@ -586,17 +561,26 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         return self.rm
 
 
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def list(self):
-  #     """ Implements saga.adaptors.cpi.job.Service.list()
-  #     """
-  #     jobids = list()
-  #     for (job_obj, job_id) in self._jobs.iteritems():
-  #         if job_id is not None:
-  #             jobids.append(job_id)
-  #     return jobids
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def list(self):
+        """ Implements saga.adaptors.cpi.job.Service.list()
+        """
+
+        # ashleyz@login1:~$ squeue -h -o "%i" -u ashleyz                                                                                                                                                                       
+        # 255042
+        # 255035
+        # 255028
+        # 255018
+
+        # this line gives us a nothing but jobids for our user
+        ret, out, _ = self.shell.run_sync('squeue -h -o "%%i" -u %s' 
+                                          % self.rm.username)
+        output = out.strip().split("\n")
+        return output
+
+        pass
   #
   #
   # # ----------------------------------------------------------------
@@ -641,7 +625,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
 ###############################################################################
 #
-class SLURMJob (saga.adaptors.cpi.job.Job) :
+class SLURMJob (saga.adaptors.cpi.job.Job):
     """ Implements saga.adaptors.cpi.job.Job
     """
     # ----------------------------------------------------------------
