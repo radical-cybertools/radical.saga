@@ -400,7 +400,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         rm, pid = self._adaptor.parse_id(id)
 
-        ret, out, _ = self.shell.run_sync("%s -f %s | \
+        ret, out, _ = self.shell.run_sync("%s -f1 %s | \
             egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" \
             % (self._commands['qstat']['path'], pid))
 
@@ -423,7 +423,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 if key == 'job_state':
                     job_state = _pbs_to_saga_jobstate(val)
                 elif key == 'exec_host':
-                    exec_hosts = val
+                    exec_hosts = val.split('+')  # format i73/7+i73/6+...
                 elif key == 'exit_status':
                     exit_status = val
                 elif key == 'ctime':
