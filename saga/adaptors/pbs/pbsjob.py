@@ -18,18 +18,21 @@ from saga.job.constants import *
 
 import re
 import time
-import collections
 from copy import deepcopy
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
+# --------------------------------------------------------------------
+#
 def log_error_and_raise(message, exception, logger):
     logger.error(message)
     raise exception(message)
 
 
+# --------------------------------------------------------------------
+#
 def _pbs_to_saga_jobstate(pbsjs):
     """ translates a pbs one-letter state to saga
     """
@@ -55,6 +58,8 @@ def _pbs_to_saga_jobstate(pbsjs):
         return saga.job.UNKNOWN
 
 
+# --------------------------------------------------------------------
+#
 def _pbscript_generator(url, logger, jd, ppn):
     """ generates a PBS script from a SAGA job description
     """
@@ -249,7 +254,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 ###############################################################################
 #
 class PBSJobService (saga.adaptors.cpi.job.Service):
-    """ Implements saga.adaptors.cpi.job.Service """
+    """ implements saga.adaptors.cpi.job.Service """
 
     # ----------------------------------------------------------------
     #
@@ -385,7 +390,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def _job_run(self, jd):
-        """ runs a job via PBS """
+        """ runs a job via qsub
+        """
 
         # create a PBS job script from SAGA job description
         script = _pbscript_generator(url=self.rm, logger=self._logger, jd=jd,
@@ -410,7 +416,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def _job_get_info(self, id):
-        """ get the job state from the wrapper shell """
+        """ get job attributes via qstat
+        """
 
         job_state   = None
         exec_hosts  = None
@@ -478,7 +485,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def _job_cancel(self, id):
-
+        """ cancel the job via 'qdel'
+        """
         rm, pid = self._adaptor.parse_id(id)
 
         ret, out, _ = self.shell.run_sync("%s %s\n" \
@@ -491,7 +499,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def _job_wait(self, id, timeout):
-        """
+        """ wait for the job to finish or fail
         """
 
         time_start = time.time()
@@ -517,7 +525,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     @SYNC_CALL
     def create_job(self, jd):
-        """ Implements saga.adaptors.cpi.job.Service.get_url()
+        """ implements saga.adaptors.cpi.job.Service.get_url()
         """
         # check that only supported attributes are provided
         for attribute in jd.list_attributes():
@@ -547,33 +555,23 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def list (self):
+    def list(self):
+        """ implements saga.adaptors.cpi.job.Service.list()
+        """
+        ids = []
 
-        ret, out, _ = self.shell.run_sync ("LIST\n")
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to list jobs: (%s)(%s)" \
-                               % (ret, out))
+        ret, out, _ = self.shell.run_sync("%s -a -u `whoami` | grep `whoami`"\
+            % self._commands['qstat']['path'])
+        if ret != 0:
+            message = "failed to list jobs via 'qstat': %s" % out
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+        else:
+            jobid = "[%s]-[%s]" % (self.rm, out.split()[0])
+            ids.append(jobid)
+            print ids
 
-        lines = filter (None, out.split ("\n"))
-        self._logger.debug (lines)
+        return ids
 
-        if lines[0] != "OK" :
-            raise saga.NoSuccess ("failed to list jobs (%s)" % (lines))
-
-        del lines[0]
-        self._ids = []
-
-        for line in lines :
-            try :
-                pid    = int(line.strip ())
-                job_id = "[%s]-[%s]" % (self.rm, pid)
-                self._ids.append (job_id)
-            except Exception as e:
-                self._logger.error ("Ignore non-int job pid (%s) (%s)" % (line, e))
-
-        return self._ids
-   
-   
   # # ----------------------------------------------------------------
   # #
   # @SYNC_CALL
@@ -617,7 +615,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 ###############################################################################
 #
 class PBSJob (saga.adaptors.cpi.job.Job):
-    """ Implements saga.adaptors.cpi.job.Job
+    """ implements saga.adaptors.cpi.job.Job
     """
 
     def __init__(self, api, adaptor):
@@ -628,17 +626,12 @@ class PBSJob (saga.adaptors.cpi.job.Job):
 
     @SYNC_CALL
     def init_instance(self, job_info):
-        """ Implements saga.adaptors.cpi.job.Job.init_instance()
+        """ implements saga.adaptors.cpi.job.Job.init_instance()
         """
         # init_instance is called for every new saga.job.Job object
         # that is created
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
-
-        # the js is responsible for job bulk operations -- which
-        # for jobs only work for run()
-      # self._container       = self.js
-        self._method_type = "run"
 
         # initialize job attribute values
         self._id              = None
@@ -656,9 +649,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_state(self):
-        """ Implements saga.adaptors.cpi.job.Job.get_state()
+        """ mplements saga.adaptors.cpi.job.Job.get_state()
         """
-
         # if the state is DONE, CANCELED or FAILED, it is considered
         # final and we don't need to query the backend again
         if self._state == saga.job.CANCELED or self._state == saga.job.FAILED \
@@ -678,6 +670,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def wait(self, timeout):
+        """ implements saga.adaptors.cpi.job.Job.wait()
+        """
         return self.js._job_wait(self._id, timeout)
 
     # ----------------------------------------------------------------
@@ -740,9 +734,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_execution_hosts(self):
-        """ Implements saga.adaptors.cpi.job.Job.get_execution_hosts()
+        """ implements saga.adaptors.cpi.job.Job.get_execution_hosts()
         """
-
         if self._execution_hosts != None:
             return self._execution_hosts
 
@@ -753,6 +746,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def cancel(self, timeout):
+        """ implements saga.adaptors.cpi.job.Job.cancel()
+        """
         self.js._job_cancel(self._id)
         self._state = saga.job.CANCELED
 
@@ -760,6 +755,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def run(self):
+        """ implements saga.adaptors.cpi.job.Job.run()
+        """
         self._id = self.js._job_run(self.jd)
 
     # ----------------------------------------------------------------
