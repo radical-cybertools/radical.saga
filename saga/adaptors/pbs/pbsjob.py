@@ -580,9 +580,12 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         ret, out, _ = self.shell.run_sync("%s -a -u `whoami` | grep `whoami`"\
             % self._commands['qstat']['path'])
-        if ret != 0:
+        if ret != 0 and len(out) > 0:
             message = "failed to list jobs via 'qstat': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
+        elif ret != 0 and len(out) == 0:
+            # qstat | grep `whoami` exits with 1 if the list is empty
+            pass
         else:
             jobid = "[%s]-[%s]" % (self.rm, out.split()[0])
             ids.append(jobid)
