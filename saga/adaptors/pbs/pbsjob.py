@@ -308,9 +308,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
-        for key, val in parse_qs(rm_url.query).iteritems():
-            if key == 'queue':
-                self.queue = val[0]
+        if rm_url.query is not None:
+            for key, val in parse_qs(rm_url.query).iteritems():
+                if key == 'queue':
+                    self.queue = val[0]
 
 
         # we need to extrac the scheme for PTYShell. That's basically the
