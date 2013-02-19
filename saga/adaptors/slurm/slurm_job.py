@@ -542,10 +542,22 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     def _job_get_exit_code (self, id) :
         """ get the job exit code from the wrapper shell """
         rm, pid     = self._adaptor.parse_id (id)
-        ret, out, _ = self.shell.run_sync("scontrol show job %s | grep ExitCode" % pid)
-        print repr(out)
-        print self.exit_code_re.search(out).groups()[0]
-        exit(0)
+        ret, out, _ = self.shell.run_sync("scontrol show job %s" % pid)
+
+        exit_code_found = False
+        
+        # dig out our exitcode
+        for line in out.split("\n"):
+            if "ExitCode" in line:
+                #print "! ", line
+                #print self.exit_code_re.search(line).group(0)
+                return self.exit_code_re.search(line).group(0)
+        
+        # couldn't get the exitcode -- maybe should change this to be
+        # None?  b/c we will lose the code if a program waits too
+        # long to look for the exitcode...
+        raise saga.NoSuccess._log (self._logger, 
+                                   "Could not find exit code for job %s" % id)
         return 0
 
 
