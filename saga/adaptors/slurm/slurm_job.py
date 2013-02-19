@@ -400,17 +400,17 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         if job_contact:
             pass
+        
+        # add on our environment variables
+        slurm_script += env + "\n"
 
+        # create our commandline
         slurm_script += exe + arg
-        #SBATCH -J myMPI        # Job Name
-        #SBATCH -o myMPI.o%j    # Output and error file name (%j expands to jobID)
-        #SBATCH -n 32           # Total number of mpi tasks requested
-        #SBATCH -p development  # Queue (partition) name -- normal, development, etc.
-        #SBATCH -t 01:30:00     # Run time (hh:mm:ss) - 1.5 hours
-        ##ibrun ./a.out           # Run the MPI executable named a.out
 
-        #cmd = "(%s %s %s %s)"  %  (env, cwd, exe, arg)       
-        print slurm_script
+        self._logger.debug("SLURM script generated:\n%s" % slurm_script)
+        self._logger.debug("Transferring SLURM script to remote host")
+
+        # transfer our script over
         self.shell.stage_to_file (src = slurm_script, 
                                   tgt = "%s/wrapper.sh" % self._base)
         ret, out, _ = self.shell.run_sync("exec %s/wrapper.sh" % self._base)
@@ -429,76 +429,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             raise saga.NoSuccess._log(self._logger, 
                              "Couldn't get job id from submitted job!")
 
-        #exit(0)
-
-        # exe = jd.executable
-        # arg = ""
-        # env = ""
-        # cwd = ""
-
-        # #self._alive ()
-
-        # if jd.attribute_exists ("arguments") :
-        #     for a in jd.arguments :
-        #         arg += " %s" % a
-
-        # if jd.attribute_exists ("environment") :
-        #     env = "/usr/bin/env"
-        #     for e in jd.environment :
-        #         env += " %s=%s"  %  (e, jd.environment[e])
-        #     env += " "
-
-        # if jd.attribute_exists ("working_directory") :
-        #     cwd = "cd %s && " % jd.working_directory
-
-        # cmd = "%s %s %s %s"  %  (env, cwd, exe, arg)
-
-        # ret, out, _ = self.shell.run_sync ("RUN %s" % cmd)
-        # if  ret != 0 :
-        #     raise saga.NoSuccess ("failed to run job '%s': (%s)(%s)" % (cmd, ret, out))
-
-        # lines = filter (None, out.split ("\n"))
-        # self._logger.debug (lines)
-
-        # if  len (lines) < 2 :
-        #     raise saga.NoSuccess ("failed to run job (%s)" % lines)
-
-        # if lines[-2] != "OK" :
-        #     raise saga.NoSuccess ("failed to run job (%s)" % lines)
-
-        # job_id = "[%s]-[%s]" % (self.rm, lines[-1])
-
         self._logger.debug ("started job %s" % self.job_id)
 
         return self.job_id
-        
 
-
-    # ----------------------------------------------------------------
-    #
-    #
-    def _job_wait (self, id, timeout):
-        time_start = time.time()
-        time_now   = time_start
-        rm, pid    = self._adaptor.parse_id(id)
-
-        while True:
-            state = self._job_get_info(id)[0]
-            if state == saga.job.DONE or \
-               state == saga.job.FAILED or \
-               state == saga.job.CANCELED:
-                    return True
-            # avoid busy poll
-            time.sleep(0.5)
-
-            # check if we hit timeout
-            if timeout >= 0:
-                time_now = time.time()
-                if time_now - time_start > timeout:
-                    return False
-
-        return True
-
+    # ----------------  
     # FROM STAMPEDE'S SQUEUE MAN PAGE
     # 
     # JOB STATE CODES
@@ -527,26 +462,35 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
     #    TO  TIMEOUT         Job terminated upon reaching its time limit.
 
-    def _slurm_to_saga_jobstate(pbsjs):
+    # TODO: should CG/CF/CG = done?  that's how it is in the BJ adaptor, but 
+    # that doesn't sound right...
+    # maybe if there are no jobs we should just mark the job as completed...
+
+
+    def _slurm_to_saga_jobstate(self, pbsjs):
         """ translates a slurm one-letter state to saga
         """
-        if pbsjs == 'C':
+        if pbsjs == 'CA':
+            return saga.job.CANCELED
+        elif pbsjs == 'CD':
             return saga.job.DONE
-        elif pbsjs == 'E':
-            return saga.job.RUNNING
-        elif pbsjs == 'H':
+        elif pbsjs == 'CF':
             return saga.job.PENDING
-        elif pbsjs == 'Q':
+        elif pbsjs == 'CG':
+            return saga.job.DONE #TODO: CHECK CORRECTNESS
+        elif pbsjs == 'F':
+            return saga.job.FAILED
+        elif pbsjs == 'NF': #node failure
+            return saga.job.FAILED
+        elif pbsjs == 'PD':
             return saga.job.PENDING
+        elif pbsjs == 'PR':
+            return saga.job.CANCELLED #due to preemption
         elif pbsjs == 'R':
             return saga.job.RUNNING
-        elif pbsjs == 'T':
-            return saga.job.RUNNING
-        elif pbsjs == 'W':
-            return saga.job.PENDING
         elif pbsjs == 'S':
-            return saga.job.PENDING
-        elif pbsjs == 'X':
+            return saga.job.SUSPENDED
+        elif pbsjs == 'TO': # timeout
             return saga.job.CANCELED
         else:
             return saga.job.UNKNOWN
@@ -567,41 +511,31 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         # grab nothing but ID and states
         ret, out, _ = self.shell.run_sync('squeue -h -o "%%i %%t" -u %s' % \
-                                              self.sh.username)
+                                              self.rm.username)
 
         state_found = False
+        
+        # no jobs active
+        print "---"
+        print out.strip().split("\n")
+        if out.strip().split("\n")==['']:
+            return saga.job.UNKNOWN
+
         for line in out.strip().split("\n"):
-            if int(line.split()[0]) == pid:
-                exit(0)
+            print "---"
+            print line.split()
+            if int(line.split()[0]) == int(pid):
+                state_found = True
+                return self._slurm_to_saga_jobstate(line.split()[1])
+                 
 
         if not state_found:
             raise saga.NoSuccess._log (self._logger, 
                                        "Couldn't find job state")
         
-        return "Cats"
-
-        # rm, pid = self._adaptor.parse_id (id)
-
-        # ret, out, _ = self.shell.run_sync ("STATE %s\n" % pid)
-        # if  ret != 0 :
-        #     raise saga.NoSuccess ("failed to get job state for '%s': (%s)(%s)" \
-        #                        % (id, ret, out))
-
-        # lines = filter (None, out.split ("\n"))
-        # self._logger.debug (lines)
-
-        # if  len (lines) == 3 :
-        #     del (lines[0])
-
-        # if  len (lines) != 2 :
-        #     raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % (id, lines))
-
-        # if lines[0] != "OK" :
-        #     raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
-
-        # return lines[1]
-        
-
+        raise saga.NoSuccess._log (self._logger,
+                                   "Internal SLURM adaptor error"
+                                   " in _job_get_state")
 
     # ----------------------------------------------------------------
     #
@@ -648,7 +582,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # this line gives us a nothing but jobids for our user
         ret, out, _ = self.shell.run_sync('squeue -h -o "%%i" -u %s' 
                                           % self.rm.username)
-        print self.rm
         output = ["[%s]-[%s]" % (self.rm, i) for i in out.strip().split("\n")]
         return output
   #
@@ -743,9 +676,30 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
 
   # # ----------------------------------------------------------------
   # #
-  # @SYNC_CALL
-  # def wait(self, timeout):
-  #     pass
+    @SYNC_CALL
+    def wait(self, timeout):
+        time_start = time.time()
+        time_now   = time_start
+        rm, pid    = self._adaptor.parse_id(self._id)
+
+        while True:
+            state = self.js._job_get_state(self._id)
+            if state == saga.job.DONE or \
+               state == saga.job.FAILED or \
+               state == saga.job.CANCELED:
+                    return True
+            # avoid busy poll
+            time.sleep(0.5)
+
+            # check if we hit timeout
+            if timeout >= 0:
+                time_now = time.time()
+                if time_now - time_start > timeout:
+                    return False
+
+        return True
+
+
   #
     # ----------------------------------------------------------------
     #

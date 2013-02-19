@@ -38,7 +38,7 @@ def main(args):
         jd = saga.job.Description()
 
         # environment, executable & arguments
-        jd.environment = {'CATME':'10'}       
+        jd.environment = {'CATME':'10', 'SAGA':'RULES'}    
         jd.executable  = '/bin/sleep'
         jd.arguments   = ['$CATME']
         jd.queue = "development"
