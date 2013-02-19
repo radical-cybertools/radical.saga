@@ -265,13 +265,14 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if  ret != 0 :
             raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" % (ret, out))
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
-
+        
         # yank out username if it wasn't made explicit
+        # TODO: IS MODIFYING THE URL LIKE THIS LEGIT?  if not fix it
         if not self.rm.username:
             self._logger.debug ("No username provided in URL %s, so we are"
                                 "going to find it with whoami" % shell_url)
             ret, out, _ = self.shell.run_sync("whoami")
-            self.rm.username = out
+            self.rm.username = out.strip()
             self._logger.debug("Username detected as: %s", self.rm.username)
 
 
@@ -420,7 +421,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         found_id = False
         for line in out.split("\n"):
             if "Submitted batch job" in line:
-                self.job_id = int(line.split()[-1:][0])
+                self.job_id = "[%s]-[%s]" % \
+                    (self.rm, int(line.split()[-1:][0]))
                 found_id = True
 
         if not found_id:
@@ -475,7 +477,28 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     # ----------------------------------------------------------------
     #
     #
-    
+    def _job_wait (self, id, timeout):
+        time_start = time.time()
+        time_now   = time_start
+        rm, pid    = self._adaptor.parse_id(id)
+
+        while True:
+            state = self._job_get_info(id)[0]
+            if state == saga.job.DONE or \
+               state == saga.job.FAILED or \
+               state == saga.job.CANCELED:
+                    return True
+            # avoid busy poll
+            time.sleep(0.5)
+
+            # check if we hit timeout
+            if timeout >= 0:
+                time_now = time.time()
+                if time_now - time_start > timeout:
+                    return False
+
+        return True
+
     # FROM STAMPEDE'S SQUEUE MAN PAGE
     # 
     # JOB STATE CODES
@@ -504,8 +527,56 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
     #    TO  TIMEOUT         Job terminated upon reaching its time limit.
 
+    def _slurm_to_saga_jobstate(pbsjs):
+        """ translates a slurm one-letter state to saga
+        """
+        if pbsjs == 'C':
+            return saga.job.DONE
+        elif pbsjs == 'E':
+            return saga.job.RUNNING
+        elif pbsjs == 'H':
+            return saga.job.PENDING
+        elif pbsjs == 'Q':
+            return saga.job.PENDING
+        elif pbsjs == 'R':
+            return saga.job.RUNNING
+        elif pbsjs == 'T':
+            return saga.job.RUNNING
+        elif pbsjs == 'W':
+            return saga.job.PENDING
+        elif pbsjs == 'S':
+            return saga.job.PENDING
+        elif pbsjs == 'X':
+            return saga.job.CANCELED
+        else:
+            return saga.job.UNKNOWN
+
     def _job_get_state (self, id) :
         """ get the job state from the wrapper shell """
+
+        # if we don't even have an ID, state is unknown
+        # TODO: VERIFY CORRECTNESS
+
+        if id==None:
+            return saga.job.UNKNOWN
+
+        rm, pid     = self._adaptor.parse_id (id)
+        
+        # ashleyz@login1:~$ squeue -h -o "%i %t" -u ashleyz
+        # 255333 CG
+
+        # grab nothing but ID and states
+        ret, out, _ = self.shell.run_sync('squeue -h -o "%%i %%t" -u %s' % \
+                                              self.sh.username)
+
+        state_found = False
+        for line in out.strip().split("\n"):
+            if int(line.split()[0]) == pid:
+                exit(0)
+
+        if not state_found:
+            raise saga.NoSuccess._log (self._logger, 
+                                       "Couldn't find job state")
         
         return "Cats"
 
@@ -577,10 +648,9 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # this line gives us a nothing but jobids for our user
         ret, out, _ = self.shell.run_sync('squeue -h -o "%%i" -u %s' 
                                           % self.rm.username)
-        output = out.strip().split("\n")
+        print self.rm
+        output = ["[%s]-[%s]" % (self.rm, i) for i in out.strip().split("\n")]
         return output
-
-        pass
   #
   #
   # # ----------------------------------------------------------------
@@ -651,7 +721,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         self._method_type     = "run"
 
         # initialize job attribute values
-        self._id              = "default id"
+        self._id              = None
         self._state           = saga.job.NEW
         self._exit_code       = None
         self._exception       = None
@@ -667,8 +737,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
     def get_state(self):
         """ Implements saga.adaptors.cpi.job.Job.get_state()
         """
-        #self._state = self.js._job_get_state (self._id)
-        self._state = "TODO: IMPLEMENT JOB STATE"
+        self._state = self.js._job_get_state (self._id)
         return self._state
   
 

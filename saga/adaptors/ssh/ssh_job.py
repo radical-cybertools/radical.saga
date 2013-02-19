@@ -305,6 +305,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         self.session = session
         self.njobs   = 0
 
+
         self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session.contexts, 
                                                     self._logger)
 

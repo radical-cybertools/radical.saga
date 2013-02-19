@@ -82,7 +82,7 @@ def main(args):
                           "Please run with SAGA_VERBOSE=4 set in the"
                           "environment for debug output.  %s"
                           % (str(ex)))
-        print " *** %s" % saga.utils.exception.get_traceback()
+        print " *** %s %s" % (saga.utils.exception.get_traceback(), ex)
         sys.exit(-1)
 
     print "SLURM test script finished execution"
