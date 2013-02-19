@@ -415,6 +415,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # transfer our script over
         self.shell.stage_to_file (src = slurm_script, 
                                   tgt = "%s/wrapper.sh" % self._base)
+
         ret, out, _ = self.shell.run_sync("exec %s/wrapper.sh" % self._base)
         ret, out, _ = self.shell.run_sync("sbatch %s/wrapper.sh" % self._base)
         

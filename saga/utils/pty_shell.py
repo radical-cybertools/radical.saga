@@ -639,9 +639,11 @@ class PTYShell (object) :
         See also :func:`stage_from_file`.
         """
 
-        self.run_async ("cat > %s.$$" % tgt)
-        self.pty.write (src)
-        self.pty.write ("\n\4mv %s.$$ %s\n" % (tgt, tgt))  
+        src_quoted = re.sub (r'([$\\])', r'\\\1', src)
+
+        self.run_async ("cat > %s.$$ <<\"SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\"" % tgt)
+        self.pty.write (src_quoted)
+        self.pty.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\nmv %s.$$ %s\n" % (tgt, tgt))  
 
         # we send two commands at once (cat, mv), so need to find two prompts
         ret, txt = self.find_prompt ()
