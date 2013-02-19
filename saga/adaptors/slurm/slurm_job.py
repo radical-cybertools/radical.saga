@@ -128,7 +128,6 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
 
-
     # ----------------------------------------------------------------
     #
     def sanity_check (self) :
@@ -162,6 +161,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self._cpi_base = super  (SLURMJobService, self)
         self._cpi_base.__init__ (api, adaptor)
         self._base = base = "$HOME/.saga/adaptors/slurm_job"
+
+        self.exit_code_re = re.compile("""(?<=ExitCode=)[0-9]*""")
 
 
 
@@ -538,6 +539,16 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                                    "Internal SLURM adaptor error"
                                    " in _job_get_state")
 
+    def _job_get_exit_code (self, id) :
+        """ get the job exit code from the wrapper shell """
+        rm, pid     = self._adaptor.parse_id (id)
+        ret, out, _ = self.shell.run_sync("scontrol show job %s | grep ExitCode" % pid)
+        print repr(out)
+        print self.exit_code_re.search(out).groups()[0]
+        exit(0)
+        return 0
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -715,12 +726,11 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
    
   # # ----------------------------------------------------------------
   # #
-  # @SYNC_CALL
+    @SYNC_CALL
     def get_exit_code(self) :
         """ Implements saga.adaptors.cpi.job.Job.get_exit_code()
         """   
-        return 0
-        return self._exit_code
+        return self.js._job_get_exit_code(self._id)
   #
   # # ----------------------------------------------------------------
   # #
