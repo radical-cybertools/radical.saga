@@ -116,7 +116,6 @@ class redis_ns_monitor (threading.Thread) :
 
             while sub :
 
-                
                 info = sub.next ()
                 data = info['data']
 
@@ -652,7 +651,6 @@ class redis_ns_entry :
         if key in self.data and self.data[key] == val :
 
             # nothing changed - so just trigger the set event
-            print "just publish"
             self.logger.debug ("pub ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
             self.r.publish   (MON, "ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
 
