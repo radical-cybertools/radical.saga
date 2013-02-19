@@ -689,10 +689,10 @@ class PTYShell (object) :
                 src_hex += h
 
             self.pty.write ("""\
-            ( tee /tmp/d.$$ | sed -e 's/\([^ ][^ ]\)/\\1\\n/g' | 
-             while read A; do
+            ( sed -e 's/\(..\)/\\1\\n/g' | 
+              while read A; do
                if ! test -z "$A"; then printf "\\x$A"; fi
-            done ) > %s.$$ <<SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n""" % tgt)
+              done ) > %s.$$ <<SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n""" % tgt)
             self.pty.write (src_hex)
             self.pty.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n")
 
