@@ -38,11 +38,12 @@ def main(args):
         jd = saga.job.Description()
 
         # environment, executable & arguments
-        jd.environment = {'CATME':'10', 'SAGA':'RULES'}    
+        jd.environment = {'MYVAR':'10', 'SAGA':'RULES'}    
         jd.executable  = '/bin/sleep'
-        jd.arguments   = ['$CATME']
+        jd.arguments   = ['$MYVAR']
         jd.queue = "development"
         jd.name = "SlurmJob"
+        jd.job_contact="anz7@rutgers.edu"
         jd.project = "TG-ASC120003"
         jd.wall_time_limit = "1"
         jd.number_of_processes=1
@@ -65,13 +66,15 @@ def main(args):
         print "Job ID    : %s" % (catjob.id)
         print "Job State : %s" % (catjob.state)
 
+        catjob.cancel()
+
         print "\nListing active jobs: "
         for job in js.list():
             print " * %s" % job
 
         # wait for our job to complete
-        print "\n...waiting for job...\n"
-        catjob.wait()
+        #print "\n...waiting for job...\n"
+        #catjob.wait()
 
         print "Job State : %s" % catjob.state
         print "Exitcode  : %s" % catjob.exit_code

@@ -361,7 +361,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             project = jd.project
 
         if jd.attribute_exists("job_contact"):
-            job_contact = jd.job_contact
+            job_contact = jd.job_contact[0]
 
         slurm_script = "#!/bin/bash\n"
 
@@ -401,7 +401,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             slurm_script += "#SBATCH -A %s\n" % project
 
         if job_contact:
-            pass
+            slurm_script += "#SBATCH --mail-user=%s\n" % job_contact
         
         # add on our environment variables
         slurm_script += env + "\n"
@@ -443,25 +443,15 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     #    state follows.
 
     #    CA  CANCELLED       Job was explicitly cancelled by the user or system administrator.  The job may or may not have been initiated.
-
     #    CD  COMPLETED       Job has terminated all processes on all nodes.
-
     #    CF  CONFIGURING     Job has been allocated resources, but are waiting for them to become ready for use (e.g. booting).
-
     #    CG  COMPLETING      Job is in the process of completing. Some processes on some nodes may still be active.
-
     #    F   FAILED          Job terminated with non-zero exit code or other failure condition.
-
     #    NF  NODE_FAIL       Job terminated due to failure of one or more allocated nodes.
-
     #    PD  PENDING         Job is awaiting resource allocation.
-
     #    PR  PREEMPTED       Job terminated due to preemption.
-
     #    R   RUNNING         Job currently has an allocation.
-
     #    S   SUSPENDED       Job has an allocation, but execution has been suspended.
-
     #    TO  TIMEOUT         Job terminated upon reaching its time limit.
 
     # TODO: should CG/CF/CG = done?  that's how it is in the BJ adaptor, but 
@@ -559,6 +549,16 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         raise saga.NoSuccess._log (self._logger, 
                                    "Could not find exit code for job %s" % id)
         return 0
+
+    def _job_cancel (self, id):
+        print id
+        rm, pid     = self._adaptor.parse_id (id)
+        ret, out, _ = self.shell.run_sync("scancel %s" % pid)
+        if ret == 0:
+            return True
+        else:
+            raise saga.NoSuccess._log(self._logger,
+                                      "Could not cancel job %s" % id)
 
 
     # ----------------------------------------------------------------
@@ -780,9 +780,11 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
   #
   # # ----------------------------------------------------------------
   # #
-  # @SYNC_CALL
-  # def cancel(self, timeout):
-  #     pass
+    @SYNC_CALL
+    def cancel(self, timeout):
+        #scancel id
+        self.js._job_cancel(self._id)
+
   #
   #
     # ----------------------------------------------------------------
