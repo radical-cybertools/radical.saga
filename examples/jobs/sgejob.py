@@ -18,14 +18,14 @@ def main():
     try:
         # create a job service for a remote SGE cluster.
         # the 'sge+ssh://' scheme triggers the SGE adaptor.
-        js = saga.job.Service("sge+ssh://lonestar.tacc.utexas.edu")
+        js = saga.job.Service("sge+ssh://lonestar.tacc.utexas.edu?queue=normal")
 
         # describe our job
         jd = saga.job.Description()
 
         # environment, executable & arguments. We use '/bin/sleep' to simulate
         # a job that runs for $RUNTIME seconds.
-        jd.queue       = 'normal'
+        jd.queue       = 'xyz'
         jd.name        = 'testjob'
         jd.project     = 'TG-MCB090174'
         jd.environment = {'RUNTIME': '60'}

@@ -19,6 +19,7 @@ from saga.job.constants import *
 import re
 import time
 from copy import deepcopy
+from cgi import parse_qs
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -62,7 +63,7 @@ def _sge_to_saga_jobstate(sgejs):
 
 # --------------------------------------------------------------------
 #
-def _sgescript_generator(url, logger, jd, ppn):
+def _sgescript_generator(url, logger, jd, ppn, queue=None):
     """ generates an SGE script from a SAGA job description
     """
     sge_params = str()
@@ -95,8 +96,13 @@ def _sgescript_generator(url, logger, jd, ppn):
         hours = jd.wall_time_limit / 60
         minutes = jd.wall_time_limit % 60
         sge_params += "#$ -l h_rt=%s:%s:00 \n" % (str(hours), str(minutes))
+
     if jd.queue is not None:
-        sge_params += "#$ -q %s \n" % jd.queue
+        if queue is not None:
+            # 'global' queue overrides 'jd' queue
+            sge_params += "#$ -q %s \n" % queue
+        else:
+            sge_params += "#$ -q %s \n" % jd.queue
     else:
         raise Exception("No queue defined.")
 
@@ -287,9 +293,16 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         self.session = session
         self.ppn     = 0
         self.jobs    = dict()
+        self.queue   = None
 
         rm_scheme = rm_url.scheme
         pty_url   = deepcopy(rm_url)
+
+        # this adaptor supports options that can be passed via the
+        # 'query' component of the job service URL.
+        for key, val in parse_qs(rm_url.query).iteritems():
+            if key == 'queue':
+                self.queue = val[0]
 
         # we need to extrac the scheme for PTYShell. That's basically the
         # job.Serivce Url withou the sge+ part. We use the PTYShell to execute
@@ -381,10 +394,13 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
     def _job_run(self, jd):
         """ runs a job via qsub
         """
+        if (self.queue is not None) and (jd.queue is not None):
+            self._logger.warning("Job service was instantiated explicitly with 'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." \
+                % (self.queue, jd.queue, self.queue))
 
         # create an SGE job script from SAGA job description
         script = _sgescript_generator(url=self.rm, logger=self._logger,
-            jd=jd, ppn=self.ppn)
+            jd=jd, ppn=self.ppn, queue=self.queue)
         self._logger.debug("Generated SGE script: %s" % script)
 
         ret, out, _ = self.shell.run_sync("echo '%s' | %s" \
