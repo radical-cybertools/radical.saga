@@ -73,8 +73,8 @@ def main(args):
         print "\n...waiting for job...\n"
         catjob.wait()
 
-        print "Job State : %s" % (catjob.state)
-        print "Exitcode  : %s" % (catjob.exit_code)
+        print "Job State :", catjob.state
+        print "Exitcode  :", catjob.exit_code
         
 
     except Exception, ex:
