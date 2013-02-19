@@ -74,6 +74,28 @@ class PTYShell (object) :
             raise saga.NoSuccess ("failed to check size (%s)(%s)" % (ret, out))
 
         assert (len(pbs_job_script) == int(out))
+
+    Known Problems:
+    ^^^^^^^^^^^^^^^
+
+    It seems that for some reasons which I cannot fathom, the pty line swallows
+    a ^D now and then.  But ^D was used for file staging like this::
+    
+      self.run_async ("cat > %s.$$" % tgt)
+      self.pty.write (src)
+      self.pty.write ("\n\x04\nmv %s.$$ %s\n", (tgt, tgt))
+    
+    If the \x04 == ^D is gone, then the cat process will wait forever on input.
+    Instead of the construct above, we now use a HERE document::
+    
+      self.run_async ("cat > %s.$$ <<\"SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\"" % tgt)
+      self.pty.write (src)
+      self.pty.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\nmv %s.$$ %s\n" % (tgt, tgt))  
+    
+    which works fine.  Note that this does not fix the disappearing ^D -- the
+    pty classes don't use it anywhere, but applications of these classes might
+    still attempt to send it to the remote shell...
+
     """
 
     # ----------------------------------------------------------------
@@ -643,9 +665,9 @@ class PTYShell (object) :
         See also :func:`stage_from_file`.
         """
 
-        self.run_async ("cat > %s.$$" % tgt)
+        self.run_async ("cat > %s.$$ <<\"SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\"" % tgt)
         self.pty.write (src)
-        self.pty.write ("\n\4mv %s.$$ %s\n" % (tgt, tgt))  
+        self.pty.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\nmv %s.$$ %s\n" % (tgt, tgt))  
 
         # we send two commands at once (cat, mv), so need to find two prompts
         ret, txt = self.find_prompt ()
