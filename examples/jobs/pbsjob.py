@@ -18,7 +18,7 @@ def main():
     try:
         # create a job service for the local machine. both, 'fork' and
         # 'local' schemes trigger the local job adaptor.
-        js = saga.job.Service("pbs+gsissh://gsissh.kraken.nics.tennessee.edu")
+        js = saga.job.Service("pbs+gsissh://gsissh.kraken.nics.tennessee.edu?queue=batch")
 
         # describe our job
         jd = saga.job.Description()
@@ -27,7 +27,7 @@ def main():
         # a job that runs for $RUNTIME seconds.
         jd.queue       = 'batch'
         jd.name        = 'testjob'
-        jd.project     = 'TG-XXXYYYYZZZ'
+        jd.project     = 'TG-MCB090174'
         jd.environment = {'RUNTIME': '60'}
         jd.wall_time_limit = 2  # minutes
         jd.total_cpu_count = 12
