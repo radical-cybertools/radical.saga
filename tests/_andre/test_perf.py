@@ -118,21 +118,21 @@ def main () :
 # perf (1,  [(1, 'ssh://india.futuregrid.org/')])
 # perf (1,  [(1, 'ssh://sierra.futuregrid.org/')])
 
-perf (1000,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/')])
-perf (1000,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/'), 
-              (10, 'ssh://repex1.tacc.utexas.edu/')])
-perf (1000,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/'), 
-              (10, 'ssh://repex1.tacc.utexas.edu/'), 
-              (10, 'gsissh://trestles-login.sdsc.edu/')])
-perf (1000,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/'), 
-              (10, 'ssh://repex1.tacc.utexas.edu/'), 
-              (10, 'gsissh://trestles-login.sdsc.edu/'), 
-              (10, 'ssh://india.futuregrid.org/')])
-perf (1000,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/'), 
-              (10, 'ssh://repex1.tacc.utexas.edu/'), 
-              (10, 'gsissh://trestles-login.sdsc.edu/'), 
-              (10, 'ssh://india.futuregrid.org/'), 
-              (10, 'ssh://sierra.futuregrid.org/')])
+perf (100,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/')])
+perf (100,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/'), 
+             (10, 'ssh://repex1.tacc.utexas.edu/')])
+perf (100,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/'), 
+             (10, 'ssh://repex1.tacc.utexas.edu/'), 
+             (10, 'gsissh://trestles-login.sdsc.edu/')])
+perf (100,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/'), 
+             (10, 'ssh://repex1.tacc.utexas.edu/'), 
+             (10, 'gsissh://trestles-login.sdsc.edu/'), 
+             (10, 'ssh://india.futuregrid.org/')])
+perf (100,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/'), 
+             (10, 'ssh://repex1.tacc.utexas.edu/'), 
+             (10, 'gsissh://trestles-login.sdsc.edu/'), 
+             (10, 'ssh://india.futuregrid.org/'), 
+             (10, 'ssh://sierra.futuregrid.org/')])
 
 
 # perf (    100,  [(1, 'fork://localhost/')])
