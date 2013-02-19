@@ -3,11 +3,11 @@ import time
 import saga
 
 try :
-    js = saga.job.Service ('ssh://localhost')
+    js = saga.job.Service ('ssh://localhost/')
   
     jd = saga.job.Description ()
     jd.executable = '/bin/sleep'
-    jd.arguments  = ['10']
+    jd.arguments  = ['1']
   
     j = js.create_job (jd)
     j.run ()

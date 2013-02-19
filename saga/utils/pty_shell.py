@@ -246,7 +246,7 @@ class PTYShell (object) :
         startup prompts and messages.
         """
 
-        self.prompt    = "^(.*[\$#>])\s*$" # a line ending with # $ >
+        self.prompt    = "^(.*[\$#>])\s*$" # greedy, look for line ending with # $ >
         self.prompt_re = re.compile (self.prompt, re.DOTALL)
 
         prompt_patterns = ["password\s*:\s*$",            # password prompt
@@ -348,7 +348,7 @@ class PTYShell (object) :
         match = None
 
         while not match :
-            _, match = self.pty.find    ([self.prompt], _PTY_TIMEOUT)
+            _, match = self.pty.find ([self.prompt], _PTY_TIMEOUT)
 
         ret, txt = self._eval_prompt (match)
 
@@ -394,11 +394,15 @@ class PTYShell (object) :
           PROMPT-0->
 
         and thus swallow the ls output...
+
+        Note that the string match *before* te prompt regex is non-gready -- if
+        the output contains multiple occurrences of the prompt, only the match
+        up to the first occurence is returned.
         """
 
         old_prompt     = self.prompt
         self.prompt    = prompt
-        self.prompt_re = re.compile ("^(.*)%s\s*$" % self.prompt, re.DOTALL)
+        self.prompt_re = re.compile ("^(.*?)%s\s*$" % self.prompt, re.DOTALL)
 
         try :
             self.pty.write ("\n")
@@ -661,14 +665,44 @@ class PTYShell (object) :
         See also :func:`stage_from_file`.
         """
 
-        self.run_async ("cat > %s.$$ <<\"SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\"" % tgt)
-        self.pty.write (src)
-        self.pty.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\nmv %s.$$ %s\n" % (tgt, tgt))  
+        size_src = len (src)
 
-        # we send two commands at once (cat, mv), so need to find two prompts
-        ret, txt = self.find_prompt ()
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to stage (cat) string to file (%s)(%s)" % (ret, txt))
+        while True :
+
+            ret, out, _ = self.run_sync ("wc -c %s.$$ | cut -f 1 -d ' '" % tgt)
+
+            if  ret == 0 :
+                size_tgt = out.strip ()
+
+                if str(size_src) == str(size_tgt) :
+                    break
+                else :
+                    # print "try again (%s)(%s)!" % (size_src, size_tgt)
+                    pass
+
+
+            
+            src_hex = ""
+            for i in [hex(ord(x)) for x in src] :
+                h = i.replace ('0x', '')
+                if len(h) == 1 : src_hex += '0'
+                src_hex += h
+
+            self.pty.write ("""\
+            ( sed -e 's/\(..\)/\\1\\n/g' | 
+              while read A; do
+               if ! test -z "$A"; then printf "\\x$A"; fi
+              done ) > %s.$$ <<SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n""" % tgt)
+            self.pty.write (src_hex)
+            self.pty.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n")
+
+            # we send two commands at once (cat, mv), so need to find two prompts
+            ret, txt = self.find_prompt ()
+            if  ret != 0 :
+                raise saga.NoSuccess ("failed to stage (cat) string to file (%s)(%s)" % (ret, txt))
+
+
+        self.pty.write ("mv %s.$$ %s\n" % (tgt, tgt))  
 
         ret, txt = self.find_prompt ()
         if  ret != 0 :
