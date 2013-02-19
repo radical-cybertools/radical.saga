@@ -97,12 +97,12 @@ def _sgescript_generator(url, logger, jd, ppn, queue=None):
         minutes = jd.wall_time_limit % 60
         sge_params += "#$ -l h_rt=%s:%s:00 \n" % (str(hours), str(minutes))
 
-    if jd.queue is not None:
-        if queue is not None:
-            # 'global' queue overrides 'jd' queue
-            sge_params += "#$ -q %s \n" % queue
-        else:
-            sge_params += "#$ -q %s \n" % jd.queue
+    if (jd.queue is not None) and (queue is not None):
+        sge_params += "#$ -q %s \n" % queue
+    elif (jd.queue is not None) and (queue is None):
+        sge_params += "#$ -q %s \n" % jd.queue
+    elif (jd.queue is None) and (queue is not None):
+        sge_params += "#$ -q %s \n" % queue
     else:
         raise Exception("No queue defined.")
 
@@ -300,9 +300,10 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
-        for key, val in parse_qs(rm_url.query).iteritems():
-            if key == 'queue':
-                self.queue = val[0]
+        if rm_url.query is not None:
+            for key, val in parse_qs(rm_url.query).iteritems():
+                if key == 'queue':
+                    self.queue = val[0]
 
         # we need to extrac the scheme for PTYShell. That's basically the
         # job.Serivce Url withou the sge+ part. We use the PTYShell to execute

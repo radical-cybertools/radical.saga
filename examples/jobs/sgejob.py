@@ -18,7 +18,7 @@ def main():
     try:
         # create a job service for a remote SGE cluster.
         # the 'sge+ssh://' scheme triggers the SGE adaptor.
-        js = saga.job.Service("sge+ssh://lonestar.tacc.utexas.edu?queue=normal")
+        js = saga.job.Service("sge+ssh://lonestar.tacc.utexas.edu")# ?queue=normal")
 
         # describe our job
         jd = saga.job.Description()
