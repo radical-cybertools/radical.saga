@@ -23,26 +23,35 @@ class PTYShell (object) :
 
     The shell to be run is expected to be POSIX compliant (bash, csh, sh, zsh
     etc) -- in particular, we expect the following features:
-    `$?`,
-    `$!`,
-    `$*`,
-    `$#`,
-    `$@`,
-    `$PPID`,
-    `>&`,
-    `>>`,
-    `>`,
-    `<`,
-    `2>&1`,
-    `|`,
-    `||`,
-    `&&`,
-    `wait`,
-    `kill`,
-    `nohup`, and
-    `shift`
+    ``$?``,
+    ``$!``,
+    ``$*``,
+    ``$#``,
+    ``$@``,
+    ``$PPID``,
+    ``>&``,
+    ``>>``,
+    ``>``,
+    ``<``,
+    ``2>&1``,
+    ``|``,
+    ``||``,
+    ``&&``,
+    ``wait``,
+    ``kill``,
+    ``nohup``,
+    ``shift``,
+    ``PS1``, and
+    ``PS2``.
 
-    Example::
+    Note that ``PTYShell`` will change the shell prompts (``PS1`` and ``PS2``),
+    to simplify output parsing.  ``PS2`` will be empty, ``PS1`` will be set
+    ``PROMPT-$?->\\n`` -- that way, the prompt will report the exit value of the
+    last command, saving an extra roundtrip.  Users of this class should be
+    careful when setting other prompts -- see :func:`set_prompt` for more
+    details.
+
+    Usage Example::
 
         # start the shell, find its prompt.  
         self.shell = saga.utils.pty_shell.PTYShell ("ssh://user@remote.host.net/", contexts, self._logger)
@@ -65,6 +74,28 @@ class PTYShell (object) :
             raise saga.NoSuccess ("failed to check size (%s)(%s)" % (ret, out))
 
         assert (len(pbs_job_script) == int(out))
+
+    Known Problems:
+    ^^^^^^^^^^^^^^^
+
+    It seems that for some reasons which I cannot fathom, the pty line swallows
+    a ^D now and then.  But ^D was used for file staging like this::
+    
+      self.run_async ("cat > %s.$$" % tgt)
+      self.pty.write (src)
+      self.pty.write ("\n\x04\nmv %s.$$ %s\n", (tgt, tgt))
+    
+    If the \x04 == ^D is gone, then the cat process will wait forever on input.
+    Instead of the construct above, we now use a HERE document::
+    
+      self.run_async ("cat > %s.$$ <<\"SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\"" % tgt)
+      self.pty.write (src)
+      self.pty.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\nmv %s.$$ %s\n" % (tgt, tgt))  
+    
+    which works fine.  Note that this does not fix the disappearing ^D -- the
+    pty classes don't use it anywhere, but applications of these classes might
+    still attempt to send it to the remote shell...
+
     """
 
     # ----------------------------------------------------------------
@@ -265,7 +296,7 @@ class PTYShell (object) :
                 self.logger.debug ("got initial shell prompt")
 
                 # turn off shell echo, set/register new prompt
-                self.run_sync ("stty -echo; PS1='PROMPT-$?->\\n'; export PS1\n", 
+                self.run_sync ("stty -echo; PS1='PROMPT-$?->\\n'; PS2=''; export PS1 PS2\n", 
                                 new_prompt="PROMPT-(\d+)->\s*$")
 
                 self.logger.debug ("got new shell prompt")
@@ -630,9 +661,9 @@ class PTYShell (object) :
         See also :func:`stage_from_file`.
         """
 
-        self.run_async ("cat > %s.$$" % tgt)
+        self.run_async ("cat > %s.$$ <<\"SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\"" % tgt)
         self.pty.write (src)
-        self.pty.write ("\n\4mv %s.$$ %s\n" % (tgt, tgt))  
+        self.pty.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\nmv %s.$$ %s\n" % (tgt, tgt))  
 
         # we send two commands at once (cat, mv), so need to find two prompts
         ret, txt = self.find_prompt ()

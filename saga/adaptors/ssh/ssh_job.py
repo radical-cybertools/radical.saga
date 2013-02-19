@@ -863,16 +863,17 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
 
         return self._exit_code
    
-  # # ----------------------------------------------------------------
-  # #
-  # # TODO: the values below should be fetched with every get_state...
-  # #
-  # @SYNC_CALL
-  # def get_execution_hosts (self) :
-  #     """ Implements saga.adaptors.cpi.job.Job.get_execution_hosts()
-  #     """        
-  #     return self._execution_hosts
-  #
+    # ----------------------------------------------------------------
+    #
+    # TODO: the values below should be fetched with every get_state...
+    #
+    @SYNC_CALL
+    def get_execution_hosts (self) :
+        """ Implements saga.adaptors.cpi.job.Job.get_execution_hosts()
+        """        
+        self._logger.debug ("this is the ssh adaptor, reporting execution hosts")
+        return [self.js.get_url ().host]
+   
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
