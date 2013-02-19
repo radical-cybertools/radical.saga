@@ -47,7 +47,7 @@ def main():
         print "Job State : %s" % (sleepjob.state)
 
         print "\n...starting job...\n"
-        #sleepjob.run()
+        sleepjob.run()
 
         print "Job ID    : %s" % (sleepjob.id)
         print "Job State : %s" % (sleepjob.state)
@@ -55,7 +55,6 @@ def main():
         print "\nListing active jobs: "
         for job in js.list():
             print " * %s" % job
-        return 0
 
         # wait for our job to complete
         print "\n...waiting for job...\n"
