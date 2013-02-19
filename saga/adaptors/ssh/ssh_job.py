@@ -348,7 +348,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # Thus, when the script times out, the shell dies and the connection
         # drops -- that will free all associated resources, and allows for
         # a clean reconnect.
-      # ret, out, _ = self.shell.run_sync ("exec sh %s/wrapper.sh" % base)
+        # ret, out, _ = self.shell.run_sync ("exec sh %s/wrapper.sh" % base)
       
         # Well, actually, we do not use exec, as that does not give us good
         # feedback on failures (the shell just quits) -- so we replace it with
@@ -598,7 +598,8 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
             raise saga.BadParameter._log (self._logger, "run_hosts needs a command to run")
 
         if "'" in cmd :
-            raise saga.BadParameter._log (self._logger, "shell command cannot contain \"'\"")
+            raise saga.BadParameter._log (self._logger, "command cannot contain \"'\" (%s)"  \
+                                       % cmd)
 
         if  host and host != self.rm.host :
             raise saga.BadParameter._log (self._logger, "Can only run jobs on %s"

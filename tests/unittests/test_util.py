@@ -12,74 +12,74 @@ _config_options = [
     { 
     'category'      : 'saga.tests',
     'name'          : 'job_service_url', 
-    'type'          : string, 
+    'type'          : str, 
     'default'       : "",
     'documentation' : "job submission url to be used for remote unit tests",
-    'env_variable'  : SAGA_TEST_JOB_SERVICE_URL
+    'env_variable'  : "SAGA_TEST_JOB_SERVICE_URL"
     },
     { 
     'category'      : 'saga.tests',
     'name'          : 'filesystem_url', 
-    'type'          : string, 
+    'type'          : str, 
     'default'       : "",
     'documentation' : "filesystem root directory to be used for remote unit tests",
-    'env_variable'  : SAGA_TEST_FILESYSTEM_URL
+    'env_variable'  : "SAGA_TEST_FILESYSTEM_URL"
     },
     { 
     'category'      : 'saga.tests',
     'name'          : 'replica_url', 
-    'type'          : string, 
+    'type'          : str, 
     'default'       : "",
     'documentation' : "replica root directory to be used for remote unit tests",
-    'env_variable'  : SAGA_TEST_REPLICA_URL
+    'env_variable'  : "SAGA_TEST_REPLICA_URL"
     },
     { 
     'category'      : 'saga.tests',
     'name'          : 'advert_url', 
-    'type'          : string, 
+    'type'          : str, 
     'default'       : "",
     'documentation' : "advert root directory to be used for remote unit tests",
-    'env_variable'  : SAGA_TEST_ADVERT_URL
+    'env_variable'  : "SAGA_TEST_ADVERT_URL"
     },
     { 
     'category'      : 'saga.tests',
     'name'          : 'context_type', 
-    'type'          : string, 
+    'type'          : str, 
     'default'       : "",
     'documentation' : "context type to be used for remote unit tests",
-    'env_variable'  : SAGA_TEST_CONTEXT_TYPE
+    'env_variable'  : "SAGA_TEST_CONTEXT_TYPE"
     },
     { 
     'category'      : 'saga.tests',
     'name'          : 'context_user_id', 
-    'type'          : string, 
+    'type'          : str, 
     'default'       : "",
     'documentation' : "context user id to be used for remote unit tests",
-    'env_variable'  : SAGA_TEST_CONTEXT_USER_ID
+    'env_variable'  : "SAGA_TEST_CONTEXT_USER_ID"
     },
     { 
     'category'      : 'saga.tests',
     'name'          : 'context_user_pass', 
-    'type'          : string, 
+    'type'          : str, 
     'default'       : "",
     'documentation' : "context user password to be used for remote unit tests",
-    'env_variable'  : SAGA_TEST_CONTEXT_USER_PASS
+    'env_variable'  : "SAGA_TEST_CONTEXT_USER_PASS"
     },
     { 
     'category'      : 'saga.tests',
     'name'          : 'context_user_proxy', 
-    'type'          : string, 
+    'type'          : str, 
     'default'       : "",
     'documentation' : "context user proxy to be used for remote unit tests",
-    'env_variable'  : SAGA_TEST_CONTEXT_USER_PROXY
+    'env_variable'  : "SAGA_TEST_CONTEXT_USER_PROXY"
     },
     { 
     'category'      : 'saga.tests',
     'name'          : 'context_user_cert', 
-    'type'          : string, 
+    'type'          : str, 
     'default'       : "",
     'documentation' : "context user cert to be used for remote unit tests",
-    'env_variable'  : SAGA_TEST_CONTEXT_USER_CERT
+    'env_variable'  : "SAGA_TEST_CONTEXT_USER_CERT"
     },
 ]
 
@@ -114,10 +114,10 @@ class TestUtil (sconf.Configurable):
 
         c = saga.Context (ctype)
 
-        c.user_id    = cfg['context_user_id'].get_value ())
-        c.user_pass  = cfg['context_user_pass'].get_value ())
-        c.user_cert  = cfg['context_user_cert'].get_value ())
-        c.user_proxy = cfg['context_user_proxy'].get_value ())
+        c.user_id    = cfg['context_user_id'].get_value ()
+        c.user_pass  = cfg['context_user_pass'].get_value ()
+        c.user_cert  = cfg['context_user_cert'].get_value ()
+        c.user_proxy = cfg['context_user_proxy'].get_value ()
 
         return c
 

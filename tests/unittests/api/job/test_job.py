@@ -69,7 +69,7 @@ def test_get_exit_code () :
     try:
         tc = sutc.TestConfig ()
         js = saga.job.Service (tc.js_url, tc.session)
-        j  = js.run_job ("/bin/sh -c 'exit 3'")
+        j  = js.run_job ("/bin/sh -c \"exit 3\"")
         j.wait ()
         assert j.exit_code == 3
 
