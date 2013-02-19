@@ -416,10 +416,42 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
+    def _job_get_state(self, jobid):
+        """ get job state via qstat
+        """
+        job_state = None
+
+        rm, pid = self._adaptor.parse_id(jobid)
+        # get the job status via qstat
+        ret, out, _ = self.shell.run_sync("%s | grep %s" \
+            % (self._commands['qstat']['path'], pid))
+        if ret != 0:
+            # if the job existed previously, it has disappeared from the
+            # queueing system. in that case we can set the job_state to
+            # DONE. the job could also have failed, but that's impossible
+            # to figure out.
+            if jobid in self.jobs:
+                if self.jobs[jobid] == saga.job.RUNNING:
+                    self.jobs[jobid] = saga.job.DONE
+                    job_state = self.jobs[jobid]
+                else:
+                    job_state = self.jobs[jobid]
+            else:
+                # something else went wrong
+                message = "Error retrieving job status via 'qstat': %s" % out
+                log_error_and_raise(message, saga.NoSuccess, self._logger)
+        else:
+            # result should look like this:
+            # 1036615 0.51206 testjob  tg802352  qw  02/19/2013 02:41:08
+            job_state = _sge_to_saga_jobstate(out.split()[4])
+
+        return job_state
+
+    # ----------------------------------------------------------------
+    #
     def _job_get_info(self, jobid):
         """ get job attributes via qstat
         """
-
         job_state   = None
         exec_hosts  = None
         exit_status = None
@@ -452,9 +484,10 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             # 1036615 0.51206 testjob  tg802352  qw  02/19/2013 02:41:08
             job_state = _sge_to_saga_jobstate(out.split()[4])
 
-        #ret, out, _ = self.shell.run_sync("%s -f1 %s | \
-        #    egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" \
-        #    % (self._commands['qstat']['path'], pid))
+        # now we run 
+        ret, out, _ = self.shell.run_sync("%s -f1 %s | \
+            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" \
+            % (self._commands['qstat']['path'], pid))
 
         #if ret != 0:
         #    # something went wrong
@@ -584,7 +617,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("%s -a -u `whoami` | grep `whoami`"\
+        ret, out, _ = self.shell.run_sync("%s | grep `whoami`"\
             % self._commands['qstat']['path'])
         if ret != 0:
             message = "failed to list jobs via 'qstat': %s" % out
@@ -681,7 +714,7 @@ class SGEJob (saga.adaptors.cpi.job.Job):
             return self._state
         else:
             try:
-                self._state = self.js._job_get_info(self._id)[0]
+                self._state = self.js._job_get_state(self._id)
                 return self._state
             except Exception as e:
                 # the job can disappear on the remote end.
