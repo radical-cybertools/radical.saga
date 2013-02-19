@@ -25,12 +25,12 @@ def main():
 
         # environment, executable & arguments. We use '/bin/sleep' to simulate
         # a job that runs for $RUNTIME seconds.
-        jd.queue       = 'batch'
+        jd.queue       = 'normal'
         jd.name        = 'testjob'
-        jd.project     = 'TG-XXXYYYYZZZ'
+        jd.project     = 'TG-MCB090174'
         jd.environment = {'RUNTIME': '60'}
         jd.wall_time_limit = 2  # minutes
-        jd.total_cpu_count = 16
+        jd.total_cpu_count = 1
         jd.working_directory = "/tmp/"
         jd.executable  = '/bin/sleep'
         jd.arguments   = ['$RUNTIME']
@@ -52,9 +52,9 @@ def main():
         print "Job ID    : %s" % (sleepjob.id)
         print "Job State : %s" % (sleepjob.state)
 
-        print "\nListing active jobs: "
-        for job in js.list():
-            print " * %s" % job
+        #print "\nListing active jobs: "
+        #for job in js.list():
+        #    print " * %s" % job
 
         # wait for our job to complete
         print "\n...waiting for job...\n"

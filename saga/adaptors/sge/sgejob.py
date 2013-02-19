@@ -33,37 +33,39 @@ def log_error_and_raise(message, exception, logger):
 
 # --------------------------------------------------------------------
 #
-def _pbs_to_saga_jobstate(pbsjs):
-    """ translates a pbs one-letter state to saga
+def _sge_to_saga_jobstate(sgejs):
+    """ translates a sge one-letter state to saga
     """
-    if pbsjs == 'C':
+    if sgejs == 'c':
         return saga.job.DONE
-    elif pbsjs == 'E':
+    elif sgejs == 'E':
         return saga.job.RUNNING
-    elif pbsjs == 'H':
+    elif sgejs == 'H':
         return saga.job.PENDING
-    elif pbsjs == 'Q':
+    elif sgejs == 'qw':
         return saga.job.PENDING
-    elif pbsjs == 'R':
+    elif sgejs == 'r':
         return saga.job.RUNNING
-    elif pbsjs == 'T':
+    elif sgejs == 't':
         return saga.job.RUNNING
-    elif pbsjs == 'W':
+    elif sgejs == 'w':
         return saga.job.PENDING
-    elif pbsjs == 'S':
+    elif sgejs == 's':
         return saga.job.PENDING
-    elif pbsjs == 'X':
+    elif sgejs == 'X':
         return saga.job.CANCELED
+    elif sgejs == 'Eqw':
+        return saga.job.FAILED
     else:
         return saga.job.UNKNOWN
 
 
 # --------------------------------------------------------------------
 #
-def _pbscript_generator(url, logger, jd, ppn, is_cray=False):
-    """ generates a PBS script from a SAGA job description
+def _sgescript_generator(url, logger, jd, ppn):
+    """ generates an SGE script from a SAGA job description
     """
-    pbs_params = str()
+    sge_params = str()
     exec_n_args = str()
 
     if jd.executable is not None:
@@ -73,63 +75,56 @@ def _pbscript_generator(url, logger, jd, ppn, is_cray=False):
             exec_n_args += "%s " % (arg)
 
     if jd.name is not None:
-        pbs_params += "#PBS -N %s \n" % jd.name
+        sge_params += "#$ -N %s \n" % jd.name
 
-    if is_cray is False:
-        # qsub on Cray systems complains about the -V option:
-        # Warning:
-        # Your job uses the -V option, which requests that all of your
-        # current shell environment settings (9913 bytes) be exported to
-        # it.  This is not recommended, as it causes problems for the
-        # batch environment in some cases.
-        pbs_params += "#PBS -V \n"
+    sge_params += "#$ -V \n"
 
     if jd.environment is not None:
         variable_list = str()
         for key in jd.environment.keys():
             variable_list += "%s=%s," % (key, jd.environment[key])
-        pbs_params += "#PBS -v %s \n" % variable_list
+        sge_params += "#$ -v %s \n" % variable_list
 
     if jd.working_directory is not None:
-        pbs_params += "#PBS -d %s \n" % jd.working_directory
+        sge_params += "#$ -wd %s \n" % jd.working_directory
     if jd.output is not None:
-        pbs_params += "#PBS -o %s \n" % jd.output
+        sge_params += "#$ -o %s \n" % jd.output
     if jd.error is not None:
-        pbs_params += "#PBS -e %s \n" % jd.error
+        sge_params += "#$ -e %s \n" % jd.error
     if jd.wall_time_limit is not None:
         hours = jd.wall_time_limit / 60
         minutes = jd.wall_time_limit % 60
-        pbs_params += "#PBS -l walltime=%s:%s:00 \n" \
-            % (str(hours), str(minutes))
+        sge_params += "#$ -l h_rt=%s:%s:00 \n" % (str(hours), str(minutes))
     if jd.queue is not None:
-        pbs_params += "#PBS -q %s \n" % jd.queue
-    if jd.project is not None:
-        pbs_params += "#PBS -A %s \n" % str(jd.project)
-    if jd.job_contact is not None:
-        pbs_params += "#PBS -m abe \n"
-
-    # TORQUE on a cray requires different -l size.. arguments than regular
-    # HPC clusters:
-    if is_cray is True:
-        # Special case for TORQUE on Cray XT5s
-        logger.info("Using Cray XT specific '#PBS - size=xx' flags.")
-        if jd.total_cpu_count is not None:
-            pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
+        sge_params += "#$ -q %s \n" % jd.queue
     else:
-        # Default case, i.e, standard HPC cluster (non-Cray XT)
-        if jd.total_cpu_count is not None:
-            tcc = int(jd.total_cpu_count)
-            tbd = float(tcc) / float(ppn)
-            if float(tbd) > int(tbd):
-                pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
-                    % (str(int(tbd) + 1), ppn)
-            else:
-                pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
-                    % (str(int(tbd)), ppn)
+        raise Exception("No queue defined.")
 
-    pbscript = "\n#!/bin/bash \n%s%s" % (pbs_params, exec_n_args)
-    return pbscript
+    if jd.project is not None:
+        sge_params += "#$ -A %s \n" % str(jd.project)
+    if jd.job_contact is not None:
+        sge_params += "#$ -m be \n"
+        sge_params += "#$ -M %s \n" % jd.contact
 
+    # if no cores are requested at all, we default to one
+    if jd.total_cpu_count is None:
+        jd.total_cpu_count = 1
+
+    # we need to translate the # cores requested into
+    # multiplicity, i.e., if one core is requested and
+    # the cluster consists of 16-way SMP nodes, we will
+    # request 16. If 17 cores are requested, we will
+    # request 32... and so on ... self.__ppn represents
+    # the core count per single node
+    count = int(int(jd.total_cpu_count) / int(ppn))
+    if int(jd.total_cpu_count) % int(ppn) != 0:
+        count = count + 1
+    count = count * int(ppn)
+
+    sge_params += "#$ -pe %sway %s" % (ppn, str(count))
+
+    sgescript = "\n#!/bin/bash \n%s \n%s" % (sge_params, exec_n_args)
+    return sgescript
 
 # --------------------------------------------------------------------
 # some private defs
@@ -139,19 +134,18 @@ _PTY_TIMEOUT = 2.0
 # --------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.pbsjob"
-_ADAPTOR_SCHEMAS       = ["pbs", "pbs+ssh", "pbs+gsissh"]
+_ADAPTOR_NAME          = "saga.adaptor.sgejob"
+_ADAPTOR_SCHEMAS       = ["sge", "sge+ssh", "sge+gsissh"]
 _ADAPTOR_OPTIONS       = [
-    # This adaptor doesn't have any options 
-    # {
-    # 'category':      'saga.adaptor.pbsjob',
-    # 'name':          'foo',
-    # 'type':          bool,
-    # 'default':       False,
-    # 'valid_options': [True, False],
-    # 'documentation': """Doc""",
-    # 'env_variable':   None
-    # },
+    {
+    'category':      'saga.adaptor.sgejob',
+    'name':          'foo',
+    'type':          bool,
+    'default':       False,
+    'valid_options': [True, False],
+    'documentation': """Doc""",
+    'env_variable':   None
+    },
 ]
 
 # --------------------------------------------------------------------
@@ -188,12 +182,12 @@ _ADAPTOR_DOC = {
     "name":          _ADAPTOR_NAME,
     "cfg_options":   _ADAPTOR_OPTIONS,
     "capabilities":  _ADAPTOR_CAPABILITIES,
-    "description":   """The PBS adaptor can run and manage jobs on local and
-                        remote PBS and TORQUE clusters.""",
+    "description":   """The SGE adaptor can run and manage jobs on local and
+                        remote SGE clusters.""",
     "details": """TODO""",
-    "schemas": {"pbs":        "connect to a local PBS/TORQUE cluster",
-                "pbs+ssh":    "conenct to a remote PBS/TORQUE cluster via SSH",
-                "pbs+gsissh": "connect to a remote PBS/TORQUE cluster via GSISSH"}
+    "schemas": {"sge":        "connect to a local SGE cluster",
+                "sge+ssh":    "conenct to a remote SGE cluster via SSH",
+                "sge+gsissh": "connect to a remote SGE cluster via GSISSH"}
 }
 
 # --------------------------------------------------------------------
@@ -206,11 +200,11 @@ _ADAPTOR_INFO = {
     "cpis": [
         {
         "type": "saga.job.Service",
-        "class": "PBSJobService"
+        "class": "SGEJobService"
         },
         {
         "type": "saga.job.Job",
-        "class": "PBSJob"
+        "class": "SGEJob"
         }
     ]
 }
@@ -258,7 +252,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
 ###############################################################################
 #
-class PBSJobService (saga.adaptors.cpi.job.Service):
+class SGEJobService (saga.adaptors.cpi.job.Service):
     """ implements saga.adaptors.cpi.job.Service 
     """
 
@@ -266,7 +260,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def __init__(self, api, adaptor):
 
-        self._cpi_base = super(PBSJobService, self)
+        self._cpi_base = super(SGEJobService, self)
         self._cpi_base.__init__(api, adaptor)
 
     # ----------------------------------------------------------------
@@ -278,8 +272,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # separately?
         #   cmd_state () { touch $DIR/purgeable; ... }
         # When should that be done?
-        self._logger.error("adaptor dying... %s" % self.njobs)
-        self._logger.trace()
+        # self._logger.error("adaptor dying... %s" % self.njobs)
+        # self._logger.trace()
 
         self.finalize(kill_shell=True)
 
@@ -289,33 +283,31 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     def init_instance(self, adaptor_state, rm_url, session):
         """ service instance constructor
         """
-
         self.rm      = rm_url
         self.session = session
-        self.njobs   = 0
         self.ppn     = 0
-        self.is_cray = False
+        self.jobs    = dict()
 
         rm_scheme = rm_url.scheme
         pty_url   = deepcopy(rm_url)
 
         # we need to extrac the scheme for PTYShell. That's basically the
-        # job.Serivce Url withou the pbs+ part. We use the PTYShell to execute
+        # job.Serivce Url withou the sge+ part. We use the PTYShell to execute
         # pbs commands either locally or via gsissh or ssh.
-        if rm_scheme == "pbs":
+        if rm_scheme == "sge":
             pty_url.scheme = "fork"
-        elif rm_scheme == "pbs+ssh":
+        elif rm_scheme == "sge+ssh":
             pty_url.scheme = "ssh"
-        elif rm_scheme == "pbs+gsissh":
+        elif rm_scheme == "sge+gsissh":
             pty_url.scheme = "gsissh"
 
-        # these are the commands that we need in order to interact with PBS.
+        # these are the commands that we need in order to interact with SGE.
         # the adaptor will try to find them during initialize(self) and bail
         # out in case they are note avaialbe.
-        self._commands = {'pbsnodes': None,
-                          'qstat':    None,
-                          'qsub':     None,
-                          'qdel':     None}
+        self._commands = {'qstat': None,
+                          'qsub':  None,
+                          'qdel':  None,
+                          'qconf': None}
 
         # create a null logger to silence the PTY wrapper!
         import logging
@@ -337,69 +329,47 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def initialize(self):
-        # check if all required pbs tools are available
+        # check if all required sge tools are available
         for cmd in self._commands.keys():
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
-                message = "Error finding PBS tools: %s" % out
+                message = "Error finding SGE tools: %s" % out
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
             else:
                 path = out.strip()  # strip removes newline
-                if cmd == 'qdel':  # qdel doesn't support --version!
-                    self._commands[cmd] = {"path":    path,
-                                           "version": "?"}
+
+                ret, out, _ = self.shell.run_sync("%s -help" % cmd)
+                if ret != 0:
+                    message = "Error finding SGE tools: %s" % out
+                    log_error_and_raise(message, saga.NoSuccess,
+                        self._logger)
                 else:
-                    ret, out, _ = self.shell.run_sync("%s --version" % cmd)
-                    if ret != 0:
-                        message = "Error finding PBS tools: %s" % out
-                        log_error_and_raise(message, saga.NoSuccess,
-                            self._logger)
-                    else:
-                        # version is reported as: "version: x.y.z"
-                        version = out.strip().split()[1]
+                    # version is reported in the first row of the
+                    # help screen, e.g., GE 6.2u5_1
+                    version = out.strip().split('\n')[0]
 
-                        # add path and version to the command dictionary
-                        self._commands[cmd] = {"path":    path,
-                                               "version": version}
+                    # add path and version to the command dictionary
+                    self._commands[cmd] = {"path":    path,
+                                           "version": version}
 
-        self._logger.info("Found PBS tools: %s" % self._commands)
-
-        # let's try to figure out if we're working on a Cray XT machine.
-        # naively, we assume that if we can find the 'aprun' command in the
-        # path that we're logged in to a Cray machine.
-        ret, out, _ = self.shell.run_sync('which aprun')
-        if ret != 0:
-            self.is_cray = False
-        else:
-            self._logger.info("Host '%s' seems to be a Cray XT class machine." \
-                % self.rm.host)
-            self.is_cray = True
+        self._logger.info("Found SGE tools: %s" % self._commands)
 
         # see if we can get some information about the cluster, e.g.,
         # different queues, number of processes per node, etc.
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
-        ret, out, _ = self.shell.run_sync('%s -a | grep np' % \
-            self._commands['pbsnodes']['path'])
+        ret, out, _ = self.shell.run_sync('%s -sq %s | grep slots' % \
+            (self._commands['qconf']['path'], 'normal'))
         if ret != 0:
-            message = "Error running pbsnodes: %s" % out
+            message = "Error running 'qconf': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
             # this is black magic. we just assume that the highest occurence
             # of a specific np is the number of processors (cores) per compute
             # node. this equals max "PPN" for job scripts
-            ppn_list = dict()
-            for line in out.split('\n'):
-                np = line.split(' = ')
-                if len(np) == 2:
-                    np = np[1].strip()
-                    if np in ppn_list:
-                        ppn_list[np] += 1
-                    else:
-                        ppn_list[np] = 1
-            self.ppn = max(ppn_list, key=ppn_list.get)
-            self._logger.debug("Found the following 'ppn' configurations: %s. Using %s as default ppn." 
-                % (ppn_list, self.ppn))
+            self.ppn = out.split()[1]
+            self._logger.debug("Determined 'wayness' for queue '%s': %s" \
+                % ('normal', self.ppn))
 
     # ----------------------------------------------------------------
     #
@@ -412,10 +382,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """ runs a job via qsub
         """
 
-        # create a PBS job script from SAGA job description
-        script = _pbscript_generator(url=self.rm, logger=self._logger, jd=jd,
-            ppn=self.ppn, is_cray=self.is_cray)
-        self._logger.debug("Generated PBS script: %s" % script)
+        # create an SGE job script from SAGA job description
+        script = _sgescript_generator(url=self.rm, logger=self._logger,
+            jd=jd, ppn=self.ppn)
+        self._logger.debug("Generated SGE script: %s" % script)
 
         ret, out, _ = self.shell.run_sync("echo '%s' | %s" \
             % (script, self._commands['qsub']['path']))
@@ -426,15 +396,27 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 % (out, script)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
-            # stdout contains the job id
-            job_id = "[%s]-[%s]" % (self.rm, out.strip())
-            self._logger.info("Submitted PBS job with id: %s" % job_id)
-            self.njobs += 1
+            # stdout contains the job id:
+            # Your job 1036608 ("testjob") has been submitted
+            pid = None
+            for line in out.split('\n'):
+                if line.find("Your job") != -1:
+                    pid = line.split()[2]
+            if pid == None:
+                message = "Couldn't parse job id from 'qsub' output: %s" % out
+                log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+            job_id = "[%s]-[%s]" % (self.rm, pid)
+            self._logger.info("Submitted SGE job with id: %s" % job_id)
+
+            # add job to internal list of jobs.
+            self.jobs[job_id] = saga.job.PENDING
+
             return job_id
 
     # ----------------------------------------------------------------
     #
-    def _job_get_info(self, id):
+    def _job_get_info(self, jobid):
         """ get job attributes via qstat
         """
 
@@ -445,40 +427,63 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         start_time  = None
         end_time    = None
 
-        rm, pid = self._adaptor.parse_id(id)
+        rm, pid = self._adaptor.parse_id(jobid)
 
-        ret, out, _ = self.shell.run_sync("%s -f1 %s | \
-            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" \
+        # get the job status via qstat
+        ret, out, _ = self.shell.run_sync("%s | grep %s" \
             % (self._commands['qstat']['path'], pid))
-
         if ret != 0:
-            # something went wrong
-            message = "Error retrieving job info via 'qstat': %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            # if the job existed previously, it has disappeared from the
+            # queueing system. in that case we can set the job_state to
+            # DONE. the job could also have failed, but that's impossible
+            # to figure out.
+            if jobid in self.jobs:
+                if self.jobs[jobid] == saga.job.RUNNING:
+                    self.jobs[jobid] = saga.job.DONE
+                    job_state = self.jobs[jobid]
+                else:
+                    job_state = self.jobs[jobid]
+            else:
+                # something else went wrong
+                message = "Error retrieving job status via 'qstat': %s" % out
+                log_error_and_raise(message, saga.NoSuccess, self._logger)
+        else:
+            # result should look like this:
+            # 1036615 0.51206 testjob  tg802352  qw  02/19/2013 02:41:08
+            job_state = _sge_to_saga_jobstate(out.split()[4])
+
+        #ret, out, _ = self.shell.run_sync("%s -f1 %s | \
+        #    egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" \
+        #    % (self._commands['qstat']['path'], pid))
+
+        #if ret != 0:
+        #    # something went wrong
+        #    message = "Error retrieving job info via 'qstat': %s" % out
+        #    log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         # parse the egrep result. this should look something like this:
         #     job_state = C
         #     exec_host = i72/0
         #     exit_status = 0
-        results = out.split('\n')
-        for result in results:
-            if len(result.split('=')) == 2:
-                key, val = result.split('=')
-                key = key.strip()  # strip() removes whitespaces at the
-                val = val.strip()  # beginning and the end of the string
+        #results = out.split('\n')
+        #for result in results:
+        #    if len(result.split('=')) == 2:
+        #        key, val = result.split('=')
+        #        key = key.strip()  # strip() removes whitespaces at the
+        #        val = val.strip()  # beginning and the end of the string
 
-                if key == 'job_state':
-                    job_state = _pbs_to_saga_jobstate(val)
-                elif key == 'exec_host':
-                    exec_hosts = val.split('+')  # format i73/7+i73/6+...
-                elif key == 'exit_status':
-                    exit_status = val
-                elif key == 'ctime':
-                    create_time = val
-                elif key == 'start_time':
-                    start_time = val
-                elif key == 'comp_time':
-                    end_time = val
+        #        if key == 'job_state':
+        #            job_state = _sge_to_saga_jobstate(val)
+        #        elif key == 'exec_host':
+        #            exec_hosts = val.split('+')  # format i73/7+i73/6+...
+        #        elif key == 'exit_status':
+        #            exit_status = val
+        #        elif key == 'ctime':
+        #            create_time = val
+        #        elif key == 'start_time':
+        #            start_time = val
+        #        elif key == 'comp_time':
+        #            end_time = val
 
         return (job_state, exec_hosts, exit_status,
                 create_time, start_time, end_time)
@@ -632,14 +637,14 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
 ###############################################################################
 #
-class PBSJob (saga.adaptors.cpi.job.Job):
+class SGEJob (saga.adaptors.cpi.job.Job):
     """ implements saga.adaptors.cpi.job.Job
     """
 
     def __init__(self, api, adaptor):
 
         # initialize parent class
-        self._cpi_base = super(PBSJob, self)
+        self._cpi_base = super(SGEJob, self)
         self._cpi_base.__init__(api, adaptor)
 
     @SYNC_CALL
@@ -679,6 +684,7 @@ class PBSJob (saga.adaptors.cpi.job.Job):
                 self._state = self.js._job_get_info(self._id)[0]
                 return self._state
             except Exception as e:
+                # the job can disappear on the remote end.
                 if self._id == None:
                     return self._state
                 else:
@@ -776,6 +782,9 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         """ implements saga.adaptors.cpi.job.Job.run()
         """
         self._id = self.js._job_run(self.jd)
+        # after a call to run(), the job is either in RUNNIGN or
+        # PENDING state.
+        self._state = saga.job.PENDING
 
     # ----------------------------------------------------------------
     #
