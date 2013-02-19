@@ -461,6 +461,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             # result should look like this:
             # 1036615 0.51206 testjob  tg802352  qw  02/19/2013 02:41:08
             job_state = _sge_to_saga_jobstate(out.split()[4])
+            self.jobs[jobid] = job_state
 
         return job_state
 
@@ -476,64 +477,33 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         start_time  = None
         end_time    = None
 
-        rm, pid = self._adaptor.parse_id(jobid)
+        job_state = self._job_get_state(jobid)
 
-        # get the job status via qstat
-        ret, out, _ = self.shell.run_sync("%s | grep %s" \
-            % (self._commands['qstat']['path'], pid))
-        if ret != 0:
-            # if the job existed previously, it has disappeared from the
-            # queueing system. in that case we can set the job_state to
-            # DONE. the job could also have failed, but that's impossible
-            # to figure out.
-            if jobid in self.jobs:
-                if self.jobs[jobid] == saga.job.RUNNING:
-                    self.jobs[jobid] = saga.job.DONE
-                    job_state = self.jobs[jobid]
-                else:
-                    job_state = self.jobs[jobid]
-            else:
-                # something else went wrong
-                message = "Error retrieving job status via 'qstat': %s" % out
-                log_error_and_raise(message, saga.NoSuccess, self._logger)
-        else:
-            # result should look like this:
-            # 1036615 0.51206 testjob  tg802352  qw  02/19/2013 02:41:08
-            job_state = _sge_to_saga_jobstate(out.split()[4])
+        # we can only fetch the state if the job is still running
+        if (job_state == saga.job.PENDING) or (job_state == saga.job.RUNNING):
 
-        # now we run 
-        ret, out, _ = self.shell.run_sync("%s -f1 %s | \
-            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" \
-            % (self._commands['qstat']['path'], pid))
+            rm, pid = self._adaptor.parse_id(jobid)
 
-        #if ret != 0:
-        #    # something went wrong
-        #    message = "Error retrieving job info via 'qstat': %s" % out
-        #    log_error_and_raise(message, saga.NoSuccess, self._logger)
+            # now we run a different qstat command to get some additional
+            # informations about the job
+            ret, out, _ = self.shell.run_sync("%s -f -j %s | \
+                egrep '(submission_time)'" \
+                % (self._commands['qstat']['path'], pid))
 
-        # parse the egrep result. this should look something like this:
-        #     job_state = C
-        #     exec_host = i72/0
-        #     exit_status = 0
-        #results = out.split('\n')
-        #for result in results:
-        #    if len(result.split('=')) == 2:
-        #        key, val = result.split('=')
-        #        key = key.strip()  # strip() removes whitespaces at the
-        #        val = val.strip()  # beginning and the end of the string
+            if ret != 0:
+                # something went wrong
+                message = "Error retrieving job info via 'qstat': %s" % out
+                self._logger.warning(message)
 
-        #        if key == 'job_state':
-        #            job_state = _sge_to_saga_jobstate(val)
-        #        elif key == 'exec_host':
-        #            exec_hosts = val.split('+')  # format i73/7+i73/6+...
-        #        elif key == 'exit_status':
-        #            exit_status = val
-        #        elif key == 'ctime':
-        #            create_time = val
-        #        elif key == 'start_time':
-        #            start_time = val
-        #        elif key == 'comp_time':
-        #            end_time = val
+            # parse the egrep result. this should look something like this:
+            #     submission_time = xyz
+            #     ...
+            results = out.split('\n')
+            for result in results:
+                print result
+                if 'submission_time' in result:
+                    val = result.replace('submission_time', '')
+                    create_time = val.strip()
 
         return (job_state, exec_hosts, exit_status,
                 create_time, start_time, end_time)
@@ -581,7 +551,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         rm, pid    = self._adaptor.parse_id(id)
 
         while True:
-            state = self._job_get_info(id)[0]
+            state = self._job_get_state(id)
             if state == saga.job.DONE or \
                state == saga.job.FAILED or \
                state == saga.job.CANCELED:
