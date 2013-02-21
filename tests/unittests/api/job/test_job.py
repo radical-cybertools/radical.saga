@@ -7,8 +7,6 @@ import sys
 import saga
 import saga.utils.test_config as sutc
 
-notimpl_warn_only = False
-
 
 # ------------------------------------------------------------------------------
 #
@@ -21,14 +19,21 @@ def test_job_service_create():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+        if tc.job_walltime_limit != "":
+            jd.wall_time_limit = tc.job_walltime_limit
+        if tc.job_project != "":
+            jd.project = tc.job_project
 
         j1 = js.create_job(jd)
         assert j1.state == j1.get_state()
         assert j1.state == saga.job.NEW
 
+    except saga.NotImplemented as ni:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
+                print "%s " % ni
     except saga.SagaException as se:
-        print se
-        assert False
+        assert False, "Unexpected exception: %s" % se
 
 
 # ------------------------------------------------------------------------------
@@ -42,6 +47,10 @@ def test_job_run():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+        if tc.job_walltime_limit != "":
+            jd.wall_time_limit = tc.job_walltime_limit
+        if tc.job_project != "":
+            jd.project = tc.job_project
 
         j1 = js.create_job(jd)
 
@@ -52,8 +61,8 @@ def test_job_run():
         j1.cancel()
 
     except saga.NotImplemented as ni:
-            assert notimpl_warn_only, "%s " % ni
-            if notimpl_warn_only:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
                 print "%s " % ni
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
@@ -70,6 +79,10 @@ def test_job_suspend_resume():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+        if tc.job_walltime_limit != "":
+            jd.wall_time_limit = tc.job_walltime_limit
+        if tc.job_project != "":
+            jd.project = tc.job_project
 
         j1 = js.create_job(jd)
         j1.run()
@@ -85,8 +98,8 @@ def test_job_suspend_resume():
         j1.cancel()
 
     except saga.NotImplemented as ni:
-            assert notimpl_warn_only, "%s " % ni
-            if notimpl_warn_only:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
                 print "%s " % ni
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
@@ -103,6 +116,10 @@ def test_job_cancel():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+        if tc.job_walltime_limit != "":
+            jd.wall_time_limit = tc.job_walltime_limit
+        if tc.job_project != "":
+            jd.project = tc.job_project
 
         j1 = js.create_job(jd)
 
@@ -111,8 +128,8 @@ def test_job_cancel():
         assert j1.state == saga.job.CANCELED
 
     except saga.NotImplemented as ni:
-            assert notimpl_warn_only, "%s " % ni
-            if notimpl_warn_only:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
                 print "%s " % ni
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
@@ -129,6 +146,10 @@ def test_job_wait():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+        if tc.job_walltime_limit != "":
+            jd.wall_time_limit = tc.job_walltime_limit
+        if tc.job_project != "":
+            jd.project = tc.job_project
 
         j1 = js.create_job(jd)
 
@@ -137,8 +158,8 @@ def test_job_wait():
         assert j1.state == saga.job.DONE
 
     except saga.NotImplemented as ni:
-            assert notimpl_warn_only, "%s " % ni
-            if notimpl_warn_only:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
                 print "%s " % ni
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
@@ -155,6 +176,10 @@ def test_job_states_OLD():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['3']
+        if tc.job_walltime_limit != "":
+            jd.wall_time_limit = tc.job_walltime_limit
+        if tc.job_project != "":
+            jd.project = tc.job_project
 
         j3 = js.run_job ("/bin/sleep 3 ; /bin/true")
         assert j3.state == saga.job.RUNNING
@@ -169,8 +194,8 @@ def test_job_states_OLD():
         assert j4.state == saga.job.FAILED
 
     except saga.NotImplemented as ni:
-            assert notimpl_warn_only, "%s " % ni
-            if notimpl_warn_only:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
                 print "%s " % ni
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
@@ -188,8 +213,8 @@ def test_get_exit_code () :
         assert j.exit_code == 3
 
     except saga.NotImplemented as ni:
-            assert notimpl_warn_only, "%s " % ni
-            if notimpl_warn_only:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
                 print "%s " % ni
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
@@ -205,9 +230,12 @@ def test_get_service_url () :
         j  = js.run_job ("/bin/sleep 10")
         assert j.service_url == js.url
 
+    except saga.NotImplemented as ni:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
+                print "%s " % ni
     except saga.SagaException as se:
-        print  se
-        assert False
+        assert False, "Unexpected exception: %s" % se
 
 
 # ------------------------------------------------------------------------------
@@ -221,7 +249,10 @@ def test_get_id () :
         assert j.id != None
         assert j.id == j.get_id ()
 
+    except saga.NotImplemented as ni:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
+                print "%s " % ni
     except saga.SagaException as se:
-        print  se
-        assert False
+        assert False, "Unexpected exception: %s" % se
 

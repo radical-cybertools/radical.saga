@@ -27,6 +27,9 @@ If you wnat to run all configurations, pass the directory as parameter, e.g.:
 The verbosity of the test output can be set via the ``NOSE_VERBOSE`` 
 environment variavble.
 
+By default, the test suite handles saga.NotImplemented exceptions as errors.
+However, if you set the ``
+
 The test suites expects the python environment to be set up in a way that the
 sage module is automatically found.  Also, it needs the ``nose`` module
 installed (``pip install nose``), which provides the testing framework.
