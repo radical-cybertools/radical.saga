@@ -15,7 +15,6 @@ include saga/utils/job/*.py
 include saga/utils/config/*.py
 include saga/utils/contrib/*.py
 include saga/utils/logger/*.py
-include saga/utils/cmdlinewrapper/*.py
 
 include saga/adaptors/*.py
 include saga/adaptors/cpi/*.py
