@@ -20,7 +20,7 @@ def test_job_states () :
         assert j1.state == saga.job.NEW
                          
         j1.run ()        
-        assert j1.state == saga.job.RUNNING
+        assert (j1.state == saga.job.RUNNING or j1.state == saga.job.PENDING)
         assert j1.state == j1.get_state ()
                          
         j1.suspend ()    
