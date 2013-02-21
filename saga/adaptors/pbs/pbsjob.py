@@ -19,6 +19,7 @@ from saga.job.constants import *
 import re
 import time
 from copy import deepcopy
+from cgi import parse_qs
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -60,7 +61,7 @@ def _pbs_to_saga_jobstate(pbsjs):
 
 # --------------------------------------------------------------------
 #
-def _pbscript_generator(url, logger, jd, ppn, is_cray=False):
+def _pbscript_generator(url, logger, jd, ppn, is_cray=False, queue=None):
     """ generates a PBS script from a SAGA job description
     """
     pbs_params = str()
@@ -101,8 +102,14 @@ def _pbscript_generator(url, logger, jd, ppn, is_cray=False):
         minutes = jd.wall_time_limit % 60
         pbs_params += "#PBS -l walltime=%s:%s:00 \n" \
             % (str(hours), str(minutes))
-    if jd.queue is not None:
+
+    if (jd.queue is not None) and (queue is not None):
+        pbs_params += "#PBS -q %s \n" % queue
+    elif (jd.queue is not None) and (queue is None):
         pbs_params += "#PBS -q %s \n" % jd.queue
+    elif (jd.queue is None) and (queue is not None):
+        pbs_params += "#PBS -q %s \n" % queue
+
     if jd.project is not None:
         pbs_params += "#PBS -A %s \n" % str(jd.project)
     if jd.job_contact is not None:
@@ -294,9 +301,18 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self.njobs   = 0
         self.ppn     = 0
         self.is_cray = False
+        self.queue   = None
 
         rm_scheme = rm_url.scheme
         pty_url   = deepcopy(rm_url)
+
+        # this adaptor supports options that can be passed via the
+        # 'query' component of the job service URL.
+        if rm_url.query is not None:
+            for key, val in parse_qs(rm_url.query).iteritems():
+                if key == 'queue':
+                    self.queue = val[0]
+
 
         # we need to extrac the scheme for PTYShell. That's basically the
         # job.Serivce Url withou the pbs+ part. We use the PTYShell to execute
@@ -322,11 +338,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         class NullHandler(logging.Handler):
             def emit(self, record):
                 pass
-        nh = NullHandler()
-        null_logger = logging.getLogger("PTYShell").addHandler(nh)
+        #nh = NullHandler()
+        #null_logger = logging.getLogger("PTYShell").addHandler(nh)
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-            self.session.contexts, null_logger)
+            self.session.contexts)#, null_logger)
 
         self.shell.set_initialize_hook(self.initialize)
         self.shell.set_finalize_hook(self.finalize)
@@ -410,10 +426,13 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     def _job_run(self, jd):
         """ runs a job via qsub
         """
+        if (self.queue is not None) and (jd.queue is not None):
+            self._logger.warning("Job service was instantiated explicitly with 'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." \
+                % (self.queue, jd.queue, self.queue))
 
         # create a PBS job script from SAGA job description
         script = _pbscript_generator(url=self.rm, logger=self._logger, jd=jd,
-            ppn=self.ppn, is_cray=self.is_cray)
+            ppn=self.ppn, is_cray=self.is_cray, queue=self.queue)
         self._logger.debug("Generated PBS script: %s" % script)
 
         ret, out, _ = self.shell.run_sync("echo '%s' | %s" \
@@ -580,9 +599,12 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         ret, out, _ = self.shell.run_sync("%s -a -u `whoami` | grep `whoami`"\
             % self._commands['qstat']['path'])
-        if ret != 0:
+        if ret != 0 and len(out) > 0:
             message = "failed to list jobs via 'qstat': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
+        elif ret != 0 and len(out) == 0:
+            # qstat | grep `whoami` exits with 1 if the list is empty
+            pass
         else:
             jobid = "[%s]-[%s]" % (self.rm, out.split()[0])
             ids.append(jobid)

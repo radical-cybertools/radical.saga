@@ -11,13 +11,13 @@ import threading
 
 import saga.utils.logger
 import saga.utils.timeout_gc
-import saga.exceptions      as se
+import saga.exceptions as se
 
 
 # --------------------------------------------------------------------
 #
-_CHUNKSIZE = 1024   # default size of each read
-_POLLDELAY = 0.0001 # seconds in between read attempts
+_CHUNKSIZE = 1024  # default size of each read
+_POLLDELAY = 0.01  # seconds in between read attempts
 
 
 # --------------------------------------------------------------------
@@ -92,11 +92,13 @@ class PTYProcess (object) :
 
 
         self.command = command # list of strings too run()
+        self.logger  = logger
+
+
         self.cache   = ""      # data cache
         self.clog    = ""      # log the data cache
         self.child   = None    # the process as created by subprocess.Popen
         self.ptyio   = None    # the process' io channel, from pty.fork()
-        self.logger  = logger
 
         self.initialize_hook = None
         self.finalize_hook   = None
@@ -221,11 +223,9 @@ class PTYProcess (object) :
         """ kill the child, close all I/O channels """
 
         # as long as the chiuld lives, run any higher level shutdown routine.
-        # print "pty process finalize"
         if  self.finalize_hook :
             self.finalize_hook ()
 
-        # print "pty process finalize 1"
         # now we can safely kill the child process, and close all I/O channels
         try :
             if  self.child :
@@ -256,8 +256,6 @@ class PTYProcess (object) :
       # except OSError :
       #     pass
 
-        # print "pty process finalize done"
-
 
     # --------------------------------------------------------------------
     #
@@ -287,14 +285,7 @@ class PTYProcess (object) :
             # short, and child.poll is slow, we will nevertheless attempt at least
             # one read...
             start = time.time ()
-
-            ret     = ""
-            sel_to  = timeout
-
-            # the select timeout cannot be negative -- 0 is non-blocking... 
-            if  sel_to < 0 : 
-                sel_to = 0
-
+            ret   = ""
 
             # first, lets see if we still have data in the cache we can return
             if len (self.cache) :
@@ -321,8 +312,8 @@ class PTYProcess (object) :
                 # read until we have enough data, or hit timeout ceiling...
                 while True :
                 
-                    # idle wait 'til the next data chunk arrives, or 'til sel_to
-                    rlist, _, _ = select.select ([self.parent_out], [], [], sel_to)
+                    # idle wait 'til the next data chunk arrives, or 'til _POLLDELAY
+                    rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
 
                     # got some data? 
                     for f in rlist:
@@ -333,9 +324,9 @@ class PTYProcess (object) :
 
                         buf = buf.replace ('\n', '\\n')
                         buf = buf.replace ('\r', '')
-                        if  len(buf) > 40 :
+                        if  len(buf) > 60 :
                             self.logger.debug ("read : [%5d] (%s ... %s)" \
-                                            % (len(buf), buf[:20], buf[-20:]))
+                                            % (len(buf), buf[:30], buf[-30:]))
                         else :
                             self.logger.debug ("read : [%5d] (%s)" \
                                             % (len(buf), buf))
@@ -412,11 +403,7 @@ class PTYProcess (object) :
                 while True :
                 
                     # do an idle wait 'til the next data chunk arrives
-                    rlist = []
-                    if timeout < 0 :
-                        rlist, _, _ = select.select ([self.parent_out], [], [])
-                    else :
-                        rlist, _, _ = select.select ([self.parent_out], [], [], timeout)
+                    rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
 
                     # got some data - read them into the cache
                     for f in rlist:
@@ -426,9 +413,9 @@ class PTYProcess (object) :
 
                         buf = buf.replace ('\n', '\\n')
                         buf = buf.replace ('\r', '')
-                        if  len(buf) > 40 :
+                        if  len(buf) > 60 :
                             self.logger.debug ("read : [%5d] (%s ... %s)" \
-                                            % (len(buf), buf[:20], buf[-20:]))
+                                            % (len(buf), buf[:30], buf[-30:]))
                         else :
                             self.logger.debug ("read : [%5d] (%s)" \
                                             % (len(buf), buf))
@@ -545,6 +532,7 @@ class PTYProcess (object) :
             ret   = []                                 # array of read lines
             patts = []                                 # compiled patterns
             data  = self.cache                         # initial data to check
+            self.cache = ""
 
             if not data : # empty cache?
                 data = self.read (_CHUNKSIZE, _POLLDELAY)
@@ -614,9 +602,9 @@ class PTYProcess (object) :
 
                 buf = data.replace ('\n', '\\n')
                 buf =  buf.replace ('\r', '')
-                if  len(buf) > 40 :
+                if  len(buf) > 60 :
                     self.logger.debug ("write: [%5d] (%s ... %s)" \
-                                    % (len(data), buf[:20], buf[-20:]))
+                                    % (len(data), buf[:30], buf[-30:]))
                 else :
                     self.logger.debug ("write: [%5d] (%s)" \
                                     % (len(data), buf))
