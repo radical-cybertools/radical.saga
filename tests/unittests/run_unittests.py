@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+__author__    = ["Ole Weidner", "Andre Merzky"]
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
 
 import re
 import os
@@ -10,7 +16,7 @@ import saga.utils.test_config as sutc
 """
 This script runs a set of unit tests, which are organized in a directory
 structure under ``tests/unittests/`` -- each sub-directory in that hierarchy
-represents a test suite to be run.   
+represents a test suite to be run.
 
 The test suites expects the python environment to be set up in a way that the
 sage module is automatically found.  Also, it needs the ``nose`` module
@@ -27,22 +33,22 @@ The config files are in particular used to accomodate remote unit testing, i.e.
 to run the unit tests against arbitrary remote backends.  An example config file
 is::
 
-    # this config file will run the job package unit tests against 
+    # this config file will run the job package unit tests against
     # over a local ssh connection
-    
+
     [saga.tests]
     test_suites        = engine,api/job
 
     job_service_url    = ssh://localhost/
-    filesystem_url     = 
-    replica_url        = 
-    advert_url         = 
+    filesystem_url     =
+    replica_url        =
+    advert_url         =
 
     context_type       = ssh
     context_user_id    = peer_gynt
-    context_user_pass  = 
-    context_user_proxy = 
-    context_user_cert  = 
+    context_user_pass  =
+    context_user_proxy =
+    context_user_cert  =
 
 The above listing includes the complete set of supported attributes -- missing
 entries are assumed to be empty strings, and can be left out.  The
