@@ -49,19 +49,22 @@ class PTYShell (object) :
     ``$*``,
     ``$#``,
     ``$@``,
+    ``$$``,
     ``$PPID``,
     ``>&``,
     ``>>``,
     ``>``,
     ``<``,
-    ``2>&1``,
     ``|``,
     ``||``,
+    ``()``,
+    ``&``,
     ``&&``,
     ``wait``,
     ``kill``,
     ``nohup``,
     ``shift``,
+    ``export``,
     ``PS1``, and
     ``PS2``.
 
@@ -72,26 +75,8 @@ class PTYShell (object) :
     careful when setting other prompts -- see :func:`set_prompt` for more
     details.
 
-
-    Data Staging and Data Management:
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-    The PTYShell class does not only support commnd execution, but also basic
-    data management: for SSH based shells, it will create a tunneled scp/sftp
-    connection for file staging.  Other data management operations (mkdir, size,
-    list, ...) are executed either as shell commands, or on the scp/sftp channel
-    (if possible on the data channel, to keep the shell pty free for concurrent
-    command execution).  Ssh tunneling is implemented via ssh.v2 'ControlMaster'
-    capabilities (see `ssh_config(5)`).
-    
-    For local shells, PTYShell will create an additional shell pty for data
-    management operations.  
-
-    Future versions of this class may support additional command channels for
-    more efficient asynchronous operations.
-
-
     Usage Example::
+    ^^^^^^^^^^^^^^^
 
         # start the shell, find its prompt.  
         self.shell = saga.utils.pty_shell.PTYShell ("ssh://user@remote.host.net/", contexts, self._logger)
@@ -108,12 +93,75 @@ class PTYShell (object) :
         self.shell.stage_to_file (src = pbs_job_script, 
                                   tgt = "/tmp/data.$$/job_1.pbs")
 
-        # check size of staged script
+        # check size of staged script (this is actually done on PTYShell level
+        # already, with no extra hop):
         ret, out, _ = self.shell.run_sync ("stat -c '%s' /tmp/data.$$/job_1.pbs" )
         if  ret != 0 :
             raise saga.NoSuccess ("failed to check size (%s)(%s)" % (ret, out))
 
         assert (len(pbs_job_script) == int(out))
+
+
+    Data Staging and Data Management:
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    The PTYShell class does not only support command execution, but also basic
+    data management: for SSH based shells, it will create a tunneled scp/sftp
+    connection for file staging.  Other data management operations (mkdir, size,
+    list, ...) are executed either as shell commands, or on the scp/sftp channel
+    (if possible on the data channel, to keep the shell pty free for concurrent
+    command execution).  Ssh tunneling is implemented via ssh.v2 'ControlMaster'
+    capabilities (see `ssh_config(5)`).
+    
+    For local shells, PTYShell will create an additional shell pty for data
+    management operations.  
+
+    Asynchronous Notifications:
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    A third pty process will be created for asynchronous notifications.  For
+    that purpose, the shell started on the first channel will create a named
+    pipe, at::
+
+      $HOME/.saga/adaptors/shell/async.$$
+
+    ``$$`` here represents the pid of the shell process.  It will also set the
+    environment variable ``SAGA_ASYNC_PIPE`` to point to that named pipe -- any
+    application running on the remote host can write event messages to that
+    pipe, which will be available on the local end (see below).  `PTYShell`
+    leaves it unspecified what format those messages have, but messages are
+    expected to be separated by newlines.
+    
+    An adaptor using `PTYShell` can subscribe for messages via::
+
+      self.pty_shell.subscribe (callback)
+
+    where callback is a Python callable.  PTYShell will listen on the event
+    channel *in a separate thread* and invoke that callback on any received
+    message, passing the message text (sans newline) to the callback.
+
+    An example usage: the command channel may run the following command line::
+
+      ( sh -c 'sleep 100 && echo "job $$ done" > $SAGA_ASYNC_PIPE" \
+                         || echo "job $$ fail" > $SAGA_ASYNC_PIPE" ) &
+
+    which will return immediately, and send a notification message at job
+    completion.
+
+    Note that writes to named pipes are not atomic.  From POSIX:
+
+    ``A write is atomic if the whole amount written in one operation is not
+    interleaved with data from any other process. This is useful when there are
+    multiple writers sending data to a single reader. Applications need to know
+    how large a write request can be expected to be performed atomically. This
+    maximum is called {PIPE_BUF}. This volume of IEEE Std 1003.1-2001 does not
+    say whether write requests for more than {PIPE_BUF} bytes are atomic, but
+    requires that writes of {PIPE_BUF} or fewer bytes shall be atomic.`
+
+    Thus the user is responsible for ensuring that either messages are smaller
+    than *PIPE_BUF* bytes on the remote system (usually at least 1024, on Linux
+    usually 4096), or to lock the pipe on larger writes.
+
 
     Known Problems:
     ^^^^^^^^^^^^^^^
