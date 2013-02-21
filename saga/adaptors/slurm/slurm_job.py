@@ -14,8 +14,6 @@ import string
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
-
-
 # --------------------------------------------------------------------
 # some private defs
 #
@@ -488,48 +486,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         else:
             return saga.job.UNKNOWN
 
-    def _job_get_state (self, id) :
-        """ get the job state from the wrapper shell """
-
-        # if we don't even have an ID, state is unknown
-        # TODO: VERIFY CORRECTNESS
-
-        if id==None:
-            return saga.job.UNKNOWN
-
-        rm, pid     = self._adaptor.parse_id (id)
-        
-        # ashleyz@login1:~$ squeue -h -o "%i %t" -u ashleyz
-        # 255333 CG
-
-        # grab nothing but ID and states
-        ret, out, _ = self.shell.run_sync('squeue -h -o "%%i %%t" -u %s' % \
-                                              self.rm.username)
-
-        state_found = False
-        
-        # no jobs active
-        print "---"
-        print out.strip().split("\n")
-        if out.strip().split("\n")==['']:
-            return saga.job.UNKNOWN
-
-        for line in out.strip().split("\n"):
-            print "---"
-            print line.split()
-            if int(line.split()[0]) == int(pid):
-                state_found = True
-                return self._slurm_to_saga_jobstate(line.split()[1])
-                 
-
-        if not state_found:
-            raise saga.NoSuccess._log (self._logger, 
-                                       "Couldn't find job state")
-        
-        raise saga.NoSuccess._log (self._logger,
-                                   "Internal SLURM adaptor error"
-                                   " in _job_get_state")
-
     def _job_get_exit_code (self, id) :
         """ get the job exit code from the wrapper shell """
         rm, pid     = self._adaptor.parse_id (id)
@@ -540,8 +496,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # dig out our exitcode
         for line in out.split("\n"):
             if "ExitCode" in line:
-                #print "! ", line
-                #print self.exit_code_re.search(line).group(0)
                 return self.exit_code_re.search(line).group(0)
         
         # couldn't get the exitcode -- maybe should change this to be
@@ -552,7 +506,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         return 0
 
     def _job_cancel (self, id):
-        print id
         rm, pid     = self._adaptor.parse_id (id)
         ret, out, _ = self.shell.run_sync("scancel %s" % pid)
         if ret == 0:
@@ -688,6 +641,54 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         
         return self.get_api ()
 
+    def _job_get_state (self, id) :
+        """ get the job state from the wrapper shell """
+
+        # if the state is NEW and we haven't sent out a run comment, keep
+        # it listed as NEW
+        if self._state == saga.job.NEW and not self._started:
+            return saga.job.NEW
+
+        # if we don't even have an ID, state is unknown
+        # TODO: VERIFY CORRECTNESS
+
+        if id==None:
+            return saga.job.UNKNOWN
+
+        # if the state is DONE, CANCELED or FAILED, it is considered
+        # final and we don't need to query the backend again
+        if self._state == saga.job.CANCELED or self._state == saga.job.FAILED \
+            or self._state == saga.job.DONE:
+            return self._state
+
+        rm, pid     = self._adaptor.parse_id (id)
+        
+        # grab nothing but ID and states
+        # output looks like:   
+        # 255333 CG
+        ret, out, _ = self.js.shell.run_sync('squeue -h -o "%%i %%t" -u %s' % \
+                                              self.js.rm.username)
+
+        state_found = False
+        
+        # no jobs active
+        if out.strip().split("\n")==['']:
+            return saga.job.UNKNOWN
+
+        for line in out.strip().split("\n"):
+            if int(line.split()[0]) == int(pid):
+                state_found = True
+                return self.js._slurm_to_saga_jobstate(line.split()[1])
+                 
+
+        if not state_found:
+            return saga.job.UNKNOWN
+        #    raise saga.NoSuccess._log (self._logger, 
+        #                               "Couldn't find job state")
+        
+        raise saga.NoSuccess._log (self._logger,
+                                   "Internal SLURM adaptor error"
+                                   " in _job_get_state")
 
     # ----------------------------------------------------------------
     #
@@ -695,8 +696,15 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
     def get_state(self):
         """ Implements saga.adaptors.cpi.job.Job.get_state()
         """
-        self._state = self.js._job_get_state (self._id)
+        self._state = self._job_get_state (self._id)
         return self._state
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_description (self):
+        return self.jd
+
   
 
   # # ----------------------------------------------------------------
@@ -708,7 +716,8 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         rm, pid    = self._adaptor.parse_id(self._id)
 
         while True:
-            state = self.js._job_get_state(self._id)
+            state = self._job_get_state(self._id)
+            self._logger.debug("wait() state for job id %s:%s"%(self._id, state))
             if state == saga.job.DONE or \
                state == saga.job.FAILED or \
                state == saga.job.CANCELED:
@@ -795,6 +804,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         """ Implements saga.adaptors.cpi.job.Job.run()
         """
         self._id = self.js._job_run (self.jd)
+        self._started = True
 
 
   # # ----------------------------------------------------------------

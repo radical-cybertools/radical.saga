@@ -31,8 +31,8 @@ def main(args):
         # create a job service for the local machine. both, 'fork' and 
         # 'local' schemes trigger the local job adaptor. 
         print "Creating Job Service!"
-      # js = saga.job.Service("slurm+ssh://stampede")
-        js = saga.job.Service("slurm+ssh://tg803521@login1.stampede.tacc.utexas.edu/")
+        js = saga.job.Service("slurm+ssh://stampede")
+        #js = saga.job.Service("slurm+ssh://tg803521@login1.stampede.tacc.utexas.edu/")
         
         print "Creating Job Description!"
         # describe our job
@@ -57,6 +57,9 @@ def main(args):
         # create the job (state: New)
         catjob = js.create_job(jd)
 
+        jd2 = catjob.get_description()
+        print jd2
+
         # check our job's id and state
         print "Job ID    : %s" % (catjob.id)
         print "Job State : %s" % (catjob.state)
@@ -74,8 +77,8 @@ def main(args):
             print " * %s" % job
 
         # wait for our job to complete
-        #print "\n...waiting for job...\n"
-        #catjob.wait()
+        print "\n...waiting for job...\n"
+        catjob.wait()
 
         print "Job State : %s" % catjob.state
         print "Exitcode  : %s" % catjob.exit_code
