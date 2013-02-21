@@ -97,7 +97,7 @@ class PTYProcess (object) :
         self.cache   = ""      # data cache
         self.clog    = ""      # log the data cache
         self.child   = None    # the process as created by subprocess.Popen
-        self.ptyio   = None    # the process' io channel, from pty.fork()
+        self.pty_io  = None    # the process' io channel, from pty.fork()
 
         self.initialize_hook = None
         self.finalize_hook   = None
@@ -258,6 +258,36 @@ class PTYProcess (object) :
 
     # --------------------------------------------------------------------
     #
+    def check_state (self) :
+        """
+        Check if the child process is still alive.  If so, return True,
+        otherwise collect it, declare as dead, and return False.
+        """
+        if not self.child :
+            # uh, nothing to check for
+            return False
+
+        try :
+            (pid, status) = os.waitpid (self.child, os.WNOHANG)
+
+            if 0 == status :
+                return True
+
+            if os.WIFSIGNALED (status) :
+                self.logger.info ("pty process died from signal %s" 
+                               % os.WTERMSIG (status))
+
+            if os.WIFEXITED (status) :
+                self.logger.info ("pty process exited with %s" 
+                               % os.WEXITSTATUS (status))
+
+        except OSError :
+            pass
+
+
+
+    # --------------------------------------------------------------------
+    #
     def read (self, size=_CHUNKSIZE, timeout=0, _force=False) :
         """ 
         read some data from the child.  By default, the method reads a full
@@ -311,6 +341,11 @@ class PTYProcess (object) :
                 # read until we have enough data, or hit timeout ceiling...
                 while True :
                 
+                    # ensure child lives.  FIXME: race condition of check,
+                    # select and read - child may die in between
+                    if not self.check_state () :
+                        raise se.IncorrectState ("pty process died")
+
                     # idle wait 'til the next data chunk arrives, or 'til _POLLDELAY
                     rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
 
@@ -401,6 +436,11 @@ class PTYProcess (object) :
                 # a newline, or until timeout
                 while True :
                 
+                    # ensure child lives.  FIXME: race condition of check,
+                    # select and read - child may die in between
+                    if not self.check_state () :
+                        raise se.IncorrectState ("pty process died")
+
                     # do an idle wait 'til the next data chunk arrives
                     rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
 
@@ -610,6 +650,11 @@ class PTYProcess (object) :
 
                 # attempt to write forever -- until we succeeed
                 while data :
+
+                    # ensure child lives.  FIXME: race condition of check,
+                    # select and read - child may die in between
+                    if not self.check_state () :
+                        raise se.IncorrectState ("pty process died")
 
                     # check if the pty pipe is ready for data
                     _, wlist, _ = select.select ([], [self.parent_in], [], _POLLDELAY)

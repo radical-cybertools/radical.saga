@@ -118,23 +118,8 @@ class PTYShell (object) :
     Known Problems:
     ^^^^^^^^^^^^^^^
 
-    It seems that for some reasons which I cannot fathom, the pty line swallows
-    a ^D now and then.  But ^D was used for file staging like this::
-    
-      self.run_async ("cat > %s.$$" % tgt)
-      self.pty_shell.write (src)
-      self.pty_shell.write ("\n\x04\nmv %s.$$ %s\n", (tgt, tgt))
-    
-    If the \x04 == ^D is gone, then the cat process will wait forever on input.
-    Instead of the construct above, we now use a HERE document::
-    
-      self.run_async ("cat > %s.$$ <<\"SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\"" % tgt)
-      self.pty_shell.write (src)
-      self.pty_shell.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\nmv %s.$$ %s\n" % (tgt, tgt))  
-    
-    which works fine.  Note that this does not fix the disappearing ^D -- the
-    pty classes don't use it anywhere, but applications of these classes might
-    still attempt to send it to the remote shell...
+    - If the ssh connection gets dropped on the remote end, the pty_process
+      remains active on MacOS -- it does not seem to collect the dying child.
 
     """
 
