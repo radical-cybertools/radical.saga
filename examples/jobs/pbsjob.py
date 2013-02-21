@@ -10,6 +10,7 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 import sys
+import time
 import saga
 
 
@@ -18,7 +19,7 @@ def main():
     try:
         # create a job service for the local machine. both, 'fork' and
         # 'local' schemes trigger the local job adaptor.
-        js = saga.job.Service("pbs+gsissh://gsissh.kraken.nics.tennessee.edu?queue=batch")
+        js = saga.job.Service("pbs+ssh://hotel.futuregrid.org")
 
         # describe our job
         jd = saga.job.Description()
@@ -51,6 +52,8 @@ def main():
 
         print "Job ID    : %s" % (sleepjob.id)
         print "Job State : %s" % (sleepjob.state)
+
+        time.sleep(4)
 
         print "\nListing active jobs: "
         for job in js.list():

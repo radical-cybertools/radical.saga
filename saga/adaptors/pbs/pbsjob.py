@@ -597,17 +597,23 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("%s -a -u `whoami` | grep `whoami`"\
+        ret, out, _ = self.shell.run_sync("%s -l | grep `whoami`"\
             % self._commands['qstat']['path'])
+
         if ret != 0 and len(out) > 0:
             message = "failed to list jobs via 'qstat': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         elif ret != 0 and len(out) == 0:
-            # qstat | grep `whoami` exits with 1 if the list is empty
+            # qstat | grep `` exits with 1 if the list is empty
             pass
         else:
-            jobid = "[%s]-[%s]" % (self.rm, out.split()[0])
-            ids.append(jobid)
+            for line in out.split("\n"):
+                # output looks like this:
+                # 112059.svc.uc.futuregrid testjob oweidner 0 Q batch
+                # 112061.svc.uc.futuregrid testjob oweidner 0 Q batch
+                if len(line.split()) > 1:
+                    jobid = "[%s]-[%s]" % (self.rm, line.split()[0])
+                    ids.append(jobid)
 
         return ids
 

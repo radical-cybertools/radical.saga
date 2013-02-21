@@ -67,7 +67,7 @@ def test_create_simple_job () :
 # ------------------------------------------------------------------------------
 #
 def test_list_jobs () :
-    """ find a submitted job in the list returned by list() """
+    """ Testing if a submitted job shows up in Service.list() """
     try:
         tc = sutc.TestConfig ()
 
@@ -84,8 +84,9 @@ def test_list_jobs () :
         j  = js.create_job (jd)
 
         # run job - now it has an id, and js must know it
-        j.run ()
-        assert j.id in js.list ()
+        j.run()
+        all_jobs = js.list()
+        assert j.id in all_jobs, "%s not in %s" % (j.id, all_jobs)
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
