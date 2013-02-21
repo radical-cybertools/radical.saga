@@ -125,7 +125,7 @@ setup_args = {
         "saga.adaptors.context",
         "saga.adaptors.local",
         "saga.adaptors.redis",
-        "saga.adaptors.ssh",
+        "saga.adaptors.shell",
         "saga.adaptors.irods",
         "saga.engine",
         "saga.utils",
