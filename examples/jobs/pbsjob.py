@@ -53,16 +53,14 @@ def main():
         print "Job ID    : %s" % (sleepjob.id)
         print "Job State : %s" % (sleepjob.state)
 
-        time.sleep(4)
-
         print "\nListing active jobs: "
         for job in js.list():
             print " * %s" % job
 
         # wait for our job to complete
         print "\n...waiting for job...\n"
-        sleepjob.wait(10)
-        sleepjob.cancel()
+        sleepjob.wait()
+        #sleepjob.cancel()
 
         print "Job State   : %s" % (sleepjob.state)
         print "Exitcode    : %s" % (sleepjob.exit_code)

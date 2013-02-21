@@ -284,8 +284,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # separately?
         #   cmd_state () { touch $DIR/purgeable; ... }
         # When should that be done?
-        self._logger.error("adaptor dying... %s" % self.njobs)
-        self._logger.trace()
+        #self._logger.error("adaptor dying... %s" % self.njobs)
+        #self._logger.trace()
 
         self.finalize(kill_shell=True)
 
@@ -298,10 +298,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         self.rm      = rm_url
         self.session = session
-        self.njobs   = 0
         self.ppn     = 0
         self.is_cray = False
         self.queue   = None
+        self.jobs    = dict()
 
         rm_scheme = rm_url.scheme
         pty_url   = deepcopy(rm_url)
@@ -413,7 +413,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                     else:
                         ppn_list[np] = 1
             self.ppn = max(ppn_list, key=ppn_list.get)
-            self._logger.debug("Found the following 'ppn' configurations: %s. Using %s as default ppn." 
+            self._logger.debug("Found the following 'ppn' configurations: %s. \
+    Using %s as default ppn." 
                 % (ppn_list, self.ppn))
 
     # ----------------------------------------------------------------
@@ -427,7 +428,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """ runs a job via qsub
         """
         if (self.queue is not None) and (jd.queue is not None):
-            self._logger.warning("Job service was instantiated explicitly with 'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." \
+            self._logger.warning("Job service was instantiated explicitly with \
+'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." \
                 % (self.queue, jd.queue, self.queue))
 
         # create a PBS job script from SAGA job description
@@ -447,12 +449,15 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             # stdout contains the job id
             job_id = "[%s]-[%s]" % (self.rm, out.strip().split('.')[0])
             self._logger.info("Submitted PBS job with id: %s" % job_id)
-            self.njobs += 1
+
+            # add job to internal list of jobs.
+            self.jobs[job_id] = saga.job.PENDING
+
             return job_id
 
     # ----------------------------------------------------------------
     #
-    def _job_get_info(self, id):
+    def _job_get_info(self, job_id, prev_state):
         """ get job attributes via qstat
         """
 
@@ -463,68 +468,83 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         start_time  = None
         end_time    = None
 
-        rm, pid = self._adaptor.parse_id(id)
+        rm, pid = self._adaptor.parse_id(job_id)
 
         ret, out, _ = self.shell.run_sync("%s -f1 %s | \
-            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" \
+            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|\
+(comp_time)'" \
             % (self._commands['qstat']['path'], pid))
 
         if ret != 0:
-            # something went wrong
-            message = "Error retrieving job info via 'qstat': %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            if ("Unknown Job Id" in out):
+                # Let's see if the previous job state was runnig or pending. in
+                # that case, the job is gone now, which can either mean DONE,
+                # or FAILED. the only thing we can do is set it to 'DONE'
+                if prev_state in [saga.job.RUNNING, saga.job.PENDING]:
+                    job_state = saga.job.DONE
+                    self._logger.warning("Previously running job has \
+disappeared. This probably means that the backend doesn't store information\
+about finished jobs. Setting state to 'DONE'.")
+                else:
+                    job_state = prev_state
+            else:
+                # something went wrong
+                message = "Error retrieving job info via 'qstat': %s" % out
+                log_error_and_raise(message, saga.NoSuccess, self._logger)
+        else:
+            # parse the egrep result. this should look something like this:
+            #     job_state = C
+            #     exec_host = i72/0
+            #     exit_status = 0
+            results = out.split('\n')
+            for result in results:
+                if len(result.split('=')) == 2:
+                    key, val = result.split('=')
+                    key = key.strip()  # strip() removes whitespaces at the
+                    val = val.strip()  # beginning and the end of the string
 
-        # parse the egrep result. this should look something like this:
-        #     job_state = C
-        #     exec_host = i72/0
-        #     exit_status = 0
-        results = out.split('\n')
-        for result in results:
-            if len(result.split('=')) == 2:
-                key, val = result.split('=')
-                key = key.strip()  # strip() removes whitespaces at the
-                val = val.strip()  # beginning and the end of the string
-
-                if key == 'job_state':
-                    job_state = _pbs_to_saga_jobstate(val)
-                elif key == 'exec_host':
-                    exec_hosts = val.split('+')  # format i73/7+i73/6+...
-                elif key == 'exit_status':
-                    exit_status = val
-                elif key == 'ctime':
-                    create_time = val
-                elif key == 'start_time':
-                    start_time = val
-                elif key == 'comp_time':
-                    end_time = val
+                    if key == 'job_state':
+                        job_state = _pbs_to_saga_jobstate(val)
+                    elif key == 'exec_host':
+                        exec_hosts = val.split('+')  # format i73/7+i73/6+...
+                    elif key == 'exit_status':
+                        exit_status = val
+                    elif key == 'ctime':
+                        create_time = val
+                    elif key == 'start_time':
+                        start_time = val
+                    elif key == 'comp_time':
+                        end_time = val
 
         return (job_state, exec_hosts, exit_status,
                 create_time, start_time, end_time)
 
     # ----------------------------------------------------------------
     #
-    def _job_get_exit_code(self, id):
+    def _job_get_exit_code(self, job_id):
         """ get the job's exit code
         """
         # _job_get_info returns (job_state, exec_hosts, exit_status,
         #                        create_time, start_time)
-        return self._job_get_info(id)[2]
+        return self._job_get_info(job_id=job_id, 
+            prev_state=self.jobs[job_id])[2]
 
     # ----------------------------------------------------------------
     #
-    def _job_get_execution_hosts(self, id):
+    def _job_get_execution_hosts(self, job_id):
         """ get the job's exit code
         """
         # _job_get_info returns (job_state, exec_hosts, exit_status,
         #                        create_time, start_time)
-        return self._job_get_info(id)[1]
+        return self._job_get_info(job_id=job_id, 
+            prev_state=self.jobs[job_id])[1]
 
     # ----------------------------------------------------------------
     #
-    def _job_cancel(self, id):
+    def _job_cancel(self, job_id):
         """ cancel the job via 'qdel'
         """
-        rm, pid = self._adaptor.parse_id(id)
+        rm, pid = self._adaptor.parse_id(job_id)
 
         ret, out, _ = self.shell.run_sync("%s %s\n" \
             % (self._commands['qdel']['path'], pid))
@@ -533,18 +553,23 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             message = "Error canceling job via 'qdel': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
+        # assume success 
+        self.jobs[job_id] = saga.job.CANCELED
+
+
     # ----------------------------------------------------------------
     #
-    def _job_wait(self, id, timeout):
+    def _job_wait(self, job_id, timeout):
         """ wait for the job to finish or fail
         """
 
         time_start = time.time()
         time_now   = time_start
-        rm, pid    = self._adaptor.parse_id(id)
+        rm, pid    = self._adaptor.parse_id(job_id)
 
         while True:
-            state = self._job_get_info(id)[0]
+            state = self._job_get_info(job_id=job_id,
+                prev_state=self.jobs[job_id])[0]
             if state == saga.job.DONE or \
                state == saga.job.FAILED or \
                state == saga.job.CANCELED:
@@ -703,7 +728,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
             return self._state
         else:
             try:
-                self._state = self.js._job_get_info(self._id)[0]
+                self._state = self.js._job_get_info(job_id=self._id, 
+                    prev_state=self.js.jobs[self._id])[0]
                 return self._state
             except Exception as e:
                 if self._id == None:
@@ -748,7 +774,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         if self._created is None:
             # _job_get_info returns (job_state, exec_hosts, exit_status,
             #                        create_time, start_time, end_time)
-            self._created = self.js._job_get_info(self._id)[3]
+            self._created = self.js._job_get_info(job_id=self._id, 
+                prev_state=self.js.jobs[self._id])[3]
         return self._created
 
     # ----------------------------------------------------------------
@@ -760,7 +787,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         if self._started is None:
             # _job_get_info returns (job_state, exec_hosts, exit_status,
             #                        create_time, start_time, end_time)
-            self._started = self.js._job_get_info(self._id)[4]
+            self._started = self.js._job_get_info(job_id=self._id, 
+                prev_state=self.js.jobs[self._id])[4]
         return self._started
 
     # ----------------------------------------------------------------
@@ -772,7 +800,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         if self._finished is None:
             # _job_get_info returns (job_state, exec_hosts, exit_status,
             #                        create_time, start_time, end_time)
-            self._finished = self.js._job_get_info(self._id)[5]
+            self._finished = self.js._job_get_info(job_id=self._id, 
+                prev_state=self.js.jobs[self._id])[5]
         return self._finished
 
     # ----------------------------------------------------------------
