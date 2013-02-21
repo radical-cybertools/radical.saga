@@ -445,7 +445,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
             # stdout contains the job id
-            job_id = "[%s]-[%s]" % (self.rm, out.strip())
+            job_id = "[%s]-[%s]" % (self.rm, out.strip().split('.')[0])
             self._logger.info("Submitted PBS job with id: %s" % job_id)
             self.njobs += 1
             return job_id
@@ -612,8 +612,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 # 112059.svc.uc.futuregrid testjob oweidner 0 Q batch
                 # 112061.svc.uc.futuregrid testjob oweidner 0 Q batch
                 if len(line.split()) > 1:
-                    jobid = "[%s]-[%s]" % (self.rm, line.split()[0])
-                    ids.append(jobid)
+                    jobid = "[%s]-[%s]" % (self.rm, line.split()[0].split('.')[0])
+                    ids.append(str(jobid))
 
         return ids
 
