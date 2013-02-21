@@ -1,6 +1,0 @@
-
-  - attributes interface does not yet support async calls
-  - attrib needs adaptor interactions
-
-  - cpi classes need __init__ to call down the chain to CPIBase
-
