@@ -98,7 +98,7 @@ def launch_tests(options, testdir):
             # configure the unit test framework
             config = nose.config.Config()
 
-            config.verbosity  = 10
+            config.verbosity  = int(os.getenv('NOSE_VERBOSE', 1))
             config.workingDir = testdir + '/' + test_suite
             config.stream     = sys.stderr
 
