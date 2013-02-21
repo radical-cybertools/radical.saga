@@ -13,7 +13,6 @@ import saga.utils.logger
 import saga.utils.timeout_gc
 import saga.exceptions as se
 
-
 # --------------------------------------------------------------------
 #
 _CHUNKSIZE = 1024  # default size of each read
