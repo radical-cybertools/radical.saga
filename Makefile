@@ -6,6 +6,9 @@ all: docs
 docs:
 	make -C docs html
 
+test:
+	nosetests tests.restapi --config=tests/nose.cfg
+
 pylint:
 	@for f in `find saga/ -name \*.py`; do \
 	  res=`pylint -r n -f text $$f 2>&1 | grep -e '^[FE]'` ;\
