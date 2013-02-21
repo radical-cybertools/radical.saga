@@ -83,7 +83,7 @@ with the test suites as shown.
 
 #-----------------------------------------------------------------------------
 #
-def launch_tests(options):
+def launch_tests(options, testdir):
 
     # test_cfgs will contain a list of all configuation files
     # that we will use for the tests
@@ -107,42 +107,42 @@ def launch_tests(options):
     cfg_filters = [".*"]
 
     # the TestConfig singleton is shared with all test suites as they run
-    tc = sutc.TestConfig ()
+    tc = sutc.TestConfig()
 
     # now cycle over the found test configs, configure the TestConfig accordingly,
     # and run all specified test_suites
-    for sfg_name in test_cfgs :
+    for sfg_name in test_cfgs:
 
         # only use this config if it matches the config filters.
         cfg_active = False
-        for cfg_filter in cfg_filters :
-            if  re.search (cfg_filter, sfg_name) :
+        for cfg_filter in cfg_filters:
+            if re.search(cfg_filter, sfg_name):
                 cfg_active = True
                 break
 
-        if  not cfg_active :
+        if not cfg_active:
             # this config file name did not match *any* of the given filters...
-            print "skipping %s" % (os.path.basename (sfg_name))
+            print "skipping %s" % (os.path.basename(sfg_name))
             continue
 
-        
-        # initialize the correct test_util singleton (i.e. with the correct configfile)
-        tc.read_config (sfg_name)
+        # initialize the correct test_util singleton
+        # (i.e. with the correct configfile)
+        tc.read_config(sfg_name)
 
         # run all test suites from the config
-        for test_suite in tc.test_suites :
+        for test_suite in tc.test_suites:
 
             # configure the unit test framework
-            config = nose.config.Config ()
-            
+            config = nose.config.Config()
+
             config.verbosity  = 1
-            config.workingDir = test_base + '/' + test_suite
+            config.workingDir = testdir + '/' + test_suite
             config.stream     = sys.stderr
-            
+
             # and run tests
             print "______________________________________________________________________"
             print "%s : %s" % (os.path.basename (sfg_name), test_suite)
-            result = nose.core.run (config=config)
+            result = nose.core.run(config=config)
             print "______________________________________________________________________"
 
 #-----------------------------------------------------------------------------
@@ -162,4 +162,5 @@ or a comma-separated list of individual config files")
         print "ERROR: You need to provide the -c/--config option."
         sys.exit(-1)
 
-    sys.exit(launch_tests(options=options))
+    testdir = "%s/unittests/" % os.path.dirname(os.path.realpath(__file__))
+    sys.exit(launch_tests(options=options, testdir=testdir))
