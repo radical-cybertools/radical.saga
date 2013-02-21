@@ -287,7 +287,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             self.tasks.delete (t)
 
 
-
     # ----------------------------------------------------------------
     #
     def run (self) :
@@ -346,6 +345,79 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # ----------------------------------------------------------------
     #
+    def get_states (self) :
+
+        buckets = self._get_buckets ()
+        threads = []  # threads running container ops
+        queues  = {}
+
+        # handle all tasks bound to containers
+        for c in buckets['bound'] :
+
+            # handle all methods -- all go to the same 'container_get_states' though)
+            tasks = []
+            for m in buckets['bound'][c] :
+                tasks += buckets['bound'][c][m]
+
+            threads.append (Thread.Run (c.container_get_states, tasks))
+
+        
+        # handle all tasks not bound to containers
+        for task in buckets['unbound'] :
+
+            threads.append (Thread.Run (task.get_state))
+            
+
+        # We still need to get the states from all threads.
+        # FIXME: order
+        states  = []
+
+        for thread in threads :
+            thread.join ()
+
+            if thread.get_state () == FAILED :
+                raise thread.get_exception ()
+
+            # FIXME: what about ordering tasks / states?
+            res = thread.get_result ()
+
+            if res != None :
+                states += res
+
+        return states
+
+
+    # ----------------------------------------------------------------
+    #
+    def cancel (self, timeout=-1) :
+
+        buckets = self._get_buckets ()
+        threads = []  # threads running container ops
+        queues  = {}
+
+        # handle all tasks bound to containers
+        for c in buckets['bound'] :
+
+            # handle all methods -- all go to the same 'container_cancel' though)
+            tasks = []
+            for m in buckets['bound'][c] :
+                tasks += buckets['bound'][c][m]
+
+            threads.append (Thread.Run (c.container_cancel, tasks, timeout))
+
+        
+        # handle all tasks not bound to containers
+        for task in buckets['unbound'] :
+
+            threads.append (Thread.Run (task.cancel, timeout))
+            
+
+        for thread in threads :
+            thread.join ()
+
+
+    # ----------------------------------------------------------------
+    #
     def wait (self, mode=ALL, timeout=-1) :
 
         if not mode in [ANY, ALL] :
@@ -397,7 +469,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
         # running (FIXME: consider sending a signal at least)
 
         timeout = 0.01 # seconds, heuristic :-/
-        done    = False
 
         for thread in threads :
             thread.join (timeout)
@@ -433,6 +504,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
+            # TODO: this is semantically not correct: timeout is applied
+            #       n times...
             c.container_wait (tasks, ALL, timeout)
             ret = tasks[0]
  
@@ -444,57 +517,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
         # all done - return random task (first from last container, or last
         # unbound task)
         return ret
-
-
-
-    # ----------------------------------------------------------------
-    #
-    def cancel (self, timeout) :
-
-        if not len (self.tasks) :
-            # nothing to do
-            return None
-
-
-        buckets = self._get_buckets ()
-        threads = []  # threads running container ops
-        queues  = {}
-
-
-        # handle all tasks bound to containers
-        for c in buckets['bound'] :
-
-            # handle all methods -- all go to the same 'container_cancel' though)
-            tasks = []
-            for m in buckets['bound'][c] :
-
-                tasks += buckets['bound'][c]
-
-            queue  = Queue.Queue ()
-            thread = Thread.Run (c.container_cancel, (queue, tasks))
-
-            threads.append (thread)
-            queues[thread] = queue
-
-
-        # handle all tasks not bound to containers
-        for task in buckets['unbound'] :
-
-            queue  = Queue.Queue ()
-            thread = Thread.Run (task.cancel, (queue, timeout))
-
-            threads.append (thread)
-            queues[thread] = queue
-            
-
-        # wait for all threads to finish
-        for thread in threads :
-            thread.join ()
-
-            if thread.get_state () == FAILED :
-                raise se.NoSuccess ("thread exception: %s\n%s" \
-                                 %  (str(thread.get_exception ()),
-                                     str(thread.get_traceback ())))
 
 
     # ----------------------------------------------------------------
@@ -509,52 +531,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
     def get_tasks (self) :
 
         return self.tasks
-
-
-    # ----------------------------------------------------------------
-    #
-    def get_states (self) :
-
-        if not len (self.tasks) :
-            # nothing to do
-            return None
-
-
-        buckets = self._get_buckets ()
-        threads = []  # threads running container ops
-        queues  = {}
-
-
-        for container in buckets['bound'] :
-
-            tasks  = buckets['bound'][container]
-            threads.append (Thread.Run (container.container_get_states, tasks))
-
-
-        for task in buckets['unbound'] :
-
-            threads.append (Thread.Run (task.get_states))
-            
-
-        # wait for all threads to finish
-        for thread in threads :
-            thread.join ()
-
-            if thread.get_state () == FAILED :
-                raise se.NoSuccess ("thread exception: %s\n%s" \
-                                 % (str(thread.get_exception ()),
-                                    str(thread.get_traceback ())))
-
-
-        states = []
-        for queue in queues :
-            result = queue.get ()
-            
-            # FIXME: check if this was an exception
-            states.append (result)
-
-        return states
-
 
 
     # ----------------------------------------------------------------

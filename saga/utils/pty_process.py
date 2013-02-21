@@ -11,13 +11,17 @@ import threading
 
 import saga.utils.logger
 import saga.utils.timeout_gc
-import saga.exceptions      as se
-
+import saga.exceptions as se
 
 # --------------------------------------------------------------------
 #
+<<<<<<< HEAD
 _CHUNKSIZE = 1024   # default size of each read
 _POLLDELAY = 0.01   # seconds in between read attempts
+=======
+_CHUNKSIZE = 1024  # default size of each read
+_POLLDELAY = 0.01  # seconds in between read attempts
+>>>>>>> 66175fc87a37fe1f4de2390b0c6c337c16a72314
 
 
 # --------------------------------------------------------------------
@@ -285,14 +289,7 @@ class PTYProcess (object) :
             # short, and child.poll is slow, we will nevertheless attempt at least
             # one read...
             start = time.time ()
-
-            ret     = ""
-            sel_to  = timeout
-
-            # the select timeout cannot be negative -- 0 is non-blocking... 
-            if  sel_to < 0 : 
-                sel_to = 0
-
+            ret   = ""
 
             # first, lets see if we still have data in the cache we can return
             if len (self.cache) :
@@ -319,8 +316,8 @@ class PTYProcess (object) :
                 # read until we have enough data, or hit timeout ceiling...
                 while True :
                 
-                    # idle wait 'til the next data chunk arrives, or 'til sel_to
-                    rlist, _, _ = select.select ([self.parent_out], [], [], sel_to)
+                    # idle wait 'til the next data chunk arrives, or 'til _POLLDELAY
+                    rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
 
                     # got some data? 
                     for f in rlist:
@@ -410,11 +407,7 @@ class PTYProcess (object) :
                 while True :
                 
                     # do an idle wait 'til the next data chunk arrives
-                    rlist = []
-                    if timeout < 0 :
-                        rlist, _, _ = select.select ([self.parent_out], [], [])
-                    else :
-                        rlist, _, _ = select.select ([self.parent_out], [], [], timeout)
+                    rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
 
                     # got some data - read them into the cache
                     for f in rlist:

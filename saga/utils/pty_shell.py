@@ -6,13 +6,34 @@ import saga.utils.pty_process
 import saga.utils.logger
 
 _PTY_TIMEOUT = 2.0
-_SCHEMAS     = ['ssh', 'gsissh', 'fork']
+_SCHEMAS     = ['ssh', 'gsissh', 'fork', 'shell']
 
 IGNORE   = 0    # discard stdout / stderr
 MERGED   = 1    # merge stdout and stderr
 SEPARATE = 2    # fetch stdout and stderr individually (one more hop)
 STDOUT   = 3    # fetch stdout only, discard stderr
 STDERR   = 4    # fetch stderr only, discard stdout
+
+# ssh options:
+#   -e none         : no escape character
+#   -M              : master mode for connection sharing
+#   -S control_path : slave mode for connection sharing
+#   -t              : force pty allocation
+#   -x              : disable x11 forwarding
+#   
+#   ServerAliveInterval
+#   CheckHostIP no
+#   ConnectTimeout
+#   ControlMaster  yes | no | no ...
+#   ControlPath    $BASE/ssh_control_%n_%p.$$.sock
+#                  %r (remote id)? would need inspection
+#   ControlPersist 10   : close master after 10 seconds idle
+#   EscapeChar     none : transparent for binary data
+#   TCPKeepAlive   yes  : detect connection failure
+#
+#   
+#
+
 
 # --------------------------------------------------------------------
 #
@@ -51,6 +72,25 @@ class PTYShell (object) :
     careful when setting other prompts -- see :func:`set_prompt` for more
     details.
 
+
+    Data Staging and Data Management:
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    The PTYShell class does not only support commnd execution, but also basic
+    data management: for SSH based shells, it will create a tunneled scp/sftp
+    connection for file staging.  Other data management operations (mkdir, size,
+    list, ...) are executed either as shell commands, or on the scp/sftp channel
+    (if possible on the data channel, to keep the shell pty free for concurrent
+    command execution).  Ssh tunneling is implemented via ssh.v2 'ControlMaster'
+    capabilities (see `ssh_config(5)`).
+    
+    For local shells, PTYShell will create an additional shell pty for data
+    management operations.  
+
+    Future versions of this class may support additional command channels for
+    more efficient asynchronous operations.
+
+
     Usage Example::
 
         # start the shell, find its prompt.  
@@ -82,15 +122,15 @@ class PTYShell (object) :
     a ^D now and then.  But ^D was used for file staging like this::
     
       self.run_async ("cat > %s.$$" % tgt)
-      self.pty.write (src)
-      self.pty.write ("\n\x04\nmv %s.$$ %s\n", (tgt, tgt))
+      self.pty_shell.write (src)
+      self.pty_shell.write ("\n\x04\nmv %s.$$ %s\n", (tgt, tgt))
     
     If the \x04 == ^D is gone, then the cat process will wait forever on input.
     Instead of the construct above, we now use a HERE document::
     
       self.run_async ("cat > %s.$$ <<\"SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\"" % tgt)
-      self.pty.write (src)
-      self.pty.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\nmv %s.$$ %s\n" % (tgt, tgt))  
+      self.pty_shell.write (src)
+      self.pty_shell.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\nmv %s.$$ %s\n" % (tgt, tgt))  
     
     which works fine.  Note that this does not fix the disappearing ^D -- the
     pty classes don't use it anywhere, but applications of these classes might
@@ -115,36 +155,51 @@ class PTYShell (object) :
             self.logger = saga.utils.logger.getLogger ('PTYShell')
 
         schema  = self.url.schema.lower ()
-        self.sh_type = ""
-        self.sh_exe  = ""
-        self.sh_user = ""
-        self.sh_pass = ""
+        self.shell_type = ""
+
+        self.shell_exe  = ""
+        self.shell_user = ""
+        self.shell_pass = ""
+        self.shell_host = ""
+
+        self.data_exe   = ""
+        self.data_user  = ""
+        self.data_pass  = ""
+        self.data_host  = ""
+
+        # on demand, we open a second channel for scp
+        self.pty_shell = None
+        self.pty_data  = None
 
         # find out what type of shell we have to deal with
         if  schema   == "ssh" :
-            self.sh_type  =  "ssh"
-            self.sh_exe   =  saga.utils.which.which ("ssh")
+            self.shell_type  =  "ssh"
+            self.shell_exe   =  saga.utils.which.which ("ssh")
+            self.data_exe    =  saga.utils.which.which ("scp")
 
         elif schema  == "gsissh" :
-            self.sh_type  =  "ssh"
-            self.sh_exe   =  saga.utils.which.which ("gsissh")
+            self.shell_type  =  "ssh"
+            self.shell_exe   =  saga.utils.which.which ("gsissh")
+            self.data_exe    =  saga.utils.which.which ("gsiscp")
 
-        elif schema  == "fork" :
-
-            self.sh_type  =  "sh"
+        elif schema  == "fork"  or \
+             schema  == "shell" :
+            self.shell_type  =  "sh"
             if  "SHELL" in os.environ :
-                self.sh_exe =  saga.utils.which.which (os.environ["SHELL"])
+                self.shell_exe =  saga.utils.which.which (os.environ["SHELL"])
             else :
-                self.sh_exe =  saga.utils.which.which ("sh")
+                self.shell_exe =  saga.utils.which.which ("sh")
+
+            self.data_exe = self.shell_exe
+
         else :
             raise saga.BadParameter._log (self.logger, \
             	  "PTYShell utility can only handle %s schema URLs, not %s" \
                   % (_SCHEMAS, schema))
 
 
-
         # make sure we have something to run
-        if not self.sh_exe :
+        if not self.shell_exe :
             raise saga.BadParameter._log (self.logger, \
             	  "adaptor cannot handle %s://, no shell exe found" % schema)
 
@@ -155,10 +210,10 @@ class PTYShell (object) :
         # and elsewhere.  Also, we have to make sure that the shell is an
         # interactive login shell, so that it interprets the users startup
         # files, and reacts on commands.
-        if  self.sh_type == "ssh" :
+        if  self.shell_type == "ssh" :
 
-            self.sh_env  =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
-            self.sh_args =  "-t "                       # force pty
+            self.shell_env  =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
+            self.shell_args =  "-t "                       # force pty
 
             for context in self.contexts :
 
@@ -166,54 +221,66 @@ class PTYShell (object) :
                     # ssh can handle user_id and user_key of ssh contexts
                     if  schema == "ssh" :
                         if  context.attribute_exists ("user_id") :
-                            self.sh_user  = context.user_id
+                            self.shell_user  = context.user_id
                         if  context.attribute_exists ("user_key") :
-                            self.sh_args += "-i %s " % context.user_key
+                            self.shell_args += "-i %s " % context.user_key
 
                 if  context.type.lower () == "userpass" :
                     # FIXME: ssh should also be able to handle UserPass contexts
                     if  schema == "ssh" :
                         if  context.attribute_exists ("user_id") :
-                            self.sh_user = context.user_id
+                            self.shell_user = context.user_id
                         if  context.attribute_exists ("user_pass") :
-                            self.sh_pass = context.user_pass
+                            self.shell_pass = context.user_pass
 
                 if  context.type.lower () == "gsissh" :
                     # gsissh can handle user_proxy of X509 contexts
                     # FIXME: also use cert_dir etc.
                     if  context.attribute_exists ("user_proxy") :
                         if  schema == "gsissh" :
-                            self.sh_env = "X509_PROXY='%s' " % context.user_proxy
+                            self.shell_env = "X509_PROXY='%s' " % context.user_proxy
 
             # all ssh based shells allow for user_id from contexts -- but the
             # username given in the URL takes precedence
             if self.url.username :
-                self.sh_user = self.url.username
+                self.shell_user = self.url.username
 
-            if self.sh_user :
-                self.sh_args += "-l %s " % self.sh_user
+            if self.shell_user :
+                self.shell_args += "-l %s " % self.shell_user
+
+
+            self.data_env  = self.shell_env
+            self.data_args = self.shell_args
+            self.data_host = self.shell_host
 
             # build the ssh command line
-            self.sh_cmd  =  "%s %s %s %s" % (self.sh_env, self.sh_exe, self.sh_args, self.url.host)
+            self.shell_cmd = "%s %s %s %s" % (self.shell_env, 
+                                              self.shell_exe,
+                                              self.shell_args, 
+                                              self.url.host)
+            self.data_cmd  = "%s %s %s %s" % (self.shell_env, 
+                                              self.data_exe,
+                                              self.shell_args, 
+                                              self.url.host)
 
         # a local shell
-        elif self.sh_type == "sh" :
+        elif self.shell_type == "sh" :
             # Make sure we have an interactive login shell w/o ansi escapes.
             # Note that we redirect the shell's stderr to stdout -- pty-process
             # does not expose stderr separately...
-            self.sh_args =  "-l -i"
-            self.sh_env  =  "/usr/bin/env TERM=vt100"
-            self.sh_cmd  =  "%s %s %s" % (self.sh_env, self.sh_exe, self.sh_args)
-
-
+            self.shell_args =  "-l -i"
+            self.shell_env  =  "/usr/bin/env TERM=vt100"
+            self.shell_cmd  =  "%s %s %s" % (self.shell_env, 
+                                             self.shell_exe,
+                                             self.shell_args)
 
         # we got the shell command - now run it!
-        self.logger.info ("job service opens pty for '%s'" % self.sh_cmd)
-        self.pty = saga.utils.pty_process.PTYProcess (self.sh_cmd, 
-                                                      logger=self.logger)
+        self.logger.info ("job service opens pty for '%s'" % self.shell_cmd)
+        self.pty_shell = saga.utils.pty_process.PTYProcess (self.shell_cmd, 
+                                                            logger=self.logger)
 
-        self.pty.set_initialize_hook (self.initialize)
-        self.pty.set_finalize_hook   (self.finalize)
+        self.pty_shell.set_initialize_hook (self.initialize)
+        self.pty_shell.set_finalize_hook   (self.finalize)
 
         self.initialize ()
 
@@ -246,7 +313,7 @@ class PTYShell (object) :
         startup prompts and messages.
         """
 
-        self.prompt    = "^(.*[\$#>])\s*$" # a line ending with # $ >
+        self.prompt    = "^(.*[\$#>])\s*$" # greedy, look for line ending with # $ >
         self.prompt_re = re.compile (self.prompt, re.DOTALL)
 
         prompt_patterns = ["password\s*:\s*$",            # password prompt
@@ -255,7 +322,7 @@ class PTYShell (object) :
 
         # self.prompt is all we need for local shell, so we could do:
         #
-        # if  self.sh_type == 'sh' :
+        # if  self.shell_type == 'sh' :
         #     prompt_patterns = [self.prompt] 
         #
         # but we don't and keep the other pattern around so that the switch in
@@ -263,7 +330,7 @@ class PTYShell (object) :
 
 
         # find a prompt
-        n, match = self.pty.find (prompt_patterns, _PTY_TIMEOUT)
+        n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
 
         # this loop will run until we finally find the self.prompt.  At that
         # point, we'll try to set a different prompt, and when we found that,
@@ -273,23 +340,23 @@ class PTYShell (object) :
 
             if n == None :
                 # we found none of the prompts, yet -- try again 
-                n, match = self.pty.find (prompt_patterns, _PTY_TIMEOUT)
+                n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
 
 
             if n == 0 :
                 self.logger.debug ("got password prompt")
-                if not self.sh_pass :
+                if not self.shell_pass :
                     raise saga.NoSuccess ("prompted for unknown password (%s)" \
                                        % match)
 
-                self.pty.write ("%s\n" % self.sh_pass)
-                n, match = self.pty.find (prompt_patterns, _PTY_TIMEOUT)
+                self.pty_shell.write ("%s\n" % self.shell_pass)
+                n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
 
 
             elif n == 1 :
                 self.logger.debug ("got hostkey prompt")
-                self.pty.write ("yes\n")
-                n, match = self.pty.find (prompt_patterns, _PTY_TIMEOUT)
+                self.pty_shell.write ("yes\n")
+                n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
 
 
             elif n == 2 :
@@ -310,6 +377,16 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
+    def initialize_scp (self) :
+
+        if self.scp :
+            return
+
+
+
+
+    # ----------------------------------------------------------------
+    #
     def finalize (self, kill_pty = False) :
 
         try :
@@ -323,8 +400,8 @@ class PTYShell (object) :
 
         try :
             if  kill_pty :
-                if  self.pty :
-                    self.pty.finalize ()
+                if  self.pty_shell :
+                    self.pty_shell.finalize ()
 
 
         except Exception as e :
@@ -348,7 +425,7 @@ class PTYShell (object) :
         match = None
 
         while not match :
-            _, match = self.pty.find    ([self.prompt], _PTY_TIMEOUT)
+            _, match = self.pty_shell.find ([self.prompt], _PTY_TIMEOUT)
 
         ret, txt = self._eval_prompt (match)
 
@@ -394,18 +471,22 @@ class PTYShell (object) :
           PROMPT-0->
 
         and thus swallow the ls output...
+
+        Note that the string match *before* te prompt regex is non-gready -- if
+        the output contains multiple occurrences of the prompt, only the match
+        up to the first occurence is returned.
         """
 
         old_prompt     = self.prompt
         self.prompt    = prompt
-        self.prompt_re = re.compile ("^(.*)%s\s*$" % self.prompt, re.DOTALL)
+        self.prompt_re = re.compile ("^(.*?)%s\s*$" % self.prompt, re.DOTALL)
 
         try :
-            self.pty.write ("\n")
+            self.pty_shell.write ("\n")
 
             # FIXME: how do we know that _PTY_TIMOUT suffices?  In particular if
             # we actually need to flush...
-            _, match  = self.pty.find ([self.prompt], _PTY_TIMEOUT)
+            _, match  = self.pty_shell.find ([self.prompt], _PTY_TIMEOUT)
 
             if not match :
                 self.prompt = old_prompt
@@ -478,9 +559,6 @@ class PTYShell (object) :
             self.set_prompt (new_prompt)
 
         return (ret, txt)
-
-
-
 
 
 
@@ -560,7 +638,7 @@ class PTYShell (object) :
             redir  =  ""
 
         self.logger.debug ('run_sync: %s%s'   % (command, redir))
-        self.pty.write    (          "%s%s\n" % (command, redir))
+        self.pty_shell.write    (          "%s%s\n" % (command, redir))
 
 
         # If given, switch to new prompt pattern right now...
@@ -569,7 +647,7 @@ class PTYShell (object) :
             prompt = new_prompt
 
         # command has been started - now find prompt again.  
-        _, match = self.pty.find ([prompt], timeout=-1.0)  # blocks
+        _, match = self.pty_shell.find ([prompt], timeout=-1.0)  # blocks
 
         if not match :
             # not find prompt after blocking?  BAD!  Restart the shell
@@ -591,8 +669,8 @@ class PTYShell (object) :
         if  iomode == SEPARATE :
             stdout =  txt
 
-            self.pty.write ("cat %s\n" % _err)
-            _, match = self.pty.find ([self.prompt], timeout=-1.0)  # blocks
+            self.pty_shell.write ("cat %s\n" % _err)
+            _, match = self.pty_shell.find ([self.prompt], timeout=-1.0)  # blocks
 
             if not match :
                 # not find prompt after blocking?  BAD!  Restart the shell
@@ -638,7 +716,7 @@ class PTYShell (object) :
         command = command.strip ()
 
         self.logger.debug ('run_async: %s'   % command)
-        self.pty.write    (           "%s\n" % command)
+        self.pty_shell.write    (           "%s\n" % command)
 
         return
 
@@ -661,14 +739,44 @@ class PTYShell (object) :
         See also :func:`stage_from_file`.
         """
 
-        self.run_async ("cat > %s.$$ <<\"SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\"" % tgt)
-        self.pty.write (src)
-        self.pty.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\nmv %s.$$ %s\n" % (tgt, tgt))  
+        size_src = len (src)
 
-        # we send two commands at once (cat, mv), so need to find two prompts
-        ret, txt = self.find_prompt ()
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to stage (cat) string to file (%s)(%s)" % (ret, txt))
+        while True :
+
+            ret, out, _ = self.run_sync ("wc -c %s.$$ | cut -f 1 -d ' '" % tgt)
+
+            if  ret == 0 :
+                size_tgt = out.strip ()
+
+                if str(size_src) == str(size_tgt) :
+                    break
+                else :
+                    # print "try again (%s)(%s)!" % (size_src, size_tgt)
+                    pass
+
+
+            
+            src_hex = ""
+            for i in [hex(ord(x)) for x in src] :
+                h = i.replace ('0x', '')
+                if len(h) == 1 : src_hex += '0'
+                src_hex += h
+
+            self.pty_shell.write ("""\
+            ( sed -e 's/\(..\)/\\1\\n/g' | 
+              while read A; do
+               if ! test -z "$A"; then printf "\\x$A"; fi
+              done ) > %s.$$ <<SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n""" % tgt)
+            self.pty_shell.write (src_hex)
+            self.pty_shell.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n")
+
+            # we send two commands at once (cat, mv), so need to find two prompts
+            ret, txt = self.find_prompt ()
+            if  ret != 0 :
+                raise saga.NoSuccess ("failed to stage (cat) string to file (%s)(%s)" % (ret, txt))
+
+
+        self.pty_shell.write ("mv %s.$$ %s\n" % (tgt, tgt))  
 
         ret, txt = self.find_prompt ()
         if  ret != 0 :
