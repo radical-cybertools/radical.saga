@@ -242,7 +242,7 @@ cmd_run () {
 
   while true
   do
-    grep RUNNING "$DIR/state" && break
+    grep "RUNNING" "$DIR/state" && break
     sleep 0  # sleep 0 will wait for just some millisecs
   done
 
@@ -352,7 +352,7 @@ cmd_result () {
   DIR="$BASE/$1"
   state=`grep -e ' $' "$DIR/state" | tail -n 1 | tr -d ' '`
 
-  if test "$state" != "DONE " -a "$state" != "FAILED " -a "$state" != "CANCELED "
+  if test "$state" != "DONE" -a "$state" != "FAILED" -a "$state" != "CANCELED"
   then 
     ERROR="job $1 in incorrect state ($state != DONE|FAILED|CANCELED)"
     return
