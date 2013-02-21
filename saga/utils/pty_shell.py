@@ -1,6 +1,7 @@
 
 import re
 import os
+import sys
 
 import saga.utils.pty_process
 import saga.utils.logger
@@ -740,20 +741,25 @@ class PTYShell (object) :
                     pass
 
 
-            
-            src_hex = ""
-            for i in [hex(ord(x)) for x in src] :
-                h = i.replace ('0x', '')
-                if len(h) == 1 : src_hex += '0'
-                src_hex += h
+            if sys.platform == 'darwin' :
+                self.pty_shell.write ("cat > %s.$$ <<'SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT'\n" % tgt)
+                self.pty_shell.write (src)
+                self.pty_shell.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n")
 
-            self.pty_shell.write ("""\
-            ( sed -e 's/\(..\)/\\1\\n/g' | 
-              while read A; do
-               if ! test -z "$A"; then printf "\\x$A"; fi
-              done ) > %s.$$ <<SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n""" % tgt)
-            self.pty_shell.write (src_hex)
-            self.pty_shell.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n")
+            else :
+                src_hex = ""
+                for i in [hex(ord(x)) for x in src] :
+                    h = i.replace ('0x', '')
+                    if len(h) == 1 : src_hex += '0'
+                    src_hex += h
+                
+                self.pty_shell.write ("""\
+                ( sed -e 's/\(..\)/\\1\\n/g' | 
+                  while read A; do
+                   if ! test -z "$A"; then printf "\\x$A"; fi
+                  done ) > %s.$$ <<SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n""" % tgt)
+                self.pty_shell.write (src_hex)
+                self.pty_shell.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n")
 
             # we send two commands at once (cat, mv), so need to find two prompts
             ret, txt = self.find_prompt ()
