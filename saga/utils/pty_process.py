@@ -15,14 +15,9 @@ import saga.exceptions as se
 
 # --------------------------------------------------------------------
 #
-<<<<<<< HEAD
+
 _CHUNKSIZE = 1024   # default size of each read
 _POLLDELAY = 0.01   # seconds in between read attempts
-=======
-_CHUNKSIZE = 1024  # default size of each read
-_POLLDELAY = 0.01  # seconds in between read attempts
->>>>>>> 66175fc87a37fe1f4de2390b0c6c337c16a72314
-
 
 # --------------------------------------------------------------------
 #
