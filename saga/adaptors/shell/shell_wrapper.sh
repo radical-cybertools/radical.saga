@@ -13,7 +13,7 @@ ERROR=""
 RETVAL=""
 
 # this is where this 'daemon' keeps state for all started jobs
-BASE=$HOME/.saga/adaptors/ssh_job/
+BASE=$HOME/.saga/adaptors/shell_job/
 
 # this process will terminate when idle for longer than TIMEOUT seconds
 TIMEOUT=30

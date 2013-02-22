@@ -4,7 +4,6 @@ __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
 
-# import cmdlinewrapper
 # import logger
 # import threads
 # import config

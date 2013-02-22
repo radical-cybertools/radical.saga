@@ -126,12 +126,11 @@ setup_args = {
         "saga.adaptors.local",
         "saga.adaptors.pbs",
         "saga.adaptors.redis",
-        "saga.adaptors.ssh",
+        "saga.adaptors.shell",
         "saga.adaptors.irods",
         "saga.engine",
         "saga.utils",
         "saga.utils.contrib",
-        "saga.utils.cmdlinewrapper",
         "saga.utils.logger",
         "saga.utils.config",
         "saga.utils.job"
