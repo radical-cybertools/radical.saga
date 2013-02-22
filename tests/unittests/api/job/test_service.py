@@ -49,12 +49,16 @@ def test_create_simple_job () :
         js = saga.job.Service (tc.js_url, tc.session)
         jd = saga.job.Description ()
         jd.executable = '/bin/true'
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
-        j  = js.create_job (jd)
+        j = js.create_job(jd)
         assert j.state == saga.job.NEW
 
     except saga.NotImplemented as ni:
@@ -76,12 +80,16 @@ def test_list_jobs () :
         jd = saga.job.Description ()
         jd.executable = '/bin/sleep'
         jd.arguments  = ['10']
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
-        j  = js.create_job (jd)
+        j = js.create_job(jd)
 
         # run job - now it has an id, and js must know it
         j.run()
@@ -126,16 +134,20 @@ def test_get_job () :
         jd = saga.job.Description ()
         jd.executable = '/bin/sleep'
         jd.arguments  = ['10']
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
-        j  = js.create_job (jd)
+        j = js.create_job(jd)
 
         # run job - now it has an id, and js must be able to retrieve it by id
-        j.run ()
-        j_clone = js.get_job (j.id)
+        j.run()
+        j_clone = js.get_job(j.id)
         assert j.id in j_clone.id
 
     except saga.NotImplemented as ni:
