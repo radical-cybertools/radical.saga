@@ -467,6 +467,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         create_time = None
         start_time  = None
         end_time    = None
+        job_is_gone = False  # we set this flag if the job is not known anymore
 
         rm, pid = self._adaptor.parse_id(job_id)
 
@@ -482,11 +483,13 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 # or FAILED. the only thing we can do is set it to 'DONE'
                 if prev_state in [saga.job.RUNNING, saga.job.PENDING]:
                     job_state = saga.job.DONE
+                    job_is_gone = True
                     self._logger.warning("Previously running job has \
 disappeared. This probably means that the backend doesn't store information\
 about finished jobs. Setting state to 'DONE'.")
                 else:
                     job_state = prev_state
+                    job_is_gone = True
             else:
                 # something went wrong
                 message = "Error retrieving job info via 'qstat': %s" % out
@@ -517,7 +520,7 @@ about finished jobs. Setting state to 'DONE'.")
                         end_time = val
 
         return (job_state, exec_hosts, exit_status,
-                create_time, start_time, end_time)
+                create_time, start_time, end_time, job_is_gone)
 
     # ----------------------------------------------------------------
     #
