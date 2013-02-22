@@ -323,7 +323,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         if jd.attribute_exists ("environment") :
             for e in jd.environment :
-                env += "export %s=%s; "  %  (e, jd.environment[e])
+                env += "export %s=%s;"  %  (e, jd.environment[e])
+            env=env[:-1] # trim off last ;
 
         if jd.attribute_exists ("spmd_variation"):
             spmd_variation = jd.spmd_variation
@@ -390,7 +391,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if wall_time_limit:
             hours = wall_time_limit / 60
             minutes = wall_time_limit % 60
-            slurm_script += "#SBATCH -t %s:%s:00\n" % (hours, minutes)
+            slurm_script += "#SBATCH -t %s:%s:00\n" % (str(hours).zfill(2), str(minutes).zfill(2))
 
         if queue:
             slurm_script += "#SBATCH -p %s\n" % queue
