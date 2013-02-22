@@ -29,7 +29,7 @@ def main():
         jd.queue       = 'batch'
         jd.name        = 'testjob'
         jd.project     = 'TG-MCB090174'
-        jd.environment = {'RUNTIME': '60'}
+        jd.environment = {'RUNTIME': '10'}
         jd.wall_time_limit =   2 # minutes
         #jd.total_cpu_count = 12
         jd.working_directory = "/tmp/"

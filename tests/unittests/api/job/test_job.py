@@ -29,8 +29,8 @@ def test_job_service_create():
             jd.queue = tc.job_queue
 
         j1 = js.create_job(jd)
-        assert j1.state == j1.get_state()
-        assert j1.state == saga.job.NEW
+        assert j1.state == j1.get_state(), "%s != %s" % (j1.state, j1.get_state())
+        assert j1.state == saga.job.NEW, "%s != %s" % (j1.state, saga.job.NEW)
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
