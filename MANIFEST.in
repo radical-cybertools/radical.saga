@@ -25,11 +25,9 @@ include saga/adaptors/cpi/replica/*.py
 include saga/adaptors/cpi/advert/*.py
 include saga/adaptors/context/*.py
 include saga/adaptors/local/*.py
-include saga/adaptors/pbs/*.py
-include saga/adaptors/redis/*.py
 include saga/adaptors/shell/*.py
 include saga/adaptors/shell/*.sh
-include saga/adaptors/irods/*.py
+include saga/adaptors/pbs/*.py
 
 include MANIFEST.in README.md LICENSE.md CHANGES.md
 
