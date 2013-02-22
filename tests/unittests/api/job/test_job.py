@@ -19,10 +19,14 @@ def test_job_service_create():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
         j1 = js.create_job(jd)
         assert j1.state == j1.get_state()
@@ -47,10 +51,14 @@ def test_job_run():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
         j1 = js.create_job(jd)
 
@@ -79,10 +87,14 @@ def test_job_suspend_resume():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
         j1 = js.create_job(jd)
         j1.run()
@@ -116,10 +128,14 @@ def test_job_cancel():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
         j1 = js.create_job(jd)
 
@@ -146,10 +162,14 @@ def test_job_wait():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
         j1 = js.create_job(jd)
 
@@ -176,10 +196,14 @@ def test_job_states_OLD():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['3']
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
         j3 = js.run_job ("/bin/sleep 3 ; /bin/true")
         assert j3.state == saga.job.RUNNING
