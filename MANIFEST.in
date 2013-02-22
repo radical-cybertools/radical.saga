@@ -15,7 +15,6 @@ include saga/utils/job/*.py
 include saga/utils/config/*.py
 include saga/utils/contrib/*.py
 include saga/utils/logger/*.py
-include saga/utils/cmdlinewrapper/*.py
 
 include saga/adaptors/*.py
 include saga/adaptors/cpi/*.py
@@ -26,10 +25,8 @@ include saga/adaptors/cpi/replica/*.py
 include saga/adaptors/cpi/advert/*.py
 include saga/adaptors/context/*.py
 include saga/adaptors/local/*.py
-include saga/adaptors/redis/*.py
-include saga/adaptors/ssh/*.py
-include saga/adaptors/ssh/*.sh
-include saga/adaptors/irods/*.py
+include saga/adaptors/shell/*.py
+include saga/adaptors/shell/*.sh
 
 include MANIFEST.in README.md LICENSE.md CHANGES.md
 

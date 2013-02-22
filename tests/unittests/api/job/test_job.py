@@ -19,10 +19,14 @@ def test_job_service_create():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
         j1 = js.create_job(jd)
         assert j1.state == j1.get_state()
@@ -47,10 +51,14 @@ def test_job_run():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
         j1 = js.create_job(jd)
 
@@ -79,10 +87,14 @@ def test_job_suspend_resume():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
         j1 = js.create_job(jd)
         j1.run()
@@ -116,10 +128,14 @@ def test_job_cancel():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
         j1 = js.create_job(jd)
 
@@ -146,10 +162,14 @@ def test_job_wait():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
         j1 = js.create_job(jd)
 
@@ -176,10 +196,14 @@ def test_job_states_OLD():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['3']
+
+        # add options from the test .cfg file if set
         if tc.job_walltime_limit != "":
             jd.wall_time_limit = tc.job_walltime_limit
         if tc.job_project != "":
             jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
 
         j3 = js.run_job ("/bin/sleep 3 ; /bin/true")
         assert j3.state == saga.job.RUNNING
@@ -203,14 +227,31 @@ def test_job_states_OLD():
 
 # ------------------------------------------------------------------------------
 #
-def test_get_exit_code () :
-    """ run a job service and get exit code """
+def test_get_exit_code():
+    """ Testing job.exit_code
+    """
     try:
-        tc = sutc.TestConfig ()
-        js = saga.job.Service (tc.js_url, tc.session)
-        j  = js.run_job ("/bin/sh -c \"exit 3\"")
-        j.wait ()
-        assert j.exit_code == 3
+        tc = sutc.TestConfig()
+        js = saga.job.Service(tc.js_url, tc.session)
+
+        jd = saga.job.Description()
+        jd.executable = "/bin/sh"
+        jd.arguments = ["-c \"exit 3\""]
+
+        # add options from the test .cfg file if set
+        if tc.job_walltime_limit != "":
+            jd.wall_time_limit = tc.job_walltime_limit
+        if tc.job_project != "":
+            jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
+
+        j = js.create_job(jd)
+        j.run()
+        j.wait()
+
+        ec = j.exit_code
+        assert ec == 3, "%s != 3" % ec
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
@@ -222,12 +263,27 @@ def test_get_exit_code () :
 
 # ------------------------------------------------------------------------------
 #
-def test_get_service_url () :
-    """ run a job and check service url """
+def test_get_service_url():
+    """ Testing if job.service_url == Service.url
+    """
     try:
-        tc = sutc.TestConfig ()
-        js = saga.job.Service (tc.js_url, tc.session)
-        j  = js.run_job ("/bin/sleep 10")
+        tc = sutc.TestConfig()
+        js = saga.job.Service(tc.js_url, tc.session)
+
+        jd = saga.job.Description()
+        jd.executable = '/bin/sleep'
+        jd.arguments = ['10']
+
+        # add options from the test .cfg file if set
+        if tc.job_walltime_limit != "":
+            jd.wall_time_limit = tc.job_walltime_limit
+        if tc.job_project != "":
+            jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
+
+        j = js.create_job(jd)
+
         assert j.service_url == js.url
 
     except saga.NotImplemented as ni:
@@ -240,14 +296,30 @@ def test_get_service_url () :
 
 # ------------------------------------------------------------------------------
 #
-def test_get_id () :
-    """ run a job service and get id """
+def test_get_id():
+    """ Testing job.get_id() / job.id
+    """
     try:
-        tc = sutc.TestConfig ()
-        js = saga.job.Service (tc.js_url, tc.session)
-        j  = js.run_job ("/bin/sleep 10")
+        tc = sutc.TestConfig()
+        js = saga.job.Service(tc.js_url, tc.session)
+
+        jd = saga.job.Description()
+        jd.executable = '/bin/sleep'
+        jd.arguments = ['10']
+
+        # add options from the test .cfg file if set
+        if tc.job_walltime_limit != "":
+            jd.wall_time_limit = tc.job_walltime_limit
+        if tc.job_project != "":
+            jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
+
+        j = js.create_job(jd)
+        j.run()
+
         assert j.id != None
-        assert j.id == j.get_id ()
+        assert j.id == j.get_id()
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
@@ -255,4 +327,3 @@ def test_get_id () :
                 print "%s " % ni
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
-

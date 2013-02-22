@@ -131,7 +131,6 @@ setup_args = {
         "saga.engine",
         "saga.utils",
         "saga.utils.contrib",
-        "saga.utils.cmdlinewrapper",
         "saga.utils.logger",
         "saga.utils.config",
         "saga.utils.job"
