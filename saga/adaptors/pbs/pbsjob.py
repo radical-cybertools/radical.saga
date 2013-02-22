@@ -751,6 +751,14 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
+    def get_service_url(self):
+        """ implements saga.adaptors.cpi.job.Job.get_service_url()
+        """
+        return self.js.rm
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
     def get_id(self):
         """ implements saga.adaptors.cpi.job.Job.get_id()
         """
