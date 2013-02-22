@@ -58,8 +58,7 @@ def main(args):
         # create the job (state: New)
         catjob = js.create_job(jd)
 
-        jd2 = catjob.get_description()
-        print jd2
+        print catjob.get_description()
 
         # check our job's id and state
         print "Job ID    : %s" % (catjob.id)
@@ -71,7 +70,9 @@ def main(args):
         print "Job ID    : %s" % (catjob.id)
         print "Job State : %s" % (catjob.state)
 
-        catjob.cancel()
+        #catjob.cancel()
+        #catjob.suspend()
+        #catjob.resume()
 
         print "\nListing active jobs: "
         for job in js.list():

@@ -470,7 +470,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         elif slurmjs == "CONFIGURING" or slurmjs == 'CF':
             return saga.job.PENDING
         elif slurmjs == "COMPLETING" or slurmjs == 'CG':
-            return saga.job.DONE #TODO: CHECK CORRECTNESS
+            return saga.job.RUNNING
         elif slurmjs == "FAILED" or slurmjs == 'F':
             return saga.job.FAILED
         elif slurmjs == "NODE_FAIL" or slurmjs == 'NF':
@@ -514,7 +514,25 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             return True
         else:
             raise saga.NoSuccess._log(self._logger,
-                                      "Could not cancel job %s" % id)
+                                      "Could not cancel job %s" % pid)
+
+    def _job_suspend (self, job_id):
+        rm, pid     = self._adaptor.parse_id (job_id)
+        ret, out, _ = self.shell.run_sync("scontrol suspend %s" % pid)
+        if ret == 0:
+            return True
+        else:
+            raise saga.NoSuccess._log(self._logger,
+                                      "Could not suspend job %s" % pid)
+
+    def _job_resume (self, job_id):
+        rm, pid     = self._adaptor.parse_id (job_id)
+        ret, out, _ = self.shell.run_sync("scontrol resume %s" % pid)
+        if ret == 0:
+            return True
+        else:
+            raise saga.NoSuccess._log(self._logger,
+                                      "Could not resume job %s" % pid)
 
 
     # ----------------------------------------------------------------
@@ -725,8 +743,6 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
     def get_description (self):
         return self.jd
 
-  
-
   # # ----------------------------------------------------------------
   # #
     @SYNC_CALL
@@ -773,6 +789,21 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         """ Implements saga.adaptors.cpi.job.Job.get_exit_code()
         """   
         return self.js._job_get_exit_code(self._id)
+
+  # # ----------------------------------------------------------------
+    @SYNC_CALL
+    def suspend(self) :
+        """ Implements saga.adaptors.cpi.job.Job.get_exit_code()
+        """ 
+        return self.js._job_suspend(self._id)
+
+  # # ----------------------------------------------------------------
+    @SYNC_CALL
+    def resume(self) :
+        """ Implements saga.adaptors.cpi.job.Job.get_exit_code()
+        """ 
+        return self.js._job_resume(self._id)
+
   #
   # # ----------------------------------------------------------------
   # #
