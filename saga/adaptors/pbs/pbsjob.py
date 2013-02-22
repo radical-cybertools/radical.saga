@@ -504,7 +504,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                     curr_info['state'] = saga.job.DONE
                     curr_info['gone'] = True
                     self._logger.warning("Previously running job has \
-disappeared. This probably means that the backend doesn't store information\
+disappeared. This probably means that the backend doesn't store informations \
 about finished jobs. Setting state to 'DONE'.")
                 else:
                     curr_info['gone'] = True
