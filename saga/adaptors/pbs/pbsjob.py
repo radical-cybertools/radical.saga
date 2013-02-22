@@ -964,9 +964,3 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         else:
             return self.js._job_get_execution_hosts(self._id)
 
-    # ----------------------------------------------------------------
-    #
-    @SYNC_CALL
-    def re_raise(self):
-        # nothing to do here actually, as run () is synchronous...
-        return self._exception

@@ -19,7 +19,7 @@ def main():
     try:
         # create a job service for the local machine. both, 'fork' and
         # 'local' schemes trigger the local job adaptor.
-        js = saga.job.Service("pbs+ssh://india.futuregrid.org")
+        js = saga.job.Service("pbs+ssh://alamo.futuregrid.org")
 
         # describe our job
         jd = saga.job.Description()
