@@ -21,6 +21,30 @@ _config_options = [
     },
     { 
     'category'      : 'saga.tests',
+    'name'          : 'job_project', 
+    'type'          : str, 
+    'default'       : "",
+    'documentation' : "project / allocation id to use with job scheduler",
+    'env_variable'  : "SAGA_TEST_JOB_PROJECT"
+    },
+    { 
+    'category'      : 'saga.tests',
+    'name'          : 'job_queue', 
+    'type'          : str, 
+    'default'       : "",
+    'documentation' : "queue to use with job scheduler",
+    'env_variable'  : "SAGA_TEST_JOB_QUEUE"
+    },
+    { 
+    'category'      : 'saga.tests',
+    'name'          : 'job_walltime_limit', 
+    'type'          : str, 
+    'default'       : "",
+    'documentation' : "walltime limit to pass to the job scheduler",
+    'env_variable'  : "SAGA_TEST_JOB_WALLTIME_LIMIT"
+    },
+    { 
+    'category'      : 'saga.tests',
     'name'          : 'filesystem_url', 
     'type'          : str, 
     'default'       : "",
@@ -178,6 +202,30 @@ class TestConfig (sconf.Configurable):
     def js_url (self):
 
         return self._cfg['job_service_url'].get_value ()
+
+
+    #-----------------------------------------------------------------
+    # 
+    @property
+    def job_walltime_limit (self):
+
+        return self._cfg['job_walltime_limit'].get_value ()
+
+
+    #-----------------------------------------------------------------
+    # 
+    @property
+    def job_project (self):
+
+        return self._cfg['job_project'].get_value ()
+
+
+    #-----------------------------------------------------------------
+    # 
+    @property
+    def job_queue (self):
+
+        return self._cfg['job_queue'].get_value ()
 
 
     #-----------------------------------------------------------------

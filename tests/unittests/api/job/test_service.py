@@ -1,68 +1,65 @@
+__author__    = ["Ole Weidner", "Andre Merzky"]
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
 
-import os
-import sys
 import saga
 import saga.utils.test_config as sutc
 
+
 # ------------------------------------------------------------------------------
 #
-def test_create_sync_service () :
-    """ create a job service instance synchronously """
+def test_get_url():
+    """ Testing job service url/get_url()
+    """
     try:
-        tc = sutc.TestConfig ()
-        js = saga.job.Service (tc.js_url, tc.session)
+        tc = sutc.TestConfig()
+        js = saga.job.Service(tc.js_url, tc.session)
+        assert str(js.get_url()) == str(tc.js_url)
+        assert str(js.url) == str(tc.js_url)
+
+    except saga.NotImplemented as ni:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
+                print "%s " % ni
     except saga.SagaException as se:
-        assert False
+        assert False, "Unexpected exception: %s" % se
+
 
 # ------------------------------------------------------------------------------
 #
-def test_get_url () :
-    """ create a job service and check url """
+def test_list_jobs():
+    """ Testing if a submitted job shows up in Service.list() """
     try:
-        tc = sutc.TestConfig ()
-        js = saga.job.Service (tc.js_url, tc.session)
-        assert str(js.get_url ()) == str(tc.js_url)
-        assert str(js.url)        == str(tc.js_url)
-
-    except saga.SagaException as se:
-        assert False
-
-# ------------------------------------------------------------------------------
-#
-def test_create_simple_job () :
-    """ create a simple job (/bin/true) """
-    try:
-        tc = sutc.TestConfig ()
-        js = saga.job.Service (tc.js_url, tc.session)
-        jd = saga.job.Description ()
-        jd.executable = '/bin/true'
-        j  = js.create_job (jd)
-        assert j.state == saga.job.NEW
-
-    except saga.SagaException as se:
-        assert False
-
-# ------------------------------------------------------------------------------
-#
-def test_list_jobs () :
-    """ find a submitted job in the list returned by list() """
-    try:
-        tc = sutc.TestConfig ()
+        tc = sutc.TestConfig()
 
         # create job service and job
-        js = saga.job.Service (tc.js_url, tc.session)
-        jd = saga.job.Description ()
+        js = saga.job.Service(tc.js_url, tc.session)
+        jd = saga.job.Description()
         jd.executable = '/bin/sleep'
-        jd.arguments  = ['10']
-        j  = js.create_job (jd)
+        jd.arguments = ['10']
+
+        # add options from the test .cfg file if set
+        if tc.job_walltime_limit != "":
+            jd.wall_time_limit = tc.job_walltime_limit
+        if tc.job_project != "":
+            jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
+
+        j = js.create_job(jd)
 
         # run job - now it has an id, and js must know it
-        j.run ()
-        assert j.id in js.list ()
+        j.run()
+        all_jobs = js.list()
+        assert j.id in all_jobs, \
+            "%s not in %s" % (j.id, all_jobs)
 
+    except saga.NotImplemented as ni:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
+                print "%s " % ni
     except saga.SagaException as se:
-        print se
-        assert False
+        assert False, "Unexpected exception: %s" % se
 
 # ------------------------------------------------------------------------------
 #
@@ -76,9 +73,12 @@ def test_run_job () :
         j  = js.run_job ("/bin/sleep 10")
         assert j.id
 
+    except saga.NotImplemented as ni:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
+                print "%s " % ni
     except saga.SagaException as se:
-        print se
-        assert False
+        assert False, "Unexpected exception: %s" % se
 
 # ------------------------------------------------------------------------------
 #
@@ -92,16 +92,25 @@ def test_get_job () :
         jd = saga.job.Description ()
         jd.executable = '/bin/sleep'
         jd.arguments  = ['10']
-        j  = js.create_job (jd)
+
+        # add options from the test .cfg file if set
+        if tc.job_walltime_limit != "":
+            jd.wall_time_limit = tc.job_walltime_limit
+        if tc.job_project != "":
+            jd.project = tc.job_project
+        if tc.job_queue != "":
+            jd.queue = tc.job_queue
+
+        j = js.create_job(jd)
 
         # run job - now it has an id, and js must be able to retrieve it by id
-        j.run ()
-        j_clone = js.get_job (j.id)
+        j.run()
+        j_clone = js.get_job(j.id)
         assert j.id in j_clone.id
 
+    except saga.NotImplemented as ni:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
+                print "%s " % ni
     except saga.SagaException as se:
-        print se
-        assert False
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
+        assert False, "Unexpected exception: %s" % se
