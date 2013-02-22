@@ -52,6 +52,8 @@ def launch_tests(options, testdir):
     # that we will use for the tests
     test_cfgs = []
 
+    print options.notimpl_warn_only
+
     for config in options.config.split(","):
         if os.path.exists(config):
             if os.path.isdir(config):
@@ -71,6 +73,9 @@ def launch_tests(options, testdir):
 
     # the TestConfig singleton is shared with all test suites as they run
     tc = sutc.TestConfig()
+
+    # tag the notimpl_warn_only option to the object
+    tc.notimpl_warn_only = options.notimpl_warn_only
 
     # now cycle over the found test configs, configure the TestConfig accordingly,
     # and run all specified test_suites
@@ -113,9 +118,10 @@ def launch_tests(options, testdir):
 if __name__ == "__main__":
 
     parser = OptionParser()
-    parser.add_option("--debug",
-                  action="store_true", dest="debug", default=False,
-                  help="start the tests in debug mode")
+    parser.add_option("--notimpl-warn-only",
+                  action="store_true", dest="notimpl_warn_only", default=False,
+                  help="if set, warn on NotImplemented exceptions. If set to \
+'False' (default), NotImplemented will produce an error.")
     parser.add_option("-c", "--config", dest="config", metavar="CONFIG",
                   help="either a directory that contains test config files \
 or a comma-separated list of individual config files")
