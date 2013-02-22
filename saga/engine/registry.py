@@ -21,11 +21,7 @@ adaptor_registry = [
                     "saga.adaptors.context.x509",
                     "saga.adaptors.context.ssh",
                     "saga.adaptors.context.userpass",
-                    "saga.adaptors.redis.redis_advert",
                     "saga.adaptors.local.localfile",
                     "saga.adaptors.shell.shell_job",
                    ]
-
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
