@@ -725,7 +725,8 @@ about finished jobs. Setting state to 'DONE'.")
         # state information you need there.
         adaptor_state = {"job_service":     self,
                          "job_description": jd,
-                         "job_schema":      self.rm.schema
+                         "job_schema":      self.rm.schema,
+                         "reconnect":       False
                         }
 
         return saga.job.Job(_adaptor=self._adaptor,
@@ -735,15 +736,21 @@ about finished jobs. Setting state to 'DONE'.")
     #
     @SYNC_CALL
     def get_job(self, jobid):
-        """ Implements saga.adaptors.cpi.job.Service.get_url()
+        """ Implements saga.adaptors.cpi.job.Service.get_job()
         """
+
+        # try to get some information about this job and throw it into
+        # our job dictionary.
+        self.jobs[jobid] = self._retrieve_job(jobid)
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         adaptor_state = {"job_service":     self,
                          # TODO: fill job description
                          "job_description": saga.job.Description(),
-                         "job_schema":      self.rm.schema
+                         "job_schema":      self.rm.schema,
+                         "reconnect":       True,
+                         "reconnect_jobid": jobid
                         }
 
         return saga.job.Job(_adaptor=self._adaptor,
@@ -832,9 +839,12 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
 
-        self._id              = None
-        self._started         = False
-        self._exception       = None
+        if job_info['reconnect'] is True:
+            self._id = job_info['reconnect_jobid']
+            self._started = True
+        else:
+            self._id = None
+            self._started = False
 
         return self.get_api()
 
@@ -857,7 +867,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         """ implements saga.adaptors.cpi.job.Job.wait()
         """
         if self._started is False:
-            log_error_and_raise("Can't wait for job that hasn't been started!")
+            log_error_and_raise("Can't wait for job that hasn't been started",
+                saga.IncorrectState, self._logger)
         else:
             self.js._job_wait(self._id, timeout)
 
@@ -868,7 +879,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         """ implements saga.adaptors.cpi.job.Job.cancel()
         """
         if self._started is False:
-            log_error_and_raise("Can't cancel a job that hasn't been started!")
+            log_error_and_raise("Can't wait for job that hasn't been started",
+                saga.IncorrectState, self._logger)
         else:
             self.js._job_cancel(self._id)
 

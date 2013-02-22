@@ -57,17 +57,19 @@ def main():
         for job in js.list():
             print " * %s" % job
 
+        # disconnect / reconnect
+        sleebjob_clone = js.get_job(sleepjob.id)
+
         # wait for our job to complete
         print "\n...waiting for job...\n"
-        sleepjob.wait()
-        #sleepjob.cancel()
+        sleebjob_clone.wait()
 
-        print "Job State   : %s" % (sleepjob.state)
-        print "Exitcode    : %s" % (sleepjob.exit_code)
-        print "Exec. hosts : %s" % (sleepjob.execution_hosts)
-        print "Create time : %s" % (sleepjob.created)
-        print "Start time  : %s" % (sleepjob.started)
-        print "End time    : %s" % (sleepjob.finished)
+        print "Job State   : %s" % (sleebjob_clone.state)
+        print "Exitcode    : %s" % (sleebjob_clone.exit_code)
+        print "Exec. hosts : %s" % (sleebjob_clone.execution_hosts)
+        print "Create time : %s" % (sleebjob_clone.created)
+        print "Start time  : %s" % (sleebjob_clone.started)
+        print "End time    : %s" % (sleebjob_clone.finished)
 
     except saga.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))
