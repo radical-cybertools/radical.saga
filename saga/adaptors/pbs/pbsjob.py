@@ -465,6 +465,55 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
+    def _retrieve_job(self, job_id):
+        """ see if we can get some info about a job that we don't
+            know anything about
+        """
+        rm, pid = self._adaptor.parse_id(job_id)
+
+        # run the PBS 'qstat' command to get some infos about our job
+        ret, out, _ = self.shell.run_sync("%s -f1 %s | \
+            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" % (self._commands['qstat']['path'], pid))
+
+        if ret != 0:
+            log_error_and_raise("Couldn't reconnect to job '%s': %s" % \
+                (job_id, out))
+        else:
+            # the job seems to exist on the backend. let's gather some data
+            job_info = {
+                'state':        saga.job.UNKNOWN,
+                'exec_hosts':   None,
+                'returncode':   None,
+                'create_time':  None,
+                'start_time':   None,
+                'end_time':     None,
+                'gone':         False
+            }
+
+            results = out.split('\n')
+            for line in results:
+                if len(line.split('=')) == 2:
+                    key, val = line.split('=')
+                    key = key.strip()  # strip() removes whitespaces at the
+                    val = val.strip()  # beginning and the end of the string
+
+                    if key == 'job_state':
+                        job_info['state'] = _pbs_to_saga_jobstate(val)
+                    elif key == 'exec_host':
+                        job_info['exec_hosts'] = val.split('+')
+                    elif key == 'exit_status':
+                        job_info['returncode'] = val
+                    elif key == 'ctime':
+                        job_info['create_time'] = val
+                    elif key == 'start_time':
+                        job_info['start_time'] = val
+                    elif key == 'comp_time':
+                        job_info['end_time'] = val
+
+            return job_info
+
+    # ----------------------------------------------------------------
+    #
     def _job_get_info(self, job_id):
         """ get job attributes via qstat
         """
@@ -492,8 +541,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         # run the PBS 'qstat' command to get some infos about our job
         ret, out, _ = self.shell.run_sync("%s -f1 %s | \
-            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|\
-(comp_time)'" % (self._commands['qstat']['path'], pid))
+            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" % (self._commands['qstat']['path'], pid))
 
         if ret != 0:
             if ("Unknown Job Id" in out):
@@ -686,6 +734,24 @@ about finished jobs. Setting state to 'DONE'.")
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
+    def get_job(self, jobid):
+        """ Implements saga.adaptors.cpi.job.Service.get_url()
+        """
+
+        # this dict is passed on to the job adaptor class -- use it to pass any
+        # state information you need there.
+        adaptor_state = {"job_service":     self,
+                         # TODO: fill job description
+                         "job_description": saga.job.Description(),
+                         "job_schema":      self.rm.schema
+                        }
+
+        return saga.job.Job(_adaptor=self._adaptor,
+                            _adaptor_state=adaptor_state)
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
     def get_url(self):
         """ implements saga.adaptors.cpi.job.Service.get_url()
         """
@@ -719,21 +785,7 @@ about finished jobs. Setting state to 'DONE'.")
 
         return ids
 
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def get_job (self, jobid):
-  #     """ Implements saga.adaptors.cpi.job.Service.get_url()
-  #     """
-  #     if jobid not in self._jobs.values ():
-  #         msg = "Service instance doesn't know a Job with ID '%s'" % (jobid)
-  #         raise saga.BadParameter._log (self._logger, msg)
-  #     else:
-  #         for (job_obj, job_id) in self._jobs.iteritems ():
-  #             if job_id == jobid:
-  #                 return job_obj.get_api ()
-  #
-  #
+
   # # ----------------------------------------------------------------
   # #
   # def container_run (self, jobs) :
