@@ -563,6 +563,39 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         """
         return self.rm
 
+    @SYNC_CALL
+    def run_job (self, cmd, host):
+        raise saga.NotImplemented._log (self._logger, "run_job not implemented"
+                                        " for SLURM jobs -- please construct"
+                                        " a job description and create a job"
+                                        " manually.")
+        # if not cmd :
+        #     raise saga.BadParameter._log (self._logger, "run_hosts needs a command to run")
+
+        # if "'" in cmd :
+        #     raise saga.BadParameter._log (self._logger, "command cannot contain \"'\" (%s)"  \
+        #                                % cmd)
+
+        # if  host and host != self.rm.host :
+        #     raise saga.BadParameter._log (self._logger, "Can only run jobs on %s"
+        #                                % self.rm.host)
+        # cmd_elems = cmd.split ()
+
+        # if not len(cmd_elems) :
+        #     raise saga.BadParameter._log (self._logger, "run_hosts needs a non-empty command to run")
+
+        # jd = saga.job.Description ()
+
+        # jd.executable = "/bin/sh"
+        # jd.arguments  = ["-c", "'%s'" % " ".join (cmd_elems)]
+
+        # job = self.create_job (jd)
+        # job.run ()
+
+        return job
+
+        
+
 
     # ----------------------------------------------------------------
     #

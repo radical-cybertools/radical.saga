@@ -30,9 +30,14 @@ def main(args):
     try:
         # create a job service for the local machine. both, 'fork' and 
         # 'local' schemes trigger the local job adaptor. 
+
         print "Creating Job Service!"
         js = saga.job.Service("slurm+ssh://stampede")
         #js = saga.job.Service("slurm+ssh://tg803521@login1.stampede.tacc.utexas.edu/")
+
+        print "Testing run_job!"
+        #js.run_job("/bin/sleep 5")
+
         
         print "Creating Job Description!"
         # describe our job
