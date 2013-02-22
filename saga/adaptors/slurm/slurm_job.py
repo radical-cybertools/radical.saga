@@ -161,7 +161,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self._base = base = "$HOME/.saga/adaptors/slurm_job"
 
         self.exit_code_re = re.compile("""(?<=ExitCode=)[0-9]*""")
-
+        self.scontrol_jobstate_re = re.compile("""(?<=JobState=)[a-zA-Z]*""")
 
 
     # ----------------------------------------------------------------
@@ -428,10 +428,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         if not found_id:
             raise saga.NoSuccess._log(self._logger, 
-                             "Couldn't get job id from submitted job!")
+                             "Couldn't get job id from submitted job!"
+                              " sbatch output:\n%s" % out)
 
-        self._logger.debug ("started job %s" % self.job_id)
-
+        self._logger.debug("started job %s" % self.job_id)
+        self._logger.debug("Batch system output:\n%s" % out)
         return self.job_id
 
     # ----------------  
@@ -457,31 +458,31 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     # that doesn't sound right...
     # maybe if there are no jobs we should just mark the job as completed...
 
-
-    def _slurm_to_saga_jobstate(self, pbsjs):
+ 
+    def _slurm_to_saga_jobstate(self, slurmjs):
         """ translates a slurm one-letter state to saga
         """
-        if pbsjs == 'CA':
+        if slurmjs == "CANCELLED" or slurmjs == 'CA':
             return saga.job.CANCELED
-        elif pbsjs == 'CD':
+        elif slurmjs == "COMPLETED" or slurmjs == 'CD':
             return saga.job.DONE
-        elif pbsjs == 'CF':
+        elif slurmjs == "CONFIGURING" or slurmjs == 'CF':
             return saga.job.PENDING
-        elif pbsjs == 'CG':
+        elif slurmjs == "COMPLETING" or slurmjs == 'CG':
             return saga.job.DONE #TODO: CHECK CORRECTNESS
-        elif pbsjs == 'F':
+        elif slurmjs == "FAILED" or slurmjs == 'F':
             return saga.job.FAILED
-        elif pbsjs == 'NF': #node failure
+        elif slurmjs == "NODE_FAIL" or slurmjs == 'NF':
             return saga.job.FAILED
-        elif pbsjs == 'PD':
+        elif slurmjs == "PENDING" or slurmjs == 'PD':
             return saga.job.PENDING
-        elif pbsjs == 'PR':
-            return saga.job.CANCELLED #due to preemption
-        elif pbsjs == 'R':
+        elif slurmjs == "PREEMPTED" or slurmjs == 'PR':
+            return saga.job.CANCELLED
+        elif slurmjs == "RUNNING" or slurmjs == 'R':
             return saga.job.RUNNING
-        elif pbsjs == 'S':
+        elif slurmjs == "SUSPENDED" or slurmjs == 'S':
             return saga.job.SUSPENDED
-        elif pbsjs == 'TO': # timeout
+        elif slurmjs == "TIMEOUT" or slurmjs == 'TO':
             return saga.job.CANCELED
         else:
             return saga.job.UNKNOWN
@@ -641,7 +642,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         
         return self.get_api ()
 
-    def _job_get_state (self, id) :
+    def _job_get_state (self, job_id) :
         """ get the job state from the wrapper shell """
 
         # if the state is NEW and we haven't sent out a run comment, keep
@@ -652,7 +653,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         # if we don't even have an ID, state is unknown
         # TODO: VERIFY CORRECTNESS
 
-        if id==None:
+        if job_id==None:
             return saga.job.UNKNOWN
 
         # if the state is DONE, CANCELED or FAILED, it is considered
@@ -661,28 +662,46 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
             or self._state == saga.job.DONE:
             return self._state
 
-        rm, pid     = self._adaptor.parse_id (id)
-        
-        # grab nothing but ID and states
-        # output looks like:   
-        # 255333 CG
-        ret, out, _ = self.js.shell.run_sync('squeue -h -o "%%i %%t" -u %s' % \
-                                              self.js.rm.username)
+        rm, pid     = self._adaptor.parse_id (job_id)
 
-        state_found = False
-        
-        # no jobs active
-        if out.strip().split("\n")==['']:
-            return saga.job.UNKNOWN
+        #self.scontrol_jobstate_re = re.compile("""(?<=JobState=)[a-zA-Z]*""")
 
-        for line in out.strip().split("\n"):
-            if int(line.split()[0]) == int(pid):
-                state_found = True
-                return self.js._slurm_to_saga_jobstate(line.split()[1])
+        try:
+            ret, out, _ = self.js.shell.run_sync('scontrol show job %s' % pid)
+            m = self.js.scontrol_jobstate_re.search(out)
+            if m:
+                scontrol_state = m.group(0)
+            else:
+                # no jobstate found from scontrol
+                return saga.job.UNKNOWN
+
+            return self.js._slurm_to_saga_jobstate(scontrol_state)
+
+        except E, ex:
+            raise saga.NoSuccess("Error getting the job state for "
+                                 "job %s:\n%s"%(pid,ex))
+        
+
+        # # grab nothing but ID and states
+        # # output looks like:   
+        # # 255333 CG
+        # ret, out, _ = self.js.shell.run_sync('squeue -h -o "%%i %%t" -u %s' % \
+        #                                       self.js.rm.username)
+
+        # state_found = False
+
+        # # no jobs active
+        # if out.strip().split("\n")==['']:
+        #     return saga.job.UNKNOWN
+
+        # for line in out.strip().split("\n"):
+        #     if int(line.split()[0]) == int(pid):
+        #         state_found = True
+        #         return self.js._slurm_to_saga_jobstate(line.split()[1])
                  
 
-        if not state_found:
-            return saga.job.UNKNOWN
+        # if not state_found:
+        #     return saga.job.UNKNOWN
         #    raise saga.NoSuccess._log (self._logger, 
         #                               "Couldn't find job state")
         
