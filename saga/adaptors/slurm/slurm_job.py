@@ -499,8 +499,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         elif slurmjs == "CONFIGURING" or slurmjs == 'CF':
             return saga.job.PENDING
         elif slurmjs == "COMPLETING" or slurmjs == 'CG':
-            return saga.job.DONE
-            #return saga.job.RUNNING
+            #return saga.job.DONE
+            return saga.job.RUNNING
         elif slurmjs == "FAILED" or slurmjs == 'F':
             return saga.job.FAILED
         elif slurmjs == "NODE_FAIL" or slurmjs == 'NF':
@@ -788,25 +788,32 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         end_time=None
         if end_time_search:
             end_time = end_time.search.group(0)
+            self.logger.debug("end_time for job %s detected as %s" % \
+                              (pid, end_time))
 
         # determine the job's creation time
         create_time_search = self.js.scontrol_create_time_re.search(out)
         create_time=None
         if create_time_search:
             create_time = create_time.search.group(0)
+            self.logger.debug("create_time for job %s detected as %s" % \
+                              (pid, create_time))
 
         # determine the job's execution hosts
         exec_hosts_search = self.js.scontrol_exec_hosts_re.search(out)
         exec_hosts=None
         if exec_hosts_search:
             exec_hosts = exec_hosts.search.group(0)
+            self.logger.debug("exec_hosts for job %s detected as %s" % \
+                              (pid, exec_hosts))
 
         # determine the job's execution hosts
         comp_time_search = self.js.scontrol_comp_time_re.search(out)
         comp_time=None
         if comp_time_search:
             comp_time = comp_time.search.group(0)
-
+            self.logger.debug("comp_time for job %s detected as %s" % \
+                              (pid, comp_time))
 
         # if key == 'job_state':
         #     curr_info['state'] = _pbs_to_saga_jobstate(val)

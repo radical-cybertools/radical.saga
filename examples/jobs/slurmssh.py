@@ -46,6 +46,8 @@ def main(args):
         jd.environment = {'MYVAR':'10', 'SAGA':'RULES'}    
         jd.executable  = '/bin/sleep'
         jd.arguments   = ['$MYVAR']
+        #jd.executable  = '/bin/exit'
+        #jd.arguments   = ['3']
         jd.queue = "development"
         jd.name = "SlurmJob"
         jd.job_contact="anz7@rutgers.edu"
