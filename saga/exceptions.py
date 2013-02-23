@@ -1,11 +1,9 @@
-
 __author__    = "Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-""" Exception classes 
+""" Exception classes
 """
-
 
 import weakref
 import operator
@@ -14,15 +12,14 @@ import saga.utils.exception
 
 
 class SagaException(saga.utils.exception.ExceptionBase):
-    """ 
-    
+    """
     The Exception class encapsulates information about error conditions
     encountered in SAGA.
 
     Additionally to the error message (e.message), the exception also provides
     a trace to the code location where the error condition got raised
     (e.traceback).
- 
+
     B{Example}::
 
       try :
@@ -47,7 +44,7 @@ class SagaException(saga.utils.exception.ExceptionBase):
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, message, api_object=None) :
+    def __init__(self, message, api_object=None):
         """ 
         Create a new exception object.
 

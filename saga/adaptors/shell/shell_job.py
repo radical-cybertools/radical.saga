@@ -1,5 +1,5 @@
 
-""" SSH job adaptor implementation """
+""" shell based job adaptor implementation """
 
 import saga.utils.which
 import saga.utils.pty_shell
@@ -14,7 +14,7 @@ import os
 import time
 import threading
 
-import ssh_wrapper
+import shell_wrapper
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -28,11 +28,11 @@ _PTY_TIMEOUT = 2.0
 # --------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.ssh_job"
-_ADAPTOR_SCHEMAS       = ["fork", "ssh", "gsissh"]
+_ADAPTOR_NAME          = "saga.adaptor.shell_job"
+_ADAPTOR_SCHEMAS       = ["fork", "local", "ssh", "gsissh"]
 _ADAPTOR_OPTIONS       = [
     { 
-    'category'         : 'saga.adaptor.ssh_job',
+    'category'         : 'saga.adaptor.shell_job',
     'name'             : 'enable_notifications', 
     'type'             : bool, 
     'default'          : False,
@@ -67,7 +67,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.STATE_DETAIL],
     "contexts"         : {"ssh"      : "public/private keypair",
                           "x509"     : "X509 proxy for gsissh",
-                          "userpass" : "username/password pair for simple ssh"}
+                          "userpass" : "username/password pair for ssh"}
 }
 
 # --------------------------------------------------------------------
@@ -78,8 +78,8 @@ _ADAPTOR_DOC           = {
     "cfg_options"      : _ADAPTOR_OPTIONS, 
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "description"      : """ 
-        The SSH job adaptor. This adaptor uses the ssh command line tools to run
-        remote jobs.
+        The Shell job adaptor. This adaptor uses the sh command line tools (sh,
+        ssh, gsissh) to run remote jobs.
         """,
     "details"          : """ 
         A more elaborate description....
@@ -138,7 +138,7 @@ _ADAPTOR_DOC           = {
 
           * number of files are limited, as is disk space: the job.service will
             
-            keep job state on the remote disk, in ``$HOME/.saga/adaptors/ssh_job/``.
+            keep job state on the remote disk, in ``$HOME/.saga/adaptors/shell_job/``.
             Quota limitations may limit the number of files created there,
             and/or the total size of that directory.  
 
@@ -168,6 +168,7 @@ _ADAPTOR_DOC           = {
 
         """,
     "schemas"          : {"fork"   :"use /bin/sh to run jobs", 
+                          "local"  :"alias for fork://", 
                           "ssh"    :"use ssh to run remote jobs", 
                           "gsissh" :"use gsissh to run remote jobs"}
 }
@@ -182,11 +183,11 @@ _ADAPTOR_INFO          = {
     "cpis"             : [
         { 
         "type"         : "saga.job.Service",
-        "class"        : "SSHJobService"
+        "class"        : "ShellJobService"
         }, 
         { 
         "type"         : "saga.job.Job",
-        "class"        : "SSHJob"
+        "class"        : "ShellJob"
         }
     ]
 }
@@ -256,14 +257,14 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
 ###############################################################################
 #
-class SSHJobService (saga.adaptors.cpi.job.Service) :
+class ShellJobService (saga.adaptors.cpi.job.Service) :
     """ Implements saga.adaptors.cpi.job.Service """
 
     # ----------------------------------------------------------------
     #
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (SSHJobService, self)
+        self._cpi_base = super  (ShellJobService, self)
         self._cpi_base.__init__ (api, adaptor)
 
 
@@ -320,7 +321,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # and running, we can requests job start / management operations via its
         # stdio.
 
-        base = "$HOME/.saga/adaptors/ssh_job"
+        base = "$HOME/.saga/adaptors/shell_job"
 
         ret, out, _ = self.shell.run_sync ("mkdir -p %s" % base)
         if  ret != 0 :
@@ -337,7 +338,7 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
         # TODO: replace some constants in the script with values from config
         # files, such as 'timeout' or 'purge_on_quit' ...
         #
-        self.shell.stage_to_file (src = ssh_wrapper._WRAPPER_SCRIPT, 
+        self.shell.stage_to_file (src = shell_wrapper._WRAPPER_SCRIPT, 
                                   tgt = "%s/wrapper.sh" % base)
 
         # we run the script.  In principle, we should set a new / different
@@ -954,14 +955,14 @@ class SSHJobService (saga.adaptors.cpi.job.Service) :
 
 ###############################################################################
 #
-class SSHJob (saga.adaptors.cpi.job.Job) :
+class ShellJob (saga.adaptors.cpi.job.Job) :
     """ Implements saga.adaptors.cpi.job.Job
     """
     # ----------------------------------------------------------------
     #
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (SSHJob, self)
+        self._cpi_base = super  (ShellJob, self)
         self._cpi_base.__init__ (api, adaptor)
 
 
@@ -1075,7 +1076,7 @@ class SSHJob (saga.adaptors.cpi.job.Job) :
     def get_execution_hosts (self) :
         """ Implements saga.adaptors.cpi.job.Job.get_execution_hosts()
         """        
-        self._logger.debug ("this is the ssh adaptor, reporting execution hosts")
+        self._logger.debug ("this is the shell adaptor, reporting execution hosts")
         return [self.js.get_url ().host]
    
     # ----------------------------------------------------------------
