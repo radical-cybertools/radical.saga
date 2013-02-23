@@ -163,8 +163,6 @@ class OrderedDict (dict):
         if isinstance(other, dict):
             for key in other:
                 self[key] = other[key]
-        if isinstance(other, tuple):
-            self[other[0]] = other[1]
         elif hasattr(other, 'keys'):
             for key in other.keys():   # ignore pylint complaint
                 self[key] = other[key]

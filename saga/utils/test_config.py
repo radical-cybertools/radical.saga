@@ -233,7 +233,7 @@ class TestConfig (sconf.Configurable):
     @property
     def fs_url (self):
 
-        return self._cfg['job_filesystem_url'].get_value ()
+        return self._cfg['filesystem_url'].get_value ()
 
 
     #-----------------------------------------------------------------
@@ -241,7 +241,7 @@ class TestConfig (sconf.Configurable):
     @property
     def replica_url (self):
 
-        return self._cfg['job_replica_url'].get_value ()
+        return self._cfg['replica_url'].get_value ()
 
 
     #-----------------------------------------------------------------
@@ -249,7 +249,7 @@ class TestConfig (sconf.Configurable):
     @property
     def advert_url (self):
 
-        return self._cfg['job_advert_url'].get_value ()
+        return self._cfg['advert_url'].get_value ()
 
 
 
