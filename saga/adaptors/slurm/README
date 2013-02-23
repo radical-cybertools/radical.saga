@@ -39,6 +39,12 @@ I'm not sure how to fix this for the time being.
 Suspend/resume do not appear to be supported for regular
 users on Stampede.
 
+run_job is not supported, as there are many attributed (queues,
+projects, etc) which need to be passed to the adaptor.  I could
+add URL parsing so that you could pile on queue/project/jobname
+information if this has any strong usecases, but I avoided doing
+so for now to decrease complexity/possible confusion.
+
 Cancelling a job with scontrol, puts it into a COMPLETING state, which
 is parsed by the SLURM status parser as saga.job.RUNNING (see the
 SLURM docs, COMPLETING is a state a job goes into when it is done
