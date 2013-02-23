@@ -167,10 +167,12 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         self.exit_code_re = re.compile("""(?<=ExitCode=)[0-9]*""")
         self.scontrol_jobstate_re = re.compile("""(?<=JobState=)[a-zA-Z]*""")
-        # TODO make sure this formats properly
+        # TODO make sure this formats properly and works right!
         self.scontrol_start_time_re = re.compile("""(?<=StartTime=).* """)
         self.scontrol_end_time_re = re.compile("""(?<=EndTime=).* """)
         self.scontrol_create_time_re = re.compile("""(?<=SubmitTime=).* """)
+        self.scontrol_exec_hosts_re = re.compile("""(?<=ExcNodeList=).* """)
+        self.scontrol_comp_time_re = re.compile("""(?<=RunTime=).* """)
 
 
     # ----------------------------------------------------------------
@@ -663,11 +665,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                         }
         return_job =  saga.job.Job(_adaptor=self._adaptor,
                             _adaptor_state=adaptor_state)
-        #return_job._id = self._id
-        return_job._state = self.jobs[jobid]["state"]
-        return_job._id = jobid #self.jobs[jobid][]
-        return_job._state = "CATS"
-
         return return_job
         
   #     if jobid not in self._jobs.values():
@@ -781,10 +778,35 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
 
         # figure out when the job started
         create_time_search = self.js.scontrol_create_time_re.search(out)
-        create_time="UNKNOWN"
+        create_time=None
         if create_time_search:
             create_time = create_time_search.group(0)
         curr_info['create_time'] = create_time
+
+        # determine the job's end time
+        end_time_search = self.js.scontrol_end_time_re.search(out)
+        end_time=None
+        if end_time_search:
+            end_time = end_time.search.group(0)
+
+        # determine the job's creation time
+        create_time_search = self.js.scontrol_create_time_re.search(out)
+        create_time=None
+        if create_time_search:
+            create_time = create_time.search.group(0)
+
+        # determine the job's execution hosts
+        exec_hosts_search = self.js.scontrol_exec_hosts_re.search(out)
+        exec_hosts=None
+        if exec_hosts_search:
+            exec_hosts = exec_hosts.search.group(0)
+
+        # determine the job's execution hosts
+        comp_time_search = self.js.scontrol_comp_time_re.search(out)
+        comp_time=None
+        if comp_time_search:
+            comp_time = comp_time.search.group(0)
+
 
         # if key == 'job_state':
         #     curr_info['state'] = _pbs_to_saga_jobstate(val)

@@ -35,9 +35,8 @@ def main(args):
         js = saga.job.Service("slurm+ssh://stampede")
         #js = saga.job.Service("slurm+ssh://tg803521@login1.stampede.tacc.utexas.edu/")
 
-        print "Testing run_job!"
+        #print "Testing run_job!"
         #js.run_job("/bin/sleep 5")
-
         
         print "Creating Job Description!"
         # describe our job
@@ -75,19 +74,6 @@ def main(args):
         print "Job ID    : %s" % (catjob.id)
         print "Job State : %s" % (catjob.state)
 
-        print 
-        gj = js.get_job(catjob.id)
-        print gj.id
-        print "get_job id", js.get_job(catjob.id).id
-        print "get_job state", js.get_job(catjob.id).state
-        print "get_job _state", js.get_job(catjob.id)._state
-        
-        print
-        print "catjob.id", catjob.id
-        print "catjob.state", catjob.state
-        print "EARLY TERMINATION BECAUSE BUGS ARE WACKY AND WE ARE TRYING TO FIX THEM"
-        exit(0)
-
         #catjob.cancel()
         #catjob.suspend()
         #catjob.resume()
@@ -101,8 +87,7 @@ def main(args):
         catjob.wait()
 
         print "Job State : %s" % catjob.state
-        print "Exitcode  : %s" % catjob.exit_code
-        
+        print "Exitcode  : %s" % catjob.exit_code        
 
     except Exception, ex:
         logging.exception("An error occured while executing the test script!"
