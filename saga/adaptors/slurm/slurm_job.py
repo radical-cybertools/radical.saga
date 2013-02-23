@@ -1,5 +1,8 @@
 """ SLURM job adaptor implementation """
 
+#TODO: Throw errors if a user does not specify the MINIMUM number of
+#      attributes required for SLURM in a job description
+
 import saga.utils.which
 import saga.utils.pty_shell
 
@@ -729,7 +732,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
 
             return self.js._slurm_to_saga_jobstate(scontrol_state)
 
-        except E, ex:
+        except Exception, ex:
             raise saga.NoSuccess("Error getting the job state for "
                                  "job %s:\n%s"%(pid,ex))
         
