@@ -35,3 +35,15 @@ JobId=309684 Name=SlurmJob
    WorkDir=/home1/01414/_______/
 
 I'm not sure how to fix this for the time being.
+
+Suspend/resume do not appear to be supported for regular
+users on Stampede.
+
+Cancelling a job with scontrol, puts it into a COMPLETING state, which
+is parsed by the SLURM status parser as saga.job.RUNNING (see the
+SLURM docs, COMPLETING is a state a job goes into when it is done
+running but still flushing IO/etc).  Anyhow, I put some code in to
+manually put the job into CANCELED state when the job is canceled,
+but I'm not sure that this is reported correctly everywhere yet.
+
+What exit code should be returned for a CANCELED job?

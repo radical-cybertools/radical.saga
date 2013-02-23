@@ -76,9 +76,12 @@ def main(args):
         print "Job ID    : %s" % (catjob.id)
         print "Job State : %s" % (catjob.state)
 
+        #print "Cancelling Job"
         #catjob.cancel()
         #catjob.suspend()
         #catjob.resume()
+        #print "Job ID    : %s" % (catjob.id)
+        #print "Job State : %s" % (catjob.state)
 
         print "\nListing active jobs: "
         for job in js.list():
@@ -89,7 +92,7 @@ def main(args):
         catjob.wait()
 
         print "Job State : %s" % catjob.state
-        print "Exitcode  : %s" % catjob.exit_code        
+        print "Exitcode  : %s" % catjob.exit_code
 
     except Exception, ex:
         logging.exception("An error occured while executing the test script!"

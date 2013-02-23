@@ -622,10 +622,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # job = self.create_job (jd)
         # job.run ()
 
-
-        
-
-
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -746,7 +742,10 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         return self.get_api ()
 
     def _job_get_info (self, job_id):
-        """ use scontrol to grab job info """
+        """ 
+        use scontrol to grab job info 
+        NOT CURRENTLY USED/TESTED, here for later
+        """
         # if we don't have the job in our dictionary, we don't want it
         # TODO: verify correctness, we should probably probe anyhow
         #       in case it was added by an external app
@@ -814,19 +813,6 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
             comp_time = comp_time.search.group(0)
             self.logger.debug("comp_time for job %s detected as %s" % \
                               (pid, comp_time))
-
-        # if key == 'job_state':
-        #     curr_info['state'] = _pbs_to_saga_jobstate(val)
-        # elif key == 'exec_host':
-        #     curr_info['exec_hosts'] = val.split('+') # format i73/7+i73/6+...
-        # elif key == 'exit_status':
-        #     curr_info['returncode'] = val
-        # elif key == 'ctime':
-        #     curr_info['create_time'] = val
-        # elif key == 'start_time':
-        #     curr_info['start_time'] = val
-        # elif key == 'comp_time':
-        #     curr_info['end_time'] = val
         return curr_info
 
     def _job_get_state (self, job_id) :
@@ -1022,6 +1008,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
     def cancel(self, timeout):
         #scancel id
         self.js._job_cancel(self._id)
+        self._state=saga.job.CANCELED
 
   #
   #
