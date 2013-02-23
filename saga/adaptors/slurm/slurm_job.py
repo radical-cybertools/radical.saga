@@ -579,7 +579,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # state information you need there.
         adaptor_state = { "job_service"     : self, 
                           "job_description" : jd,
-                          "job_schema"      : self.rm.schema }
+                          "job_schema"      : self.rm.schema,
+                          "reconnect" : False}
 
         return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
@@ -665,6 +666,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         #return_job._id = self._id
         return_job._state = self.jobs[jobid]["state"]
         return_job._id = jobid #self.jobs[jobid][]
+        return_job._state = "CATS"
 
         return return_job
         
@@ -722,7 +724,6 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         """ Implements saga.adaptors.cpi.job.Job.init_instance()
         """
 
-        print "Yo, in init_instance!"
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"] 
 
@@ -738,7 +739,13 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         self._exception       = None
         self._started         = None
         self._finished        = None
-        
+
+        if job_info['reconnect'] is True:
+            self._id = job_info['reconnect_jobid']
+            self._started = True
+        else:
+            self._started = False
+
         return self.get_api ()
 
     def _job_get_info (self, job_id):

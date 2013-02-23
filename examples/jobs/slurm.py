@@ -80,6 +80,8 @@ def main(args):
         print gj.id
         print "get_job id", js.get_job(catjob.id).id
         print "get_job state", js.get_job(catjob.id).state
+        print "get_job _state", js.get_job(catjob.id)._state
+        
         print
         print "catjob.id", catjob.id
         print "catjob.state", catjob.state
