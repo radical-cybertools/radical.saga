@@ -14,6 +14,8 @@ import os
 import time
 import textwrap
 import string
+from copy import deepcopy
+
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
@@ -165,6 +167,10 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         self.exit_code_re = re.compile("""(?<=ExitCode=)[0-9]*""")
         self.scontrol_jobstate_re = re.compile("""(?<=JobState=)[a-zA-Z]*""")
+        # TODO make sure this formats properly
+        self.scontrol_starttime_re = re.compile("""(?<=StartTime=).* """)
+        self.scontrol_endtime_re = re.compile("""(?<=EndTime=).* """)
+        self.scontrol_submittime_re = re.compile("""(?<=SubmitTime=).* """)
 
 
     # ----------------------------------------------------------------
@@ -199,6 +205,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         self.rm      = rm_url
         self.session = session
+
+        self.jobs = {}
 
         self._open ()
 
@@ -269,14 +277,17 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" % (ret, out))
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
         
+        self.rm.detected_username = self.rm.username
         # yank out username if it wasn't made explicit
         # TODO: IS MODIFYING THE URL LIKE THIS LEGIT?  if not fix it
         if not self.rm.username:
             self._logger.debug ("No username provided in URL %s, so we are"
                                 "going to find it with whoami" % shell_url)
             ret, out, _ = self.shell.run_sync("whoami")
-            self.rm.username = out.strip()
-            self._logger.debug("Username detected as: %s", self.rm.username)
+            #self.rm.username = out.strip()
+            self.rm.detected_username = out.strip()
+            self._logger.debug("Username detected as: %s",
+                               self.rm.detected_username)
 
 
     # ----------------------------------------------------------------
@@ -443,6 +454,18 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         self._logger.debug("started job %s" % self.job_id)
         self._logger.debug("Batch system output:\n%s" % out)
+
+        print self.job_id
+        self.jobs[self.job_id] = {
+                'state': saga.job.PENDING,
+                'exec_hosts': None,
+                'returncode': None,
+                'create_time': None,
+                'start_time': None,
+                'end_time': None,
+                'gone': False
+            }
+
         return self.job_id
 
     # ----------------  
@@ -619,7 +642,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         # this line gives us a nothing but jobids for our user
         ret, out, _ = self.shell.run_sync('squeue -h -o "%%i" -u %s' 
-                                          % self.rm.username)
+                                          % self.rm.detected_username)
         output = ["[%s]-[%s]" % (self.rm, i) for i in out.strip().split("\n")]
         return output
   #
@@ -704,10 +727,62 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         
         return self.get_api ()
 
+    def _job_get_info (self, job_id):
+        """ use scontrol to grab job info """
+        # if we don't have the job in our dictionary, we don't want it
+        # TODO: verify correctness, we should probably probe anyhow
+        #       in case it was added by an external app
+        if job_id not in self.jobs:
+            message = "Unknown job ID: %s. Can't update state." % job_id
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+        # prev. info contains the info collect when _job_get_info
+        # was called the last time
+        prev_info = self.jobs[job_id]
+
+        # if the 'gone' flag is set, there's no need to query the job
+        # state again. it's gone forever
+        if prev_info['gone'] is True:
+            self._logger.warning("Job information is not available anymore.")
+            return prev_info
+
+        # curr. info will contain the new job info collect. it starts off
+        # as a copy of prev_info
+        curr_info = deepcopy(prev_info)
+
+        rm, pid = self._adaptor.parse_id(job_id)
+
+        # update current info with scontrol
+        ret, out, _ = self.js.shell.run_sync('scontrol show job %s' % pid)
+
+        # update the state
+        curr_info['state'] = _job_get_state(job_id)
+
+        # figure out when the job started
+        create_time_search = self.js.scontrol_create_time_re.search(out)
+        create_time="UNKNOWN"
+        if create_time_search:
+            create_time = create_time_search.group(0)
+        curr_info['create_time'] = create_time
+
+        # if key == 'job_state':
+        #     curr_info['state'] = _pbs_to_saga_jobstate(val)
+        # elif key == 'exec_host':
+        #     curr_info['exec_hosts'] = val.split('+') # format i73/7+i73/6+...
+        # elif key == 'exit_status':
+        #     curr_info['returncode'] = val
+        # elif key == 'ctime':
+        #     curr_info['create_time'] = val
+        # elif key == 'start_time':
+        #     curr_info['start_time'] = val
+        # elif key == 'comp_time':
+        #     curr_info['end_time'] = val
+        return curr_info
+
     def _job_get_state (self, job_id) :
         """ get the job state from the wrapper shell """
 
-        # if the state is NEW and we haven't sent out a run comment, keep
+        # if the state is NEW and we haven't sent out a run command, keep
         # it listed as NEW
         if self._state == saga.job.NEW and not self._started:
             return saga.job.NEW
