@@ -50,7 +50,7 @@ def main(args):
         #jd.arguments   = ['3']
         jd.queue = "development"
         jd.name = "SlurmJob"
-        jd.job_contact="anz7@rutgers.edu"
+        #jd.job_contact="user@whateveryouuseforemail.com"
         #jd.project = "TG-ASC120003"
         jd.project = "ResSim"
         jd.wall_time_limit = "1"
