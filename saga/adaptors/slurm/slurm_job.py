@@ -507,15 +507,14 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # dig out our exitcode
         for line in out.split("\n"):
             if "ExitCode" in line:
-                return self.exit_code_re.search(line).group(0)
+                self.exit_code = self.exit_code_re.search(line).group(0)
+                return self.exit_code
         
         # couldn't get the exitcode -- maybe should change this to be
         # None?  b/c we will lose the code if a program waits too
         # long to look for the exitcode...
         raise saga.NoSuccess._log (self._logger, 
                                    "Could not find exit code for job %s" % id)
-        return 0
-
     def _job_cancel (self, id):
         rm, pid     = self._adaptor.parse_id (id)
         ret, out, _ = self.shell.run_sync("scancel %s" % pid)
@@ -523,7 +522,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             return True
         else:
             raise saga.NoSuccess._log(self._logger,
-                                      "Could not cancel job %s" % pid)
+                                      "Could not cancel job %s because: %s" % (pid,out))
 
     def _job_suspend (self, job_id):
         rm, pid     = self._adaptor.parse_id (job_id)
@@ -532,7 +531,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             return True
         else:
             raise saga.NoSuccess._log(self._logger,
-                                      "Could not suspend job %s" % pid)
+                                      "Could not suspend job %s because: %s" % (pid, out))
 
     def _job_resume (self, job_id):
         rm, pid     = self._adaptor.parse_id (job_id)
@@ -541,7 +540,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             return True
         else:
             raise saga.NoSuccess._log(self._logger,
-                                      "Could not resume job %s" % pid)
+                                      "Could not resume job %s because: %s" % (pid, out))
 
 
     # ----------------------------------------------------------------
@@ -627,10 +626,13 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
   #
   # # ----------------------------------------------------------------
   # #
-  # @SYNC_CALL
-  # def get_job (self, jobid):
-  #     """ Implements saga.adaptors.cpi.job.Service.get_url()
-  #     """
+    @SYNC_CALL
+    def get_job (self, jobid):
+        """ Implements saga.adaptors.cpi.job.Service.get_url()
+        """
+        raise saga.NotImplemented._log (self._logger, "get_job not implemented"
+                                        " for SLURM jobs")
+
   #     if jobid not in self._jobs.values():
   #         msg = "Service instance doesn't know a Job with ID '%s'" % (jobid)
   #         raise saga.BadParameter._log (self._logger, msg)
@@ -783,6 +785,15 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
     @SYNC_CALL
     def get_description (self):
         return self.jd
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_service_url(self):
+        """ implements saga.adaptors.cpi.job.Job.get_service_url()
+        """
+        return self.js.rm
+   
 
   # # ----------------------------------------------------------------
   # #
