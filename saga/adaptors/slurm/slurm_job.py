@@ -168,9 +168,9 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self.exit_code_re = re.compile("""(?<=ExitCode=)[0-9]*""")
         self.scontrol_jobstate_re = re.compile("""(?<=JobState=)[a-zA-Z]*""")
         # TODO make sure this formats properly
-        self.scontrol_starttime_re = re.compile("""(?<=StartTime=).* """)
-        self.scontrol_endtime_re = re.compile("""(?<=EndTime=).* """)
-        self.scontrol_submittime_re = re.compile("""(?<=SubmitTime=).* """)
+        self.scontrol_start_time_re = re.compile("""(?<=StartTime=).* """)
+        self.scontrol_end_time_re = re.compile("""(?<=EndTime=).* """)
+        self.scontrol_create_time_re = re.compile("""(?<=SubmitTime=).* """)
 
 
     # ----------------------------------------------------------------
@@ -486,11 +486,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     #    R   RUNNING         Job currently has an allocation.
     #    S   SUSPENDED       Job has an allocation, but execution has been suspended.
     #    TO  TIMEOUT         Job terminated upon reaching its time limit.
-
-    # TODO: should CG/CF/CG = done?  that's how it is in the BJ adaptor, but 
-    # that doesn't sound right...
-    # maybe if there are no jobs we should just mark the job as completed...
-
  
     def _slurm_to_saga_jobstate(self, slurmjs):
         """ translates a slurm one-letter state to saga
@@ -502,7 +497,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         elif slurmjs == "CONFIGURING" or slurmjs == 'CF':
             return saga.job.PENDING
         elif slurmjs == "COMPLETING" or slurmjs == 'CG':
-            return saga.job.RUNNING
+            return saga.job.DONE
+            #return saga.job.RUNNING
         elif slurmjs == "FAILED" or slurmjs == 'F':
             return saga.job.FAILED
         elif slurmjs == "NODE_FAIL" or slurmjs == 'NF':
@@ -511,7 +507,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             return saga.job.PENDING
         elif slurmjs == "PREEMPTED" or slurmjs == 'PR':
             return saga.job.CANCELED
-        elif slurmjs == "RUNNING" or slurmjs == 'R':
+        elif slurmjs == "RUNNING" or slurmjs == 'R': 
             return saga.job.RUNNING
         elif slurmjs == "SUSPENDED" or slurmjs == 'S':
             return saga.job.SUSPENDED
@@ -651,11 +647,27 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
   # #
     @SYNC_CALL
     def get_job (self, jobid):
-        """ Implements saga.adaptors.cpi.job.Service.get_url()
-        """
-        raise saga.NotImplemented._log (self._logger, "get_job not implemented"
-                                        " for SLURM jobs")
+        # try to get some information about this job and throw it into
+        # our job dictionary.
+        # self.jobs[jobid] = self._retrieve_job(jobid)
 
+        # this dict is passed on to the job adaptor class -- use it to pass any
+        # state information you need there.
+        adaptor_state = {"job_service": self,
+                         # TODO: fill job description
+                         "job_description": saga.job.Description(),
+                         "job_schema": self.rm.schema,
+                         "reconnect": True,
+                         "reconnect_jobid": jobid
+                        }
+        return_job =  saga.job.Job(_adaptor=self._adaptor,
+                            _adaptor_state=adaptor_state)
+        #return_job._id = self._id
+        return_job._state = self.jobs[jobid]["state"]
+        return_job._id = jobid #self.jobs[jobid][]
+
+        return return_job
+        
   #     if jobid not in self._jobs.values():
   #         msg = "Service instance doesn't know a Job with ID '%s'" % (jobid)
   #         raise saga.BadParameter._log (self._logger, msg)
@@ -709,6 +721,8 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
     def init_instance (self, job_info):
         """ Implements saga.adaptors.cpi.job.Job.init_instance()
         """
+
+        print "Yo, in init_instance!"
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"] 
 

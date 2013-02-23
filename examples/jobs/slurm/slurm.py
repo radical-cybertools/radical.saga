@@ -75,6 +75,17 @@ def main(args):
         print "Job ID    : %s" % (catjob.id)
         print "Job State : %s" % (catjob.state)
 
+        print 
+        gj = js.get_job(catjob.id)
+        print gj.id
+        print "get_job id", js.get_job(catjob.id).id
+        print "get_job state", js.get_job(catjob.id).state
+        print
+        print "catjob.id", catjob.id
+        print "catjob.state", catjob.state
+        print "EARLY TERMINATION BECAUSE BUGS ARE WACKY AND WE ARE TRYING TO FIX THEM"
+        exit(0)
+
         #catjob.cancel()
         #catjob.suspend()
         #catjob.resume()
