@@ -203,20 +203,20 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self._open ()
 
 
-    # ----------------------------------------------------------------
-    #
-    def _alive (self) :
+    # # ----------------------------------------------------------------
+    # #
+    # def _alive (self) :
 
-        if  not self.shell or not self.shell.alive () :
-            self._logger.info ("shell is dead - long live the shell")
+    #     if  not self.shell or not self.shell.alive () :
+    #         self._logger.info ("shell is dead - long live the shell")
             
-            try :
-                self._close ()  # for cleanup...
-                self._open  ()
+    #         try :
+    #             self._close ()  # for cleanup...
+    #             self._open  ()
 
-            except Exception :
-                # did not work for good - give up
-                raise saga.IncorrectState ("job service is not connected, can't reconnect")
+    #         except Exception :
+    #             # did not work for good - give up
+    #             raise saga.IncorrectState ("job service is not connected, can't reconnect")
 
 
     # ----------------------------------------------------------------
@@ -466,7 +466,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     def _slurm_to_saga_jobstate(self, slurmjs):
         """ translates a slurm one-letter state to saga
         """
-        if slurmjs == "CANCELLED" or slurmjs == 'CA':
+        if slurmjs == "CANCELED" or slurmjs == 'CA':
             return saga.job.CANCELED
         elif slurmjs == "COMPLETED" or slurmjs == 'CD':
             return saga.job.DONE
@@ -481,7 +481,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         elif slurmjs == "PENDING" or slurmjs == 'PD':
             return saga.job.PENDING
         elif slurmjs == "PREEMPTED" or slurmjs == 'PR':
-            return saga.job.CANCELLED
+            return saga.job.CANCELED
         elif slurmjs == "RUNNING" or slurmjs == 'R':
             return saga.job.RUNNING
         elif slurmjs == "SUSPENDED" or slurmjs == 'S':
@@ -595,7 +595,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # job = self.create_job (jd)
         # job.run ()
 
-        return job
 
         
 
