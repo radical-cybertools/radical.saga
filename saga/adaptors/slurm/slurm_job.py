@@ -378,6 +378,12 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         if number_of_processes:
             slurm_script += "#SBATCH -n %s\n" % number_of_processes
+        # no processes selected, let's give a default
+        else:
+            self._logger.warning("number_of_processes not specified in submitted "
+                                 "SLURM job description -- defaulting to 1!")
+            number_of_processes=1
+            slurm_script += "#SBATCH -n %s\n" % number_of_processes
 
         if threads_per_process:
             pass
