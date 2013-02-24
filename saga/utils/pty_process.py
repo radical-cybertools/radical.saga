@@ -16,7 +16,7 @@ import saga.exceptions as se
 # --------------------------------------------------------------------
 #
 _CHUNKSIZE = 1024  # default size of each read
-_POLLDELAY = 0.01  # seconds in between read attempts
+_POLLDELAY = 0.5   # seconds in between read attempts
 
 
 # --------------------------------------------------------------------
@@ -343,6 +343,16 @@ class PTYProcess (object) :
                 
                     # idle wait 'til the next data chunk arrives, or 'til _POLLDELAY
                     rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
+
+                    if  not len(rlist) :
+                        # select tells us there are data, and then we can
+                        # read nothing?  This must be MacOS!  If so, we bail
+                        # out at this point.
+                        
+                        if sys.platform == 'darwin' :
+                            self.finalize ()
+                            raise se.IncorrectState ("MacOS is beating a dead horse - bail out")
+
 
                     # got some data? 
                     for f in rlist:

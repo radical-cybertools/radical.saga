@@ -3,7 +3,6 @@ import time
 import saga
 
 try :
-    saga.engine.engine.Engine ()._dump ()
     js = saga.job.Service ('ssh://localhost/')
   
     jd = saga.job.Description ()
