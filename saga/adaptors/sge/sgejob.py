@@ -737,7 +737,6 @@ about finished jobs. Setting state to 'DONE'.")
 
         return ids
 
-
   # # ----------------------------------------------------------------
   # #
   # def container_run (self, jobs) :
