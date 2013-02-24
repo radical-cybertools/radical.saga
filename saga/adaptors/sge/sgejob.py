@@ -278,8 +278,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         # separately?
         #   cmd_state () { touch $DIR/purgeable; ... }
         # When should that be done?
-        # self._logger.error("adaptor dying... %s" % self.njobs)
-        # self._logger.trace()
+        #self._logger.error("adaptor dying... %s" % self.njobs)
+        #self._logger.trace()
 
         self.finalize(kill_shell=True)
 
@@ -396,12 +396,13 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         """ runs a job via qsub
         """
         if (self.queue is not None) and (jd.queue is not None):
-            self._logger.warning("Job service was instantiated explicitly with 'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." \
+            self._logger.warning("Job service was instantiated explicitly with \
+'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." \
                 % (self.queue, jd.queue, self.queue))
 
-        # create an SGE job script from SAGA job description
-        script = _sgescript_generator(url=self.rm, logger=self._logger,
-            jd=jd, ppn=self.ppn, queue=self.queue)
+        # create a SGE job script from SAGA job description
+        script = _sgescript_generator(url=self.rm, logger=self._logger, jd=jd,
+            ppn=self.ppn, queue=self.queue)
         self._logger.debug("Generated SGE script: %s" % script)
 
         ret, out, _ = self.shell.run_sync("echo '%s' | %s" \
@@ -426,112 +427,201 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             job_id = "[%s]-[%s]" % (self.rm, pid)
             self._logger.info("Submitted SGE job with id: %s" % job_id)
 
-            # add job to internal list of jobs.
-            self.jobs[job_id] = saga.job.PENDING
+            # add job to internal list of known jobs.
+            self.jobs[job_id] = {
+                'state':        saga.job.PENDING,
+                'exec_hosts':   None,
+                'returncode':   None,
+                'create_time':  None,
+                'start_time':   None,
+                'end_time':     None,
+                'gone':         False
+            }
 
             return job_id
 
     # ----------------------------------------------------------------
     #
-    def _job_get_state(self, jobid):
-        """ get job state via qstat
+    def _retrieve_job(self, job_id):
+        """ see if we can get some info about a job that we don't
+            know anything about
         """
-        job_state = None
+        rm, pid = self._adaptor.parse_id(job_id)
 
-        rm, pid = self._adaptor.parse_id(jobid)
-        # get the job status via qstat
-        ret, out, _ = self.shell.run_sync("%s | grep %s" \
-            % (self._commands['qstat']['path'], pid))
+        # run the SGE 'qstat' command to get some infos about our job
+        ret, out, _ = self.shell.run_sync("echo -n \"JID: \" && %s | grep %s \
+                && %s -f -j %s | egrep '(submission_time)'" \
+                % (self._commands['qstat']['path'], pid,
+                   self._commands['qstat']['path'], pid))
+
         if ret != 0:
-            # if the job existed previously, it has disappeared from the
-            # queueing system. in that case we can set the job_state to
-            # DONE. the job could also have failed, but that's impossible
-            # to figure out.
-            if jobid in self.jobs:
-                if self.jobs[jobid] == saga.job.RUNNING:
-                    self.jobs[jobid] = saga.job.DONE
-                    job_state = self.jobs[jobid]
-                else:
-                    job_state = self.jobs[jobid]
-            else:
-                # something else went wrong
-                message = "Error retrieving job status via 'qstat': %s" % out
-                log_error_and_raise(message, saga.NoSuccess, self._logger)
+            message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
-            # result should look like this:
-            # 1036615 0.51206 testjob  tg802352  qw  02/19/2013 02:41:08
-            job_state = _sge_to_saga_jobstate(out.split()[4])
-            self.jobs[jobid] = job_state
+            # the job seems to exist on the backend. let's gather some data
+            job_info = {
+                'state':        saga.job.UNKNOWN,
+                'exec_hosts':   None,
+                'returncode':   None,
+                'create_time':  None,
+                'start_time':   None,
+                'end_time':     None,
+                'gone':         False
+            }
 
-        return job_state
-
-    # ----------------------------------------------------------------
-    #
-    def _job_get_info(self, jobid):
-        """ get job attributes via qstat
-        """
-        job_state   = None
-        exec_hosts  = None
-        exit_status = None
-        create_time = None
-        start_time  = None
-        end_time    = None
-
-        job_state = self._job_get_state(jobid)
-
-        # we can only fetch the state if the job is still running
-        if (job_state == saga.job.PENDING) or (job_state == saga.job.RUNNING):
-
-            rm, pid = self._adaptor.parse_id(jobid)
-
-            # now we run a different qstat command to get some additional
-            # informations about the job
-            ret, out, _ = self.shell.run_sync("%s -f -j %s | \
-                egrep '(submission_time)'" \
-                % (self._commands['qstat']['path'], pid))
-
-            if ret != 0:
-                # something went wrong
-                message = "Error retrieving job info via 'qstat': %s" % out
-                self._logger.warning(message)
-
-            # parse the egrep result. this should look something like this:
-            #     submission_time = xyz
-            #     ...
             results = out.split('\n')
             for result in results:
-                print result
-                if 'submission_time' in result:
-                    val = result.replace('submission_time', '')
-                    create_time = val.strip()
+                if 'JID:' in result:
+                    job_state = _sge_to_saga_jobstate(out.split()[5])
+                    job_info['state'] = job_state
+                elif 'submission_time:' in result:
+                    val = result.replace('submission_time:', '')
+                    job_info['create_time'] = val.strip()
 
-        return (job_state, exec_hosts, exit_status,
-                create_time, start_time, end_time)
+            return job_info
 
     # ----------------------------------------------------------------
     #
-    def _job_get_exit_code(self, id):
+    def _job_get_info(self, job_id):
+        """ get job attributes via qstat
+        """
+
+        # if we don't have the job in our dictionary, we don't want it
+        if job_id not in self.jobs:
+            message = "Unkown job ID: %s. Can't update state." % job_id
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+        # prev. info contains the info collect when _job_get_info
+        # was called the last time
+        prev_info = self.jobs[job_id]
+
+        # if the 'gone' flag is set, there's no need to query the job
+        # state again. it's gone forever
+        if prev_info['gone'] is True:
+            self._logger.warning("Job information is not available anymore.")
+            return prev_info
+
+        # curr. info will contain the new job info collect. it starts off
+        # as a copy of prev_info
+        curr_info = deepcopy(prev_info)
+
+        rm, pid = self._adaptor.parse_id(job_id)
+
+        # run the SGE 'qstat' command to get some infos about our job
+        ret, out, _ = self.shell.run_sync("echo -n \"JID: \" && %s | grep %s \
+                && %s -f -j %s | egrep '(submission_time)'" \
+                % (self._commands['qstat']['path'], pid,
+                   self._commands['qstat']['path'], pid))
+
+        if ret != 0:
+            # Let's see if the previous job state was runnig or pending. in
+            # that case, the job is gone now, which can either mean DONE,
+            # or FAILED. the only thing we can do is set it to 'DONE'
+            if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+                curr_info['state'] = saga.job.DONE
+                curr_info['gone'] = True
+                self._logger.warning("Previously running job has \
+disappeared. This probably means that the backend doesn't store informations \
+about finished jobs. Setting state to 'DONE'.")
+            else:
+                curr_info['gone'] = True
+
+        else:
+            results = out.split('\n')
+            for result in results:
+                if 'JID:' in result:
+                    job_state = _sge_to_saga_jobstate(out.split()[5])
+                    curr_info['state'] = job_state
+                elif 'submission_time:' in result:
+                    val = result.replace('submission_time:', '')
+                    curr_info['create_time'] = val.strip()
+
+        # return the new job info dict
+        return curr_info
+
+    # ----------------------------------------------------------------
+    #
+    def _job_get_state(self, job_id):
+        """ get the job's state
+        """
+        # check if we have already reach a terminal state
+        if self.jobs[job_id]['state'] == saga.job.CANCELED \
+        or self.jobs[job_id]['state'] == saga.job.FAILED \
+        or self.jobs[job_id]['state'] == saga.job.DONE:
+            return self.jobs[job_id]['state']
+
+        # check if we can / should update
+        if (self.jobs[job_id]['gone'] is not True):
+            self.jobs[job_id] = self._job_get_info(job_id=job_id)
+
+        return self.jobs[job_id]['state']
+
+    # ----------------------------------------------------------------
+    #
+    def _job_get_exit_code(self, job_id):
         """ get the job's exit code
         """
-        # _job_get_info returns (job_state, exec_hosts, exit_status,
-        #                        create_time, start_time)
-        return self._job_get_info(id)[2]
+        # check if we can / should update
+        if (self.jobs[job_id]['gone'] is not True) \
+        and (self.jobs[job_id]['returncode'] is None):
+            self.jobs[job_id] = self._job_get_info(job_id=job_id)
+
+        return self.jobs[job_id]['returncode']
 
     # ----------------------------------------------------------------
     #
-    def _job_get_execution_hosts(self, id):
+    def _job_get_execution_hosts(self, job_id):
         """ get the job's exit code
         """
-        # _job_get_info returns (job_state, exec_hosts, exit_status,
-        #                        create_time, start_time)
-        return self._job_get_info(id)[1]
+        # check if we can / should update
+        if (self.jobs[job_id]['gone'] is not True) \
+        and (self.jobs[job_id]['exec_hosts'] is None):
+            self.jobs[job_id] = self._job_get_info(job_id=job_id)
+
+        return self.jobs[job_id]['exec_hosts']
 
     # ----------------------------------------------------------------
     #
-    def _job_cancel(self, id):
+    def _job_get_create_time(self, job_id):
+        """ get the job's creation time
+        """
+        # check if we can / should update
+        if (self.jobs[job_id]['gone'] is not True) \
+        and (self.jobs[job_id]['create_time'] is None):
+            self.jobs[job_id] = self._job_get_info(job_id=job_id)
+
+        return self.jobs[job_id]['create_time']
+
+    # ----------------------------------------------------------------
+    #
+    def _job_get_start_time(self, job_id):
+        """ get the job's start time
+        """
+        # check if we can / should update
+        if (self.jobs[job_id]['gone'] is not True) \
+        and (self.jobs[job_id]['start_time'] is None):
+            self.jobs[job_id] = self._job_get_info(job_id=job_id)
+
+        return self.jobs[job_id]['start_time']
+
+    # ----------------------------------------------------------------
+    #
+    def _job_get_end_time(self, job_id):
+        """ get the job's end time
+        """
+        # check if we can / should update
+        if (self.jobs[job_id]['gone'] is not True) \
+        and (self.jobs[job_id]['end_time'] is None):
+            self.jobs[job_id] = self._job_get_info(job_id=job_id)
+
+        return self.jobs[job_id]['end_time']
+
+    # ----------------------------------------------------------------
+    #
+    def _job_cancel(self, job_id):
         """ cancel the job via 'qdel'
         """
-        rm, pid = self._adaptor.parse_id(id)
+        rm, pid = self._adaptor.parse_id(job_id)
 
         ret, out, _ = self.shell.run_sync("%s %s\n" \
             % (self._commands['qdel']['path'], pid))
@@ -540,18 +630,22 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             message = "Error canceling job via 'qdel': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
+        # assume the job was succesfully canceld
+        self.jobs[job_id]['state'] = saga.job.CANCELED
+
     # ----------------------------------------------------------------
     #
-    def _job_wait(self, id, timeout):
+    def _job_wait(self, job_id, timeout):
         """ wait for the job to finish or fail
         """
 
         time_start = time.time()
         time_now   = time_start
-        rm, pid    = self._adaptor.parse_id(id)
+        rm, pid    = self._adaptor.parse_id(job_id)
 
         while True:
-            state = self._job_get_state(id)
+            state = self._job_get_state(job_id=job_id)
+
             if state == saga.job.DONE or \
                state == saga.job.FAILED or \
                state == saga.job.CANCELED:
@@ -582,7 +676,32 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         # state information you need there.
         adaptor_state = {"job_service":     self,
                          "job_description": jd,
-                         "job_schema":      self.rm.schema
+                         "job_schema":      self.rm.schema,
+                         "reconnect":       False
+                        }
+
+        return saga.job.Job(_adaptor=self._adaptor,
+                            _adaptor_state=adaptor_state)
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_job(self, jobid):
+        """ Implements saga.adaptors.cpi.job.Service.get_job()
+        """
+
+        # try to get some information about this job and throw it into
+        # our job dictionary.
+        self.jobs[jobid] = self._retrieve_job(jobid)
+
+        # this dict is passed on to the job adaptor class -- use it to pass any
+        # state information you need there.
+        adaptor_state = {"job_service":     self,
+                         # TODO: fill job description
+                         "job_description": saga.job.Description(),
+                         "job_schema":      self.rm.schema,
+                         "reconnect":       True,
+                         "reconnect_jobid": jobid
                         }
 
         return saga.job.Job(_adaptor=self._adaptor,
@@ -607,7 +726,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         ret, out, _ = self.shell.run_sync("%s | grep `whoami`"\
             % self._commands['qstat']['path'])
         if ret != 0 and len(out) > 0:
-            message = "failed to list jobs via 'qstat': %s" % out
+            message = "Failed to list jobs via 'qstat': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         elif ret != 0 and len(out) == 0:
             # qstat | grep `whoami` exits with 1 if the list is empty
@@ -618,21 +737,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         return ids
 
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def get_job (self, jobid):
-  #     """ Implements saga.adaptors.cpi.job.Service.get_url()
-  #     """
-  #     if jobid not in self._jobs.values ():
-  #         msg = "Service instance doesn't know a Job with ID '%s'" % (jobid)
-  #         raise saga.BadParameter._log (self._logger, msg)
-  #     else:
-  #         for (job_obj, job_id) in self._jobs.iteritems ():
-  #             if job_id == jobid:
-  #                 return job_obj.get_api ()
-  #
-  #
+
   # # ----------------------------------------------------------------
   # #
   # def container_run (self, jobs) :
@@ -679,15 +784,12 @@ class SGEJob (saga.adaptors.cpi.job.Job):
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
 
-        # initialize job attribute values
-        self._id              = None
-        self._state           = saga.job.NEW
-        self._exit_code       = None
-        self._exception       = None
-        self._created         = None
-        self._started         = None
-        self._finished        = None
-        self._execution_hosts = None
+        if job_info['reconnect'] is True:
+            self._id = job_info['reconnect_jobid']
+            self._started = True
+        else:
+            self._id = None
+            self._started = False
 
         return self.get_api()
 
@@ -697,21 +799,11 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     def get_state(self):
         """ mplements saga.adaptors.cpi.job.Job.get_state()
         """
-        # if the state is DONE, CANCELED or FAILED, it is considered
-        # final and we don't need to query the backend again
-        if self._state == saga.job.CANCELED or self._state == saga.job.FAILED \
-            or self._state == saga.job.DONE:
-            return self._state
+        if self._started is False:
+            # jobs that are not started are always in 'NEW' state
+            return saga.job.NEW
         else:
-            try:
-                self._state = self.js._job_get_state(self._id)
-                return self._state
-            except Exception as e:
-                # the job can disappear on the remote end.
-                if self._id == None:
-                    return self._state
-                else:
-                    raise e
+            return self.js._job_get_state(self._id)
 
     # ----------------------------------------------------------------
     #
@@ -719,7 +811,40 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     def wait(self, timeout):
         """ implements saga.adaptors.cpi.job.Job.wait()
         """
-        return self.js._job_wait(self._id, timeout)
+        if self._started is False:
+            log_error_and_raise("Can't wait for job that hasn't been started",
+                saga.IncorrectState, self._logger)
+        else:
+            self.js._job_wait(self._id, timeout)
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def cancel(self, timeout):
+        """ implements saga.adaptors.cpi.job.Job.cancel()
+        """
+        if self._started is False:
+            log_error_and_raise("Can't wait for job that hasn't been started",
+                saga.IncorrectState, self._logger)
+        else:
+            self.js._job_cancel(self._id)
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def run(self):
+        """ implements saga.adaptors.cpi.job.Job.run()
+        """
+        self._id = self.js._job_run(self.jd)
+        self._started = True
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_service_url(self):
+        """ implements saga.adaptors.cpi.job.Job.get_service_url()
+        """
+        return self.js.rm
 
     # ----------------------------------------------------------------
     #
@@ -735,11 +860,10 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     def get_exit_code(self):
         """ implements saga.adaptors.cpi.job.Job.get_exit_code()
         """
-        if self._exit_code != None:
-            return self._exit_code
-
-        self._exit_code = self.js._job_get_exit_code(self._id)
-        return self._exit_code
+        if self._started is False:
+            return None
+        else:
+            return self.js._job_get_exit_code(self._id)
 
     # ----------------------------------------------------------------
     #
@@ -747,11 +871,10 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     def get_created(self):
         """ implements saga.adaptors.cpi.job.Job.get_created()
         """
-        if self._created is None:
-            # _job_get_info returns (job_state, exec_hosts, exit_status,
-            #                        create_time, start_time, end_time)
-            self._created = self.js._job_get_info(self._id)[3]
-        return self._created
+        if self._started is False:
+            return None
+        else:
+            return self.js._job_get_create_time(self._id)
 
     # ----------------------------------------------------------------
     #
@@ -759,11 +882,10 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     def get_started(self):
         """ implements saga.adaptors.cpi.job.Job.get_started()
         """
-        if self._started is None:
-            # _job_get_info returns (job_state, exec_hosts, exit_status,
-            #                        create_time, start_time, end_time)
-            self._started = self.js._job_get_info(self._id)[4]
-        return self._started
+        if self._started is False:
+            return None
+        else:
+            return self.js._job_get_start_time(self._id)
 
     # ----------------------------------------------------------------
     #
@@ -771,11 +893,10 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     def get_finished(self):
         """ implements saga.adaptors.cpi.job.Job.get_finished()
         """
-        if self._finished is None:
-            # _job_get_info returns (job_state, exec_hosts, exit_status,
-            #                        create_time, start_time, end_time)
-            self._finished = self.js._job_get_info(self._id)[5]
-        return self._finished
+        if self._started is False:
+            return None
+        else:
+            return self.js._job_get_end_time(self._id)
 
     # ----------------------------------------------------------------
     #
@@ -783,35 +904,7 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     def get_execution_hosts(self):
         """ implements saga.adaptors.cpi.job.Job.get_execution_hosts()
         """
-        if self._execution_hosts != None:
-            return self._execution_hosts
-
-        self._execution_hosts = self.js._job_get_execution_hosts(self._id)
-        return self._execution_hosts
-
-    # ----------------------------------------------------------------
-    #
-    @SYNC_CALL
-    def cancel(self, timeout):
-        """ implements saga.adaptors.cpi.job.Job.cancel()
-        """
-        self.js._job_cancel(self._id)
-        self._state = saga.job.CANCELED
-
-    # ----------------------------------------------------------------
-    #
-    @SYNC_CALL
-    def run(self):
-        """ implements saga.adaptors.cpi.job.Job.run()
-        """
-        self._id = self.js._job_run(self.jd)
-        # after a call to run(), the job is either in RUNNIGN or
-        # PENDING state.
-        self._state = saga.job.PENDING
-
-    # ----------------------------------------------------------------
-    #
-    @SYNC_CALL
-    def re_raise(self):
-        # nothing to do here actually, as run () is synchronous...
-        return self._exception
+        if self._started is False:
+            return None
+        else:
+            return self.js._job_get_execution_hosts(self._id)
