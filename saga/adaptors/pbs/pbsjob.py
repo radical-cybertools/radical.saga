@@ -476,8 +476,9 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" % (self._commands['qstat']['path'], pid))
 
         if ret != 0:
-            log_error_and_raise("Couldn't reconnect to job '%s': %s" % \
-                (job_id, out))
+            message = "Couldn't reconnect to job '%s': %s" % (job_id, out))
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+
         else:
             # the job seems to exist on the backend. let's gather some data
             job_info = {
