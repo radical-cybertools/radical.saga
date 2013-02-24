@@ -317,9 +317,11 @@ class PTYProcess (object) :
                     # got some data? 
                     for f in rlist:
                         # read whatever we still need
-                        buf  = os.read (f, size-len(ret))
-                        self.clog += buf
-                        ret       += buf
+                        buf         = os.read (f, size-len(ret))
+                        self.clog  += buf
+                        ret        += buf
+
+                        if not len(buf) : raise OSError ("EOF")
 
                         buf = buf.replace ('\n', '\\n')
                         buf = buf.replace ('\r', '')
@@ -401,14 +403,17 @@ class PTYProcess (object) :
                 # a newline, or until timeout
                 while True :
                 
-                    # do an idle wait 'til the next data chunk arrives
+                    # idle wait 'til the next data chunk arrives, or 'til _POLLDELAY
                     rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
 
                     # got some data - read them into the cache
                     for f in rlist:
+                        # read whatever we can get
                         buf         = os.read (f, _CHUNKSIZE)
                         self.clog  += buf
                         self.cache += buf
+
+                        if not len(buf) : raise OSError ("EOF")
 
                         buf = buf.replace ('\n', '\\n')
                         buf = buf.replace ('\r', '')
@@ -618,6 +623,8 @@ class PTYProcess (object) :
                         
                         # write will report the number of written bytes
                         size = os.write (f, data)
+
+                        if not size : raise OSError ("EOF")
 
                         # otherwise, truncate by written data, and try again
                         data = data[size:]
