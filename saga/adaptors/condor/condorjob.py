@@ -97,7 +97,10 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
     arguments = "arguments = "
     if jd.arguments is not None:
         for arg in jd.arguments:
-            arguments += "%s " % (arg)
+            # Condor HATES double quotes in the arguments. It'll return
+            # some crap like: "Found illegal unescaped double-quote: ...
+            # That's why we esacpe them.
+            arguments += "%s " % (arg.replace('"', '\\"'))
     condor_file += "\n%s" % arguments
 
     # file_transfer -> transfer_input_files
@@ -546,22 +549,22 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             % (self._commands['condor_q']['path'], pid))
 
         if ret != 0:
-            if ("Unknown Job Id" in out):
+            #if ("Unknown Job Id" in out):
                 # Let's see if the previous job state was runnig or pending. in
                 # that case, the job is gone now, which can either mean DONE,
                 # or FAILED. the only thing we can do is set it to 'DONE'
-                if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                    curr_info['state'] = saga.job.DONE
-                    curr_info['gone'] = True
-                    self._logger.warning("Previously running job has \
+            if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+                curr_info['state'] = saga.job.DONE
+                curr_info['gone'] = True
+                self._logger.warning("Previously running job has \
 disappeared. This probably means that the backend doesn't store informations \
 about finished jobs. Setting state to 'DONE'.")
-                else:
-                    curr_info['gone'] = True
             else:
-                # something went wrong
-                message = "Error retrieving job info via 'condor_q': %s" % out
-                log_error_and_raise(message, saga.NoSuccess, self._logger)
+                curr_info['gone'] = True
+            #else:
+            #    # something went wrong
+            #    message = "Error retrieving job info via 'condor_q': %s" % out
+            #    log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
             # parse the egrep result. this should look something like this:
             # JobStatus = 5
