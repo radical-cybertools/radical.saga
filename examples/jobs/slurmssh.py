@@ -83,6 +83,8 @@ def main(args):
         #print "Job ID    : %s" % (catjob.id)
         #print "Job State : %s" % (catjob.state)
 
+        #print catjob.get_created()
+
         print "\nListing active jobs: "
         for job in js.list():
             print " * %s" % job
