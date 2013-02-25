@@ -456,7 +456,14 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 if "** Proc" in line:
                     pid = line.split()[2][:-1]
 
-            job_id = "[%s]-[%s]" % (self.rm, pid)
+            # we don't want the 'query' part of the URL to be part of the ID,
+            # simply because it can get terribly long (and ugly). to get rid
+            # of it, we clone the URL and set the query part to None.
+            rm_clone = deepcopy(self.rm)
+            rm_clone.query = ""
+            rm_clone.path = ""
+
+            job_id = "[%s]-[%s]" % (rm_clone, pid)
             self._logger.info("Submitted Condor job with id: %s" % job_id)
 
             # add job to internal list of known jobs.
@@ -557,7 +564,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 curr_info['state'] = saga.job.DONE
                 curr_info['gone'] = True
                 self._logger.warning("Previously running job has \
-disappeared. This probably means that the backend doesn't store informations \
+disappeared. This probably means that the backend doesn't store any information \
 about finished jobs. Setting state to 'DONE'.")
             else:
                 curr_info['gone'] = True
@@ -785,7 +792,11 @@ about finished jobs. Setting state to 'DONE'.")
                 # 112059.svc.uc.futuregrid testjob oweidner 0 Q batch
                 # 112061.svc.uc.futuregrid testjob oweidner 0 Q batch
                 if len(line.split()) > 1:
-                    jobid = "[%s]-[%s]" % (self.rm, line.split()[0])
+                    rm_clone = deepcopy(self.rm)
+                    rm_clone.query = ""
+                    rm_clone.path = ""
+
+                    jobid = "[%s]-[%s]" % (rm_clone, line.split()[0])
                     ids.append(str(jobid))
 
         return ids
