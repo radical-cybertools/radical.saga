@@ -221,6 +221,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.PROJECT,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
+                          saga.job.CANDIDATE_HOSTS,
                           saga.job.TOTAL_CPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -403,18 +404,19 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
             else:
                 path = out.strip()  # strip removes newline
-                #if cmd == 'qdel':  # qdel doesn't support --version!
-                #    self._commands[cmd] = {"path":    path,
-                #                           "version": "?"}
-                #else:
-                #    ret, out, _ = self.shell.run_sync("%s --version" % cmd)
-                #    if ret != 0:
-                #        message = "Error finding PBS tools: %s" % out
-                #        log_error_and_raise(message, saga.NoSuccess,
-                #            self._logger)
-                #    else:
-                #        # version is reported as: "version: x.y.z"
-                version = "0.0"  # out.strip().split()[1]
+                if cmd == 'condor_version':
+                    ret, out, _ = self.shell.run_sync("%s" % cmd)
+                    if ret != 0:
+                        message = "Error determining Condor version: %s" % out
+                        log_error_and_raise(message, saga.NoSuccess,
+                            self._logger)
+                    else:
+                        # version is reported as:
+                        # $CondorVersion: 7.8.6 Oct 25 2012 $
+                        # $CondorPlatform: X86_64-CentOS_5.7 $
+                        lines = out.split('\n')
+                        version = lines[0].replace("$CondorVersion: ", "")
+                        version = version.strip(" $")
 
                         # add path and version to the command dictionary
                 self._commands[cmd] = {"path":    path,
@@ -422,43 +424,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         self._logger.info("Found Condor tools: %s" % self._commands)
 
-        # let's try to figure out if we're working on a Cray XT machine.
-        # naively, we assume that if we can find the 'aprun' command in the
-        # path that we're logged in to a Cray machine.
-        ret, out, _ = self.shell.run_sync('which aprun')
-        if ret != 0:
-            self.is_cray = False
-        else:
-            self._logger.info("Host '%s' seems to be a Cray XT class machine." \
-                % self.rm.host)
-            self.is_cray = True
-
-        # see if we can get some information about the cluster, e.g.,
-        # different queues, number of processes per node, etc.
-        # TODO: this is quite a hack. however, it *seems* to work quite
-        #       well in practice.
-        ret, out, _ = self.shell.run_sync('%s -a | grep np' % \
-            self._commands['condornodes']['path'])
-        if ret != 0:
-            message = "Error running condornodes: %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
-        else:
-            # this is black magic. we just assume that the highest occurence
-            # of a specific np is the number of processors (cores) per compute
-            # node. this equals max "PPN" for job scripts
-            ppn_list = dict()
-            for line in out.split('\n'):
-                np = line.split(' = ')
-                if len(np) == 2:
-                    np = np[1].strip()
-                    if np in ppn_list:
-                        ppn_list[np] += 1
-                    else:
-                        ppn_list[np] = 1
-            self.ppn = max(ppn_list, key=ppn_list.get)
-            self._logger.debug("Found the following 'ppn' configurations: %s. \
-    Using %s as default ppn." 
-                % (ppn_list, self.ppn))
 
     # ----------------------------------------------------------------
     #
