@@ -125,6 +125,7 @@ setup_args = {
         "saga.adaptors.context",
         "saga.adaptors.local",
         "saga.adaptors.shell",
+        "saga.adaptors.condor"
         "saga.engine",
         "saga.utils",
         "saga.utils.contrib",
