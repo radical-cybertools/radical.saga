@@ -407,7 +407,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             pass
 
         if working_directory:
-            pass
+            slurm_script += "#SBATCH -D %s\n" % working_directory
 
         if output:
             slurm_script+= "#SBATCH -o %s\n" % output
