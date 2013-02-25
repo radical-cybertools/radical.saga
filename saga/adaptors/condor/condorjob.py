@@ -37,105 +37,151 @@ def log_error_and_raise(message, exception, logger):
 def _condor_to_saga_jobstate(condorjs):
     """ translates a condor one-letter state to saga
     """
-    if condorjs == 'C':
-        return saga.job.DONE
-    elif condorjs == 'E':
-        return saga.job.RUNNING
-    elif condorjs == 'H':
-        return saga.job.PENDING
-    elif condorjs == 'Q':
-        return saga.job.PENDING
-    elif condorjs == 'R':
-        return saga.job.RUNNING
-    elif condorjs == 'T':
-        return saga.job.RUNNING
-    elif condorjs == 'W':
-        return saga.job.PENDING
-    elif condorjs == 'S':
-        return saga.job.PENDING
-    elif condorjs == 'X':
-        return saga.job.CANCELED
+    # From: http://pages.cs.wisc.edu/~adesmet/status.html
+    #
+    # JobStatus in job ClassAds
+    #
+    # 0   Unexpanded  U
+    # 1   Idle    I
+    # 2   Running R
+    # 3   Removed X
+    # 4   Completed   C
+    # 5   Held    H
+    # 6   Submission_err  E
+
+    if int(cdrjs) == 0:
+        return saga.job.Pending
+    elif int(cdrjs) == 1:
+        return saga.job.Pending
+    elif int(cdrjs) == 2:
+        return saga.job.Running
+    elif int(cdrjs) == 3:
+        return saga.job.Canceled
+    elif int(cdrjs) == 4:
+        return saga.job.Done
+    elif int(cdrjs) == 5:
+        return saga.job.Pending
+    elif int(cdrjs) == 6:
+        return saga.job.Failed
     else:
-        return saga.job.UNKNOWN
+        return saga.job.Unknown
 
 
 # --------------------------------------------------------------------
 #
-def _condorcript_generator(url, logger, jd, ppn, is_cray=False, queue=None):
-    """ generates a PBS script from a SAGA job description
+def _condorscript_generator(url, logger, jd, query=None):
+    """ generates a Condor script from a SAGA job description
     """
-    condor_params = str()
-    exec_n_args = str()
+    condor_file = str()
 
+    ##### OPTIONS PASSED VIA JOB SERVICE URL #####
+    ##
+    if query is not None:
+        condor_file += "\n##### DEFAULT OPTIONS PASSED VIA JOB SERVICE URL #####\n##"
+        # special treatment for universe - defaults to 'vanilla'
+        if 'universe' not in query:
+            condor_file += "\nuniverse = vanilla"
+        for (key, value) in query.iteritems():
+            condor_file += "\n%s = %s" % (key, value)
+
+    ##### OPTIONS PASSED VIA JOB DESCRIPTION #####
+    ##
+    condor_file += "\n\n##### OPTIONS PASSED VIA JOB SERVICE URL #####\n##"
+    requirements = "requirements = "
+
+    # executable -> executable
     if jd.executable is not None:
-        exec_n_args += "%s " % (jd.executable)
+        condor_file += "\nexecutable = %s" % jd.executable
+
+    # arguments -> arguments
+    arguments = "arguments = "
     if jd.arguments is not None:
         for arg in jd.arguments:
-            exec_n_args += "%s " % (arg)
+            arguments += "%s " % (arg)
+    condor_file += "\n%s" % arguments
 
-    if jd.name is not None:
-        condor_params += "#PBS -N %s \n" % jd.name
+    # file_transfer -> transfer_input_files
+    if jd.file_transfer is not None:
+        td = TransferDirectives(jd.file_transfer)
 
-    if is_cray is False:
-        # qsub on Cray systems complains about the -V option:
-        # Warning:
-        # Your job uses the -V option, which requests that all of your
-        # current shell environment settings (9913 bytes) be exported to
-        # it.  This is not recommended, as it causes problems for the
-        # batch environment in some cases.
-        condor_params += "#PBS -V \n"
+        if len(td.in_append_dict) > 0:
+            raise Exception('FileTransfer append syntax (>>) not supported by Condor: %s' % td.in_append_dict)
+        if len(td.out_append_dict) > 0:
+            raise Exception('FileTransfer append syntax (<<) not supported by Condor: %s' % td.out_append_dict)
+        
+        if len(td.in_overwrite_dict) > 0:
+            transfer_input_files = "transfer_input_files = "
+            for (source, target) in td.in_overwrite_dict.iteritems():
+                # make sure source is file an not dir
+                (s_path, s_entry) = os.path.split(source)
+                if len(s_entry) < 1:
+                    raise Exception('Condor accepts only files (not directories) as FileTransfer sources: %s' % source)
+                # make sure target is just a file 
+                (t_path, t_entry) = os.path.split(target)
+                if len(t_path) > 1:
+                    raise Exception('Condor accepts only filenames (without paths) as FileTransfer targets: %s' % target)
+                # make sure source and target file are the same
+                if s_entry != t_entry:
+                    raise Exception('For Condor source file name and target file name have to be identical: %s != %s' % (s_entry, t_entry))
+                # entry ok - add to job script
+                transfer_input_files += "%s, " % source
+            condor_file += "\n%s" % transfer_input_files
 
+        if len(td.out_overwrite_dict) > 0:
+            transfer_output_files = "transfer_output_files = "
+            for (source, target) in td.out_overwrite_dict.iteritems():
+                # make sure source is file an not dir
+                (s_path, s_entry) = os.path.split(source)
+                if len(s_entry) < 1:
+                    raise Exception('Condor accepts only files (not directories) as FileTransfer sources: %s' % source)
+                # make sure target is just a file 
+                (t_path, t_entry) = os.path.split(target)
+                if len(t_path) > 1:
+                    raise Exception('Condor accepts only filenames (without paths) as FileTransfer targets: %s' % target)
+                # make sure source and target file are the same
+                if s_entry != t_entry:
+                    raise Exception('For Condor source file name and target file name have to be identical: %s != %s' % (s_entry, t_entry))
+                # entry ok - add to job script
+                transfer_output_files += "%s, " % source
+            condor_file += "\n%s" % transfer_output_files
+
+    # always define log
+    condor_file += "\nlog = saga-condor-job-$(cluster).log "
+
+    # output -> output
+    if jd.output is not None:
+        condor_file += "\noutput = %s " % jd.output
+
+    # error -> error
+    if jd.error is not None:
+        condor_file += "\nerror = %s " % jd.error 
+
+    # environment -> environment
+    environment = "environment = "
     if jd.environment is not None:
         variable_list = str()
-        for key in jd.environment.keys():
-            variable_list += "%s=%s," % (key, jd.environment[key])
-        condor_params += "#PBS -v %s \n" % variable_list
+        for key in jd.environment.keys(): 
+            variable_list += "%s=%s;" % (key, jd.environment[key])
+        environment += "%s " % variable_list
+    condor_file += "\n%s" % environment
 
-    if jd.working_directory is not None:
-        condor_params += "#PBS -d %s \n" % jd.working_directory
-    if jd.output is not None:
-        condor_params += "#PBS -o %s \n" % jd.output
-    if jd.error is not None:
-        condor_params += "#PBS -e %s \n" % jd.error
-    if jd.wall_time_limit is not None:
-        hours = jd.wall_time_limit / 60
-        minutes = jd.wall_time_limit % 60
-        condor_params += "#PBS -l walltime=%s:%s:00 \n" \
-            % (str(hours), str(minutes))
-
-    if (jd.queue is not None) and (queue is not None):
-        condor_params += "#PBS -q %s \n" % queue
-    elif (jd.queue is not None) and (queue is None):
-        condor_params += "#PBS -q %s \n" % jd.queue
-    elif (jd.queue is None) and (queue is not None):
-        condor_params += "#PBS -q %s \n" % queue
-
+    # project -> +ProjectName
     if jd.project is not None:
-        condor_params += "#PBS -A %s \n" % str(jd.project)
-    if jd.job_contact is not None:
-        condor_params += "#PBS -m abe \n"
+        condor_file += "\n+ProjectName = \"%s\"" % str(jd.project)
 
-    # TORQUE on a cray requires different -l size.. arguments than regular
-    # HPC clusters:
-    if is_cray is True:
-        # Special case for TORQUE on Cray XT5s
-        logger.info("Using Cray XT specific '#PBS - size=xx' flags.")
-        if jd.total_cpu_count is not None:
-            condor_params += "#PBS -l size=%s \n" % jd.total_cpu_count
-    else:
-        # Default case, i.e, standard HPC cluster (non-Cray XT)
-        if jd.total_cpu_count is not None:
-            tcc = int(jd.total_cpu_count)
-            tbd = float(tcc) / float(ppn)
-            if float(tbd) > int(tbd):
-                condor_params += "#PBS -l nodes=%s:ppn=%s \n" \
-                    % (str(int(tbd) + 1), ppn)
-            else:
-                condor_params += "#PBS -l nodes=%s:ppn=%s \n" \
-                    % (str(int(tbd)), ppn)
+    # candidate hosts -> SiteList + requirements
+    if jd.candidate_hosts is not None:
+        hosts = ""
+        for host in jd.candidate_hosts:
+            hosts += "%s, " % host
+        sitelist = "+SiteList = \"%s\"" % hosts
+        requirements += "(stringListMember(GLIDEIN_ResourceName,SiteList) == True)"
+        condor_file += "\n%s" % sitelist
+        condor_file += "\n%s" % requirements
 
-    condorcript = "\n#!/bin/bash \n%s%s" % (condor_params, exec_n_args)
-    return condorcript
+    condor_file += "\n\nqueue"
+
+    return condor_file
 
 
 # --------------------------------------------------------------------
@@ -295,13 +341,12 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     def init_instance(self, adaptor_state, rm_url, session):
         """ service instance constructor
         """
-
-        self.rm      = rm_url
-        self.session = session
-        self.ppn     = 0
-        self.is_cray = False
-        self.queue   = None
-        self.jobs    = dict()
+        self.rm            = rm_url
+        self.session       = session
+        self.ppn           = 0
+        self.is_cray       = False
+        self.jobs          = dict()
+        self.query_options = dict()
 
         rm_scheme = rm_url.scheme
         pty_url   = deepcopy(rm_url)
@@ -310,9 +355,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # 'query' component of the job service URL.
         if rm_url.query is not None:
             for key, val in parse_qs(rm_url.query).iteritems():
-                if key == 'queue':
-                    self.queue = val[0]
-
+                self.query_options[key] = val[0]
 
         # we need to extrac the scheme for PTYShell. That's basically the
         # job.Serivce Url withou the condor+ part. We use the PTYShell to execute
@@ -327,10 +370,10 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # these are the commands that we need in order to interact with PBS.
         # the adaptor will try to find them during initialize(self) and bail
         # out in case they are note avaialbe.
-        self._commands = {'condornodes': None,
-                          'qstat':    None,
-                          'qsub':     None,
-                          'qdel':     None}
+        self._commands = {'condor_version': None,
+                          'condor_submit':  None,
+                          'condor_q':       None,
+                          'condor_rm':      None}
 
         # create a null logger to silence the PTY wrapper!
         import logging
@@ -338,8 +381,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         class NullHandler(logging.Handler):
             def emit(self, record):
                 pass
-        #nh = NullHandler()
-        #null_logger = logging.getLogger("PTYShell").addHandler(nh)
+        nh = NullHandler()
+        null_logger = logging.getLogger("PTYShell").addHandler(nh)
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url,
             self.session.contexts, null_logger)
@@ -356,28 +399,28 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         for cmd in self._commands.keys():
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
-                message = "Error finding PBS tools: %s" % out
+                message = "Error finding Condor tools: %s" % out
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
             else:
                 path = out.strip()  # strip removes newline
-                if cmd == 'qdel':  # qdel doesn't support --version!
-                    self._commands[cmd] = {"path":    path,
-                                           "version": "?"}
-                else:
-                    ret, out, _ = self.shell.run_sync("%s --version" % cmd)
-                    if ret != 0:
-                        message = "Error finding PBS tools: %s" % out
-                        log_error_and_raise(message, saga.NoSuccess,
-                            self._logger)
-                    else:
-                        # version is reported as: "version: x.y.z"
-                        version = out.strip().split()[1]
+                #if cmd == 'qdel':  # qdel doesn't support --version!
+                #    self._commands[cmd] = {"path":    path,
+                #                           "version": "?"}
+                #else:
+                #    ret, out, _ = self.shell.run_sync("%s --version" % cmd)
+                #    if ret != 0:
+                #        message = "Error finding PBS tools: %s" % out
+                #        log_error_and_raise(message, saga.NoSuccess,
+                #            self._logger)
+                #    else:
+                #        # version is reported as: "version: x.y.z"
+                version = "0.0"  # out.strip().split()[1]
 
                         # add path and version to the command dictionary
-                        self._commands[cmd] = {"path":    path,
-                                               "version": version}
+                self._commands[cmd] = {"path":    path,
+                                       "version": version}
 
-        self._logger.info("Found PBS tools: %s" % self._commands)
+        self._logger.info("Found Condor tools: %s" % self._commands)
 
         # let's try to figure out if we're working on a Cray XT machine.
         # naively, we assume that if we can find the 'aprun' command in the
