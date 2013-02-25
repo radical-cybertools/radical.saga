@@ -232,8 +232,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     # ----------------------------------------------------------------
     #
     def _open (self) :
-        # start the shell, find its prompt.  If that is up and running, we can
-        # bootstrap our wrapper script, and then run jobs etc.
+        """
+        Open our persistent shell for this job adaptor.  We use
+        the pty_shell functionality for this.  
+        """
+        # check to see what kind of connection we will want to create
         if self.rm.schema   == "slurm":
             shell_schema = "fork://"
         elif self.rm.schema == "slurm+ssh":
@@ -265,36 +268,40 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         shell_url = saga.url.Url(shell_url)
 
+        # establish shell connection
         self._logger.debug("Opening shell of type: %s" % shell_url)
-        self.shell = saga.utils.pty_shell.PTYShell (shell_url, self.session.contexts, self._logger)
-
-        # -- now stage the shell wrapper script, and run it.  Once that is up
-        # and running, we can requests job start / management operations via its
-        # stdio.
-
-        base = "$HOME/.saga/adaptors/slurm_job"
-        
-        ret, out, _ = self.shell.run_sync ("mkdir -p %s" % base)
+        self.shell = saga.utils.pty_shell.PTYShell (shell_url, 
+                                                    self.session.contexts, 
+                                                    self._logger)
+                
+        # prepare our remote working directory for wrappers/etc
+        ret, out, _ = self.shell.run_sync ("mkdir -p %s" % self._base)
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" % (ret, out))
+            raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" \
+                                      % (ret, out))
+
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
         
         self.rm.detected_username = self.rm.username
-        # yank out username if it wasn't made explicit
-        # TODO: IS MODIFYING THE URL LIKE THIS LEGIT?  if not fix it
+        # figure out username if it wasn't made explicit
+        # important if .ssh/config info read+connected with 
+        # a different username than what we expect
         if not self.rm.username:
             self._logger.debug ("No username provided in URL %s, so we are"
                                 "going to find it with whoami" % shell_url)
             ret, out, _ = self.shell.run_sync("whoami")
-            #self.rm.username = out.strip()
             self.rm.detected_username = out.strip()
             self._logger.debug("Username detected as: %s",
                                self.rm.detected_username)
 
+        return
 
     # ----------------------------------------------------------------
     #
     def _close (self) :
+        """
+        Close our shell connection
+        """
         del (self.shell)
         self.shell = None
 
@@ -329,9 +336,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # to override defaults
 
         if jd.attribute_exists ("name"):
-            #TODO: alert user or quit with exception if
-            # we have to mangle the name
-            job_name = string.replace(jd.name, " ", "_")
+            job_name = jd.name
 
         if jd.attribute_exists ("arguments") :
             for a in jd.arguments :
@@ -381,7 +386,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         slurm_script = "#!/bin/bash\n"
 
         if job_name:
-            slurm_script += '#SBATCH -J %s\n' % job_name
+            slurm_script += '#SBATCH -J "%s"\n' % job_name
 
         if spmd_variation:
             pass #TODO

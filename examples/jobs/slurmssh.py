@@ -49,7 +49,7 @@ def main(args):
         #jd.executable  = '/bin/exit'
         #jd.arguments   = ['3']
         jd.queue = "development"
-        jd.name = "SlurmJob"
+        jd.name = "Slurm Job"
         #jd.job_contact="user@whateveryouuseforemail.com"
         #jd.project = "TG-ASC120003"
         jd.project = "ResSim"
