@@ -3,18 +3,25 @@ import re
 import os
 import sys
 
+import saga.utils.singleton
 import saga.utils.pty_process
 import saga.utils.logger
 
 _PTY_TIMEOUT = 2.0
 _SCHEMAS     = ['ssh', 'gsissh', 'fork', 'shell']
 
+# ------------------------------------------------------------------------------
+#
+# iomode flags
+#
 IGNORE   = 0    # discard stdout / stderr
 MERGED   = 1    # merge stdout and stderr
 SEPARATE = 2    # fetch stdout and stderr individually (one more hop)
 STDOUT   = 3    # fetch stdout only, discard stderr
 STDERR   = 4    # fetch stderr only, discard stdout
 
+# ------------------------------------------------------------------------------
+#
 # ssh options:
 #   -e none         : no escape character
 #   -M              : master mode for connection sharing
@@ -28,12 +35,70 @@ STDERR   = 4    # fetch stderr only, discard stdout
 #   ControlMaster  yes | no | no ...
 #   ControlPath    $BASE/ssh_control_%n_%p.$$.sock
 #                  %r (remote id)? would need inspection
-#   ControlPersist 10   : close master after 10 seconds idle
+#   ControlPersist 100  : close master after 100 seconds idle
 #   EscapeChar     none : transparent for binary data
 #   TCPKeepAlive   yes  : detect connection failure
 #
-#   
+#   LoginGraceTime seconds : disconnect if no login after n seconds
 #
+# ------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------
+#
+class PTYShellPool (object) :
+    """
+    We keep a set opf ssh master connections, so that other object instances can
+    quickly create slave connections as needed -- that removes the authorization
+    overhead of multiploe channels for the same target host/user/context
+    triplet.  An underlying assumption is that this module is used under the
+    same user id, or that changes in the effective user ID are offset by the use
+    of :class:`saga.Context`s.
+
+    Any ssh master connection in this pool can idle, and may thus shut down
+    after ``ControlPersist`` seconds (see options).
+    """
+
+    __metaclass__ = saga.utils.singleton.Singleton
+
+
+    # --------------------------------------------------------------------------
+    #
+    def __init__ (self) :
+
+        self.pool = {}
+
+
+    # --------------------------------------------------------------------------
+    #
+    def add (pty_shell, hostname, username, context) :
+
+        connection_id = "%s@%s" % (username, hostname)
+
+        if not context in self.pool :
+            self.pool[context] = {}
+
+        self.pool[context][connection_id] = pty_shell
+
+
+
+    # --------------------------------------------------------------------------
+    #
+    def get (hostname, username, context) :
+
+        connection_id = "%s@%s" % (username, hostname)
+
+        if not context in self.pool :
+            return None
+
+        if not connection_id in self.pool[context] :
+            return None
+
+        # FIXME: check if the returned pty_shell if still viable / alive, and
+        # revive if not.
+
+        return self.pool[context][connection_id]
 
 
 # --------------------------------------------------------------------

@@ -214,8 +214,6 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
         self.notifications = self.opts['enable_notifications'].get_value ()
 
-        self._logger.debug ('threading id: %s' % threading.current_thread ().name)
-
 
     # ----------------------------------------------------------------
     #

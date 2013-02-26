@@ -201,7 +201,7 @@ class Engine(sconf.Configurable):
         # attempt to load all registered modules
         for module_name in registry:
 
-            self._logger.info ("Trying to load adaptor %s"  %  module_name)
+            self._logger.info ("Loading  adaptor %s"  %  module_name)
 
 
             # first, import the module
@@ -409,7 +409,7 @@ class Engine(sconf.Configurable):
                     self._adaptor_registry[cpi_type][adaptor_schema].append(info)
                     registered_schemas.append(str("%s://" % adaptor_schema))
 
-                self._logger.info("Registering %s for %s API with URL scheme %s" %
+                self._logger.info("Register adaptor %s for %s API with URL scheme(s) %s" %
                                       (module_name,
                                        cpi_type,
                                        registered_schemas))

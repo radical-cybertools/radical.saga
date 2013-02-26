@@ -16,7 +16,7 @@ import saga.exceptions as se
 # --------------------------------------------------------------------
 #
 _CHUNKSIZE = 1024  # default size of each read
-_POLLDELAY = 0.5   # seconds in between read attempts
+_POLLDELAY = 0.01  # seconds in between read attempts
 
 
 # --------------------------------------------------------------------
@@ -97,10 +97,16 @@ class PTYProcess (object) :
         self.cache   = ""      # data cache
         self.clog    = ""      # log the data cache
         self.child   = None    # the process as created by subprocess.Popen
-        self.pty_io  = None    # the process' io channel, from pty.fork()
+        self.ptyio   = None    # the process' io channel, from pty.fork()
 
-        self.initialize_hook = None
-        self.finalize_hook   = None
+        self.exit_code        = None  # child died with code (may be revived)
+        self.exit_signal      = None  # child kill by signal (may be revived)
+
+        self.initialize_hook  = None
+        self.finalize_hook    = None
+
+        self.recover_max      = 3  # TODO: make configure option.  This does not
+        self.recover_attempts = 0  # apply for recovers triggered by gc_timout!
 
         if not self.logger :
             self.logger = saga.utils.logger.getLogger ('PTYProcess')
@@ -258,31 +264,77 @@ class PTYProcess (object) :
 
     # --------------------------------------------------------------------
     #
-    def check_state (self) :
+    def alive (self, recover=False) :
         """
-        Check if the child process is still alive.  If so, return True,
-        otherwise collect it, declare as dead, and return False.
+        try to determine if the child process is still active.  If not, mark 
+        the child as dead and close all IO descriptors etc ("func:`finalize`).
+
+        If `recover` is `True` and the child is indeed dead, we attempt to
+        re-initialize it (:func:`initialize`).  We only do that for so many
+        times (`self.recover_max`) before giving up -- at that point it seems
+        likely that the child exits due to a re-occurring operations condition.
+
+        Note that upstream consumers of the :class:`PTYProcess` should be
+        careful to only use `recover=True` when they can indeed handle
+        a disconnected/reconnected client at that point, i.e. if there are no
+        assumptions on persistent state beyond those in control of the upstream
+        consumers themselves.
         """
-        if not self.child :
-            # uh, nothing to check for
+
+        # hey, kiddo, whats up?
+        wpid, wstat = os.waitpid (self.child, os.WNOHANG)
+
+        # did we get a note about child termination?
+        if 0 == wpid :
+            # nope, all is well - carry on
+            return True
+
+
+        # Yes, we got a note.  
+        # Well, maybe the child fooled us and is just playing dead?
+        if os.WIFSTOPPED   (wstat) or \
+           os.WIFCONTINUED (wstat)    :
+            # we don't care if someone stopped/resumed the child -- that is up
+            # to higher powers.  For our purposes, the child is alive.  Ha!
+            return True
+
+
+        # not stopped, poor thing... - soooo, what happened??
+        if os.WIFEXITED (wstat) :
+            # child died of natural causes - perform autopsy...
+            self.exit_code   = os.WEXITSTATUS (wstat)
+            self.exit_signal = None
+
+        elif os.WIFSIGNALED (wstat) :
+            # murder!! Child got killed by someone!  recover evidence...
+            self.exit_code   = None
+            self.exit_signal = os.WTERMSIG (wstat)
+
+        # either way, its dead -- make sure it stays dead, to avoid zombie
+        # apocalypse...
+        self.finalize ()
+
+        # check if we can attempt a post-mortem revival though
+        if  not recover :
+            # nope, we are on holy ground - revival not allowed.
             return False
 
-        try :
-            (pid, status) = os.waitpid (self.child, os.WNOHANG)
+        # we are allowed to revive!  So can we try one more time...  pleeeease??
+        # (for cats, allow up to 9 attempts; for Buddhists, always allow to
+        # reincarnate, etc.)
+        if self.recover_attempts >= self.recover_max :
+            # nope, its gone for good - just report the sad news
+            return False
 
-            if 0 == status :
-                return True
+        # MEDIIIIC!!!!
+        self.recover_attempts += 1
+        self.initialize ()
 
-            if os.WIFSIGNALED (status) :
-                self.logger.info ("pty process died from signal %s" 
-                               % os.WTERMSIG (status))
-
-            if os.WIFEXITED (status) :
-                self.logger.info ("pty process exited with %s" 
-                               % os.WEXITSTATUS (status))
-
-        except OSError :
-            pass
+        # well, now we don't trust the child anymore, of course!  So we check
+        # again.  Yes, this is recursive -- but note that recover_attempts get
+        # incremented on every iteration, and this will eventually lead to
+        # call termination (tm).
+        return self.alive (recover=True)
 
 
 
@@ -344,24 +396,12 @@ class PTYProcess (object) :
                     # idle wait 'til the next data chunk arrives, or 'til _POLLDELAY
                     rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
 
-                    if  not len(rlist) :
-                        # select tells us there are data, and then we can
-                        # read nothing?  This must be MacOS!  If so, we bail
-                        # out at this point.
-                        
-                        if sys.platform == 'darwin' :
-                            self.finalize ()
-                            raise se.IncorrectState ("MacOS is beating a dead horse - bail out")
-
-
                     # got some data? 
                     for f in rlist:
                         # read whatever we still need
-                        buf         = os.read (f, size-len(ret))
-                        self.clog  += buf
-                        ret        += buf
-
-                        if not len(buf) : raise OSError ("EOF")
+                        buf  = os.read (f, size-len(ret))
+                        self.clog += buf
+                        ret       += buf
 
                         buf = buf.replace ('\n', '\\n')
                         buf = buf.replace ('\r', '')
@@ -443,17 +483,14 @@ class PTYProcess (object) :
                 # a newline, or until timeout
                 while True :
                 
-                    # idle wait 'til the next data chunk arrives, or 'til _POLLDELAY
+                    # do an idle wait 'til the next data chunk arrives
                     rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
 
                     # got some data - read them into the cache
                     for f in rlist:
-                        # read whatever we can get
                         buf         = os.read (f, _CHUNKSIZE)
                         self.clog  += buf
                         self.cache += buf
-
-                        if not len(buf) : raise OSError ("EOF")
 
                         buf = buf.replace ('\n', '\\n')
                         buf = buf.replace ('\r', '')
@@ -663,8 +700,6 @@ class PTYProcess (object) :
                         
                         # write will report the number of written bytes
                         size = os.write (f, data)
-
-                        if not size : raise OSError ("EOF")
 
                         # otherwise, truncate by written data, and try again
                         data = data[size:]
