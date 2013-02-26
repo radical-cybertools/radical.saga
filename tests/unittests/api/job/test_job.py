@@ -7,6 +7,42 @@ import sys
 import saga
 import saga.utils.test_config as sutc
 
+from copy import deepcopy
+
+
+# ------------------------------------------------------------------------------
+#
+def test_job_invalid_session():
+    """ Testing if an invalid session results in a proper exception
+    """
+    try:
+        tc = sutc.TestConfig()
+        invalid_session = "INVALID SESSION"
+        js = saga.job.Serivce(tc.js_url, invalid_session)
+        assert False, "Expected XYZ exception but got none."
+
+    except saga.XYZ:
+        assert True
+    except Exception, ex:
+        assert False, "Expected XYZ exception, but got %s" % str(ex)
+
+
+# ------------------------------------------------------------------------------
+#
+def test_job_service_invalid_url():
+    """ Testing if a non-resolvable hostname results in a proper exception
+    """
+    try:
+        tc = sutc.TestConfig()
+        invalid_url = deepcopy(tc.js_url)
+        invalid_url.hostname += ".invalid"
+        js = saga.job.Serivce(invalid_url, tc.session)
+        assert False, "Expected XYZ exception but got none."
+
+    except saga.XYZ:
+        assert True
+    except Exception, ex:
+        assert False, "Expected XYZ exception, but got %s" % str(ex)
 
 # ------------------------------------------------------------------------------
 #
