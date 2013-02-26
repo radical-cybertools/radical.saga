@@ -64,7 +64,9 @@ def main(args):
         # create the job (state: New)
         catjob = js.create_job(jd)
 
-        print catjob.get_description()
+        # not in for slurm right now
+        #print catjob.get_description()
+        #print catjob.get_created()
 
         # check our job's id and state
         print "Job ID    : %s" % (catjob.id)
@@ -82,8 +84,6 @@ def main(args):
         #catjob.resume()
         #print "Job ID    : %s" % (catjob.id)
         #print "Job State : %s" % (catjob.state)
-
-        #print catjob.get_created()
 
         print "\nListing active jobs: "
         for job in js.list():

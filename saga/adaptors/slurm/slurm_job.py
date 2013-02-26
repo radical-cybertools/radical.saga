@@ -86,6 +86,61 @@ _ADAPTOR_DOC           = {
         remote jobs.
         """,
     "details"          : """ 
+        GENERAL NOTES:
+
+        On Stampede, returning a non-zero exit code results in the scheduler
+        putting the job into a FAILED state and assigning it an exit code of 127.
+
+        EXAMPLE:
+
+        js = saga.job.Service("slurm+ssh://stampede")js = saga.job.Service("slurm+ssh://stampede")
+        jd.executable  = '/bin/exit'
+        jd.arguments   = ['3']
+        job = js.create_job(jd)
+        job.run()
+
+        Will return something similar to (personal account information removed):
+
+        (saga-python-env)ashleyz@login1:~$ scontrol show job 309684
+        JobId=309684 Name=SlurmJob
+           UserId=_____ GroupId=__________
+           Priority=3000 Account=_____ QOS=normal
+           JobState=FAILED Reason=NonZeroExitCode Dependency=(null)
+           Requeue=0 Restarts=0 BatchFlag=1 ExitCode=127:0
+           RunTime=00:00:05 TimeLimit=00:01:00 TimeMin=N/A
+           SubmitTime=2013-02-22T20:26:50 EligibleTime=2013-02-22T20:26:50
+           StartTime=2013-02-22T20:26:50 EndTime=2013-02-22T20:26:55
+           PreemptTime=None SuspendTime=None SecsPreSuspend=0
+           Partition=development AllocNode:Sid=login1:12070
+           ReqNodeList=(null) ExcNodeList=(null)
+           NodeList=c557-401
+           BatchHost=c557-401
+           NumNodes=1 NumCPUs=16 CPUs/Task=1 ReqS:C:T=*:*:*
+           MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0
+           Features=(null) Gres=(null) Reservation=(null)
+           Shared=0 Contiguous=0 Licenses=(null) Network=(null)
+           Command=/home1/01414/_______/.saga/adaptors/slurm_job/wrapper.sh
+           WorkDir=/home1/01414/_______/
+
+        I'm not sure how to fix this for the time being.
+
+        Suspend/resume do not appear to be supported for regular
+        users on Stampede.
+
+        run_job is not supported, as there are many attributed (queues,
+        projects, etc) which need to be passed to the adaptor.  I could
+        add URL parsing so that you could pile on queue/project/jobname
+        information if this has any strong usecases, but I avoided doing
+        so for now to decrease complexity/possible confusion.
+
+        Cancelling a job with scontrol, puts it into a COMPLETING state, which
+        is parsed by the SLURM status parser as saga.job.RUNNING (see the
+        SLURM docs, COMPLETING is a state a job goes into when it is done
+        running but still flushing IO/etc).  Anyhow, I put some code in to
+        manually put the job into CANCELED state when the job is canceled,
+        but I'm not sure that this is reported correctly everywhere yet.
+
+        What exit code should be returned for a CANCELED job?
 
         IMPLEMENTATION NOTES:
         - If scontrol can't find an exit code, it returns None
@@ -99,6 +154,7 @@ _ADAPTOR_DOC           = {
           not gone over theis extensively...
         - Relating to the above, _job_get_info is written, but unused/untested
           (mostly from PBS adaptor)
+
         UNIMPLEMENTED ITEMS:
         - Container submission not implemented
         - Parts in job_description not parsed:         
@@ -106,7 +162,6 @@ _ADAPTOR_DOC           = {
         -- spmd_variation
         -- total_cpu_count
         - get_created/etc not in yet
-
         """,
     "schemas"          : {"slurm"        :"use slurm to run local SLURM jobs", 
                           "slurm+ssh"    :"use ssh to run remote SLURM jobs", 
@@ -118,7 +173,7 @@ _ADAPTOR_DOC           = {
 
 _ADAPTOR_INFO          = {
     "name"             : _ADAPTOR_NAME,
-    "version"          : "v0.1",
+    "version"          : "v0.2",
     "schemas"          : _ADAPTOR_SCHEMAS,
     "cpis"             : [
         { 
@@ -154,9 +209,6 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     # ----------------------------------------------------------------
     #
     def sanity_check (self) :
-
-        # FIXME: also check for gsissh
-
         pass
 
 
@@ -179,7 +231,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     # ----------------------------------------------------------------
     #
     def __init__ (self, api, adaptor) :
-
         #saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
         self._cpi_base = super  (SLURMJobService, self)
         self._cpi_base.__init__ (api, adaptor)
@@ -194,25 +245,17 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self.scontrol_exec_hosts_re = re.compile("""(?<=ExcNodeList=).* """)
         self.scontrol_comp_time_re = re.compile("""(?<=RunTime=).* """)
 
+        # these are the commands that we need in order to interact with SLURM
+        # the adaptor will try to find them when it first opens the shell
+        # connection, and bails out in case they are not available.
+        self._commands = {'sbatch': None,
+                          'squeue': None,
+                          'scontrol': None,
+                          'scancel': None}
 
     # ----------------------------------------------------------------
     #
     def __del__ (self) :
-
-        # FIXME: not sure if we should PURGE here -- that removes states which
-        # might not be evaluated, yet.  Should we mark state evaluation
-        # separately? 
-        #   cmd_state () { touch $DIR/purgeable; ... }
-        # When should that be done?
-
-      # try :
-      #   # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
-      #   # self._logger.trace ()
-      #   # self._logger.breakpoint ()
-      #     if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
-      # except :
-      #     pass
-
         try :
             if self.shell : del (self.shell)
         except :
@@ -229,9 +272,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self.session = session
 
         self.jobs = {}
-
         self._open ()
-
 
     # # ----------------------------------------------------------------
     # #
@@ -293,6 +334,19 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self.shell = saga.utils.pty_shell.PTYShell (shell_url, 
                                                     self.session.contexts, 
                                                     self._logger)
+
+        # verify our SLURM environment contains the commands we need for this
+        # adaptor to work properly
+        self._logger.debug("Verifying existence of remote SLURM tools.")
+        for cmd in self._commands.keys():
+            ret, out, _ = self.shell.run_sync("which %s " % cmd)
+            if ret != 0:
+                message = "Error finding SLURM tool %s on remote server %s!\n" \
+                          "Locations searched:\n%s\n" \
+                          "Is SLURM installed on that machine? " \
+                          "If so, is your remote SLURM environment "\
+                          "configured properly? " % (cmd, self.rm, out)
+                raise saga.NoSuccess._log (self._logger, message)
                 
         # prepare our remote working directory for wrappers/etc
         ret, out, _ = self.shell.run_sync ("mkdir -p %s" % self._base)
@@ -903,8 +957,8 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         return self.js.rm
    
 
-  # # ----------------------------------------------------------------
-  # #
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def wait(self, timeout):
         time_start = time.time()
@@ -940,65 +994,73 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         """ Implements saga.adaptors.cpi.job.Job.get_id() """        
         return self._id
    
-  # # ----------------------------------------------------------------
-  # #
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def get_exit_code(self) :
         """ Implements saga.adaptors.cpi.job.Job.get_exit_code()
         """   
         return self.js._job_get_exit_code(self._id)
 
-  # # ----------------------------------------------------------------
+    #  ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def suspend(self) :
         """ Implements saga.adaptors.cpi.job.Job.get_exit_code()
         """ 
         return self.js._job_suspend(self._id)
 
-  # # ----------------------------------------------------------------
+    # ----------------------------------------------------------------
     @SYNC_CALL
     def resume(self) :
         """ Implements saga.adaptors.cpi.job.Job.get_exit_code()
         """ 
         return self.js._job_resume(self._id)
 
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def get_created(self) :
-  #     """ Implements saga.adaptors.cpi.job.Job.get_started()
-  #     """     
-  #     # for local jobs started == created. for other adaptors 
-  #     # this is not necessarily true   
-  #     return self._started
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def get_started(self) :
-  #     """ Implements saga.adaptors.cpi.job.Job.get_started()
-  #     """        
-  #     return self._started
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def get_finished(self) :
-  #     """ Implements saga.adaptors.cpi.job.Job.get_finished()
-  #     """        
-  #     return self._finished
-  # 
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def get_execution_hosts(self) :
-  #     """ Implements saga.adaptors.cpi.job.Job.get_execution_hosts()
-  #     """        
-  #     return self._execution_hosts
-  #
-  # # ----------------------------------------------------------------
-  # #
+  
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_created(self) :
+        """ Implements saga.adaptors.cpi.job.Job.get_created()
+        """     
+        raise saga.NotImplemented._log (self._logger, "get_created not"
+                                        " implemented for SLURM jobs.")
+        return self._created
+  
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_started(self) :
+        """ Implements saga.adaptors.cpi.job.Job.get_started()
+        """        
+        raise saga.NotImplemented._log (self._logger, "get_started not"
+                                        " implemented for SLURM jobs.")
+        return self._started
+  
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_finished(self) :
+        """ Implements saga.adaptors.cpi.job.Job.get_finished()
+        """        
+        raise saga.NotImplemented._log (self._logger, "get_finished not"
+                                        " implemented for SLURM jobs.")
+        return self._finished
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_execution_hosts(self) :
+        """ Implements saga.adaptors.cpi.job.Job.get_execution_hosts()
+        """        
+        raise saga.NotImplemented._log (self._logger, "get_execution_hosts not"
+                                        " implemented for SLURM jobs.")
+    
+        return self._execution_hosts
+  
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def cancel(self, timeout):
         #scancel id
@@ -1013,14 +1075,6 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         """
         self._id = self.js._job_run (self.jd)
         self._started = True
-
-
-  # # ----------------------------------------------------------------
-  # #
-  # @SYNC_CALL
-  # def re_raise(self):
-  #     return self._exception
-
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
