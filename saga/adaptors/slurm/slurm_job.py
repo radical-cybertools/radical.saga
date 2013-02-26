@@ -824,13 +824,13 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         # if we don't have the job in our dictionary, we don't want it
         # TODO: verify correctness, we should probably probe anyhow
         #       in case it was added by an external app
-        if job_id not in self.jobs:
+        if job_id not in self.js.jobs:
             message = "Unknown job ID: %s. Can't update state." % job_id
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            raise saga.NoSuccess._log(self._logger, message)
 
         # prev. info contains the info collect when _job_get_info
         # was called the last time
-        prev_info = self.jobs[job_id]
+        prev_info = self.js.jobs[job_id]
 
         # if the 'gone' flag is set, there's no need to query the job
         # state again. it's gone forever
@@ -848,7 +848,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         ret, out, _ = self.js.shell.run_sync('scontrol show job %s' % pid)
 
         # update the state
-        curr_info['state'] = _job_get_state(job_id)
+        curr_info['state'] = self._job_get_state(job_id)
 
         # figure out when the job started
         create_time_search = self.js.scontrol_create_time_re.search(out)
@@ -862,7 +862,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         end_time=None
         if end_time_search:
             end_time = end_time.search.group(0)
-            self.logger.debug("end_time for job %s detected as %s" % \
+            self._logger.debug("end_time for job %s detected as %s" % \
                               (pid, end_time))
 
         # determine the job's creation time
@@ -870,7 +870,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         create_time=None
         if create_time_search:
             create_time = create_time.search.group(0)
-            self.logger.debug("create_time for job %s detected as %s" % \
+            self._logger.debug("create_time for job %s detected as %s" % \
                               (pid, create_time))
 
         # determine the job's execution hosts
@@ -878,7 +878,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         exec_hosts=None
         if exec_hosts_search:
             exec_hosts = exec_hosts.search.group(0)
-            self.logger.debug("exec_hosts for job %s detected as %s" % \
+            self._logger.debug("exec_hosts for job %s detected as %s" % \
                               (pid, exec_hosts))
 
         # determine the job's execution hosts
@@ -886,7 +886,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         comp_time=None
         if comp_time_search:
             comp_time = comp_time.search.group(0)
-            self.logger.debug("comp_time for job %s detected as %s" % \
+            self._logger.debug("comp_time for job %s detected as %s" % \
                               (pid, comp_time))
         return curr_info
 
