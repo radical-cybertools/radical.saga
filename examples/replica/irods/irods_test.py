@@ -80,22 +80,22 @@ def main(args):
             f.write ("x" * (FILE_SIZE * pow(2,20)) )
 
         print "Creating iRODS directory object"
-        mydir = saga.replica.LogicalDirectory("irods://" + IRODS_DIRECTORY) 
+        mydir = saga.replica.LogicalDirectory("irods://localhost/" + IRODS_DIRECTORY) 
 
         print "Uploading file to iRODS"
-        myfile = saga.replica.LogicalFile('irods://'+IRODS_DIRECTORY+TEMP_FILENAME)
+        myfile = saga.replica.LogicalFile('irods://localhost/'+IRODS_DIRECTORY+TEMP_FILENAME)
         myfile.upload(home_dir + TEMP_FILENAME, \
                      "irods:///this/path/is/ignored/?resource="+IRODS_RESOURCE)
 
         print "Deleting file locally : %s" % (home_dir + TEMP_FILENAME)
         os.remove(home_dir + TEMP_FILENAME)
 
-        print "Printing iRODS directory listing for %s " % ("irods://" + IRODS_DIRECTORY)
+        print "Printing iRODS directory listing for %s " % ("irods://localhost/" + IRODS_DIRECTORY)
         for entry in mydir.list():
             print entry
 
         print "Creating iRODS file object"
-        myfile = saga.replica.LogicalFile('irods://' + IRODS_DIRECTORY+TEMP_FILENAME)
+        myfile = saga.replica.LogicalFile('irods://localhost/' + IRODS_DIRECTORY+TEMP_FILENAME)
         
         # TODO: Re-implement this test
         # [11:49:05 AM] Andre M: To get the size, you will first need to dig out a location, open a filesystem.File on it, and then check the size...
@@ -106,7 +106,7 @@ def main(args):
 
         print "Creating",NUM_REPLICAS,"replicas for",IRODS_DIRECTORY+TEMP_FILENAME
         for i in range(NUM_REPLICAS):
-            myfile.replicate("irods:///this/path/is/ignored/?resource="+IRODS_RESOURCE)
+            myfile.replicate("irods://localhost/this/path/is/ignored/?resource="+IRODS_RESOURCE)
 
         print "Locations the file is stored at on iRODS:"
         for entry in myfile.list_locations():
@@ -127,7 +127,7 @@ def main(args):
         os.remove("/tmp/" + TEMP_FILENAME)
 
         print "Making test dir %s on iRODS" % (IRODS_DIRECTORY+TEMP_DIR)
-        mydir.make_dir("irods://"+IRODS_DIRECTORY+TEMP_DIR)
+        mydir.make_dir("irods://localhost/"+IRODS_DIRECTORY+TEMP_DIR)
         
         # test moving the logical file
         # TODO: bug andre to make sure I am doing this right :)
@@ -136,7 +136,7 @@ def main(args):
         #myfile.move_self("irods://"+IRODS_DIRECTORY+TEMP_DIR)
 
         print "Deleting test dir %s from iRODS" % (IRODS_DIRECTORY+TEMP_DIR)
-        mydir.remove("irods://"+IRODS_DIRECTORY+TEMP_DIR)
+        mydir.remove("irods://localhost/"+IRODS_DIRECTORY+TEMP_DIR)
 
         print "Deleting file %s from iRODS" % (IRODS_DIRECTORY+TEMP_FILENAME)
         myfile.remove()

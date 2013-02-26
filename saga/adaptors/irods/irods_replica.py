@@ -372,14 +372,6 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         except Exception, e:
             raise saga.NoSuccess ("Couldn't get resource listing: %s " % (str(e)))
 
-
-
-###############################################################################
-#
-#
-#
-
-
 ###############################################################################
 #
 # logical_directory adaptor class
@@ -446,16 +438,14 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
 
         url   = self._url
         flags = self._flags 
-
-        # TODO: verify that this is correct commented out
-        # or if i should add some alternate functionality
-        # (seems like boilerplate from local file adaptor)
-        #if not os.path.isdir (path) :
-        #    raise saga.BadParameter ("Cannot handle url %s (is not a Logicaldirectory)"  \
-        #                                       %  path)
-        
-        # TODO: "stat" the file
-
+        if url.host != "localhost":
+            raise saga.BadParameter._log(self._logger, "iRODS adaptor does NOT"
+                                         " currently support accessing remote"
+                                         " hosts via URLs.  To access the"
+                                         " iRODS environment currently"
+                                         " established on the local"
+                                         " machine, please use localhost"
+                                         " as your hostname.")
 
     # ----------------------------------------------------------------
     #
@@ -538,9 +528,6 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
 
         return
 
-
-
-
     # ----------------------------------------------------------------
     #
     #
@@ -575,8 +562,6 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
             raise saga.NoSuccess ("Couldn't list directory: %s " % (str(ex)))
 
         return result
-
-
 
 ######################################################################
 #
@@ -663,42 +648,6 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
         self._path = url.path
         path       = url.path
 
-        # TODO: add appropriate sanity checks as may be needed for logical file
-        # (as opposed to local, which this boilerplate seems to be for)
-
-        # if not os.path.exists (path) :
-
-        #     (dirname, filename) = os.path.split (path)
-
-        #     if not filename :
-        #         raise saga.BadParameter ("Cannot handle url %s (names directory)"  \
-        #                                          %  path)
-
-        #     if not os.path.exists (dirname) :
-        #         if saga.replica.CREATE_PARENTS & flags :
-        #             try :
-        #                 os.makedirs (path)
-        #             except Exception as e :
-        #                 raise saga.NoSuccess ("Could not 'mkdir -p %s': %s)"  \
-        #                                                 % (path, str(e)))
-        #         else :
-        #             raise saga.BadParameter ("Cannot handle url %s (parent dir does not exist)"  \
-        #                                              %  path)
-        
-        #     if not os.path.exists (filename) :
-        #         if saga.replica.CREATE & flags :
-        #             try :
-        #                 open (path, 'w').close () # touch
-        #             except Exception as e :
-        #                 raise saga.NoSuccess ("Could not 'touch %s': %s)"  \
-        #                                                 % (path, str(e)))
-        #         else :
-        #             raise saga.BadParameter ("Cannot handle url %s (Logicalfile does not exist)"  \
-        #                                              %  path)
-        
-        # if not os.path.isfile (path) :
-        #     raise saga.BadParameter ("Cannot handle url %s (is not a Logicalfile)"  \
-        #                                        %  path)
 
     # ----------------------------------------------------------------
     #
@@ -985,7 +934,6 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
             raise saga.NoSuccess ("Couldn't download file. %s" % ex)
 
         return
-
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
