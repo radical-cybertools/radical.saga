@@ -25,15 +25,17 @@ class PTYProcess (object) :
     """
     This class spawns a process, providing that child with pty I/O channels --
     it will maintain stdin, stdout and stderr channels to the child.  All
-    write* operations operate on the stdin, all read* operations operate on the
-    stdout stream.  Data from the stderr stream are at this point redirected to
-    the stdout channel.
+    write-like operations operate on the stdin, all read-like operations operate
+    on the stdout stream.  Data from the stderr stream are at this point
+    redirected to the stdout channel.
 
     Example::
 
+        # run an interactive client process
         pty = PTYProcess ("/usr/bin/ssh -t localhost")
-        pty.run ()
 
+        # check client's I/O for one of the following patterns (prompts).  
+        # Then search again.
         n, match = pty.find (['password\s*:\s*$', 
                               'want to continue connecting.*\(yes/no\)\s*$', 
                               '[\$#>]\s*$'])
@@ -41,25 +43,51 @@ class PTYProcess (object) :
         while True :
 
             if n == 0 :
-                # found password prompt
+                # found password prompt - tell the secret
                 pty.write ("secret\\n")
-                n, match = pty.find (['password\s*:\s*$', 
-                                      'want to continue connecting.*\(yes/no\)\s*$', 
-                                      '[\$#>]\s*$'])
+                n, _ = pty.find (['password\s*:\s*$', 
+                                  'want to continue connecting.*\(yes/no\)\s*$', 
+                                  '[\$#>]\s*$'])
             elif n == 1 :
-                # found request to accept host key
+                # found request to accept host key - sure we do... (who checks
+                # those keys anyways...?).  Then search again.
                 pty.write ("yes\\n")
-                n, match = pty.find (['password\s*:\s*$', 
-                                      'want to continue connecting.*\(yes/no\)\s*$', 
-                                      '[\$#>]\s*$'])
+                n, _ = pty.find (['password\s*:\s*$', 
+                                  'want to continue connecting.*\(yes/no\)\s*$', 
+                                  '[\$#>]\s*$'])
             elif n == 2 :
-                # found some prompt
+                # found shell prompt!  Wohoo!
                 break
         
+
         while True :
-            # send sleeps as quickly as possible, forever...
-            pty.find (['[\$#>]\s*$'])
-            pty.write ("/bin/sleep 10\\n")
+            # go full Dornroeschen (Sleeping Beauty)...
+            pty.alive (recover=True) or break      # check / restart process
+            pty.find  (['[\$#>]\s*$'])             # find shell prompt
+            pty.write ("/bin/sleep "100 years"\\n") # sleep!  SLEEEP!
+
+        # something bad happened
+        print pty.autopsy ()
+
+
+    The managed child process is under control of a Timeout Garbage Collector
+    (:class:`saga.utils.timeout_gc.TimeoutGC`), which will terminate the child
+    after some inactivity period.  The child will be automatically restarted on
+    the next activity attempts.  To support orderly process bootstrapping, users
+    of the :class:`PTYProcess` class should register hooks for process
+    initialization and finalization (:func:`set_initialize_hook` and
+    :func:`set_finalize_hook`).  The finalization hook may operate on a dead
+    child process, and should be written in a way that this does not lead to an
+    error (which would abort the restart attempt).
+
+    If the child process dies on its own, or is terminated by a third party, the
+    class will also attempt to restart the child.  In order to not interfere
+    with the process state at unexpected points, this will only happen during
+    explicit :func:`alive` checks, if the `recover` parameter is set to `True`
+    (`False` by default).  This restart mechanism will be used up to
+    `recover_max` times in a row, any successful activity will reset the recover
+    counter though.  The recover process will invoke both the finalization and
+    initialization hooks.
     """
 
     # ----------------------------------------------------------------
@@ -73,11 +101,10 @@ class PTYProcess (object) :
         :type  command: string or list of strings
         :param command: The given command is what is run as a child, and
         fed/drained via pty pipes.  If given as string, command is split into an
-        array of strings (simple splis on white space), as that is what
-        :func:`subprocess.Popen` wants.
+        array of strings, using :func:`shlex.split`.
 
-        :type  command: string or list of strings
-        :param command: The given command is what is run as a child, and
+        :type  logger:  :class:`saga.utils.logger.Logger` instance
+        :param logger:  logger stream to send status messages to.
         """
 
         if isinstance (command, basestring) :
@@ -138,8 +165,6 @@ class PTYProcess (object) :
             self.finalize ()
         except :
             pass
-    
-    
     
 
     # ----------------------------------------------------------------------
@@ -336,6 +361,25 @@ class PTYProcess (object) :
         # call termination (tm).
         return self.alive (recover=True)
 
+
+
+    # --------------------------------------------------------------------
+    #
+    def autopsy (self) :
+        """ 
+        return diagnostics information string for dead child processes
+        """
+
+        if  self.child :
+            # Boooh!
+            return "false alarm, process %s is alive!" % self.child
+
+        ret  = ""
+        ret += "  exit code  : %s\n" % self.exit_code
+        ret += "  exit signal: %s\n" % self.exit_signal
+        ret += "  last output: %s\n" % self.cache[-256:] # FIXME: smarter selection
+
+        return ret
 
 
     # --------------------------------------------------------------------

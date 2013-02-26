@@ -108,12 +108,12 @@ class PTYShell (object) :
     This class wraps a shell process and runs it as a :class:`PTYProcess`.  The
     user of this class can start that shell, and run arbitrary commands on it.
 
-    The shell to be run is expected to be POSIX compliant (bash, csh, sh, zsh
-    etc) -- in particular, we expect the following features:
+    The shell to be run is expected to be POSIX compliant (bash, dash, sh, ksh
+    etc.) -- in particular, we expect the following features:
     ``$?``,
     ``$!``,
-    ``$*``,
     ``$#``,
+    ``$*``,
     ``$@``,
     ``$$``,
     ``$PPID``,
@@ -182,6 +182,7 @@ class PTYShell (object) :
     For local shells, PTYShell will create an additional shell pty for data
     management operations.  
 
+
     Asynchronous Notifications:
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -229,13 +230,19 @@ class PTYShell (object) :
     usually 4096), or to lock the pipe on larger writes.
 
 
-    Known Problems:
-    ^^^^^^^^^^^^^^^
+    Automated Restart, Timeouts:
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    - If the ssh connection gets dropped on the remote end, the pty_process
-      remains active on MacOS -- it does not seem to collect the dying child.
+    For timeout and restart semantics, please see the documentation to the
+    underlying :class:`saga.utils.pty_process.PTYProcess` class.
 
     """
+
+    # TODO: 
+    #   - on client shell activitites, also mark the master as active, to
+    #     avoid timeout garbage collection.
+    #   - use ssh mechanisms for master timeout (and persist), as custom
+    #     mechanisms will interfere with gc_timout.
 
     # ----------------------------------------------------------------
     #
@@ -474,15 +481,6 @@ class PTYShell (object) :
         if  self.initialize_hook :
             self.initialize_hook ()
 
-    # ----------------------------------------------------------------
-    #
-    def initialize_scp (self) :
-
-        if self.scp :
-            return
-
-
-
 
     # ----------------------------------------------------------------
     #
@@ -506,6 +504,15 @@ class PTYShell (object) :
         except Exception as e :
             pass
 
+
+
+    # ----------------------------------------------------------------
+    #
+    def alive (self, recover=False) :
+        """
+        The shell is assumed to be alive if the shell processes lives.
+        """
+        return self.pty_shell.alive (recover)
 
 
     # ----------------------------------------------------------------
@@ -710,6 +717,13 @@ class PTYShell (object) :
         expect the prompt regex to capture the exit status of the process.
         """
 
+        # we expect the shell to be in 'ground state' when running a syncronous
+        # command -- thus we can check if the shell is alive before doing so,
+        # and restart if needed
+        if not self.pty_shell.alive (recover=True) :
+            raise saga.IncorrectState ("Can't run command -- shell died:\n%s" \
+                                    % self.pty_shell.autopsy ())
+
         command = command.strip ()
         if command.endswith ('&') :
             raise saga.BadParameter ("can only run foreground jobs ('%s')" \
@@ -812,6 +826,13 @@ class PTYShell (object) :
         For async execution, we don't care if the command is doing i/o redirection or not.
         """
 
+        # we expect the shell to be in 'ground state' when running an asyncronous
+        # command -- thus we can check if the shell is alive before doing so,
+        # and restart if needed
+        if not self.pty_shell.alive (recover=True) :
+            raise saga.IncorrectState ("Can't run command -- shell died:\n%s" \
+                                    % self.pty_shell.autopsy ())
+
         command = command.strip ()
 
         self.logger.debug ('run_async: %s'   % command)
@@ -837,6 +858,13 @@ class PTYShell (object) :
 
         See also :func:`stage_from_file`.
         """
+
+        # we expect the shell to be in 'ground state' when staging a file
+        # -- thus we can check if the shell is alive before doing so,
+        # and restart if needed
+        if not self.pty_shell.alive (recover=True) :
+            raise saga.IncorrectState ("Can't stage file -- shell died:\n%s" \
+                                    % self.pty_shell.autopsy ())
 
         size_src = len (src)
 
@@ -899,6 +927,13 @@ class PTYShell (object) :
         raised if reading the file was not possible (missing permissions,
         incorrect path, etc.).  
         """
+
+        # we expect the shell to be in 'ground state' when staging a file
+        # -- thus we can check if the shell is alive before doing so,
+        # and restart if needed
+        if not self.pty_shell.alive (recover=True) :
+            raise saga.IncorrectState ("Can't stage file -- shell died:\n%s" \
+                                    % self.pty_shell.autopsy ())
 
         ret, out, _ = self.run_sync ("cat %s" % src)
 
