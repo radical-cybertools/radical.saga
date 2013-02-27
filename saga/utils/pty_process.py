@@ -180,7 +180,9 @@ class PTYProcess (object) :
     #
     def initialize (self) :
 
-        self.logger.debug ("PTYProcess: %s\n" % ' '.join ((self.command)))
+        # NOTE: do we need to lock?
+
+        self.logger.debug ("PTYProcess: '%s'" % ' '.join ((self.command)))
 
     ##  The lines commented out with '##' attempt to reproduce what
     ##  pty.fork does, but with separate stderr capture.
@@ -251,6 +253,8 @@ class PTYProcess (object) :
     def finalize (self) :
         """ kill the child, close all I/O channels """
 
+        # NOTE: do we need to lock?
+
         # as long as the chiuld lives, run any higher level shutdown routine.
         if  self.finalize_hook :
             self.finalize_hook ()
@@ -294,43 +298,45 @@ class PTYProcess (object) :
         killed
         """
 
-        # yes, for ever and ever...
-        while True :
+        with self.gc.active (self) :
 
-            # hey, kiddo, whats up?
-            wpid, wstat = os.waitpid (self.child, 0)
+            # yes, for ever and ever...
+            while True :
 
-            # did we get a note about child termination?
-            if 0 == wpid :
+                # hey, kiddo, whats up?
+                wpid, wstat = os.waitpid (self.child, 0)
 
-                # nope, all is well - carry on
-                continue
+                # did we get a note about child termination?
+                if 0 == wpid :
 
-
-            # Yes, we got a note.  
-            # Well, maybe the child fooled us and is just playing dead?
-            if os.WIFSTOPPED   (wstat) or \
-               os.WIFCONTINUED (wstat)    :
-                # we don't care if someone stopped/resumed the child -- that is up
-                # to higher powers.  For our purposes, the child is alive.  Ha!
-                continue
+                    # nope, all is well - carry on
+                    continue
 
 
-            # not stopped, poor thing... - soooo, what happened??
-            if os.WIFEXITED (wstat) :
-                # child died of natural causes - perform autopsy...
-                self.exit_code   = os.WEXITSTATUS (wstat)
-                self.exit_signal = None
+                # Yes, we got a note.  
+                # Well, maybe the child fooled us and is just playing dead?
+                if os.WIFSTOPPED   (wstat) or \
+                   os.WIFCONTINUED (wstat)    :
+                    # we don't care if someone stopped/resumed the child -- that is up
+                    # to higher powers.  For our purposes, the child is alive.  Ha!
+                    continue
 
-            elif os.WIFSIGNALED (wstat) :
-                # murder!! Child got killed by someone!  recover evidence...
-                self.exit_code   = None
-                self.exit_signal = os.WTERMSIG (wstat)
 
-            # either way, its dead -- make sure it stays dead, to avoid zombie
-            # apocalypse...
-            self.finalize ()
-            return
+                # not stopped, poor thing... - soooo, what happened??
+                if os.WIFEXITED (wstat) :
+                    # child died of natural causes - perform autopsy...
+                    self.exit_code   = os.WEXITSTATUS (wstat)
+                    self.exit_signal = None
+
+                elif os.WIFSIGNALED (wstat) :
+                    # murder!! Child got killed by someone!  recover evidence...
+                    self.exit_code   = None
+                    self.exit_signal = os.WTERMSIG (wstat)
+
+                # either way, its dead -- make sure it stays dead, to avoid zombie
+                # apocalypse...
+                self.finalize ()
+                return
 
     # --------------------------------------------------------------------
     #
@@ -351,60 +357,65 @@ class PTYProcess (object) :
         consumers themselves.
         """
 
-        # hey, kiddo, whats up?
-        wpid, wstat = os.waitpid (self.child, os.WNOHANG)
+        with self.gc.active (self) :
 
-        # did we get a note about child termination?
-        if 0 == wpid :
-            # nope, all is well - carry on
-            return True
+            # do we have a child which we can check?
+            if  self.child :
 
+                # hey, kiddo, whats up?
+                wpid, wstat = os.waitpid (self.child, os.WNOHANG)
 
-        # Yes, we got a note.  
-        # Well, maybe the child fooled us and is just playing dead?
-        if os.WIFSTOPPED   (wstat) or \
-           os.WIFCONTINUED (wstat)    :
-            # we don't care if someone stopped/resumed the child -- that is up
-            # to higher powers.  For our purposes, the child is alive.  Ha!
-            return True
+                # did we get a note about child termination?
+                if 0 == wpid :
+                    # nope, all is well - carry on
+                    return True
 
 
-        # not stopped, poor thing... - soooo, what happened??
-        if os.WIFEXITED (wstat) :
-            # child died of natural causes - perform autopsy...
-            self.exit_code   = os.WEXITSTATUS (wstat)
-            self.exit_signal = None
+                # Yes, we got a note.  
+                # Well, maybe the child fooled us and is just playing dead?
+                if os.WIFSTOPPED   (wstat) or \
+                   os.WIFCONTINUED (wstat)    :
+                    # we don't care if someone stopped/resumed the child -- that is up
+                    # to higher powers.  For our purposes, the child is alive.  Ha!
+                    return True
 
-        elif os.WIFSIGNALED (wstat) :
-            # murder!! Child got killed by someone!  recover evidence...
-            self.exit_code   = None
-            self.exit_signal = os.WTERMSIG (wstat)
 
-        # either way, its dead -- make sure it stays dead, to avoid zombie
-        # apocalypse...
-        self.finalize ()
+                # not stopped, poor thing... - soooo, what happened??
+                if os.WIFEXITED (wstat) :
+                    # child died of natural causes - perform autopsy...
+                    self.exit_code   = os.WEXITSTATUS (wstat)
+                    self.exit_signal = None
 
-        # check if we can attempt a post-mortem revival though
-        if  not recover :
-            # nope, we are on holy ground - revival not allowed.
-            return False
+                elif os.WIFSIGNALED (wstat) :
+                    # murder!! Child got killed by someone!  recover evidence...
+                    self.exit_code   = None
+                    self.exit_signal = os.WTERMSIG (wstat)
 
-        # we are allowed to revive!  So can we try one more time...  pleeeease??
-        # (for cats, allow up to 9 attempts; for Buddhists, always allow to
-        # reincarnate, etc.)
-        if self.recover_attempts >= self.recover_max :
-            # nope, its gone for good - just report the sad news
-            return False
+                # either way, its dead -- make sure it stays dead, to avoid zombie
+                # apocalypse...
+                self.finalize ()
 
-        # MEDIIIIC!!!!
-        self.recover_attempts += 1
-        self.initialize ()
+            # check if we can attempt a post-mortem revival though
+            if  not recover :
+                # nope, we are on holy ground - revival not allowed.
+                return False
 
-        # well, now we don't trust the child anymore, of course!  So we check
-        # again.  Yes, this is recursive -- but note that recover_attempts get
-        # incremented on every iteration, and this will eventually lead to
-        # call termination (tm).
-        return self.alive (recover=True)
+            # we are allowed to revive!  So can we try one more time...  pleeeease??
+            # (for cats, allow up to 9 attempts; for Buddhists, always allow to
+            # reincarnate, etc.)
+            if self.recover_attempts >= self.recover_max :
+                # nope, its gone for good - just report the sad news
+                return False
+
+            # MEDIIIIC!!!!
+            self.recover_attempts += 1
+            self.initialize ()
+
+            # well, now we don't trust the child anymore, of course!  So we check
+            # again.  Yes, this is recursive -- but note that recover_attempts get
+            # incremented on every iteration, and this will eventually lead to
+            # call termination (tm).
+            return self.alive (recover=True)
 
 
 
@@ -415,16 +426,18 @@ class PTYProcess (object) :
         return diagnostics information string for dead child processes
         """
 
-        if  self.child :
-            # Boooh!
-            return "false alarm, process %s is alive!" % self.child
+        with self.gc.active (self) :
 
-        ret  = ""
-        ret += "  exit code  : %s\n" % self.exit_code
-        ret += "  exit signal: %s\n" % self.exit_signal
-        ret += "  last output: %s\n" % self.cache[-256:] # FIXME: smarter selection
+            if  self.child :
+                # Boooh!
+                return "false alarm, process %s is alive!" % self.child
 
-        return ret
+            ret  = ""
+            ret += "  exit code  : %s\n" % self.exit_code
+            ret += "  exit signal: %s\n" % self.exit_signal
+            ret += "  last output: %s\n" % self.cache[-256:] # FIXME: smarter selection
+
+            return ret
 
 
     # --------------------------------------------------------------------
@@ -490,7 +503,10 @@ class PTYProcess (object) :
 
                         buf  = os.read (f, _CHUNKSIZE)
                         self.cache += buf.replace ('\r', '')
-                        log         = buf.replace ('\n', '\\n')
+                        log         = buf.replace ('\r', '')
+                        log         = log.replace ('\n', '\\n')
+                      # print "buf: --%s--" % buf
+                      # print "log: --%s--" % log
                         if  len(log) > 60 :
                             self.logger.debug ("read : [%5d] (%s ... %s)" \
                                             % (len(log), log[:30], log[-30:]))
@@ -541,149 +557,6 @@ class PTYProcess (object) :
             except Exception as e :
                 raise se.NoSuccess ("read from pty process [%s] failed (%s)" \
                                  % (threading.current_thread().name, e))
-
-
-
-    # --------------------------------------------------------------------
-    #
-    def _readline (self, timeout=0) :
-        """
-        read a line from the child.  This method will read data into the cache,
-        and return whatever it finds up to (but not including) the first newline
-        (\\\\n).  When timeout is met, the method will return None, and leave 
-        all data in the cache::
-
-          timeout <  0: reads are blocking until data arrive, and call will
-                        only return when any complete line has been found (which
-                        may be never)
-
-          timeout == 0: reads do not block, and the call will only be successful
-                        if a complete line is already in the cache, or is found
-                        on the first read attempt.
-
-          timeout >  0: read calls block up to timeout, and reading is attempted
-                        until timeout is reached, or a complete line is found,
-                        whatever comes first.
-
-        Note: the returned lines get '\\\\r' stripped.
-        """
-    
-        with self.gc.active (self) :
-
-            # start the timeout timer right now.  Note that even if timeout is
-            # short, and child.poll is slow, we will nevertheless attempt at least
-            # one read...
-            start = time.time ()
-
-            # check if we still have a full line in cache
-            # FIXME: what happens if cache == '\n' ?
-            if '\n' in self.cache :
-
-                idx = self.cache.index ('\n')
-                ret = self.cache[:idx-1]
-                rem = self.cache[idx+1:]
-                self.cache = rem  # store the remainder back into the cache
-                return ret.replace('\r', '')
-
-
-            try :
-                # the cache is depleted, we need to read new data until we find
-                # a newline, or until timeout
-                while True :
-                
-                    # do an idle wait 'til the next data chunk arrives
-                    rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
-
-                    # got some data - read them into the cache
-                    for f in rlist:
-                        buf         = os.read (f, _CHUNKSIZE)
-                        self.cache += buf.replace ('\r', '')
-
-                        log         = buf.replace ('\n', '\\n')
-                        if  len(log) > 60 :
-                            self.logger.debug ("read : [%5d] (%s ... %s)" \
-                                            % (len(log), log[:30], log[-30:]))
-                        else :
-                            self.logger.debug ("read : [%5d] (%s)" \
-                                            % (len(log), log))
-
-                    # check if we *now* have a full line in cache
-                    if '\n' in self.cache :
-
-                        idx = self.cache.index ('\n')
-                        ret = self.cache[:idx-1]
-                        rem = self.cache[idx+1:]
-                        self.cache = rem  # store the remainder back into the cache
-                        return ret.replace('\r', '')
-
-                    # if not, check if we hit timeout
-                    now = time.time ()
-                    if (now-start) > timeout :
-                        # timeout, but nothing found -- leave cache alone and return
-                        return None
-
-
-            except Exception as e :
-                raise se.NoSuccess ("read from pty process [%s] failed (%s)" \
-                                 % (threading.current_thread().name, e))
-
-
-
-    # ----------------------------------------------------------------
-    #
-    def _findline (self, patterns, timeout=0) :
-        """
-        This methods reads lines from the child process until a line matching
-        any of the given patterns is found.  If that is found, all read lines
-        (minus the matching one) are returned as a list of lines, the matching
-        line itself is guaranteed to be the last line of the list.  This call
-        never returns an empty list (the matching line is at least a linebreak).
-
-        Note: the returned lines get '\\\\r' stripped.
-        """
-
-        try :
-            start = time.time ()             # startup timestamp
-            ret   = []                       # array of read lines
-            patts = []                       # compiled patterns
-            line  = self._readline (timeout) # first line to check
-
-            # pre-compile the given pattern, to speed up matching
-            for pattern in patterns :
-                patts.append (re.compile (pattern))
-
-            # we wait forever -- there are two ways out though: a line matches
-            # a pattern, or timeout passes
-            while True :
-
-                # time.sleep (0.1)
-
-                # skip non-lines
-                if  None == line :
-                    line = self._readline (timeout)
-                    continue
-
-                # check current line for any matching pattern
-                for n in range (0, len(patts)) :
-                    if patts[n].search (line) :
-                        # a pattern matched the current line: return a tuple of
-                        # pattern index, matching line, and previous lines.
-                        return (n, line.replace('\r', ''), ret)
-
-                # if a timeout is given, and actually passed, return a non-match
-                # and the set of lines found so far
-                if timeout > 0 :
-                    now = time.time ()
-                    if (now-start) > timeout :
-                        return (None, None, ret)
-
-                # append current (non-matching) line to ret, and get new line 
-                ret.append (line.replace('\r', ''))
-                line = self._readline (timeout)
-
-        except Exception as e :
-            raise se.NoSuccess ("readline from pty process [%s] failed (%s)" \
-                             % (threading.current_thread().name, e))
 
 
     # ----------------------------------------------------------------

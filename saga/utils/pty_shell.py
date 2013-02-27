@@ -835,10 +835,22 @@ class PTYShell (object) :
 
         command = command.strip ()
 
-        self.logger.debug ('run_async: %s'   % command)
-        self.pty_shell.write    (           "%s\n" % command)
+        self.send ("%s\n" % command)
 
-        return
+
+    # ----------------------------------------------------------------
+    #
+    def send (self, data) :
+        """
+        send data to the shell.  No newline is appended!
+        """
+
+        if not self.pty_shell.alive (recover=False) :
+            raise saga.IncorrectState ("Can't send data -- shell died:\n%s" \
+                                    % self.pty_shell.autopsy ())
+
+        self.logger.debug    ("send: %s" % data)
+        self.pty_shell.write (      "%s" % data)
 
 
     # ----------------------------------------------------------------
