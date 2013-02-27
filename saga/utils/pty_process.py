@@ -480,7 +480,6 @@ class PTYProcess (object) :
                 # short, and child.poll is slow, we will nevertheless attempt at least
                 # one read...
                 start = time.time ()
-                ret   = ""
 
                 # read until we have enough data, or hit timeout ceiling...
                 while True :
@@ -515,14 +514,14 @@ class PTYProcess (object) :
 
                         if  len(buf) == 0 and sys.platform == 'darwin' :
                             self.logger.debug ("read : MacOS EOF")
-
                             self.terminate ()
 
+                            ret = ""
                             if  len (self.cache) :
                                 ret = self.cache
                                 self.cache = ""
-                                return ret
-
+                            
+                            return ret
 
 
                         self.cache += buf.replace ('\r', '')
