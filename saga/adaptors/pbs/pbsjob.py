@@ -295,6 +295,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     def init_instance(self, adaptor_state, rm_url, session):
         """ service instance constructor
         """
+        # Turn this off by default.
+        self._disable_ptywrapper_logging = True
 
         self.rm      = rm_url
         self.session = session
@@ -332,17 +334,21 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                           'qsub':     None,
                           'qdel':     None}
 
-        # create a null logger to silence the PTY wrapper!
-        import logging
+        if self._disable_ptywrapper_logging:
+            # create a null logger to silence the PTY wrapper!
+            import logging
 
-        class NullHandler(logging.Handler):
-            def emit(self, record):
-                pass
-        #nh = NullHandler()
-        #null_logger = logging.getLogger("PTYShell").addHandler(nh)
+            class NullHandler(logging.Handler):
+                def emit(self, record):
+                    pass
+            nh = NullHandler()
+            null_logger = logging.getLogger("PTYShell").addHandler(nh)
 
-        self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-            self.session.contexts)#, null_logger)
+            self.shell = saga.utils.pty_shell.PTYShell(pty_url,
+                self.session.contexts, null_logger)
+        else:
+            self.shell = saga.utils.pty_shell.PTYShell(pty_url,
+                self.session.contexts)
 
         self.shell.set_initialize_hook(self.initialize)
         self.shell.set_finalize_hook(self.finalize)
