@@ -23,7 +23,5 @@ adaptor_registry = [
                     "saga.adaptors.context.userpass",
                     "saga.adaptors.local.localfile",
                     "saga.adaptors.shell.shell_job",
-                    "saga.adaptors.pbs.pbsjob",
-
+                    "saga.adaptors.sge.sgejob"
                    ]
-
