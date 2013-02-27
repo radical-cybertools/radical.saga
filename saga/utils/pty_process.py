@@ -17,6 +17,7 @@ import saga.exceptions as se
 #
 _CHUNKSIZE = 1024  # default size of each read
 _POLLDELAY = 0.01  # seconds in between read attempts
+_DEBUG_MAX = 600
 
 
 # --------------------------------------------------------------------
@@ -184,48 +185,60 @@ class PTYProcess (object) :
 
         self.logger.debug ("PTYProcess: '%s'" % ' '.join ((self.command)))
 
-    ##  The lines commented out with '##' attempt to reproduce what
-    ##  pty.fork does, but with separate stderr capture.
-    ##
-    ##  self.parent_in,  self.child_in  = pty.openpty ()
-    ##  self.parent_out, self.child_out = pty.openpty ()
-     #  self.parent_err, self.child_err = pty.openpty ()
+        self.parent_in,  self.child_in  = pty.openpty ()
+        self.parent_out, self.child_out = pty.openpty ()
+      # self.parent_err, self.child_err = pty.openpty ()
+
+        self.parent_io,  self.child_io  = pty.openpty ()
 
         # create the child
         try :
-         ##  self.child               =  os.fork ()
-            (self.child, self.pty_io) = pty.fork ()
+             self.child =  os.fork ()
         except Exception as e:
             raise se.NoSuccess ("Could not run (%s): %s" \
                              % (' '.join (self.command), e))
         
-        if not self.child :
+        if  not self.child :
+            # this is the child
+
             try :
-                # this is the child
-             ## os.close (self.parent_in)
-             ## os.close (self.parent_out)
+                # close parent end of pty pipes
+                os.close (self.parent_in)
+                os.close (self.parent_out)
               # os.close (self.parent_err)
-                
-              # # reopen stdio unbuffered
-              # # 
-              # # this mechanism is actually useful, but, for some obscure
-              # # (to me) reason fails badly if the applications stdio is
-              # # redirected -- which is a very valid use case.  So, we
-              # # keep I/O buffered, and need to get pipes flushed otherwise
-              # # (newlines much?)
-              # unbuf_in  = os.fdopen (sys.stdin.fileno(),  'r+', 0)
-              # unbuf_out = os.fdopen (sys.stdout.fileno(), 'w+', 0)
-              # unbuf_err = os.fdopen (sys.stderr.fileno(), 'w+', 0)
-              #
-              # os.dup2 (self.child_in,  unbuf_in.fileno())
-              # os.dup2 (self.child_out, unbuf_out.fileno())
-              # os.dup2 (self.child_out, unbuf_err.fileno())
 
-                # redirect stdio
-             ## os.dup2 (self.child_in,  sys.stdin.fileno())
-             ## os.dup2 (self.child_out, sys.stdout.fileno())
-             ## os.dup2 (self.child_out, sys.stderr.fileno())
+                # reopen child stdio unbuffered (buffsize=0)
+                unbuf_in  = os.fdopen (sys.stdin.fileno  (), 'r+', 0)
+                unbuf_out = os.fdopen (sys.stdout.fileno (), 'w+', 0)
+                unbuf_err = os.fdopen (sys.stderr.fileno (), 'w+', 0)
+               
+                # redirect our precious stdio
+                os.dup2 (self.child_in,  unbuf_in.fileno  ())
+                os.dup2 (self.child_out, unbuf_out.fileno ())
+                os.dup2 (self.child_out, unbuf_err.fileno ())
+              # os.dup2 (self.child_err, unbuf_err.fileno ())
 
+                # make a process group leader (should close tty tty)
+                os.setsid ()
+
+                # close tty, in case we still own any:
+                try :
+                    os.close (os.open ("/dev/tty", os.O_RDWR | os.O_NOCTTY));
+                except :
+                    # was probably closed earlier, that's all right
+                    pass
+
+                # now acquire pty
+                try :
+                    os.close (os.open (os.ttyname (sys.stdout.fileno ()), os.O_RDWR))
+                except :
+                    # well, this *may* be bad - or may now, depending on the
+                    # type of command ones to run in this shell.  So, we print
+                    # a big fat warning, and continue
+                    self.logger.error ("Unclean PTY shell setup - proceed anyway")
+                    pass
+
+                # all I/O set up, have a pty (*fingers crossed*), lift-off!
                 os.execvpe (self.command[0], self.command, os.environ)
 
             except OSError as e:
@@ -235,13 +248,10 @@ class PTYProcess (object) :
 
         else :
             # parent
-         ## os.close (self.child_in)
-         ## os.close (self.child_out)
+            os.close (self.child_in)
+            os.close (self.child_out)
           # os.close (self.child_err)
 
-          self.parent_in  = self.pty_io
-          self.parent_out = self.pty_io
-          self.parent_err = self.pty_io
 
         # check if some additional initialization routines as registered
         if  self.initialize_hook :
@@ -507,7 +517,7 @@ class PTYProcess (object) :
                         log         = log.replace ('\n', '\\n')
                       # print "buf: --%s--" % buf
                       # print "log: --%s--" % log
-                        if  len(log) > 60 :
+                        if  len(log) > _DEBUG_MAX :
                             self.logger.debug ("read : [%5d] (%s ... %s)" \
                                             % (len(log), log[:30], log[-30:]))
                         else :
@@ -666,7 +676,7 @@ class PTYProcess (object) :
 
                 log = data.replace ('\n', '\\n')
                 log =  log.replace ('\r', '')
-                if  len(log) > 60 :
+                if  len(log) > _DEBUG_MAX :
                     self.logger.debug ("write: [%5d] (%s ... %s)" \
                                     % (len(data), log[:30], log[-30:]))
                 else :

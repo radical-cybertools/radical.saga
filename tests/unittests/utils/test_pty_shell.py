@@ -6,6 +6,7 @@ import saga
 import saga.utils.pty_shell   as sups
 import saga.utils.test_config as sutc
 
+
 # ------------------------------------------------------------------------------
 #
 def test_ptyshell_ok () :
@@ -23,6 +24,7 @@ def test_ptyshell_ok () :
     time.sleep (0.1)
     assert (not shell.alive ())
 
+
 # ------------------------------------------------------------------------------
 #
 def test_ptyshell_nok () :
@@ -39,6 +41,7 @@ def test_ptyshell_nok () :
     shell.run_async ("exit")
     time.sleep (0.1)
     assert (not shell.alive ())
+
 
 # ------------------------------------------------------------------------------
 #
@@ -62,6 +65,7 @@ def test_ptyshell_async () :
     shell.run_async ("exit")
     time.sleep (0.1)
     assert (not shell.alive ())
+
 
 # ------------------------------------------------------------------------------
 #
@@ -87,6 +91,7 @@ def test_ptyshell_prompt () :
     shell.run_async ("exit")
     time.sleep (0.1)
     assert (not shell.alive ())
+
 
 # ------------------------------------------------------------------------------
 #

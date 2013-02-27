@@ -6,12 +6,14 @@ import saga.utils.pty_shell as sups
 
 try :
     shell = sups.PTYShell (saga.Url ("fork://localhost"), [])
-    shell.run_async ("scp ~/downloads/totalview*.sh @localhost:/tmp/t")
+    shell.run_async ("sftp -b - localhost <<EOT")
+    shell.send ("progress\nput /home/merzky/downloads/totalview*.sh /tmp/t\nEOT\n")
 
   # pat_bof = re.compile ("(?P<perc>\d+\%).*(?P<time>--:--)\s*ETA")
     pat_bof = re.compile ("(?P<perc>\d+)\%\s+(?P<size>.+?)\s+(?P<perf>.+?)\s+(?P<time>--:--)\s*ETA")
     pat_eta = re.compile ("(?P<perc>\d+)\%\s+(?P<size>.+?)\s+(?P<perf>.+?)\s+(?P<time>\d\d:\d\d)\s*ETA")
     pat_eof = re.compile ("(?P<perc>\d+)\%\s+(?P<size>.+?)\s+(?P<perf>.+?)\s+(?P<time>\d\d:\d\d)\s*\n")
+    pat_def = re.compile ("^sftp>.*\n")
 
     begin = True
 
@@ -21,14 +23,20 @@ try :
         match = None
 
         if  ret == 0 :
+
             if  begin :
                 match = pat_bof.search (out)
                 begin = False
+
             else :
                 match = pat_eta.search (out)
 
         if  ret == 1 :
             match = pat_eof.search (out)
+
+            if not match :
+                # ignore line echo
+                continue
 
         if not match :
             print "parsing error"

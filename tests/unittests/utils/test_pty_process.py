@@ -4,13 +4,15 @@ import time
 import signal
 import saga.utils.pty_process as supp
 
+
 # ------------------------------------------------------------------------------
 #
 def test_ptyprocess_ok () :
     """ Test pty_process which finishes successfully """
     pty = supp.PTYProcess ("/bin/true")
     pty.wait ()
-    assert pty.exit_code == 0  # true returns 0
+    assert pty.exit_code == 0
+
 
 # ------------------------------------------------------------------------------
 #
@@ -18,7 +20,8 @@ def test_ptyprocess_nok () :
     """ Test pty_process which finishes unsuccessfully """
     pty = supp.PTYProcess ("/bin/false")
     pty.wait ()
-    assert pty.exit_code != 0  # false returns 1
+    assert pty.exit_code != 0
+
 
 # ------------------------------------------------------------------------------
 #
@@ -27,8 +30,9 @@ def test_ptyprocess_term () :
     pty = supp.PTYProcess ("/bin/cat")
     os.kill (pty.child, signal.SIGTERM)
     time.sleep (0.1)
-    assert (not pty.alive ())                  # killed it - it better stays dead!
-    assert (pty.exit_signal == signal.SIGTERM) # killed it with SIGTERM
+    assert (not pty.alive ())
+    assert (pty.exit_signal == signal.SIGTERM)
+
 
 # ------------------------------------------------------------------------------
 #
@@ -37,8 +41,9 @@ def test_ptyprocess_kill () :
     pty = supp.PTYProcess ("/bin/cat")
     os.kill (pty.child, signal.SIGKILL)
     time.sleep (0.1)
-    assert (not pty.alive ())                  # killed it - it better stays dead!
-    assert (pty.exit_signal == signal.SIGKILL) # killed it with SIGKILL
+    assert (not pty.alive ())
+    assert (pty.exit_signal == signal.SIGKILL)
+
 
 # ------------------------------------------------------------------------------
 #
@@ -48,7 +53,8 @@ def test_ptyprocess_suspend_resume () :
     os.kill (pty.child, signal.SIGSTOP)
     os.kill (pty.child, signal.SIGCONT)
     time.sleep (0.1)
-    assert (pty.alive ())                      # don't play dead!
+    assert (pty.alive ())
+
 
 # ------------------------------------------------------------------------------
 #
@@ -60,6 +66,7 @@ def test_ptyprocess_stdout () :
     out = pty.read ()
     assert (str(txt) == str(out))
 
+
 # ------------------------------------------------------------------------------
 #
 def test_ptyprocess_stderr () :
@@ -70,6 +77,7 @@ def test_ptyprocess_stderr () :
   # print "--%s--%s--\n" % ( len(txt), txt)
   # print "--%s--%s--\n" % ( len(out), out)
     assert (str(txt) == str(out))
+
 
 # ------------------------------------------------------------------------------
 #
@@ -84,6 +92,7 @@ def test_ptyprocess_write () :
   # print "--%s--%s--\n" % ( len(out), out)
     assert (txt == out)
 
+
 # ------------------------------------------------------------------------------
 #
 def test_ptyprocess_find () :
@@ -93,6 +102,7 @@ def test_ptyprocess_find () :
     out = pty.find ('2', '3')
   # print out
     assert (out == (0, '______1_____2'))
+
 
 # ------------------------------------------------------------------------------
 #
