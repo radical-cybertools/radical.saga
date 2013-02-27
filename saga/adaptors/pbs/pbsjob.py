@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-""" Condor job adaptor implementation
+""" PBS job adaptor implementation
 """
 
 __author__    = "Ole Weidner"
@@ -34,157 +34,108 @@ def log_error_and_raise(message, exception, logger):
 
 # --------------------------------------------------------------------
 #
-def _condor_to_saga_jobstate(condorjs):
-    """ translates a condor one-letter state to saga
+def _pbs_to_saga_jobstate(pbsjs):
+    """ translates a pbs one-letter state to saga
     """
-    # From: http://pages.cs.wisc.edu/~adesmet/status.html
-    #
-    # JobStatus in job ClassAds
-    #
-    # 0   Unexpanded  U
-    # 1   Idle    I
-    # 2   Running R
-    # 3   Removed X
-    # 4   Completed   C
-    # 5   Held    H
-    # 6   Submission_err  E
-
-    if int(condorjs) == 0:
-        return saga.job.PENDING
-    elif int(condorjs) == 1:
-        return saga.job.PENDING
-    elif int(condorjs) == 2:
-        return saga.job.RUNNING
-    elif int(condorjs) == 3:
-        return saga.job.CANCELED
-    elif int(condorjs) == 4:
+    if pbsjs == 'C':
         return saga.job.DONE
-    elif int(condorjs) == 5:
+    elif pbsjs == 'E':
+        return saga.job.RUNNING
+    elif pbsjs == 'H':
         return saga.job.PENDING
-    elif int(condorjs) == 6:
-        return saga.job.FAILED
+    elif pbsjs == 'Q':
+        return saga.job.PENDING
+    elif pbsjs == 'R':
+        return saga.job.RUNNING
+    elif pbsjs == 'T':
+        return saga.job.RUNNING
+    elif pbsjs == 'W':
+        return saga.job.PENDING
+    elif pbsjs == 'S':
+        return saga.job.PENDING
+    elif pbsjs == 'X':
+        return saga.job.CANCELED
     else:
         return saga.job.UNKNOWN
 
 
 # --------------------------------------------------------------------
 #
-def _condorscript_generator(url, logger, jd, option_dict=None):
-    """ generates a Condor script from a SAGA job description
+def _pbscript_generator(url, logger, jd, ppn, is_cray=False, queue=None):
+    """ generates a PBS script from a SAGA job description
     """
-    condor_file = str()
+    pbs_params = str()
+    exec_n_args = str()
 
-    ##### OPTIONS PASSED VIA JOB SERVICE URL #####
-    ##
-    if option_dict is not None:
-        condor_file += "\n##### DEFAULT OPTIONS PASSED VIA JOB SERVICE URL #####\n##"
-        # special treatment for universe - defaults to 'vanilla'
-        if 'universe' not in option_dict:
-            condor_file += "\nuniverse = vanilla"
-        for (key, value) in option_dict.iteritems():
-            condor_file += "\n%s = %s" % (key, value)
-
-    ##### OPTIONS PASSED VIA JOB DESCRIPTION #####
-    ##
-    condor_file += "\n\n##### OPTIONS PASSED VIA JOB SERVICE URL #####\n##"
-    requirements = "requirements = "
-
-    # executable -> executable
     if jd.executable is not None:
-        condor_file += "\nexecutable = %s" % jd.executable
-
-    # arguments -> arguments
-    arguments = "arguments = "
+        exec_n_args += "%s " % (jd.executable)
     if jd.arguments is not None:
         for arg in jd.arguments:
-            # Condor HATES double quotes in the arguments. It'll return
-            # some crap like: "Found illegal unescaped double-quote: ...
-            # That's why we esacpe them.
-            arguments += "%s " % (arg.replace('"', '\\"'))
-    condor_file += "\n%s" % arguments
+            exec_n_args += "%s " % (arg)
 
-    # file_transfer -> transfer_input_files
-    if jd.file_transfer is not None:
-        td = TransferDirectives(jd.file_transfer)
+    if jd.name is not None:
+        pbs_params += "#PBS -N %s \n" % jd.name
 
-        if len(td.in_append_dict) > 0:
-            raise Exception('FileTransfer append syntax (>>) not supported by Condor: %s' % td.in_append_dict)
-        if len(td.out_append_dict) > 0:
-            raise Exception('FileTransfer append syntax (<<) not supported by Condor: %s' % td.out_append_dict)
+    if is_cray is False:
+        # qsub on Cray systems complains about the -V option:
+        # Warning:
+        # Your job uses the -V option, which requests that all of your
+        # current shell environment settings (9913 bytes) be exported to
+        # it.  This is not recommended, as it causes problems for the
+        # batch environment in some cases.
+        pbs_params += "#PBS -V \n"
 
-        if len(td.in_overwrite_dict) > 0:
-            transfer_input_files = "transfer_input_files = "
-            for (source, target) in td.in_overwrite_dict.iteritems():
-                # make sure source is file an not dir
-                (s_path, s_entry) = os.path.split(source)
-                if len(s_entry) < 1:
-                    raise Exception('Condor accepts only files (not directories) as FileTransfer sources: %s' % source)
-                # make sure target is just a file
-                (t_path, t_entry) = os.path.split(target)
-                if len(t_path) > 1:
-                    raise Exception('Condor accepts only filenames (without paths) as FileTransfer targets: %s' % target)
-                # make sure source and target file are the same
-                if s_entry != t_entry:
-                    raise Exception('For Condor source file name and target file name have to be identical: %s != %s' % (s_entry, t_entry))
-                # entry ok - add to job script
-                transfer_input_files += "%s, " % source
-            condor_file += "\n%s" % transfer_input_files
-
-        if len(td.out_overwrite_dict) > 0:
-            transfer_output_files = "transfer_output_files = "
-            for (source, target) in td.out_overwrite_dict.iteritems():
-                # make sure source is file an not dir
-                (s_path, s_entry) = os.path.split(source)
-                if len(s_entry) < 1:
-                    raise Exception('Condor accepts only files (not directories) as FileTransfer sources: %s' % source)
-                # make sure target is just a file
-                (t_path, t_entry) = os.path.split(target)
-                if len(t_path) > 1:
-                    raise Exception('Condor accepts only filenames (without paths) as FileTransfer targets: %s' % target)
-                # make sure source and target file are the same
-                if s_entry != t_entry:
-                    raise Exception('For Condor source file name and target file name have to be identical: %s != %s' % (s_entry, t_entry))
-                # entry ok - add to job script
-                transfer_output_files += "%s, " % source
-            condor_file += "\n%s" % transfer_output_files
-
-    # always define log
-    condor_file += "\nlog = saga-condor-job-$(cluster).log "
-
-    # output -> output
-    if jd.output is not None:
-        condor_file += "\noutput = %s " % jd.output
-
-    # error -> error
-    if jd.error is not None:
-        condor_file += "\nerror = %s " % jd.error 
-
-    # environment -> environment
-    environment = "environment = "
     if jd.environment is not None:
         variable_list = str()
-        for key in jd.environment.keys(): 
-            variable_list += "%s=%s;" % (key, jd.environment[key])
-        environment += "%s " % variable_list
-    condor_file += "\n%s" % environment
+        for key in jd.environment.keys():
+            variable_list += "%s=%s," % (key, jd.environment[key])
+        pbs_params += "#PBS -v %s \n" % variable_list
 
-    # project -> +ProjectName
+    if jd.working_directory is not None:
+        pbs_params += "#PBS -d %s \n" % jd.working_directory
+    if jd.output is not None:
+        pbs_params += "#PBS -o %s \n" % jd.output
+    if jd.error is not None:
+        pbs_params += "#PBS -e %s \n" % jd.error
+    if jd.wall_time_limit is not None:
+        hours = jd.wall_time_limit / 60
+        minutes = jd.wall_time_limit % 60
+        pbs_params += "#PBS -l walltime=%s:%s:00 \n" \
+            % (str(hours), str(minutes))
+
+    if (jd.queue is not None) and (queue is not None):
+        pbs_params += "#PBS -q %s \n" % queue
+    elif (jd.queue is not None) and (queue is None):
+        pbs_params += "#PBS -q %s \n" % jd.queue
+    elif (jd.queue is None) and (queue is not None):
+        pbs_params += "#PBS -q %s \n" % queue
+
     if jd.project is not None:
-        condor_file += "\n+ProjectName = \"%s\"" % str(jd.project)
+        pbs_params += "#PBS -A %s \n" % str(jd.project)
+    if jd.job_contact is not None:
+        pbs_params += "#PBS -m abe \n"
 
-    # candidate hosts -> SiteList + requirements
-    if jd.candidate_hosts is not None:
-        hosts = ""
-        for host in jd.candidate_hosts:
-            hosts += "%s, " % host
-        sitelist = "+SiteList = \"%s\"" % hosts
-        requirements += "(stringListMember(GLIDEIN_ResourceName,SiteList) == True)"
-        condor_file += "\n%s" % sitelist
-        condor_file += "\n%s" % requirements
+    # TORQUE on a cray requires different -l size.. arguments than regular
+    # HPC clusters:
+    if is_cray is True:
+        # Special case for TORQUE on Cray XT5s
+        logger.info("Using Cray XT specific '#PBS - size=xx' flags.")
+        if jd.total_cpu_count is not None:
+            pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
+    else:
+        # Default case, i.e, standard HPC cluster (non-Cray XT)
+        if jd.total_cpu_count is not None:
+            tcc = int(jd.total_cpu_count)
+            tbd = float(tcc) / float(ppn)
+            if float(tbd) > int(tbd):
+                pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
+                    % (str(int(tbd) + 1), ppn)
+            else:
+                pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
+                    % (str(int(tbd)), ppn)
 
-    condor_file += "\n\nqueue"
-
-    return condor_file
+    pbscript = "\n#!/bin/bash \n%s%s" % (pbs_params, exec_n_args)
+    return pbscript
 
 
 # --------------------------------------------------------------------
@@ -195,11 +146,11 @@ _PTY_TIMEOUT = 2.0
 # --------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.condorjob"
-_ADAPTOR_SCHEMAS       = ["condor", "condor+ssh", "condor+gsissh"]
+_ADAPTOR_NAME          = "saga.adaptor.pbsjob"
+_ADAPTOR_SCHEMAS       = ["pbs", "pbs+ssh", "pbs+gsissh"]
 _ADAPTOR_OPTIONS       = [
     {
-    'category':      'saga.adaptor.condorjob',
+    'category':      'saga.adaptor.pbsjob',
     'name':          'foo',
     'type':          bool,
     'default':       False,
@@ -224,7 +175,6 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.PROJECT,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
-                          saga.job.CANDIDATE_HOSTS,
                           saga.job.TOTAL_CPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -244,12 +194,12 @@ _ADAPTOR_DOC = {
     "name":          _ADAPTOR_NAME,
     "cfg_options":   _ADAPTOR_OPTIONS,
     "capabilities":  _ADAPTOR_CAPABILITIES,
-    "description":   """The Condor adaptor can run and manage jobs on local and
-                        remote Condor gateways.""",
+    "description":   """The PBS adaptor can run and manage jobs on local and
+                        remote PBS and TORQUE clusters.""",
     "details": """TODO""",
-    "schemas": {"condor":        "connect to a local Condor gateway",
-                "condor+ssh":    "conenct to a remote Condor gateway via SSH",
-                "condor+gsissh": "connect to a remote Condor gateway via GSISSH"}
+    "schemas": {"pbs":        "connect to a local PBS/TORQUE cluster",
+                "pbs+ssh":    "conenct to a remote PBS/TORQUE cluster via SSH",
+                "pbs+gsissh": "connect to a remote PBS/TORQUE cluster via GSISSH"}
 }
 
 # --------------------------------------------------------------------
@@ -262,11 +212,11 @@ _ADAPTOR_INFO = {
     "cpis": [
         {
         "type": "saga.job.Service",
-        "class": "CondorJobService"
+        "class": "PBSJobService"
         },
         {
         "type": "saga.job.Job",
-        "class": "CondorJob"
+        "class": "PBSJob"
         }
     ]
 }
@@ -275,8 +225,8 @@ _ADAPTOR_INFO = {
 ###############################################################################
 # The adaptor class
 class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
-    """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by
-        the SAGA engine), and which registers the CPI implementation classes
+    """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by 
+        the SAGA engine), and which registers the CPI implementation classes 
         which provide the adaptor's functionality.
     """
 
@@ -314,15 +264,15 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
 ###############################################################################
 #
-class CondorJobService (saga.adaptors.cpi.job.Service):
-    """ implements saga.adaptors.cpi.job.Service
+class PBSJobService (saga.adaptors.cpi.job.Service):
+    """ implements saga.adaptors.cpi.job.Service 
     """
 
     # ----------------------------------------------------------------
     #
     def __init__(self, api, adaptor):
 
-        self._cpi_base = super(CondorJobService, self)
+        self._cpi_base = super(PBSJobService, self)
         self._cpi_base.__init__(api, adaptor)
 
     # ----------------------------------------------------------------
@@ -345,15 +295,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     def init_instance(self, adaptor_state, rm_url, session):
         """ service instance constructor
         """
-        # Turn this off by default.
-        self._disable_ptywrapper_logging = True
-        
-        self.rm            = rm_url
-        self.session       = session
-        self.ppn           = 0
-        self.is_cray       = False
-        self.jobs          = dict()
-        self.query_options = dict()
+
+        self.rm      = rm_url
+        self.session = session
+        self.ppn     = 0
+        self.is_cray = False
+        self.queue   = None
+        self.jobs    = dict()
 
         rm_scheme = rm_url.scheme
         pty_url   = deepcopy(rm_url)
@@ -362,42 +310,39 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # 'query' component of the job service URL.
         if rm_url.query is not None:
             for key, val in parse_qs(rm_url.query).iteritems():
-                self.query_options[key] = val[0]
+                if key == 'queue':
+                    self.queue = val[0]
+
 
         # we need to extrac the scheme for PTYShell. That's basically the
-        # job.Serivce Url withou the condor+ part. We use the PTYShell to execute
-        # condor commands either locally or via gsissh or ssh.
-        if rm_scheme == "condor":
+        # job.Serivce Url withou the pbs+ part. We use the PTYShell to execute
+        # pbs commands either locally or via gsissh or ssh.
+        if rm_scheme == "pbs":
             pty_url.scheme = "fork"
-        elif rm_scheme == "condor+ssh":
+        elif rm_scheme == "pbs+ssh":
             pty_url.scheme = "ssh"
-        elif rm_scheme == "condor+gsissh":
+        elif rm_scheme == "pbs+gsissh":
             pty_url.scheme = "gsissh"
 
-        # these are the commands that we need in order to interact with Condor.
+        # these are the commands that we need in order to interact with PBS.
         # the adaptor will try to find them during initialize(self) and bail
         # out in case they are note avaialbe.
-        self._commands = {'condor_version': None,
-                          'condor_submit':  None,
-                          'condor_q':       None,
-                          'condor_rm':      None}
+        self._commands = {'pbsnodes': None,
+                          'qstat':    None,
+                          'qsub':     None,
+                          'qdel':     None}
 
-        if self._disable_ptywrapper_logging:
-            # create a null logger to silence the PTY wrapper!
-            import logging
+        # create a null logger to silence the PTY wrapper!
+        import logging
 
-            class NullHandler(logging.Handler):
-                def emit(self, record):
-                    pass
-            nh = NullHandler()
-            null_logger = logging.getLogger("PTYShell").addHandler(nh)
+        class NullHandler(logging.Handler):
+            def emit(self, record):
+                pass
+        #nh = NullHandler()
+        #null_logger = logging.getLogger("PTYShell").addHandler(nh)
 
-            self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-                self.session.contexts, null_logger)
-        else:
-            self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-                self.session.contexts)
-
+        self.shell = saga.utils.pty_shell.PTYShell(pty_url,
+            self.session.contexts)#, null_logger)
 
         self.shell.set_initialize_hook(self.initialize)
         self.shell.set_finalize_hook(self.finalize)
@@ -407,33 +352,70 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def initialize(self):
-        # check if all required condor tools are available
+        # check if all required pbs tools are available
         for cmd in self._commands.keys():
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
-                message = "Error finding Condor tools: %s" % out
+                message = "Error finding PBS tools: %s" % out
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
             else:
                 path = out.strip()  # strip removes newline
-                if cmd == 'condor_version':
-                    ret, out, _ = self.shell.run_sync("%s" % cmd)
+                if cmd == 'qdel':  # qdel doesn't support --version!
+                    self._commands[cmd] = {"path":    path,
+                                           "version": "?"}
+                else:
+                    ret, out, _ = self.shell.run_sync("%s --version" % cmd)
                     if ret != 0:
-                        message = "Error determining Condor version: %s" % out
+                        message = "Error finding PBS tools: %s" % out
                         log_error_and_raise(message, saga.NoSuccess,
                             self._logger)
                     else:
-                        # version is reported as:
-                        # $CondorVersion: 7.8.6 Oct 25 2012 $
-                        # $CondorPlatform: X86_64-CentOS_5.7 $
-                        lines = out.split('\n')
-                        version = lines[0].replace("$CondorVersion: ", "")
-                        version = version.strip(" $")
+                        # version is reported as: "version: x.y.z"
+                        version = out.strip().split()[1]
 
                         # add path and version to the command dictionary
-                self._commands[cmd] = {"path":    path,
-                                       "version": version}
+                        self._commands[cmd] = {"path":    path,
+                                               "version": version}
 
-        self._logger.info("Found Condor tools: %s" % self._commands)
+        self._logger.info("Found PBS tools: %s" % self._commands)
+
+        # let's try to figure out if we're working on a Cray XT machine.
+        # naively, we assume that if we can find the 'aprun' command in the
+        # path that we're logged in to a Cray machine.
+        ret, out, _ = self.shell.run_sync('which aprun')
+        if ret != 0:
+            self.is_cray = False
+        else:
+            self._logger.info("Host '%s' seems to be a Cray XT class machine." \
+                % self.rm.host)
+            self.is_cray = True
+
+        # see if we can get some information about the cluster, e.g.,
+        # different queues, number of processes per node, etc.
+        # TODO: this is quite a hack. however, it *seems* to work quite
+        #       well in practice.
+        ret, out, _ = self.shell.run_sync('%s -a | grep np' % \
+            self._commands['pbsnodes']['path'])
+        if ret != 0:
+            message = "Error running pbsnodes: %s" % out
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+        else:
+            # this is black magic. we just assume that the highest occurence
+            # of a specific np is the number of processors (cores) per compute
+            # node. this equals max "PPN" for job scripts
+            ppn_list = dict()
+            for line in out.split('\n'):
+                np = line.split(' = ')
+                if len(np) == 2:
+                    np = np[1].strip()
+                    if np in ppn_list:
+                        ppn_list[np] += 1
+                    else:
+                        ppn_list[np] = 1
+            self.ppn = max(ppn_list, key=ppn_list.get)
+            self._logger.debug("Found the following 'ppn' configurations: %s. \
+    Using %s as default ppn." 
+                % (ppn_list, self.ppn))
 
     # ----------------------------------------------------------------
     #
@@ -445,34 +427,28 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     def _job_run(self, jd):
         """ runs a job via qsub
         """
-        # create a Condor job script from SAGA job description
-        script = _condorscript_generator(url=self.rm, logger=self._logger, jd=jd,
-            option_dict=self.query_options)
-        self._logger.debug("Generated Condor script: %s" % script)
+        if (self.queue is not None) and (jd.queue is not None):
+            self._logger.warning("Job service was instantiated explicitly with \
+'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." \
+                % (self.queue, jd.queue, self.queue))
 
-        ret, out, _ = self.shell.run_sync("echo \'%s\' | %s -" \
-            % (script, self._commands['condor_submit']['path']))
+        # create a PBS job script from SAGA job description
+        script = _pbscript_generator(url=self.rm, logger=self._logger, jd=jd,
+            ppn=self.ppn, is_cray=self.is_cray, queue=self.queue)
+        self._logger.debug("Generated PBS script: %s" % script)
+
+        ret, out, _ = self.shell.run_sync("echo '%s' | %s" \
+            % (script, self._commands['qsub']['path']))
 
         if ret != 0:
             # something went wrong
-            message = "Error running job via 'condor_submit': %s. Script was: %s" \
+            message = "Error running job via 'qsub': %s. Script was: %s" \
                 % (out, script)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
             # stdout contains the job id
-            for line in out.split("\n"):
-                if "** Proc" in line:
-                    pid = line.split()[2][:-1]
-
-            # we don't want the 'query' part of the URL to be part of the ID,
-            # simply because it can get terribly long (and ugly). to get rid
-            # of it, we clone the URL and set the query part to None.
-            rm_clone = deepcopy(self.rm)
-            rm_clone.query = ""
-            rm_clone.path = ""
-
-            job_id = "[%s]-[%s]" % (rm_clone, pid)
-            self._logger.info("Submitted Condor job with id: %s" % job_id)
+            job_id = "[%s]-[%s]" % (self.rm, out.strip().split('.')[0])
+            self._logger.info("Submitted PBS job with id: %s" % job_id)
 
             # add job to internal list of known jobs.
             self.jobs[job_id] = {
@@ -495,14 +471,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
-        # run the Condor 'condor_q' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync("%s -long %s | \
-            egrep '(JobStatus)|(ExitStatus)|(CompletionDate)'" \
-            % (self._commands['condor_q']['path'], pid))
-        if ret != 0:
-            message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+        # run the PBS 'qstat' command to get some infos about our job
+        ret, out, _ = self.shell.run_sync("%s -f1 %s | \
+            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" % (self._commands['qstat']['path'], pid))
 
+        if ret != 0:
+            log_error_and_raise("Couldn't reconnect to job '%s': %s" % \
+                (job_id, out))
         else:
             # the job seems to exist on the backend. let's gather some data
             job_info = {
@@ -516,17 +491,23 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             }
 
             results = out.split('\n')
-            for result in results:
-                if len(result.split('=')) == 2:
-                    key, val = result.split('=')
+            for line in results:
+                if len(line.split('=')) == 2:
+                    key, val = line.split('=')
                     key = key.strip()  # strip() removes whitespaces at the
                     val = val.strip()  # beginning and the end of the string
 
-                    if key == 'JobStatus':
-                        job_info['state'] = _condor_to_saga_jobstate(val)
-                    elif key == 'ExitStatus':
+                    if key == 'job_state':
+                        job_info['state'] = _pbs_to_saga_jobstate(val)
+                    elif key == 'exec_host':
+                        job_info['exec_hosts'] = val.split('+')
+                    elif key == 'exit_status':
                         job_info['returncode'] = val
-                    elif key == 'CompletionDate':
+                    elif key == 'ctime':
+                        job_info['create_time'] = val
+                    elif key == 'start_time':
+                        job_info['start_time'] = val
+                    elif key == 'comp_time':
                         job_info['end_time'] = val
 
             return job_info
@@ -534,7 +515,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def _job_get_info(self, job_id):
-        """ get job attributes via condor_q
+        """ get job attributes via qstat
         """
 
         # if we don't have the job in our dictionary, we don't want it
@@ -558,33 +539,32 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         rm, pid = self._adaptor.parse_id(job_id)
 
-        # run the Condor 'condor_q' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync("%s -long %s | \
-            egrep '(JobStatus)|(ExitStatus)|(CompletionDate)'" \
-            % (self._commands['condor_q']['path'], pid))
+        # run the PBS 'qstat' command to get some infos about our job
+        ret, out, _ = self.shell.run_sync("%s -f1 %s | \
+            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" % (self._commands['qstat']['path'], pid))
 
         if ret != 0:
-            #if ("Unknown Job Id" in out):
+            if ("Unknown Job Id" in out):
                 # Let's see if the previous job state was runnig or pending. in
                 # that case, the job is gone now, which can either mean DONE,
                 # or FAILED. the only thing we can do is set it to 'DONE'
-            if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                curr_info['state'] = saga.job.DONE
-                curr_info['gone'] = True
-                self._logger.warning("Previously running job has \
-disappeared. This probably means that the backend doesn't store any information \
+                if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+                    curr_info['state'] = saga.job.DONE
+                    curr_info['gone'] = True
+                    self._logger.warning("Previously running job has \
+disappeared. This probably means that the backend doesn't store informations \
 about finished jobs. Setting state to 'DONE'.")
+                else:
+                    curr_info['gone'] = True
             else:
-                curr_info['gone'] = True
-            #else:
-            #    # something went wrong
-            #    message = "Error retrieving job info via 'condor_q': %s" % out
-            #    log_error_and_raise(message, saga.NoSuccess, self._logger)
+                # something went wrong
+                message = "Error retrieving job info via 'qstat': %s" % out
+                log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
             # parse the egrep result. this should look something like this:
-            # JobStatus = 5
-            # ExitStatus = 0
-            # CompletionDate = 0
+            #     job_state = C
+            #     exec_host = i72/0
+            #     exit_status = 0
             results = out.split('\n')
             for result in results:
                 if len(result.split('=')) == 2:
@@ -592,11 +572,17 @@ about finished jobs. Setting state to 'DONE'.")
                     key = key.strip()  # strip() removes whitespaces at the
                     val = val.strip()  # beginning and the end of the string
 
-                    if key == 'JobStatus':
-                        curr_info['state'] = _condor_to_saga_jobstate(val)
-                    elif key == 'ExitStatus':
+                    if key == 'job_state':
+                        curr_info['state'] = _pbs_to_saga_jobstate(val)
+                    elif key == 'exec_host':
+                        curr_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
+                    elif key == 'exit_status':
                         curr_info['returncode'] = val
-                    elif key == 'CompletionDate':
+                    elif key == 'ctime':
+                        curr_info['create_time'] = val
+                    elif key == 'start_time':
+                        curr_info['start_time'] = val
+                    elif key == 'comp_time':
                         curr_info['end_time'] = val
 
         # return the new job info dict
@@ -682,15 +668,15 @@ about finished jobs. Setting state to 'DONE'.")
     # ----------------------------------------------------------------
     #
     def _job_cancel(self, job_id):
-        """ cancel the job via 'condor_rm'
+        """ cancel the job via 'qdel'
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
         ret, out, _ = self.shell.run_sync("%s %s\n" \
-            % (self._commands['condor_rm']['path'], pid))
+            % (self._commands['qdel']['path'], pid))
 
         if ret != 0:
-            message = "Error canceling job via 'condor_rm': %s" % out
+            message = "Error canceling job via 'qdel': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         # assume the job was succesfully canceld
@@ -786,13 +772,14 @@ about finished jobs. Setting state to 'DONE'.")
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("%s | grep `whoami`"\
-            % self._commands['condor_q']['path'])
+        ret, out, _ = self.shell.run_sync("%s -l | grep `whoami`"\
+            % self._commands['qstat']['path'])
 
         if ret != 0 and len(out) > 0:
-            message = "failed to list jobs via 'condor_q': %s" % out
+            message = "failed to list jobs via 'qstat': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         elif ret != 0 and len(out) == 0:
+            # qstat | grep `` exits with 1 if the list is empty
             pass
         else:
             for line in out.split("\n"):
@@ -800,11 +787,7 @@ about finished jobs. Setting state to 'DONE'.")
                 # 112059.svc.uc.futuregrid testjob oweidner 0 Q batch
                 # 112061.svc.uc.futuregrid testjob oweidner 0 Q batch
                 if len(line.split()) > 1:
-                    rm_clone = deepcopy(self.rm)
-                    rm_clone.query = ""
-                    rm_clone.path = ""
-
-                    jobid = "[%s]-[%s]" % (rm_clone, line.split()[0])
+                    jobid = "[%s]-[%s]" % (self.rm, line.split()[0].split('.')[0])
                     ids.append(str(jobid))
 
         return ids
@@ -837,14 +820,14 @@ about finished jobs. Setting state to 'DONE'.")
 
 ###############################################################################
 #
-class CondorJob (saga.adaptors.cpi.job.Job):
+class PBSJob (saga.adaptors.cpi.job.Job):
     """ implements saga.adaptors.cpi.job.Job
     """
 
     def __init__(self, api, adaptor):
 
         # initialize parent class
-        self._cpi_base = super(CondorJob, self)
+        self._cpi_base = super(PBSJob, self)
         self._cpi_base.__init__(api, adaptor)
 
     @SYNC_CALL

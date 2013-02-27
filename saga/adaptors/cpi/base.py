@@ -1,3 +1,6 @@
+__author__    = ["Andre Merzky", "Ole Weidner"]
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
 
 """ Provides the CPI base class, adaptor base class, and a number of call
     decorators. """
@@ -50,7 +53,7 @@ class AdaptorBase (saga_config.Configurable) :
                 'type'             : bool, 
                 'default'          : True, 
                 'valid_options'    : [True, False],
-                'documentation'    : "enable / disable %s adaptor"  % self._name,
+                'documentation'    : "Enable / disable loading of the adaptor",
                 'env_variable'     : None
                 }
             )
