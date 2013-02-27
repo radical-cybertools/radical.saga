@@ -125,6 +125,7 @@ setup_args = {
         "saga.adaptors.context",
         "saga.adaptors.local",
         "saga.adaptors.shell",
+        "saga.adaptors.pbs",
         "saga.engine",
         "saga.utils",
         "saga.utils.contrib",
