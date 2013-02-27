@@ -1,8 +1,10 @@
+__author__    = ["Andre Merzky", "Ole Weidner"]
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
 
 # --------------------------------------------------------------------
 #
 import re
-import pprint
 import saga.engine.registry
 
 
@@ -77,7 +79,7 @@ for a in saga.engine.registry.adaptor_registry :
         schemas = ""
         for schema in m._ADAPTOR_DOC['schemas'] :
             text     = cleanup (m._ADAPTOR_DOC['schemas'][schema])
-            schemas += "  - **%s** : %s\n" % (schema, text)
+            schemas += "  - **%s://** : %s\n" % (schema, text)
 
 
     if 'cfg_options' in m._ADAPTOR_DOC :
@@ -95,7 +97,7 @@ for a in saga.engine.registry.adaptor_registry :
             if 'valid_options' in o :
                 oval  = o['valid_options']
 
-            options += "``%s``\n" % oname
+            options += "%s\n****************" % oname
             options += "\n"
             options += "%s\n" % odoc
             options += "\n"
@@ -124,7 +126,7 @@ for a in saga.engine.registry.adaptor_registry :
             if cname in cap_headers :
                 header = cap_headers[cname]
 
-            capable += "``%s``\n" % header
+            capable += "%s\n****************" % header
             capable += "\n"
 
             capab = capabs[cname]
@@ -148,7 +150,7 @@ for a in saga.engine.registry.adaptor_registry :
             classes      += "  - :class:`%s`\n" % cpi['type']
             classes_long += "\n"
             classes_long += "%s\n" % cpi['type']
-            classes_long += "%s\n" % ('"' * len(cpi['type']))
+            classes_long += "%s\n" % ('*' * len(cpi['type']))
             classes_long += "\n"
             classes_long += ".. autoclass:: %s.%s\n"  % (a, cpi['class'])
             classes_long += "   :members:\n"
@@ -165,32 +167,40 @@ for a in saga.engine.registry.adaptor_registry :
     f.write ("\n")
     f.write ("%s\n" % details)
     f.write ("\n")
-    f.write ("Version\n")
-    f.write ("=======\n")
-    f.write ("\n")
-    f.write ("%s\n" % version)
-    f.write ("\n")
+    #f.write ("Version\n")
+    #f.write ("=======\n")
+    #f.write ("\n")
+    #f.write ("%s\n" % version)
+    #f.write ("\n")
     f.write ("\n")
     f.write ("Supported Schemas\n")
-    f.write ("=================\n")
+    f.write ("-----------------\n")
     f.write ("\n")
     f.write ("%s\n" % schemas)
     f.write ("\n")
     f.write ("\n")
     f.write ("Configuration Options\n")
-    f.write ("=====================\n")
+    f.write ("---------------------\n")
+    f.write ("Configuration options can be used to control the adaptor's \
+runtime behavior. Most adaptors don't need any configuration options \
+to be set in order to work. They are mostly for controlling experimental \
+features and properties of the adaptors.\
+\n\n \
+.. seealso:: More information about configuration options can be found in \
+the :ref:`conf_file` section.\n")
     f.write ("\n")
     f.write ("%s\n" % options)
     f.write ("\n")
-    f.write ("Supported Capabilities\n")
-    f.write ("======================\n")
+    f.write ("Capabilities\n")
+    f.write ("------------\n")
     f.write ("\n")
     f.write ("%s\n" % capable)
     f.write ("\n")
     f.write ("Supported API Classes\n")
-    f.write ("=====================\n")
-    f.write ("\n")
+    f.write ("---------------------\n")
+    f.write ("\nThis adaptor supports the following API classes:\n")
     f.write ("%s\n" % classes)
+    f.write ("Method implementation details are listed below.\n")
     f.write ("%s\n" % classes_long)
     f.write ("\n")
 
