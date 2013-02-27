@@ -122,7 +122,6 @@ class PTYProcess (object) :
 
 
         self.cache   = ""      # data cache
-        self.clog    = ""      # log the data cache
         self.child   = None    # the process as created by subprocess.Popen
         self.ptyio   = None    # the process' io channel, from pty.fork()
 
@@ -133,7 +132,7 @@ class PTYProcess (object) :
         self.finalize_hook    = None
 
         self.recover_max      = 3  # TODO: make configure option.  This does not
-        self.recover_attempts = 0  # apply for recovers triggered by gc_timout!
+        self.recover_attempts = 0  # apply for recovers triggered by gc_timeout!
 
         if not self.logger :
             self.logger = saga.utils.logger.getLogger ('PTYProcess')
@@ -289,6 +288,52 @@ class PTYProcess (object) :
 
     # --------------------------------------------------------------------
     #
+    def wait (self) :
+        """ 
+        blocks forever until the child finishes on its own, or is getting
+        killed
+        """
+
+        # yes, for ever and ever...
+        while True :
+
+            # hey, kiddo, whats up?
+            wpid, wstat = os.waitpid (self.child, 0)
+
+            # did we get a note about child termination?
+            if 0 == wpid :
+
+                # nope, all is well - carry on
+                continue
+
+
+            # Yes, we got a note.  
+            # Well, maybe the child fooled us and is just playing dead?
+            if os.WIFSTOPPED   (wstat) or \
+               os.WIFCONTINUED (wstat)    :
+                # we don't care if someone stopped/resumed the child -- that is up
+                # to higher powers.  For our purposes, the child is alive.  Ha!
+                continue
+
+
+            # not stopped, poor thing... - soooo, what happened??
+            if os.WIFEXITED (wstat) :
+                # child died of natural causes - perform autopsy...
+                self.exit_code   = os.WEXITSTATUS (wstat)
+                self.exit_signal = None
+
+            elif os.WIFSIGNALED (wstat) :
+                # murder!! Child got killed by someone!  recover evidence...
+                self.exit_code   = None
+                self.exit_signal = os.WTERMSIG (wstat)
+
+            # either way, its dead -- make sure it stays dead, to avoid zombie
+            # apocalypse...
+            self.finalize ()
+            return
+
+    # --------------------------------------------------------------------
+    #
     def alive (self, recover=False) :
         """
         try to determine if the child process is still active.  If not, mark 
@@ -384,12 +429,13 @@ class PTYProcess (object) :
 
     # --------------------------------------------------------------------
     #
-    def read (self, size=_CHUNKSIZE, timeout=0, _force=False) :
+    def read (self, size=0, timeout=0, _force=False) :
         """ 
-        read some data from the child.  By default, the method reads a full
-        chunk, but other read sizes can be specified.  
+        read some data from the child.  By default, the method reads whatever is
+        available on the next read, up to _CHUNKSIZE, but other read sizes can
+        be specified.  
         
-        The method will return whatever data is has at timeout::
+        The method will return whatever data it has at timeout::
         
           timeout == 0 : return the content of the first successful read, with
                          whatever data up to 'size' have been found.
@@ -406,73 +452,91 @@ class PTYProcess (object) :
 
         with self.gc.active (self) :
 
-            # start the timeout timer right now.  Note that even if timeout is
-            # short, and child.poll is slow, we will nevertheless attempt at least
-            # one read...
-            start = time.time ()
-            ret   = ""
-
-            # first, lets see if we still have data in the cache we can return
-            if len (self.cache) :
-
-                # we don't even need all of the cache
-                if  size < len (self.cache) :
-                    ret = self.cache[:size]
-                    self.cache = self.cache[size:]
-                    return ret
-
-                elif size == len (self.cache) :
-                    # doh!
-                    ret = self.cache
-                    self.cache = ""
-                    return ret
-
-                else : # size > len(self.cache)
-                    # just use what we have, then go on to reading data
-                    ret = self.cache
-                    self.cache = ""
-
-
             try:
+                # start the timeout timer right now.  Note that even if timeout is
+                # short, and child.poll is slow, we will nevertheless attempt at least
+                # one read...
+                start = time.time ()
+                ret   = ""
+
                 # read until we have enough data, or hit timeout ceiling...
                 while True :
                 
+                    # first, lets see if we still have data in the cache we can return
+                    if len (self.cache) :
+
+                        if not size :
+                            ret = self.cache
+                            self.cache = ""
+                            return ret
+
+                        # we don't even need all of the cache
+                        elif size <= len (self.cache) :
+                            ret = self.cache[:size]
+                            self.cache = self.cache[size:]
+                            return ret
+
+                    # otherwise we need to read some more data, right?
                     # idle wait 'til the next data chunk arrives, or 'til _POLLDELAY
                     rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
 
                     # got some data? 
                     for f in rlist:
                         # read whatever we still need
-                        buf  = os.read (f, size-len(ret))
-                        self.clog += buf
-                        ret       += buf
 
-                        buf = buf.replace ('\n', '\\n')
-                        buf = buf.replace ('\r', '')
-                        if  len(buf) > 60 :
+                        readsize = _CHUNKSIZE
+                        if size: 
+                            readsize = size-len(ret)
+
+                        buf  = os.read (f, _CHUNKSIZE)
+                        self.cache += buf.replace ('\r', '')
+                        log         = buf.replace ('\n', '\\n')
+                        if  len(log) > 60 :
                             self.logger.debug ("read : [%5d] (%s ... %s)" \
-                                            % (len(buf), buf[:30], buf[-30:]))
+                                            % (len(log), log[:30], log[-30:]))
                         else :
                             self.logger.debug ("read : [%5d] (%s)" \
-                                            % (len(buf), buf))
+                                            % (len(log), log))
+
+
+                    # lets see if we still got any data in the cache we can return
+                    if len (self.cache) :
+
+                        if not size :
+                            ret = self.cache
+                            self.cache = ""
+                            return ret
+
+                        # we don't even need all of the cache
+                        elif size <= len (self.cache) :
+                            ret = self.cache[:size]
+                            self.cache = self.cache[size:]
+                            return ret
+
+                    # at this point, we do not have sufficient data -- only
+                    # return on timeout
 
                     if  timeout == 0 : 
                         # only return if we have data
-                        if len (ret) :
+                        if len (self.cache) :
+                            ret        = self.cache
+                            self.cache = ""
                             return ret
 
                     elif timeout < 0 :
-                        # return immediately
+                        # return of we have data or not
+                        ret        = self.cache
+                        self.cache = ""
                         return ret
 
                     else : # timeout > 0
-                        # return if timeout is reached, or if data size is reached
-                        if len (ret) >= size :
-                            return ret
-
+                        # return if timeout is reached
                         now = time.time ()
                         if (now-start) > timeout :
+                            ret        = self.cache
+                            self.cache = ""
                             return ret
+
 
             except Exception as e :
                 raise se.NoSuccess ("read from pty process [%s] failed (%s)" \
@@ -533,17 +597,15 @@ class PTYProcess (object) :
                     # got some data - read them into the cache
                     for f in rlist:
                         buf         = os.read (f, _CHUNKSIZE)
-                        self.clog  += buf
-                        self.cache += buf
+                        self.cache += buf.replace ('\r', '')
 
-                        buf = buf.replace ('\n', '\\n')
-                        buf = buf.replace ('\r', '')
-                        if  len(buf) > 60 :
+                        log         = buf.replace ('\n', '\\n')
+                        if  len(log) > 60 :
                             self.logger.debug ("read : [%5d] (%s ... %s)" \
-                                            % (len(buf), buf[:30], buf[-30:]))
+                                            % (len(log), log[:30], log[-30:]))
                         else :
                             self.logger.debug ("read : [%5d] (%s)" \
-                                            % (len(buf), buf))
+                                            % (len(log), log))
 
                     # check if we *now* have a full line in cache
                     if '\n' in self.cache :
@@ -660,7 +722,7 @@ class PTYProcess (object) :
             self.cache = ""
 
             if not data : # empty cache?
-                data = self.read (_CHUNKSIZE, _POLLDELAY)
+                data = self.read (timeout=_POLLDELAY)
 
             # pre-compile the given pattern, to speed up matching
             for pattern in patterns :
@@ -674,23 +736,27 @@ class PTYProcess (object) :
 
                 # skip non-lines
                 if  None == data :
-                    data += self.read (_CHUNKSIZE, _POLLDELAY)
+                    data += self.read (timeout=_POLLDELAY)
 
                 # check current data for any matching pattern
               # print ">>%s<<" % data
                 for n in range (0, len(patts)) :
+
                     match = patts[n].search (data)
                   # print "==%s==" % patterns[n]
+
                     if match :
-                      # print "~~match!~~ %s" % data[match.start():match.end()]
-                      # print "~~match!~~ %s" % (len(data))
-                      # print "~~match!~~ %s" % (str(match.span()))
                         # a pattern matched the current data: return a tuple of
                         # pattern index and matching data.  The remainder of the
                         # data is cached.
-                        ret  = data[0:match.end()+1]
-                        self.cache = data[match.end()+1:] 
+                        ret  = data[0:match.end()]
+                        self.cache = data[match.end():] 
+
+                      # print "~~match!~~ %s" % data[match.start():match.end()]
+                      # print "~~match!~~ %s" % (len(data))
+                      # print "~~match!~~ %s" % (str(match.span()))
                       # print "~~match!~~ %s" % (ret)
+
                         return (n, ret.replace('\r', ''))
 
                 # if a timeout is given, and actually passed, return a non-match
@@ -704,7 +770,7 @@ class PTYProcess (object) :
                         return (None, None)
 
                 # no match yet, still time -- read more data
-                data += self.read (_CHUNKSIZE, _POLLDELAY)
+                data += self.read (timeout=_POLLDELAY)
 
 
         except Exception as e :
@@ -725,14 +791,14 @@ class PTYProcess (object) :
 
             with self.gc.active (self) :
 
-                buf = data.replace ('\n', '\\n')
-                buf =  buf.replace ('\r', '')
-                if  len(buf) > 60 :
+                log = data.replace ('\n', '\\n')
+                log =  log.replace ('\r', '')
+                if  len(log) > 60 :
                     self.logger.debug ("write: [%5d] (%s ... %s)" \
-                                    % (len(data), buf[:30], buf[-30:]))
+                                    % (len(data), log[:30], log[-30:]))
                 else :
                     self.logger.debug ("write: [%5d] (%s)" \
-                                    % (len(data), buf))
+                                    % (len(data), log))
 
                 # attempt to write forever -- until we succeeed
                 while data :

@@ -9,7 +9,6 @@ import re
 import sys
 import pprint
 import string
-import signal
 import inspect
 
 import saga.exceptions      as se
@@ -23,15 +22,6 @@ import saga.engine.registry  # adaptors to load
 ############# These are all supported options for saga.engine ####################
 ##
 _config_options = [
-    { 
-    'category'      : 'saga.engine',
-    'name'          : 'enable_ctrl_c', 
-    'type'          : bool, 
-    'default'       : True,
-    'valid_options' : [True, False],
-    'documentation' : 'install SIGINT signal handler to abort application.',
-    'env_variable'  : None
-    },
     { 
     'category'      : 'saga.engine',
     'name'          : 'load_beta_adaptors', 
@@ -152,17 +142,6 @@ class Engine(sconf.Configurable):
 
         # Initialize the logging
         self._logger = slog.getLogger ('saga.engine')
-
-
-        # install signal handler, if requested
-        if self._cfg['enable_ctrl_c'].get_value () :
-
-            def signal_handler (signal, frame):
-                sys.stderr.write ("Ctrl+C caught. Exiting...")
-                sys.exit (0)
-
-            self._logger.debug ("installing signal handler for SIGTERM")
-            signal.signal (signal.SIGTERM, signal_handler)
 
 
         # load adaptors
