@@ -512,6 +512,7 @@ class PTYShell (object) :
     def alive (self, recover=False) :
         """
         The shell is assumed to be alive if the shell processes lives.
+        Attempt to restart shell if recover==True
         """
         return self.pty_shell.alive (recover)
 
@@ -893,16 +894,26 @@ class PTYShell (object) :
 
         while True :
 
-            ret, out, _ = self.run_sync ("wc -c %s.$$ | cut -f 1 -d ' '" % tgt)
+            ret, out, _ = self.run_sync ("wc -c %s.$$ | xargs echo | cut -f 1 -d ' '" % tgt)
 
             if  ret == 0 :
-                size_tgt = out.strip ()
 
-                if str(size_src) == str(size_tgt) :
-                    break
-                else :
-                    # print "try again (%s)(%s)!" % (size_src, size_tgt)
+                try :
+                    size_tgt = int (out.strip ())
+
+                except :  
+                    # no valid output from wc
                     pass
+
+                else :
+                    if sys.platform == 'darwin' :
+                        size_tgt -= 1
+
+                    if str(size_src) == str(size_tgt) :
+                        break
+                    else :
+                        print "try again (%s)(%s)!" % (size_src, size_tgt)
+                        pass
 
 
             if sys.platform == 'darwin' :

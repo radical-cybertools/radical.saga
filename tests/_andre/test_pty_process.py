@@ -13,6 +13,7 @@ def test_ptyprocess_ok () :
     pty.wait ()
     assert pty.exit_code == 0
 
+test_ptyprocess_ok ()
 
 # ------------------------------------------------------------------------------
 #
@@ -64,7 +65,11 @@ def test_ptyprocess_stdout () :
     pty = supp.PTYProcess ("printf \"%s\"" % txt)
     out = pty.read ()
     pty.wait ()
+    print "--%s--%s--\n" % ( len(txt), txt)
+    print "--%s--%s--\n" % ( len(out), out)
     assert (str(txt) == str(out))
+
+test_ptyprocess_stdout ()
 
 
 # ------------------------------------------------------------------------------
@@ -78,6 +83,7 @@ def test_ptyprocess_stderr () :
   # print "--%s--%s--\n" % ( len(out), out)
     assert (str(txt) == str(out))
 
+test_ptyprocess_stderr ()
 
 # ------------------------------------------------------------------------------
 #
@@ -92,6 +98,7 @@ def test_ptyprocess_write () :
   # print "--%s--%s--\n" % ( len(out), out)
     assert (txt == out)
 
+test_ptyprocess_write ()
 
 # ------------------------------------------------------------------------------
 #
@@ -103,12 +110,13 @@ def test_ptyprocess_find () :
   # print out
     assert (out == (0, '______1_____2'))
 
+test_ptyprocess_find ()
 
 # ------------------------------------------------------------------------------
 #
 def test_ptyprocess_restart () :
     """ Test pty_process restart"""
-    pty = supp.PTYProcess ("cat")
+    pty = supp.PTYProcess ("/bin/cat")
     assert (pty.alive ())
 
     pty.finalize ()
@@ -119,4 +127,6 @@ def test_ptyprocess_restart () :
 
     pty.finalize ()
     assert (not pty.alive ())
+
+test_ptyprocess_restart ()
 
