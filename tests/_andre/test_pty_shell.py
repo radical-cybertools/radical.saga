@@ -6,6 +6,8 @@ import saga
 import saga.utils.pty_shell   as sups
 import saga.utils.test_config as sutc
 
+tc=sutc.TestConfig()
+tc.read_config("configs/fork_localhost.cfg")
 
 # ------------------------------------------------------------------------------
 #
@@ -24,6 +26,7 @@ def test_ptyshell_ok () :
     time.sleep (1)
     assert (not shell.alive ())
 
+test_ptyshell_ok ()
 
 # ------------------------------------------------------------------------------
 #
