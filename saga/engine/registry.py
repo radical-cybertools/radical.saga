@@ -22,9 +22,9 @@ adaptor_registry = [
                     "saga.adaptors.context.ssh",
                     "saga.adaptors.context.userpass",
                     "saga.adaptors.local.localfile",
-                    "saga.adaptors.ssh.ssh_job",
-                    "saga.adaptors.redis.redis_advert",
-                    "saga.adaptors.irods.irods_replica",
+                    "saga.adaptors.shell.shell_job",
+                    "saga.adaptors.sge.sgejob",
+                    "saga.adaptors.pbs.pbsjob",
+                    "saga.adaptors.condor.condorjob",
                     "saga.adaptors.slurm.slurm_job"
                    ]
-
