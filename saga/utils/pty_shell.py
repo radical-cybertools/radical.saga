@@ -6,6 +6,7 @@ import sys
 import saga.utils.singleton
 import saga.utils.pty_process
 import saga.utils.logger
+import saga.utils.which
 
 _PTY_TIMEOUT = 2.0
 _SCHEMAS     = ['ssh', 'gsissh', 'fork', 'shell']
@@ -540,6 +541,16 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
+    def find (self, patterns) :
+        """
+        Note that this method blocks until pattern is found in the shell I/O.
+        """
+
+        return self.pty_shell.find (patterns, timeout=-1)
+
+
+    # ----------------------------------------------------------------
+    #
     def set_prompt (self, prompt) :
         """
         :type  prompt:  string 
@@ -953,6 +964,27 @@ class PTYShell (object) :
             raise saga.NoSuccess ("failed to stage file to string (%s)(%s)" % (ret, out))
 
         return out
+
+
+    # ----------------------------------------------------------------
+    #
+    def stage_file_local_remote (self, src, tgt) :
+        """
+        :type  src: string
+        :param src: path to file to be staged
+        :type  tgt: string
+        :param tgt: path to file after staging
+
+        For a local shell (type = 'sh'), we run a ``popen ("cp src tgt")``.  For
+        remote shells (type == 'ssh'), we start a Slave scp connection 
+        
+        """
+
+        # we expect the master shell to be in alive when staging, as we need to
+        # spawn cp / scp slaves
+        if not self.pty_shell.alive (recover=True) :
+            raise saga.IncorrectState ("Can't stage file -- shell died:\n%s" \
+                                    % self.pty_shell.autopsy ())
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
