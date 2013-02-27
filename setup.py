@@ -75,15 +75,9 @@ class our_sdist(sdist):
 setup_args = {
     'name': "saga",
     'version': version,
-<<<<<<< HEAD
     'description': "A light-weight access layer for distributed computing infrastructure",
     'long_description': "SAGA-python light-weight implementation of the OGF GFD.90 SAGA standard. SAGA-Python is written 100% in Python and focuses on usability and ease of deployment.",
-    'author': "Ole Christian Weidner, et al.",
-=======
-    'description': "A Light-Weight Access Layer for Distributed Computing Infrastructure",
-    'long_description': "saga-python is a native Python implementation of the OGF GFD.90 SAGA standard.",
     'author': "Ole Weidner, et al.",
->>>>>>> devel
     'author_email': "ole.weidner@rutgers.edu",
     'maintainer': "Ole Weidner",
     'maintainer_email': "ole.weidner@rutgers.edu",
@@ -131,11 +125,7 @@ setup_args = {
         "saga.adaptors.context",
         "saga.adaptors.local",
         "saga.adaptors.shell",
-<<<<<<< HEAD
         "saga.adaptors.sge",
-=======
-        "saga.adaptors.pbs",
->>>>>>> devel
         "saga.engine",
         "saga.utils",
         "saga.utils.contrib",
