@@ -64,6 +64,19 @@ class Directory (saga.namespace.directory.Directory) :
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
 
+    @classmethod
+    def create (cls, url=None, flags=READ, session=None, ttype=None) :
+        '''
+        url:       saga.Url
+        flags:     saga.replica.flags enum
+        session:   saga.Session
+        ttype:     saga.task.type enum
+        ret:       saga.Task
+        '''
+
+        _nsdir = super (Directory, cls)
+        return _nsdir.create (url, flags, session, ttype=ttype)
+
     # ----------------------------------------------------------------
     #
     # filesystem directory methods

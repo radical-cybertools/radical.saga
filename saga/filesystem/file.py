@@ -57,6 +57,19 @@ class File (saga.namespace.entry.Entry) :
         self._nsentry.__init__ (url, flags, session, 
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
+    @classmethod
+    def create (cls, url=None, flags=READ, session=None, ttype=None) :
+        '''
+        url:       saga.Url
+        flags:     saga.replica.flags enum
+        session:   saga.Session
+        ttype:     saga.task.type enum
+        ret:       saga.Task
+        '''
+
+        _nsentry = super (File, cls)
+        return _nsentry.create (url, flags, session, ttype=ttype)
+
 
     # ----------------------------------------------------------------
     #

@@ -55,6 +55,9 @@ class Entry (saga.base.Base, saga.async.Async) :
         self._is_recursive = False # recursion guard (FIXME: NOT THREAD SAFE)
 
         # param checks
+        if not session :
+            session = saga.Session (default=True)
+
         url     = saga.url.Url (url)
         scheme  = url.scheme.lower ()
 
@@ -73,6 +76,9 @@ class Entry (saga.base.Base, saga.async.Async) :
         '''
 
         # param checks
+        if not session :
+            session = saga.Session (default=True)
+
         url     = saga.url.Url (url)
         scheme  = url.scheme.lower ()
 

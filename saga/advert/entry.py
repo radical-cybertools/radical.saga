@@ -61,11 +61,8 @@ class Entry (saga.namespace.entry.Entry,
         ret:       saga.Task
         '''
 
-        # param checks
-        url     = saga.url.Url (url)
-        scheme  = url.scheme.lower ()
-
-        return cls (url, flags, session, _ttype=ttype)._init_task
+        _nsentry = super (Entry, cls)
+        return _nsentry.create (url, flags, session, ttype=ttype)
 
 
 

@@ -69,8 +69,6 @@ class Directory (entry.Entry) :
 
         '''
 
-        # FIXME: param checks
-
         self._nsentry = super  (Directory, self)
         self._nsentry.__init__ (url, flags, session, 
                                 _adaptor, _adaptor_state, _ttype=_ttype)
@@ -86,11 +84,8 @@ class Directory (entry.Entry) :
         ret:       saga.Task
         '''
 
-        # param checks
-        url     = saga.url.Url (url)
-        scheme  = url.scheme.lower ()
-
-        return cls (url, flags, session, _ttype=ttype)._init_task
+        _nsentry = super (Directory, cls)
+        return _nsentry.create (url, flags, session, ttype=ttype)
 
 
     def open_dir (self, path, flags=READ, ttype=None) :

@@ -63,11 +63,11 @@ class Service (Base, Async) :
 
 
         # param checks
+        if not session :
+            session = saga.Session (default=True)
+
         url     = Url (url)
         scheme  = url.scheme.lower ()
-
-        if not session :
-            session = Session (default=True)
 
         Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
                        url, session, ttype=_ttype)
@@ -85,6 +85,9 @@ class Service (Base, Async) :
         """
 
         # param checks
+        if not session :
+            session = saga.Session (default=True)
+
         url     = Url (url)
         scheme  = url.scheme.lower ()
 

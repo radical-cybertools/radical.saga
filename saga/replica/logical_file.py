@@ -38,11 +38,9 @@ class LogicalFile (saga.namespace.entry.Entry,
         ret:       saga.Task
         '''
 
-        # param checks
-        url     = saga.url.Url (url)
-        scheme  = url.scheme.lower ()
+        _nsentry = super (LogicalFile, cls)
+        return _nsentry.create (url, flags, session, ttype=ttype)
 
-        return cls (url, flags, session, _ttype=ttype)._init_task
 
 
     # ----------------------------------------------------------------

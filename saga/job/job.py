@@ -527,6 +527,9 @@ class Self (Job) :
         # self._attributes_extensible  (False)
         # self._attributes_camelcasing (True)
 
+        if not session :
+            session = saga.Session (default=True)
+
         Base.__init__ (self, 'fork', session, ttype=_ttype)
 
 
@@ -537,6 +540,9 @@ class Self (Job) :
         ttype:     saga.task.type enum
         ret:       saga.Task
         '''
+        if not session :
+            session = saga.Session (default=True)
+
 
         return cls (session, _ttype=ttype)._init_task
     
