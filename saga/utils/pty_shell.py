@@ -1,19 +1,28 @@
 
 import re
 import os
+import sys
 
+import saga.utils.singleton
 import saga.utils.pty_process
 import saga.utils.logger
+import saga.utils.which
 
 _PTY_TIMEOUT = 2.0
 _SCHEMAS     = ['ssh', 'gsissh', 'fork', 'shell']
 
+# ------------------------------------------------------------------------------
+#
+# iomode flags
+#
 IGNORE   = 0    # discard stdout / stderr
 MERGED   = 1    # merge stdout and stderr
 SEPARATE = 2    # fetch stdout and stderr individually (one more hop)
 STDOUT   = 3    # fetch stdout only, discard stderr
 STDERR   = 4    # fetch stderr only, discard stdout
 
+# ------------------------------------------------------------------------------
+#
 # ssh options:
 #   -e none         : no escape character
 #   -M              : master mode for connection sharing
@@ -27,12 +36,70 @@ STDERR   = 4    # fetch stderr only, discard stdout
 #   ControlMaster  yes | no | no ...
 #   ControlPath    $BASE/ssh_control_%n_%p.$$.sock
 #                  %r (remote id)? would need inspection
-#   ControlPersist 10   : close master after 10 seconds idle
+#   ControlPersist 100  : close master after 100 seconds idle
 #   EscapeChar     none : transparent for binary data
 #   TCPKeepAlive   yes  : detect connection failure
 #
-#   
+#   LoginGraceTime seconds : disconnect if no login after n seconds
 #
+# ------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------
+#
+class PTYShellPool (object) :
+    """
+    We keep a set opf ssh master connections, so that other object instances can
+    quickly create slave connections as needed -- that removes the authorization
+    overhead of multiploe channels for the same target host/user/context
+    triplet.  An underlying assumption is that this module is used under the
+    same user id, or that changes in the effective user ID are offset by the use
+    of :class:`saga.Context`s.
+
+    Any ssh master connection in this pool can idle, and may thus shut down
+    after ``ControlPersist`` seconds (see options).
+    """
+
+    __metaclass__ = saga.utils.singleton.Singleton
+
+
+    # --------------------------------------------------------------------------
+    #
+    def __init__ (self) :
+
+        self.pool = {}
+
+
+    # --------------------------------------------------------------------------
+    #
+    def add (pty_shell, hostname, username, context) :
+
+        connection_id = "%s@%s" % (username, hostname)
+
+        if not context in self.pool :
+            self.pool[context] = {}
+
+        self.pool[context][connection_id] = pty_shell
+
+
+
+    # --------------------------------------------------------------------------
+    #
+    def get (hostname, username, context) :
+
+        connection_id = "%s@%s" % (username, hostname)
+
+        if not context in self.pool :
+            return None
+
+        if not connection_id in self.pool[context] :
+            return None
+
+        # FIXME: check if the returned pty_shell if still viable / alive, and
+        # revive if not.
+
+        return self.pool[context][connection_id]
 
 
 # --------------------------------------------------------------------
@@ -42,26 +109,29 @@ class PTYShell (object) :
     This class wraps a shell process and runs it as a :class:`PTYProcess`.  The
     user of this class can start that shell, and run arbitrary commands on it.
 
-    The shell to be run is expected to be POSIX compliant (bash, csh, sh, zsh
-    etc) -- in particular, we expect the following features:
+    The shell to be run is expected to be POSIX compliant (bash, dash, sh, ksh
+    etc.) -- in particular, we expect the following features:
     ``$?``,
     ``$!``,
-    ``$*``,
     ``$#``,
+    ``$*``,
     ``$@``,
+    ``$$``,
     ``$PPID``,
     ``>&``,
     ``>>``,
     ``>``,
     ``<``,
-    ``2>&1``,
     ``|``,
     ``||``,
+    ``()``,
+    ``&``,
     ``&&``,
     ``wait``,
     ``kill``,
     ``nohup``,
     ``shift``,
+    ``export``,
     ``PS1``, and
     ``PS2``.
 
@@ -72,26 +142,8 @@ class PTYShell (object) :
     careful when setting other prompts -- see :func:`set_prompt` for more
     details.
 
-
-    Data Staging and Data Management:
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-    The PTYShell class does not only support commnd execution, but also basic
-    data management: for SSH based shells, it will create a tunneled scp/sftp
-    connection for file staging.  Other data management operations (mkdir, size,
-    list, ...) are executed either as shell commands, or on the scp/sftp channel
-    (if possible on the data channel, to keep the shell pty free for concurrent
-    command execution).  Ssh tunneling is implemented via ssh.v2 'ControlMaster'
-    capabilities (see `ssh_config(5)`).
-    
-    For local shells, PTYShell will create an additional shell pty for data
-    management operations.  
-
-    Future versions of this class may support additional command channels for
-    more efficient asynchronous operations.
-
-
     Usage Example::
+    ^^^^^^^^^^^^^^^
 
         # start the shell, find its prompt.  
         self.shell = saga.utils.pty_shell.PTYShell ("ssh://user@remote.host.net/", contexts, self._logger)
@@ -108,35 +160,90 @@ class PTYShell (object) :
         self.shell.stage_to_file (src = pbs_job_script, 
                                   tgt = "/tmp/data.$$/job_1.pbs")
 
-        # check size of staged script
+        # check size of staged script (this is actually done on PTYShell level
+        # already, with no extra hop):
         ret, out, _ = self.shell.run_sync ("stat -c '%s' /tmp/data.$$/job_1.pbs" )
         if  ret != 0 :
             raise saga.NoSuccess ("failed to check size (%s)(%s)" % (ret, out))
 
         assert (len(pbs_job_script) == int(out))
 
-    Known Problems:
-    ^^^^^^^^^^^^^^^
 
-    It seems that for some reasons which I cannot fathom, the pty line swallows
-    a ^D now and then.  But ^D was used for file staging like this::
+    Data Staging and Data Management:
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    The PTYShell class does not only support command execution, but also basic
+    data management: for SSH based shells, it will create a tunneled scp/sftp
+    connection for file staging.  Other data management operations (mkdir, size,
+    list, ...) are executed either as shell commands, or on the scp/sftp channel
+    (if possible on the data channel, to keep the shell pty free for concurrent
+    command execution).  Ssh tunneling is implemented via ssh.v2 'ControlMaster'
+    capabilities (see `ssh_config(5)`).
     
-      self.run_async ("cat > %s.$$" % tgt)
-      self.pty_shell.write (src)
-      self.pty_shell.write ("\n\x04\nmv %s.$$ %s\n", (tgt, tgt))
+    For local shells, PTYShell will create an additional shell pty for data
+    management operations.  
+
+
+    Asynchronous Notifications:
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    A third pty process will be created for asynchronous notifications.  For
+    that purpose, the shell started on the first channel will create a named
+    pipe, at::
+
+      $HOME/.saga/adaptors/shell/async.$$
+
+    ``$$`` here represents the pid of the shell process.  It will also set the
+    environment variable ``SAGA_ASYNC_PIPE`` to point to that named pipe -- any
+    application running on the remote host can write event messages to that
+    pipe, which will be available on the local end (see below).  `PTYShell`
+    leaves it unspecified what format those messages have, but messages are
+    expected to be separated by newlines.
     
-    If the \x04 == ^D is gone, then the cat process will wait forever on input.
-    Instead of the construct above, we now use a HERE document::
-    
-      self.run_async ("cat > %s.$$ <<\"SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\"" % tgt)
-      self.pty_shell.write (src)
-      self.pty_shell.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\nmv %s.$$ %s\n" % (tgt, tgt))  
-    
-    which works fine.  Note that this does not fix the disappearing ^D -- the
-    pty classes don't use it anywhere, but applications of these classes might
-    still attempt to send it to the remote shell...
+    An adaptor using `PTYShell` can subscribe for messages via::
+
+      self.pty_shell.subscribe (callback)
+
+    where callback is a Python callable.  PTYShell will listen on the event
+    channel *in a separate thread* and invoke that callback on any received
+    message, passing the message text (sans newline) to the callback.
+
+    An example usage: the command channel may run the following command line::
+
+      ( sh -c 'sleep 100 && echo "job $$ done" > $SAGA_ASYNC_PIPE" \
+                         || echo "job $$ fail" > $SAGA_ASYNC_PIPE" ) &
+
+    which will return immediately, and send a notification message at job
+    completion.
+
+    Note that writes to named pipes are not atomic.  From POSIX:
+
+    ``A write is atomic if the whole amount written in one operation is not
+    interleaved with data from any other process. This is useful when there are
+    multiple writers sending data to a single reader. Applications need to know
+    how large a write request can be expected to be performed atomically. This
+    maximum is called {PIPE_BUF}. This volume of IEEE Std 1003.1-2001 does not
+    say whether write requests for more than {PIPE_BUF} bytes are atomic, but
+    requires that writes of {PIPE_BUF} or fewer bytes shall be atomic.`
+
+    Thus the user is responsible for ensuring that either messages are smaller
+    than *PIPE_BUF* bytes on the remote system (usually at least 1024, on Linux
+    usually 4096), or to lock the pipe on larger writes.
+
+
+    Automated Restart, Timeouts:
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    For timeout and restart semantics, please see the documentation to the
+    underlying :class:`saga.utils.pty_process.PTYProcess` class.
 
     """
+
+    # TODO: 
+    #   - on client shell activitites, also mark the master as active, to
+    #     avoid timeout garbage collection.
+    #   - use ssh mechanisms for master timeout (and persist), as custom
+    #     mechanisms will interfere with gc_timout.
 
     # ----------------------------------------------------------------
     #
@@ -375,15 +482,6 @@ class PTYShell (object) :
         if  self.initialize_hook :
             self.initialize_hook ()
 
-    # ----------------------------------------------------------------
-    #
-    def initialize_scp (self) :
-
-        if self.scp :
-            return
-
-
-
 
     # ----------------------------------------------------------------
     #
@@ -411,6 +509,16 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
+    def alive (self, recover=False) :
+        """
+        The shell is assumed to be alive if the shell processes lives.
+        Attempt to restart shell if recover==True
+        """
+        return self.pty_shell.alive (recover)
+
+
+    # ----------------------------------------------------------------
+    #
     def find_prompt (self) :
         """
         If run_async was called, a command is running on the shell.  find_prompt
@@ -430,6 +538,16 @@ class PTYShell (object) :
         ret, txt = self._eval_prompt (match)
 
         return (ret, txt)
+
+
+    # ----------------------------------------------------------------
+    #
+    def find (self, patterns) :
+        """
+        Note that this method blocks until pattern is found in the shell I/O.
+        """
+
+        return self.pty_shell.find (patterns, timeout=-1)
 
 
     # ----------------------------------------------------------------
@@ -611,6 +729,13 @@ class PTYShell (object) :
         expect the prompt regex to capture the exit status of the process.
         """
 
+        # we expect the shell to be in 'ground state' when running a syncronous
+        # command -- thus we can check if the shell is alive before doing so,
+        # and restart if needed
+        if not self.pty_shell.alive (recover=True) :
+            raise saga.IncorrectState ("Can't run command -- shell died:\n%s" \
+                                    % self.pty_shell.autopsy ())
+
         command = command.strip ()
         if command.endswith ('&') :
             raise saga.BadParameter ("can only run foreground jobs ('%s')" \
@@ -713,17 +838,36 @@ class PTYShell (object) :
         For async execution, we don't care if the command is doing i/o redirection or not.
         """
 
+        # we expect the shell to be in 'ground state' when running an asyncronous
+        # command -- thus we can check if the shell is alive before doing so,
+        # and restart if needed
+        if not self.pty_shell.alive (recover=True) :
+            raise saga.IncorrectState ("Can't run command -- shell died:\n%s" \
+                                    % self.pty_shell.autopsy ())
+
         command = command.strip ()
 
-        self.logger.debug ('run_async: %s'   % command)
-        self.pty_shell.write    (           "%s\n" % command)
-
-        return
+        self.send ("%s\n" % command)
 
 
     # ----------------------------------------------------------------
     #
-    def stage_to_file (self, src, tgt) :
+    def send (self, data) :
+        """
+        send data to the shell.  No newline is appended!
+        """
+
+        if not self.pty_shell.alive (recover=False) :
+            raise saga.IncorrectState ("Can't send data -- shell died:\n%s" \
+                                    % self.pty_shell.autopsy ())
+
+        self.logger.debug    ("send: %s" % data)
+        self.pty_shell.write (      "%s" % data)
+
+
+    # ----------------------------------------------------------------
+    #
+    def write_to_file (self, src, tgt) :
         """
         :type  src: string
         :param src: data to be staged into the target file
@@ -739,36 +883,58 @@ class PTYShell (object) :
         See also :func:`stage_from_file`.
         """
 
+        # we expect the shell to be in 'ground state' when staging a file
+        # -- thus we can check if the shell is alive before doing so,
+        # and restart if needed
+        if not self.pty_shell.alive (recover=True) :
+            raise saga.IncorrectState ("Can't stage file -- shell died:\n%s" \
+                                    % self.pty_shell.autopsy ())
+
         size_src = len (src)
 
         while True :
 
-            ret, out, _ = self.run_sync ("wc -c %s.$$ | cut -f 1 -d ' '" % tgt)
+            ret, out, _ = self.run_sync ("wc -c %s.$$ | xargs echo | cut -f 1 -d ' '" % tgt)
 
             if  ret == 0 :
-                size_tgt = out.strip ()
 
-                if str(size_src) == str(size_tgt) :
-                    break
-                else :
-                    # print "try again (%s)(%s)!" % (size_src, size_tgt)
+                try :
+                    size_tgt = int (out.strip ())
+
+                except :  
+                    # no valid output from wc
                     pass
 
+                else :
+                    if sys.platform == 'darwin' :
+                        size_tgt -= 1
 
-            
-            src_hex = ""
-            for i in [hex(ord(x)) for x in src] :
-                h = i.replace ('0x', '')
-                if len(h) == 1 : src_hex += '0'
-                src_hex += h
+                    if str(size_src) == str(size_tgt) :
+                        break
+                    else :
+                        print "try again (%s)(%s)!" % (size_src, size_tgt)
+                        pass
 
-            self.pty_shell.write ("""\
-            ( sed -e 's/\(..\)/\\1\\n/g' | 
-              while read A; do
-               if ! test -z "$A"; then printf "\\x$A"; fi
-              done ) > %s.$$ <<SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n""" % tgt)
-            self.pty_shell.write (src_hex)
-            self.pty_shell.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n")
+
+            if sys.platform == 'darwin' :
+                self.pty_shell.write ("cat > %s.$$ <<'SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT'\n" % tgt)
+                self.pty_shell.write (src)
+                self.pty_shell.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n")
+
+            else :
+                src_hex = ""
+                for i in [hex(ord(x)) for x in src] :
+                    h = i.replace ('0x', '')
+                    if len(h) == 1 : src_hex += '0'
+                    src_hex += h
+                
+                self.pty_shell.write ("""\
+                ( sed -e 's/\(..\)/\\1\\n/g' | 
+                  while read A; do
+                   if ! test -z "$A"; then printf "\\x$A"; fi
+                  done ) > %s.$$ <<SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n""" % tgt)
+                self.pty_shell.write (src_hex)
+                self.pty_shell.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n")
 
             # we send two commands at once (cat, mv), so need to find two prompts
             ret, txt = self.find_prompt ()
@@ -785,7 +951,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def stage_from_file (self, src) :
+    def read_from_file (self, src) :
         """
         :type  src: string
         :param src: path to file to be fetched
@@ -796,12 +962,61 @@ class PTYShell (object) :
         incorrect path, etc.).  
         """
 
+        # we expect the shell to be in 'ground state' when staging a file
+        # -- thus we can check if the shell is alive before doing so,
+        # and restart if needed
+        if not self.pty_shell.alive (recover=True) :
+            raise saga.IncorrectState ("Can't stage file -- shell died:\n%s" \
+                                    % self.pty_shell.autopsy ())
+
         ret, out, _ = self.run_sync ("cat %s" % src)
 
         if  ret != 0 :
             raise saga.NoSuccess ("failed to stage file to string (%s)(%s)" % (ret, out))
 
         return out
+
+
+    # ----------------------------------------------------------------
+    #
+    def _copy_file (self, src, tgt, metrics) :
+        """
+        :type  src: string
+        :param src: path to file to be staged
+
+        :type  tgt: string
+        :param tgt: path to file after staging
+
+        :type  metrics: list of saga.Metric instances
+        :param metrics: list of metrics to be updated with status information
+
+        Return value: handle to copy process, which can be used for status
+        checks etc.
+
+        Both, `src` and `tgt` strings, need to be fully qualified names, in the
+        sense that they must be readily understood by cp (for `sh` type shells)
+        and scp (for `ssh` type shells), respectively.  
+        
+        Note that this is a private function, called by :func:`copy_to_remote`
+        and :func:`copy_from_remote`, which prepare the respective qualified
+        path names.
+
+        For a local shell (type = 'sh'), we run a ``popen ("cp src tgt")``.  For
+        remote shells (type == 'ssh'), we start a slave scp connection.  In both
+        cases, we provide status update once per second.  For `cp`, this is
+        achieved by calling `stat` on `src` and `tgt`, to compare size; for
+        `scp` we parse the progress meter on stdout.  The thusly obtained
+        information are fed to the respective metrics, which can be registered
+        either on start time (see `metrics` parameter), or during the lifetime
+        of the copy process, via ``add_metric (handle, metric)``.
+        
+        """
+
+        # we expect the master shell to be in alive when staging, as we need to
+        # spawn cp / scp slaves
+        if not self.pty_shell.alive (recover=True) :
+            raise saga.IncorrectState ("Can't stage file -- shell died:\n%s" \
+                                    % self.pty_shell.autopsy ())
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
