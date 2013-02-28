@@ -66,4 +66,4 @@ You can install the latest development version of SAGA Python directly from our 
 
 .. code-block:: bash
 
-    pip install -e git://github.com/saga-project/saga-python.git#egg=saga-python
+    pip install -e git://github.com/saga-project/saga-python.git@devel#egg=saga-python
