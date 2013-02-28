@@ -6,7 +6,7 @@ import saga.utils.pty_shell as sups
 
 try :
     shell = sups.PTYShell (saga.Url ("fork://localhost"), [])
-    shell.run_async ("sftp -b - localhost <<EOT")
+    shell.run_async ("(sftp -b - localhost || (printf \"SFTP_ABORT\n\"; false)) <<EOT")
     shell.send ("progress\nput /home/merzky/downloads/totalview*.sh /tmp/t\nEOT\n")
 
   # pat_bof = re.compile ("(?P<perc>\d+\%).*(?P<time>--:--)\s*ETA")
@@ -16,41 +16,62 @@ try :
     pat_def = re.compile ("^sftp>.*\n")
 
     begin = True
+    error   = ""
 
     while True :
-        ret, out = shell.find (['ETA', '\n'])
+        ret, out = shell.find (['ETA$', 'SFTP_ABORT\n', '\n'])
+        progress    = None
 
-        match = None
-
+        # ----------------------------------------------------------------------
+        # found ETA - transfer is in progress
         if  ret == 0 :
 
             if  begin :
-                match = pat_bof.search (out)
+                # first ETA will look different than the others
+                progress = pat_bof.search (out)
                 begin = False
-
             else :
-                match = pat_eta.search (out)
+                progress = pat_eta.search (out)
 
+
+        # ----------------------------------------------------------------------
+        # found an ABORT?  well, then we abort and fetch prompt
         if  ret == 1 :
-            match = pat_eof.search (out)
+            break
 
-            if not match :
+
+        # ----------------------------------------------------------------------
+        if  ret == 2 :
+            progress = pat_eof.search (out)
+
+            if not progress :
                 # ignore line echo
+                error += out
                 continue
 
-        if not match :
-            print "parsing error"
+        # ----------------------------------------------------------------------
+        # we should have found progress info on both ETA and '\n' matches...
+        # oh well...
+        if not progress :
+            print "parse error -- ignore"
+            error += out
+
+        # ----------------------------------------------------------------------
+        # had a match, either on 'ETA' or on '\n' -- both give progress info
+        print "%6s%%  %6s  %10s  %6s" % (progress.group ('perc'), 
+                                         progress.group ('size'),
+                                         progress.group ('perf'),
+                                         progress.group ('time'))
+        # ----------------------------------------------------------------------
+        # we had a match on '\n' -- this is the end of transfer
+        if  ret == 2 :
             break
 
-        print "%6s%%  %6s  %10s  %6s" % (match.group ('perc'), 
-                                         match.group ('size'),
-                                         match.group ('perf'),
-                                         match.group ('time'))
-        if  ret == 1 :
-            break
-
-    ret, txt = shell.find_prompt ()
-    print "--%s-- : --%s--" % (ret, txt)
+    ret, out = shell.find_prompt ()
+    if ret != 0 :
+        print "file copy failed:\n'%s'" % error
+    else :
+        print "file copy done"
 
 
 except saga.SagaException as e :

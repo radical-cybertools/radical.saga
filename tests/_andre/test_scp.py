@@ -14,6 +14,7 @@ try :
     pat_eof = re.compile ("(?P<perc>\d+)\%\s+(?P<size>.+?)\s+(?P<perf>.+?)\s+(?P<time>\d\d:\d\d)\s*\n")
 
     begin = True
+    error = ""
 
     while True :
         ret, out = shell.find (['ETA', '\n'])
@@ -31,7 +32,8 @@ try :
             match = pat_eof.search (out)
 
         if not match :
-            print "parsing error"
+            # parsing error
+            error += out
             break
 
         print "%6s%%  %6s  %10s  %6s" % (match.group ('perc'), 
@@ -41,8 +43,11 @@ try :
         if  ret == 1 :
             break
 
-    ret, txt = shell.find_prompt ()
-    print "--%s-- : --%s--" % (ret, txt)
+    ret, out = shell.find_prompt ()
+    if ret != 0 :
+        print "file copy failed:\n'%s'" % error
+    else :
+        print "file copy done"
 
 
 except saga.SagaException as e :
