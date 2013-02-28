@@ -300,7 +300,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         self.session = session
         self.njobs   = 0
 
-        self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session.contexts, 
+        self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
                                                     self._logger)
 
         self.shell.set_initialize_hook (self.initialize)

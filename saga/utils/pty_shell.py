@@ -1,15 +1,14 @@
 
 import re
-import os
 import sys
 
-import saga.utils.singleton
-import saga.utils.pty_process
 import saga.utils.logger
 import saga.utils.which
+import saga.utils.pty_shell_factory as supsf
 
 _PTY_TIMEOUT = 2.0
-_SCHEMAS     = ['ssh', 'gsissh', 'fork', 'shell']
+_SCHEMAS     = ['ssh', 'gsissh', 'fork', 'shell', 'file', 'scp', 'sftp', 'gsiscp', 'gsisftp']
+# FIXME: gsiftp?
 
 # ------------------------------------------------------------------------------
 #
@@ -20,86 +19,6 @@ MERGED   = 1    # merge stdout and stderr
 SEPARATE = 2    # fetch stdout and stderr individually (one more hop)
 STDOUT   = 3    # fetch stdout only, discard stderr
 STDERR   = 4    # fetch stderr only, discard stdout
-
-# ------------------------------------------------------------------------------
-#
-# ssh options:
-#   -e none         : no escape character
-#   -M              : master mode for connection sharing
-#   -S control_path : slave mode for connection sharing
-#   -t              : force pty allocation
-#   -x              : disable x11 forwarding
-#   
-#   ServerAliveInterval
-#   CheckHostIP no
-#   ConnectTimeout
-#   ControlMaster  yes | no | no ...
-#   ControlPath    $BASE/ssh_control_%n_%p.$$.sock
-#                  %r (remote id)? would need inspection
-#   ControlPersist 100  : close master after 100 seconds idle
-#   EscapeChar     none : transparent for binary data
-#   TCPKeepAlive   yes  : detect connection failure
-#
-#   LoginGraceTime seconds : disconnect if no login after n seconds
-#
-# ------------------------------------------------------------------------------
-
-
-
-# ------------------------------------------------------------------------------
-#
-class PTYShellPool (object) :
-    """
-    We keep a set opf ssh master connections, so that other object instances can
-    quickly create slave connections as needed -- that removes the authorization
-    overhead of multiploe channels for the same target host/user/context
-    triplet.  An underlying assumption is that this module is used under the
-    same user id, or that changes in the effective user ID are offset by the use
-    of :class:`saga.Context`s.
-
-    Any ssh master connection in this pool can idle, and may thus shut down
-    after ``ControlPersist`` seconds (see options).
-    """
-
-    __metaclass__ = saga.utils.singleton.Singleton
-
-
-    # --------------------------------------------------------------------------
-    #
-    def __init__ (self) :
-
-        self.pool = {}
-
-
-    # --------------------------------------------------------------------------
-    #
-    def add (self, pty_shell, hostname, username, context) :
-
-        connection_id = "%s@%s" % (username, hostname)
-
-        if not context in self.pool :
-            self.pool[context] = {}
-
-        self.pool[context][connection_id] = pty_shell
-
-
-
-    # --------------------------------------------------------------------------
-    #
-    def get (self, hostname, username, context) :
-
-        connection_id = "%s@%s" % (username, hostname)
-
-        if not context in self.pool :
-            return None
-
-        if not connection_id in self.pool[context] :
-            return None
-
-        # FIXME: check if the returned pty_shell if still viable / alive, and
-        # revive if not.
-
-        return self.pool[context][connection_id]
 
 
 # --------------------------------------------------------------------
@@ -247,10 +166,9 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, url, contexts=[], logger=None, init=None) :
+    def __init__ (self, url, session, logger=None, init=None) :
 
         self.url       = url               # describes the shell to run
-        self.contexts  = contexts          # get security tokens from these
         self.logger    = logger            # possibly log to here
         self.init      = init              # call after reconnect
 
@@ -261,133 +179,10 @@ class PTYShell (object) :
         if not self.logger :
             self.logger = saga.utils.logger.getLogger ('PTYShell')
 
-        schema  = self.url.schema.lower ()
-        self.shell_type = ""
-
-        self.shell_exe  = ""
-        self.shell_user = ""
-        self.shell_pass = ""
-        self.shell_host = ""
-
-        self.data_exe   = ""
-        self.data_user  = ""
-        self.data_pass  = ""
-        self.data_host  = ""
-
-        # on demand, we open a second channel for scp
-        self.pty_shell = None
-        self.pty_data  = None
-
-        # find out what type of shell we have to deal with
-        if  schema   == "ssh" :
-            self.shell_type  =  "ssh"
-            self.shell_exe   =  saga.utils.which.which ("ssh")
-            self.data_exe    =  saga.utils.which.which ("scp")
-
-        elif schema  == "gsissh" :
-            self.shell_type  =  "ssh"
-            self.shell_exe   =  saga.utils.which.which ("gsissh")
-            self.data_exe    =  saga.utils.which.which ("gsiscp")
-
-        elif schema  == "fork"  or \
-             schema  == "shell" :
-            self.shell_type  =  "sh"
-            if  "SHELL" in os.environ :
-                self.shell_exe =  saga.utils.which.which (os.environ["SHELL"])
-            else :
-                self.shell_exe =  saga.utils.which.which ("sh")
-
-            self.data_exe = self.shell_exe
-
-        else :
-            raise saga.BadParameter._log (self.logger, \
-            	  "PTYShell utility can only handle %s schema URLs, not %s" \
-                  % (_SCHEMAS, schema))
-
-
-        # make sure we have something to run
-        if not self.shell_exe :
-            raise saga.BadParameter._log (self.logger, \
-            	  "adaptor cannot handle %s://, no shell exe found" % schema)
-
-
-        # depending on type, create PTYProcess command line (args, env etc)
-        #
-        # We always set term=vt100 to avoid ansi-escape sequences in the prompt
-        # and elsewhere.  Also, we have to make sure that the shell is an
-        # interactive login shell, so that it interprets the users startup
-        # files, and reacts on commands.
-        if  self.shell_type == "ssh" :
-
-            self.shell_env  =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
-            self.shell_args =  "-t "                       # force pty
-
-            for context in self.contexts :
-
-                if  context.type.lower () == "ssh" :
-                    # ssh can handle user_id and user_key of ssh contexts
-                    if  schema == "ssh" :
-                        if  context.attribute_exists ("user_id") :
-                            self.shell_user  = context.user_id
-                        if  context.attribute_exists ("user_key") :
-                            self.shell_args += "-i %s " % context.user_key
-
-                if  context.type.lower () == "userpass" :
-                    # FIXME: ssh should also be able to handle UserPass contexts
-                    if  schema == "ssh" :
-                        if  context.attribute_exists ("user_id") :
-                            self.shell_user = context.user_id
-                        if  context.attribute_exists ("user_pass") :
-                            self.shell_pass = context.user_pass
-
-                if  context.type.lower () == "gsissh" :
-                    # gsissh can handle user_proxy of X509 contexts
-                    # FIXME: also use cert_dir etc.
-                    if  context.attribute_exists ("user_proxy") :
-                        if  schema == "gsissh" :
-                            self.shell_env = "X509_PROXY='%s' " % context.user_proxy
-
-            # all ssh based shells allow for user_id from contexts -- but the
-            # username given in the URL takes precedence
-            if self.url.username :
-                self.shell_user = self.url.username
-
-            if self.shell_user :
-                self.shell_args += "-l %s " % self.shell_user
-
-
-            self.data_env  = self.shell_env
-            self.data_args = self.shell_args
-            self.data_host = self.shell_host
-
-            # build the ssh command line
-            self.shell_cmd = "%s %s %s %s" % (self.shell_env, 
-                                              self.shell_exe,
-                                              self.shell_args, 
-                                              self.url.host)
-            self.data_cmd  = "%s %s %s %s" % (self.shell_env, 
-                                              self.data_exe,
-                                              self.shell_args, 
-                                              self.url.host)
-
-        # a local shell
-        elif self.shell_type == "sh" :
-            # Make sure we have an interactive login shell w/o ansi escapes.
-            # Note that we redirect the shell's stderr to stdout -- pty-process
-            # does not expose stderr separately...
-            self.shell_args =  "-l -i"
-            self.shell_env  =  "/usr/bin/env TERM=vt100"
-            self.shell_cmd  =  "%s %s %s" % (self.shell_env, 
-                                             self.shell_exe,
-                                             self.shell_args)
-
-        # we got the shell command - now run it!
-        self.logger.info ("job service opens pty for '%s'" % self.shell_cmd)
-        self.pty_shell = saga.utils.pty_process.PTYProcess (self.shell_cmd, 
-                                                            logger=self.logger)
-
-        self.pty_shell.set_initialize_hook (self.initialize)
-        self.pty_shell.set_finalize_hook   (self.finalize)
+        self.factory   = supsf.PTYShellFactory ()
+        self.pty_shell = self.factory.register (url, session, 
+                                                self.initialize, self.finalize, 
+                                                self.logger)
 
         self.initialize ()
 
@@ -433,7 +228,7 @@ class PTYShell (object) :
         #     prompt_patterns = [self.prompt] 
         #
         # but we don't and keep the other pattern around so that the switch in
-        # the while loop below is the same for shell types
+        # the while loop below is the same for all shell types
 
 
         # find a prompt
@@ -1017,6 +812,8 @@ class PTYShell (object) :
         if not self.pty_shell.alive (recover=True) :
             raise saga.IncorrectState ("Can't stage file -- shell died:\n%s" \
                                     % self.pty_shell.autopsy ())
+
+        # FIXME: magic goes here...
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

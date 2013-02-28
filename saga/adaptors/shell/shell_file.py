@@ -213,7 +213,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self.session = session
 
         # FIXME: get ssh Master connection from _adaptor dict
-        self.shell = saga.utils.pty_shell.PTYShell (self.url, self.session.contexts, 
+        self.shell = saga.utils.pty_shell.PTYShell (self.url, self.session, 
                                                     self._logger)
 
         self.shell.set_initialize_hook (self.initialize)
@@ -366,7 +366,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def is_file (flags):
+    def is_file (self, flags):
         # FIXME: eval flags
         return True
 
