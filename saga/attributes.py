@@ -2251,6 +2251,17 @@ class Attributes (_AttributesBase) :
         key  = self._attributes_t_keycheck (key)
         return self._attributes_remove     (key, flow=self._DOWN)
 
+    ####################################
+    def __str__ (self) :
+        """ return a string representation of all set attributes """
+        d = {}
+
+        for a in self.list_attributes () :
+            d[a] = self.get_attribute (a)
+
+        s = "%s %s" % (type(self), str(d))
+
+        return s
 
 ################################################################################
 
