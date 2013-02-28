@@ -17,12 +17,18 @@ def test_job_invalid_session():
     """
     try:
         tc = sutc.TestConfig()
-        invalid_session = "INVALID SESSION"
-        js = saga.job.Serivce(tc.js_url, invalid_session)
+        # generate an invalid session
+        invalid_session = saga.Session()
+        c = saga.Context("ssh")
+        c.user_id = "accda1b0-81b4"
+        c.user_pass = "accda1b0-81b4"
+        invalid_session.add_context(c)
+
+        js = saga.job.Service(tc.js_url, invalid_session)
         assert False, "Expected XYZ exception but got none."
 
-    except saga.XYZ:
-        assert True
+    #except saga.XYZ:
+    #    assert True
     except Exception, ex:
         assert False, "Expected XYZ exception, but got %s" % str(ex)
 
@@ -34,13 +40,13 @@ def test_job_service_invalid_url():
     """
     try:
         tc = sutc.TestConfig()
-        invalid_url = deepcopy(tc.js_url)
-        invalid_url.hostname += ".invalid"
-        js = saga.job.Serivce(invalid_url, tc.session)
+        invalid_url = deepcopy(saga.Url(tc.js_url))
+        invalid_url.host += "accda1b0-81b4"
+        js = saga.job.Service(invalid_url, tc.session)
         assert False, "Expected XYZ exception but got none."
 
-    except saga.XYZ:
-        assert True
+    #except saga.XYZ:
+    #    assert True
     except Exception, ex:
         assert False, "Expected XYZ exception, but got %s" % str(ex)
 
