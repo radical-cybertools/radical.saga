@@ -1,0 +1,61 @@
+
+********************
+saga.adaptor.myproxy
+********************
+
+This adaptor fetches an X509 proxy from
+MyProxy when it is added to a saga.Session.
+
+
+Supported Schemas
+-----------------
+
+  - **myproxy://** : this adaptor can only interact with myproxy backends
+
+
+
+Configuration Options
+---------------------
+Configuration options can be used to control the adaptor's runtime behavior. Most adaptors don't need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.
+
+ .. seealso:: More information about configuration options can be found in the :ref:`conf_file` section.
+
+enabled
+****************
+enable / disable saga.adaptor.myproxy adaptor
+
+  - **type** : <type 'bool'>
+  - **default** : True
+  - **environment** : None
+  - **valid options** : [True, False]
+
+
+Capabilities
+------------
+
+attributes
+****************
+  - Type
+  - Server
+  - UserID
+  - UserPass
+  - LifeTime
+
+
+
+Supported API Classes
+---------------------
+
+This adaptor supports the following API classes:
+  - :class:`saga.Context`
+
+Method implementation details are listed below.
+
+saga.Context
+************
+
+.. autoclass:: saga.adaptors.context.myproxy.ContextMyProxy
+   :members:
+
+
+

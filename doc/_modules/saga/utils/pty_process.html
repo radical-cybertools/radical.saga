@@ -1,0 +1,819 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>saga.utils.pty_process &mdash; SAGA 0.9.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.9.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 0.9.1 documentation" href="../../../index.html" />
+    <link rel="up" title="saga" href="../../saga.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../saga.html" accesskey="U">saga</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for saga.utils.pty_process</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">pty</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">shlex</span>
+<span class="kn">import</span> <span class="nn">select</span>
+<span class="kn">import</span> <span class="nn">signal</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="kn">import</span> <span class="nn">saga.utils.logger</span>
+<span class="kn">import</span> <span class="nn">saga.utils.timeout_gc</span>
+<span class="kn">import</span> <span class="nn">saga.exceptions</span> <span class="kn">as</span> <span class="nn">se</span>
+
+<span class="c"># --------------------------------------------------------------------</span>
+<span class="c">#</span>
+<span class="n">_CHUNKSIZE</span> <span class="o">=</span> <span class="mi">1024</span>  <span class="c"># default size of each read</span>
+<span class="n">_POLLDELAY</span> <span class="o">=</span> <span class="mf">0.01</span>  <span class="c"># seconds in between read attempts</span>
+<span class="n">_DEBUG_MAX</span> <span class="o">=</span> <span class="mi">600</span>
+
+
+<span class="c"># --------------------------------------------------------------------</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">PTYProcess</span> <span class="p">(</span><span class="nb">object</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="PTYProcess"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class spawns a process, providing that child with pty I/O channels --</span>
+<span class="sd">    it will maintain stdin, stdout and stderr channels to the child.  All</span>
+<span class="sd">    write-like operations operate on the stdin, all read-like operations operate</span>
+<span class="sd">    on the stdout stream.  Data from the stderr stream are at this point</span>
+<span class="sd">    redirected to the stdout channel.</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        # run an interactive client process</span>
+<span class="sd">        pty = PTYProcess (&quot;/usr/bin/ssh -t localhost&quot;)</span>
+
+<span class="sd">        # check client&#39;s I/O for one of the following patterns (prompts).  </span>
+<span class="sd">        # Then search again.</span>
+<span class="sd">        n, match = pty.find ([&#39;password\s*:\s*$&#39;, </span>
+<span class="sd">                              &#39;want to continue connecting.*\(yes/no\)\s*$&#39;, </span>
+<span class="sd">                              &#39;[\$#&gt;]\s*$&#39;])</span>
+
+<span class="sd">        while True :</span>
+
+<span class="sd">            if n == 0 :</span>
+<span class="sd">                # found password prompt - tell the secret</span>
+<span class="sd">                pty.write (&quot;secret\\n&quot;)</span>
+<span class="sd">                n, _ = pty.find ([&#39;password\s*:\s*$&#39;, </span>
+<span class="sd">                                  &#39;want to continue connecting.*\(yes/no\)\s*$&#39;, </span>
+<span class="sd">                                  &#39;[\$#&gt;]\s*$&#39;])</span>
+<span class="sd">            elif n == 1 :</span>
+<span class="sd">                # found request to accept host key - sure we do... (who checks</span>
+<span class="sd">                # those keys anyways...?).  Then search again.</span>
+<span class="sd">                pty.write (&quot;yes\\n&quot;)</span>
+<span class="sd">                n, _ = pty.find ([&#39;password\s*:\s*$&#39;, </span>
+<span class="sd">                                  &#39;want to continue connecting.*\(yes/no\)\s*$&#39;, </span>
+<span class="sd">                                  &#39;[\$#&gt;]\s*$&#39;])</span>
+<span class="sd">            elif n == 2 :</span>
+<span class="sd">                # found shell prompt!  Wohoo!</span>
+<span class="sd">                break</span>
+<span class="sd">        </span>
+
+<span class="sd">        while True :</span>
+<span class="sd">            # go full Dornroeschen (Sleeping Beauty)...</span>
+<span class="sd">            pty.alive (recover=True) or break      # check / restart process</span>
+<span class="sd">            pty.find  ([&#39;[\$#&gt;]\s*$&#39;])             # find shell prompt</span>
+<span class="sd">            pty.write (&quot;/bin/sleep &quot;100 years&quot;\\n&quot;) # sleep!  SLEEEP!</span>
+
+<span class="sd">        # something bad happened</span>
+<span class="sd">        print pty.autopsy ()</span>
+
+
+<span class="sd">    The managed child process is under control of a Timeout Garbage Collector</span>
+<span class="sd">    (:class:`saga.utils.timeout_gc.TimeoutGC`), which will terminate the child</span>
+<span class="sd">    after some inactivity period.  The child will be automatically restarted on</span>
+<span class="sd">    the next activity attempts.  To support orderly process bootstrapping, users</span>
+<span class="sd">    of the :class:`PTYProcess` class should register hooks for process</span>
+<span class="sd">    initialization and finalization (:func:`set_initialize_hook` and</span>
+<span class="sd">    :func:`set_finalize_hook`).  The finalization hook may operate on a dead</span>
+<span class="sd">    child process, and should be written in a way that this does not lead to an</span>
+<span class="sd">    error (which would abort the restart attempt).</span>
+
+<span class="sd">    If the child process dies on its own, or is terminated by a third party, the</span>
+<span class="sd">    class will also attempt to restart the child.  In order to not interfere</span>
+<span class="sd">    with the process state at unexpected points, this will only happen during</span>
+<span class="sd">    explicit :func:`alive` checks, if the `recover` parameter is set to `True`</span>
+<span class="sd">    (`False` by default).  This restart mechanism will be used up to</span>
+<span class="sd">    `recover_max` times in a row, any successful activity will reset the recover</span>
+<span class="sd">    counter though.  The recover process will invoke both the finalization and</span>
+<span class="sd">    initialization hooks.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The class constructor, which runs (execvpe) command in a separately</span>
+<span class="sd">        forked process.  The bew process will inherit the environment of the</span>
+<span class="sd">        application process.</span>
+
+<span class="sd">        :type  command: string or list of strings</span>
+<span class="sd">        :param command: The given command is what is run as a child, and</span>
+<span class="sd">        fed/drained via pty pipes.  If given as string, command is split into an</span>
+<span class="sd">        array of strings, using :func:`shlex.split`.</span>
+
+<span class="sd">        :type  logger:  :class:`saga.utils.logger.Logger` instance</span>
+<span class="sd">        :param logger:  logger stream to send status messages to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span> <span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">)</span> <span class="p">:</span>
+            <span class="n">command</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span><span class="n">command</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span> <span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;PTYProcess expects string or list command&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;PTYProcess expects non-empty command&quot;</span><span class="p">)</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">command</span> <span class="c"># list of strings too run()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span>  <span class="o">=</span> <span class="n">logger</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>   <span class="o">=</span> <span class="s">&quot;&quot;</span>      <span class="c"># data cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">child</span>   <span class="o">=</span> <span class="bp">None</span>    <span class="c"># the process as created by subprocess.Popen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ptyio</span>   <span class="o">=</span> <span class="bp">None</span>    <span class="c"># the process&#39; io channel, from pty.fork()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>        <span class="o">=</span> <span class="bp">None</span>  <span class="c"># child died with code (may be revived)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span>      <span class="o">=</span> <span class="bp">None</span>  <span class="c"># child kill by signal (may be revived)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span>  <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span>    <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">recover_max</span>      <span class="o">=</span> <span class="mi">3</span>  <span class="c"># TODO: make configure option.  This does not</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recover_attempts</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># apply for recovers triggered by gc_timeout!</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">getLogger</span> <span class="p">(</span><span class="s">&#39;PTYProcess&#39;</span><span class="p">)</span>
+
+        <span class="c"># register this process instance for timeout garbage collection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gc</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">timeout_gc</span><span class="o">.</span><span class="n">TimeoutGC</span> <span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">register</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">)</span>
+
+
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span> <span class="p">()</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;pty or process creation failed (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+
+    <span class="c"># --------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__del__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        Need to free pty&#39;s on destruction, otherwise we might ran out of</span>
+<span class="sd">        them (see cat /proc/sys/kernel/pty/max)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span> <span class="p">(</span><span class="s">&quot;pty __del__&quot;</span><span class="p">)</span>
+      <span class="c"># self.logger.trace ()</span>
+    
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">unregister</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">()</span>
+        <span class="k">except</span> <span class="p">:</span>
+            <span class="k">pass</span>
+    
+
+    <span class="c"># ----------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">set_initialize_hook</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initialize_hook</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="PTYProcess.set_initialize_hook"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.set_initialize_hook">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="o">=</span> <span class="n">initialize_hook</span>
+
+    <span class="c"># ----------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">set_finalize_hook</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">finalize_hook</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYProcess.set_finalize_hook"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.set_finalize_hook">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span> <span class="o">=</span> <span class="n">finalize_hook</span>
+
+    <span class="c"># ----------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">initialize</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYProcess.initialize"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.initialize">[docs]</a>
+        <span class="c"># NOTE: do we need to lock?</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;PTYProcess: &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">)))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_in</span><span class="p">,</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child_in</span>  <span class="o">=</span> <span class="n">pty</span><span class="o">.</span><span class="n">openpty</span> <span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_out</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">child_out</span> <span class="o">=</span> <span class="n">pty</span><span class="o">.</span><span class="n">openpty</span> <span class="p">()</span>
+      <span class="c"># self.parent_err, self.child_err = pty.openpty ()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_io</span><span class="p">,</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child_io</span>  <span class="o">=</span> <span class="n">pty</span><span class="o">.</span><span class="n">openpty</span> <span class="p">()</span>
+
+        <span class="c"># create the child</span>
+        <span class="k">try</span> <span class="p">:</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span>  <span class="n">os</span><span class="o">.</span><span class="n">fork</span> <span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not run (</span><span class="si">%s</span><span class="s">): </span><span class="si">%s</span><span class="s">&quot;</span> \
+                             <span class="o">%</span> <span class="p">(</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">),</span> <span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span>  <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="p">:</span>
+            <span class="c"># this is the child</span>
+
+            <span class="k">try</span> <span class="p">:</span>
+                <span class="c"># close parent end of pty pipes</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">close</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_in</span><span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">close</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_out</span><span class="p">)</span>
+              <span class="c"># os.close (self.parent_err)</span>
+
+                <span class="c"># reopen child stdio unbuffered (buffsize=0)</span>
+                <span class="n">unbuf_in</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fdopen</span> <span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">fileno</span>  <span class="p">(),</span> <span class="s">&#39;r+&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">unbuf_out</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fdopen</span> <span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">fileno</span> <span class="p">(),</span> <span class="s">&#39;w+&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">unbuf_err</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fdopen</span> <span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">fileno</span> <span class="p">(),</span> <span class="s">&#39;w+&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+               
+                <span class="c"># redirect our precious stdio</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">dup2</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_in</span><span class="p">,</span>  <span class="n">unbuf_in</span><span class="o">.</span><span class="n">fileno</span>  <span class="p">())</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">dup2</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_out</span><span class="p">,</span> <span class="n">unbuf_out</span><span class="o">.</span><span class="n">fileno</span> <span class="p">())</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">dup2</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_out</span><span class="p">,</span> <span class="n">unbuf_err</span><span class="o">.</span><span class="n">fileno</span> <span class="p">())</span>
+              <span class="c"># os.dup2 (self.child_err, unbuf_err.fileno ())</span>
+
+                <span class="c"># make a process group leader (should close tty tty)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">setsid</span> <span class="p">()</span>
+
+                <span class="c"># close tty, in case we still own any:</span>
+                <span class="k">try</span> <span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">close</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">open</span> <span class="p">(</span><span class="s">&quot;/dev/tty&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">O_RDWR</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">O_NOCTTY</span><span class="p">));</span>
+                <span class="k">except</span> <span class="p">:</span>
+                    <span class="c"># was probably closed earlier, that&#39;s all right</span>
+                    <span class="k">pass</span>
+
+                <span class="c"># now acquire pty</span>
+                <span class="k">try</span> <span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">close</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">open</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">ttyname</span> <span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">fileno</span> <span class="p">()),</span> <span class="n">os</span><span class="o">.</span><span class="n">O_RDWR</span><span class="p">))</span>
+                <span class="k">except</span> <span class="p">:</span>
+                    <span class="c"># well, this *may* be bad - or may now, depending on the</span>
+                    <span class="c"># type of command ones to run in this shell.  So, we print</span>
+                    <span class="c"># a big fat warning, and continue</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span> <span class="p">(</span><span class="s">&quot;Unclean PTY shell setup - proceed anyway&quot;</span><span class="p">)</span>
+                    <span class="k">pass</span>
+
+                <span class="c"># all I/O set up, have a pty (*fingers crossed*), lift-off!</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">execvpe</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span> <span class="p">(</span><span class="s">&quot;Could not execute (</span><span class="si">%s</span><span class="s">): </span><span class="si">%s</span><span class="s">&quot;</span> \
+                                <span class="o">%</span> <span class="p">(</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">),</span> <span class="n">e</span><span class="p">))</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="c"># parent</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">close</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_in</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">close</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_out</span><span class="p">)</span>
+          <span class="c"># os.close (self.child_err)</span>
+
+
+        <span class="c"># check if some additional initialization routines as registered</span>
+        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="p">()</span>
+
+
+    <span class="c"># --------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">finalize</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYProcess.finalize"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.finalize">[docs]</a>        <span class="sd">&quot;&quot;&quot; kill the child, close all I/O channels &quot;&quot;&quot;</span>
+
+        <span class="c"># NOTE: do we need to lock?</span>
+
+        <span class="c"># as long as the chiuld lives, run any higher level shutdown routine.</span>
+        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span> <span class="p">()</span>
+
+        <span class="c"># now we can safely kill the child process, and close all I/O channels</span>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">kill</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">kill</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGKILL</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span> <span class="bp">None</span>
+
+     <span class="c">## try : </span>
+     <span class="c">##     os.close (self.parent_in)  </span>
+     <span class="c">## except OSError :</span>
+     <span class="c">##     pass</span>
+
+     <span class="c">## try : </span>
+     <span class="c">##     os.close (self.parent_out) </span>
+     <span class="c">## except OSError :</span>
+     <span class="c">##     pass</span>
+
+      <span class="c"># try : </span>
+      <span class="c">#     os.close (self.parent_err) </span>
+      <span class="c"># except OSError :</span>
+      <span class="c">#     pass</span>
+
+
+    <span class="c"># --------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">wait</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYProcess.wait"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.wait">[docs]</a>        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        blocks forever until the child finishes on its own, or is getting</span>
+<span class="sd">        killed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+            <span class="c"># yes, for ever and ever...</span>
+            <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
+
+                <span class="c"># hey, kiddo, whats up?</span>
+                <span class="n">wpid</span><span class="p">,</span> <span class="n">wstat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">waitpid</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+                <span class="c"># did we get a note about child termination?</span>
+                <span class="k">if</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">wpid</span> <span class="p">:</span>
+
+                    <span class="c"># nope, all is well - carry on</span>
+                    <span class="k">continue</span>
+
+
+                <span class="c"># Yes, we got a note.  </span>
+                <span class="c"># Well, maybe the child fooled us and is just playing dead?</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFSTOPPED</span>   <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="ow">or</span> \
+                   <span class="n">os</span><span class="o">.</span><span class="n">WIFCONTINUED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>    <span class="p">:</span>
+                    <span class="c"># we don&#39;t care if someone stopped/resumed the child -- that is up</span>
+                    <span class="c"># to higher powers.  For our purposes, the child is alive.  Ha!</span>
+                    <span class="k">continue</span>
+
+
+                <span class="c"># not stopped, poor thing... - soooo, what happened??</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFEXITED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="p">:</span>
+                    <span class="c"># child died of natural causes - perform autopsy...</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">WEXITSTATUS</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="bp">None</span>
+
+                <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFSIGNALED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="p">:</span>
+                    <span class="c"># murder!! Child got killed by someone!  recover evidence...</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="bp">None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">WTERMSIG</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>
+
+                <span class="c"># either way, its dead -- make sure it stays dead, to avoid zombie</span>
+                <span class="c"># apocalypse...</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">()</span>
+                <span class="k">return</span>
+
+    <span class="c"># --------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">alive</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recover</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYProcess.alive"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.alive">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        try to determine if the child process is still active.  If not, mark </span>
+<span class="sd">        the child as dead and close all IO descriptors etc (&quot;func:`finalize`).</span>
+
+<span class="sd">        If `recover` is `True` and the child is indeed dead, we attempt to</span>
+<span class="sd">        re-initialize it (:func:`initialize`).  We only do that for so many</span>
+<span class="sd">        times (`self.recover_max`) before giving up -- at that point it seems</span>
+<span class="sd">        likely that the child exits due to a re-occurring operations condition.</span>
+
+<span class="sd">        Note that upstream consumers of the :class:`PTYProcess` should be</span>
+<span class="sd">        careful to only use `recover=True` when they can indeed handle</span>
+<span class="sd">        a disconnected/reconnected client at that point, i.e. if there are no</span>
+<span class="sd">        assumptions on persistent state beyond those in control of the upstream</span>
+<span class="sd">        consumers themselves.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+            <span class="c"># do we have a child which we can check?</span>
+            <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="p">:</span>
+
+                <span class="c"># hey, kiddo, whats up?</span>
+                <span class="n">wpid</span><span class="p">,</span> <span class="n">wstat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">waitpid</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">WNOHANG</span><span class="p">)</span>
+
+                <span class="c"># did we get a note about child termination?</span>
+                <span class="k">if</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">wpid</span> <span class="p">:</span>
+                    <span class="c"># nope, all is well - carry on</span>
+                    <span class="k">return</span> <span class="bp">True</span>
+
+
+                <span class="c"># Yes, we got a note.  </span>
+                <span class="c"># Well, maybe the child fooled us and is just playing dead?</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFSTOPPED</span>   <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="ow">or</span> \
+                   <span class="n">os</span><span class="o">.</span><span class="n">WIFCONTINUED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>    <span class="p">:</span>
+                    <span class="c"># we don&#39;t care if someone stopped/resumed the child -- that is up</span>
+                    <span class="c"># to higher powers.  For our purposes, the child is alive.  Ha!</span>
+                    <span class="k">return</span> <span class="bp">True</span>
+
+
+                <span class="c"># not stopped, poor thing... - soooo, what happened??</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFEXITED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="p">:</span>
+                    <span class="c"># child died of natural causes - perform autopsy...</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">WEXITSTATUS</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="bp">None</span>
+
+                <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFSIGNALED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="p">:</span>
+                    <span class="c"># murder!! Child got killed by someone!  recover evidence...</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="bp">None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">WTERMSIG</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>
+
+                <span class="c"># either way, its dead -- make sure it stays dead, to avoid zombie</span>
+                <span class="c"># apocalypse...</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">()</span>
+
+            <span class="c"># check if we can attempt a post-mortem revival though</span>
+            <span class="k">if</span>  <span class="ow">not</span> <span class="n">recover</span> <span class="p">:</span>
+                <span class="c"># nope, we are on holy ground - revival not allowed.</span>
+                <span class="k">return</span> <span class="bp">False</span>
+
+            <span class="c"># we are allowed to revive!  So can we try one more time...  pleeeease??</span>
+            <span class="c"># (for cats, allow up to 9 attempts; for Buddhists, always allow to</span>
+            <span class="c"># reincarnate, etc.)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">recover_attempts</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recover_max</span> <span class="p">:</span>
+                <span class="c"># nope, its gone for good - just report the sad news</span>
+                <span class="k">return</span> <span class="bp">False</span>
+
+            <span class="c"># MEDIIIIC!!!!</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">recover_attempts</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span> <span class="p">()</span>
+
+            <span class="c"># well, now we don&#39;t trust the child anymore, of course!  So we check</span>
+            <span class="c"># again.  Yes, this is recursive -- but note that recover_attempts get</span>
+            <span class="c"># incremented on every iteration, and this will eventually lead to</span>
+            <span class="c"># call termination (tm).</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+
+
+    <span class="c"># --------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">autopsy</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYProcess.autopsy"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.autopsy">[docs]</a>        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        return diagnostics information string for dead child processes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+            <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="p">:</span>
+                <span class="c"># Boooh!</span>
+                <span class="k">return</span> <span class="s">&quot;false alarm, process </span><span class="si">%s</span><span class="s"> is alive!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">child</span>
+
+            <span class="n">ret</span>  <span class="o">=</span> <span class="s">&quot;&quot;</span>
+            <span class="n">ret</span> <span class="o">+=</span> <span class="s">&quot;  exit code  : </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>
+            <span class="n">ret</span> <span class="o">+=</span> <span class="s">&quot;  exit signal: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span>
+            <span class="n">ret</span> <span class="o">+=</span> <span class="s">&quot;  last output: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:]</span> <span class="c"># FIXME: smarter selection</span>
+
+            <span class="k">return</span> <span class="n">ret</span>
+
+
+    <span class="c"># --------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">read</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">_force</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYProcess.read"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.read">[docs]</a>        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        read some data from the child.  By default, the method reads whatever is</span>
+<span class="sd">        available on the next read, up to _CHUNKSIZE, but other read sizes can</span>
+<span class="sd">        be specified.  </span>
+<span class="sd">        </span>
+<span class="sd">        The method will return whatever data it has at timeout::</span>
+<span class="sd">        </span>
+<span class="sd">          timeout == 0 : return the content of the first successful read, with</span>
+<span class="sd">                         whatever data up to &#39;size&#39; have been found.</span>
+<span class="sd">          timeout &lt;  0 : return after first read attempt, even if no data have </span>
+<span class="sd">                         been available.</span>
+
+<span class="sd">        If no data are found, the method returns an empty string (not None).</span>
+
+<span class="sd">        This method will not fill the cache, but will just read whatever data it</span>
+<span class="sd">        needs (FIXME).</span>
+
+<span class="sd">        Note: the returned lines do *not* get &#39;\\\\r&#39; stripped.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c"># start the timeout timer right now.  Note that even if timeout is</span>
+                <span class="c"># short, and child.poll is slow, we will nevertheless attempt at least</span>
+                <span class="c"># one read...</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
+
+                <span class="c"># read until we have enough data, or hit timeout ceiling...</span>
+                <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
+                
+                    <span class="c"># first, lets see if we still have data in the cache we can return</span>
+                    <span class="k">if</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
+
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">size</span> <span class="p">:</span>
+                            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                            <span class="k">return</span> <span class="n">ret</span>
+
+                        <span class="c"># we don&#39;t even need all of the cache</span>
+                        <span class="k">elif</span> <span class="n">size</span> <span class="o">&lt;=</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
+                            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
+                            <span class="k">return</span> <span class="n">ret</span>
+
+                    <span class="c"># otherwise we need to read some more data, right?</span>
+                    <span class="c"># idle wait &#39;til the next data chunk arrives, or &#39;til _POLLDELAY</span>
+                    <span class="n">rlist</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_out</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="n">_POLLDELAY</span><span class="p">)</span>
+
+                    <span class="c"># got some data? </span>
+                    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">rlist</span><span class="p">:</span>
+                        <span class="c"># read whatever we still need</span>
+
+                        <span class="n">readsize</span> <span class="o">=</span> <span class="n">_CHUNKSIZE</span>
+                        <span class="k">if</span> <span class="n">size</span><span class="p">:</span> 
+                            <span class="n">readsize</span> <span class="o">=</span> <span class="n">size</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
+
+                        <span class="n">buf</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">read</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">_CHUNKSIZE</span><span class="p">)</span>
+
+                        <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s">&#39;darwin&#39;</span> <span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : MacOS EOF&quot;</span><span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">terminate</span> <span class="p">()</span>
+
+                            <span class="n">ret</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                            <span class="k">if</span>  <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
+                                <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                            
+                            <span class="k">return</span> <span class="n">ret</span>
+
+
+                        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">+=</span> <span class="n">buf</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+                        <span class="n">log</span>         <span class="o">=</span> <span class="n">buf</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+                        <span class="n">log</span>         <span class="o">=</span> <span class="n">log</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">n&#39;</span><span class="p">)</span>
+                      <span class="c"># print &quot;buf: --%s--&quot; % buf</span>
+                      <span class="c"># print &quot;log: --%s--&quot; % log</span>
+                        <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_DEBUG_MAX</span> <span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s"> ... </span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                            <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">),</span> <span class="n">log</span><span class="p">[:</span><span class="mi">30</span><span class="p">],</span> <span class="n">log</span><span class="p">[</span><span class="o">-</span><span class="mi">30</span><span class="p">:]))</span>
+                        <span class="k">else</span> <span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                            <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">),</span> <span class="n">log</span><span class="p">))</span>
+
+
+                    <span class="c"># lets see if we still got any data in the cache we can return</span>
+                    <span class="k">if</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
+
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">size</span> <span class="p">:</span>
+                            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                            <span class="k">return</span> <span class="n">ret</span>
+
+                        <span class="c"># we don&#39;t even need all of the cache</span>
+                        <span class="k">elif</span> <span class="n">size</span> <span class="o">&lt;=</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
+                            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
+                            <span class="k">return</span> <span class="n">ret</span>
+
+                    <span class="c"># at this point, we do not have sufficient data -- only</span>
+                    <span class="c"># return on timeout</span>
+
+                    <span class="k">if</span>  <span class="n">timeout</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span> 
+                        <span class="c"># only return if we have data</span>
+                        <span class="k">if</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
+                            <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                            <span class="k">return</span> <span class="n">ret</span>
+
+                    <span class="k">elif</span> <span class="n">timeout</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">:</span>
+                        <span class="c"># return of we have data or not</span>
+                        <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                        <span class="k">return</span> <span class="n">ret</span>
+
+                    <span class="k">else</span> <span class="p">:</span> <span class="c"># timeout &gt; 0</span>
+                        <span class="c"># return if timeout is reached</span>
+                        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">now</span><span class="o">-</span><span class="n">start</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">timeout</span> <span class="p">:</span>
+                            <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                            <span class="k">return</span> <span class="n">ret</span>
+
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;read from pty process [</span><span class="si">%s</span><span class="s">] failed (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                 <span class="o">%</span> <span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span><span class="p">()</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">find</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYProcess.find"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.find">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This methods reads bytes from the child process until a string matching</span>
+<span class="sd">        any of the given patterns is found.  If that is found, all read data are</span>
+<span class="sd">        returned as a string, up to (and including) the match.  Note that</span>
+<span class="sd">        pattern can match an empty string, and the call then will return just</span>
+<span class="sd">        that, an empty string.  If all patterns end with matching a newline,</span>
+<span class="sd">        this method is effectively matching lines -- but note that &#39;$&#39; will also</span>
+<span class="sd">        match the end of the (currently available) data stream.</span>
+
+<span class="sd">        The call actually returns a tuple, containing the index of the matching</span>
+<span class="sd">        pattern, and the string up to the match as described above.</span>
+
+<span class="sd">        If no pattern is found before timeout, the call returns (None, None).</span>
+<span class="sd">        Negative timeouts will block until a match is found</span>
+
+<span class="sd">        Note that the pattern are interpreted with the re.M (multi-line) and</span>
+<span class="sd">        re.S (dot matches all) regex flags.</span>
+
+<span class="sd">        Performance: the call is doing repeated string regex searches over</span>
+<span class="sd">        whatever data it finds.  On complex regexes, and large data, and small</span>
+<span class="sd">        read buffers, this method can be expensive.  </span>
+
+<span class="sd">        Note: the returned data get &#39;\\\\r&#39; stripped.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>                       <span class="c"># startup timestamp</span>
+            <span class="n">ret</span>   <span class="o">=</span> <span class="p">[]</span>                                 <span class="c"># array of read lines</span>
+            <span class="n">patts</span> <span class="o">=</span> <span class="p">[]</span>                                 <span class="c"># compiled patterns</span>
+            <span class="n">data</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>                         <span class="c"># initial data to check</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span> <span class="p">:</span> <span class="c"># empty cache?</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span> <span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">_POLLDELAY</span><span class="p">)</span>
+
+            <span class="c"># pre-compile the given pattern, to speed up matching</span>
+            <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">patterns</span> <span class="p">:</span>
+                <span class="n">patts</span><span class="o">.</span><span class="n">append</span> <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span> <span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">))</span>
+
+            <span class="c"># we wait forever -- there are two ways out though: data matches</span>
+            <span class="c"># a pattern, or timeout passes</span>
+            <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
+
+              <span class="c"># time.sleep (0.1)</span>
+
+                <span class="c"># skip non-lines</span>
+                <span class="k">if</span>  <span class="bp">None</span> <span class="o">==</span> <span class="n">data</span> <span class="p">:</span>
+                    <span class="n">data</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span> <span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">_POLLDELAY</span><span class="p">)</span>
+
+                <span class="c"># check current data for any matching pattern</span>
+              <span class="c"># print &quot;&gt;&gt;%s&lt;&lt;&quot; % data</span>
+                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">patts</span><span class="p">))</span> <span class="p">:</span>
+
+                    <span class="n">match</span> <span class="o">=</span> <span class="n">patts</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">search</span> <span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                  <span class="c"># print &quot;==%s==&quot; % patterns[n]</span>
+
+                    <span class="k">if</span> <span class="n">match</span> <span class="p">:</span>
+                        <span class="c"># a pattern matched the current data: return a tuple of</span>
+                        <span class="c"># pattern index and matching data.  The remainder of the</span>
+                        <span class="c"># data is cached.</span>
+                        <span class="n">ret</span>  <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">()]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">():]</span> 
+
+                      <span class="c"># print &quot;~~match!~~ %s&quot; % data[match.start():match.end()]</span>
+                      <span class="c"># print &quot;~~match!~~ %s&quot; % (len(data))</span>
+                      <span class="c"># print &quot;~~match!~~ %s&quot; % (str(match.span()))</span>
+                      <span class="c"># print &quot;~~match!~~ %s&quot; % (ret)</span>
+
+                        <span class="k">return</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">ret</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+
+                <span class="c"># if a timeout is given, and actually passed, return a non-match</span>
+                <span class="k">if</span> <span class="n">timeout</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span>
+                    <span class="k">return</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">timeout</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">:</span>
+                    <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">now</span><span class="o">-</span><span class="n">start</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">timeout</span> <span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">data</span>
+                        <span class="k">return</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+                <span class="c"># no match yet, still time -- read more data</span>
+                <span class="n">data</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span> <span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">_POLLDELAY</span><span class="p">)</span>
+
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;find from pty process [</span><span class="si">%s</span><span class="s">] failed (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                             <span class="o">%</span> <span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span><span class="p">()</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
+
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">write</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYProcess.write"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.write">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method will repeatedly attempt to push the given data into the</span>
+<span class="sd">        child&#39;s stdin pipe, until it succeeds to write all data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span> <span class="p">:</span>
+
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+                <span class="n">log</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">n&#39;</span><span class="p">)</span>
+                <span class="n">log</span> <span class="o">=</span>  <span class="n">log</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+                <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_DEBUG_MAX</span> <span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s"> ... </span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                    <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">log</span><span class="p">[:</span><span class="mi">30</span><span class="p">],</span> <span class="n">log</span><span class="p">[</span><span class="o">-</span><span class="mi">30</span><span class="p">:]))</span>
+                <span class="k">else</span> <span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                    <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">log</span><span class="p">))</span>
+
+                <span class="c"># attempt to write forever -- until we succeeed</span>
+                <span class="k">while</span> <span class="n">data</span> <span class="p">:</span>
+
+                    <span class="c"># check if the pty pipe is ready for data</span>
+                    <span class="n">_</span><span class="p">,</span> <span class="n">wlist</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span> <span class="p">([],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_in</span><span class="p">],</span> <span class="p">[],</span> <span class="n">_POLLDELAY</span><span class="p">)</span>
+
+                    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">wlist</span> <span class="p">:</span>
+                        
+                        <span class="c"># write will report the number of written bytes</span>
+                        <span class="n">size</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+                        <span class="c"># otherwise, truncate by written data, and try again</span>
+                        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
+
+                        <span class="k">if</span> <span class="n">data</span> <span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="n">size</span><span class="p">)</span>
+
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;write to pty process [</span><span class="si">%s</span><span class="s">] failed (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                             <span class="o">%</span> <span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span><span class="p">()</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
+
+
+
+<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../saga.html" >saga</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

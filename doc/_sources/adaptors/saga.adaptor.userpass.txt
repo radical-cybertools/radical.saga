@@ -1,0 +1,59 @@
+
+*********************
+saga.adaptor.userpass
+*********************
+
+This adaptor stores user_id and user_pass tokens, to
+be used for backend connections.
+
+
+Supported Schemas
+-----------------
+
+  - **userpass://** : this adaptor can only store username/password pairs.
+
+
+
+Configuration Options
+---------------------
+Configuration options can be used to control the adaptor's runtime behavior. Most adaptors don't need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.
+
+ .. seealso:: More information about configuration options can be found in the :ref:`conf_file` section.
+
+enabled
+****************
+enable / disable saga.adaptor.userpass adaptor
+
+  - **type** : <type 'bool'>
+  - **default** : True
+  - **environment** : None
+  - **valid options** : [True, False]
+
+
+Capabilities
+------------
+
+attributes
+****************
+  - Type
+  - UserID
+  - UserPass
+
+
+
+Supported API Classes
+---------------------
+
+This adaptor supports the following API classes:
+  - :class:`saga.Context`
+
+Method implementation details are listed below.
+
+saga.Context
+************
+
+.. autoclass:: saga.adaptors.context.userpass.ContextUserPass
+   :members:
+
+
+

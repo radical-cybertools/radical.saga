@@ -1,0 +1,372 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>7. saga.adaptor.sgejob &mdash; SAGA 0.9.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 0.9.1 documentation" href="../index.html" />
+    <link rel="up" title="5. Adaptors:" href="saga.adaptor.index.html" />
+    <link rel="next" title="8. saga.adaptor.pbsjob" href="saga.adaptor.pbsjob.html" />
+    <link rel="prev" title="6. saga.adaptor.shell_job" href="saga.adaptor.shell_job.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.pbsjob.html" title="8. saga.adaptor.pbsjob"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.shell_job.html" title="6. saga.adaptor.shell_job"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" accesskey="U">5. Adaptors:</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="saga-adaptor-sgejob">
+<h1>7. saga.adaptor.sgejob<a class="headerlink" href="#saga-adaptor-sgejob" title="Permalink to this headline">¶</a></h1>
+<p>TODO</p>
+<div class="section" id="supported-schemas">
+<h2>7.1. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><strong>sge+gsissh://</strong> : connect to a remote SGE cluster via GSISSH</li>
+<li><strong>sge://</strong> : connect to a local SGE cluster</li>
+<li><strong>sge+ssh://</strong> : conenct to a remote SGE cluster via SSH</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="configuration-options">
+<h2>7.2. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<p>Configuration options can be used to control the adaptor&#8217;s runtime behavior. Most adaptors don&#8217;t need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.</p>
+<blockquote>
+<div><div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">More information about configuration options can be found in the <a class="reference internal" href="../usage/config.html#conf-file"><em>Configuration Files</em></a> section.</p>
+</div>
+</div></blockquote>
+<div class="section" id="enabled">
+<h3>7.2.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<p>enable / disable saga.adaptor.sgejob adaptor</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>type</strong> : &lt;type &#8216;bool&#8217;&gt;</li>
+<li><strong>default</strong> : True</li>
+<li><strong>environment</strong> : None</li>
+<li><strong>valid options</strong> : [True, False]</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="foo">
+<h3>7.2.2. foo<a class="headerlink" href="#foo" title="Permalink to this headline">¶</a></h3>
+<p>Doc</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>type</strong> : &lt;type &#8216;bool&#8217;&gt;</li>
+<li><strong>default</strong> : False</li>
+<li><strong>environment</strong> : None</li>
+<li><strong>valid options</strong> : [True, False]</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="capabilities">
+<h2>7.3. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="supported-monitorable-metrics">
+<h3>7.3.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>State</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="supported-job-attributes">
+<h3>7.3.2. Supported Job Attributes<a class="headerlink" href="#supported-job-attributes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>ExitCode</li>
+<li>ExecutionHosts</li>
+<li>Created</li>
+<li>Started</li>
+<li>Finished</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="supported-context-types">
+<h3>7.3.3. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><em>x509</em>: GSISSH X509 proxy context</li>
+<li><em>userpass</em>: username/password pair (ssh)</li>
+<li><em>ssh</em>: SSH public/private keypair</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="supported-job-description-attributes">
+<h3>7.3.4. Supported Job Description Attributes<a class="headerlink" href="#supported-job-description-attributes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>Name</li>
+<li>Executable</li>
+<li>Arguments</li>
+<li>Environment</li>
+<li>Input</li>
+<li>Output</li>
+<li>Error</li>
+<li>Queue</li>
+<li>Project</li>
+<li>WallTimeLimit</li>
+<li>WorkingDirectory</li>
+<li>TotalCPUCount</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="supported-api-classes">
+<h2>7.4. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>This adaptor supports the following API classes:</dt>
+<dd><ul class="first last simple">
+<li><a class="reference internal" href="../library/job/index.html#saga.job.Service" title="saga.job.Service"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Service</span></tt></a></li>
+<li><a class="reference internal" href="../library/job/index.html#saga.job.Job" title="saga.job.Job"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Job</span></tt></a></li>
+</ul>
+</dd>
+</dl>
+<p>Method implementation details are listed below.</p>
+<div class="section" id="saga-job-service">
+<h3>7.4.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.sge.sgejob.SGEJobService">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.sge.sgejob.</tt><tt class="descname">SGEJobService</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJobService"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJobService" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.job.service.Service</span></tt></p>
+<p>implements saga.adaptors.cpi.job.Service</p>
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJobService.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJobService.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJobService.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJobService.initialize">
+<tt class="descname">initialize</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJobService.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJobService.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJobService.finalize">
+<tt class="descname">finalize</tt><big>(</big><em>kill_shell=False</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJobService.finalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJobService.finalize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJobService.create_job">
+<tt class="descname">create_job</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJobService.create_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJobService.create_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJobService.get_job">
+<tt class="descname">get_job</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJobService.get_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJobService.get_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJobService.get_url">
+<tt class="descname">get_url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJobService.get_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJobService.get_url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJobService.list">
+<tt class="descname">list</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJobService.list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJobService.list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="saga-job-job">
+<h3>7.4.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.sge.sgejob.SGEJob">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.sge.sgejob.</tt><tt class="descname">SGEJob</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.job.job.Job</span></tt></p>
+<p>implements saga.adaptors.cpi.job.Job</p>
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJob.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJob.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJob.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJob.get_state">
+<tt class="descname">get_state</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJob.get_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJob.get_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJob.wait">
+<tt class="descname">wait</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJob.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJob.wait" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJob.cancel">
+<tt class="descname">cancel</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJob.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJob.cancel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJob.run">
+<tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJob.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJob.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJob.get_service_url">
+<tt class="descname">get_service_url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJob.get_service_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJob.get_service_url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJob.get_id">
+<tt class="descname">get_id</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJob.get_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJob.get_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJob.get_exit_code">
+<tt class="descname">get_exit_code</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJob.get_exit_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJob.get_exit_code" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJob.get_created">
+<tt class="descname">get_created</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJob.get_created"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJob.get_created" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJob.get_started">
+<tt class="descname">get_started</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJob.get_started"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJob.get_started" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJob.get_finished">
+<tt class="descname">get_finished</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJob.get_finished"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJob.get_finished" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.sge.sgejob.SGEJob.get_execution_hosts">
+<tt class="descname">get_execution_hosts</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/sge/sgejob.html#SGEJob.get_execution_hosts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.sge.sgejob.SGEJob.get_execution_hosts" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">7. saga.adaptor.sgejob</a><ul>
+<li><a class="reference internal" href="#supported-schemas">7.1. Supported Schemas</a></li>
+<li><a class="reference internal" href="#configuration-options">7.2. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">7.2.1. enabled</a></li>
+<li><a class="reference internal" href="#foo">7.2.2. foo</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#capabilities">7.3. Capabilities</a><ul>
+<li><a class="reference internal" href="#supported-monitorable-metrics">7.3.1. Supported Monitorable Metrics</a></li>
+<li><a class="reference internal" href="#supported-job-attributes">7.3.2. Supported Job Attributes</a></li>
+<li><a class="reference internal" href="#supported-context-types">7.3.3. Supported Context Types</a></li>
+<li><a class="reference internal" href="#supported-job-description-attributes">7.3.4. Supported Job Description Attributes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#supported-api-classes">7.4. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-job-service">7.4.1. saga.job.Service</a></li>
+<li><a class="reference internal" href="#saga-job-job">7.4.2. saga.job.Job</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="saga.adaptor.shell_job.html"
+                        title="previous chapter">6. saga.adaptor.shell_job</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="saga.adaptor.pbsjob.html"
+                        title="next chapter">8. saga.adaptor.pbsjob</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/adaptors/saga.adaptor.sgejob.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.pbsjob.html" title="8. saga.adaptor.pbsjob"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.shell_job.html" title="6. saga.adaptor.shell_job"
+             >previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" >5. Adaptors:</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

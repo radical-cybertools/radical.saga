@@ -1,0 +1,1177 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>saga.adaptors.slurm.slurm_job &mdash; SAGA 0.9.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.9.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 0.9.1 documentation" href="../../../../index.html" />
+    <link rel="up" title="saga" href="../../../saga.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for saga.adaptors.slurm.slurm_job</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot; SLURM job adaptor implementation &quot;&quot;&quot;</span>
+
+<span class="c">#TODO: Throw errors if a user does not specify the MINIMUM number of</span>
+<span class="c">#      attributes required for SLURM in a job description</span>
+
+<span class="kn">import</span> <span class="nn">saga.utils.which</span>
+<span class="kn">import</span> <span class="nn">saga.utils.pty_shell</span>
+
+<span class="kn">import</span> <span class="nn">saga.adaptors.cpi.base</span>
+<span class="kn">import</span> <span class="nn">saga.adaptors.cpi.job</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+<span class="n">SYNC_CALL</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">decorators</span><span class="o">.</span><span class="n">SYNC_CALL</span>
+<span class="n">ASYNC_CALL</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">decorators</span><span class="o">.</span><span class="n">ASYNC_CALL</span>
+
+<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># some private defs</span>
+<span class="c">#</span>
+<span class="n">_PTY_TIMEOUT</span> <span class="o">=</span> <span class="mf">2.0</span>
+
+<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># the adaptor name</span>
+<span class="c">#</span>
+<span class="n">_ADAPTOR_NAME</span>          <span class="o">=</span> <span class="s">&quot;saga.adaptor.slurm_job&quot;</span>
+<span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&quot;slurm&quot;</span><span class="p">,</span> <span class="s">&quot;slurm+ssh&quot;</span><span class="p">,</span> <span class="s">&quot;slurm+gsissh&quot;</span><span class="p">]</span>
+<span class="n">_ADAPTOR_OPTIONS</span>       <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># the adaptor capabilities &amp; supported attributes</span>
+<span class="c">#</span>
+<span class="c"># TODO: FILL ALL IN FOR SLURM</span>
+<span class="n">_ADAPTOR_CAPABILITIES</span>  <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;jdes_attributes&quot;</span>  <span class="p">:</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NAME</span><span class="p">,</span> 
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXECUTABLE</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">ARGUMENTS</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">ENVIRONMENT</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">SPMD_VARIATION</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">TOTAL_CPU_COUNT</span><span class="p">,</span> 
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NUMBER_OF_PROCESSES</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PROCESSES_PER_HOST</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">THREADS_PER_PROCESS</span><span class="p">,</span> 
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">WORKING_DIRECTORY</span><span class="p">,</span>
+                          <span class="c">#saga.job.INTERACTIVE,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">INPUT</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">OUTPUT</span><span class="p">,</span> 
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FILE_TRANSFER</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CLEANUP</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">JOB_START_TIME</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">WALL_TIME_LIMIT</span><span class="p">,</span> 
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">TOTAL_PHYSICAL_MEMORY</span><span class="p">,</span> 
+                          <span class="c">#saga.job.CPU_ARCHITECTURE, </span>
+                          <span class="c">#saga.job.OPERATING_SYSTEM_TYPE, </span>
+                          <span class="c">#saga.job.CANDIDATE_HOSTS,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">QUEUE</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PROJECT</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">JOB_CONTACT</span><span class="p">],</span>
+
+    <span class="s">&quot;job_attributes&quot;</span>   <span class="p">:</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXIT_CODE</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXECUTION_HOSTS</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CREATED</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">STARTED</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FINISHED</span><span class="p">],</span>
+    <span class="s">&quot;metrics&quot;</span>          <span class="p">:</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">STATE</span><span class="p">,</span> 
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">STATE_DETAIL</span><span class="p">],</span>
+    <span class="s">&quot;contexts&quot;</span>         <span class="p">:</span> <span class="p">{</span><span class="s">&quot;ssh&quot;</span>      <span class="p">:</span> <span class="s">&quot;public/private keypair&quot;</span><span class="p">,</span>
+                          <span class="s">&quot;x509&quot;</span>     <span class="p">:</span> <span class="s">&quot;X509 proxy for gsissh&quot;</span><span class="p">,</span>
+                          <span class="s">&quot;userpass&quot;</span> <span class="p">:</span> <span class="s">&quot;username/password pair for simple ssh&quot;</span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># the adaptor documentation</span>
+<span class="c">#</span>
+<span class="n">_ADAPTOR_DOC</span>           <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;name&quot;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&quot;cfg_options&quot;</span>      <span class="p">:</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">,</span> 
+    <span class="s">&quot;capabilities&quot;</span>     <span class="p">:</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
+    <span class="s">&quot;description&quot;</span>      <span class="p">:</span> <span class="s">&quot;&quot;&quot; </span>
+<span class="s">        The SLURM job adaptor. This adaptor uses the SLURM command line tools to run</span>
+<span class="s">        remote jobs.</span>
+<span class="s">        &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;details&quot;</span>          <span class="p">:</span> <span class="s">&quot;&quot;&quot; </span>
+<span class="s">        GENERAL NOTES:</span>
+
+<span class="s">        On Stampede, returning a non-zero exit code results in the scheduler</span>
+<span class="s">        putting the job into a FAILED state and assigning it an exit code of 127.</span>
+
+<span class="s">        EXAMPLE:</span>
+
+<span class="s">        js = saga.job.Service(&quot;slurm+ssh://stampede&quot;)js = saga.job.Service(&quot;slurm+ssh://stampede&quot;)</span>
+<span class="s">        jd.executable  = &#39;/bin/exit&#39;</span>
+<span class="s">        jd.arguments   = [&#39;3&#39;]</span>
+<span class="s">        job = js.create_job(jd)</span>
+<span class="s">        job.run()</span>
+
+<span class="s">        Will return something similar to (personal account information removed):</span>
+
+<span class="s">        (saga-python-env)ashleyz@login1:~$ scontrol show job 309684</span>
+<span class="s">        JobId=309684 Name=SlurmJob</span>
+<span class="s">           UserId=_____ GroupId=__________</span>
+<span class="s">           Priority=3000 Account=_____ QOS=normal</span>
+<span class="s">           JobState=FAILED Reason=NonZeroExitCode Dependency=(null)</span>
+<span class="s">           Requeue=0 Restarts=0 BatchFlag=1 ExitCode=127:0</span>
+<span class="s">           RunTime=00:00:05 TimeLimit=00:01:00 TimeMin=N/A</span>
+<span class="s">           SubmitTime=2013-02-22T20:26:50 EligibleTime=2013-02-22T20:26:50</span>
+<span class="s">           StartTime=2013-02-22T20:26:50 EndTime=2013-02-22T20:26:55</span>
+<span class="s">           PreemptTime=None SuspendTime=None SecsPreSuspend=0</span>
+<span class="s">           Partition=development AllocNode:Sid=login1:12070</span>
+<span class="s">           ReqNodeList=(null) ExcNodeList=(null)</span>
+<span class="s">           NodeList=c557-401</span>
+<span class="s">           BatchHost=c557-401</span>
+<span class="s">           NumNodes=1 NumCPUs=16 CPUs/Task=1 ReqS:C:T=*:*:*</span>
+<span class="s">           MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0</span>
+<span class="s">           Features=(null) Gres=(null) Reservation=(null)</span>
+<span class="s">           Shared=0 Contiguous=0 Licenses=(null) Network=(null)</span>
+<span class="s">           Command=/home1/01414/_______/.saga/adaptors/slurm_job/wrapper.sh</span>
+<span class="s">           WorkDir=/home1/01414/_______/</span>
+
+<span class="s">        I&#39;m not sure how to fix this for the time being.</span>
+
+<span class="s">        Suspend/resume do not appear to be supported for regular</span>
+<span class="s">        users on Stampede.</span>
+
+<span class="s">        run_job is not supported, as there are many attributed (queues,</span>
+<span class="s">        projects, etc) which need to be passed to the adaptor.  I could</span>
+<span class="s">        add URL parsing so that you could pile on queue/project/jobname</span>
+<span class="s">        information if this has any strong usecases, but I avoided doing</span>
+<span class="s">        so for now to decrease complexity/possible confusion.</span>
+
+<span class="s">        Cancelling a job with scontrol, puts it into a COMPLETING state, which</span>
+<span class="s">        is parsed by the SLURM status parser as saga.job.RUNNING (see the</span>
+<span class="s">        SLURM docs, COMPLETING is a state a job goes into when it is done</span>
+<span class="s">        running but still flushing IO/etc).  Anyhow, I put some code in to</span>
+<span class="s">        manually put the job into CANCELED state when the job is canceled,</span>
+<span class="s">        but I&#39;m not sure that this is reported correctly everywhere yet.</span>
+
+<span class="s">        What exit code should be returned for a CANCELED job?</span>
+
+<span class="s">        IMPLEMENTATION NOTES:</span>
+<span class="s">        - If scontrol can&#39;t find an exit code, it returns None</span>
+<span class="s">          (see _job_get_exit_code)</span>
+<span class="s">        - If scancel can&#39;t cancel a job, we raise an exception</span>
+<span class="s">          (see _job_cancel)</span>
+<span class="s">        - If we can&#39;t suspend a job with scontrol suspend, we raise an exception</span>
+<span class="s">          (see _job_suspend).  scontrol suspend NOT supported on Stampede</span>
+<span class="s">        - I started to implement a dictionary to keep track of jobs locally.</span>
+<span class="s">          It works to the point where the unit tests are passed, but I have</span>
+<span class="s">          not gone over theis extensively...</span>
+<span class="s">        - Relating to the above, _job_get_info is written, but unused/untested</span>
+<span class="s">          (mostly from PBS adaptor)</span>
+
+<span class="s">        UNIMPLEMENTED ITEMS:</span>
+<span class="s">        - Container submission not implemented</span>
+<span class="s">        - Parts in job_description not parsed:         </span>
+<span class="s">        -- threads_per_process</span>
+<span class="s">        -- spmd_variation</span>
+<span class="s">        -- total_cpu_count</span>
+<span class="s">        - get_created/etc not in yet</span>
+<span class="s">        &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;schemas&quot;</span>          <span class="p">:</span> <span class="p">{</span><span class="s">&quot;slurm&quot;</span>        <span class="p">:</span><span class="s">&quot;use slurm to run local SLURM jobs&quot;</span><span class="p">,</span> 
+                          <span class="s">&quot;slurm+ssh&quot;</span>    <span class="p">:</span><span class="s">&quot;use ssh to run remote SLURM jobs&quot;</span><span class="p">,</span> 
+                          <span class="s">&quot;slurm+gsissh&quot;</span> <span class="p">:</span><span class="s">&quot;use gsissh to run remote SLURM jobs&quot;</span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># the adaptor info is used to register the adaptor with SAGA</span>
+
+<span class="n">_ADAPTOR_INFO</span>          <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;name&quot;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&quot;version&quot;</span>          <span class="p">:</span> <span class="s">&quot;v0.2&quot;</span><span class="p">,</span>
+    <span class="s">&quot;schemas&quot;</span>          <span class="p">:</span> <span class="n">_ADAPTOR_SCHEMAS</span><span class="p">,</span>
+    <span class="s">&quot;cpis&quot;</span>             <span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span> 
+        <span class="s">&quot;type&quot;</span>         <span class="p">:</span> <span class="s">&quot;saga.job.Service&quot;</span><span class="p">,</span>
+        <span class="s">&quot;class&quot;</span>        <span class="p">:</span> <span class="s">&quot;SLURMJobService&quot;</span>
+        <span class="p">},</span> 
+        <span class="p">{</span> 
+        <span class="s">&quot;type&quot;</span>         <span class="p">:</span> <span class="s">&quot;saga.job.Job&quot;</span><span class="p">,</span>
+        <span class="s">&quot;class&quot;</span>        <span class="p">:</span> <span class="s">&quot;SLURMJob&quot;</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="c">###############################################################################</span>
+<span class="c"># The adaptor class</span>
+
+<span class="k">class</span> <span class="nc">Adaptor</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AdaptorBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">    This is the actual adaptor class, which gets loaded by SAGA (i.e. by the</span>
+<span class="sd">    SAGA engine), and which registers the CPI implementation classes which</span>
+<span class="sd">    provide the adaptor&#39;s functionality.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AdaptorBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_ADAPTOR_INFO</span><span class="p">,</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">id_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span> <span class="p">(</span><span class="s">&#39;^\[(.*)\]-\[(.*?)\]$&#39;</span><span class="p">)</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">sanity_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">pass</span>
+
+
+    <span class="k">def</span> <span class="nf">parse_id</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span> <span class="p">:</span>
+        <span class="c"># split the id &#39;[rm]-[pid]&#39; in its parts, and return them.</span>
+
+        <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_re</span><span class="o">.</span><span class="n">match</span> <span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+
+        <span class="k">if</span>  <span class="ow">not</span> <span class="n">match</span> <span class="ow">or</span> <span class="nb">len</span> <span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">())</span> <span class="o">!=</span> <span class="mi">2</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot parse job id &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="nb">id</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span> <span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+
+
+<span class="c">###############################################################################</span>
+<span class="c">#</span>
+<div class="viewcode-block" id="SLURMJobService"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService">[docs]</a><span class="k">class</span> <span class="nc">SLURMJobService</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">)</span> <span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service &quot;&quot;&quot;</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
+        <span class="c">#saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span>  <span class="p">(</span><span class="n">SLURMJobService</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_base</span> <span class="o">=</span> <span class="n">base</span> <span class="o">=</span> <span class="s">&quot;$HOME/.saga/adaptors/slurm_job&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">exit_code_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;&quot;&quot;(?&lt;=ExitCode=)[0-9]*&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scontrol_jobstate_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;&quot;&quot;(?&lt;=JobState=)[a-zA-Z]*&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="c"># TODO make sure this formats properly and works right!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scontrol_start_time_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;&quot;&quot;(?&lt;=StartTime=).* &quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scontrol_end_time_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;&quot;&quot;(?&lt;=EndTime=).* &quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scontrol_create_time_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;&quot;&quot;(?&lt;=SubmitTime=).* &quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scontrol_exec_hosts_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;&quot;&quot;(?&lt;=ExcNodeList=).* &quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scontrol_comp_time_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;&quot;&quot;(?&lt;=RunTime=).* &quot;&quot;&quot;</span><span class="p">)</span>
+
+        <span class="c"># these are the commands that we need in order to interact with SLURM</span>
+        <span class="c"># the adaptor will try to find them when it first opens the shell</span>
+        <span class="c"># connection, and bails out in case they are not available.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;sbatch&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+                          <span class="s">&#39;squeue&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+                          <span class="s">&#39;scontrol&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+                          <span class="s">&#39;scancel&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">}</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__del__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="p">:</span> <span class="k">del</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">:</span>
+            <span class="k">pass</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJobService.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.init_instance">[docs]</a>    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">rm_url</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Service instance constructor &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rm</span>      <span class="o">=</span> <span class="n">rm_url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_open</span> <span class="p">()</span>
+
+    <span class="c"># # ----------------------------------------------------------------</span>
+    <span class="c"># #</span>
+    <span class="c"># def _alive (self) :</span>
+
+    <span class="c">#     if  not self.shell or not self.shell.alive () :</span>
+    <span class="c">#         self._logger.info (&quot;shell is dead - long live the shell&quot;)</span>
+            
+    <span class="c">#         try :</span>
+    <span class="c">#             self._close ()  # for cleanup...</span>
+    <span class="c">#             self._open  ()</span>
+
+    <span class="c">#         except Exception :</span>
+    <span class="c">#             # did not work for good - give up</span>
+    <span class="c">#             raise saga.IncorrectState (&quot;job service is not connected, can&#39;t reconnect&quot;)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span></div>
+    <span class="k">def</span> <span class="nf">_open</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Open our persistent shell for this job adaptor.  We use</span>
+<span class="sd">        the pty_shell functionality for this.  </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># check to see what kind of connection we will want to create</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">schema</span>   <span class="o">==</span> <span class="s">&quot;slurm&quot;</span><span class="p">:</span>
+            <span class="n">shell_schema</span> <span class="o">=</span> <span class="s">&quot;fork://&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">schema</span> <span class="o">==</span> <span class="s">&quot;slurm+ssh&quot;</span><span class="p">:</span>
+            <span class="n">shell_schema</span> <span class="o">=</span> <span class="s">&quot;ssh://&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">schema</span> <span class="o">==</span> <span class="s">&quot;slurm+gsissh&quot;</span><span class="p">:</span>
+            <span class="n">shell_schema</span> <span class="o">=</span> <span class="s">&quot;gsissh://&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectURL</span><span class="p">(</span><span class="s">&quot;Schema </span><span class="si">%s</span><span class="s"> not supported by SLURM adaptor.&quot;</span>
+                                    <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">schema</span><span class="p">)</span>
+
+        <span class="c">#&lt;scheme&gt;://&lt;user&gt;:&lt;pass&gt;@&lt;host&gt;:&lt;port&gt;/&lt;path&gt;?&lt;query&gt;#&lt;fragment&gt;</span>
+        <span class="c"># build our shell URL</span>
+        <span class="n">shell_url</span> <span class="o">=</span> <span class="n">shell_schema</span> 
+        
+        <span class="c"># did we provide a username and password?</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">username</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">password</span><span class="p">:</span>
+            <span class="n">shell_url</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">username</span> <span class="o">+</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">password</span> <span class="o">+</span> <span class="s">&quot;@&quot;</span>
+
+        <span class="c"># only provided a username</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">username</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">password</span><span class="p">:</span>
+            <span class="n">shell_url</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">username</span> <span class="o">+</span> <span class="s">&quot;@&quot;</span>
+
+        <span class="c">#add hostname</span>
+        <span class="n">shell_url</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">host</span>
+
+        <span class="c">#add port</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">port</span><span class="p">:</span>
+            <span class="n">shell_url</span> <span class="o">+=</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">port</span>
+
+        <span class="n">shell_url</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">Url</span><span class="p">(</span><span class="n">shell_url</span><span class="p">)</span>
+
+        <span class="c"># establish shell connection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Opening shell of type: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">shell_url</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="n">shell_url</span><span class="p">,</span> 
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">contexts</span><span class="p">,</span> 
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+
+        <span class="c"># verify our SLURM environment contains the commands we need for this</span>
+        <span class="c"># adaptor to work properly</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Verifying existence of remote SLURM tools.&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;which </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error finding SLURM tool </span><span class="si">%s</span><span class="s"> on remote server </span><span class="si">%s</span><span class="s">!</span><span class="se">\n</span><span class="s">&quot;</span> \
+                          <span class="s">&quot;Locations searched:</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> \
+                          <span class="s">&quot;Is SLURM installed on that machine? &quot;</span> \
+                          <span class="s">&quot;If so, is your remote SLURM environment &quot;</span>\
+                          <span class="s">&quot;configured properly? &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+                
+        <span class="c"># prepare our remote working directory for wrappers/etc</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;mkdir -p </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base</span><span class="p">)</span>
+        <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to prepare base dir (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                      <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got cmd prompt (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">detected_username</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">username</span>
+        <span class="c"># figure out username if it wasn&#39;t made explicit</span>
+        <span class="c"># important if .ssh/config info read+connected with </span>
+        <span class="c"># a different username than what we expect</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">username</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;No username provided in URL </span><span class="si">%s</span><span class="s">, so we are&quot;</span>
+                                <span class="s">&quot;going to find it with whoami&quot;</span> <span class="o">%</span> <span class="n">shell_url</span><span class="p">)</span>
+            <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;whoami&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">detected_username</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Username detected as: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">detected_username</span><span class="p">)</span>
+
+        <span class="k">return</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_close</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Close our shell connection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="bp">None</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_job_run</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jd</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; runs a job on the wrapper via pty, and returns the job id &quot;&quot;&quot;</span>
+        
+        <span class="c">#define a bunch of default args</span>
+        <span class="n">exe</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>
+        <span class="n">arg</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="n">cwd</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="n">job_name</span> <span class="o">=</span> <span class="s">&quot;SAGAPythonSLURMJob&quot;</span>
+        <span class="n">spmd_variation</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">total_cpu_count</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">number_of_processes</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">threads_per_process</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">working_directory</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="s">&quot;saga-python-slurm-default.out&quot;</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">file_transfer</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">job_start_time</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">wall_time_limit</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">queue</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">project</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">job_contact</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="c"># check to see what&#39;s available in our job description</span>
+        <span class="c"># to override defaults</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">):</span>
+            <span class="n">job_name</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;arguments&quot;</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span> <span class="p">:</span>
+                <span class="n">arg</span> <span class="o">+=</span> <span class="s">&quot; </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">a</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;environment&quot;</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">environment</span> <span class="p">:</span>
+                <span class="n">env</span> <span class="o">+=</span> <span class="s">&quot;export </span><span class="si">%s</span><span class="s">=</span><span class="si">%s</span><span class="s">;&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">environment</span><span class="p">[</span><span class="n">e</span><span class="p">])</span>
+            <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c"># trim off last ;</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;spmd_variation&quot;</span><span class="p">):</span>
+            <span class="n">spmd_variation</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">spmd_variation</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;total_cpu_count&quot;</span><span class="p">):</span>
+            <span class="n">total_cpu_count</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;number_of_processes&quot;</span><span class="p">):</span>
+            <span class="n">number_of_processes</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">number_of_processes</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;processes_per_host&quot;</span><span class="p">):</span>
+            <span class="n">processes_per_host</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">processes_per_host</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;threads_per_process&quot;</span><span class="p">):</span>
+            <span class="n">threads_per_process</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">threads_per_process</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;working_directory&quot;</span><span class="p">):</span>
+            <span class="n">cwd</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;output&quot;</span><span class="p">):</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">output</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span><span class="p">(</span><span class="s">&quot;error&quot;</span><span class="p">):</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">error</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span><span class="p">(</span><span class="s">&quot;wall_time_limit&quot;</span><span class="p">):</span>
+            <span class="n">wall_time_limit</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">wall_time_limit</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span><span class="p">(</span><span class="s">&quot;queue&quot;</span><span class="p">):</span>
+            <span class="n">queue</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">queue</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span><span class="p">(</span><span class="s">&quot;project&quot;</span><span class="p">):</span>
+            <span class="n">project</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">project</span>
+
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span><span class="p">(</span><span class="s">&quot;job_contact&quot;</span><span class="p">):</span>
+            <span class="n">job_contact</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">job_contact</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">slurm_script</span> <span class="o">=</span> <span class="s">&quot;#!/bin/bash</span><span class="se">\n</span><span class="s">&quot;</span>
+
+        <span class="k">if</span> <span class="n">job_name</span><span class="p">:</span>
+            <span class="n">slurm_script</span> <span class="o">+=</span> <span class="s">&#39;#SBATCH -J &quot;</span><span class="si">%s</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">job_name</span>
+
+        <span class="k">if</span> <span class="n">spmd_variation</span><span class="p">:</span>
+            <span class="k">pass</span> <span class="c">#TODO</span>
+
+        <span class="k">if</span> <span class="n">total_cpu_count</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="n">number_of_processes</span><span class="p">:</span>
+            <span class="n">slurm_script</span> <span class="o">+=</span> <span class="s">&quot;#SBATCH -n </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">number_of_processes</span>
+        <span class="c"># no processes selected, let&#39;s give a default</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;number_of_processes not specified in submitted &quot;</span>
+                                 <span class="s">&quot;SLURM job description -- defaulting to 1!&quot;</span><span class="p">)</span>
+            <span class="n">number_of_processes</span><span class="o">=</span><span class="mi">1</span>
+            <span class="n">slurm_script</span> <span class="o">+=</span> <span class="s">&quot;#SBATCH -n </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">number_of_processes</span>
+
+        <span class="k">if</span> <span class="n">threads_per_process</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="n">working_directory</span><span class="p">:</span>
+            <span class="n">slurm_script</span> <span class="o">+=</span> <span class="s">&quot;#SBATCH -D </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">working_directory</span>
+
+        <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
+            <span class="n">slurm_script</span><span class="o">+=</span> <span class="s">&quot;#SBATCH -o </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">output</span>
+        
+        <span class="k">if</span> <span class="n">error</span><span class="p">:</span>
+            <span class="n">slurm_script</span> <span class="o">+=</span> <span class="s">&quot;#SBATCH -e </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">error</span>
+
+        <span class="k">if</span> <span class="n">wall_time_limit</span><span class="p">:</span>
+            <span class="n">hours</span> <span class="o">=</span> <span class="n">wall_time_limit</span> <span class="o">/</span> <span class="mi">60</span>
+            <span class="n">minutes</span> <span class="o">=</span> <span class="n">wall_time_limit</span> <span class="o">%</span> <span class="mi">60</span>
+            <span class="n">slurm_script</span> <span class="o">+=</span> <span class="s">&quot;#SBATCH -t </span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">:00</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">hours</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">minutes</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">queue</span><span class="p">:</span>
+            <span class="n">slurm_script</span> <span class="o">+=</span> <span class="s">&quot;#SBATCH -p </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">queue</span>
+
+        <span class="k">if</span> <span class="n">project</span><span class="p">:</span>
+            <span class="n">slurm_script</span> <span class="o">+=</span> <span class="s">&quot;#SBATCH -A </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">project</span>
+
+        <span class="k">if</span> <span class="n">job_contact</span><span class="p">:</span>
+            <span class="n">slurm_script</span> <span class="o">+=</span> <span class="s">&quot;#SBATCH --mail-user=</span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job_contact</span>
+        
+        <span class="c"># add on our environment variables</span>
+        <span class="n">slurm_script</span> <span class="o">+=</span> <span class="n">env</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+
+        <span class="c"># create our commandline</span>
+        <span class="n">slurm_script</span> <span class="o">+=</span> <span class="n">exe</span> <span class="o">+</span> <span class="n">arg</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;SLURM script generated:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">slurm_script</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Transferring SLURM script to remote host&quot;</span><span class="p">)</span>
+
+        <span class="c"># transfer our script over</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_to_file</span> <span class="p">(</span><span class="n">src</span> <span class="o">=</span> <span class="n">slurm_script</span><span class="p">,</span> 
+                                  <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">/wrapper.sh&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base</span><span class="p">)</span>
+
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;sbatch </span><span class="si">%s</span><span class="s">/wrapper.sh&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base</span><span class="p">)</span>
+        
+        <span class="c"># find out what our job ID will be</span>
+        <span class="c"># TODO: Could make this more efficient</span>
+        <span class="n">found_id</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s">&quot;Submitted batch job&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">job_id</span> <span class="o">=</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">]-[</span><span class="si">%s</span><span class="s">]&quot;</span> <span class="o">%</span> \
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">:][</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="n">found_id</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="c"># if we have no job ID, there&#39;s a failure...</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">found_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> 
+                             <span class="s">&quot;Couldn&#39;t get job id from submitted job!&quot;</span>
+                              <span class="s">&quot; sbatch output:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;started job </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Batch system output:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span><span class="p">)</span>
+
+        <span class="c"># create local jobs dictionary entry</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">job_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s">&#39;state&#39;</span><span class="p">:</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span><span class="p">,</span>
+                <span class="s">&#39;exec_hosts&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+                <span class="s">&#39;returncode&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+                <span class="s">&#39;create_time&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+                <span class="s">&#39;start_time&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+                <span class="s">&#39;end_time&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+                <span class="s">&#39;gone&#39;</span><span class="p">:</span> <span class="bp">False</span>
+            <span class="p">}</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_id</span>
+
+    <span class="c"># ----------------  </span>
+    <span class="c"># FROM STAMPEDE&#39;S SQUEUE MAN PAGE</span>
+    <span class="c"># </span>
+    <span class="c"># JOB STATE CODES</span>
+    <span class="c">#    Jobs typically pass through several states in the course of their execution.  The typical states are PENDING, RUNNING, SUSPENDED, COMPLETING, and COMPLETED.   An  explanation  of  each</span>
+    <span class="c">#    state follows.</span>
+
+    <span class="c">#    CA  CANCELLED       Job was explicitly cancelled by the user or system administrator.  The job may or may not have been initiated.</span>
+    <span class="c">#    CD  COMPLETED       Job has terminated all processes on all nodes.</span>
+    <span class="c">#    CF  CONFIGURING     Job has been allocated resources, but are waiting for them to become ready for use (e.g. booting).</span>
+    <span class="c">#    CG  COMPLETING      Job is in the process of completing. Some processes on some nodes may still be active.</span>
+    <span class="c">#    F   FAILED          Job terminated with non-zero exit code or other failure condition.</span>
+    <span class="c">#    NF  NODE_FAIL       Job terminated due to failure of one or more allocated nodes.</span>
+    <span class="c">#    PD  PENDING         Job is awaiting resource allocation.</span>
+    <span class="c">#    PR  PREEMPTED       Job terminated due to preemption.</span>
+    <span class="c">#    R   RUNNING         Job currently has an allocation.</span>
+    <span class="c">#    S   SUSPENDED       Job has an allocation, but execution has been suspended.</span>
+    <span class="c">#    TO  TIMEOUT         Job terminated upon reaching its time limit.</span>
+ 
+    <span class="k">def</span> <span class="nf">_slurm_to_saga_jobstate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slurmjs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; translates a slurm one-letter state to saga</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&quot;CANCELED&quot;</span> <span class="ow">or</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&#39;CA&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span>
+        <span class="k">elif</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&quot;COMPLETED&quot;</span> <span class="ow">or</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&#39;CD&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span>
+        <span class="k">elif</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&quot;CONFIGURING&quot;</span> <span class="ow">or</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&#39;CF&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span>
+        <span class="k">elif</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&quot;COMPLETING&quot;</span> <span class="ow">or</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&#39;CG&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">RUNNING</span>
+        <span class="k">elif</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&quot;FAILED&quot;</span> <span class="ow">or</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&#39;F&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span>
+        <span class="k">elif</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&quot;NODE_FAIL&quot;</span> <span class="ow">or</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&#39;NF&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span>
+        <span class="k">elif</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&quot;PENDING&quot;</span> <span class="ow">or</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&#39;PD&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span>
+        <span class="k">elif</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&quot;PREEMPTED&quot;</span> <span class="ow">or</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&#39;PR&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span>
+        <span class="k">elif</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&quot;RUNNING&quot;</span> <span class="ow">or</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&#39;R&#39;</span><span class="p">:</span> 
+            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">RUNNING</span>
+        <span class="k">elif</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&quot;SUSPENDED&quot;</span> <span class="ow">or</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&#39;S&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">SUSPENDED</span>
+        <span class="k">elif</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&quot;TIMEOUT&quot;</span> <span class="ow">or</span> <span class="n">slurmjs</span> <span class="o">==</span> <span class="s">&#39;TO&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">UNKNOWN</span>
+
+    <span class="k">def</span> <span class="nf">_job_get_exit_code</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; get the job exit code from the wrapper shell &quot;&quot;&quot;</span>
+        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span> <span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;scontrol show job </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">pid</span><span class="p">)</span>
+
+        <span class="n">exit_code_found</span> <span class="o">=</span> <span class="bp">False</span>
+        
+        <span class="c"># dig out our exitcode</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s">&quot;ExitCode&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exit_code_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">line</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>
+        
+        <span class="c">### couldn&#39;t get the exitcode -- maybe should change this to just return</span>
+        <span class="c">### None?  b/c we will lose the code if a program waits too</span>
+        <span class="c">### long to look for the exitcode...</span>
+        <span class="c">###raise saga.NoSuccess._log (self._logger, </span>
+        <span class="c">###                           &quot;Could not find exit code for job %s&quot; % id)</span>
+        <span class="c"># decided to have it just return none</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t find job </span><span class="si">%s</span><span class="s"> in SLURM -- returning None&quot;</span>
+                             <span class="s">&quot; for job status.&quot;</span> <span class="o">%</span> <span class="nb">id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">_job_cancel</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given a job id, attempt to cancel it through use of commandline</span>
+<span class="sd">        scancel.  Raises exception when unsuccessful.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span> <span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;scancel </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">pid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ret</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span>
+                                      <span class="s">&quot;Could not cancel job </span><span class="si">%s</span><span class="s"> because: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pid</span><span class="p">,</span><span class="n">out</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_job_suspend</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempt to suspend a job with commandline scontrol.  Raise</span>
+<span class="sd">        exception when unsuccessful.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span> <span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;scontrol suspend </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">pid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ret</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span>
+                                      <span class="s">&quot;Could not suspend job </span><span class="si">%s</span><span class="s"> because: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pid</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_job_resume</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempt to resume a job with commandline scontrol.  Raise</span>
+<span class="sd">        exception when unsuccessful.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span> <span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;scontrol resume </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">pid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ret</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span>
+                                      <span class="s">&quot;Could not resume job </span><span class="si">%s</span><span class="s"> because: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pid</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJobService.create_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.create_job">[docs]</a>    <span class="k">def</span> <span class="nf">create_job</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jd</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_url()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># check that only supported attributes are provided</span>
+        <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">list_attributes</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">attribute</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">[</span><span class="s">&quot;jdes_attributes&quot;</span><span class="p">]:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;&#39;JobDescription.</span><span class="si">%s</span><span class="s">&#39; is not supported by this adaptor&quot;</span> <span class="o">%</span> <span class="n">attribute</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+        
+        <span class="c"># this dict is passed on to the job adaptor class -- use it to pass any</span>
+        <span class="c"># state information you need there.</span>
+        <span class="n">adaptor_state</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&quot;job_service&quot;</span>     <span class="p">:</span> <span class="bp">self</span><span class="p">,</span> 
+                          <span class="s">&quot;job_description&quot;</span> <span class="p">:</span> <span class="n">jd</span><span class="p">,</span>
+                          <span class="s">&quot;job_schema&quot;</span>      <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span>
+                          <span class="s">&quot;reconnect&quot;</span> <span class="p">:</span> <span class="bp">False</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span> <span class="p">(</span><span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">,</span>
+                             <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
+
+    <span class="c"># ----------------------------------------------------------------</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJobService.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.get_url">[docs]</a>    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_url()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span>
+</div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJobService.run_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.run_job">[docs]</a>    <span class="k">def</span> <span class="nf">run_job</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">host</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NotImplemented</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;run_job not implemented&quot;</span>
+                                        <span class="s">&quot; for SLURM jobs -- please construct&quot;</span>
+                                        <span class="s">&quot; a job description and create a job&quot;</span>
+                                        <span class="s">&quot; manually.&quot;</span><span class="p">)</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJobService.list"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.list">[docs]</a>    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.list()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># ashleyz@login1:~$ squeue -h -o &quot;%i&quot; -u ashleyz                                                                                                                                                                       </span>
+        <span class="c"># 255042</span>
+        <span class="c"># 255035</span>
+        <span class="c"># 255028</span>
+        <span class="c"># 255018</span>
+
+        <span class="c"># this line gives us a nothing but jobids for our user</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&#39;squeue -h -o &quot;</span><span class="si">%%</span><span class="s">i&quot; -u </span><span class="si">%s</span><span class="s">&#39;</span> 
+                                          <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">detected_username</span><span class="p">)</span>
+
+        <span class="c"># mangle our results into the proper id format</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;[</span><span class="si">%s</span><span class="s">]-[</span><span class="si">%s</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJobService.get_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.get_job">[docs]</a>    <span class="k">def</span> <span class="nf">get_job</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobid</span><span class="p">):</span>
+        <span class="c"># try to get some information about this job and throw it into</span>
+        <span class="c"># our job dictionary.</span>
+        <span class="c"># self.jobs[jobid] = self._retrieve_job(jobid)</span>
+
+        <span class="c"># this dict is passed on to the job adaptor class -- use it to pass any</span>
+        <span class="c"># state information you need there.</span>
+        <span class="n">adaptor_state</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;job_service&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="p">,</span>
+                         <span class="c"># TODO: fill job description</span>
+                         <span class="s">&quot;job_description&quot;</span><span class="p">:</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">(),</span>
+                         <span class="s">&quot;job_schema&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span>
+                         <span class="s">&quot;reconnect&quot;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                         <span class="s">&quot;reconnect_jobid&quot;</span><span class="p">:</span> <span class="n">jobid</span>
+                        <span class="p">}</span>
+        <span class="n">return_job</span> <span class="o">=</span>  <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">(</span><span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">,</span>
+                            <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">return_job</span>
+        
+  <span class="c">#     if jobid not in self._jobs.values():</span>
+  <span class="c">#         msg = &quot;Service instance doesn&#39;t know a Job with ID &#39;%s&#39;&quot; % (jobid)</span>
+  <span class="c">#         raise saga.BadParameter._log (self._logger, msg)</span>
+  <span class="c">#     else:</span>
+  <span class="c">#         for (job_obj, job_id) in self._jobs.iteritems():</span>
+  <span class="c">#             if job_id == jobid:</span>
+  <span class="c">#                 return job_obj.get_api ()</span>
+  <span class="c">#</span>
+  <span class="c">#</span>
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># def container_run (self, jobs) :</span>
+  <span class="c">#     self._logger.debug(&quot;container run: %s&quot;  %  str(jobs))</span>
+  <span class="c">#     # TODO: this is not optimized yet</span>
+  <span class="c">#     for job in jobs:</span>
+  <span class="c">#         job.run()</span>
+  <span class="c">#</span>
+  <span class="c">#</span>
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># def container_wait (self, jobs, mode, timeout) :</span>
+  <span class="c">#     self._logger.debug(&quot;container wait: %s&quot;  %  str(jobs))</span>
+  <span class="c">#     # TODO: this is not optimized yet</span>
+  <span class="c">#     for job in jobs:</span>
+  <span class="c">#         job.wait()</span>
+  <span class="c">#</span>
+  <span class="c">#</span>
+  <span class="c"># # ----------------------------------------------------------------</span>
+  <span class="c"># #</span>
+  <span class="c"># def container_cancel (self, jobs) :</span>
+  <span class="c">#     self._logger.debug(&quot;container cancel: %s&quot;  %  str(jobs))</span>
+  <span class="c">#     raise saga.NoSuccess(&quot;Not Implemented&quot;);</span>
+
+
+<span class="c">###############################################################################</span>
+<span class="c">#</span></div></div>
+<div class="viewcode-block" id="SLURMJob"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob">[docs]</a><span class="k">class</span> <span class="nc">SLURMJob</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span>  <span class="p">(</span><span class="n">SLURMJob</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.init_instance">[docs]</a>    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_info</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.init_instance()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">jd</span> <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&quot;job_description&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">js</span> <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&quot;job_service&quot;</span><span class="p">]</span> 
+
+        <span class="c"># the js is responsible for job bulk operations -- which</span>
+        <span class="c"># for jobs only work for run()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_container</span>       <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_method_type</span>     <span class="o">=</span> <span class="s">&quot;run&quot;</span>
+
+        <span class="c"># initialize job attribute values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span>              <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span>           <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NEW</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exit_code</span>       <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exception</span>       <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_started</span>         <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_finished</span>        <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c"># think &quot;reconnect&quot; in terms of &quot;reloading&quot; job id, _NOT_</span>
+        <span class="c"># physically creating a new network connection</span>
+        <span class="k">if</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;reconnect&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;reconnect_jobid&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">_job_get_info</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        use scontrol to grab job info </span>
+<span class="sd">        NOT CURRENTLY USED/TESTED, here for later</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># if we don&#39;t have the job in our dictionary, we don&#39;t want it</span>
+        <span class="c"># TODO: verify correctness, we should probably probe anyhow</span>
+        <span class="c">#       in case it was added by an external app</span>
+        <span class="k">if</span> <span class="n">job_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">jobs</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Unknown job ID: </span><span class="si">%s</span><span class="s">. Can&#39;t update state.&quot;</span> <span class="o">%</span> <span class="n">job_id</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+        <span class="c"># prev. info contains the info collect when _job_get_info</span>
+        <span class="c"># was called the last time</span>
+        <span class="n">prev_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span>
+
+        <span class="c"># if the &#39;gone&#39; flag is set, there&#39;s no need to query the job</span>
+        <span class="c"># state again. it&#39;s gone forever</span>
+        <span class="k">if</span> <span class="n">prev_info</span><span class="p">[</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Job information is not available anymore.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">prev_info</span>
+
+        <span class="c"># curr. info will contain the new job info collect. it starts off</span>
+        <span class="c"># as a copy of prev_info</span>
+        <span class="n">curr_info</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">prev_info</span><span class="p">)</span>
+
+        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+
+        <span class="c"># update current info with scontrol</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&#39;scontrol show job </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">pid</span><span class="p">)</span>
+
+        <span class="c"># update the state</span>
+        <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_state</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+
+        <span class="c"># figure out when the job started</span>
+        <span class="n">create_time_search</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">scontrol_create_time_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+        <span class="n">create_time</span><span class="o">=</span><span class="bp">None</span>
+        <span class="k">if</span> <span class="n">create_time_search</span><span class="p">:</span>
+            <span class="n">create_time</span> <span class="o">=</span> <span class="n">create_time_search</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;create_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">create_time</span>
+
+        <span class="c"># determine the job&#39;s end time</span>
+        <span class="n">end_time_search</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">scontrol_end_time_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+        <span class="n">end_time</span><span class="o">=</span><span class="bp">None</span>
+        <span class="k">if</span> <span class="n">end_time_search</span><span class="p">:</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="n">end_time</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;end_time for job </span><span class="si">%s</span><span class="s"> detected as </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> \
+                              <span class="p">(</span><span class="n">pid</span><span class="p">,</span> <span class="n">end_time</span><span class="p">))</span>
+
+        <span class="c"># determine the job&#39;s creation time</span>
+        <span class="n">create_time_search</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">scontrol_create_time_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+        <span class="n">create_time</span><span class="o">=</span><span class="bp">None</span>
+        <span class="k">if</span> <span class="n">create_time_search</span><span class="p">:</span>
+            <span class="n">create_time</span> <span class="o">=</span> <span class="n">create_time</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;create_time for job </span><span class="si">%s</span><span class="s"> detected as </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> \
+                              <span class="p">(</span><span class="n">pid</span><span class="p">,</span> <span class="n">create_time</span><span class="p">))</span>
+
+        <span class="c"># determine the job&#39;s execution hosts</span>
+        <span class="n">exec_hosts_search</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">scontrol_exec_hosts_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+        <span class="n">exec_hosts</span><span class="o">=</span><span class="bp">None</span>
+        <span class="k">if</span> <span class="n">exec_hosts_search</span><span class="p">:</span>
+            <span class="n">exec_hosts</span> <span class="o">=</span> <span class="n">exec_hosts</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;exec_hosts for job </span><span class="si">%s</span><span class="s"> detected as </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> \
+                              <span class="p">(</span><span class="n">pid</span><span class="p">,</span> <span class="n">exec_hosts</span><span class="p">))</span>
+
+        <span class="c"># determine the job&#39;s execution hosts</span>
+        <span class="n">comp_time_search</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">scontrol_comp_time_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+        <span class="n">comp_time</span><span class="o">=</span><span class="bp">None</span>
+        <span class="k">if</span> <span class="n">comp_time_search</span><span class="p">:</span>
+            <span class="n">comp_time</span> <span class="o">=</span> <span class="n">comp_time</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;comp_time for job </span><span class="si">%s</span><span class="s"> detected as </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> \
+                              <span class="p">(</span><span class="n">pid</span><span class="p">,</span> <span class="n">comp_time</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">curr_info</span>
+
+    <span class="k">def</span> <span class="nf">_job_get_state</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; get the job state from the wrapper shell &quot;&quot;&quot;</span>
+
+        <span class="c"># if the state is NEW and we haven&#39;t sent out a run command, keep</span>
+        <span class="c"># it listed as NEW</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NEW</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NEW</span>
+
+        <span class="c"># if we don&#39;t even have an ID, state is unknown</span>
+        <span class="c"># TODO: VERIFY CORRECTNESS</span>
+
+        <span class="k">if</span> <span class="n">job_id</span><span class="o">==</span><span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">UNKNOWN</span>
+
+        <span class="c"># if the state is DONE, CANCELED or FAILED, it is considered</span>
+        <span class="c"># final and we don&#39;t need to query the backend again</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span> \
+            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span>
+
+        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span> <span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+
+        <span class="c">#self.scontrol_jobstate_re = re.compile(&quot;&quot;&quot;(?&lt;=JobState=)[a-zA-Z]*&quot;&quot;&quot;)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&#39;scontrol show job </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">pid</span><span class="p">)</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">scontrol_jobstate_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+                <span class="n">scontrol_state</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># no jobstate found from scontrol</span>
+                <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">UNKNOWN</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_slurm_to_saga_jobstate</span><span class="p">(</span><span class="n">scontrol_state</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">(</span><span class="s">&quot;Error getting the job state for &quot;</span>
+                                 <span class="s">&quot;job </span><span class="si">%s</span><span class="s">:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">pid</span><span class="p">,</span><span class="n">ex</span><span class="p">))</span>
+        
+        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span>
+                                   <span class="s">&quot;Internal SLURM adaptor error&quot;</span>
+                                   <span class="s">&quot; in _job_get_state&quot;</span><span class="p">)</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.get_state"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_state">[docs]</a>    <span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_state()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_state</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.get_description"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_description">[docs]</a>    <span class="k">def</span> <span class="nf">get_description</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jd</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.get_service_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_service_url">[docs]</a>    <span class="k">def</span> <span class="nf">get_service_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_service_url()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">rm</span>
+   
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.wait"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.wait">[docs]</a>    <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+        <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">time_now</span>   <span class="o">=</span> <span class="n">time_start</span>
+        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;wait() state for job id </span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">&quot;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">,</span> <span class="n">state</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span> <span class="ow">or</span> \
+               <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span> <span class="ow">or</span> \
+               <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">True</span>
+            <span class="c"># avoid busy poll</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+
+            <span class="c"># check if we hit timeout</span>
+            <span class="k">if</span> <span class="n">timeout</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">time_now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">time_now</span> <span class="o">-</span> <span class="n">time_start</span> <span class="o">&gt;</span> <span class="n">timeout</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c"># Andre Merzky: In general, the job ID is something which is generated by the adaptor or by the backend, and the user should not interpret it.  So, you can do that.  Two caveats though:</span>
+    <span class="c"># (a) The ID MUST remain constant once it is assigned to a job (imagine an application hashes on job ids, for example.</span>
+    <span class="c"># (b) the ID SHOULD follow the scheme [service_url]-[backend-id] -- and in that case, you should make sure that the URL part of the ID can be used to create a new job service instance...</span>
+</div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.get_id"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_id</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_id() &quot;&quot;&quot;</span>        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span>
+   
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.get_exit_code"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_exit_code">[docs]</a>    <span class="k">def</span> <span class="nf">get_exit_code</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_exit_code()</span>
+<span class="sd">        &quot;&quot;&quot;</span>   
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_exit_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+
+    <span class="c">#  ----------------------------------------------------------------</span>
+    <span class="c">#</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.suspend"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.suspend">[docs]</a>    <span class="k">def</span> <span class="nf">suspend</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_exit_code()</span>
+<span class="sd">        &quot;&quot;&quot;</span> 
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_suspend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+
+    <span class="c"># ----------------------------------------------------------------</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.resume"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.resume">[docs]</a>    <span class="k">def</span> <span class="nf">resume</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_exit_code()</span>
+<span class="sd">        &quot;&quot;&quot;</span> 
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_resume</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+
+  
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.get_created"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_created">[docs]</a>    <span class="k">def</span> <span class="nf">get_created</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_created()</span>
+<span class="sd">        &quot;&quot;&quot;</span>     
+        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NotImplemented</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;get_created not&quot;</span>
+                                        <span class="s">&quot; implemented for SLURM jobs.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_created</span>
+  
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.get_started"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_started">[docs]</a>    <span class="k">def</span> <span class="nf">get_started</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_started()</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NotImplemented</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;get_started not&quot;</span>
+                                        <span class="s">&quot; implemented for SLURM jobs.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span>
+  
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.get_finished"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_finished">[docs]</a>    <span class="k">def</span> <span class="nf">get_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_finished()</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NotImplemented</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;get_finished not&quot;</span>
+                                        <span class="s">&quot; implemented for SLURM jobs.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finished</span>
+   
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.get_execution_hosts"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_execution_hosts">[docs]</a>    <span class="k">def</span> <span class="nf">get_execution_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_execution_hosts()</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NotImplemented</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;get_execution_hosts not&quot;</span>
+                                        <span class="s">&quot; implemented for SLURM jobs.&quot;</span><span class="p">)</span>
+    
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execution_hosts</span>
+  
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.cancel"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.cancel">[docs]</a>    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+        <span class="c">#scancel id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_cancel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">=</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span></div>
+    <span class="nd">@SYNC_CALL</span>
+<div class="viewcode-block" id="SLURMJob.run"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
+        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.run()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_run</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

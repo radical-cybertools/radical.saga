@@ -1,0 +1,62 @@
+
+*****************************
+saga.adaptor.filesystem.local
+*****************************
+
+This adaptor interacts with local filesystem, by
+using the (POSIX like) os and shutil Python packages.
+
+
+Supported Schemas
+-----------------
+
+  - **local://** : alias for *file*
+  - **file://** : local filesystem.
+
+
+
+Configuration Options
+---------------------
+Configuration options can be used to control the adaptor's runtime behavior. Most adaptors don't need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.
+
+ .. seealso:: More information about configuration options can be found in the :ref:`conf_file` section.
+
+enabled
+****************
+enable / disable saga.adaptor.filesystem.local adaptor
+
+  - **type** : <type 'bool'>
+  - **default** : True
+  - **environment** : None
+  - **valid options** : [True, False]
+
+
+Capabilities
+------------
+
+
+
+Supported API Classes
+---------------------
+
+This adaptor supports the following API classes:
+  - :class:`saga.filesystem.Directory`
+  - :class:`saga.filesystem.File`
+
+Method implementation details are listed below.
+
+saga.filesystem.Directory
+*************************
+
+.. autoclass:: saga.adaptors.local.localfile.LocalDirectory
+   :members:
+
+
+saga.filesystem.File
+********************
+
+.. autoclass:: saga.adaptors.local.localfile.LocalFile
+   :members:
+
+
+

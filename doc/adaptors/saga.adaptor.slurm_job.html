@@ -1,0 +1,442 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>10. saga.adaptor.slurm_job &mdash; SAGA 0.9.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 0.9.1 documentation" href="../index.html" />
+    <link rel="up" title="5. Adaptors:" href="saga.adaptor.index.html" />
+    <link rel="next" title="6. Developer Documentation" href="../developers/index.html" />
+    <link rel="prev" title="9. saga.adaptor.condorjob" href="saga.adaptor.condorjob.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../developers/index.html" title="6. Developer Documentation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.condorjob.html" title="9. saga.adaptor.condorjob"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" accesskey="U">5. Adaptors:</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="saga-adaptor-slurm-job">
+<h1>10. saga.adaptor.slurm_job<a class="headerlink" href="#saga-adaptor-slurm-job" title="Permalink to this headline">¶</a></h1>
+<p>GENERAL NOTES:
+On Stampede, returning a non-zero exit code results in the scheduler
+putting the job into a FAILED state and assigning it an exit code of 127.
+EXAMPLE:
+js = saga.job.Service(&#8220;slurm+ssh://stampede&#8221;)js = saga.job.Service(&#8220;slurm+ssh://stampede&#8221;)
+jd.executable  = &#8216;/bin/exit&#8217;
+jd.arguments   = [&#8216;3&#8217;]
+job = js.create_job(jd)
+job.run()
+Will return something similar to (personal account information removed):
+(saga-python-env)ashleyz&#64;login1:~$ scontrol show job 309684
+JobId=309684 Name=SlurmJob
+UserId=_____ GroupId=__________
+Priority=3000 Account=_____ QOS=normal
+JobState=FAILED Reason=NonZeroExitCode Dependency=(null)
+Requeue=0 Restarts=0 BatchFlag=1 ExitCode=127:0
+RunTime=00:00:05 TimeLimit=00:01:00 TimeMin=N/A
+SubmitTime=2013-02-22T20:26:50 EligibleTime=2013-02-22T20:26:50
+StartTime=2013-02-22T20:26:50 EndTime=2013-02-22T20:26:55
+PreemptTime=None SuspendTime=None SecsPreSuspend=0
+Partition=development AllocNode:Sid=login1:12070
+ReqNodeList=(null) ExcNodeList=(null)
+NodeList=c557-401
+BatchHost=c557-401
+NumNodes=1 NumCPUs=16 CPUs/Task=1 ReqS:C:T=*:<em>:</em>
+MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0
+Features=(null) Gres=(null) Reservation=(null)
+Shared=0 Contiguous=0 Licenses=(null) Network=(null)
+Command=/home1/01414/_______/.saga/adaptors/slurm_job/wrapper.sh
+WorkDir=/home1/01414/_______/
+I&#8217;m not sure how to fix this for the time being.
+Suspend/resume do not appear to be supported for regular
+users on Stampede.
+run_job is not supported, as there are many attributed (queues,
+projects, etc) which need to be passed to the adaptor.  I could
+add URL parsing so that you could pile on queue/project/jobname
+information if this has any strong usecases, but I avoided doing
+so for now to decrease complexity/possible confusion.
+Cancelling a job with scontrol, puts it into a COMPLETING state, which
+is parsed by the SLURM status parser as saga.job.RUNNING (see the
+SLURM docs, COMPLETING is a state a job goes into when it is done
+running but still flushing IO/etc).  Anyhow, I put some code in to
+manually put the job into CANCELED state when the job is canceled,
+but I&#8217;m not sure that this is reported correctly everywhere yet.
+What exit code should be returned for a CANCELED job?
+IMPLEMENTATION NOTES:
+- If scontrol can&#8217;t find an exit code, it returns None
+(see _job_get_exit_code)
+- If scancel can&#8217;t cancel a job, we raise an exception
+(see _job_cancel)
+- If we can&#8217;t suspend a job with scontrol suspend, we raise an exception
+(see _job_suspend).  scontrol suspend NOT supported on Stampede
+- I started to implement a dictionary to keep track of jobs locally.
+It works to the point where the unit tests are passed, but I have
+not gone over theis extensively...
+- Relating to the above, _job_get_info is written, but unused/untested
+(mostly from PBS adaptor)
+UNIMPLEMENTED ITEMS:
+- Container submission not implemented
+- Parts in job_description not parsed:
+&#8211; threads_per_process
+&#8211; spmd_variation
+&#8211; total_cpu_count
+- get_created/etc not in yet</p>
+<div class="section" id="supported-schemas">
+<h2>10.1. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><strong>slurm+gsissh://</strong> : use gsissh to run remote SLURM jobs</li>
+<li><strong>slurm://</strong> : use slurm to run local SLURM jobs</li>
+<li><strong>slurm+ssh://</strong> : use ssh to run remote SLURM jobs</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="configuration-options">
+<h2>10.2. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<p>Configuration options can be used to control the adaptor&#8217;s runtime behavior. Most adaptors don&#8217;t need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.</p>
+<blockquote>
+<div><div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">More information about configuration options can be found in the <a class="reference internal" href="../usage/config.html#conf-file"><em>Configuration Files</em></a> section.</p>
+</div>
+</div></blockquote>
+<div class="section" id="enabled">
+<h3>10.2.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<p>enable / disable saga.adaptor.slurm_job adaptor</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>type</strong> : &lt;type &#8216;bool&#8217;&gt;</li>
+<li><strong>default</strong> : True</li>
+<li><strong>environment</strong> : None</li>
+<li><strong>valid options</strong> : [True, False]</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="capabilities">
+<h2>10.3. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="supported-monitorable-metrics">
+<h3>10.3.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>State</li>
+<li>StateDetail</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="supported-job-attributes">
+<h3>10.3.2. Supported Job Attributes<a class="headerlink" href="#supported-job-attributes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>ExitCode</li>
+<li>ExecutionHosts</li>
+<li>Created</li>
+<li>Started</li>
+<li>Finished</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="supported-context-types">
+<h3>10.3.3. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><em>x509</em>: X509 proxy for gsissh</li>
+<li><em>userpass</em>: username/password pair for simple ssh</li>
+<li><em>ssh</em>: public/private keypair</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="supported-job-description-attributes">
+<h3>10.3.4. Supported Job Description Attributes<a class="headerlink" href="#supported-job-description-attributes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>Name</li>
+<li>Executable</li>
+<li>Arguments</li>
+<li>Environment</li>
+<li>SPMDVariation</li>
+<li>TotalCPUCount</li>
+<li>NumberOfProcesses</li>
+<li>ProcessesPerHost</li>
+<li>ThreadsPerProcess</li>
+<li>WorkingDirectory</li>
+<li>Input</li>
+<li>Output</li>
+<li>Error</li>
+<li>FileTransfer</li>
+<li>Cleanup</li>
+<li>JobStartTime</li>
+<li>WallTimeLimit</li>
+<li>TotalPhysicalMemory</li>
+<li>Queue</li>
+<li>Project</li>
+<li>JobContact</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="supported-api-classes">
+<h2>10.4. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>This adaptor supports the following API classes:</dt>
+<dd><ul class="first last simple">
+<li><a class="reference internal" href="../library/job/index.html#saga.job.Service" title="saga.job.Service"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Service</span></tt></a></li>
+<li><a class="reference internal" href="../library/job/index.html#saga.job.Job" title="saga.job.Job"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Job</span></tt></a></li>
+</ul>
+</dd>
+</dl>
+<p>Method implementation details are listed below.</p>
+<div class="section" id="saga-job-service">
+<h3>10.4.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJobService">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.slurm.slurm_job.</tt><tt class="descname">SLURMJobService</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJobService"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJobService" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.job.service.Service</span></tt></p>
+<p>Implements saga.adaptors.cpi.job.Service</p>
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJobService.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJobService.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJobService.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJobService.create_job">
+<tt class="descname">create_job</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJobService.create_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJobService.create_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJobService.get_url">
+<tt class="descname">get_url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJobService.get_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJobService.get_url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJobService.run_job">
+<tt class="descname">run_job</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJobService.run_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJobService.run_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJobService.list">
+<tt class="descname">list</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJobService.list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJobService.list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJobService.get_job">
+<tt class="descname">get_job</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJobService.get_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJobService.get_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="saga-job-job">
+<h3>10.4.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.slurm.slurm_job.</tt><tt class="descname">SLURMJob</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.job.job.Job</span></tt></p>
+<p>Implements saga.adaptors.cpi.job.Job</p>
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.get_state">
+<tt class="descname">get_state</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.get_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.get_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.get_description">
+<tt class="descname">get_description</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.get_description"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.get_description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.get_service_url">
+<tt class="descname">get_service_url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.get_service_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.get_service_url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.wait">
+<tt class="descname">wait</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.wait" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.get_id">
+<tt class="descname">get_id</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.get_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.get_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.get_exit_code">
+<tt class="descname">get_exit_code</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.get_exit_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.get_exit_code" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.suspend">
+<tt class="descname">suspend</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.suspend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.suspend" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.resume">
+<tt class="descname">resume</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.resume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.resume" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.get_created">
+<tt class="descname">get_created</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.get_created"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.get_created" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.get_started">
+<tt class="descname">get_started</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.get_started"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.get_started" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.get_finished">
+<tt class="descname">get_finished</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.get_finished"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.get_finished" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.get_execution_hosts">
+<tt class="descname">get_execution_hosts</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.get_execution_hosts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.get_execution_hosts" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.cancel">
+<tt class="descname">cancel</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.cancel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.slurm.slurm_job.SLURMJob.run">
+<tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">10. saga.adaptor.slurm_job</a><ul>
+<li><a class="reference internal" href="#supported-schemas">10.1. Supported Schemas</a></li>
+<li><a class="reference internal" href="#configuration-options">10.2. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">10.2.1. enabled</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#capabilities">10.3. Capabilities</a><ul>
+<li><a class="reference internal" href="#supported-monitorable-metrics">10.3.1. Supported Monitorable Metrics</a></li>
+<li><a class="reference internal" href="#supported-job-attributes">10.3.2. Supported Job Attributes</a></li>
+<li><a class="reference internal" href="#supported-context-types">10.3.3. Supported Context Types</a></li>
+<li><a class="reference internal" href="#supported-job-description-attributes">10.3.4. Supported Job Description Attributes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#supported-api-classes">10.4. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-job-service">10.4.1. saga.job.Service</a></li>
+<li><a class="reference internal" href="#saga-job-job">10.4.2. saga.job.Job</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="saga.adaptor.condorjob.html"
+                        title="previous chapter">9. saga.adaptor.condorjob</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../developers/index.html"
+                        title="next chapter">6. Developer Documentation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/adaptors/saga.adaptor.slurm_job.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../developers/index.html" title="6. Developer Documentation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.condorjob.html" title="9. saga.adaptor.condorjob"
+             >previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" >5. Adaptors:</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

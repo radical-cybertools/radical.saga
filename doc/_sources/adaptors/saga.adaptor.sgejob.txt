@@ -1,0 +1,103 @@
+
+*******************
+saga.adaptor.sgejob
+*******************
+
+TODO
+
+
+Supported Schemas
+-----------------
+
+  - **sge+gsissh://** : connect to a remote SGE cluster via GSISSH
+  - **sge://** : connect to a local SGE cluster
+  - **sge+ssh://** : conenct to a remote SGE cluster via SSH
+
+
+
+Configuration Options
+---------------------
+Configuration options can be used to control the adaptor's runtime behavior. Most adaptors don't need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.
+
+ .. seealso:: More information about configuration options can be found in the :ref:`conf_file` section.
+
+enabled
+****************
+enable / disable saga.adaptor.sgejob adaptor
+
+  - **type** : <type 'bool'>
+  - **default** : True
+  - **environment** : None
+  - **valid options** : [True, False]
+foo
+****************
+Doc
+
+  - **type** : <type 'bool'>
+  - **default** : False
+  - **environment** : None
+  - **valid options** : [True, False]
+
+
+Capabilities
+------------
+
+Supported Monitorable Metrics
+****************
+  - State
+
+Supported Job Attributes
+****************
+  - ExitCode
+  - ExecutionHosts
+  - Created
+  - Started
+  - Finished
+
+Supported Context Types
+****************
+  - *x509*: GSISSH X509 proxy context
+  - *userpass*: username/password pair (ssh)
+  - *ssh*: SSH public/private keypair
+
+Supported Job Description Attributes
+****************
+  - Name
+  - Executable
+  - Arguments
+  - Environment
+  - Input
+  - Output
+  - Error
+  - Queue
+  - Project
+  - WallTimeLimit
+  - WorkingDirectory
+  - TotalCPUCount
+
+
+
+Supported API Classes
+---------------------
+
+This adaptor supports the following API classes:
+  - :class:`saga.job.Service`
+  - :class:`saga.job.Job`
+
+Method implementation details are listed below.
+
+saga.job.Service
+****************
+
+.. autoclass:: saga.adaptors.sge.sgejob.SGEJobService
+   :members:
+
+
+saga.job.Job
+************
+
+.. autoclass:: saga.adaptors.sge.sgejob.SGEJob
+   :members:
+
+
+

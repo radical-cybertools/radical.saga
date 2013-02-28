@@ -1,0 +1,480 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>saga.utils.timeout_gc &mdash; SAGA 0.9.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.9.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 0.9.1 documentation" href="../../../index.html" />
+    <link rel="up" title="saga" href="../../saga.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../saga.html" accesskey="U">saga</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for saga.utils.timeout_gc</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="kn">import</span> <span class="nn">saga.exceptions</span>      <span class="kn">as</span> <span class="nn">se</span>
+<span class="kn">import</span> <span class="nn">saga.utils.threads</span>   <span class="kn">as</span> <span class="nn">sthread</span>
+<span class="kn">import</span> <span class="nn">saga.utils.singleton</span> <span class="kn">as</span> <span class="nn">single</span>
+
+
+<span class="c"># ------------------------------------------------------------------------------</span>
+<span class="c">#</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">TimeoutGC</span> <span class="p">(</span><span class="nb">object</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="TimeoutGC"><a class="viewcode-back" href="../../../usage/timeout_gc.html#saga.utils.timeout_gc.TimeoutGC">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class supports a timout driven garbage collection.  A monitored object</span>
+<span class="sd">    instance can register itself with this garbage collector (a singleton), and</span>
+<span class="sd">    update its timer whenever it is active.  When being inactive for a while,</span>
+<span class="sd">    the GC will call finalize() on the object.  The object can notify the gc of</span>
+<span class="sd">    ongoing activities -- this will (a) reset the timer, and (b) the gc will</span>
+<span class="sd">    ensure that the object is in a viable state for the activity -- i.e. it will</span>
+<span class="sd">    call the object&#39;s ``initialize()`` method if it timed out before.</span>
+
+<span class="sd">    Note that the finalize() is called in a separate thread.  The time granularity</span>
+<span class="sd">    is 10 seconds -- i.e. the thread checks for idle objects every 10 seconds.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">      import time</span>
+<span class="sd">      import saga.utils.timeout_gc as togc</span>
+<span class="sd">      </span>
+<span class="sd">      class WatchedClass () :</span>
+<span class="sd">      </span>
+<span class="sd">        def __init__ (self) :</span>
+<span class="sd">      </span>
+<span class="sd">          print &quot;ctor&quot;</span>
+<span class="sd">          self.initialize ()</span>
+<span class="sd">      </span>
+<span class="sd">          self.gc = togc.TimeoutGC ()</span>
+<span class="sd">          self.gc.register (self, self.initialize, self.finalize, timeout=5)</span>
+<span class="sd">      </span>
+<span class="sd">        def __del__ (self) :</span>
+<span class="sd">          print &quot;dtor&quot;</span>
+<span class="sd">          self.gc.unregister (self)</span>
+<span class="sd">          self.finalize ()</span>
+<span class="sd">          pass</span>
+<span class="sd">      </span>
+<span class="sd">        def initialize (self) :</span>
+<span class="sd">          print &quot;init&quot;</span>
+<span class="sd">          self.f = open(&#39;/tmp/watched.txt&#39;, &#39;a+&#39;)</span>
+<span class="sd">          self.f.write (&quot;init\\n&quot;)</span>
+<span class="sd">      </span>
+<span class="sd">        def finalize (self) :</span>
+<span class="sd">          print &quot;fini&quot;</span>
+<span class="sd">          self.f.write (&quot;fini\\n&quot;)</span>
+<span class="sd">          self.f.close ()</span>
+<span class="sd">      </span>
+<span class="sd">        def action (self) :</span>
+<span class="sd">          with self.gc.active (self) :</span>
+<span class="sd">            print &quot;action&quot;</span>
+<span class="sd">            self.f.write (&quot;action\\n&quot;)</span>
+<span class="sd">      </span>
+<span class="sd">      # main</span>
+<span class="sd">      wc = WatchedClass ()</span>
+<span class="sd">      wc.action ()</span>
+<span class="sd">      time.sleep (20)</span>
+<span class="sd">      wc.action ()</span>
+
+<span class="sd">    This will print::</span>
+
+<span class="sd">      ctor</span>
+<span class="sd">      init</span>
+<span class="sd">      action</span>
+<span class="sd">      fini</span>
+<span class="sd">      init</span>
+<span class="sd">      action</span>
+<span class="sd">      fini</span>
+<span class="sd">      dtor</span>
+
+<span class="sd">    (The last &#39;fini&#39; and &#39;dtor&#39; messages are likely missing while python</span>
+<span class="sd">    shuts down).</span>
+
+<span class="sd">    The ``sleep(20)`` will cause the ``TimeoutGC``  to call the ``finalize()``</span>
+<span class="sd">    method of the watched class.  On the next action after the sleep, the ``with</span>
+<span class="sd">    self.gc.active (self)`` statement will ensure that the object is alive</span>
+<span class="sd">    again -- the ``TimeoutGC`` will call the object&#39;s ``initialize()`` method.</span>
+
+
+<span class="sd">    Known Limitations:</span>
+<span class="sd">    ^^^^^^^^^^^^^^^^^^</span>
+
+<span class="sd">      * Objects which register in the garbage collector are never removed unless</span>
+<span class="sd">        they unregister.  This can potentially lead to memory starvation, as the</span>
+<span class="sd">        native Python garbage collector will not be able to reclaim those</span>
+<span class="sd">        objects.  Thus: unregister on ``__del__``!</span>
+
+<span class="sd">      * When an object&#39;s ``finalize()`` is called, due to an timeout, and that</span>
+<span class="sd">        method raises an exception, the ``TimeoutGC`` still assumes that the</span>
+<span class="sd">        object is dead, and will potentially attempt to revive it.  It is the</span>
+<span class="sd">        responsibility of the watched object to handle that condition.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># TODO:  make time granularity a configuration option</span>
+    <span class="c"># TODO:  make default timeout  a configuration option</span>
+
+
+    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">single</span><span class="o">.</span><span class="n">Singleton</span>
+
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">class</span> <span class="nc">_Activity</span> <span class="p">(</span><span class="nb">object</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="TimeoutGC._Activity"><a class="viewcode-back" href="../../../usage/timeout_gc.html#saga.utils.timeout_gc.TimeoutGC._Activity">[docs]</a>        <span class="sd">&quot;&quot;&quot; This is an activity context manager -- it gets created by</span>
+<span class="sd">        timeout_gc.active(obj), and on creation locks the object&#39;s lock.  The</span>
+<span class="sd">        __enter__ method thus does not need to lock again, but the __exit__</span>
+<span class="sd">        method must do so.  </span>
+
+<span class="sd">        This makes it imperative that the ``active()`` method is ALWAYS called in</span>
+<span class="sd">        a ``with`` statement (or, more exactly, that the ``_Activity`` instances</span>
+<span class="sd">        returned by ``active()`` are always used in a ``with`` statement --</span>
+<span class="sd">        otherwise the lock gets never unlocked (well, ``__del__`` tries to</span>
+<span class="sd">        mitigate that, but anyway).</span>
+
+<span class="sd">        See http://preshing.com/20110920/the-python-with-statement-by-example</span>
+<span class="sd">        for a good description of context managers and their use in ``with``</span>
+<span class="sd">        statements.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># ----------------------------------------------------------------------</span>
+        <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span> <span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">obj</span>  <span class="o">=</span> <span class="n">obj</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gc</span>   <span class="o">=</span> <span class="n">TimeoutGC</span> <span class="p">()</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">objects</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;object unknown to GC (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">obj</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">lock</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;lock&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="o">.</span><span class="n">acquire</span> <span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">locked</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="c"># ----------------------------------------------------------------------</span>
+        <span class="k">def</span> <span class="nf">__del__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">locked</span> <span class="p">:</span>
+                <span class="c"># someone abused this class.  Anyway, to avoid even greater</span>
+                <span class="c"># problems, we unlock...</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="o">.</span><span class="n">release</span> <span class="p">()</span>
+
+        <span class="c"># ----------------------------------------------------------------------</span>
+        <span class="k">def</span> <span class="nf">__enter__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+            <span class="c"># we are locked -- see __init__</span>
+            <span class="k">pass</span>
+
+        <span class="c"># ----------------------------------------------------------------------</span>
+        <span class="k">def</span> <span class="nf">__exit__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">)</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">refresh</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obj</span><span class="p">)</span>  <span class="c"># work is done, restart idle timer</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="o">.</span><span class="n">release</span> <span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">locked</span> <span class="o">=</span> <span class="bp">False</span>
+
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the timeout garbage collector: create the state dict, and</span>
+<span class="sd">        start the watcher thread.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">objects</span>   <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run</span>       <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread</span>    <span class="o">=</span> <span class="n">sthread</span><span class="o">.</span><span class="n">Thread</span><span class="o">.</span><span class="n">Run</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gc</span><span class="p">)</span>
+
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__del__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        On destruction, signal the watcher thread that it can finish.  Well,</span>
+<span class="sd">        that thread will likely bail out anyway, since the destruction will</span>
+<span class="sd">        suddenly remove the self members, but hey...  Since the gc is</span>
+<span class="sd">        a singleton though, at this point everything goes south anyway, so we</span>
+<span class="sd">        don&#39;t care...</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_gc</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="TimeoutGC._gc"><a class="viewcode-back" href="../../../usage/timeout_gc.html#saga.utils.timeout_gc.TimeoutGC._gc">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is the watcher thread: it will run forever, and will regularly</span>
+<span class="sd">        check idle times for all living registered objects.  Note that it will</span>
+<span class="sd">        lock the object&#39;s lock -- and since this is a separate thread, this will</span>
+<span class="sd">        actually *lock* and potentially block.  That means that (a) garbage</span>
+<span class="sd">        collection can be delayed if aquiring that lock is delayed, and (b)</span>
+<span class="sd">        that the watched object can be blocked if it attempts an activity, but</span>
+<span class="sd">        this gc thread decided to finalize it.  But hey, that&#39;s the idea, right?</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span> <span class="p">:</span>
+
+            <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span> <span class="p">:</span>
+
+                <span class="c"># lock the object&#39;s enty -- otherwise the main thread might</span>
+                <span class="c"># remove entries we operate on...</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;lock&#39;</span><span class="p">]</span> <span class="p">:</span>
+
+                    <span class="k">try</span> <span class="p">:</span>
+                        <span class="n">pdict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">]</span>
+
+                        <span class="c"># don&#39;t beat a dead horse...</span>
+                        <span class="k">if</span> <span class="n">pdict</span><span class="p">[</span><span class="s">&#39;alive&#39;</span><span class="p">]</span> <span class="p">:</span>
+
+                            <span class="k">if</span> <span class="p">(</span><span class="n">now</span> <span class="o">-</span> <span class="n">pdict</span><span class="p">[</span><span class="s">&#39;timestamp&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">pdict</span><span class="p">[</span><span class="s">&#39;timeout&#39;</span><span class="p">]</span> <span class="p">:</span>
+
+                                <span class="n">obj</span><span class="o">.</span><span class="n">finalize</span> <span class="p">()</span>
+                                <span class="n">pdict</span><span class="p">[</span><span class="s">&#39;alive&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+
+                                <span class="c"># the above may have taken some time -- refresh timestamp</span>
+                                <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
+
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                        <span class="c"># finalize failed -- we assume that the object got the</span>
+                        <span class="c"># message anyway, and will continue.</span>
+                        <span class="k">pass</span>
+
+            <span class="c"># checked all objects -- time to idle for a bit...</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span> <span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">register</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">obj_initialize</span><span class="p">,</span> <span class="n">obj_finalize</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="TimeoutGC.register"><a class="viewcode-back" href="../../../usage/timeout_gc.html#saga.utils.timeout_gc.TimeoutGC.register">[docs]</a>        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        Register an object instance for teimout garbage collection.  The</span>
+<span class="sd">        ``obj_finalize`` method is called when the object instance seems idle</span>
+<span class="sd">        for longer than ``timeout`` seconds, the ``obj_initialize`` method is</span>
+<span class="sd">        called if any new activity is performed after that timeout.</span>
+
+<span class="sd">        Calling this method twice on the same object instance will replace the</span>
+<span class="sd">        previous entry.</span>
+<span class="sd">        </span>
+<span class="sd">        We do *not* call ``initialize()`` on registering objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">obj_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span> <span class="p">()</span>
+
+        <span class="k">with</span> <span class="n">obj_lock</span> <span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;lock&#39;</span><span class="p">]</span>       <span class="o">=</span> <span class="n">obj_lock</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;initialize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj_initialize</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;finalize&#39;</span><span class="p">]</span>   <span class="o">=</span> <span class="n">obj_finalize</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;timeout&#39;</span><span class="p">]</span>    <span class="o">=</span> <span class="n">timeout</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;timestamp&#39;</span><span class="p">]</span>  <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;alive&#39;</span><span class="p">]</span>      <span class="o">=</span> <span class="bp">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;reviving&#39;</span><span class="p">]</span>   <span class="o">=</span> <span class="bp">False</span>  <span class="c"># avoid circular revival</span>
+
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">unregister</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="TimeoutGC.unregister"><a class="viewcode-back" href="../../../usage/timeout_gc.html#saga.utils.timeout_gc.TimeoutGC.unregister">[docs]</a>        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        Finish watching that object instance.</span>
+<span class="sd">        </span>
+<span class="sd">        We do *not* call ``finalize()`` on unregistering objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># make sure we know that obj</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;object unknown to GC (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">obj</span><span class="p">)</span>
+
+        <span class="c"># remove all traces of the object.  Once released, the lock will have no</span>
+        <span class="c"># reference anymore, and will be python-gc&#39;ed, too.</span>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;lock&#39;</span><span class="p">]</span> <span class="p">:</span>
+                <span class="k">del</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">])</span>
+        <span class="k">except</span> <span class="p">:</span>
+            <span class="c"># we use try/except to make sure that noone deleted the entry</span>
+            <span class="c"># between the above check and the locking...</span>
+            <span class="k">pass</span>
+
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="TimeoutGC.active"><a class="viewcode-back" href="../../../usage/timeout_gc.html#saga.utils.timeout_gc.TimeoutGC.active">[docs]</a>        <span class="sd">&quot;&quot;&quot; whenever a registered object wants to perform an activity which</span>
+<span class="sd">        requires the object to be initialized, it can do::</span>
+
+<span class="sd">          with self.gc.active (self) :</span>
+<span class="sd">              do_work ()</span>
+
+<span class="sd">        active() will ensure that the object is alive, reviving it if</span>
+<span class="sd">        necessary, and lock it to prevent intermediate closure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># make sure we know that obj</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;object unknown to GC (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">obj</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;lock&#39;</span><span class="p">]</span> <span class="p">:</span>
+
+            <span class="c"># make sure the object is alive</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">revive</span> <span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+            <span class="c"># we have the rlock, so object cannot be finalized.  Create an</span>
+            <span class="c"># activity context, which will keep the lock up, and return it.  The</span>
+            <span class="c"># lock will get release when the Activitie&#39;s __exit__() method is</span>
+            <span class="c"># called.</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Activity</span> <span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">revive</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="TimeoutGC.revive"><a class="viewcode-back" href="../../../usage/timeout_gc.html#saga.utils.timeout_gc.TimeoutGC.revive">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Re-initialize the object if needed, re-set as alive, and refresh</span>
+<span class="sd">        timestamp. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># make sure we know that obj</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;object unknown to GC (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">obj</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;lock&#39;</span><span class="p">]</span> <span class="p">:</span>
+        
+            <span class="c"># avoid circular initialization on revival</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;reviving&#39;</span><span class="p">]</span> <span class="p">:</span>
+                <span class="k">return</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;alive&#39;</span><span class="p">]</span> <span class="p">:</span>
+                <span class="k">try</span> <span class="p">:</span>
+
+                    <span class="c"># re-initialize the object, if needed</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;reviving&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;initialize&#39;</span><span class="p">]()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;alive&#39;</span><span class="p">]</span>    <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">except</span> <span class="p">:</span>
+                    <span class="c"># revival failed, the object remains dead...</span>
+                    <span class="c"># This is bad actually, as the next activity request will</span>
+                    <span class="c"># trigger *another* revival attempt -- but we hope that the</span>
+                    <span class="c"># activity will, at some point, realize that the object</span>
+                    <span class="c"># remained dead -- what was the point of revival otherwise</span>
+                    <span class="c"># anyway??</span>
+                    <span class="k">pass</span>
+
+                <span class="k">finally</span> <span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;reviving&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+
+            <span class="c"># refresh state (we do that even if the object was not revived)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span> <span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">refresh</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="TimeoutGC.refresh"><a class="viewcode-back" href="../../../usage/timeout_gc.html#saga.utils.timeout_gc.TimeoutGC.refresh">[docs]</a>        <span class="sd">&quot;&quot;&quot; refresh timestamp on live objects &quot;&quot;&quot;</span>
+
+        <span class="c"># make sure we know that obj</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;object unknown to GC (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">obj</span><span class="p">)</span>
+
+        
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;lock&#39;</span><span class="p">]</span> <span class="p">:</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;alive&#39;</span><span class="p">]</span> <span class="p">:</span>
+
+                <span class="c"># *uff*, not too late... </span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">obj</span><span class="p">][</span><span class="s">&#39;timestamp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
+
+
+<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../saga.html" >saga</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,214 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>2. saga.adaptor.x509 &mdash; SAGA 0.9.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 0.9.1 documentation" href="../index.html" />
+    <link rel="up" title="5. Adaptors:" href="saga.adaptor.index.html" />
+    <link rel="next" title="3. saga.adaptor.ssh" href="saga.adaptor.ssh.html" />
+    <link rel="prev" title="1. saga.adaptor.myproxy" href="saga.adaptor.myproxy.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.ssh.html" title="3. saga.adaptor.ssh"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.myproxy.html" title="1. saga.adaptor.myproxy"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" accesskey="U">5. Adaptors:</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="saga-adaptor-x509">
+<h1>2. saga.adaptor.x509<a class="headerlink" href="#saga-adaptor-x509" title="Permalink to this headline">¶</a></h1>
+<p>This adaptor points to a X509 proxy, or certificate,
+be used for backend connections.  Note that this
+context can be created by a MyProxy context instance.</p>
+<div class="section" id="supported-schemas">
+<h2>2.1. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><strong>x509://</strong> : x509 token information.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="configuration-options">
+<h2>2.2. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<p>Configuration options can be used to control the adaptor&#8217;s runtime behavior. Most adaptors don&#8217;t need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.</p>
+<blockquote>
+<div><div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">More information about configuration options can be found in the <a class="reference internal" href="../usage/config.html#conf-file"><em>Configuration Files</em></a> section.</p>
+</div>
+</div></blockquote>
+<div class="section" id="enabled">
+<h3>2.2.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<p>enable / disable saga.adaptor.x509 adaptor</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>type</strong> : &lt;type &#8216;bool&#8217;&gt;</li>
+<li><strong>default</strong> : True</li>
+<li><strong>environment</strong> : None</li>
+<li><strong>valid options</strong> : [True, False]</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="capabilities">
+<h2>2.3. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="attributes">
+<h3>2.3.1. attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>Type</li>
+<li>UserProxy</li>
+<li>LifeTime</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="supported-api-classes">
+<h2>2.4. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>This adaptor supports the following API classes:</dt>
+<dd><ul class="first last simple">
+<li><tt class="xref py py-class docutils literal"><span class="pre">saga.Context</span></tt></li>
+</ul>
+</dd>
+</dl>
+<p>Method implementation details are listed below.</p>
+<div class="section" id="saga-context">
+<h3>2.4.1. saga.Context<a class="headerlink" href="#saga-context" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.context.x509.ContextX509">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.context.x509.</tt><tt class="descname">ContextX509</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/context/x509.html#ContextX509"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.context.x509.ContextX509" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.context.Context</span></tt></p>
+<dl class="method">
+<dt id="saga.adaptors.context.x509.ContextX509.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/context/x509.html#ContextX509.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.context.x509.ContextX509.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">2. saga.adaptor.x509</a><ul>
+<li><a class="reference internal" href="#supported-schemas">2.1. Supported Schemas</a></li>
+<li><a class="reference internal" href="#configuration-options">2.2. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">2.2.1. enabled</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#capabilities">2.3. Capabilities</a><ul>
+<li><a class="reference internal" href="#attributes">2.3.1. attributes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#supported-api-classes">2.4. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-context">2.4.1. saga.Context</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="saga.adaptor.myproxy.html"
+                        title="previous chapter">1. saga.adaptor.myproxy</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="saga.adaptor.ssh.html"
+                        title="next chapter">3. saga.adaptor.ssh</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/adaptors/saga.adaptor.x509.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.ssh.html" title="3. saga.adaptor.ssh"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.myproxy.html" title="1. saga.adaptor.myproxy"
+             >previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" >5. Adaptors:</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

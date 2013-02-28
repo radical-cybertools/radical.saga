@@ -1,0 +1,461 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>6. saga.adaptor.shell_job &mdash; SAGA 0.9.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/sidebar.js"></script>
+    <link rel="top" title="SAGA 0.9.1 documentation" href="../index.html" />
+    <link rel="up" title="5. Adaptors:" href="saga.adaptor.index.html" />
+    <link rel="next" title="7. saga.adaptor.sgejob" href="saga.adaptor.sgejob.html" />
+    <link rel="prev" title="5. saga.adaptor.filesystem.local" href="saga.adaptor.filesystem.local.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.sgejob.html" title="7. saga.adaptor.sgejob"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.filesystem.local.html" title="5. saga.adaptor.filesystem.local"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" accesskey="U">5. Adaptors:</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="saga-adaptor-shell-job">
+<h1>6. saga.adaptor.shell_job<a class="headerlink" href="#saga-adaptor-shell-job" title="Permalink to this headline">¶</a></h1>
+<p>A more elaborate description....
+Known Limitations:
+&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;
+* number of system pty&#8217;s are limited:  each job.service object bound
+to this adaptor will use 2 pairs of pty pipes.  Systems usually
+limit the number of available pty&#8217;s to 1024 .. 4096.  Given that
+other process also use pty&#8217;s , that gives a hard limit to the number
+of object instances which can be created concurrently.  Hitting the
+pty limit will cause the following error message (or similar)::
+NoSuccess: pty_allocation or process creation failed (ENOENT: no more ptys)
+This limitation comes from saga.utils.pty_process.  On Linux
+systems, the utilization of pty&#8217;s can be monitored::
+echo &#8220;allocated pty&#8217;s: <cite>cat /proc/sys/kernel/pty/nr</cite>&#8221;
+echo &#8220;available pty&#8217;s: <cite>cat /proc/sys/kernel/pty/max</cite>&#8221;
+* number of ssh connections are limited: sshd&#8217;s default configuration,
+which is in place on many systems, limits the number of concurrent
+ssh connections to 10 per user &#8211; beyond that, connections are
+refused with the following error::
+NoSuccess: ssh_exchange_identification: Connection closed by remote host
+As the communication with the ssh channel is unbuffered, the
+dropping of the connection will likely cause this error message to
+be lost.  Instead, the adaptor will just see that the ssh connection
+disappeared, and will issue an error message similar to this one::
+NoSuccess: read from pty process failed (Could not read line - pty process died)
+* number of processes are limited: the creation of an job.service
+object will create one additional process on the local system, and
+two processes on the remote system (ssh daemon clone and a shell
+instance).  Each remote job will create three additional processes:
+two for the job instance itself (double fork), and an additional
+process which monitors the job for state changes etc.  Additional
+temporary processes may be needed as well.
+While marked as &#8216;obsolete&#8217; by POSIX, the <cite>ulimit</cite> command is
+available on many systems, and reports the number of processes
+available per user (<cite>ulimit -u</cite>)
+On hitting process limits, the job creation will fail with an error
+similar to either of these::
+NoSuccess: failed to run job (/bin/sh: fork: retry: Resource temporarily unavailable)
+NoSuccess: failed to run job &#8211; backend error
+* number of files are limited, as is disk space: the job.service will
+keep job state on the remote disk, in <tt class="docutils literal"><span class="pre">$HOME/.saga/adaptors/shell_job/</span></tt>.
+Quota limitations may limit the number of files created there,
+and/or the total size of that directory.
+On quota or disk space limits, you may see error messages similar to
+the following ones::
+NoSuccess: read from pty process failed ([Errno 5] Quota exceeded)
+NoSuccess: read from pty process failed ([Errno 5] Input/output error)
+NoSuccess: find from pty process [Thread-5] failed (Could not read - pty process died)
+* Other system limits (memory, CPU, selinux, accounting etc.) apply as
+usual.
+* thread safety: it is safe to create multiple <tt class="xref py py-class docutils literal"><span class="pre">job.Service</span></tt>
+instances to the same target host at a time &#8211; they should not
+interfere with each other, but <tt class="docutils literal"><span class="pre">list()</span></tt> will list jobs created by
+either instance (if those use the same target host user account).
+It is <strong>not</strong> safe to use the <em>same</em> <tt class="xref py py-class docutils literal"><span class="pre">job.Service</span></tt> instance
+from multiple threads concurrently &#8211; the communication on the I/O
+channel will likely get screwed up.  This limitation may be removed
+in future versions of the adaptor.  Non-concurrent (i.e. serialized)
+use should work as expected though.</p>
+<div class="section" id="supported-schemas">
+<h2>6.1. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><strong>fork://</strong> : use /bin/sh to run jobs</li>
+<li><strong>gsissh://</strong> : use gsissh to run remote jobs</li>
+<li><strong>local://</strong> : alias for fork://</li>
+<li><strong>ssh://</strong> : use ssh to run remote jobs</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="configuration-options">
+<h2>6.2. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<p>Configuration options can be used to control the adaptor&#8217;s runtime behavior. Most adaptors don&#8217;t need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.</p>
+<blockquote>
+<div><div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">More information about configuration options can be found in the <a class="reference internal" href="../usage/config.html#conf-file"><em>Configuration Files</em></a> section.</p>
+</div>
+</div></blockquote>
+<div class="section" id="enabled">
+<h3>6.2.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<p>enable / disable saga.adaptor.shell_job adaptor</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>type</strong> : &lt;type &#8216;bool&#8217;&gt;</li>
+<li><strong>default</strong> : True</li>
+<li><strong>environment</strong> : None</li>
+<li><strong>valid options</strong> : [True, False]</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="enable-notifications">
+<h3>6.2.2. enable_notifications<a class="headerlink" href="#enable-notifications" title="Permalink to this headline">¶</a></h3>
+<p>Enable support for job state notifications.  Note that
+enabling this option will create a local thread, a remote
+shell process, and an additional network connection.
+In particular for ssh/gsissh where the number of
+concurrent connections is limited to 10, this
+effectively halfs the number of available job service
+instances per remote host.</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>type</strong> : &lt;type &#8216;bool&#8217;&gt;</li>
+<li><strong>default</strong> : False</li>
+<li><strong>environment</strong> : None</li>
+<li><strong>valid options</strong> : [True, False]</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="capabilities">
+<h2>6.3. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="supported-monitorable-metrics">
+<h3>6.3.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>State</li>
+<li>StateDetail</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="supported-job-attributes">
+<h3>6.3.2. Supported Job Attributes<a class="headerlink" href="#supported-job-attributes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>ExitCode</li>
+<li>ExecutionHosts</li>
+<li>Created</li>
+<li>Started</li>
+<li>Finished</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="supported-context-types">
+<h3>6.3.3. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><em>x509</em>: X509 proxy for gsissh</li>
+<li><em>userpass</em>: username/password pair for ssh</li>
+<li><em>ssh</em>: public/private keypair</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="supported-job-description-attributes">
+<h3>6.3.4. Supported Job Description Attributes<a class="headerlink" href="#supported-job-description-attributes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>Executable</li>
+<li>Arguments</li>
+<li>Environment</li>
+<li>Input</li>
+<li>Output</li>
+<li>Error</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="supported-api-classes">
+<h2>6.4. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>This adaptor supports the following API classes:</dt>
+<dd><ul class="first last simple">
+<li><a class="reference internal" href="../library/job/index.html#saga.job.Service" title="saga.job.Service"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Service</span></tt></a></li>
+<li><a class="reference internal" href="../library/job/index.html#saga.job.Job" title="saga.job.Job"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Job</span></tt></a></li>
+</ul>
+</dd>
+</dl>
+<p>Method implementation details are listed below.</p>
+<div class="section" id="saga-job-service">
+<h3>6.4.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.shell.shell_job.ShellJobService">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.shell.shell_job.</tt><tt class="descname">ShellJobService</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.job.service.Service</span></tt></p>
+<p>Implements saga.adaptors.cpi.job.Service</p>
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJobService.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJobService.initialize">
+<tt class="descname">initialize</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJobService.finalize">
+<tt class="descname">finalize</tt><big>(</big><em>kill_shell=False</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService.finalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService.finalize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJobService.run_job">
+<tt class="descname">run_job</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService.run_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService.run_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJobService.create_job">
+<tt class="descname">create_job</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService.create_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService.create_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJobService.get_url">
+<tt class="descname">get_url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService.get_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService.get_url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJobService.list">
+<tt class="descname">list</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService.list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService.list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJobService.get_job">
+<tt class="descname">get_job</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService.get_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService.get_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJobService.container_run">
+<tt class="descname">container_run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService.container_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService.container_run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJobService.container_wait">
+<tt class="descname">container_wait</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService.container_wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService.container_wait" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJobService.container_cancel">
+<tt class="descname">container_cancel</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService.container_cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService.container_cancel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJobService.container_get_states">
+<tt class="descname">container_get_states</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService.container_get_states"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService.container_get_states" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="saga-job-job">
+<h3>6.4.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.shell.shell_job.ShellJob">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.shell.shell_job.</tt><tt class="descname">ShellJob</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.job.job.Job</span></tt></p>
+<p>Implements saga.adaptors.cpi.job.Job</p>
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJob.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJob.get_description">
+<tt class="descname">get_description</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob.get_description"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob.get_description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJob.get_state">
+<tt class="descname">get_state</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob.get_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob.get_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJob.get_service_url">
+<tt class="descname">get_service_url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob.get_service_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob.get_service_url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJob.wait">
+<tt class="descname">wait</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob.wait" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJob.get_id">
+<tt class="descname">get_id</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob.get_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob.get_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJob.get_exit_code">
+<tt class="descname">get_exit_code</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob.get_exit_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob.get_exit_code" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJob.get_execution_hosts">
+<tt class="descname">get_execution_hosts</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob.get_execution_hosts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob.get_execution_hosts" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJob.run">
+<tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJob.suspend">
+<tt class="descname">suspend</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob.suspend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob.suspend" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJob.resume">
+<tt class="descname">resume</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob.resume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob.resume" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJob.cancel">
+<tt class="descname">cancel</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob.cancel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJob.re_raise">
+<tt class="descname">re_raise</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob.re_raise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob.re_raise" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">6. saga.adaptor.shell_job</a><ul>
+<li><a class="reference internal" href="#supported-schemas">6.1. Supported Schemas</a></li>
+<li><a class="reference internal" href="#configuration-options">6.2. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">6.2.1. enabled</a></li>
+<li><a class="reference internal" href="#enable-notifications">6.2.2. enable_notifications</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#capabilities">6.3. Capabilities</a><ul>
+<li><a class="reference internal" href="#supported-monitorable-metrics">6.3.1. Supported Monitorable Metrics</a></li>
+<li><a class="reference internal" href="#supported-job-attributes">6.3.2. Supported Job Attributes</a></li>
+<li><a class="reference internal" href="#supported-context-types">6.3.3. Supported Context Types</a></li>
+<li><a class="reference internal" href="#supported-job-description-attributes">6.3.4. Supported Job Description Attributes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#supported-api-classes">6.4. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-job-service">6.4.1. saga.job.Service</a></li>
+<li><a class="reference internal" href="#saga-job-job">6.4.2. saga.job.Job</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="saga.adaptor.filesystem.local.html"
+                        title="previous chapter">5. saga.adaptor.filesystem.local</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="saga.adaptor.sgejob.html"
+                        title="next chapter">7. saga.adaptor.sgejob</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/adaptors/saga.adaptor.shell_job.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.sgejob.html" title="7. saga.adaptor.sgejob"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.filesystem.local.html" title="5. saga.adaptor.filesystem.local"
+             >previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" >5. Adaptors:</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, The SAGA Project.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
