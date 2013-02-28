@@ -514,7 +514,7 @@ class PTYProcess (object) :
 
                         if  len(buf) == 0 and sys.platform == 'darwin' :
                             self.logger.debug ("read : MacOS EOF")
-                            self.terminate ()
+                            self.finalize ()
 
                             ret = ""
                             if  len (self.cache) :

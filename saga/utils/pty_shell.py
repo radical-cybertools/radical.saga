@@ -73,7 +73,7 @@ class PTYShellPool (object) :
 
     # --------------------------------------------------------------------------
     #
-    def add (pty_shell, hostname, username, context) :
+    def add (self, pty_shell, hostname, username, context) :
 
         connection_id = "%s@%s" % (username, hostname)
 
@@ -86,7 +86,7 @@ class PTYShellPool (object) :
 
     # --------------------------------------------------------------------------
     #
-    def get (hostname, username, context) :
+    def get (self, hostname, username, context) :
 
         connection_id = "%s@%s" % (username, hostname)
 
