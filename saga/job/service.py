@@ -64,7 +64,7 @@ class Service (Base, Async) :
 
         # param checks
         if not session :
-            session = saga.Session (default=True)
+            session = Session (default=True)
 
         url     = Url (url)
         scheme  = url.scheme.lower ()
@@ -86,7 +86,7 @@ class Service (Base, Async) :
 
         # param checks
         if not session :
-            session = saga.Session (default=True)
+            session = Session (default=True)
 
         url     = Url (url)
         scheme  = url.scheme.lower ()

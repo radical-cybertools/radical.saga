@@ -79,9 +79,6 @@ class Entry (saga.base.Base, saga.async.Async) :
         if not session :
             session = saga.Session (default=True)
 
-        url     = saga.url.Url (url)
-        scheme  = url.scheme.lower ()
-
         return cls (url, flags, session, _ttype=ttype)._init_task
 
 
