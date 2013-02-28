@@ -34,6 +34,12 @@ _SCHEMAS_GSI = ['gsissh', 'gsiscp', 'gsisftp']   # 'gsiftp'?
 
 _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 
+# ssh master/slave flag magic # FIXME: make timeouts configurable
+_SSH_CONTROL_DIR  = "%s/.saga/adaptors/shell/" % os.environ['HOME']
+_SSH_CONTROL_PATH = "%s/.saga/adaptors/shell/ssh_control_%%n_%%p.%s.ctrl" % (_SSH_CONTROL_DIR, os.getpid ())
+_SSH_MASTER_FLAGS = "-o ControlMaster=yes -o ControlPath=%s -o ControlPersist=30" % _SSH_CONTROL_PATH
+_SSH_SLAVE_FLAGS  = "-o ControlMaster=no  -o ControlPath=%s -o ControlPersist=30" % _SSH_CONTROL_PATH
+
 
 # ------------------------------------------------------------------------------
 #
@@ -92,7 +98,7 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def register (self, url, session=None, initialize=None, finalize=None, logger=None) :
+    def get (self, url, session=None, logger=None) :
         """ 
         This initiates a master connection.  If there is a suitable master
         connection in the registry, it is re-used, and no new master connection
@@ -115,44 +121,39 @@ class PTYShellFactory (object) :
         ctx_s  = str(master['ctx'])
         host_s = str(master['host'])
 
-        if not host_s in self.registry :
-            self.registry[host_s] = {}
+        # Now, if we don't have that master, yet, we need to instantiate it
+        if not host_s in self.registry                : self.registry[host_s] = {} 
+        if not ctx_s  in self.registry[host_s]        : self.registry[host_s][ctx_s] = {}
+        if not typ_s  in self.registry[host_s][ctx_s] : 
 
-        if not ctx_s in self.registry[host_s] :
-            self.registry[host_s][ctx_s] = {}
+            # new master: create an instance, and register it
+            self.logger.info ("open master pty for '%s / %s / %s'" \
+                           % (typ_s, host_s, ctx_s))
 
-        if typ_s in self.registry[host_s][ctx_s] :
-            # already have a master connection
-            return False
+            # FIXME: right now, we create a shell connection as master --
+            # but a master does not actually need a shell, as it is never really
+            # used to run commands...
+            master['pty'] = saga.utils.pty_process.PTYProcess (master['m_cmd'], logger=logger)
 
-        # new master: create an instance, and register it
-        self.logger.info ("open master pty for '%s / %s / %s'" \
-                       % (typ_s, host_s, ctx_s))
-
-        master['pty'] = saga.utils.pty_process.PTYProcess (master['cmd'], logger=logger)
-
-        master['pty'].set_initialize_hook (initialize)
-        master['pty'].set_finalize_hook   (finalize)
-
-        return master['pty']
+            # master was created - register it
+            self.registry[host_s][ctx_s][typ_s] = master 
 
 
-    # --------------------------------------------------------------------------
-    #
-    def get (self, hostname, username, context) :
+        else :
+            # we already have a master: make sure it is alive, and restart as
+            # needed
+            master = self.registry[host_s][ctx_s][typ_s]
 
-        connection_id = "%s@%s" % (username, hostname)
+            if  not master['pty'].alive (recover=True) :
+                raise saga.IncorrectState._log (logger, \
+            	  "Lost main connection to %s" % master['host'])
 
-        if not context in self.registry :
-            return None
 
-        if not connection_id in self.registry[context] :
-            return None
 
-        # FIXME: check if the returned pty_shell is still viable / alive, and
-        # revive if not.
+        # at this point, we do have a valid, living master
 
-        return self.registry[context][connection_id]
+        slave = saga.utils.pty_process.PTYProcess (master['s_cmd'], logger=logger)
+        return slave
 
 
     # --------------------------------------------------------------------------
@@ -195,14 +196,14 @@ class PTYShellFactory (object) :
                 exe =  saga.utils.which.which ("sh")
 
         else :
-            raise saga.BadParameter._log (logger, \
+            raise saga.BadParameter._log (self.logger, \
             	  "PTYShell utility can only handle %s schema URLs, not %s" \
                   % (_SCHEMAS, schema))
 
 
         # make sure we have something to run
         if  not exe :
-            raise saga.BadParameter._log (logger, \
+            raise saga.BadParameter._log (self.logger, \
             	  "cannot handle %s://, no shell executable found" % schema)
 
 
@@ -257,29 +258,33 @@ class PTYShellFactory (object) :
 
             if user : args += "-l %s " % user
 
-            # build the ssh command line
-            cmd = "%s %s %s -M yes %s" % (env, exe, args, host_string)
+            # build the master and slave command lines
+            m_cmd = "%s %s %s %s %s" % (env, exe, args, _SHELL_MASTER_FLAGS, host_string)
+            s_cmd = "%s %s %s %s %s" % (env, exe, args, _SHELL_SLAVE_FLAGS,  host_string)
+
 
         # a local shell
         elif typ == "sh" :
             # Make sure we have an interactive login shell w/o ansi escapes.
             # Note that we redirect the shell's stderr to stdout -- pty-process
             # does not expose stderr separately...
-            args =  "-l -i"
-            env  =  "/usr/bin/env TERM=vt100"
-            cmd  =  "%s %s %s" % (env, exe, args)
+            args  =  "-l -i"
+            env   =  "/usr/bin/env TERM=vt100"
+            m_cmd =  "%s %s %s" % (env, exe, args)
+            s_cmd =  "%s %s %s" % (env, exe, args)
 
 
         # keep all collected info in the master dict, and return it for
         # registration
-        return { 'type' : typ,
-                 'url'  : url,
-                 'ctx'  : ctx,
-                 'env'  : env,
-                 'exe'  : exe,
-                 'args' : args,  # *will not* contain the master flag
-                 'cmd'  : cmd,   # *will*     contain the master flag
-                 'host' : host_string }
+        return { 'type'  : typ,
+                 'url'   : url,
+                 'ctx'   : ctx,
+                 'env'   : env,
+                 'exe'   : exe,
+                 'args'  : args,
+                 'm_cmd' : m_cmd,
+                 's_cmd' : s_cmd,
+                 'host'  : host_string }
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

@@ -180,9 +180,10 @@ class PTYShell (object) :
             self.logger = saga.utils.logger.getLogger ('PTYShell')
 
         self.factory   = supsf.PTYShellFactory ()
-        self.pty_shell = self.factory.register (url, session, 
-                                                self.initialize, self.finalize, 
-                                                self.logger)
+        self.pty_shell = self.factory.get      (url, session, self.logger)
+
+        self.pty_shell.set_initialize_hook (self.initialize)
+        self.pty_shell.set_finalize_hook   (self.finalize)
 
         self.initialize ()
 
@@ -707,7 +708,6 @@ class PTYShell (object) :
                     if str(size_src) == str(size_tgt) :
                         break
                     else :
-                        print "try again (%s)(%s)!" % (size_src, size_tgt)
                         pass
 
 

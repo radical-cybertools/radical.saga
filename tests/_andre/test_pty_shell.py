@@ -14,7 +14,7 @@ tc.read_config("configs/fork_localhost.cfg")
 def test_ptyshell_ok () :
     """ Test pty_shell which runs command successfully """
     conf  = sutc.TestConfig()
-    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session.contexts)
+    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session)
 
     txt = "______1______2_____3_____"
     ret, out, _ = shell.run_sync ("printf \"%s\"" % txt)
@@ -26,14 +26,13 @@ def test_ptyshell_ok () :
     time.sleep (1)
     assert (not shell.alive ())
 
-test_ptyshell_ok ()
 
 # ------------------------------------------------------------------------------
 #
 def test_ptyshell_nok () :
     """ Test pty_shell which runs command unsuccessfully """
     conf  = sutc.TestConfig()
-    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session.contexts)
+    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session)
 
     txt = "______1______2_____3_____"
     ret, out, _ = shell.run_sync ("printf \"%s\" ; false" % txt)
@@ -45,13 +44,14 @@ def test_ptyshell_nok () :
     time.sleep (1)
     assert (not shell.alive ())
 
+test_ptyshell_nok ()
 
 # ------------------------------------------------------------------------------
 #
 def test_ptyshell_async () :
     """ Test pty_shell which runs command successfully """
     conf  = sutc.TestConfig()
-    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session.contexts)
+    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session)
 
     txt = "______1______2_____3_____\n"
     shell.run_async ("cat <<EOT")
@@ -68,14 +68,16 @@ def test_ptyshell_async () :
     shell.run_async ("exit")
     time.sleep (1)
     assert (not shell.alive ())
+    print 'ok'
 
+test_ptyshell_async ()
 
 # ------------------------------------------------------------------------------
 #
 def test_ptyshell_prompt () :
     """ Test pty_shell with prompt change """
     conf  = sutc.TestConfig()
-    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session.contexts)
+    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session)
 
     txt = "______1______2_____3_____"
     ret, out, _ = shell.run_sync ("printf \"%s\"" % txt)
@@ -101,7 +103,7 @@ def test_ptyshell_prompt () :
 def test_ptyshell_file_stage () :
     """ Test pty_shell file staging """
     conf  = sutc.TestConfig()
-    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session.contexts)
+    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session)
 
     txt = "______1______2_____3_____"
     shell.stage_to_file (txt, "/tmp/saga-test-staging-$$")
