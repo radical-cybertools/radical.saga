@@ -332,7 +332,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # establish shell connection
         self._logger.debug("Opening shell of type: %s" % shell_url)
         self.shell = saga.utils.pty_shell.PTYShell (shell_url, 
-                                                    self.session.contexts, 
+                                                    self.session, 
                                                     self._logger)
 
         # verify our SLURM environment contains the commands we need for this

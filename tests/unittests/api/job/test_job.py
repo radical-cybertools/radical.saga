@@ -12,27 +12,27 @@ from copy import deepcopy
 long_job = None
 
 
-# ------------------------------------------------------------------------------
-#
-def test_job_invalid_session():
-    """ Testing if an invalid session results in a proper exception
-    """
-    try:
-        tc = sutc.TestConfig()
-        # generate an invalid session
-        invalid_session = saga.Session()
-        c = saga.Context("ssh")
-        c.user_id = "accda1b0-81b4"
-        c.user_pass = "accda1b0-81b4"
-        invalid_session.add_context(c)
-
-        js = saga.job.Service(tc.js_url, invalid_session)
-        assert False, "Expected XYZ exception but got none."
-
-    #except saga.XYZ:
-    #    assert True
-    except Exception, ex:
-        assert False, "Expected XYZ exception, but got %s" % str(ex)
+# # ------------------------------------------------------------------------------
+# #
+# def test_job_invalid_session():
+#     """ Testing if an invalid session results in a proper exception
+#     """
+#     try:
+#         tc = sutc.TestConfig()
+#         # generate an invalid session
+#         invalid_session = saga.Session(default=False)
+#         c = saga.Context("ssh")
+#         c.user_id = "accda1b0-81b4"
+#         c.user_pass = "accda1b0-81b4"
+#         invalid_session.add_context(c)
+# 
+#         js = saga.job.Service(tc.js_url, invalid_session)
+#         assert False, "Expected XYZ exception but got none."
+# 
+#     #except saga.XYZ:
+#     #    assert True
+#     except Exception, ex:
+#         assert False, "Expected XYZ exception, but got %s" % str(ex)
 
 
 # ------------------------------------------------------------------------------

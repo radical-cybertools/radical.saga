@@ -337,10 +337,10 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             null_logger = logging.getLogger("PTYShell").addHandler(nh)
 
             self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-                self.session.contexts, null_logger)
+                self.session, null_logger)
         else:
             self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-                self.session.contexts)
+                self.session)
 
         self.shell.set_initialize_hook(self.initialize)
         self.shell.set_finalize_hook(self.finalize)
