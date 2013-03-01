@@ -72,7 +72,7 @@ def main():
         print "End time    : %s" % (sleebjob_clone.finished)
 
     except saga.SagaException, ex:
-        print "An exception occured: (%s) %s " % (ex.get_type(), (str(ex)))
+        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
         # get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
         print " \n*** Backtrace:\n %s" % ex.traceback

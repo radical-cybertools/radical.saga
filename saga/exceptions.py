@@ -183,9 +183,9 @@ class SagaException(saga.utils.exception.ExceptionBase):
 
     message    = property (get_message)         # string
     object     = property (get_object)          # object type
+    type       = property (get_type)            # exception type
     exceptions = property (get_all_exceptions)  # list [Exception]
     messages   = property (get_all_messages)    # list [string]
-
 
 
 # --------------------------------------------------------------------
