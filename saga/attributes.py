@@ -1660,14 +1660,18 @@ class Attributes (_AttributesBase) :
             other_d['attributes'][key]['last']         =       d['attributes'][key]['last']
             other_d['attributes'][key]['ttl']          =       d['attributes'][key]['ttl']
 
-            if d['attributes'][key]['flavor'] == VECTOR and \
-               d['attributes'][key]['value' ] != None       :
-                other_d['attributes'][key]['value']  = list (d['attributes'][key]['value'])
+            if d['attributes'][key]['value' ] == None :
+                other_d['attributes'][key]['value'] = None
             else :
-                other_d['attributes'][key]['value']  =       d['attributes'][key]['value']
+                if d['attributes'][key]['flavor'] == VECTOR :
+                    other_d['attributes'][key]['value'] = list (d['attributes'][key]['value'])
+                else :
+                    other_d['attributes'][key]['value'] =       d['attributes'][key]['value']
 
         # set the new dictionary as state for copied class
         _AttributesBase.__setattr__ (other, '_d', other_d)
+
+        return other
 
 
     ####################################

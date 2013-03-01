@@ -14,10 +14,12 @@ def test_deepcopy():
 
     try:
         jd1 = saga.job.Description ()
-        jd1.executable = '/bin/true'
+        jd1.executable = '/bin/sleep'
+        jd1.arguments  = ['1.3']
         jd2 = jd1.clone ()
-        jd2.executable = '/bin/false'
-        assert jd1.executable != jd2.executable 
+        jd2.executable = '/bin/nanosleep'
+        assert jd1.executable != jd2.executable, "%s != %s" % (jd1.executable, jd2.executable)
+        assert jd1.arguments  == jd2.arguments 
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni

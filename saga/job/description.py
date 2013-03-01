@@ -57,7 +57,12 @@ class Description (saga.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    def clone (self) :
+    def __deepcopy__ (self, other) :
+        return self.clone (other)
+
+    # --------------------------------------------------------------------------
+    #
+    def clone (self, other=None) :
         """ 
         deep copy: unlike the default python assignment (copy object reference),
         a deep copy will create a new object instance with the same state --
@@ -66,10 +71,10 @@ class Description (saga.Attributes) :
 
         # a job description only has attributes - so create a new instance,
         # clone the attribs, and done.
-        ret = saga.job.Description ()
-        self._attributes_deep_copy (self, ret)
+        if not other :
+            other = saga.job.Description ()
 
-        return ret
+        return self._attributes_deep_copy (other)
 
 
 
