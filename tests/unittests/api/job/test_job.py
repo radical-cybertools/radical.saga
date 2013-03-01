@@ -20,20 +20,25 @@ long_job = None
 #     try:
 #         tc = sutc.TestConfig()
 #         # generate an invalid session
+#         valid_session   = tc.session
 #         invalid_session = saga.Session(default=False)
-#         c = saga.Context("ssh")
-#         c.user_id = "accda1b0-81b4"
-#         c.user_pass = "accda1b0-81b4"
-#         invalid_session.add_context(c)
+# 
+#         for valid_context in valid_session.contexts :
+#             invalid_context = saga.Context (valid_context.type)
+# 
+#             for a in valid_context.list_attributes () :
+#                 invalid_context.set_attribute (a, valid_context.get_attribute (a) + "-hahaha")
+# 
+#             invalid_session.add_context (invalid_context)
 # 
 #         js = saga.job.Service(tc.js_url, invalid_session)
 #         assert False, "Expected XYZ exception but got none."
 # 
-#     #except saga.XYZ:
-#     #    assert True
-#     except Exception, ex:
-#         assert False, "Expected XYZ exception, but got %s" % str(ex)
-
+#     except saga.BadParameter:
+#         assert True
+#     except saga.SagaException as ex:
+#         assert False, "Expected BadParameter exception, but got %s" % ex
+# 
 
 # ------------------------------------------------------------------------------
 #
@@ -42,15 +47,15 @@ def test_job_service_invalid_url():
     """
     try:
         tc = sutc.TestConfig()
-        invalid_url = deepcopy(saga.Url(tc.js_url))
-        invalid_url.host += "accda1b0-81b4"
+        invalid_url       = deepcopy(saga.Url(tc.js_url))
+        invalid_url.host += ".does.not.exist"
         js = saga.job.Service(invalid_url, tc.session)
         assert False, "Expected XYZ exception but got none."
 
-    #except saga.XYZ:
-    #    assert True
-    except Exception, ex:
-        assert False, "Expected XYZ exception, but got %s" % str(ex)
+    except saga.BadParameter:
+        assert True
+    except saga.SagaException as ex:
+        assert False, "Expected BadParameter exception, but got %s" % ex
         
 # ------------------------------------------------------------------------------
 #
@@ -82,8 +87,6 @@ def test_job_service_create():
                 print "%s " % ni
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
-
-
 # ------------------------------------------------------------------------------
 #
 def test_job_run():

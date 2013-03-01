@@ -54,8 +54,9 @@ class SagaException(saga.utils.exception.ExceptionBase):
         """
         saga.utils.exception.ExceptionBase.__init__ (self, message)
 
+        self._type          = self.__class__.__name__
         self._message       = message
-        self._messages      = [message]
+        self._messages      = [self.get_message ()]
         self._exceptions    = [self]
         self._top_exception = self
         self._traceback     = saga.utils.exception.get_traceback (1)
@@ -74,6 +75,7 @@ class SagaException(saga.utils.exception.ExceptionBase):
         clone._messages  = self._messages
         clone._exception = self._exceptions
         clone._traceback = self._traceback
+        clone._type      = self._type
 
         return clone
 
@@ -83,12 +85,12 @@ class SagaException(saga.utils.exception.ExceptionBase):
     def get_message (self) :
         """ Return the exception message as a string.  That message is also
         available via the 'message' property."""
-        return self._message
+        return "%s: %s" % (self.type, self._message)
 
     def get_type (self):
         """ Return the type of the exception as string.
         """
-        return self.__class__.__name__
+        return self._type
 
 
     # ----------------------------------------------------------------
@@ -178,7 +180,7 @@ class SagaException(saga.utils.exception.ExceptionBase):
     # ----------------------------------------------------------------
     #
     def __str__ (self) :
-        return self._message
+        return self.get_message ()
 
 
     message    = property (get_message)         # string

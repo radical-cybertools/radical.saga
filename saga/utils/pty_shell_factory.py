@@ -155,7 +155,7 @@ class PTYShellFactory (object) :
         if not typ_s  in self.registry[host_s][ctx_s] : 
 
             # new master: create an instance, and register it
-            self.logger.info ("open master pty for '%s / %s / %s'" \
+            self.logger.info ("open master pty for [%s] [%s] [%s]'" \
                            % (typ_s, host_s, ctx_s))
 
             m_cmd = _SCRIPTS[info['type']]['master'] % info
@@ -291,6 +291,7 @@ class PTYShellFactory (object) :
             info['cp_args']  = ""
             info['sh_env']   = "/usr/bin/env TERM=vt100"
             info['cp_env']   = "/usr/bin/env TERM=vt100"
+            info['fs_root']  = "/"
 
             if  "SHELL" in os.environ :
                 info['sh_exe'] =  saga.utils.which.which (os.environ["SHELL"])
@@ -301,8 +302,7 @@ class PTYShellFactory (object) :
 
         else :
             raise saga.BadParameter._log (self.logger, \
-            	  "PTYShell utility can only handle %s schema URLs, not %s" \
-                  % (_SCHEMAS, schema))
+            	  "can only handle '%s://' URLs, not %s" % (_SCHEMAS, schema))
 
 
         # depending on type, create command line (args, env etc)
@@ -311,7 +311,17 @@ class PTYShellFactory (object) :
         # and elsewhere.  Also, we have to make sure that the shell is an
         # interactive login shell, so that it interprets the users startup
         # files, and reacts on commands.
-        if  info['type'] == "ssh" :
+
+        if  info['type'] == "sh" :
+            import saga.utils.misc as sum
+            if not sum.host_is_local (url.host) :
+                raise saga.BadParameter._log (self.logger, \
+                        "expect local host for '%s://', not '%s'" % (url.schema, url.host))
+
+        else :
+            import saga.utils.misc as sum
+            if not sum.host_is_valid (url.host) :
+                raise saga.BadParameter._log (self.logger, "invalid host in '%s'" % (url))
 
             info['ssh_env']   =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
             info['scp_env']   =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes

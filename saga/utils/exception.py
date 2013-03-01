@@ -54,7 +54,7 @@ class ExceptionBase(Exception):
     traceback  = property (get_traceback) 
 
     @classmethod
-    def _log (self, logger, message, level='error'):
+    def _log (cls, logger, message, level='error'):
         """ this class method allows to log the exception message while
             constructing a SAGA exception, like::
 
@@ -79,9 +79,9 @@ class ExceptionBase(Exception):
         except :
             sys.stderr.write ("unknown log level '%s'"  %  level)
 
-        log_method (message)
+        log_method ("%s: %s" % (cls.__name__, message))
 
-        return self (message)
+        return cls (message)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
