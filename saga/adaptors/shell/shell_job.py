@@ -336,8 +336,10 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # TODO: replace some constants in the script with values from config
         # files, such as 'timeout' or 'purge_on_quit' ...
         #
-        self.shell.write_to_file (src = shell_wrapper._WRAPPER_SCRIPT, 
-                                  tgt = "%s/wrapper.sh" % base)
+        src = shell_wrapper._WRAPPER_SCRIPT
+        tgt = "$HOME/.saga/adaptors/shell_job/wrapper.sh"
+
+        self.shell.write_to_file (src, tgt)
 
         # we run the script.  In principle, we should set a new / different
         # prompt -- but, due to some strange and very unlikely coincidence, the

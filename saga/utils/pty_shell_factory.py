@@ -35,11 +35,34 @@ _SCHEMAS_GSI = ['gsissh', 'gsiscp', 'gsisftp']   # 'gsiftp'?
 _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 
 # ssh master/slave flag magic # FIXME: make timeouts configurable
-_SSH_CONTROL_DIR  = "%s/.saga/adaptors/shell/" % os.environ['HOME']
-_SSH_CONTROL_PATH = "%s/.saga/adaptors/shell/ssh_control_%%n_%%p.%s.ctrl" % (_SSH_CONTROL_DIR, os.getpid ())
-_SSH_MASTER_FLAGS = "-o ControlMaster=yes -o ControlPath=%s -o ControlPersist=30" % _SSH_CONTROL_PATH
-_SSH_SLAVE_FLAGS  = "-o ControlMaster=no  -o ControlPath=%s -o ControlPersist=30" % _SSH_CONTROL_PATH
+_SSH_CONTROL_DIR    = "%s/.saga/adaptors/shell/" % os.environ['HOME']
+_SSH_CONTROL_PATH   = "%s/.saga/adaptors/shell/ssh_control_%%n_%%p.%s.ctrl" % (_SSH_CONTROL_DIR, os.getpid ())
+_SSH_FLAGS_MASTER   = "-o ControlMaster=yes -o ControlPath=%s -o ControlPersist=30" % _SSH_CONTROL_PATH
+_SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%s -o ControlPersist=30" % _SSH_CONTROL_PATH
 
+# FIXME: right now, we create a shell connection as master --
+# but a master does not actually need a shell, as it is never really
+# used to run commands...
+_SCRIPTS = {
+    'ssh' : { 
+        'master'        : "%(ssh_env)s %(ssh_exe)s   %(ssh_args)s  %(m_flags)s      %(host_str)s",
+        'shell'         : "%(ssh_env)s %(ssh_exe)s   %(ssh_args)s  %(s_flags)s      %(host_str)s",
+      # 'copy_to'       : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s      %(src)s %(root)s/%(tgt)s",
+      # 'copy_from'     : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s      %(root)s/%(src)s %(tgt)s",
+        'copy_to'       : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s -b - %(host_str)s",
+        'copy_from'     : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s -b - %(host_str)s",
+        'copy_to_in'    : "progress \n put %(src)s %(tgt)s \n exit \n",            
+        'copy_from_in'  : "progress \n get %(src)s %(tgt)s \n exit \n",
+    },
+    'sh' : { 
+        'master'        : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
+        'shell'         : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
+        'copy_to'       : "%(cp_env)s %(cp_exe)s  %(cp_args)s %(src)s %(tgt)s",
+        'copy_from'     : "%(cp_env)s %(cp_exe)s  %(cp_args)s %(src)s %(tgt)s",
+        'copy_to_in'    : "",
+        'copy_from_in'  : "",
+    }
+}
 
 # ------------------------------------------------------------------------------
 #
@@ -96,14 +119,10 @@ class PTYShellFactory (object) :
         self.logger = saga.utils.logger.getLogger ('PTYShellFactory')
         self.registry = {}
 
+
     # --------------------------------------------------------------------------
     #
-    def get (self, url, session=None, logger=None) :
-        """ 
-        This initiates a master connection.  If there is a suitable master
-        connection in the registry, it is re-used, and no new master connection
-        is created.  If needed, the existing master connection is revived.  
-        """
+    def initialize (self, url, session=None, logger=None) :
 
         # make sure we have a valid session, and a valid url type
         if  not session :
@@ -111,15 +130,17 @@ class PTYShellFactory (object) :
 
         url = saga.Url (url)
 
+        if  not logger :
+            logger = saga.utils.logger.getLogger ('PTYShellFactory')
 
         # collect all information we have/need about the requested master
         # connection
-        master = self._create_master_entry (url, session)
+        info = self._create_master_entry (url, session, logger)
 
         # we got master info - register the master, and create the instance!
-        typ_s  = str(master['type'])
-        ctx_s  = str(master['ctx'])
-        host_s = str(master['host'])
+        typ_s  = str(info['type'])
+        ctx_s  = str(info['ctx'])
+        host_s = str(info['host_str'])
 
         # Now, if we don't have that master, yet, we need to instantiate it
         if not host_s in self.registry                : self.registry[host_s] = {} 
@@ -130,81 +151,145 @@ class PTYShellFactory (object) :
             self.logger.info ("open master pty for '%s / %s / %s'" \
                            % (typ_s, host_s, ctx_s))
 
-            # FIXME: right now, we create a shell connection as master --
-            # but a master does not actually need a shell, as it is never really
-            # used to run commands...
-            master['pty'] = saga.utils.pty_process.PTYProcess (master['m_cmd'], logger=logger)
+            m_cmd = _SCRIPTS[info['type']]['master'] % info
+            info['pty'] = saga.utils.pty_process.PTYProcess (m_cmd, logger=logger)
 
             # master was created - register it
-            self.registry[host_s][ctx_s][typ_s] = master 
+            self.registry[host_s][ctx_s][typ_s] = info 
 
 
         else :
             # we already have a master: make sure it is alive, and restart as
             # needed
-            master = self.registry[host_s][ctx_s][typ_s]
+            info = self.registry[host_s][ctx_s][typ_s]
 
-            if  not master['pty'].alive (recover=True) :
+            if  not info['pty'].alive (recover=True) :
                 raise saga.IncorrectState._log (logger, \
-            	  "Lost main connection to %s" % master['host'])
+            	  "Lost main connection to %s" % info['host_str'])
 
-
-
-        # at this point, we do have a valid, living master
-
-        slave = saga.utils.pty_process.PTYProcess (master['s_cmd'], logger=logger)
-        return slave
+        return info
 
 
     # --------------------------------------------------------------------------
     #
-    def _create_master_entry (self, url, session) :
+    def run_shell (self, info) :
+        """ 
+        This initiates a master connection.  If there is a suitable master
+        connection in the registry, it is re-used, and no new master connection
+        is created.  If needed, the existing master connection is revived.  
+        """
+
+        s_cmd = _SCRIPTS[info['type']]['shell'] % info
+
+        # at this point, we do have a valid, living master
+        sh_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
+        return sh_slave
+
+
+    # --------------------------------------------------------------------------
+    #
+    def run_copy_to (self, info, src, tgt) :
+        """ 
+        This initiates a slave copy connection.   Src is interpreted as local
+        path, tgt as path on the remote host.
+        """
+
+        # at this point, we do have a valid, living master
+        try :
+            s_cmd = _SCRIPTS[info['type']]['copy_to'] \
+                    % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
+
+            s_in  = _SCRIPTS[info['type']]['copy_to_in'] \
+                    % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
+
+            cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
+            cp_slave.write (s_in)
+
+            cp_slave.wait ()
+
+            return cp_slave
+
+        except Exception as e :
+            self.logger.error ('exception: %s ' % e)
+            raise e
+
+
+    # --------------------------------------------------------------------------
+    #
+    def run_copy_from (self, info, src, tgt) :
+        """ 
+        This initiates a slave copy connection.   Src is interpreted as path on
+        the remote host, tgt as local path.
+        """
+
+        # at this point, we do have a valid, living master
+        try :
+            s_cmd = _SCRIPTS[info['type']]['copy_from'] \
+                    % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
+
+            s_in  = _SCRIPTS[info['type']]['copy_from_in'] \
+                    % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
+
+            cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
+            cp_slave.write (s_in)
+
+            cp_slave.wait ()
+
+            return cp_slave
+
+        except Exception as e :
+            self.logger.error ('exception: %s ' % e)
+            raise e
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _create_master_entry (self, url, session, logger) :
         # FIXME: cache 'which' results, etc
+        # FIXME: check 'which' results
 
-        schema  = url.schema.lower ()
+        info = {}
 
-        typ  = ""
-        exe  = ""
-        user = ""
-        pwd  = ""
-        host = ""
-        
-        # context use to open shell connection, used for registry hashing
-        ctx  = "None"  
+        info['schema']   = url.schema.lower ()
+        info['host_str'] = url.host
+        info['logger']   = logger
+        info['ctx']      = []
 
-
-        host_string = url.host
         if url.port and url.port != -1 :
-          host_string += ":%s" % url.port
+          info['host_str'] += ":%s" % url.port
 
 
         # find out what type of shell we have to deal with
-        if  schema in _SCHEMAS_SSH :
-            typ =  "ssh"
-            exe =  saga.utils.which.which ("ssh")
+        if  info['schema']   in _SCHEMAS_SSH :
+            info['type']     = "ssh"
+            info['ssh_exe']  = saga.utils.which.which ("ssh")
+            info['scp_exe']  = saga.utils.which.which ("scp")
+            info['sftp_exe'] = saga.utils.which.which ("sftp")
 
-        if  schema in _SCHEMAS_GSI :
-            typ =  "ssh"
-            exe =  saga.utils.which.which ("gsissh")
+        elif info['schema']  in _SCHEMAS_GSI :
+            info['type']     = "ssh"
+            info['ssh_exe']  = saga.utils.which.which ("gsissh")
+            info['scp_exe']  = saga.utils.which.which ("gsiscp")
+            info['sftp_exe'] = saga.utils.which.which ("gsisftp")
 
-        if  schema  in _SCHEMAS_SH :
-            typ =  "sh"
+        elif info['schema']  in _SCHEMAS_SH :
+            info['type']     = "sh"
+            info['sh_args']  = "-l -i"
+            info['cp_args']  = ""
+            info['sh_env']   = "/usr/bin/env TERM=vt100"
+            info['cp_env']   = "/usr/bin/env TERM=vt100"
 
             if  "SHELL" in os.environ :
-                exe =  saga.utils.which.which (os.environ["SHELL"])
+                info['sh_exe'] =  saga.utils.which.which (os.environ["SHELL"])
+                info['cp_exe'] =  saga.utils.which.which ("cp")
             else :
-                exe =  saga.utils.which.which ("sh")
+                info['sh_exe'] =  saga.utils.which.which ("sh")
+                info['cp_exe'] =  saga.utils.which.which ("cp")
 
         else :
             raise saga.BadParameter._log (self.logger, \
             	  "PTYShell utility can only handle %s schema URLs, not %s" \
                   % (_SCHEMAS, schema))
-
-
-        # make sure we have something to run
-        if  not exe :
-            raise saga.BadParameter._log (self.logger, \
-            	  "cannot handle %s://, no shell executable found" % schema)
 
 
         # depending on type, create command line (args, env etc)
@@ -213,79 +298,72 @@ class PTYShellFactory (object) :
         # and elsewhere.  Also, we have to make sure that the shell is an
         # interactive login shell, so that it interprets the users startup
         # files, and reacts on commands.
-        if  typ == "ssh" :
+        if  info['type'] == "ssh" :
 
-            env  =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
-            args =  "-t "                       # force pty
+            info['ssh_env']   =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
+            info['scp_env']   =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
+            info['sftp_env']  =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
+            info['ssh_args']  =  "-t "                       # force pty
+            info['scp_args']  =  ""
+            info['sftp_args'] =  ""
 
-            for context in contexts :
+            for context in session.contexts :
 
                 # ssh can also handle UserPass contexts, and ssh type contexts.
                 # gsissh can handle the same, but also X509 contexts.
 
                 if  context.type.lower () == "ssh" :
-                    if  schema in ['ssh', 'gsissh'] :
+                    if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
                         if  context.attribute_exists ("user_id")  or \
                             context.attribute_exists ("user_key") :
                             if  context.attribute_exists ("user_id") :
-                                user  = context.user_id
+                                info['user']  = context.user_id
                             if  context.attribute_exists ("user_key") :
-                                args += "-i %s " % context.user_key
-                            ctx = context
+                                info['ssh_args']  += "-i %s " % context.user_key
+                                info['scp_args']  += "-i %s " % context.user_key
+                                info['sftp_args'] += "-i %s " % context.user_key
+                            info['ctx'].append (context)
 
                 if  context.type.lower () == "userpass" :
-                    if  schema in ['ssh', 'gsissh'] :
+                    if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
                         if  context.attribute_exists ("user_id")   or \
                             context.attribute_exists ("user_pass") :
                             if  context.attribute_exists ("user_id") :
-                                user = context.user_id
+                                info['user'] = context.user_id
                             if  context.attribute_exists ("user_pass") :
-                                pwd  = context.user_pass
-                            ctx = context
+                                info['pwd']  = context.user_pass
+                            info['ctx'].append (context)
 
-                if  context.type.lower () == "gsissh" :
-                    if  schema in ['gsissh'] :
+                if  context.type.lower () == "x509" :
+                    if  info['schema'] in _SCHEMAS_GSI :
                         # FIXME: also use cert_dir etc.
                         if  context.attribute_exists ("user_proxy") :
-                            env = "X509_PROXY='%s' " % context.user_proxy
-                            ctx = context
+                            info['ssh_env']  = "X509_PROXY='%s' " % context.user_proxy
+                            info['scp_env']  = "X509_PROXY='%s' " % context.user_proxy
+                            info['sftp_env'] = "X509_PROXY='%s' " % context.user_proxy
+                            info['ctx'].append (context)
 
             # all ssh based shells allow for user_id and user_pass from contexts
             # -- but the data given in the URL take precedence
 
-            if url.username  :  user = url.username
-            if url.password  :  pwd  = url.password
+            if url.username   :  info['user'] = url.username
+            if url.password   :  info['pwd']  = url.password
 
-            if user : args += "-l %s " % user
+            if 'user' in info : 
+                info['ssh_args']  += "-l %s " % info['user']
+                info['scp_args']  += "-l %s " % info['user']
+                info['sftp_args'] += "-l %s " % info['user']
 
-            # build the master and slave command lines
-            m_cmd = "%s %s %s %s %s" % (env, exe, args, _SHELL_MASTER_FLAGS, host_string)
-            s_cmd = "%s %s %s %s %s" % (env, exe, args, _SHELL_SLAVE_FLAGS,  host_string)
+            info['m_flags']  = _SSH_FLAGS_MASTER
+            info['s_flags']  = _SSH_FLAGS_SLAVE
+            info['fs_root']  = url
 
-
-        # a local shell
-        elif typ == "sh" :
-            # Make sure we have an interactive login shell w/o ansi escapes.
-            # Note that we redirect the shell's stderr to stdout -- pty-process
-            # does not expose stderr separately...
-            args  =  "-l -i"
-            env   =  "/usr/bin/env TERM=vt100"
-            m_cmd =  "%s %s %s" % (env, exe, args)
-            s_cmd =  "%s %s %s" % (env, exe, args)
+            info['fs_root'].path = "/"
 
 
         # keep all collected info in the master dict, and return it for
         # registration
-        return { 'type'  : typ,
-                 'url'   : url,
-                 'ctx'   : ctx,
-                 'env'   : env,
-                 'exe'   : exe,
-                 'args'  : args,
-                 'm_cmd' : m_cmd,
-                 's_cmd' : s_cmd,
-                 'host'  : host_string }
-
+        return info
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

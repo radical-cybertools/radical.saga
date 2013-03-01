@@ -1,6 +1,8 @@
 
 import re
+import os
 import sys
+import errno
 
 import saga.utils.logger
 import saga.utils.which
@@ -174,13 +176,28 @@ class PTYShell (object) :
 
         self.initialize_hook = None
         self.finalize_hook   = None
+
+        # we need a local dir for file staging caches.  At this point we use
+        # $HOME, but should make this configurable (FIXME)
+        self.base = os.environ['HOME'] + '/.saga/adaptors/shell/'
+
+        try:
+            os.makedirs (self.base)
+
+        except OSError as e:
+            if e.errno == errno.EEXIST and os.path.isdir (self.base):
+                pass
+            else: 
+                raise saga.NoSuccess ("could not create staging dir: %s" % e)
+
         
         # need a new logger?
         if not self.logger :
             self.logger = saga.utils.logger.getLogger ('PTYShell')
 
-        self.factory   = supsf.PTYShellFactory ()
-        self.pty_shell = self.factory.get      (url, session, self.logger)
+        self.factory    = supsf.PTYShellFactory   ()
+        self.pty_info   = self.factory.initialize (url, session, self.logger)
+        self.pty_shell  = self.factory.run_shell  (self.pty_info)
 
         self.pty_shell.set_initialize_hook (self.initialize)
         self.pty_shell.set_finalize_hook   (self.finalize)
@@ -669,79 +686,32 @@ class PTYShell (object) :
         :param src: data to be staged into the target file
 
         :type  tgt: string
-        :param tgt: path to file to be staged
+        :param tgt: path to target file to staged to
+                    The tgt path is not an URL, but expected to be a path
+                    relative to the shell's URL.
 
         The content of the given string is pasted into a file (specified by tgt)
         on the remote system.  If that file exists, it is overwritten.
         A NoSuccess exception is raised if writing the file was not possible
         (missing permissions, incorrect path, etc.).
 
-        See also :func:`stage_from_file`.
+        See also :func:`read_from_file`.
         """
 
-        # we expect the shell to be in 'ground state' when staging a file
-        # -- thus we can check if the shell is alive before doing so,
-        # and restart if needed
-        if not self.pty_shell.alive (recover=True) :
-            raise saga.IncorrectState ("Can't stage file -- shell died:\n%s" \
-                                    % self.pty_shell.autopsy ())
+        # FIXME: make this relative to the shell's pwd?  Needs pwd in
+        # prompt, and updating pwd state on every find_prompt.
 
-        size_src = len (src)
+        # first, write data into a tmp file
+        fname   = self.base + "/staging.%s" % id(self)
+        fhandle = open (fname, 'wb')
+        fhandle.write  (src)
+        fhandle.flush  ()
+        fhandle.close  ()
 
-        while True :
+        pty_copy = self.factory.run_copy_to (self.pty_info, fname, tgt)
 
-            ret, out, _ = self.run_sync ("wc -c %s.$$ | xargs echo | cut -f 1 -d ' '" % tgt)
+        os.remove (fname)
 
-            if  ret == 0 :
-
-                try :
-                    size_tgt = int (out.strip ())
-
-                except :  
-                    # no valid output from wc
-                    pass
-
-                else :
-                    if sys.platform == 'darwin' :
-                        size_tgt -= 1
-
-                    if str(size_src) == str(size_tgt) :
-                        break
-                    else :
-                        pass
-
-
-            if sys.platform == 'darwin' :
-                self.pty_shell.write ("cat > %s.$$ <<'SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT'\n" % tgt)
-                self.pty_shell.write (src)
-                self.pty_shell.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n")
-
-            else :
-                src_hex = ""
-                for i in [hex(ord(x)) for x in src] :
-                    h = i.replace ('0x', '')
-                    if len(h) == 1 : src_hex += '0'
-                    src_hex += h
-                
-                self.pty_shell.write ("""\
-                ( sed -e 's/\(..\)/\\1\\n/g' | 
-                  while read A; do
-                   if ! test -z "$A"; then printf "\\x$A"; fi
-                  done ) > %s.$$ <<SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n""" % tgt)
-                self.pty_shell.write (src_hex)
-                self.pty_shell.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n")
-
-            # we send two commands at once (cat, mv), so need to find two prompts
-            ret, txt = self.find_prompt ()
-            if  ret != 0 :
-                raise saga.NoSuccess ("failed to stage (cat) string to file (%s)(%s)" % (ret, txt))
-
-
-        self.pty_shell.write ("mv %s.$$ %s\n" % (tgt, tgt))  
-
-        ret, txt = self.find_prompt ()
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to stage (mv) string to file (%s)(%s)" % (ret, txt))
 
 
     # ----------------------------------------------------------------
@@ -749,27 +719,31 @@ class PTYShell (object) :
     def read_from_file (self, src) :
         """
         :type  src: string
-        :param src: path to file to be fetched
+        :param src: path to source file to staged from
+                    The src path is not an URL, but expected to be a path
+                    relative to the shell's URL.
 
-        This is inverse to :func:`stage_to_file`: the content of a remote file
-        specified by `src` will be returned as string.  A NoSuccess exception is
-        raised if reading the file was not possible (missing permissions,
-        incorrect path, etc.).  
+
+        See also :func:`write_to_file`.
         """
 
-        # we expect the shell to be in 'ground state' when staging a file
-        # -- thus we can check if the shell is alive before doing so,
-        # and restart if needed
-        if not self.pty_shell.alive (recover=True) :
-            raise saga.IncorrectState ("Can't stage file -- shell died:\n%s" \
-                                    % self.pty_shell.autopsy ())
+        # FIXME: make this relative to the shell's pwd?  Needs pwd in
+        # prompt, and updating pwd state on every find_prompt.
 
-        ret, out, _ = self.run_sync ("cat %s" % src)
+        # first, write data into a tmp file
+        fname   = self.base + "/staging.%s" % id(self)
 
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to stage file to string (%s)(%s)" % (ret, out))
+        self.pty_copy = self.factory.run_copy_from (self.pty_info, src, fname)
+
+        fhandle = open (fname, 'r')
+        out = fhandle.read  ()
+        fhandle.close  ()
+
+        # os.remove (fname)
 
         return out
+
+
 
 
     # ----------------------------------------------------------------
