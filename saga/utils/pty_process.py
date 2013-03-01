@@ -475,6 +475,11 @@ class PTYProcess (object) :
 
         with self.gc.active (self) :
 
+            if not self.alive (recover=False) :
+                raise se.NoSuccess ("cannot read from dead pty process (%s)" \
+                                 % self.cache[-256:])
+
+
             try:
                 # start the timeout timer right now.  Note that even if timeout is
                 # short, and child.poll is slow, we will nevertheless attempt at least
@@ -515,13 +520,8 @@ class PTYProcess (object) :
                         if  len(buf) == 0 and sys.platform == 'darwin' :
                             self.logger.debug ("read : MacOS EOF")
                             self.finalize ()
-
-                            ret = ""
-                            if  len (self.cache) :
-                                ret = self.cache
-                                self.cache = ""
-                            
-                            return ret
+                            raise se.NoSuccess ("process on MacOS died (%s)" \
+                                             % self.cache[-256:])
 
 
                         self.cache += buf.replace ('\r', '')
@@ -669,8 +669,8 @@ class PTYProcess (object) :
 
 
         except Exception as e :
-            raise se.NoSuccess ("find from pty process [%s] failed (%s)" \
-                             % (threading.current_thread().name, e))
+            raise se.NoSuccess ("find from pty process [%s] failed (%s) (%s)" \
+                             % (threading.current_thread().name, e, data))
 
 
 
@@ -682,9 +682,13 @@ class PTYProcess (object) :
         child's stdin pipe, until it succeeds to write all data.
         """
 
-        try :
+        with self.gc.active (self) :
+        
+            if not self.alive (recover=False) :
+                raise se.NoSuccess ("cannot write to dead pty process (%s)" \
+                                 % self.cache[-256:])
 
-            with self.gc.active (self) :
+            try :
 
                 log = data.replace ('\n', '\\n')
                 log =  log.replace ('\r', '')
@@ -713,9 +717,9 @@ class PTYProcess (object) :
                             self.logger.info ("write: [%5d]" % size)
 
 
-        except Exception as e :
-            raise se.NoSuccess ("write to pty process [%s] failed (%s)" \
-                             % (threading.current_thread().name, e))
+            except Exception as e :
+                raise se.NoSuccess ("write to pty process [%s] failed (%s)" \
+                                 % (threading.current_thread().name, e))
 
 
 
