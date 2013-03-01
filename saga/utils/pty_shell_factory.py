@@ -43,6 +43,7 @@ _SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%s -o ControlPersist=
 if sys.platform == 'darwin' :
     # MacOS seems to use an older version of ssh which does not support
     # connection persistency :-/
+    _SSH_CONTROL_PATH   = "~/.saga/adaptors/shell/ssh_%%h_%%p.%s.ctrl" % (os.getpid ())
     _SSH_FLAGS_MASTER   = "-o ControlMaster=yes -o ControlPath=%s" % _SSH_CONTROL_PATH
     _SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%s" % _SSH_CONTROL_PATH
 
