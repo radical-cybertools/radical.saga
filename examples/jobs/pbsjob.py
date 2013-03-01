@@ -19,7 +19,7 @@ def main():
     try:
         # create a job service for the local machine. both, 'fork' and
         # 'local' schemes trigger the local job adaptor.
-        js = saga.job.Service("pbs+ssh://alamo.futuregrid.org")
+        js = saga.job.Service("pbs+ssh://alamo.futuregrid.orgs")
 
         # describe our job
         jd = saga.job.Description()
@@ -72,10 +72,10 @@ def main():
         print "End time    : %s" % (sleebjob_clone.finished)
 
     except saga.SagaException, ex:
-        print "An exception occured: %s " % ((str(ex)))
+        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
         # get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
-        print " *** %s" % ex.traceback
+        print " \n*** Backtrace:\n %s" % ex.traceback
         sys.exit(-1)
 
 if __name__ == "__main__":
