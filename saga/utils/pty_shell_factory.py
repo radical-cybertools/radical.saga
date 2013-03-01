@@ -56,8 +56,8 @@ _SCRIPTS = {
     'sh' : { 
         'master'        : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'shell'         : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'copy_to'       : "%(cp_env)s %(cp_exe)s  %(cp_args)s %(src)s %(tgt)s",
-        'copy_from'     : "%(cp_env)s %(cp_exe)s  %(cp_args)s %(src)s %(tgt)s",
+        'copy_to'       : "%(cp_env)s %(sh_exe)s -c \"cd ~; %(cp_exe)s  %(cp_args)s %(src)s %(tgt)s\"",
+        'copy_from'     : "%(cp_env)s %(sh_exe)s -c \"cd ~; %(cp_exe)s  %(cp_args)s %(src)s %(tgt)s\"",
         'copy_to_in'    : "",
         'copy_from_in'  : "",
     }

@@ -453,8 +453,8 @@ cmd_cancel () {
   mpid=`cat "$DIR/mpid"`
 
   # first kill monitor, so that it does not interfer with state management
-  /bin/kill -TERM $mpid
-  /bin/kill -KILL $mpid
+  /bin/kill -TERM $mpid 2>/dev/null
+  /bin/kill -KILL $mpid 2>/dev/null
 
   # now make sure that job did not reach final state before monitor died
   state=`grep -e ' $' "$DIR/state" | tail -n 1 | tr -d ' '`
@@ -465,10 +465,10 @@ cmd_cancel () {
   fi
 
   # now kill the job process group, and to be sure also the job shell
-  /bin/kill -TERM -- -$mpid 
-  /bin/kill -KILL -- -$mpid 
-  /bin/kill -TERM     $rpid 
-  /bin/kill -KILL     $rpid
+  /bin/kill -TERM -- -$mpid # this is the important one...
+  /bin/kill -KILL -- -$mpid 2>/dev/null
+  /bin/kill -TERM     $rpid 2>/dev/null
+  /bin/kill -KILL     $rpid 2>/dev/null
 
   # FIXME: how can we check for success?  ps?
   printf "CANCELED \\n" >> "$DIR/state"
