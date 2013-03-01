@@ -85,6 +85,11 @@ class SagaException(saga.utils.exception.ExceptionBase):
         available via the 'message' property."""
         return self._message
 
+    def get_type (self):
+        """ Return the type of the exception as string.
+        """
+        return self.__class__.__name__
+
 
     # ----------------------------------------------------------------
     #
@@ -302,7 +307,3 @@ class NoSuccess(SagaException):
     
     def __init__ (self, msg, obj=None) :
         SagaException.__init__ (self, msg, obj)
-
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
