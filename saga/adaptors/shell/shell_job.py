@@ -138,7 +138,7 @@ _ADAPTOR_DOC           = {
 
           * number of files are limited, as is disk space: the job.service will
             
-            keep job state on the remote disk, in ``$HOME/.saga/adaptors/shell_job/``.
+            keep job state on the remote disk, in ``~/.saga/adaptors/shell_job/``.
             Quota limitations may limit the number of files created there,
             and/or the total size of that directory.  
 
@@ -319,7 +319,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # and running, we can requests job start / management operations via its
         # stdio.
 
-        base = "$HOME/.saga/adaptors/shell_job"
+        base = "~/.saga/adaptors/shell_job"
 
         ret, out, _ = self.shell.run_sync ("mkdir -p %s" % base)
         if  ret != 0 :
@@ -337,7 +337,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # files, such as 'timeout' or 'purge_on_quit' ...
         #
         src = shell_wrapper._WRAPPER_SCRIPT
-        tgt = "$HOME/.saga/adaptors/shell_job/wrapper.sh"
+        tgt = ".saga/adaptors/shell_job/wrapper.sh"
 
         self.shell.write_to_file (src, tgt)
 

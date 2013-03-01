@@ -35,8 +35,7 @@ _SCHEMAS_GSI = ['gsissh', 'gsiscp', 'gsisftp']   # 'gsiftp'?
 _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 
 # ssh master/slave flag magic # FIXME: make timeouts configurable
-_SSH_CONTROL_DIR    = "%s/.saga/adaptors/shell/" % os.environ['HOME']
-_SSH_CONTROL_PATH   = "%s/.saga/adaptors/shell/ssh_control_%%n_%%p.%s.ctrl" % (_SSH_CONTROL_DIR, os.getpid ())
+_SSH_CONTROL_PATH   = "~/.saga/adaptors/shell/ssh_%%n_%%p.%s.ctrl" % (os.getpid ())
 _SSH_FLAGS_MASTER   = "-o ControlMaster=yes -o ControlPath=%s -o ControlPersist=30" % _SSH_CONTROL_PATH
 _SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%s -o ControlPersist=30" % _SSH_CONTROL_PATH
 
@@ -205,6 +204,12 @@ class PTYShellFactory (object) :
             cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
             cp_slave.write (s_in)
 
+          # try :
+          #     while True :
+          #         print cp_slave.read ()
+          # except :
+          #     pass
+
             cp_slave.wait ()
 
             return cp_slave
@@ -350,9 +355,7 @@ class PTYShellFactory (object) :
             if url.password   :  info['pwd']  = url.password
 
             if 'user' in info : 
-                info['ssh_args']  += "-l %s " % info['user']
-                info['scp_args']  += "-l %s " % info['user']
-                info['sftp_args'] += "-l %s " % info['user']
+                info['host_str'] = "%s@%s"  % (info['user'], info['host_str'])
 
             info['m_flags']  = _SSH_FLAGS_MASTER
             info['s_flags']  = _SSH_FLAGS_SLAVE

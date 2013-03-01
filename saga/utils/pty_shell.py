@@ -739,7 +739,7 @@ class PTYShell (object) :
         out = fhandle.read  ()
         fhandle.close  ()
 
-        # os.remove (fname)
+        os.remove (fname)
 
         return out
 

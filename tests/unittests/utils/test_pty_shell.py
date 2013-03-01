@@ -98,7 +98,7 @@ import saga.utils.test_config as sutc
 def test_ptyshell_file_stage () :
     """ Test pty_shell file staging """
     conf  = sutc.TestConfig()
-    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session.contexts)
+    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session)
 
     txt = "______1______2_____3_____\n"
     shell.write_to_file (txt, "/tmp/saga-test-staging")
@@ -106,8 +106,8 @@ def test_ptyshell_file_stage () :
 
     assert (txt == out)
 
-    # ret, out, _ = shell.run_sync ("rm /tmp/saga-test-staging")
-    # assert (ret == 0)
-    # assert (out == "")
+    ret, out, _ = shell.run_sync ("rm /tmp/saga-test-staging")
+    assert (ret == 0)
+    assert (out == "")
 
 
