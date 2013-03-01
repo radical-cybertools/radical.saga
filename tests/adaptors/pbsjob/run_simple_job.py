@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-""" This examples shows how to run a job on the local machine
-    using the 'local' job adaptor.
+""" TODO: Missing Docstring
 """
 
 __author__    = "Ole Weidner"
@@ -18,7 +17,7 @@ def main():
     try:
         # create a job service for the local machine. both, 'fork' and
         # 'local' schemes trigger the local job adaptor.
-        js = saga.job.Service("fnork://localhost")
+        js = saga.job.Service("pbs://localhost")
 
         # describe our job
         jd = saga.job.Description()

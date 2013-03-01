@@ -75,11 +75,11 @@ class our_sdist(sdist):
 setup_args = {
     'name': "saga",
     'version': version,
-    'description': "A native Python implementation of the OGF SAGA standard (GFD.90).",
-    'long_description': "SAGA-Python (a.k.a bliss) is a pragmatic and light-weight implementation of the OGF GFD.90 SAGA standard. SAGA-Python is written 100% in Python and focuses on usability and ease of deployment.",
-    'author': "Ole Christian Weidner, et al.",
+    'description': "A light-weight access layer for distributed computing infrastructure",
+    'long_description': "SAGA-python light-weight implementation of the OGF GFD.90 SAGA standard. SAGA-Python is written 100% in Python and focuses on usability and ease of deployment.",
+    'author': "Ole Weidner, et al.",
     'author_email': "ole.weidner@rutgers.edu",
-    'maintainer': "Ole Christian Weidner",
+    'maintainer': "Ole Weidner",
     'maintainer_email': "ole.weidner@rutgers.edu",
     'url': "http://saga-project.github.com/saga-python/",
     'license': "MIT",
@@ -125,6 +125,10 @@ setup_args = {
         "saga.adaptors.context",
         "saga.adaptors.local",
         "saga.adaptors.shell",
+        "saga.adaptors.sge",
+        "saga.adaptors.pbs",
+        "saga.adaptors.condor",
+        "saga.adaptors.slurm",
         "saga.engine",
         "saga.utils",
         "saga.utils.contrib",
@@ -132,7 +136,7 @@ setup_args = {
         "saga.utils.config",
         "saga.utils.job"
     ],
-    'package_data': { '': [ '*.sh' ] },
+    'package_data': {'': ['*.sh']},
     'zip_safe': False,
     'scripts': scripts,
     # mention data_files, even if empty, so install_data is called and
@@ -147,8 +151,6 @@ setup_args = {
 if sys.platform != "win32":
     setup_args['install_requires'] = [
         'colorama',
-        'pexpect'
     ]
 
 setup(**setup_args)
-
