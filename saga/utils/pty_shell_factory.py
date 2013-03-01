@@ -1,5 +1,6 @@
 
 import os
+import sys
 
 import saga.utils.singleton
 import saga.utils.pty_process
@@ -38,6 +39,12 @@ _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 _SSH_CONTROL_PATH   = "~/.saga/adaptors/shell/ssh_%%n_%%p.%s.ctrl" % (os.getpid ())
 _SSH_FLAGS_MASTER   = "-o ControlMaster=yes -o ControlPath=%s -o ControlPersist=30" % _SSH_CONTROL_PATH
 _SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%s -o ControlPersist=30" % _SSH_CONTROL_PATH
+
+if sys.platform == 'darwin' :
+    # MacOS seems to use an older version of ssh which does not support
+    # connection persistency :-/
+    _SSH_FLAGS_MASTER   = "-o ControlMaster=yes -o ControlPath=%s" % _SSH_CONTROL_PATH
+    _SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%s" % _SSH_CONTROL_PATH
 
 # FIXME: right now, we create a shell connection as master --
 # but a master does not actually need a shell, as it is never really
