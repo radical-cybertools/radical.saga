@@ -302,7 +302,7 @@ class PTYShellFactory (object) :
 
         else :
             raise saga.BadParameter._log (self.logger, \
-            	  "can only handle '%s://' URLs, not %s" % (_SCHEMAS, schema))
+            	  "can only handle '%s://' URLs, not %s" % (_SCHEMAS, info['schema']))
 
 
         # depending on type, create command line (args, env etc)
