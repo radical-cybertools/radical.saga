@@ -695,8 +695,6 @@ class PTYShell (object) :
         on the remote system.  If that file exists, it is overwritten.
         A NoSuccess exception is raised if writing the file was not possible
         (missing permissions, incorrect path, etc.).
-
-        See also :func:`read_from_file`.
         """
 
         # FIXME: make this relative to the shell's pwd?  Needs pwd in
@@ -714,7 +712,6 @@ class PTYShell (object) :
         os.remove (fname)
 
 
-
     # ----------------------------------------------------------------
     #
     def read_from_file (self, src) :
@@ -723,9 +720,6 @@ class PTYShell (object) :
         :param src: path to source file to staged from
                     The src path is not an URL, but expected to be a path
                     relative to the shell's URL.
-
-
-        See also :func:`write_to_file`.
         """
 
         # FIXME: make this relative to the shell's pwd?  Needs pwd in
@@ -745,6 +739,46 @@ class PTYShell (object) :
         return out
 
 
+    # ----------------------------------------------------------------
+    #
+    def stage_to_file (self, src, tgt) :
+        """
+        :type  src: string
+        :param src: path of local source file to be stage from.
+                    The tgt path is not an URL, but expected to be a path
+                    relative to the current working directory.
+
+        :type  tgt: string
+        :param tgt: path to target file to stage to.
+                    The tgt path is not an URL, but expected to be a path
+                    relative to the shell's URL.
+        """
+
+        # FIXME: make this relative to the shell's pwd?  Needs pwd in
+        # prompt, and updating pwd state on every find_prompt.
+
+        pty_copy = self.factory.run_copy_to (self.pty_info, src, tgt)
+
+
+    # ----------------------------------------------------------------
+    #
+    def stage_from_file (self, src, tgt) :
+        """
+        :type  src: string
+        :param tgt: path to source file to stage from.
+                    The tgt path is not an URL, but expected to be a path
+                    relative to the shell's URL.
+
+        :type  tgt: string
+        :param src: path of local target file to stage to.
+                    The tgt path is not an URL, but expected to be a path
+                    relative to the current working directory.
+        """
+
+        # FIXME: make this relative to the shell's pwd?  Needs pwd in
+        # prompt, and updating pwd state on every find_prompt.
+
+        pty_copy = self.factory.run_copy_from (self.pty_info, src, tgt)
 
 
     # ----------------------------------------------------------------
