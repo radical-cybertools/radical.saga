@@ -46,10 +46,10 @@
                 <a href="./index.html">Home</a>
               </li>
               <li class="">
-                <a href="#getstarted">Get Started</a>
+                <a class="smoothScroll" href="#getstarted">Get Started</a>
               </li>
               <li class="">
-                <a href="#supportedmw">Supported Middleware</a>
+                <a class="smoothScroll" href="#supportedmw">Supported Middleware</a>
               </li>
               <li class="">
                 <a href="./examples.html">Examples</a>
@@ -68,7 +68,7 @@
     <h1>saga-python</h1>
     <p>A Light-Weight Access Layer for Distributed Computing Infrastructure</p>
     <p>
-      <a href="bootstrap.zip" class="btn btn-primary btn-large" >Get Started</a>
+      <a href="#getstarted" class="btn btn-primary btn-large smoothScroll" >Get Started.</a>
     </p>
     <ul class="masthead-links">
       <li>
@@ -162,9 +162,24 @@
       </div>
       <div class="span6" id="supportedmw">
         <h2>Supported Middleware.</h2>
-        <p>TODO: List of adaptors</p>
-        <p><a class="btn" href="#">Read more &raquo;</a></p>
+        <p>saga-python supports a wide range of distributed computing middleware 
+          and systems via a flexible <i>adaptor</i> mechanism.</p>
 
+        <p>The latest saga-python release install with the following adaptors:</p>
+        
+        <ul>
+          <li><h5><a href="doc/adaptors/saga.adaptor.shell_job.html">SSH and GSISSH</a></h5></li>
+          <li><h5><a href="doc/adaptors/saga.adaptor.condorjob.html">Condor and Condor-G</a></h5></li>
+          <li><h5><a href="doc/adaptors/saga.adaptor.pbsjob.html">PBS and Torque</a></h5></li>
+          <li><h5><a href="doc/adaptors/saga.adaptor.sgejob.html">Sun Grid Engine</a></h5></li>
+          <li><h5><a href="doc/adaptors/saga.adaptor.slurm_job.html">SLURM</a></h5></li>
+        </ul>
+
+          <p>Besides mapping the heterogeneous backend interfaces to the SAGA
+          API, the majority of 
+          adaptors also provide transparent remote access to 
+          otherwise exclusively local services (like most HPC queuing systems) 
+          by tunneling interface calls through either SSH or GSISSH.</p>
       </div>
     </div>
 
@@ -229,11 +244,11 @@
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
     <script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>
-    <script src="js/jquery.js"></script>
-    <script src="js/bootstrap.js"></script>
-    <script src="js/google-code-prettify/prettify.js"></script>
-
-    <script src="js/application.js"></script>
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/bootstrap.js"></script>
+    <script type="text/javascript" src="js/google-code-prettify/prettify.js"></script>
+    <script type="text/javascript" src="js/smoothscroll.js"></script>
+    <script type="text/javascript" src="js/application.js"></script>
 
 
 
