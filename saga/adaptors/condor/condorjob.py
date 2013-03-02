@@ -15,6 +15,7 @@ import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
 from saga.job.constants import *
+from transferdirectives import TransferDirectives
 
 import re
 import time

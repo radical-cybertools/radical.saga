@@ -24,7 +24,6 @@ import subprocess
 import string
 
 TEMP_FILENAME = "test.txt" # filename to create and use for testing
-#TEMP_DIR      = "/irods_test_dir/" #directory to create and use for testing
 
 def main(args):
     try:
