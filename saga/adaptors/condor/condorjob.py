@@ -15,8 +15,10 @@ import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
 from saga.job.constants import *
+from transferdirectives import TransferDirectives
 
 import re
+import os
 import time
 from copy import deepcopy
 from cgi import parse_qs
