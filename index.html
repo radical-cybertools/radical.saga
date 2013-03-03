@@ -43,7 +43,7 @@
           <div class="nav-collapse collapse">
             <ul class="nav">
               <li class="active">
-                <a href="./index.html">Home</a>
+                <a class="smoothScroll" href="./index.html">Home</a>
               </li>
               <li class="">
                 <a class="smoothScroll" href="#getstarted">Get Started</a>
@@ -179,10 +179,13 @@
         </ul>
 
           <p>Besides mapping the heterogeneous backend interfaces to the SAGA
-          API, the majority of 
-          adaptors also provide transparent remote access to 
-          otherwise exclusively local services (like most HPC queuing systems) 
+          API, the majority of adaptors also provide transparent remote access 
+          to otherwise exclusively local services (like most HPC queuing systems) 
           by tunneling interface calls through either SSH or GSISSH.</p>
+
+          <p>A list of available adaptors and their description can be found 
+          in the <a href="doc/adaptors/saga.adaptor.index.html">manual</a>.
+        </p>
       </div>
     </div>
 
@@ -190,15 +193,36 @@
 
     <h1 id="getstarted">Get Started</h1>
 
-    <p class="marketing-byline">subheading</p>
+    <p class="marketing-byline">Run your first saga-python program in less then 5 minutes.</p>
 
-    <p>Saga-python is available in PyPi and installs in seconds with easy_install 
-    or pip. You can find more </p>
 
-    <pre class="prettyprint linenums languague-bash">$ easy_install saga-python</pre>
+    <h3>Installation</h3>
+    <p> The easiest way to install saga-python under your user account is 
+    via <a href="https://pypi.python.org/pypi/virtualenv">virtualenv</a>
+    and easy_install or pip.
 
-    More information about the saga-python job API can be found at:
-    http://saga-project.github.com/saga-python/doc/library/job/index.html
+
+    <pre class="prettyprint languague-bash">$ virtualenv $HOME/saga
+$ source $HOME/saga/bin/activate
+$ easy_install saga-python</pre>
+
+    <p>More detailed installation instructions can be found in the
+      <a href="doc/usage/index.html">manual</a>.
+
+    <h3>An Example</h3>
+
+    <p>This example connects to a remote PBS cluster via SSH and runs a simple
+      <em>/bin/sleep</em> job.
+
+    More information about the saga-python job API can be found in the 
+    respective <a href="doc/library/job/index.html">manual section</a>.</p>
+
+    <p>If you don't have access to a PBS cluster, you can try a different 
+      adaptor by changing the url scheme in <b>line 9</b>. For example, you can
+      use <code>slurm[+ssh]://...</code> to access a SLURM-based cluster, or 
+      <code>condor[+ssh]://...</code> to access a Condor(-G) gateway. A
+      full list of available adaptors and their URL scheme can be found 
+      in the <a href="doc/adaptors/saga.adaptor.index.html">manual</a>.</p>
 
     <pre class="prettyprint linenums languague-python">
 import saga
@@ -242,10 +266,12 @@ if __name__ == "__main__":
         # Trace back the exception. That can be helpful for debugging.
         print " \n*** Backtrace:\n %s" % ex.traceback</pre>
 
+        <p>Paste the above script into a file and run it. Your output 
+          should look similar to this:</a>
 
-    <pre class="prettyprint linenums">$ python ./sleepjob.py<span class="nocode">
+    <pre class="prettyprint languague-bash">$ python ./sleepjob.py<span class="nocode">
 Job ID      : [pbs+ssh://alamo.futuregrid.org]-[209181]
-Job State   : Pendings
+Job State   : Pending
 Job State   : Done
 Exitcode    : 0</span></pre>
 
