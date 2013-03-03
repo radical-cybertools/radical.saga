@@ -697,6 +697,17 @@ ol.inline {
   margin-left: 0;
   list-style: none;
 }
+ul.adaptors,
+ol.adaptors {
+  font-size: 120%;
+  font-weight: 300;
+}
+ul.adaptors > li,
+ol.adaptors > li {
+  line-height: 30px;
+}
+
+
 ul.inline > li,
 ol.inline > li {
   display: inline-block;

@@ -8,10 +8,10 @@
     <meta name="author" content="">
 
     <!-- Le styles -->
-    <link href="css/bootstrap.css" rel="stylesheet">
-    <link href="css/bootstrap-responsive.css" rel="stylesheet">
-    <link href="css/docs.css" rel="stylesheet">
-    <link href="js/google-code-prettify/prettify.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-responsive.css"/>
+    <link rel="stylesheet" type="text/css" href="css/docs.css"/>
+    <link rel="stylesheet" type="text/css" href="css/prettify.css"/>
 
     <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
@@ -27,7 +27,7 @@
 
   </head>
 
-  <body data-spy="scroll" data-target=".bs-docs-sidebar">
+  <body data-spy="scroll" data-target=".bs-docs-sidebar" onload="prettyPrint()" bgcolor="white">
 
     <!-- Navbar
     ================================================== -->
@@ -52,9 +52,6 @@
                 <a class="smoothScroll" href="#supportedmw">Supported Middleware</a>
               </li>
               <li class="">
-                <a href="./examples.html">Examples</a>
-              </li>
-              <li class="">
                 <a href="./doc/index.html">Documentation</a>
               </li>
             </ul>
@@ -68,7 +65,7 @@
     <h1>saga-python</h1>
     <p>A Light-Weight Access Layer for Distributed Computing Infrastructure</p>
     <p>
-      <a href="#getstarted" class="btn btn-primary btn-large smoothScroll" >Get Started.</a>
+      <a href="#getstarted" class="btn btn-primary btn-large smoothScroll" >Get Started</a>
     </p>
     <ul class="masthead-links">
       <li>
@@ -119,16 +116,16 @@
         <br />
         <br />
         <h1>About.</h1>
-            <p><i>saga-python</i> provides a Python API that is compliant with 
+            <p><i>saga-python</i> provides a Python module that is compliant with 
               the <a href="www.ogf.org/documents/GFD.90.pdf">OGF GFD.90</a>
-              SAGA (<i>Simple API for Grid Applications</i>) specification.
+              SAGA (<em>Simple API for Grid Applications</em>) specification.
               SAGA defines high-level access 
               mechanisms for distributed infrastructure components like 
               job schedulers, file transfer and resource provisioning services. 
             </p>
 
             <p>
-              Behind the API façade, saga-python provides a flexible  
+              Behind the API façade, saga-python implements a flexible  
               <i>adaptor</i> architecture. Adaptors are dynamically loadable modules
               that interface the API with different 
               middleware systems and services. Most application developers use 
@@ -156,23 +153,29 @@
     <div class="row-fluid">
       <div class="span6" id="usershowcase">
         <h2>Who is Using It.</h2>
+
+        <p class="marketing-byline">tagline</p>
+
         <p>TODO: User showcase</p>
         <p><a class="btn" href="#">Read more &raquo;</a></p>
 
       </div>
       <div class="span6" id="supportedmw">
-        <h2>Supported Middleware.</h2>
-        <p>saga-python supports a wide range of distributed computing middleware 
-          and systems via a flexible <i>adaptor</i> mechanism.</p>
+        <h2>Supported Middleware</h2>
+
+        <p class="marketing-byline">Extensibility through adaptors.</a>
+
+        <p>Saga-python supports a wide range of distributed computing middleware 
+          and systems via a flexible <em>adaptor</em> architecture.</p>
 
         <p>The latest saga-python release install with the following adaptors:</p>
         
-        <ul>
-          <li><h5><a href="doc/adaptors/saga.adaptor.shell_job.html">SSH and GSISSH</a></h5></li>
-          <li><h5><a href="doc/adaptors/saga.adaptor.condorjob.html">Condor and Condor-G</a></h5></li>
-          <li><h5><a href="doc/adaptors/saga.adaptor.pbsjob.html">PBS and Torque</a></h5></li>
-          <li><h5><a href="doc/adaptors/saga.adaptor.sgejob.html">Sun Grid Engine</a></h5></li>
-          <li><h5><a href="doc/adaptors/saga.adaptor.slurm_job.html">SLURM</a></h5></li>
+        <ul class="adaptors">
+          <li><a href="doc/adaptors/saga.adaptor.shell_job.html">SSH and GSISSH</a></li>
+          <li><a href="doc/adaptors/saga.adaptor.condorjob.html">Condor and Condor-G</a></li>
+          <li><a href="doc/adaptors/saga.adaptor.pbsjob.html">PBS and Torque</a></li>
+          <li><a href="doc/adaptors/saga.adaptor.sgejob.html">Sun Grid Engine</a></li>
+          <li><a href="doc/adaptors/saga.adaptor.slurm_job.html">SLURM</a></li>
         </ul>
 
           <p>Besides mapping the heterogeneous backend interfaces to the SAGA
@@ -186,6 +189,66 @@
     <hr class="soften">
 
     <h1 id="getstarted">Get Started</h1>
+
+    <p class="marketing-byline">subheading</p>
+
+    <p>Saga-python is available in PyPi and installs in seconds with easy_install 
+    or pip. You can find more </p>
+
+    <pre class="prettyprint linenums languague-bash">$ easy_install saga-python</pre>
+
+    More information about the saga-python job API can be found at:
+    http://saga-project.github.com/saga-python/doc/library/job/index.html
+
+    <pre class="prettyprint linenums languague-python">
+import saga
+
+if __name__ == "__main__":
+
+    try:
+        # Create a job service object that represent a remote pbs cluster.
+        # The keyword 'pbs' in the url scheme triggers the PBS adaptors
+        # and '+ssh' enables PBS remote access via SSH.
+        js = saga.job.Service("pbs+ssh://alamo.futuregrid.org")
+
+        # Next, we describe the job we want to run. A complete set of job 
+        # description attributes can be found in the API documentation. 
+        jd = saga.job.Description()
+        jd.queue           = 'batch'
+        jd.environment     = {'RUNTIME': '10'}
+        jd.wall_time_limit = 1 # minutes
+        jd.executable      = '/bin/sleep'
+        jd.arguments       = ['$RUNTIME']
+
+        # Create a new job from the job description. The initial state of 
+        # the job is 'New'.
+        sleepjob = js.create_job(jd)
+
+        # Now we can start our job.
+        sleepjob.run()
+
+        print "Job ID      : %s" % (sleepjob.id)
+        print "Job State   : %s" % (sleepjob.state)
+
+        # Wait for our job to finish (or fail).
+        sleepjob.wait()
+
+        print "Job State   : %s" % (sleepjob.state)
+        print "Exitcode    : %s" % (sleepjob.exit_code)
+
+    except saga.SagaException, ex:
+        # Catch all saga exceptions
+        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        # Trace back the exception. That can be helpful for debugging.
+        print " \n*** Backtrace:\n %s" % ex.traceback</pre>
+
+
+    <pre class="prettyprint linenums">$ python ./sleepjob.py<span class="nocode">
+Job ID      : [pbs+ssh://alamo.futuregrid.org]-[209181]
+Job State   : Pendings
+Job State   : Done
+Exitcode    : 0</span></pre>
+
     <!--p class="marketing-byline">For even more sites built with Bootstrap, <a href="http://builtwithbootstrap.tumblr.com/" target="_blank">visit the unofficial Tumblr</a> or <a href="./getting-started.html#examples">browse the examples</a>.</p>
     <div class="row-fluid">
       <ul class="thumbnails example-sites">
@@ -246,9 +309,9 @@
     <script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/bootstrap.js"></script>
-    <script type="text/javascript" src="js/google-code-prettify/prettify.js"></script>
     <script type="text/javascript" src="js/smoothscroll.js"></script>
     <script type="text/javascript" src="js/application.js"></script>
+    <script type="text/javascript" src="js/prettify.js"></script>
 
 
 
