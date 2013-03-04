@@ -284,7 +284,7 @@ class PTYShell (object) :
                 self.logger.debug ("got initial shell prompt")
 
                 # turn off shell echo, set/register new prompt
-                self.run_sync ("stty -echo; PS1='PROMPT-$?->\\n'; PS2=''; export PS1 PS2\n", 
+                self.run_sync ("unset PROMPT_COMMAND ; stty -echo; PS1='PROMPT-$?->\\n'; PS2=''; export PS1 PS2\n", 
                                 new_prompt="PROMPT-(\d+)->\s*$")
 
                 self.logger.debug ("got new shell prompt")
