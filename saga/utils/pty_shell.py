@@ -236,7 +236,7 @@ class PTYShell (object) :
         self.prompt    = "^(.*[\$#>])\s*$" # greedy, look for line ending with # $ >
         self.prompt_re = re.compile (self.prompt, re.DOTALL)
 
-        prompt_patterns = ["password\s*:\s*$",            # password prompt
+        prompt_patterns = ["assword\s*:\s*$",            # password prompt
                            "want to continue connecting", # hostkey confirmation
                            self.prompt]                   # native shell prompt 
 
@@ -284,7 +284,7 @@ class PTYShell (object) :
                 self.logger.debug ("got initial shell prompt")
 
                 # turn off shell echo, set/register new prompt
-                self.run_sync ("stty -echo; PS1='PROMPT-$?->\\n'; PS2=''; export PS1 PS2\n", 
+                self.run_sync ("unset PROMPT_COMMAND ; stty -echo; PS1='PROMPT-$?->\\n'; PS2=''; export PS1 PS2\n", 
                                 new_prompt="PROMPT-(\d+)->\s*$")
 
                 self.logger.debug ("got new shell prompt")
