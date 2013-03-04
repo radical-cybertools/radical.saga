@@ -300,7 +300,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         """ service instance constructor
         """
         # Turn this off by default.
-        self._disable_ptywrapper_logging = False
+        self._disable_ptywrapper_logging = True
 
         self.rm      = rm_url
         self.session = session
