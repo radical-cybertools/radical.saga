@@ -29,7 +29,8 @@ def main():
         jd.project     = 'TG-MCB090174'
         jd.environment = {'RUNTIME': '60'}
         jd.wall_time_limit = 2  # minutes
-        jd.total_cpu_count = 1
+        jd.total_cpu_count = 12
+        jd.spmd_variation = '12way' 
         jd.executable  = '/bin/sleep'
         jd.arguments   = ['$RUNTIME']
 

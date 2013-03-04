@@ -435,13 +435,17 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """
         if (self.queue is not None) and (jd.queue is not None):
             self._logger.warning("Job service was instantiated explicitly with \
-'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." \
-                % (self.queue, jd.queue, self.queue))
+'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." %
+                (self.queue, jd.queue, self.queue))
 
-        # create a PBS job script from SAGA job description
-        script = _pbscript_generator(url=self.rm, logger=self._logger, jd=jd,
-            ppn=self.ppn, is_cray=self.is_cray, queue=self.queue)
-        self._logger.debug("Generated PBS script: %s" % script)
+        try:
+            # create a PBS job script from SAGA job description
+            script = _pbscript_generator(url=self.rm, logger=self._logger,
+                                         jd=jd, ppn=self.ppn,
+                                         is_cray=self.is_cray, queue=self.queue)
+            self._logger.debug("Generated PBS script: %s" % script)
+        except Exception, ex:
+            log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
         ret, out, _ = self.shell.run_sync("echo '%s' | %s" \
             % (script, self._commands['qsub']['path']))
@@ -479,7 +483,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         # run the PBS 'qstat' command to get some infos about our job
         ret, out, _ = self.shell.run_sync("%s -f1 %s | \
-            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" % (self._commands['qstat']['path'], pid))
+            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|\
+(start_time)|(comp_time)'" % (self._commands['qstat']['path'], pid))
 
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -548,7 +553,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         # run the PBS 'qstat' command to get some infos about our job
         ret, out, _ = self.shell.run_sync("%s -f1 %s | \
-            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)|(comp_time)'" % (self._commands['qstat']['path'], pid))
+            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)\
+|(comp_time)'" % (self._commands['qstat']['path'], pid))
 
         if ret != 0:
             if ("Unknown Job Id" in out):
