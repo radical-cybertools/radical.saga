@@ -39,12 +39,7 @@ def test_list_jobs():
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
-        if tc.job_walltime_limit != "":
-            jd.wall_time_limit = tc.job_walltime_limit
-        if tc.job_project != "":
-            jd.project = tc.job_project
-        if tc.job_queue != "":
-            jd.queue = tc.job_queue
+        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
         j = js.create_job(jd)
 
@@ -94,12 +89,7 @@ def test_get_job () :
         jd.arguments  = ['10']
 
         # add options from the test .cfg file if set
-        if tc.job_walltime_limit != "":
-            jd.wall_time_limit = tc.job_walltime_limit
-        if tc.job_project != "":
-            jd.project = tc.job_project
-        if tc.job_queue != "":
-            jd.queue = tc.job_queue
+        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
         j = js.create_job(jd)
 

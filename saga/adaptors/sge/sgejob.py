@@ -63,11 +63,20 @@ def _sge_to_saga_jobstate(sgejs):
 
 # --------------------------------------------------------------------
 #
-def _sgescript_generator(url, logger, jd, ppn, queue=None):
+def _sgescript_generator(url, logger, jd, pe_list, queue=None):
     """ generates an SGE script from a SAGA job description
     """
     sge_params = str()
     exec_n_args = str()
+
+    # check spmd variation. this translates to the SGE qsub -pe flag.
+    if jd.spmd_variation is not None:
+        if jd.spmd_variation not in pe_list:
+            raise Exception("'%s' is not a valid option for jd.spmd_variation. \
+Valid options are: %s" % (jd.spmd_variation, pe_list))
+    else:
+        raise Exception("jd.spmd_variation needs to be set to one of the \
+following values: %s" % pe_list)
 
     if jd.executable is not None:
         exec_n_args += "%s " % (jd.executable)
@@ -122,12 +131,12 @@ def _sgescript_generator(url, logger, jd, ppn, queue=None):
     # request 16. If 17 cores are requested, we will
     # request 32... and so on ... self.__ppn represents
     # the core count per single node
-    count = int(int(jd.total_cpu_count) / int(ppn))
-    if int(jd.total_cpu_count) % int(ppn) != 0:
-        count = count + 1
-    count = count * int(ppn)
+    #count = int(int(jd.total_cpu_count) / int(ppn))
+    #if int(jd.total_cpu_count) % int(ppn) != 0:
+    #    count = count + 1
+    #count = count * int(ppn)
 
-    sge_params += "#$ -pe %sway %s" % (ppn, str(count))
+    sge_params += "#$ -pe %s %s" % (jd.spmd_variation, jd.total_cpu_count)
 
     sgescript = "\n#!/bin/bash \n%s \n%s" % (sge_params, exec_n_args)
     return sgescript
@@ -169,6 +178,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.PROJECT,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
+                          saga.job.SPMD_VARIATION,
                           saga.job.TOTAL_CPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -259,7 +269,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 ###############################################################################
 #
 class SGEJobService (saga.adaptors.cpi.job.Service):
-    """ implements saga.adaptors.cpi.job.Service 
+    """ implements saga.adaptors.cpi.job.Service
     """
 
     # ----------------------------------------------------------------
@@ -290,11 +300,11 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         """ service instance constructor
         """
         # Turn this off by default.
-        self._disable_ptywrapper_logging = True
-        
+        self._disable_ptywrapper_logging = False
+
         self.rm      = rm_url
         self.session = session
-        self.ppn     = 0
+        self.pe_list = list()
         self.jobs    = dict()
         self.queue   = None
 
@@ -339,8 +349,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             self.shell = saga.utils.pty_shell.PTYShell(pty_url,
                 self.session, null_logger)
         else:
-            self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-                self.session)
+            self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
         self.shell.set_initialize_hook(self.initialize)
         self.shell.set_finalize_hook(self.finalize)
@@ -363,7 +372,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 if ret != 0:
                     message = "Error finding SGE tools: %s" % out
                     log_error_and_raise(message, saga.NoSuccess,
-                        self._logger)
+                                        self._logger)
                 else:
                     # version is reported in the first row of the
                     # help screen, e.g., GE 6.2u5_1
@@ -375,22 +384,18 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         self._logger.info("Found SGE tools: %s" % self._commands)
 
-        # see if we can get some information about the cluster, e.g.,
-        # different queues, number of processes per node, etc.
-        # TODO: this is quite a hack. however, it *seems* to work quite
-        #       well in practice.
-        ret, out, _ = self.shell.run_sync('%s -sq %s | grep slots' % \
-            (self._commands['qconf']['path'], 'normal'))
+        # determine the available processing elements
+        ret, out, _ = self.shell.run_sync('%s -spl' %
+                      (self._commands['qconf']['path']))
         if ret != 0:
             message = "Error running 'qconf': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
-            # this is black magic. we just assume that the highest occurence
-            # of a specific np is the number of processors (cores) per compute
-            # node. this equals max "PPN" for job scripts
-            self.ppn = out.split()[1]
-            self._logger.debug("Determined 'wayness' for queue '%s': %s" \
-                % ('normal', self.ppn))
+            for pe in out.split('\n'):
+                if pe != '':
+                    self.pe_list.append(pe)
+            self._logger.debug("Available processing elements: %s" %
+                (self.pe_list))
 
     # ----------------------------------------------------------------
     #
@@ -404,16 +409,20 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         """
         if (self.queue is not None) and (jd.queue is not None):
             self._logger.warning("Job service was instantiated explicitly with \
-'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." \
-                % (self.queue, jd.queue, self.queue))
+'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." %
+                (self.queue, jd.queue, self.queue))
 
-        # create a SGE job script from SAGA job description
-        script = _sgescript_generator(url=self.rm, logger=self._logger, jd=jd,
-            ppn=self.ppn, queue=self.queue)
-        self._logger.debug("Generated SGE script: %s" % script)
+        try:
+            # create a SGE job script from SAGA job description
+            script = _sgescript_generator(url=self.rm, logger=self._logger,
+                                          jd=jd, pe_list=self.pe_list,
+                                          queue=self.queue)
+            self._logger.debug("Generated SGE script: %s" % script)
+        except Exception, ex:
+            log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
-        ret, out, _ = self.shell.run_sync("echo '%s' | %s" \
-            % (script, self._commands['qsub']['path']))
+        ret, out, _ = self.shell.run_sync("echo '%s' | %s" %
+            (script, self._commands['qsub']['path']))
 
         if ret != 0:
             # something went wrong
@@ -427,7 +436,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             for line in out.split('\n'):
                 if line.find("Your job") != -1:
                     pid = line.split()[2]
-            if pid == None:
+            if pid is None:
                 message = "Couldn't parse job id from 'qsub' output: %s" % out
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
