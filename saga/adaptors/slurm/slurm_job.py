@@ -1026,7 +1026,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         """     
         raise saga.NotImplemented._log (self._logger, "get_created not"
                                         " implemented for SLURM jobs.")
-        return self._created
+        return
   
     # ----------------------------------------------------------------
     #
@@ -1057,7 +1057,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         raise saga.NotImplemented._log (self._logger, "get_execution_hosts not"
                                         " implemented for SLURM jobs.")
     
-        return self._execution_hosts
+        return
   
     # ----------------------------------------------------------------
     #
