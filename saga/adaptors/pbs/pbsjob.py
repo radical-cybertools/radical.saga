@@ -124,15 +124,17 @@ def _pbscript_generator(url, logger, jd, ppn, is_cray=False, queue=None):
             pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
     else:
         # Default case, i.e, standard HPC cluster (non-Cray XT)
-        if jd.total_cpu_count is not None:
-            tcc = int(jd.total_cpu_count)
-            tbd = float(tcc) / float(ppn)
-            if float(tbd) > int(tbd):
-                pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
-                    % (str(int(tbd) + 1), ppn)
-            else:
-                pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
-                    % (str(int(tbd)), ppn)
+        if jd.total_cpu_count is None:
+            jd.total_cpu_count = 1
+
+        tcc = int(jd.total_cpu_count)
+        tbd = float(tcc) / float(ppn)
+        if float(tbd) > int(tbd):
+            pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
+                % (str(int(tbd) + 1), ppn)
+        else:
+            pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
+                % (str(int(tbd)), ppn)
 
     pbscript = "\n#!/bin/bash \n%s%s" % (pbs_params, exec_n_args)
     return pbscript
