@@ -138,7 +138,7 @@ class Entry (saga.base.Base, saga.async.Async) :
             if dir.is_dir ('data'):
                 # do something
         '''
-        return self._adaptor.is_dir (ttype=ttype)
+        return self._adaptor.is_dir_self (ttype=ttype)
   
     
     def is_entry (self, ttype=None) :
@@ -146,7 +146,7 @@ class Entry (saga.base.Base, saga.async.Async) :
         ttype:         saga.task.type enum
         ret:           bool / saga.Task
         '''
-        return self._adaptor.is_entry (ttype=ttype)
+        return self._adaptor.is_entry_self (ttype=ttype)
   
     
     def is_link (self, ttype=None) :
@@ -155,7 +155,7 @@ class Entry (saga.base.Base, saga.async.Async) :
         ttype:         saga.task.type enum
         ret:           bool / saga.Task
         '''
-        return self._adaptor.is_link (ttype=ttype)
+        return self._adaptor.is_link_self (ttype=ttype)
   
     
     def read_link (self, ttype=None) :
@@ -165,7 +165,7 @@ class Entry (saga.base.Base, saga.async.Async) :
         ret:           saga.Url / saga.Task
         '''
 
-        return self._adaptor.read_link (ttype=ttype)
+        return self._adaptor.read_link_self (ttype=ttype)
   
 
     
@@ -281,7 +281,7 @@ class Entry (saga.base.Base, saga.async.Async) :
         ret:           None / saga.Task
         '''
 
-        return self._adaptor.link (tgt, flags, ttype=ttype) 
+        return self._adaptor.link_self (tgt, flags, ttype=ttype) 
   
     
     def move (self, tgt, flags=0, ttype=None) :
@@ -302,7 +302,7 @@ class Entry (saga.base.Base, saga.async.Async) :
             entry = saga.namespace.Directory("sftp://localhost/tmp/data/data.bin")
             entry.move ("sftp://localhost/tmp/data/data.bak")
         '''
-        return self._adaptor.move (tgt, flags, ttype=ttype) 
+        return self._adaptor.move_self (tgt, flags, ttype=ttype) 
   
     
     
