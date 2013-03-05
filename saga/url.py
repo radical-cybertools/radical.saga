@@ -52,7 +52,8 @@ class Url (object):
         elif type(url_string) == Url:
             self._urlobj = urlparse.urlparse(str(url_string))
         else:
-            raise BadParameter("Url expects str or Url type as parameter")
+            raise BadParameter ("Url expects str or Url type as parameter, not %s" \
+                             % type(url_string))
 
     ######################################################################
     ##

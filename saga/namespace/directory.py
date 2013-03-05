@@ -124,7 +124,7 @@ class Directory (entry.Entry) :
     #
     # namespace directory methods
     #
-    def make_dir (self, tgt, flags=None, ttype=None) :
+    def make_dir (self, tgt, flags=0, ttype=None) :
         '''
         :param tgt:   name/path of the new directory
         :param flags: directory creation flags
@@ -154,7 +154,7 @@ class Directory (entry.Entry) :
         return self._adaptor.change_dir (url, ttype=ttype)
   
     
-    def list (self, npat=".", flags=None, ttype=None) :
+    def list (self, npat=None, flags=0, ttype=None) :
         '''
         :param npat: Entry name pattern (like POSIX 'ls', e.g. '\*.txt')
 
@@ -227,7 +227,7 @@ class Directory (entry.Entry) :
     #
     # methods overloaded from namespace.Entry
     #
-    def copy (self, url_1, url_2=None, flags=None, ttype=None) :
+    def copy (self, url_1, url_2=None, flags=0, ttype=None) :
         '''
         :param src: path of the entry to copy
         :param tgt: absolute URL of target name or directory
@@ -254,7 +254,7 @@ class Directory (entry.Entry) :
         else      :  return self._nsentry.copy (url_1,        flags, ttype=ttype)
 
     
-    def link (self, url_1, url_2, flags=None, ttype=None) :
+    def link (self, url_1, url_2, flags=0, ttype=None) :
         '''
         src:           saga.Url
         tgt:           saga.Url
@@ -266,7 +266,7 @@ class Directory (entry.Entry) :
         else      :  return self._nsentry.link (url_1,        flags, ttype=ttype)
   
     
-    def move (self, url_1, url_2, flags=None, ttype=None) :
+    def move (self, url_1, url_2, flags=0, ttype=None) :
         '''
         :param src: path of the entry to copy
         :param tgt: absolute URL of target directory
@@ -289,7 +289,7 @@ class Directory (entry.Entry) :
         else      :  return self._nsentry.move (url_1,        flags, ttype=ttype)
   
     
-    def remove (self, tgt, flags=None, ttype=None) :
+    def remove (self, tgt, flags=0, ttype=None) :
         '''
         tgt:           saga.Url
         flags:         flags enum

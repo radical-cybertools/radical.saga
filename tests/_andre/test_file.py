@@ -1,5 +1,8 @@
 
+import os
 import saga
+
+os.system ("mkdir /tmp/src ; ls -la /tmp > /tmp/src/src.dat")
 
 d = saga.filesystem.Directory ("file://localhost/tmp/src/")
 
@@ -7,7 +10,7 @@ print "copy entry from dir"
 d.copy ("src.dat", "tgt.dat")
 
 print "copy self from dir"
-d.copy ("/tmp/tgt")
+d.copy ("/tmp/tgt", flags=saga.filesystem.RECURSIVE)
 
 f_tgt = d.open ('tgt.dat')
 f_src = d.open ('src.dat')
@@ -25,6 +28,7 @@ print "size from entry"
 print f_tgt.size
 
 print "list"
-print d.list ()
+for name in d.list () :
+  print name
 
 

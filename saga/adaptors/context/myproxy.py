@@ -96,7 +96,7 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
 
         self.get_api ().type = type
 
-        return self
+        return self.get_api ()
 
 
     @SYNC_CALL
