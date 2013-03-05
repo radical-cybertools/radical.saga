@@ -2,7 +2,10 @@
 # encoding: utf-8
 
 """ This examples shows how to run a job on a remote PBS/TORQUE cluster
-    using the 'local' job adaptor.
+    using the 'pbs' job adaptor.
+
+    More information about the saga-python job API can be found at:
+    http://saga-project.github.com/saga-python/doc/library/job/index.html
 """
 
 __author__    = "Ole Weidner"
@@ -10,37 +13,28 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 import sys
-import time
 import saga
 
 
 def main():
 
     try:
-        # create a job service for the local machine. both, 'fork' and
-        # 'local' schemes trigger the local job adaptor.
-        js = saga.job.Service("pbs+ssh://alamo.futuregrid.orgs")
+        # Create a job service object that represent a remote pbs cluster.
+        # The keyword 'pbs' in the url scheme triggers the PBS adaptors
+        # and '+ssh' enables PBS remote access via SSH.
+        js = saga.job.Service("pbs+ssh://alamo.futuregrid.org")
 
-        # describe our job
+        # Next, we describe the job we want to run. A complete set of job
+        # description attributes can be found in the API documentation.
         jd = saga.job.Description()
+        jd.queue           = 'batch'
+        jd.environment     = {'RUNTIME': '10'}
+        jd.wall_time_limit = 1 # minutes
+        jd.executable      = '/bin/sleep'
+        jd.arguments       = ['$RUNTIME']
 
-        # environment, executable & arguments. We use '/bin/sleep' to simulate
-        # a job that runs for $RUNTIME seconds.
-        jd.queue       = 'batch'
-        jd.name        = 'testjob'
-        jd.project     = 'TG-MCB090174'
-        jd.environment = {'RUNTIME': '10'}
-        jd.wall_time_limit =   2 # minutes
-        #jd.total_cpu_count = 12
-        jd.working_directory = "/tmp/"
-        jd.executable  = '/bin/sleep'
-        jd.arguments   = ['$RUNTIME']
-
-        # output options (will just be empty files for /bin/sleep)
-        jd.output = "saga_pbsjob.stdout"
-        jd.error  = "saga_pbsjob.stderr"
-
-        # create the job (state: New)
+        # Create a new job from the job description. The initial state of 
+        # the job is 'New'.
         sleepjob = js.create_job(jd)
 
         # check our job's id and state
@@ -73,7 +67,7 @@ def main():
 
     except saga.SagaException, ex:
         print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
-        # get the whole traceback in case of an exception -
+        # Get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
         print " \n*** Backtrace:\n %s" % ex.traceback
         sys.exit(-1)
