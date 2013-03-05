@@ -1,6 +1,6 @@
 
-Context Management
-******************
+Security Contexts 
+*****************
 
 .. todo:: Intro to SAGA Contexts handling.
 
