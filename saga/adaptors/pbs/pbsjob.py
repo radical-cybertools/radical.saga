@@ -149,15 +149,15 @@ _PTY_TIMEOUT = 2.0
 _ADAPTOR_NAME          = "saga.adaptor.pbsjob"
 _ADAPTOR_SCHEMAS       = ["pbs", "pbs+ssh", "pbs+gsissh"]
 _ADAPTOR_OPTIONS       = [
-    {
-    'category':      'saga.adaptor.pbsjob',
-    'name':          'foo',
-    'type':          bool,
-    'default':       False,
-    'valid_options': [True, False],
-    'documentation': """Doc""",
-    'env_variable':   None
-    },
+    # {
+    # 'category':      'saga.adaptor.pbsjob',
+    # 'name':          'foo',
+    # 'type':          bool,
+    # 'default':       False,
+    # 'valid_options': [True, False],
+    # 'documentation': """Doc""",
+    # 'env_variable':   None
+    # },
 ]
 
 # --------------------------------------------------------------------
@@ -194,11 +194,14 @@ _ADAPTOR_DOC = {
     "name":          _ADAPTOR_NAME,
     "cfg_options":   _ADAPTOR_OPTIONS,
     "capabilities":  _ADAPTOR_CAPABILITIES,
-    "description":   """The PBS adaptor can run and manage jobs on local and
-                        remote PBS and TORQUE clusters.""",
-    "schemas": {"pbs":        "connect to a local PBS/TORQUE cluster",
-                "pbs+ssh":    "conenct to a remote PBS/TORQUE cluster via SSH",
-                "pbs+gsissh": "connect to a remote PBS/TORQUE cluster via GSISSH"}
+    "description":  """
+The PBS adaptor allows to run and manage jobs on `PBS <http://www.pbsworks.com/>`_
+and `TORQUE <http://www.adaptivecomputing.com/products/open-source/torque>`_ 
+controlled HPC clusters.
+""",
+    "schemas": {"pbs":        "connect to a local cluster",
+                "pbs+ssh":    "conenct to a remote cluster via SSH",
+                "pbs+gsissh": "connect to a remote cluster via GSISSH"}
 }
 
 # --------------------------------------------------------------------
@@ -238,7 +241,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts = self.get_config()
-        self.foo = self.opts['foo'].get_value()
+        # self.foo = self.opts['foo'].get_value()
 
         #self._logger.info('debug trace : %s' % self.debug_trace)
 
