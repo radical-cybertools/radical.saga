@@ -3,15 +3,24 @@
 saga.adaptor.sgejob
 *******************
 
-TODO
+
+The SGE (Sun/Oracle Grid Engine) adaptor allows to run and manage jobs on
+`SGE <http://en.wikipedia.org/wiki/Oracle_Grid_Engine>`_ controlled HPC clusters.
+
 
 
 Supported Schemas
 -----------------
 
-  - **sge+gsissh://** : connect to a remote SGE cluster via GSISSH
-  - **sge://** : connect to a local SGE cluster
-  - **sge+ssh://** : conenct to a remote SGE cluster via SSH
+This adaptor is triggered by the following URL schemes:
+
+======================== ============================================================
+schema                   description                                                 
+======================== ============================================================
+**sge://**               connect to a local cluster                                  
+**sge+ssh://**           conenct to a remote cluster via SSH                         
+**sge+gsissh://**        connect to a remote cluster via GSISSH                      
+======================== ============================================================
 
 
 
@@ -22,7 +31,8 @@ Configuration options can be used to control the adaptor's runtime behavior. Mos
  .. seealso:: More information about configuration options can be found in the :ref:`conf_file` section.
 
 enabled
-****************
+*******
+
 enable / disable saga.adaptor.sgejob adaptor
 
   - **type** : <type 'bool'>
@@ -30,7 +40,8 @@ enable / disable saga.adaptor.sgejob adaptor
   - **environment** : None
   - **valid options** : [True, False]
 foo
-****************
+***
+
 Doc
 
   - **type** : <type 'bool'>
@@ -43,11 +54,13 @@ Capabilities
 ------------
 
 Supported Monitorable Metrics
-****************
+*****************************
+
   - State
 
 Supported Job Attributes
-****************
+************************
+
   - ExitCode
   - ExecutionHosts
   - Created
@@ -55,13 +68,15 @@ Supported Job Attributes
   - Finished
 
 Supported Context Types
-****************
+***********************
+
   - *x509*: GSISSH X509 proxy context
   - *userpass*: username/password pair (ssh)
   - *ssh*: SSH public/private keypair
 
 Supported Job Description Attributes
-****************
+************************************
+
   - Name
   - Executable
   - Arguments
@@ -73,6 +88,7 @@ Supported Job Description Attributes
   - Project
   - WallTimeLimit
   - WorkingDirectory
+  - SPMDVariation
   - TotalCPUCount
 
 

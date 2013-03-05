@@ -7,10 +7,17 @@ This adaptor fetches an X509 proxy from
 MyProxy when it is added to a saga.Session.
 
 
+
 Supported Schemas
 -----------------
 
-  - **myproxy://** : this adaptor can only interact with myproxy backends
+This adaptor is triggered by the following URL schemes:
+
+======================== ============================================================
+schema                   description                                                 
+======================== ============================================================
+**myproxy://**           this adaptor can only interact with myproxy backends        
+======================== ============================================================
 
 
 
@@ -21,7 +28,8 @@ Configuration options can be used to control the adaptor's runtime behavior. Mos
  .. seealso:: More information about configuration options can be found in the :ref:`conf_file` section.
 
 enabled
-****************
+*******
+
 enable / disable saga.adaptor.myproxy adaptor
 
   - **type** : <type 'bool'>
@@ -34,7 +42,8 @@ Capabilities
 ------------
 
 attributes
-****************
+**********
+
   - Type
   - Server
   - UserID

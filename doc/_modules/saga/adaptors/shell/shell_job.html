@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.shell.shell_job &mdash; SAGA 0.9.1 documentation</title>
+    <title>saga.adaptors.shell.shell_job &mdash; SAGA 0.9.2 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.9.1',
+        VERSION:     '0.9.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.1 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.9.2 documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -137,9 +137,6 @@
     <span class="s">&quot;description&quot;</span>      <span class="p">:</span> <span class="s">&quot;&quot;&quot; </span>
 <span class="s">        The Shell job adaptor. This adaptor uses the sh command line tools (sh,</span>
 <span class="s">        ssh, gsissh) to run remote jobs.</span>
-<span class="s">        &quot;&quot;&quot;</span><span class="p">,</span>
-    <span class="s">&quot;details&quot;</span>          <span class="p">:</span> <span class="s">&quot;&quot;&quot; </span>
-<span class="s">        A more elaborate description....</span>
 
 <span class="s">        Known Limitations:</span>
 <span class="s">        ------------------</span>
@@ -195,7 +192,7 @@
 
 <span class="s">          * number of files are limited, as is disk space: the job.service will</span>
 <span class="s">            </span>
-<span class="s">            keep job state on the remote disk, in ``$HOME/.saga/adaptors/shell_job/``.</span>
+<span class="s">            keep job state on the remote disk, in ``~/.saga/adaptors/shell_job/``.</span>
 <span class="s">            Quota limitations may limit the number of files created there,</span>
 <span class="s">            and/or the total size of that directory.  </span>
 
@@ -270,8 +267,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">opts</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_config</span> <span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">notifications</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="p">[</span><span class="s">&#39;enable_notifications&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_value</span> <span class="p">()</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&#39;threading id: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span> <span class="p">()</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -359,8 +354,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">njobs</span>   <span class="o">=</span> <span class="mi">0</span>
 
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">contexts</span><span class="p">,</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> 
                                                     <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">set_initialize_hook</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">)</span>
@@ -379,7 +373,7 @@
         <span class="c"># and running, we can requests job start / management operations via its</span>
         <span class="c"># stdio.</span>
 
-        <span class="n">base</span> <span class="o">=</span> <span class="s">&quot;$HOME/.saga/adaptors/shell_job&quot;</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="s">&quot;~/.saga/adaptors/shell_job&quot;</span>
 
         <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;mkdir -p </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">base</span><span class="p">)</span>
         <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
@@ -396,8 +390,10 @@
         <span class="c"># TODO: replace some constants in the script with values from config</span>
         <span class="c"># files, such as &#39;timeout&#39; or &#39;purge_on_quit&#39; ...</span>
         <span class="c">#</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_to_file</span> <span class="p">(</span><span class="n">src</span> <span class="o">=</span> <span class="n">shell_wrapper</span><span class="o">.</span><span class="n">_WRAPPER_SCRIPT</span><span class="p">,</span> 
-                                  <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">/wrapper.sh&quot;</span> <span class="o">%</span> <span class="n">base</span><span class="p">)</span>
+        <span class="n">src</span> <span class="o">=</span> <span class="n">shell_wrapper</span><span class="o">.</span><span class="n">_WRAPPER_SCRIPT</span>
+        <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;.saga/adaptors/shell_job/wrapper.sh&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">write_to_file</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
 
         <span class="c"># we run the script.  In principle, we should set a new / different</span>
         <span class="c"># prompt -- but, due to some strange and very unlikely coincidence, the</span>
@@ -1207,7 +1203,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>

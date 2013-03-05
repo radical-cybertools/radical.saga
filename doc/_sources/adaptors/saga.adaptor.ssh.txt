@@ -7,10 +7,17 @@ This adaptor points to a ssh public/private keypair and
 user_id to be used for backend connections.
 
 
+
 Supported Schemas
 -----------------
 
-  - **ssh://** : ssh private/public and userid information.
+This adaptor is triggered by the following URL schemes:
+
+======================== ============================================================
+schema                   description                                                 
+======================== ============================================================
+**ssh://**               ssh private/public and userid information.                  
+======================== ============================================================
 
 
 
@@ -21,7 +28,8 @@ Configuration options can be used to control the adaptor's runtime behavior. Mos
  .. seealso:: More information about configuration options can be found in the :ref:`conf_file` section.
 
 enabled
-****************
+*******
+
 enable / disable saga.adaptor.ssh adaptor
 
   - **type** : <type 'bool'>
@@ -34,7 +42,8 @@ Capabilities
 ------------
 
 attributes
-****************
+**********
+
   - Type
   - UserProxy
   - LifeTime

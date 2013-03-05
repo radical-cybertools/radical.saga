@@ -7,10 +7,17 @@ This adaptor stores user_id and user_pass tokens, to
 be used for backend connections.
 
 
+
 Supported Schemas
 -----------------
 
-  - **userpass://** : this adaptor can only store username/password pairs.
+This adaptor is triggered by the following URL schemes:
+
+======================== ============================================================
+schema                   description                                                 
+======================== ============================================================
+**userpass://**          this adaptor can only store username/password pairs.        
+======================== ============================================================
 
 
 
@@ -21,7 +28,8 @@ Configuration options can be used to control the adaptor's runtime behavior. Mos
  .. seealso:: More information about configuration options can be found in the :ref:`conf_file` section.
 
 enabled
-****************
+*******
+
 enable / disable saga.adaptor.userpass adaptor
 
   - **type** : <type 'bool'>
@@ -34,7 +42,8 @@ Capabilities
 ------------
 
 attributes
-****************
+**********
+
   - Type
   - UserID
   - UserPass

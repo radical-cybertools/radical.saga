@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>4. saga.adaptor.userpass &mdash; SAGA 0.9.1 documentation</title>
+    <title>4. saga.adaptor.userpass &mdash; SAGA 0.9.2 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.1',
+        VERSION:     '0.9.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,9 +31,9 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.1 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.2 documentation" href="../index.html" />
     <link rel="up" title="5. Adaptors:" href="saga.adaptor.index.html" />
-    <link rel="next" title="5. saga.adaptor.filesystem.local" href="saga.adaptor.filesystem.local.html" />
+    <link rel="next" title="5. saga.adaptor.shell_job" href="saga.adaptor.shell_job.html" />
     <link rel="prev" title="3. saga.adaptor.ssh" href="saga.adaptor.ssh.html" /> 
   </head>
   <body>
@@ -47,12 +47,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.filesystem.local.html" title="5. saga.adaptor.filesystem.local"
+          <a href="saga.adaptor.shell_job.html" title="5. saga.adaptor.shell_job"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="saga.adaptor.ssh.html" title="3. saga.adaptor.ssh"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" accesskey="U">5. Adaptors:</a> &raquo;</li> 
       </ul>
     </div>  
@@ -68,11 +68,23 @@
 be used for backend connections.</p>
 <div class="section" id="supported-schemas">
 <h2>4.1. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
-<blockquote>
-<div><ul class="simple">
-<li><strong>userpass://</strong> : this adaptor can only store username/password pairs.</li>
-</ul>
-</div></blockquote>
+<p>This adaptor is triggered by the following URL schemes:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="29%" />
+<col width="71%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">schema</th>
+<th class="head">description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><strong>userpass://</strong></td>
+<td>this adaptor can only store username/password pairs.</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section" id="configuration-options">
 <h2>4.2. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
@@ -166,8 +178,8 @@ be used for backend connections.</p>
   <p class="topless"><a href="saga.adaptor.ssh.html"
                         title="previous chapter">3. saga.adaptor.ssh</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="saga.adaptor.filesystem.local.html"
-                        title="next chapter">5. saga.adaptor.filesystem.local</a></p>
+  <p class="topless"><a href="saga.adaptor.shell_job.html"
+                        title="next chapter">5. saga.adaptor.shell_job</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/adaptors/saga.adaptor.userpass.txt"
@@ -200,12 +212,12 @@ be used for backend connections.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.filesystem.local.html" title="5. saga.adaptor.filesystem.local"
+          <a href="saga.adaptor.shell_job.html" title="5. saga.adaptor.shell_job"
              >next</a> |</li>
         <li class="right" >
           <a href="saga.adaptor.ssh.html" title="3. saga.adaptor.ssh"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" >5. Adaptors:</a> &raquo;</li> 
       </ul>
     </div>

@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.sge.sgejob &mdash; SAGA 0.9.1 documentation</title>
+    <title>saga.adaptors.sge.sgejob &mdash; SAGA 0.9.2 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.9.1',
+        VERSION:     '0.9.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.1 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.9.2 documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -121,11 +121,20 @@
 
 <span class="c"># --------------------------------------------------------------------</span>
 <span class="c">#</span>
-<span class="k">def</span> <span class="nf">_sgescript_generator</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">jd</span><span class="p">,</span> <span class="n">ppn</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_sgescript_generator</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">jd</span><span class="p">,</span> <span class="n">pe_list</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; generates an SGE script from a SAGA job description</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">sge_params</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
     <span class="n">exec_n_args</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
+
+    <span class="c"># check spmd variation. this translates to the SGE qsub -pe flag.</span>
+    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">spmd_variation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">spmd_variation</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pe_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;&#39;</span><span class="si">%s</span><span class="s">&#39; is not a valid option for jd.spmd_variation. </span><span class="se">\</span>
+<span class="s">Valid options are: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">spmd_variation</span><span class="p">,</span> <span class="n">pe_list</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;jd.spmd_variation needs to be set to one of the </span><span class="se">\</span>
+<span class="s">following values: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">pe_list</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">exec_n_args</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">executable</span><span class="p">)</span>
@@ -180,12 +189,12 @@
     <span class="c"># request 16. If 17 cores are requested, we will</span>
     <span class="c"># request 32... and so on ... self.__ppn represents</span>
     <span class="c"># the core count per single node</span>
-    <span class="n">count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span><span class="p">)</span> <span class="o">/</span> <span class="nb">int</span><span class="p">(</span><span class="n">ppn</span><span class="p">))</span>
-    <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span><span class="p">)</span> <span class="o">%</span> <span class="nb">int</span><span class="p">(</span><span class="n">ppn</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span> <span class="mi">1</span>
-    <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">ppn</span><span class="p">)</span>
+    <span class="c">#count = int(int(jd.total_cpu_count) / int(ppn))</span>
+    <span class="c">#if int(jd.total_cpu_count) % int(ppn) != 0:</span>
+    <span class="c">#    count = count + 1</span>
+    <span class="c">#count = count * int(ppn)</span>
 
-    <span class="n">sge_params</span> <span class="o">+=</span> <span class="s">&quot;#$ -pe </span><span class="si">%s</span><span class="s">way </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ppn</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">count</span><span class="p">))</span>
+    <span class="n">sge_params</span> <span class="o">+=</span> <span class="s">&quot;#$ -pe </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">spmd_variation</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span><span class="p">)</span>
 
     <span class="n">sgescript</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">#!/bin/bash </span><span class="se">\n</span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sge_params</span><span class="p">,</span> <span class="n">exec_n_args</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">sgescript</span>
@@ -227,6 +236,7 @@
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PROJECT</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">WALL_TIME_LIMIT</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">WORKING_DIRECTORY</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">SPMD_VARIATION</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">TOTAL_CPU_COUNT</span><span class="p">],</span>
     <span class="s">&quot;job_attributes&quot;</span><span class="p">:</span>    <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXIT_CODE</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXECUTION_HOSTS</span><span class="p">,</span>
@@ -248,7 +258,6 @@
     <span class="s">&quot;capabilities&quot;</span><span class="p">:</span>  <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
     <span class="s">&quot;description&quot;</span><span class="p">:</span>   <span class="s">&quot;&quot;&quot;The SGE adaptor can run and manage jobs on local and</span>
 <span class="s">                        remote SGE clusters.&quot;&quot;&quot;</span><span class="p">,</span>
-    <span class="s">&quot;details&quot;</span><span class="p">:</span> <span class="s">&quot;&quot;&quot;TODO&quot;&quot;&quot;</span><span class="p">,</span>
     <span class="s">&quot;schemas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;sge&quot;</span><span class="p">:</span>        <span class="s">&quot;connect to a local SGE cluster&quot;</span><span class="p">,</span>
                 <span class="s">&quot;sge+ssh&quot;</span><span class="p">:</span>    <span class="s">&quot;conenct to a remote SGE cluster via SSH&quot;</span><span class="p">,</span>
                 <span class="s">&quot;sge+gsissh&quot;</span><span class="p">:</span> <span class="s">&quot;connect to a remote SGE cluster via GSISSH&quot;</span><span class="p">}</span>
@@ -317,7 +326,7 @@
 <span class="c">###############################################################################</span>
 <span class="c">#</span>
 <div class="viewcode-block" id="SGEJobService"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.sgejob.html#saga.adaptors.sge.sgejob.SGEJobService">[docs]</a><span class="k">class</span> <span class="nc">SGEJobService</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service </span>
+    <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -349,10 +358,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># Turn this off by default.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_disable_ptywrapper_logging</span> <span class="o">=</span> <span class="bp">True</span>
-        
+
         <span class="bp">self</span><span class="o">.</span><span class="n">rm</span>      <span class="o">=</span> <span class="n">rm_url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ppn</span>     <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pe_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span>    <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">queue</span>   <span class="o">=</span> <span class="bp">None</span>
 
@@ -395,10 +404,9 @@
             <span class="n">null_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&quot;PTYShell&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">nh</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span><span class="p">(</span><span class="n">pty_url</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">contexts</span><span class="p">,</span> <span class="n">null_logger</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">null_logger</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span><span class="p">(</span><span class="n">pty_url</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">contexts</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span><span class="p">(</span><span class="n">pty_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">set_initialize_hook</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">set_finalize_hook</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">)</span>
@@ -421,7 +429,7 @@
                 <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error finding SGE tools: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
                     <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c"># version is reported in the first row of the</span>
                     <span class="c"># help screen, e.g., GE 6.2u5_1</span>
@@ -433,22 +441,18 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Found SGE tools: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">)</span>
 
-        <span class="c"># see if we can get some information about the cluster, e.g.,</span>
-        <span class="c"># different queues, number of processes per node, etc.</span>
-        <span class="c"># TODO: this is quite a hack. however, it *seems* to work quite</span>
-        <span class="c">#       well in practice.</span>
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> -sq </span><span class="si">%s</span><span class="s"> | grep slots&#39;</span> <span class="o">%</span> \
-            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qconf&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="s">&#39;normal&#39;</span><span class="p">))</span>
+        <span class="c"># determine the available processing elements</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> -spl&#39;</span> <span class="o">%</span>
+                      <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qconf&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">]))</span>
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error running &#39;qconf&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c"># this is black magic. we just assume that the highest occurence</span>
-            <span class="c"># of a specific np is the number of processors (cores) per compute</span>
-            <span class="c"># node. this equals max &quot;PPN&quot; for job scripts</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">ppn</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Determined &#39;wayness&#39; for queue &#39;</span><span class="si">%s</span><span class="s">&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> \
-                <span class="o">%</span> <span class="p">(</span><span class="s">&#39;normal&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ppn</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">pe</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">pe</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pe_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pe</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Available processing elements: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pe_list</span><span class="p">))</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span></div>
@@ -462,16 +466,20 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">queue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Job service was instantiated explicitly with </span><span class="se">\</span>
-<span class="s">&#39;queue=</span><span class="si">%s</span><span class="s">&#39;, but job description tries to a differnt queue: &#39;</span><span class="si">%s</span><span class="s">&#39;. Using &#39;</span><span class="si">%s</span><span class="s">&#39;.&quot;</span> \
-                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">))</span>
+<span class="s">&#39;queue=</span><span class="si">%s</span><span class="s">&#39;, but job description tries to a differnt queue: &#39;</span><span class="si">%s</span><span class="s">&#39;. Using &#39;</span><span class="si">%s</span><span class="s">&#39;.&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">))</span>
 
-        <span class="c"># create a SGE job script from SAGA job description</span>
-        <span class="n">script</span> <span class="o">=</span> <span class="n">_sgescript_generator</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="n">jd</span><span class="o">=</span><span class="n">jd</span><span class="p">,</span>
-            <span class="n">ppn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ppn</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Generated SGE script: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">script</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c"># create a SGE job script from SAGA job description</span>
+            <span class="n">script</span> <span class="o">=</span> <span class="n">_sgescript_generator</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span>
+                                          <span class="n">jd</span><span class="o">=</span><span class="n">jd</span><span class="p">,</span> <span class="n">pe_list</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pe_list</span><span class="p">,</span>
+                                          <span class="n">queue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Generated SGE script: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">script</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="n">log_error_and_raise</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">),</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
 
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;echo &#39;</span><span class="si">%s</span><span class="s">&#39; | </span><span class="si">%s</span><span class="s">&quot;</span> \
-            <span class="o">%</span> <span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qsub&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">]))</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;echo &#39;</span><span class="si">%s</span><span class="s">&#39; | </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+            <span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qsub&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">]))</span>
 
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c"># something went wrong</span>
@@ -485,7 +493,7 @@
             <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;Your job&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
                     <span class="n">pid</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">2</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">pid</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pid</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Couldn&#39;t parse job id from &#39;qsub&#39; output: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
                 <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
 
@@ -1005,7 +1013,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>

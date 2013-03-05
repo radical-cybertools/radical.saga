@@ -3,15 +3,24 @@
 saga.adaptor.condorjob
 **********************
 
-TODO
+
+The (HT)Condor(-G) adaptor allows to run and manage jobs on a 
+`Condor <http://research.cs.wisc.edu/htcondor/>`_ gateway.
+
 
 
 Supported Schemas
 -----------------
 
-  - **condor+gsissh://** : connect to a remote Condor gateway via GSISSH
-  - **condor://** : connect to a local Condor gateway
-  - **condor+ssh://** : conenct to a remote Condor gateway via SSH
+This adaptor is triggered by the following URL schemes:
+
+======================== ============================================================
+schema                   description                                                 
+======================== ============================================================
+**condor://**            connect to a local gateway                                  
+**condor+ssh://**        conenct to a remote gateway via SSH                         
+**condor+gsissh://**     connect to a remote gateway via GSISSH                      
+======================== ============================================================
 
 
 
@@ -22,19 +31,12 @@ Configuration options can be used to control the adaptor's runtime behavior. Mos
  .. seealso:: More information about configuration options can be found in the :ref:`conf_file` section.
 
 enabled
-****************
+*******
+
 enable / disable saga.adaptor.condorjob adaptor
 
   - **type** : <type 'bool'>
   - **default** : True
-  - **environment** : None
-  - **valid options** : [True, False]
-foo
-****************
-Doc
-
-  - **type** : <type 'bool'>
-  - **default** : False
   - **environment** : None
   - **valid options** : [True, False]
 
@@ -43,11 +45,13 @@ Capabilities
 ------------
 
 Supported Monitorable Metrics
-****************
+*****************************
+
   - State
 
 Supported Job Attributes
-****************
+************************
+
   - ExitCode
   - ExecutionHosts
   - Created
@@ -55,13 +59,15 @@ Supported Job Attributes
   - Finished
 
 Supported Context Types
-****************
+***********************
+
   - *x509*: GSISSH X509 proxy context
   - *userpass*: username/password pair (ssh)
   - *ssh*: SSH public/private keypair
 
 Supported Job Description Attributes
-****************
+************************************
+
   - Name
   - Executable
   - Arguments
@@ -75,6 +81,7 @@ Supported Job Description Attributes
   - WorkingDirectory
   - CandidateHosts
   - TotalCPUCount
+  - FileTransfer
 
 
 

@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>6. Job Management &mdash; SAGA 0.9.1 documentation</title>
+    <title>1. Working with Jobs &mdash; SAGA 0.9.2 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.1',
+        VERSION:     '0.9.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,10 +31,10 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.1 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.2 documentation" href="../../index.html" />
     <link rel="up" title="2. Library Reference" href="../index.html" />
-    <link rel="next" title="7. File/Directory Management" href="../filesystem/index.html" />
-    <link rel="prev" title="5. Url Handling" href="../url.html" /> 
+    <link rel="next" title="2. Working with Files and Directories" href="../filesystem/index.html" />
+    <link rel="prev" title="2. Library Reference" href="../index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -47,12 +47,12 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../filesystem/index.html" title="7. File/Directory Management"
+          <a href="../filesystem/index.html" title="2. Working with Files and Directories"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../url.html" title="5. Url Handling"
+          <a href="../index.html" title="2. Library Reference"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -62,8 +62,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="job-management">
-<span id="job-managemen"></span><h1>6. Job Management<a class="headerlink" href="#job-management" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="working-with-jobs">
+<span id="job-managemen"></span><h1>1. Working with Jobs<a class="headerlink" href="#working-with-jobs" title="Permalink to this headline">¶</a></h1>
 <p>SAGA&#8217;s job management module is central to the API. It
 represents an application/executable running under the management of a resource
 manager. A resrouce manager can be anything from the local machine to a remote
@@ -125,7 +125,7 @@ documentation.</p>
 </ul>
 </div>
 <div class="section" id="job-service-saga-job-service">
-<span id="job-service"></span><h2><a class="toc-backref" href="#id1">6.1. Job Service &#8211; <a class="reference internal" href="#saga.job.Service" title="saga.job.Service"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Service</span></tt></a></a><a class="headerlink" href="#job-service-saga-job-service" title="Permalink to this headline">¶</a></h2>
+<span id="job-service"></span><h2><a class="toc-backref" href="#id1">1.1. Job Service &#8211; <a class="reference internal" href="#saga.job.Service" title="saga.job.Service"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Service</span></tt></a></a><a class="headerlink" href="#job-service-saga-job-service" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -404,7 +404,7 @@ The job.Service supports to reconnect to those remote entities:</p>
 
 </div>
 <div class="section" id="job-description-saga-job-description">
-<h2><a class="toc-backref" href="#id2">6.2. Job Description &#8211; <a class="reference internal" href="#saga.job.Description" title="saga.job.Description"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Description</span></tt></a></a><a class="headerlink" href="#job-description-saga-job-description" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id2">1.2. Job Description &#8211; <a class="reference internal" href="#saga.job.Description" title="saga.job.Description"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Description</span></tt></a></a><a class="headerlink" href="#job-description-saga-job-description" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -425,7 +425,7 @@ adaptor-specific lists of supported attributes.</p>
 <p>The job description class.</p>
 <dl class="method">
 <dt id="saga.job.Description.clone">
-<tt class="descname">clone</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.job.Description.clone" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">clone</tt><big>(</big><em>other=None</em><big>)</big><a class="headerlink" href="#saga.job.Description.clone" title="Permalink to this definition">¶</a></dt>
 <dd><p>deep copy: unlike the default python assignment (copy object reference),
 a deep copy will create a new object instance with the same state &#8211;
 after a deep copy, a change on one instance will not affect the other.</p>
@@ -897,7 +897,7 @@ If the argument is a string, the return value is the same object.</p>
 
 </div>
 <div class="section" id="jobs-saga-job-job">
-<span id="job-job"></span><h2><a class="toc-backref" href="#id3">6.3. Jobs &#8211; <a class="reference internal" href="#saga.job.Job" title="saga.job.Job"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Job</span></tt></a></a><a class="headerlink" href="#jobs-saga-job-job" title="Permalink to this headline">¶</a></h2>
+<span id="job-job"></span><h2><a class="toc-backref" href="#id3">1.3. Jobs &#8211; <a class="reference internal" href="#saga.job.Job" title="saga.job.Job"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Job</span></tt></a></a><a class="headerlink" href="#jobs-saga-job-job" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1376,7 +1376,7 @@ the service part of the job_id.</p>
 </dd></dl>
 
 <div class="section" id="attributes">
-<span id="job-attributes"></span><h3><a class="toc-backref" href="#id4">6.3.1. Attributes</a><a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h3>
+<span id="job-attributes"></span><h3><a class="toc-backref" href="#id4">1.3.1. Attributes</a><a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h3>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1435,7 +1435,7 @@ If the argument is a string, the return value is the same object.</p>
 
 </div>
 <div class="section" id="states">
-<span id="job-states"></span><h3><a class="toc-backref" href="#id5">6.3.2. States</a><a class="headerlink" href="#states" title="Permalink to this headline">¶</a></h3>
+<span id="job-states"></span><h3><a class="toc-backref" href="#id5">1.3.2. States</a><a class="headerlink" href="#states" title="Permalink to this headline">¶</a></h3>
 <p>The job state constants defined describe the possible
 states a job can be in. The constants can be used to check / compare the state
 of a job. For example:</p>
@@ -1516,7 +1516,7 @@ If the argument is a string, the return value is the same object.</p>
 
 </div>
 <div class="section" id="metrics">
-<span id="job-metrics"></span><h3><a class="toc-backref" href="#id6">6.3.3. Metrics</a><a class="headerlink" href="#metrics" title="Permalink to this headline">¶</a></h3>
+<span id="job-metrics"></span><h3><a class="toc-backref" href="#id6">1.3.3. Metrics</a><a class="headerlink" href="#metrics" title="Permalink to this headline">¶</a></h3>
 <p>Job metrics provide a way to attach callback functions to a job object. The
 registered callback functions are triggered whenever a job metric changes.</p>
 <p>Callback functions require three parameters:</p>
@@ -1570,7 +1570,7 @@ If the argument is a string, the return value is the same object.</p>
 </div>
 </div>
 <div class="section" id="job-containers-saga-job-container">
-<span id="job-container"></span><h2><a class="toc-backref" href="#id7">6.4. Job Containers &#8211; <a class="reference internal" href="#saga.job.Container" title="saga.job.Container"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Container</span></tt></a></a><a class="headerlink" href="#job-containers-saga-job-container" title="Permalink to this headline">¶</a></h2>
+<span id="job-container"></span><h2><a class="toc-backref" href="#id7">1.4. Job Containers &#8211; <a class="reference internal" href="#saga.job.Container" title="saga.job.Container"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Container</span></tt></a></a><a class="headerlink" href="#job-containers-saga-job-container" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1660,26 +1660,26 @@ from the container.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">6. Job Management</a><ul>
-<li><a class="reference internal" href="#job-service-saga-job-service">6.1. Job Service &#8211; <tt class="docutils literal"><span class="pre">saga.job.Service</span></tt></a></li>
-<li><a class="reference internal" href="#job-description-saga-job-description">6.2. Job Description &#8211; <tt class="docutils literal"><span class="pre">saga.job.Description</span></tt></a></li>
-<li><a class="reference internal" href="#jobs-saga-job-job">6.3. Jobs &#8211; <tt class="docutils literal"><span class="pre">saga.job.Job</span></tt></a><ul>
-<li><a class="reference internal" href="#attributes">6.3.1. Attributes</a></li>
-<li><a class="reference internal" href="#states">6.3.2. States</a></li>
-<li><a class="reference internal" href="#metrics">6.3.3. Metrics</a></li>
+<li><a class="reference internal" href="#">1. Working with Jobs</a><ul>
+<li><a class="reference internal" href="#job-service-saga-job-service">1.1. Job Service &#8211; <tt class="docutils literal"><span class="pre">saga.job.Service</span></tt></a></li>
+<li><a class="reference internal" href="#job-description-saga-job-description">1.2. Job Description &#8211; <tt class="docutils literal"><span class="pre">saga.job.Description</span></tt></a></li>
+<li><a class="reference internal" href="#jobs-saga-job-job">1.3. Jobs &#8211; <tt class="docutils literal"><span class="pre">saga.job.Job</span></tt></a><ul>
+<li><a class="reference internal" href="#attributes">1.3.1. Attributes</a></li>
+<li><a class="reference internal" href="#states">1.3.2. States</a></li>
+<li><a class="reference internal" href="#metrics">1.3.3. Metrics</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#job-containers-saga-job-container">6.4. Job Containers &#8211; <tt class="docutils literal"><span class="pre">saga.job.Container</span></tt></a></li>
+<li><a class="reference internal" href="#job-containers-saga-job-container">1.4. Job Containers &#8211; <tt class="docutils literal"><span class="pre">saga.job.Container</span></tt></a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../url.html"
-                        title="previous chapter">5. Url Handling</a></p>
+  <p class="topless"><a href="../index.html"
+                        title="previous chapter">2. Library Reference</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="../filesystem/index.html"
-                        title="next chapter">7. File/Directory Management</a></p>
+                        title="next chapter">2. Working with Files and Directories</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../../_sources/library/job/index.txt"
@@ -1712,12 +1712,12 @@ from the container.</p>
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../filesystem/index.html" title="7. File/Directory Management"
+          <a href="../filesystem/index.html" title="2. Working with Files and Directories"
              >next</a> |</li>
         <li class="right" >
-          <a href="../url.html" title="5. Url Handling"
+          <a href="../index.html" title="2. Library Reference"
              >previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>

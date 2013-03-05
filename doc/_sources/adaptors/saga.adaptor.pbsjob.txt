@@ -3,15 +3,25 @@
 saga.adaptor.pbsjob
 *******************
 
-TODO
+
+The PBS adaptor allows to run and manage jobs on `PBS <http://www.pbsworks.com/>`_
+and `TORQUE <http://www.adaptivecomputing.com/products/open-source/torque>`_ 
+controlled HPC clusters.
+
 
 
 Supported Schemas
 -----------------
 
-  - **pbs+gsissh://** : connect to a remote PBS/TORQUE cluster via GSISSH
-  - **pbs+ssh://** : conenct to a remote PBS/TORQUE cluster via SSH
-  - **pbs://** : connect to a local PBS/TORQUE cluster
+This adaptor is triggered by the following URL schemes:
+
+======================== ============================================================
+schema                   description                                                 
+======================== ============================================================
+**pbs://**               connect to a local cluster                                  
+**pbs+ssh://**           conenct to a remote cluster via SSH                         
+**pbs+gsissh://**        connect to a remote cluster via GSISSH                      
+======================== ============================================================
 
 
 
@@ -22,19 +32,12 @@ Configuration options can be used to control the adaptor's runtime behavior. Mos
  .. seealso:: More information about configuration options can be found in the :ref:`conf_file` section.
 
 enabled
-****************
+*******
+
 enable / disable saga.adaptor.pbsjob adaptor
 
   - **type** : <type 'bool'>
   - **default** : True
-  - **environment** : None
-  - **valid options** : [True, False]
-foo
-****************
-Doc
-
-  - **type** : <type 'bool'>
-  - **default** : False
   - **environment** : None
   - **valid options** : [True, False]
 
@@ -43,11 +46,13 @@ Capabilities
 ------------
 
 Supported Monitorable Metrics
-****************
+*****************************
+
   - State
 
 Supported Job Attributes
-****************
+************************
+
   - ExitCode
   - ExecutionHosts
   - Created
@@ -55,13 +60,15 @@ Supported Job Attributes
   - Finished
 
 Supported Context Types
-****************
+***********************
+
   - *x509*: GSISSH X509 proxy context
   - *userpass*: username/password pair (ssh)
   - *ssh*: SSH public/private keypair
 
 Supported Job Description Attributes
-****************
+************************************
+
   - Name
   - Executable
   - Arguments

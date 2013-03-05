@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>1. Exception Handling &mdash; SAGA 0.9.1 documentation</title>
+    <title>7. Exception Handling &mdash; SAGA 0.9.2 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.1',
+        VERSION:     '0.9.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,10 +31,10 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.1 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.2 documentation" href="../index.html" />
     <link rel="up" title="2. Library Reference" href="index.html" />
-    <link rel="next" title="2. Context Management" href="context.html" />
-    <link rel="prev" title="2. Library Reference" href="index.html" /> 
+    <link rel="next" title="3. Code Examples" href="../examples/index.html" />
+    <link rel="prev" title="6. Attributes and Callbacks" href="attribute.html" /> 
   </head>
   <body>
     <div class="related">
@@ -47,12 +47,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="context.html" title="2. Context Management"
+          <a href="../examples/index.html" title="3. Code Examples"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="2. Library Reference"
+          <a href="attribute.html" title="6. Attributes and Callbacks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -63,13 +63,13 @@
           <div class="body">
             
   <div class="section" id="exception-handling">
-<h1>1. Exception Handling<a class="headerlink" href="#exception-handling" title="Permalink to this headline">¶</a></h1>
+<h1>7. Exception Handling<a class="headerlink" href="#exception-handling" title="Permalink to this headline">¶</a></h1>
 <div class="admonition-todo admonition" id="index-0">
 <p class="first admonition-title">Todo</p>
 <p class="last">Intro to SAGA exception handling.</p>
 </div>
 <div class="section" id="module-saga.exceptions">
-<span id="exceptions-saga-exceptions"></span><h2>1.1. Exceptions &#8211; <a class="reference internal" href="#module-saga.exceptions" title="saga.exceptions"><tt class="xref py py-mod docutils literal"><span class="pre">saga.exceptions</span></tt></a><a class="headerlink" href="#module-saga.exceptions" title="Permalink to this headline">¶</a></h2>
+<span id="exceptions-saga-exceptions"></span><h2>7.1. Exceptions &#8211; <a class="reference internal" href="#module-saga.exceptions" title="saga.exceptions"><tt class="xref py py-mod docutils literal"><span class="pre">saga.exceptions</span></tt></a><a class="headerlink" href="#module-saga.exceptions" title="Permalink to this headline">¶</a></h2>
 <dl class="exception">
 <dt id="saga.exceptions.SagaException">
 <em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">SagaException</tt><big>(</big><em>message</em>, <em>api_object=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#SagaException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.SagaException" title="Permalink to this definition">¶</a></dt>
@@ -103,6 +103,12 @@ the rank, the better defined / known is the cause of the problem.</p>
 <tt class="descname">get_message</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#SagaException.get_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.SagaException.get_message" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the exception message as a string.  That message is also
 available via the &#8216;message&#8217; property.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.exceptions.SagaException.get_type">
+<tt class="descname">get_type</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#SagaException.get_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.SagaException.get_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the type of the exception as string.</p>
 </dd></dl>
 
 <dl class="method">
@@ -140,6 +146,12 @@ always be available &#8211; for example, exceptions raised during object
 creation may not have the option to keep an incomplete object instance
 around.  In those cases, this method will return &#8216;None&#8217;.  Either way,
 the object is also accessible via the &#8216;object&#8217; property.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.exceptions.SagaException.type">
+<tt class="descname">type</tt><a class="headerlink" href="#saga.exceptions.SagaException.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the type of the exception as string.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -243,18 +255,18 @@ the object is also accessible via the &#8216;object&#8217; property.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">1. Exception Handling</a><ul>
-<li><a class="reference internal" href="#module-saga.exceptions">1.1. Exceptions &#8211; <tt class="docutils literal"><span class="pre">saga.exceptions</span></tt></a></li>
+<li><a class="reference internal" href="#">7. Exception Handling</a><ul>
+<li><a class="reference internal" href="#module-saga.exceptions">7.1. Exceptions &#8211; <tt class="docutils literal"><span class="pre">saga.exceptions</span></tt></a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="index.html"
-                        title="previous chapter">2. Library Reference</a></p>
+  <p class="topless"><a href="attribute.html"
+                        title="previous chapter">6. Attributes and Callbacks</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="context.html"
-                        title="next chapter">2. Context Management</a></p>
+  <p class="topless"><a href="../examples/index.html"
+                        title="next chapter">3. Code Examples</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/library/exceptions.txt"
@@ -287,12 +299,12 @@ the object is also accessible via the &#8216;object&#8217; property.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="context.html" title="2. Context Management"
+          <a href="../examples/index.html" title="3. Code Examples"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="2. Library Reference"
+          <a href="attribute.html" title="6. Attributes and Callbacks"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
           <li><a href="index.html" >2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>
