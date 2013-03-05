@@ -196,7 +196,6 @@ _ADAPTOR_DOC = {
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":   """The PBS adaptor can run and manage jobs on local and
                         remote PBS and TORQUE clusters.""",
-    "details": """TODO""",
     "schemas": {"pbs":        "connect to a local PBS/TORQUE cluster",
                 "pbs+ssh":    "conenct to a remote PBS/TORQUE cluster via SSH",
                 "pbs+gsissh": "connect to a remote PBS/TORQUE cluster via GSISSH"}

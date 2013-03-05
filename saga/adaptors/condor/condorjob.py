@@ -249,7 +249,6 @@ _ADAPTOR_DOC = {
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":   """The Condor adaptor can run and manage jobs on local and
                         remote Condor gateways.""",
-    "details": """TODO""",
     "schemas": {"condor":        "connect to a local Condor gateway",
                 "condor+ssh":    "conenct to a remote Condor gateway via SSH",
                 "condor+gsissh": "connect to a remote Condor gateway via GSISSH"}

@@ -84,43 +84,47 @@ _ADAPTOR_DOC           = {
     "description"      : """ 
         The SLURM job adaptor. This adaptor uses the SLURM command line tools to run
         remote jobs.
-        """,
-    "details"          : """ 
-        GENERAL NOTES:
+ 
+        GENERAL NOTES
+        -------------
 
         On Stampede, returning a non-zero exit code results in the scheduler
         putting the job into a FAILED state and assigning it an exit code of 127.
 
-        EXAMPLE:
+        EXAMPLE
+        -------
 
-        js = saga.job.Service("slurm+ssh://stampede")js = saga.job.Service("slurm+ssh://stampede")
-        jd.executable  = '/bin/exit'
-        jd.arguments   = ['3']
-        job = js.create_job(jd)
-        job.run()
+        ::
 
-        Will return something similar to (personal account information removed):
+          js = saga.job.Service("slurm+ssh://stampede")
+          jd.executable  = '/bin/exit'
+          jd.arguments   = ['3']
+          job = js.create_job(jd)
+          job.run()
 
-        (saga-python-env)ashleyz@login1:~$ scontrol show job 309684
-        JobId=309684 Name=SlurmJob
-           UserId=_____ GroupId=__________
-           Priority=3000 Account=_____ QOS=normal
-           JobState=FAILED Reason=NonZeroExitCode Dependency=(null)
-           Requeue=0 Restarts=0 BatchFlag=1 ExitCode=127:0
-           RunTime=00:00:05 TimeLimit=00:01:00 TimeMin=N/A
-           SubmitTime=2013-02-22T20:26:50 EligibleTime=2013-02-22T20:26:50
-           StartTime=2013-02-22T20:26:50 EndTime=2013-02-22T20:26:55
-           PreemptTime=None SuspendTime=None SecsPreSuspend=0
-           Partition=development AllocNode:Sid=login1:12070
-           ReqNodeList=(null) ExcNodeList=(null)
-           NodeList=c557-401
-           BatchHost=c557-401
-           NumNodes=1 NumCPUs=16 CPUs/Task=1 ReqS:C:T=*:*:*
-           MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0
-           Features=(null) Gres=(null) Reservation=(null)
-           Shared=0 Contiguous=0 Licenses=(null) Network=(null)
-           Command=/home1/01414/_______/.saga/adaptors/slurm_job/wrapper.sh
-           WorkDir=/home1/01414/_______/
+        Will return something similar to (personal account information
+        removed)::
+
+          (saga-python-env)ashleyz@login1:~$ scontrol show job 309684
+          JobId=309684 Name=SlurmJob
+             UserId=_____ GroupId=__________
+             Priority=3000 Account=_____ QOS=normal
+             JobState=FAILED Reason=NonZeroExitCode Dependency=(null)
+             Requeue=0 Restarts=0 BatchFlag=1 ExitCode=127:0
+             RunTime=00:00:05 TimeLimit=00:01:00 TimeMin=N/A
+             SubmitTime=2013-02-22T20:26:50 EligibleTime=2013-02-22T20:26:50
+             StartTime=2013-02-22T20:26:50 EndTime=2013-02-22T20:26:55
+             PreemptTime=None SuspendTime=None SecsPreSuspend=0
+             Partition=development AllocNode:Sid=login1:12070
+             ReqNodeList=(null) ExcNodeList=(null)
+             NodeList=c557-401
+             BatchHost=c557-401
+             NumNodes=1 NumCPUs=16 CPUs/Task=1 ReqS:C:T=*:*:*
+             MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0
+             Features=(null) Gres=(null) Reservation=(null)
+             Shared=0 Contiguous=0 Licenses=(null) Network=(null)
+             Command=/home1/01414/_______/.saga/adaptors/slurm_job/wrapper.sh
+             WorkDir=/home1/01414/_______/
 
         I'm not sure how to fix this for the time being.
 
@@ -142,26 +146,32 @@ _ADAPTOR_DOC           = {
 
         What exit code should be returned for a CANCELED job?
 
-        IMPLEMENTATION NOTES:
-        - If scontrol can't find an exit code, it returns None
-          (see _job_get_exit_code)
-        - If scancel can't cancel a job, we raise an exception
-          (see _job_cancel)
-        - If we can't suspend a job with scontrol suspend, we raise an exception
-          (see _job_suspend).  scontrol suspend NOT supported on Stampede
-        - I started to implement a dictionary to keep track of jobs locally.
-          It works to the point where the unit tests are passed, but I have
-          not gone over theis extensively...
-        - Relating to the above, _job_get_info is written, but unused/untested
-          (mostly from PBS adaptor)
+        IMPLEMENTATION NOTES
+        --------------------
 
-        UNIMPLEMENTED ITEMS:
-        - Container submission not implemented
-        - Parts in job_description not parsed:         
-        -- threads_per_process
-        -- spmd_variation
-        -- total_cpu_count
-        - get_created/etc not in yet
+         - If scontrol can't find an exit code, it returns None
+           (see _job_get_exit_code)
+         - If scancel can't cancel a job, we raise an exception
+           (see _job_cancel)
+         - If we can't suspend a job with scontrol suspend, we raise an exception
+           (see _job_suspend).  scontrol suspend NOT supported on Stampede
+         - I started to implement a dictionary to keep track of jobs locally.
+           It works to the point where the unit tests are passed, but I have
+           not gone over theis extensively...
+         - Relating to the above, _job_get_info is written, but unused/untested
+           (mostly from PBS adaptor)
+
+        UNIMPLEMENTED ITEMS
+        -------------------
+
+         - Container submission not implemented
+         - Parts in job_description not parsed:         
+
+           - threads_per_process
+           - spmd_variation
+           - total_cpu_count
+
+         - get_created/etc not in yet
         """,
     "schemas"          : {"slurm"        :"use slurm to run local SLURM jobs", 
                           "slurm+ssh"    :"use ssh to run remote SLURM jobs", 
