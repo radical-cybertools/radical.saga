@@ -82,16 +82,16 @@ _ADAPTOR_DOC           = {
     "cfg_options"      : _ADAPTOR_OPTIONS, 
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "description"      : """ 
-        The SLURM job adaptor. This adaptor uses the SLURM command line tools to run
-        remote jobs.
- 
-        GENERAL NOTES
+        The SLURM adaptor allows to run and manage jobs on a 
+        `SLURM <https://computing.llnl.gov/linux/slurm/slurm.html>`_ HPC cluster.
+
+        General Notes
         -------------
 
         On Stampede, returning a non-zero exit code results in the scheduler
         putting the job into a FAILED state and assigning it an exit code of 127.
 
-        EXAMPLE
+        Example
         -------
 
         ::
@@ -146,7 +146,7 @@ _ADAPTOR_DOC           = {
 
         What exit code should be returned for a CANCELED job?
 
-        IMPLEMENTATION NOTES
+        Implementation Notes
         --------------------
 
          - If scontrol can't find an exit code, it returns None
@@ -161,7 +161,7 @@ _ADAPTOR_DOC           = {
          - Relating to the above, _job_get_info is written, but unused/untested
            (mostly from PBS adaptor)
 
-        UNIMPLEMENTED ITEMS
+        Unimplemented Items
         -------------------
 
          - Container submission not implemented
@@ -173,9 +173,9 @@ _ADAPTOR_DOC           = {
 
          - get_created/etc not in yet
         """,
-    "schemas"          : {"slurm"        :"use slurm to run local SLURM jobs", 
-                          "slurm+ssh"    :"use ssh to run remote SLURM jobs", 
-                          "slurm+gsissh" :"use gsissh to run remote SLURM jobs"}
+    "schemas": {"slurm":        "connect to a local cluster",
+                "slurm+ssh":    "conenct to a remote cluster via SSH",
+                "slurm+gsissh": "connect to a remote cluster via GSISSH"}
 }
 
 # --------------------------------------------------------------------
