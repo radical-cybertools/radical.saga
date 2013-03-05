@@ -169,7 +169,7 @@ class Entry (saga.base.Base, saga.async.Async) :
   
 
     
-    def copy (self, tgt, flags=None, ttype=None) :
+    def copy (self, tgt, flags=0, ttype=None) :
         '''
         tgt:           saga.Url
         flags:         enum flags
@@ -200,10 +200,12 @@ class Entry (saga.base.Base, saga.async.Async) :
             return self._adaptor.copy_self (tgt_url, flags, ttype=ttype)
     
     
+        # we have only sync calls here - attempt a normal call to the bound
+        # adaptor first (doh!)
+        ret = self._adaptor.copy_self (tgt_url, flags, ttype=ttype)
+
         try :
-            # we have only sync calls here - attempt a normal call to the bound
-            # adaptor first (doh!)
-            ret = self._adaptor.copy_self (tgt_url, flags, ttype=ttype)
+            True
         
         except saga.exceptions.SagaException as e :
             # if we don't have a scheme for tgt, all is in vain (adaptor
@@ -247,7 +249,6 @@ class Entry (saga.base.Base, saga.async.Async) :
                         # get an tgt-scheme'd adaptor for the new src url, and try copy again
                         adaptor = self._engine.bind_adaptor (self, 'saga.namespace.Entry', tgt_url.scheme, 
                                                              adaptor_instance)
-                        print adaptor
                         adaptor.init_instance ({}, tmp_url, READ, self._session)
                         tmp     = saga.namespace.Entry (tmp_url, READ, self._session, _adaptor=adaptor_instance)
     
@@ -272,7 +273,7 @@ class Entry (saga.base.Base, saga.async.Async) :
             raise e
      
     
-    def link (self, tgt, flags=None, ttype=None) :
+    def link (self, tgt, flags=0, ttype=None) :
         '''
         tgt:           saga.Url
         flags:         enum flags
@@ -283,7 +284,7 @@ class Entry (saga.base.Base, saga.async.Async) :
         return self._adaptor.link (tgt, flags, ttype=ttype) 
   
     
-    def move (self, tgt, flags=None, ttype=None) :
+    def move (self, tgt, flags=0, ttype=None) :
         '''
         :param target: Url of the move target.
         :param flags:  Flags to use for the operation.
@@ -305,7 +306,7 @@ class Entry (saga.base.Base, saga.async.Async) :
   
     
     
-    def remove (self, flags=None, ttype=None) :
+    def remove (self, flags=0, ttype=None) :
         '''
         :param flags:  Flags to use for the operation.
 

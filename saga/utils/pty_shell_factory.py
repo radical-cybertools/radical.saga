@@ -58,14 +58,14 @@ _SCRIPTS = {
       # 'copy_from'     : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s      %(root)s/%(src)s %(tgt)s",
         'copy_to'       : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s -b - %(host_str)s",
         'copy_from'     : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s -b - %(host_str)s",
-        'copy_to_in'    : "progress \n put %(src)s %(tgt)s \n exit \n",            
-        'copy_from_in'  : "progress \n get %(src)s %(tgt)s \n exit \n",
+        'copy_to_in'    : "progress \n put %(cp_flags) %(src)s %(tgt)s \n exit \n",            
+        'copy_from_in'  : "progress \n get %(cp_flags) %(src)s %(tgt)s \n exit \n",
     },
     'sh' : { 
         'master'        : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'shell'         : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'copy_to'       : "%(cp_env)s %(sh_exe)s -c \"cd ~; %(cp_exe)s  %(cp_args)s %(src)s %(tgt)s\"",
-        'copy_from'     : "%(cp_env)s %(sh_exe)s -c \"cd ~; %(cp_exe)s  %(cp_args)s %(src)s %(tgt)s\"",
+        'copy_to'       : "%(cp_env)s %(sh_exe)s -c \"cd ~; %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s\"",
+        'copy_from'     : "%(cp_env)s %(sh_exe)s -c \"cd ~; %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s\"",
         'copy_to_in'    : "",
         'copy_from_in'  : "",
     }
@@ -195,19 +195,20 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def run_copy_to (self, info, src, tgt) :
+    def run_copy_to (self, info, src, tgt, cp_flags="") :
         """ 
         This initiates a slave copy connection.   Src is interpreted as local
         path, tgt as path on the remote host.
         """
 
+        repl = dict ({'src'      : src, 
+                      'tgt'      : tgt, 
+                      'cp_flags' : cp_flags}.items ()+ info.items ())
+
         # at this point, we do have a valid, living master
         try :
-            s_cmd = _SCRIPTS[info['type']]['copy_to'] \
-                    % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
-
-            s_in  = _SCRIPTS[info['type']]['copy_to_in'] \
-                    % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
+            s_cmd = _SCRIPTS[info['type']]['copy_to']    % repl
+            s_in  = _SCRIPTS[info['type']]['copy_to_in'] % repl
 
             cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
             cp_slave.write (s_in)
@@ -229,22 +230,30 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def run_copy_from (self, info, src, tgt) :
+    def run_copy_from (self, info, src, tgt, cp_flags="") :
         """ 
         This initiates a slave copy connection.   Src is interpreted as path on
         the remote host, tgt as local path.
         """
 
+        repl = dict ({'src'      : src, 
+                      'tgt'      : tgt, 
+                      'cp_flags' : cp_flags}.items ()+ info.items ())
+
+
         # at this point, we do have a valid, living master
         try :
-            s_cmd = _SCRIPTS[info['type']]['copy_from'] \
-                    % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
-
-            s_in  = _SCRIPTS[info['type']]['copy_from_in'] \
-                    % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
+            s_cmd = _SCRIPTS[info['type']]['copy_from']    % repl
+            s_in  = _SCRIPTS[info['type']]['copy_from_in'] % repl
 
             cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
             cp_slave.write (s_in)
+
+          # try :
+          #     while True :
+          #         print cp_slave.read ()
+          # except :
+          #     pass
 
             cp_slave.wait ()
 
@@ -288,7 +297,6 @@ class PTYShellFactory (object) :
         elif info['schema']  in _SCHEMAS_SH :
             info['type']     = "sh"
             info['sh_args']  = "-l -i"
-            info['cp_args']  = ""
             info['sh_env']   = "/usr/bin/env TERM=vt100"
             info['cp_env']   = "/usr/bin/env TERM=vt100"
             info['fs_root']  = "/"

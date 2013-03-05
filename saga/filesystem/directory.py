@@ -98,8 +98,8 @@ class Directory (saga.namespace.directory.Directory) :
             size = dir.get_size ('data/data.bin')
             print size
         '''
-        if tgt    :  return self._adaptor.get_size (tgt, ttype=ttype)
-        else      :  return self._nsdirec.get_size (     ttype=ttype)
+        if tgt    :  return self._adaptor.get_size      (tgt, ttype=ttype)
+        else      :  return self._adaptor.get_size_self (     ttype=ttype)
 
 
     def is_file (self, tgt=None, ttype=None) :
@@ -108,8 +108,8 @@ class Directory (saga.namespace.directory.Directory) :
         ttype:    saga.task.type enum
         ret:      bool / saga.Task
         '''
-        if tgt    :  return self._adaptor.is_file (tgt, ttype=ttype)
-        else      :  return self._nsdirec.is_file (     ttype=ttype)
+        if tgt    :  return self._adaptor.is_file      (tgt, ttype=ttype)
+        else      :  return self._adaptor.is_file_self (     ttype=ttype)
 
     
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
