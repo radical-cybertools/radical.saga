@@ -73,7 +73,7 @@ class our_sdist(sdist):
         open(fn, 'w').write(version)
 
 setup_args = {
-    'name': "saga",
+    'name': "saga-python",
     'version': version,
     'description': "A light-weight access layer for distributed computing infrastructure",
     'long_description': "SAGA-python light-weight implementation of the OGF GFD.90 SAGA standard. SAGA-Python is written 100% in Python and focuses on usability and ease of deployment.",

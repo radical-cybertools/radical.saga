@@ -1,3 +1,20 @@
+Version 0.9.1 released 
+----------------------------------------------------------------------
+
+* Major re-write of engine and adaptor interface
+* Support for asynchronous operations 
+* Improved PTYWrapper for ssh/gsissh remote execution
+* Added SLURM job adaptor 
+* Added Condor job adaptor
+
+
+
+======================================================================
+REWRITE - SAGA-PYTHON 1.0
+======================================================================
+
+
+
 Version 0.2.7 released 2012-11-09
 ----------------------------------------------------------------------
 

@@ -8,6 +8,23 @@ import saga.utils.config    as sconf
 
 import saga
 
+# ------------------------------------------------------------------------------
+#
+def add_tc_params_to_jd(tc, jd):
+    if tc.job_walltime_limit != "":
+        jd.wall_time_limit = tc.job_walltime_limit
+    if tc.job_project != "":
+        jd.project = tc.job_project
+    if tc.job_queue != "":
+        jd.queue = tc.job_queue
+    if tc.job_total_cpu_count != "":
+        jd.total_cpu_count = tc.job_total_cpu_count
+    if tc.job_spmd_variation != "":
+        jd.spmd_variation = tc.job_spmd_variation
+
+    return jd
+
+
 ############# These are all supported options for saga.engine ####################
 ##
 _config_options = [
@@ -42,6 +59,22 @@ _config_options = [
     'default'       : "",
     'documentation' : "walltime limit to pass to the job scheduler",
     'env_variable'  : "SAGA_TEST_JOB_WALLTIME_LIMIT"
+    },
+    { 
+    'category'      : 'saga.tests',
+    'name'          : 'job_total_cpu_count', 
+    'type'          : str, 
+    'default'       : "",
+    'documentation' : "number of processes to pass to the job scheduler",
+    'env_variable'  : "SAGA_TEST_NUMBER_OF_PROCESSES"
+    },
+    { 
+    'category'      : 'saga.tests',
+    'name'          : 'job_spmd_variation', 
+    'type'          : str, 
+    'default'       : "",
+    'documentation' : "spmd variation to pass to the job scheduler",
+    'env_variable'  : "SAGA_TEST_SPMD_VARIATION"
     },
     { 
     'category'      : 'saga.tests',
@@ -231,6 +264,22 @@ class TestConfig (sconf.Configurable):
     #-----------------------------------------------------------------
     # 
     @property
+    def job_total_cpu_count (self):
+
+        return self._cfg['job_total_cpu_count'].get_value ()
+
+
+    #-----------------------------------------------------------------
+    # 
+    @property
+    def job_spmd_variation (self):
+
+        return self._cfg['job_spmd_variation'].get_value ()
+
+
+    #-----------------------------------------------------------------
+    # 
+    @property
     def fs_url (self):
 
         return self._cfg['job_filesystem_url'].get_value ()
@@ -250,8 +299,3 @@ class TestConfig (sconf.Configurable):
     def advert_url (self):
 
         return self._cfg['job_advert_url'].get_value ()
-
-
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-

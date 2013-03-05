@@ -70,12 +70,7 @@ def test_job_service_create():
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
-        if tc.job_walltime_limit != "":
-            jd.wall_time_limit = tc.job_walltime_limit
-        if tc.job_project != "":
-            jd.project = tc.job_project
-        if tc.job_queue != "":
-            jd.queue = tc.job_queue
+        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
         j1 = js.create_job(jd)
         assert j1.state == j1.get_state()
@@ -100,12 +95,7 @@ def test_job_run():
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
-        if tc.job_walltime_limit != "":
-            jd.wall_time_limit = tc.job_walltime_limit
-        if tc.job_project != "":
-            jd.project = tc.job_project
-        if tc.job_queue != "":
-            jd.queue = tc.job_queue
+        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
         j1 = js.create_job(jd)
 
@@ -137,12 +127,7 @@ def test_job_suspend_resume():
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
-        if tc.job_walltime_limit != "":
-            jd.wall_time_limit = tc.job_walltime_limit
-        if tc.job_project != "":
-            jd.project = tc.job_project
-        if tc.job_queue != "":
-            jd.queue = tc.job_queue
+        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
         j1 = js.create_job(jd)
         j1.run()
@@ -178,12 +163,7 @@ def test_job_cancel():
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
-        if tc.job_walltime_limit != "":
-            jd.wall_time_limit = tc.job_walltime_limit
-        if tc.job_project != "":
-            jd.project = tc.job_project
-        if tc.job_queue != "":
-            jd.queue = tc.job_queue
+        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
         j1 = js.create_job(jd)
 
@@ -213,12 +193,7 @@ def test_job_states_OLD():
         jd.arguments = ['3']
 
         # add options from the test .cfg file if set
-        if tc.job_walltime_limit != "":
-            jd.wall_time_limit = tc.job_walltime_limit
-        if tc.job_project != "":
-            jd.project = tc.job_project
-        if tc.job_queue != "":
-            jd.queue = tc.job_queue
+        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
         j3 = js.run_job ("/bin/sleep 3 ; /bin/true")
         assert j3.state == saga.job.RUNNING
@@ -254,12 +229,7 @@ def test_get_exit_code():
         jd.arguments = ["-c \"exit 3\""]
 
         # add options from the test .cfg file if set
-        if tc.job_walltime_limit != "":
-            jd.wall_time_limit = tc.job_walltime_limit
-        if tc.job_project != "":
-            jd.project = tc.job_project
-        if tc.job_queue != "":
-            jd.queue = tc.job_queue
+        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
         j = js.create_job(jd)
         j.run()
@@ -290,12 +260,7 @@ def test_get_service_url():
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
-        if tc.job_walltime_limit != "":
-            jd.wall_time_limit = tc.job_walltime_limit
-        if tc.job_project != "":
-            jd.project = tc.job_project
-        if tc.job_queue != "":
-            jd.queue = tc.job_queue
+        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
         j = js.create_job(jd)
 
@@ -323,12 +288,7 @@ def test_get_id():
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
-        if tc.job_walltime_limit != "":
-            jd.wall_time_limit = tc.job_walltime_limit
-        if tc.job_project != "":
-            jd.project = tc.job_project
-        if tc.job_queue != "":
-            jd.queue = tc.job_queue
+        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
         j = js.create_job(jd)
         j.run()
