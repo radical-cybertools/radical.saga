@@ -99,7 +99,7 @@ class File (saga.namespace.entry.Entry) :
                print file.get_size ()
 
         '''
-        return self._adaptor.get_size (ttype=ttype)
+        return self._adaptor.get_size_self (ttype=ttype)
 
   
     def read (self, size=-1, ttype=None) :

@@ -27,6 +27,18 @@ print f_src.size
 print "size from entry"
 print f_tgt.size
 
+print "move entry"
+print f_tgt.move ('TGT.DAT')
+
+print "inspect moved entry"
+print f_tgt.url
+
+print "remove entry"
+f_src.remove ()
+
+print "remove from directory"
+d.remove ("bak.dat")
+
 print "list"
 for name in d.list () :
   print name
