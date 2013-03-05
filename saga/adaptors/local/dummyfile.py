@@ -45,8 +45,7 @@ _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
-    'description'      : 'The local filesystem adaptor.',
-    'details'          : """This adaptor interacts with local filesystem, by
+    'description'      : """This adaptor interacts with local filesystem, by
                             using the (POSIX like) os and shutil Python packages.
                             It is named 'dummy', as this adaptor is only used
                             for testing and debugging -- it is *not* good for

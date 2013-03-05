@@ -27,8 +27,7 @@ _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
-    'description'      : 'The X509 context adaptor.',
-    'details'          : """This adaptor points to a X509 proxy, or certificate,
+    'description'      : """This adaptor points to a X509 proxy, or certificate,
                             be used for backend connections.  Note that this
                             context can be created by a MyProxy context instance.""",
     'schemas'          : {'x509' : 'x509 token information.'},
