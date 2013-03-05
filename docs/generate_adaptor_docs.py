@@ -168,7 +168,7 @@ for a in saga.engine.registry.adaptor_registry :
             if 'valid_options' in o :
                 oval  = o['valid_options']
 
-            options += "%s\n****************" % oname
+            options += "%s\n%s\n" % (oname, "*"*len(oname))
             options += "\n"
             options += "%s\n" % odoc
             options += "\n"
@@ -197,7 +197,7 @@ for a in saga.engine.registry.adaptor_registry :
             if cname in cap_headers :
                 header = cap_headers[cname]
 
-            capable += "%s\n****************" % header
+            capable += "%s\n%s\n" % (header, "*"*len(header))
             capable += "\n"
 
             capab = capabs[cname]
