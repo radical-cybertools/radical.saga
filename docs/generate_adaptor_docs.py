@@ -16,7 +16,72 @@ DOCROOT = "./source/adaptors"
 # --------------------------------------------------------------------
 #
 def cleanup (text) :
-    return re.sub ("\n\s*", "\n", text)
+    """
+    The text is unindented by the anmount of leading whitespace found in the
+    first non-empty.  If that first line has no leading whitespace, the
+    indentation of the second line is used.  This basically converts::
+
+        string = '''some long
+                    string with indentation which
+                      has different
+                      indentation levels
+                    all over the string
+                 '''
+
+    to::
+
+        some long
+        string with indentation which
+          has different
+          indentation levels
+        all over the string
+    """
+    l_idx = 1
+    lines = text.split ('\n')
+
+    # count leading non-empty lines
+    for line in lines :
+        if not line.strip () :
+            l_idx += 1
+        else :
+            break
+
+    # check if there is anything more to evaluate
+    if len (lines) <= l_idx :
+        return text
+
+    # determine indentation of that line
+    indent = 0
+    for c in lines[l_idx] :
+        if c == ' ' :
+            indent += 1
+        else : 
+            break
+
+    # if nothing found, check the following line
+    if not indent :
+
+        if len (lines) <= l_idx + 1:
+            return text
+        for c in lines[l_idx + 1] :
+            if c == ' ' :
+                indent += 1
+            else : 
+                break
+
+    # if still nothing found, give up
+    if not indent :
+        return text
+
+
+    # oitherwise trim all lines by that indentation
+    out = ""
+    replace = ' ' * indent
+    for line in lines :
+        out   += re.sub ("%s" % ' ' * indent, "", line)
+        out   += "\n"
+
+    return out
 
 
 # --------------------------------------------------------------------
@@ -47,27 +112,27 @@ for a in saga.engine.registry.adaptor_registry :
     print "create %s" % fn
     i.write ("   %s\n" % n)
 
-    details = "NO DETAILS KNOWN"
-    version = "NO VERSION KNOWN"
-    schemas = "NO SCHEMAS DOCUMENTED"
-    classes = "NO API CLASSES DOCUMENTED"
-    options = "NO OPTIONS SPECIFIED"
-    cfgopts = [{
-                'category'         : n,
-                'name'             : 'enabled', 
-                'type'             : bool, 
-                'default'          : True, 
-                'valid_options'    : [True, False],
-                'documentation'    : "enable / disable %s adaptor"  % n,
-                'env_variable'     : None
-              }]
-    capable = "NO CAPABILITIES SPECIFIED"
-    capabs  = []
+    description = "NO DESCRIPTION AVAILABLE"
+    version     = "NO VERSION KNOWN"
+    schemas     = "NO SCHEMAS DOCUMENTED"
+    classes     = "NO API CLASSES DOCUMENTED"
+    options     = "NO OPTIONS SPECIFIED"
+    cfgopts     = [{
+                    'category'         : n,
+                    'name'             : 'enabled', 
+                    'type'             : bool, 
+                    'default'          : True, 
+                    'valid_options'    : [True, False],
+                    'documentation'    : "enable / disable %s adaptor"  % n,
+                    'env_variable'     : None
+                  }]
+    capable     = "NO CAPABILITIES SPECIFIED"
+    capabs      = []
 
     
-    if 'details' in m._ADAPTOR_DOC :
-        details  =  m._ADAPTOR_DOC['details']
-        details  =  cleanup (details)
+    if 'description' in m._ADAPTOR_DOC :
+        description  =  m._ADAPTOR_DOC['description']
+        description  =  cleanup(description)
 
 
     if 'version' in m._ADAPTOR_INFO :
@@ -76,10 +141,16 @@ for a in saga.engine.registry.adaptor_registry :
 
 
     if 'schemas' in m._ADAPTOR_DOC :
-        schemas = ""
+
+        schemas  = "%s %s\n"       % ('='*15, '='*60)
+        schemas += "%-15s %-60s\n" % ('schema', 'description')
+        schemas += "%s %s\n"       % ('='*15, '='*60)
+
         for schema in m._ADAPTOR_DOC['schemas'] :
             text     = cleanup (m._ADAPTOR_DOC['schemas'][schema])
-            schemas += "  - **%s://** : %s\n" % (schema, text)
+            schemas += "%-15s %-60s\n" % (schema, text)
+
+        schemas += "%s %s\n"       % ('='*15, '='*60)
 
 
     if 'cfg_options' in m._ADAPTOR_DOC :
@@ -165,7 +236,7 @@ for a in saga.engine.registry.adaptor_registry :
     f.write ("%s\n" % n)
     f.write ("%s\n" % ('*' * len(n)))
     f.write ("\n")
-    f.write ("%s\n" % details)
+    f.write ("%s\n" % description)
     f.write ("\n")
     #f.write ("Version\n")
     #f.write ("=======\n")

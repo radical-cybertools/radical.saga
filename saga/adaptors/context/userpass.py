@@ -24,8 +24,7 @@ _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
-    'description'      : 'The UserPass context adaptor.',
-    'details'          : """This adaptor stores user_id and user_pass tokens, to
+    'description'      : """This adaptor stores user_id and user_pass tokens, to
                             be used for backend connections.""",
     'schemas'          : {'userpass' : 'this adaptor can only store username/password pairs.'},
 }

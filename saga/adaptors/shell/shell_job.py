@@ -80,9 +80,6 @@ _ADAPTOR_DOC           = {
     "description"      : """ 
         The Shell job adaptor. This adaptor uses the sh command line tools (sh,
         ssh, gsissh) to run remote jobs.
-        """,
-    "details"          : """ 
-        A more elaborate description....
 
         Known Limitations:
         ------------------

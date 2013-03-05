@@ -190,7 +190,6 @@ _ADAPTOR_DOC = {
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":   """The SGE adaptor can run and manage jobs on local and
                         remote SGE clusters.""",
-    "details": """TODO""",
     "schemas": {"sge":        "connect to a local SGE cluster",
                 "sge+ssh":    "conenct to a remote SGE cluster via SSH",
                 "sge+gsissh": "connect to a remote SGE cluster via GSISSH"}

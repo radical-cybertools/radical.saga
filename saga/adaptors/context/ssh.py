@@ -27,8 +27,7 @@ _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
-    'description'      : 'The SSH context adaptor.',
-    'details'          : """This adaptor points to a ssh public/private keypair and 
+    'description'      : """This adaptor points to a ssh public/private keypair and 
                             user_id to be used for backend connections.""",
     'schemas'          : {'ssh' : 'ssh private/public and userid information.'},
 }
