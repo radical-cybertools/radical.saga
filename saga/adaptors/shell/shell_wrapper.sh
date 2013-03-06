@@ -282,7 +282,7 @@ cmd_run_process () {
 
   DIR="$BASE/$SAGA_PID"
 
-  mkfifo "$DIR/fifo"           # to communicate with the monitor
+  mkfifo "$DIR/fifo"            # to communicate with the monitor
   printf "$*\\n" >  "$DIR/cmd"  # job to run by the monitor
 
   # start the monitor script, which makes sure
@@ -302,6 +302,19 @@ cmd_run_process () {
   exit
 }
 
+
+cmd_lrun () {
+  # LRUN allows to run shell commands which span more than one line.
+  CMD=""
+  while read -r IN
+  do
+    if test "$IN" = "LRUN_EOT"
+    then
+      cmd_run $CMD
+    fi
+    CMD="$CMD$IN\n"
+  done
+}
 
 # --------------------------------------------------------------------
 #
@@ -632,6 +645,7 @@ listen() {
       # is not known
       case $CMD in
         RUN       ) cmd_run     "$ARGS"  ;;
+        LRUN      ) cmd_lrun    "$ARGS"  ;;
         SUSPEND   ) cmd_suspend "$ARGS"  ;;
         RESUME    ) cmd_resume  "$ARGS"  ;;
         CANCEL    ) cmd_cancel  "$ARGS"  ;;
@@ -694,8 +708,8 @@ listen() {
 # The first arg to wrapper.sh is the id of the spawning shell, which we need to
 # report, if given
 #
-stty -echo   2> /dev/null
-stty -echonl 2> /dev/null
+#stty -echo   2> /dev/null
+#stty -echonl 2> /dev/null
 create_monitor
 listen $1
 #

@@ -404,8 +404,18 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         """ runs a job on the wrapper via pty, and returns the job id """
 
         cmd = self._jd2cmd (jd)
+        ret = 1
+        out = ""
 
-        ret, out, _ = self.shell.run_sync ("RUN %s" % cmd)
+        run_cmd = ""
+
+        # simple one-liners use RUN, otherwise LRUN
+        if not "\n" in cmd :
+            run_cmd = "RUN %s\n" % cmd
+        else :
+            run_cmd = "BULK\nLRUN\n%s\nLRUN_EOT\nBULK_RUN\n" % cmd
+
+        ret, out, _ = self.shell.run_sync (run_cmd)
         if  ret != 0 :
             raise saga.NoSuccess ("failed to run job '%s': (%s)(%s)" % (cmd, ret, out))
 

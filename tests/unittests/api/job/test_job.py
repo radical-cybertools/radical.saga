@@ -82,6 +82,8 @@ def test_job_service_create():
                 print "%s " % ni
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
+
+
 # ------------------------------------------------------------------------------
 #
 def test_job_run():
@@ -105,6 +107,41 @@ def test_job_run():
 
         global long_job
         long_job = j1
+
+    except saga.NotImplemented as ni:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
+                print "%s " % ni
+    except saga.SagaException as se:
+        assert False, "Unexpected exception: %s" % se
+
+
+# ------------------------------------------------------------------------------
+#
+def test_job_multiline_run():
+    """ Testing job.run() with multiline command
+    """
+    try:
+        tc = sutc.TestConfig()
+        js = saga.job.Service(tc.js_url, tc.session)
+        jd = saga.job.Description()
+        jd.executable = '/bin/sh'
+        jd.arguments = ["""-c "python -c '
+import time
+time.sleep (3)
+'
+"
+"""]
+
+        # add options from the test .cfg file if set
+        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+        j1 = js.create_job(jd)
+
+        j1.run()
+        assert (j1.state in [saga.job.RUNNING, saga.job.PENDING])
+        assert j1.state == j1.get_state()
+        j1.wait()
+        assert j1.state == saga.job.DONE
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
