@@ -16,8 +16,8 @@ def test_ptyshell_ok () :
 
     txt = "______1______2_____3_____"
     ret, out, _ = shell.run_sync ("printf \"%s\"" % txt)
-    assert (ret == 0)
-    assert (out == txt)
+    assert (ret == 0)    # "%s" % repr(ret)
+    assert (out == txt)  # "%s == %s" % (repr(out), repr(txt)
 
     assert (shell.alive ())
     shell.run_async ("exit")
@@ -34,8 +34,8 @@ def test_ptyshell_nok () :
 
     txt = "______1______2_____3_____"
     ret, out, _ = shell.run_sync ("printf \"%s\" ; false" % txt)
-    assert (ret == 1)
-    assert (out == txt)
+    assert (ret == 1)    # "%s" % repr(ret)
+    assert (out == txt)  # "%s == %s" % (repr(out), repr(txt)
 
     assert (shell.alive ())
     shell.run_async ("exit")
@@ -58,8 +58,8 @@ def test_ptyshell_async () :
 
     ret, out = shell.find_prompt ()
  
-    assert (ret == 0)
-    assert (out == "%s" % txt)
+    assert (ret == 0)   # "%s" % repr(ret)
+    assert (out == txt) # "%s == %s" % (repr(out), repr(txt)
  
     assert (shell.alive ())
     shell.run_async ("exit")
@@ -76,16 +76,16 @@ def test_ptyshell_prompt () :
 
     txt = "______1______2_____3_____"
     ret, out, _ = shell.run_sync ("printf \"%s\"" % txt)
-    assert (ret == 0)
-    assert (out == txt)
+    assert (ret == 0)    # "%s" % repr(ret)
+    assert (out == txt)  # "%s == %s" % (repr(out), repr(txt)
 
     shell.run_sync ('export PS1="HALLO-(\\$?)-PROMPT>"', 
                      new_prompt='HALLO-\((\d)\)-PROMPT>')
 
     txt = "______1______2_____3_____"
     ret, out, _ = shell.run_sync ("printf \"%s\"" % txt)
-    assert (ret == 0)
-    assert (out == txt)
+    assert (ret == 0)    # "%s" % repr(ret)
+    assert (out == txt)  # "%s == %s" % (repr(out), repr(txt)
 
     assert (shell.alive ())
     shell.run_async ("exit")
@@ -104,10 +104,10 @@ def test_ptyshell_file_stage () :
     shell.write_to_file (txt, "/tmp/saga-test-staging")
     out = shell.read_from_file ("/tmp/saga-test-staging")
 
-    assert (txt == out)
+    assert (txt == out)# "%s == %s" % (repr(out), repr(txt)
 
     ret, out, _ = shell.run_sync ("rm /tmp/saga-test-staging")
-    assert (ret == 0)
-    assert (out == "")
+    assert (ret == 0)    # "%s" % repr(ret)
+    assert (out == "")   # "%s == ''" % (repr(out))
 
 
