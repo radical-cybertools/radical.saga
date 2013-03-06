@@ -282,7 +282,7 @@ cmd_run_process () {
 
   DIR="$BASE/$SAGA_PID"
 
-  mkfifo "$DIR/fifo"           # to communicate with the monitor
+  mkfifo "$DIR/fifo"            # to communicate with the monitor
   printf "$*\\n" >  "$DIR/cmd"  # job to run by the monitor
 
   # start the monitor script, which makes sure
@@ -302,6 +302,24 @@ cmd_run_process () {
   exit
 }
 
+
+cmd_lrun () {
+  # LRUN allows to run shell commands which span more than one line.
+  CMD=""
+  # need IFS to preserve white space,
+  OLDIFS=$IFS
+  IFS=
+  while read -r IN
+  do
+    if test "$IN" = "LRUN_EOT "
+    then
+      break
+    fi
+    CMD="$CMD$IN\n"
+  done
+  IFS=$OLDIFS
+  cmd_run "$CMD"
+}
 
 # --------------------------------------------------------------------
 #
@@ -597,6 +615,8 @@ listen() {
   printf "PROMPT-0->\\n"
 
   # and read those from stdin
+  OLDIFS=$IFS
+  IFS=
   while read -r CMD ARGS
   do
 
@@ -621,6 +641,7 @@ listen() {
 
     # no more bulk collection (if there ever was any) -- execute the collected
     # command lines.
+    IFS=$OLDIFS
     while read -r CMD ARGS
     do
 
@@ -632,6 +653,7 @@ listen() {
       # is not known
       case $CMD in
         RUN       ) cmd_run     "$ARGS"  ;;
+        LRUN      ) cmd_lrun    "$ARGS"  ;;
         SUSPEND   ) cmd_suspend "$ARGS"  ;;
         RESUME    ) cmd_resume  "$ARGS"  ;;
         CANCEL    ) cmd_cancel  "$ARGS"  ;;
