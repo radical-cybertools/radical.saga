@@ -418,11 +418,16 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             script = _sgescript_generator(url=self.rm, logger=self._logger,
                                           jd=jd, pe_list=self.pe_list,
                                           queue=self.queue)
+
+            # escape all double quotes, otherwise 'echo |' further down
+            # won't work
+            script = script.replace('"', '\\"')
+
             self._logger.debug("Generated SGE script: %s" % script)
         except Exception, ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
-        ret, out, _ = self.shell.run_sync("echo '%s' | %s" %
+        ret, out, _ = self.shell.run_sync("""echo "%s" | %s""" %
             (script, self._commands['qsub']['path']))
 
         if ret != 0:
