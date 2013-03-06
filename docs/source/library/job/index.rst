@@ -1,7 +1,7 @@
 .. _job_managemen:
 
-Job Management
-==============
+Working with Jobs
+=================
 
 SAGA's job management module is central to the API. It
 represents an application/executable running under the management of a resource 

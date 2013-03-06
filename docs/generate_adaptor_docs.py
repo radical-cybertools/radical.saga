@@ -142,15 +142,15 @@ for a in saga.engine.registry.adaptor_registry :
 
     if 'schemas' in m._ADAPTOR_DOC :
 
-        schemas  = "%s %s\n"       % ('='*15, '='*60)
-        schemas += "%-15s %-60s\n" % ('schema', 'description')
-        schemas += "%s %s\n"       % ('='*15, '='*60)
+        schemas  = "%s %s\n"       % ('='*24, '='*60)
+        schemas += "%-24s %-60s\n" % ('schema', 'description')
+        schemas += "%s %s\n"       % ('='*24, '='*60)
 
-        for schema in m._ADAPTOR_DOC['schemas'] :
+        for schema in sorted(m._ADAPTOR_DOC['schemas'], key=len, reverse=False):
             text     = cleanup (m._ADAPTOR_DOC['schemas'][schema])
-            schemas += "%-15s %-60s\n" % (schema, text)
+            schemas += "%-24s %-60s\n" % ("**"+schema+"://**", text)
 
-        schemas += "%s %s\n"       % ('='*15, '='*60)
+        schemas += "%s %s\n"       % ('='*24, '='*60)
 
 
     if 'cfg_options' in m._ADAPTOR_DOC :
@@ -168,7 +168,7 @@ for a in saga.engine.registry.adaptor_registry :
             if 'valid_options' in o :
                 oval  = o['valid_options']
 
-            options += "%s\n****************" % oname
+            options += "%s\n%s\n" % (oname, "*"*len(oname))
             options += "\n"
             options += "%s\n" % odoc
             options += "\n"
@@ -197,7 +197,7 @@ for a in saga.engine.registry.adaptor_registry :
             if cname in cap_headers :
                 header = cap_headers[cname]
 
-            capable += "%s\n****************" % header
+            capable += "%s\n%s\n" % (header, "*"*len(header))
             capable += "\n"
 
             capab = capabs[cname]
@@ -246,7 +246,7 @@ for a in saga.engine.registry.adaptor_registry :
     f.write ("\n")
     f.write ("Supported Schemas\n")
     f.write ("-----------------\n")
-    f.write ("\n")
+    f.write ("\nThis adaptor is triggered by the following URL schemes:\n\n")
     f.write ("%s\n" % schemas)
     f.write ("\n")
     f.write ("\n")
