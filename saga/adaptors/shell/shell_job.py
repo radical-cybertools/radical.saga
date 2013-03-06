@@ -55,6 +55,7 @@ _ADAPTOR_CAPABILITIES  = {
     "jdes_attributes"  : [saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
+                          saga.job.WORKING_DIRECTORY,
                           saga.job.INPUT,
                           saga.job.OUTPUT,
                           saga.job.ERROR],
