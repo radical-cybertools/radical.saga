@@ -22,8 +22,6 @@ Contents:
 
    usage/index.rst
    library/index.rst
-   examples/index.rst
-   tutorial/index.rst
    adaptors/saga.adaptor.index.rst
    developers/index.rst
 
