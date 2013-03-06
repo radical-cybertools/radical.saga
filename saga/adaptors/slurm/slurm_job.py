@@ -86,13 +86,12 @@ _ADAPTOR_DOC           = {
         `SLURM <https://computing.llnl.gov/linux/slurm/slurm.html>`_ HPC cluster.
 
         General Notes
-        -------------
+        *************
 
         On Stampede, returning a non-zero exit code results in the scheduler
         putting the job into a FAILED state and assigning it an exit code of 127.
 
-        Example
-        -------
+        **Example:**
 
         ::
 
@@ -147,7 +146,7 @@ _ADAPTOR_DOC           = {
         What exit code should be returned for a CANCELED job?
 
         Implementation Notes
-        --------------------
+        ********************
 
          - If scontrol can't find an exit code, it returns None
            (see _job_get_exit_code)
@@ -161,18 +160,8 @@ _ADAPTOR_DOC           = {
          - Relating to the above, _job_get_info is written, but unused/untested
            (mostly from PBS adaptor)
 
-        Unimplemented Items
-        -------------------
-
-         - Container submission not implemented
-         - Parts in job_description not parsed:         
-
-           - threads_per_process
-           - spmd_variation
-           - total_cpu_count
-
-         - get_created/etc not in yet
         """,
+    "example": "examples/jobs/slurmjob.py",
     "schemas": {"slurm":        "connect to a local cluster",
                 "slurm+ssh":    "conenct to a remote cluster via SSH",
                 "slurm+gsissh": "connect to a remote cluster via GSISSH"}

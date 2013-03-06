@@ -201,6 +201,7 @@ The PBS adaptor allows to run and manage jobs on `PBS <http://www.pbsworks.com/>
 and `TORQUE <http://www.adaptivecomputing.com/products/open-source/torque>`_ 
 controlled HPC clusters.
 """,
+    "example": "examples/jobs/pbsjob.py",
     "schemas": {"pbs":        "connect to a local cluster",
                 "pbs+ssh":    "conenct to a remote cluster via SSH",
                 "pbs+gsissh": "connect to a remote cluster via GSISSH"}
