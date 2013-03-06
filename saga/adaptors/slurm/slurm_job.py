@@ -523,11 +523,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self._logger.debug("Transferring SLURM script to remote host")
 
         # transfer our script over
-        self.shell.write_to_file (src = slurm_script, 
-                                  tgt = "%s/wrapper.sh" % self._base)
+        #self.shell.write_to_file (src = slurm_script, 
+        #                          tgt = "%s/wrapper.sh" % self._base)
 
-        ret, out, _ = self.shell.run_sync("sbatch %s/wrapper.sh" % self._base)
-        
+        ret, out, _ = self.shell.run_sync("echo '%s' | sbatch" % slurm_script)
+
         # find out what our job ID will be
         # TODO: Could make this more efficient
         found_id = False
