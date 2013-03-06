@@ -32,9 +32,7 @@ The basic usage of the job module is as follows::
    print "Job State : %s" % (job.state)
    print "Exitcode  : %s" % (job.exit_code)
 
-.. seealso:: More examples on how to use the SAGA job module can be found in 
-             the :ref:`code_examples_job` section of the 
-             :ref:`chapter_code_examples` chapter.
+.. seealso:: More examples can be found in the individual adaptor sections!
 
 Like all SAGA modules, the job module relies on  middleware adaptors 
 to provide bindings to a specific resource manager. Adaptors are implicitly 

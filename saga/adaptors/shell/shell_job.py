@@ -89,7 +89,7 @@ _ADAPTOR_DOC           = {
         ssh, gsissh) to run local and remote jobs.
 
         Known Limitations:
-        ------------------
+        ******************
 
           * number of system pty's are limited:  each job.service object bound
             to this adaptor will use 2 pairs of pty pipes.  Systems usually
@@ -171,6 +171,7 @@ _ADAPTOR_DOC           = {
             use should work as expected though.
 
         """,
+    "example": "examples/jobs/localjob.py",
     "schemas"          : {"fork"   :"use /bin/sh to run jobs", 
                           "local"  :"alias for fork://", 
                           "ssh"    :"use ssh to run remote jobs", 

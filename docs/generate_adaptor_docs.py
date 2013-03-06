@@ -89,9 +89,9 @@ def cleanup (text) :
 idx = "%s/%s.rst" % (DOCROOT, 'saga.adaptor.index')
 i   = open (idx, 'w')
 
-i.write ("#########\n")
+i.write ("*********\n")
 i.write ("Adaptors:\n")
-i.write ("#########\n")
+i.write ("*********\n")
 i.write ("\n")
 i.write (".. toctree::\n")
 i.write ("   :numbered:\n")
@@ -113,6 +113,7 @@ for a in saga.engine.registry.adaptor_registry :
     i.write ("   %s\n" % n)
 
     description = "NO DESCRIPTION AVAILABLE"
+    example     = "NO EXAMPLE AVAILABLE"
     version     = "NO VERSION KNOWN"
     schemas     = "NO SCHEMAS DOCUMENTED"
     classes     = "NO API CLASSES DOCUMENTED"
@@ -134,11 +135,12 @@ for a in saga.engine.registry.adaptor_registry :
         description  =  m._ADAPTOR_DOC['description']
         description  =  cleanup(description)
 
+    if 'example' in m._ADAPTOR_DOC :
+        example = m._ADAPTOR_DOC['example']
 
     if 'version' in m._ADAPTOR_INFO :
         version  =  m._ADAPTOR_INFO['version']
         version  =  cleanup (version)
-
 
     if 'schemas' in m._ADAPTOR_DOC :
 
@@ -232,22 +234,25 @@ for a in saga.engine.registry.adaptor_registry :
     f = open (fn, 'w')
 
     f.write ("\n")
-    f.write ("%s\n" % ('*' * len(n)))
+    f.write ("%s\n" % ('#' * len(n)))
     f.write ("%s\n" % n)
-    f.write ("%s\n" % ('*' * len(n)))
+    f.write ("%s\n" % ('#' * len(n)))
     f.write ("\n")
+    f.write ("Description\n")
+    f.write ("-----------\n")
     f.write ("%s\n" % description)
     f.write ("\n")
-    #f.write ("Version\n")
-    #f.write ("=======\n")
-    #f.write ("\n")
-    #f.write ("%s\n" % version)
-    #f.write ("\n")
     f.write ("\n")
     f.write ("Supported Schemas\n")
     f.write ("-----------------\n")
     f.write ("\nThis adaptor is triggered by the following URL schemes:\n\n")
     f.write ("%s\n" % schemas)
+    f.write ("\n")
+    f.write ("\n")
+    f.write ("Example\n")
+    f.write ("-------\n")
+    f.write ("\n")
+    f.write (".. literalinclude:: ../../../%s\n" % example)
     f.write ("\n")
     f.write ("\n")
     f.write ("Configuration Options\n")
