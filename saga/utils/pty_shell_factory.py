@@ -171,7 +171,7 @@ class PTYShellFactory (object) :
 
             if  not info['pty'].alive (recover=True) :
                 raise saga.IncorrectState._log (logger, \
-            	  "Lost main connection to %s" % info['host_str'])
+            	  "Lost shell connection to %s" % info['host_str'])
 
         return info
 
@@ -201,29 +201,24 @@ class PTYShellFactory (object) :
         """
 
         # at this point, we do have a valid, living master
-        try :
-            s_cmd = _SCRIPTS[info['type']]['copy_to'] \
-                    % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
+        s_cmd = _SCRIPTS[info['type']]['copy_to'] \
+                % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
 
-            s_in  = _SCRIPTS[info['type']]['copy_to_in'] \
-                    % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
+        s_in  = _SCRIPTS[info['type']]['copy_to_in'] \
+                % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
 
-            cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
-            cp_slave.write (s_in)
+        cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
+        cp_slave.write (s_in)
 
-          # try :
-          #     while True :
-          #         print cp_slave.read ()
-          # except :
-          #     pass
+      # try :
+      #     while True :
+      #         print cp_slave.read ()
+      # except :
+      #     pass
 
-            cp_slave.wait ()
+        cp_slave.wait ()
 
-            return cp_slave
-
-        except Exception as e :
-            self.logger.error ('exception: %s ' % e)
-            raise e
+        return cp_slave
 
 
     # --------------------------------------------------------------------------
@@ -235,23 +230,18 @@ class PTYShellFactory (object) :
         """
 
         # at this point, we do have a valid, living master
-        try :
-            s_cmd = _SCRIPTS[info['type']]['copy_from'] \
-                    % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
+        s_cmd = _SCRIPTS[info['type']]['copy_from'] \
+                % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
 
-            s_in  = _SCRIPTS[info['type']]['copy_from_in'] \
-                    % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
+        s_in  = _SCRIPTS[info['type']]['copy_from_in'] \
+                % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
 
-            cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
-            cp_slave.write (s_in)
+        cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
+        cp_slave.write (s_in)
 
-            cp_slave.wait ()
+        cp_slave.wait ()
 
-            return cp_slave
-
-        except Exception as e :
-            self.logger.error ('exception: %s ' % e)
-            raise e
+        return cp_slave
 
 
     # --------------------------------------------------------------------------
@@ -301,7 +291,7 @@ class PTYShellFactory (object) :
 
         else :
             raise saga.BadParameter._log (self.logger, \
-            	  "can only handle '%s://' URLs, not %s" % (_SCHEMAS, info['schema']))
+            	  "cannot handle schema '%s://'" % url.schema)
 
 
         # depending on type, create command line (args, env etc)

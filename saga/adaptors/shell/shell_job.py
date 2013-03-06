@@ -327,7 +327,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         ret, out, _ = self.shell.run_sync ("mkdir -p %s" % base)
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" % (ret, out))
+            raise saga.NoSuccess ("host setup failed (%s): (%s)" % (ret, out))
 
         # FIXME: this is a race condition is multiple job services stage the
         # script at the same time.  We should make that atomic by
@@ -364,7 +364,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # either way, we somehow ran the script, and just need to check if it
         # came up all right...
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to run wrapper (%s)(%s)" % (ret, out))
+            raise saga.NoSuccess ("host setup failed (%s): (%s)" % (ret, out))
 
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out.strip ()))
 
@@ -619,25 +619,18 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         """
 
         if not cmd :
-            raise saga.BadParameter._log (self._logger, "run_hosts needs a command to run")
-
-        if "'" in cmd :
-            raise saga.BadParameter._log (self._logger, "command cannot contain \"'\" (%s)"  \
-                                       % cmd)
+            raise saga.BadParameter._log (self._logger, "run_job needs a command to run")
 
         if  host and host != self.rm.host :
-            raise saga.BadParameter._log (self._logger, "Can only run jobs on %s"
-                                       % self.rm.host)
+            raise saga.BadParameter._log (self._logger, "Can only run jobs on %s, not on %s" \
+                                       % (self.rm.host, host))
 
-        cmd_elems = cmd.split ()
-
-        if not len(cmd_elems) :
-            raise saga.BadParameter._log (self._logger, "run_hosts needs a non-empty command to run")
+        cmd_quoted = cmd.replace ("'", "\\\\'")
 
         jd = saga.job.Description ()
 
         jd.executable = "/bin/sh"
-        jd.arguments  = ["-c", "'%s'" % " ".join (cmd_elems)]
+        jd.arguments  = ["-c", "'%s'" % cmd_quoted]
 
         job = self.create_job (jd)
         job.run ()
@@ -700,7 +693,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 job_id = "[%s]-[%s]" % (self.rm, pid)
                 self._ids.append (job_id)
             except Exception as e:
-                self._logger.error ("Ignore non-int job pid (%s) (%s)" % (line, e))
+                self._logger.error ("Ignore ill-formatted job id (%s) (%s)" % (line, e))
 
         return self._ids
    
@@ -715,7 +708,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         known_jobs = self.list ()
 
         if jobid not in known_jobs :
-            raise saga.BadParameter._log (self._logger, "job id %s unknown"
+            raise saga.BadParameter._log (self._logger, "job id '%s' unknown"
                                        % jobid)
 
         else:
@@ -1041,16 +1034,11 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         """ Implements saga.adaptors.cpi.job.Job.get_state()
         """
 
-        # we may not yet have a backend representation...
-        try :
-            self._state = self.js._job_get_state (self._id)
+        # may not yet have backend representation, state is probably 'NEW'
+        if self._id == None :
             return self._state
-        except Exception as e :
-            if self._id == None :
-                # no ID yet, we should still have New state...
-                return self._state
-            else :
-                raise e
+
+        return self.js._job_get_state (self._id)
 
 
     # ----------------------------------------------------------------
