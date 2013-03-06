@@ -407,13 +407,15 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         ret = 1
         out = ""
 
-        run_cmd = ""
+        run_cmd  = ""
+        use_lrun = False
 
         # simple one-liners use RUN, otherwise LRUN
         if not "\n" in cmd :
             run_cmd = "RUN %s\n" % cmd
         else :
-            run_cmd = "BULK\nLRUN\n%s\nLRUN_EOT\nBULK_RUN\n" % cmd
+            use_lrun = True
+            run_cmd  = "BULK\nLRUN\n%s\nLRUN_EOT\nBULK_RUN\n" % cmd
 
         ret, out, _ = self.shell.run_sync (run_cmd)
         if  ret != 0 :
@@ -435,6 +437,13 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         self._logger.debug ("started job %s" % job_id)
 
         self.njobs += 1
+
+        # before we return, we need to clean the 'BULK COMPLETED message from lrun
+        if use_lrun :
+            ret, out = self.shell.find_prompt ()
+            if  ret != 0 :
+                raise saga.NoSuccess ("failed to run multiline job '%s': (%s)(%s)" % (run_cmd, ret, out))
+
 
         return job_id
         
