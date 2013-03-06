@@ -512,21 +512,30 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         if job_contact:
             slurm_script += "#SBATCH --mail-user=%s\n" % job_contact
-        
+
         # add on our environment variables
         slurm_script += env + "\n"
 
         # create our commandline
         slurm_script += exe + arg
 
+        # escape all double quotes, otherwise 'echo |' further down
+        # won't work
+        slurm_script = slurm_script.replace('"', '\\"')
+
+        # escape '!' - this doesn't work well with bash either:
+        # see: http://superuser.com/questions/133780/in-bash-how-do-i-escape-an-exclamation-mark
+        slurm_script = slurm_script.replace("!", "\"'!'\"")
+
+
         self._logger.debug("SLURM script generated:\n%s" % slurm_script)
         self._logger.debug("Transferring SLURM script to remote host")
 
         # transfer our script over
-        #self.shell.write_to_file (src = slurm_script, 
+        #self.shell.write_to_file (src = slurm_script,
         #                          tgt = "%s/wrapper.sh" % self._base)
 
-        ret, out, _ = self.shell.run_sync("echo '%s' | sbatch" % slurm_script)
+        ret, out, _ = self.shell.run_sync("""echo "%s" | sbatch""" % slurm_script)
 
         # find out what our job ID will be
         # TODO: Could make this more efficient
