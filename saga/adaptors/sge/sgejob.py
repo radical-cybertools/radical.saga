@@ -152,15 +152,15 @@ _PTY_TIMEOUT = 2.0
 _ADAPTOR_NAME          = "saga.adaptor.sgejob"
 _ADAPTOR_SCHEMAS       = ["sge", "sge+ssh", "sge+gsissh"]
 _ADAPTOR_OPTIONS       = [
-    {
-    'category':      'saga.adaptor.sgejob',
-    'name':          'foo',
-    'type':          bool,
-    'default':       False,
-    'valid_options': [True, False],
-    'documentation': """Doc""",
-    'env_variable':   None
-    },
+    # {
+    # 'category':      'saga.adaptor.sgejob',
+    # 'name':          'foo',
+    # 'type':          bool,
+    # 'default':       False,
+    # 'valid_options': [True, False],
+    # 'documentation': """Doc""",
+    # 'env_variable':   None
+    # },
 ]
 
 # --------------------------------------------------------------------
@@ -202,6 +202,7 @@ _ADAPTOR_DOC = {
 The SGE (Sun/Oracle Grid Engine) adaptor allows to run and manage jobs on
 `SGE <http://en.wikipedia.org/wiki/Oracle_Grid_Engine>`_ controlled HPC clusters.
 """,
+    "example": "examples/jobs/sgejob.py",
     "schemas": {"sge":        "connect to a local cluster",
                 "sge+ssh":    "conenct to a remote cluster via SSH",
                 "sge+gsissh": "connect to a remote cluster via GSISSH"}
@@ -244,7 +245,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts = self.get_config()
-        self.foo = self.opts['foo'].get_value()
+        #self.foo = self.opts['foo'].get_value()
 
         #self._logger.info('debug trace : %s' % self.debug_trace)
 

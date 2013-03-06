@@ -16,9 +16,9 @@ import saga
 def main():
 
     try:
-        # Create a job service object that represent a remote pbs cluster.
-        # The keyword 'pbs' in the url scheme triggers the PBS adaptors
-        # and '+ssh' enables PBS remote access via SSH.
+        # Create a job service object that represent the local machine.
+        # The keyword 'fork' in the url scheme triggers the 'shell' adaptor.
+        # The adaptor also support ssh:// and gsissh://
         js = saga.job.Service("fork://localhost")
 
         # Next, we describe the job we want to run. A complete set of job
