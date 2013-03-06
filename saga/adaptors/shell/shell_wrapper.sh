@@ -306,14 +306,19 @@ cmd_run_process () {
 cmd_lrun () {
   # LRUN allows to run shell commands which span more than one line.
   CMD=""
+  # need IFS to preserve white space,
+  OLDIFS=$IFS
+  IFS=
   while read -r IN
   do
-    if test "$IN" = "LRUN_EOT"
+    if test "$IN" = "LRUN_EOT "
     then
-      cmd_run $CMD
+      break
     fi
     CMD="$CMD$IN\n"
   done
+  IFS=$OLDIFS
+  cmd_run "$CMD"
 }
 
 # --------------------------------------------------------------------
@@ -610,6 +615,8 @@ listen() {
   printf "PROMPT-0->\\n"
 
   # and read those from stdin
+  OLDIFS=$IFS
+  IFS=
   while read -r CMD ARGS
   do
 
@@ -634,6 +641,7 @@ listen() {
 
     # no more bulk collection (if there ever was any) -- execute the collected
     # command lines.
+    IFS=$OLDIFS
     while read -r CMD ARGS
     do
 
@@ -708,8 +716,8 @@ listen() {
 # The first arg to wrapper.sh is the id of the spawning shell, which we need to
 # report, if given
 #
-#stty -echo   2> /dev/null
-#stty -echonl 2> /dev/null
+stty -echo   2> /dev/null
+stty -echonl 2> /dev/null
 create_monitor
 listen $1
 #

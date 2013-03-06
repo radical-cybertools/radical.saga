@@ -128,7 +128,9 @@ def test_job_multiline_run():
         jd.executable = '/bin/sh'
         jd.arguments = ["""-c "python -c '
 import time
-time.sleep (3)
+if True :
+  if True :
+    time.sleep (3)
 '
 "
 """]
