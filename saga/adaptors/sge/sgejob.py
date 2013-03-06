@@ -198,11 +198,13 @@ _ADAPTOR_DOC = {
     "name":          _ADAPTOR_NAME,
     "cfg_options":   _ADAPTOR_OPTIONS,
     "capabilities":  _ADAPTOR_CAPABILITIES,
-    "description":   """The SGE adaptor can run and manage jobs on local and
-                        remote SGE clusters.""",
-    "schemas": {"sge":        "connect to a local SGE cluster",
-                "sge+ssh":    "conenct to a remote SGE cluster via SSH",
-                "sge+gsissh": "connect to a remote SGE cluster via GSISSH"}
+    "description":  """
+The SGE (Sun/Oracle Grid Engine) adaptor allows to run and manage jobs on
+`SGE <http://en.wikipedia.org/wiki/Oracle_Grid_Engine>`_ controlled HPC clusters.
+""",
+    "schemas": {"sge":        "connect to a local cluster",
+                "sge+ssh":    "conenct to a remote cluster via SSH",
+                "sge+gsissh": "connect to a remote cluster via GSISSH"}
 }
 
 # --------------------------------------------------------------------
