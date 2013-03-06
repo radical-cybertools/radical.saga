@@ -425,7 +425,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             use_lrun = True
             run_cmd  = "BULK\nLRUN\n%s\nLRUN_EOT\nBULK_RUN\n" % cmd
 
-        run_cmd = run_cmd.replace ('\\', '\\\\')
+        run_cmd = run_cmd.replace ("\\", "\\\\\\\\") # hello MacOS
 
         ret, out, _ = self.shell.run_sync (run_cmd)
         if  ret != 0 :
