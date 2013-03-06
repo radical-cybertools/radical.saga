@@ -130,50 +130,58 @@ class PTYShellFactory (object) :
     #
     def initialize (self, url, session=None, logger=None) :
 
-        # make sure we have a valid session, and a valid url type
-        if  not session :
-            session = saga.Session (default=True)
+        try :
+            # make sure we have a valid session, and a valid url type
+            if  not session :
+                session = saga.Session (default=True)
 
-        url = saga.Url (url)
+            url = saga.Url (url)
 
-        if  not logger :
-            logger = saga.utils.logger.getLogger ('PTYShellFactory')
+            if  not logger :
+                logger = saga.utils.logger.getLogger ('PTYShellFactory')
 
-        # collect all information we have/need about the requested master
-        # connection
-        info = self._create_master_entry (url, session, logger)
+            # collect all information we have/need about the requested master
+            # connection
+            info = self._create_master_entry (url, session, logger)
 
-        # we got master info - register the master, and create the instance!
-        typ_s  = str(info['type'])
-        ctx_s  = str(info['ctx'])
-        host_s = str(info['host_str'])
+            # we got master info - register the master, and create the instance!
+            typ_s  = str(info['type'])
+            ctx_s  = str(info['ctx'])
+            host_s = str(info['host_str'])
 
-        # Now, if we don't have that master, yet, we need to instantiate it
-        if not host_s in self.registry                : self.registry[host_s] = {} 
-        if not ctx_s  in self.registry[host_s]        : self.registry[host_s][ctx_s] = {}
-        if not typ_s  in self.registry[host_s][ctx_s] : 
+            # Now, if we don't have that master, yet, we need to instantiate it
+            if not host_s in self.registry                : self.registry[host_s] = {} 
+            if not ctx_s  in self.registry[host_s]        : self.registry[host_s][ctx_s] = {}
+            if not typ_s  in self.registry[host_s][ctx_s] : 
 
-            # new master: create an instance, and register it
-            self.logger.info ("open master pty for [%s] [%s] [%s]'" \
-                           % (typ_s, host_s, ctx_s))
+                # new master: create an instance, and register it
+                self.logger.info ("open master pty for [%s] [%s] [%s]'" \
+                               % (typ_s, host_s, ctx_s))
 
-            m_cmd = _SCRIPTS[info['type']]['master'] % info
-            info['pty'] = saga.utils.pty_process.PTYProcess (m_cmd, logger=logger)
+                m_cmd = _SCRIPTS[info['type']]['master'] % info
+                info['pty'] = saga.utils.pty_process.PTYProcess (m_cmd, logger=logger)
 
-            # master was created - register it
-            self.registry[host_s][ctx_s][typ_s] = info 
+                # master was created - register it
+                self.registry[host_s][ctx_s][typ_s] = info 
 
 
-        else :
-            # we already have a master: make sure it is alive, and restart as
-            # needed
-            info = self.registry[host_s][ctx_s][typ_s]
+            else :
+                # we already have a master: make sure it is alive, and restart as
+                # needed
+                info = self.registry[host_s][ctx_s][typ_s]
 
-            if  not info['pty'].alive (recover=True) :
-                raise saga.IncorrectState._log (logger, \
-            	  "Lost shell connection to %s" % info['host_str'])
+                if  not info['pty'].alive (recover=True) :
+                    raise saga.IncorrectState._log (logger, \
+                	  "Lost shell connection to %s" % info['host_str'])
 
-        return info
+            return info
+
+        except Exception as e:
+            raise e
+            ## msg = str(e).lower ()
+            ## if "authorization" in msg :
+            ##     raise saga.BadParameter._log (self.logger, \
+            ##     raise 
 
 
     # --------------------------------------------------------------------------

@@ -584,7 +584,7 @@ class PTYProcess (object) :
                     raise e
 
                 raise se.NoSuccess ("read from process failed '%s' : (%s)" \
-                                 % (e, self.cache[-256:])
+                                 % (e, self.cache[-256:]))
 
 
     # ----------------------------------------------------------------
@@ -675,7 +675,7 @@ class PTYProcess (object) :
 
 
         except Exception as e :
-            raise se.NoSuccess ("find failed: %s" % e
+            raise se.NoSuccess ("find failed: %s" % e)
 
 
 
@@ -723,7 +723,7 @@ class PTYProcess (object) :
 
 
             except Exception as e :
-                raise se.NoSuccess ("write to process failed (%s)" % e
+                raise se.NoSuccess ("write to process failed (%s)" % e)
 
 
 
