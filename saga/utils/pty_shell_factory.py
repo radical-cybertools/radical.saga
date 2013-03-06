@@ -361,9 +361,9 @@ class PTYShellFactory (object) :
                     if  info['schema'] in _SCHEMAS_GSI :
                         # FIXME: also use cert_dir etc.
                         if  context.attribute_exists ("user_proxy") :
-                            info['ssh_env']  = "X509_PROXY='%s' " % context.user_proxy
-                            info['scp_env']  = "X509_PROXY='%s' " % context.user_proxy
-                            info['sftp_env'] = "X509_PROXY='%s' " % context.user_proxy
+                            info['ssh_env']  += "X509_PROXY='%s' " % context.user_proxy
+                            info['scp_env']  += "X509_PROXY='%s' " % context.user_proxy
+                            info['sftp_env'] += "X509_PROXY='%s' " % context.user_proxy
                             info['ctx'].append (context)
 
             # all ssh based shells allow for user_id and user_pass from contexts
