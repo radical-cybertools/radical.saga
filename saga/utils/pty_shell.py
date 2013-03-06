@@ -422,7 +422,7 @@ class PTYShell (object) :
 
             if not match :
                 self.prompt = old_prompt
-                raise saga.BadParameter ("Cannot use prompt, could not find it")
+                raise saga.BadParameter ("Cannot use new prompt, parsing failed")
 
             ret, _ = self._eval_prompt (match)
 
@@ -433,7 +433,7 @@ class PTYShell (object) :
 
         except Exception as e :
             self.prompt = old_prompt
-            raise saga.NoSuccess ("Could not set prompt (%s)" % e)
+            raise saga.NoSuccess ("Could not set shell prompt (%s)" % e)
 
 
 
@@ -457,11 +457,10 @@ class PTYShell (object) :
         result = None
         try :
             if  not data :
-                raise saga.NoSuccess ("could not parse prompt on empty string (%s) (%s)" \
+                raise saga.NoSuccess ("cannot not parse prompt (%s), invalid data (%s)" \
                                    % (prompt, data))
 
             result = prompt_re.match (data)
-
 
             if  not result :
                 self.logger.debug    ("could not parse prompt (%s) (%s)" % (prompt, data))
@@ -552,7 +551,7 @@ class PTYShell (object) :
 
         command = command.strip ()
         if command.endswith ('&') :
-            raise saga.BadParameter ("can only run foreground jobs ('%s')" \
+            raise saga.BadParameter ("run_sync can only run foreground jobs ('%s')" \
                                   % command)
 
         redir = ""
@@ -576,8 +575,8 @@ class PTYShell (object) :
         if  iomode == None :
             redir  =  ""
 
-        self.logger.debug ('run_sync: %s%s'   % (command, redir))
-        self.pty_shell.write    (          "%s%s\n" % (command, redir))
+        self.logger.debug    ('run_sync: %s%s'   % (command, redir))
+        self.pty_shell.write (          "%s%s\n" % (command, redir))
 
 
         # If given, switch to new prompt pattern right now...
@@ -656,7 +655,7 @@ class PTYShell (object) :
         # command -- thus we can check if the shell is alive before doing so,
         # and restart if needed
         if not self.pty_shell.alive (recover=True) :
-            raise saga.IncorrectState ("Can't run command -- shell died:\n%s" \
+            raise saga.IncorrectState ("Cannot run command:\n%s" \
                                     % self.pty_shell.autopsy ())
 
         command = command.strip ()
@@ -672,7 +671,7 @@ class PTYShell (object) :
         """
 
         if not self.pty_shell.alive (recover=False) :
-            raise saga.IncorrectState ("Can't send data -- shell died:\n%s" \
+            raise saga.IncorrectState ("Cannot send data:\n%s" \
                                     % self.pty_shell.autopsy ())
 
         self.logger.debug    ("send: %s" % data)
@@ -819,7 +818,7 @@ class PTYShell (object) :
         # we expect the master shell to be in alive when staging, as we need to
         # spawn cp / scp slaves
         if not self.pty_shell.alive (recover=True) :
-            raise saga.IncorrectState ("Can't stage file -- shell died:\n%s" \
+            raise saga.IncorrectState ("Cannot stage file:\n%s" \
                                     % self.pty_shell.autopsy ())
 
         # FIXME: magic goes here...
