@@ -1,8 +1,8 @@
 
 .. _file_managemen:
 
-File/Directory Management
-=========================
+Working with Files and Directories
+==================================
 
 Introduction
 ------------

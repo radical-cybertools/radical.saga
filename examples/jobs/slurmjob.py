@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-""" This examples shows how to run a job on a remote SGE cluster
-    using the 'SGE' job adaptor.
+""" This examples shows how to run a job on a remote SLURM cluster
+    using the 'SLURM' job adaptor.
 
     More information about the saga-python job API can be found at:
     http://saga-project.github.com/saga-python/doc/library/job/index.html
@@ -22,21 +22,19 @@ def main():
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the SGE adaptors
         # and '+ssh' enables SGE remote access via SSH.
-        js = saga.job.Service("sge+ssh://lonestar.tacc.utexas.edu")
+        js = saga.job.Service("slurm+ssh://login1.stampede.tacc.utexas.edu")
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
-        jd.queue           = 'development'
-        jd.project         = 'TG-MCB090174'
-        jd.total_cpu_count = 12 # for lonestar this has to be a multiple of 12
-        jd.spmd_variation  = '12way' # translates to the qsub -pe flag
         jd.environment     = {'RUNTIME': '10'}
         jd.wall_time_limit = 1 # minutes
         jd.executable      = '/bin/sleep'
-        jd.arguments       = ['$RUNTIME']
+        jd.queue           = "development"
+        jd.project         = "TG-MCB090174"
+        jd.wall_time_limit = 1 # minutes
 
-        # Create a new job from the job description. The initial state of 
+        # Create a new job from the job description. The initial state of
         # the job is 'New'.
         sleepjob = js.create_job(jd)
 

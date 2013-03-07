@@ -87,6 +87,16 @@ class SagaException(saga.utils.exception.ExceptionBase):
         available via the 'message' property."""
         return "%s: %s" % (self.type, self._message)
 
+
+    # ----------------------------------------------------------------
+    #
+    def _get_plain_message (self) :
+        """ Return the plain error message as a string. """
+        return self._message
+
+
+    # ----------------------------------------------------------------
+    #
     def get_type (self):
         """ Return the type of the exception as string.
         """
@@ -183,11 +193,12 @@ class SagaException(saga.utils.exception.ExceptionBase):
         return self.get_message ()
 
 
-    message    = property (get_message)         # string
-    object     = property (get_object)          # object type
-    type       = property (get_type)            # exception type
-    exceptions = property (get_all_exceptions)  # list [Exception]
-    messages   = property (get_all_messages)    # list [string]
+    _plain_message = property (_get_plain_message)  # string
+    message        = property (get_message)         # string
+    object         = property (get_object)          # object type
+    type           = property (get_type)            # exception type
+    exceptions     = property (get_all_exceptions)  # list [Exception]
+    messages       = property (get_all_messages)    # list [string]
 
 
 # --------------------------------------------------------------------

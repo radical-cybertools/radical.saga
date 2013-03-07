@@ -473,12 +473,14 @@ class PTYProcess (object) :
         Note: the returned lines do *not* get '\\\\r' stripped.
         """
 
+        found_eof = False
         with self.gc.active (self) :
 
             if not self.alive (recover=False) :
-                raise se.NoSuccess ("cannot read from dead pty process (%s)" \
-                                 % self.cache[-256:])
-
+                if self.cache :
+                    raise se.NoSuccess ("process I/O failed: %s" % self.cache[-256:])
+                else :
+                    raise se.NoSuccess ("process I/O failed")
 
             try:
                 # start the timeout timer right now.  Note that even if timeout is
@@ -520,7 +522,8 @@ class PTYProcess (object) :
                         if  len(buf) == 0 and sys.platform == 'darwin' :
                             self.logger.debug ("read : MacOS EOF")
                             self.finalize ()
-                            raise se.NoSuccess ("process on MacOS died (%s)" \
+                            found_eof = True
+                            raise se.NoSuccess ("unexpected EOF (%s)" \
                                              % self.cache[-256:])
 
 
@@ -577,8 +580,12 @@ class PTYProcess (object) :
 
 
             except Exception as e :
-                raise se.NoSuccess ("read from pty process [%s] failed (%s)" \
-                                 % (threading.current_thread().name, e))
+
+                if found_eof :
+                    raise e
+
+                raise se.NoSuccess ("read from process failed '%s' : (%s)" \
+                                 % (e, self.cache[-256:]))
 
 
     # ----------------------------------------------------------------
@@ -669,8 +676,7 @@ class PTYProcess (object) :
 
 
         except Exception as e :
-            raise se.NoSuccess ("find from pty process [%s] failed (%s) (%s)" \
-                             % (threading.current_thread().name, e, data))
+            raise se.NoSuccess ("find failed (%s): %s" % (e._plain_message, data))
 
 
 
@@ -685,7 +691,7 @@ class PTYProcess (object) :
         with self.gc.active (self) :
         
             if not self.alive (recover=False) :
-                raise se.NoSuccess ("cannot write to dead pty process (%s)" \
+                raise se.NoSuccess ("cannot write to dead process (%s)" \
                                  % self.cache[-256:])
 
             try :
@@ -718,9 +724,7 @@ class PTYProcess (object) :
 
 
             except Exception as e :
-                raise se.NoSuccess ("write to pty process [%s] failed (%s)" \
-                                 % (threading.current_thread().name, e))
-
+                raise se.NoSuccess ("write to process failed (%s)" % e)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

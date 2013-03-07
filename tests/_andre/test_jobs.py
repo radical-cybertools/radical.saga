@@ -3,14 +3,18 @@ import time
 import saga
 
 try :
-    js = saga.job.Service ('ssh://test@localhost/')
+    js = saga.job.Service ('ssh://localhost/')
   
     jd = saga.job.Description ()
-    jd.executable = '/bin/sleep'
-    jd.arguments  = ['1']
+    jd.executable = '/bin/echo'
+    jd.arguments  = ['hello world; date xxx; sleep 3']
+    jd.output     = "/tmp/out"
+    jd.error      = "/tmp/err"
   
     j = js.create_job (jd)
+    print j.created
     j.run ()
+    print j.started
     print "state: %s" % j.state
     time.sleep (1)
     print "state: %s" % j.state
@@ -19,13 +23,14 @@ try :
         print "..."
 
     print "state: %s" % j.state
+    print j.finished
 
     # print "list : %s" % js.list ()
     # for id in js.list () :
     #     print "--%s--" % id
 
 except saga.SagaException as e :
-    print "exception: %s" % e
+    print str(e)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
