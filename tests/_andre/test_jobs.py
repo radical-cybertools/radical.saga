@@ -3,7 +3,7 @@ import time
 import saga
 
 try :
-    js = saga.job.Service ('fork://localhost/')
+    js = saga.job.Service ('ssh://root@localhost/')
   
     jd = saga.job.Description ()
     jd.executable = '/bin/sleep'
@@ -25,7 +25,7 @@ try :
     #     print "--%s--" % id
 
 except saga.SagaException as e :
-    print "exception: %s" % e
+    print str(e)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
