@@ -675,8 +675,7 @@ class PTYShell (object) :
             raise saga.IncorrectState ("Can't send data -- shell died:\n%s" \
                                     % self.pty_shell.autopsy ())
 
-        self.logger.debug    ("send: %s" % data)
-        self.pty_shell.write (      "%s" % data)
+        self.pty_shell.write ("%s" % data)
 
 
     # ----------------------------------------------------------------
