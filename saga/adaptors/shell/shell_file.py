@@ -627,6 +627,9 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             self.flags = flags
             self.cwd   = sumisc.url_get_dirname (url)
 
+
+        self.session = session
+
         # FIXME: get ssh Master connection from _adaptor dict
         self.shell = sups.PTYShell (self.url, self.session, self._logger)
 
