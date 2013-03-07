@@ -467,34 +467,35 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         return job_id
         
 
-
     # ----------------------------------------------------------------
     #
     #
-    def _job_get_state (self, id) :
-        """ get the job state from the wrapper shell """
+    def _job_get_stats (self, id) :
+        """ get the job stats from the wrapper shell """
 
         rm, pid     = self._adaptor.parse_id (id)
-        ret, out, _ = self.shell.run_sync ("STATE %s\n" % pid)
+        ret, out, _ = self.shell.run_sync ("STATS %s\n" % pid)
 
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to get job state for '%s': (%s)(%s)" \
+            raise saga.NoSuccess ("failed to get job stats for '%s': (%s)(%s)" \
                                % (id, ret, out))
 
         lines = filter (None, out.split ("\n"))
         self._logger.debug (lines)
 
-        if  len (lines) == 3 :
-            # shell did not manage to do 'stty -echo'?
-            del (lines[0])
-
-        if  len (lines) != 2 :
-            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % (id, lines))
-
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
 
-        return self._adaptor.string_to_state (lines[1])
+        ret = {}
+        for line in lines :
+            if not ':' in line :
+                continue
+
+            key, val = line.split (":", 2)
+            ret[key.strip ().lower ()] = val.strip()
+
+        return ret
+
         
 
     # ----------------------------------------------------------------
@@ -587,41 +588,6 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             raise saga.NoSuccess ("failed to cancel job '%s' (%s)" % (id, lines))
 
 
-
-    # ----------------------------------------------------------------
-    #
-    # TODO: this should also fetch the (final) state, to safe a hop
-    # TODO: implement via notifications
-    #
-    def _job_wait (self, id, timeout) :
-        """ 
-        A call to the shell to do the WAIT would block the shell for any
-        other interactions.  In particular, it would practically kill it if the
-        Wait waits forever...
-
-        So we implement the wait via a state pull.  The *real* solution is, of
-        course, to implement state notifications, and wait for such
-        a notification to arrive within timeout seconds...
-        """
-
-        time_start = time.time ()
-        time_now   = time_start
-        rm, pid    = self._adaptor.parse_id (id)
-
-        while True :
-            state = self._job_get_state (id)
-            if  state == saga.job.DONE      or \
-                state == saga.job.FAILED    or \
-                state == saga.job.CANCELED     :
-                    return True
-            # avoid busy poll
-            time.sleep (0.5)
-
-            # check if we hit timeout
-            if  timeout >= 0 :
-                time_now = time.time ()
-                if  time_now - time_start > timeout :
-                    return False
 
     # ----------------------------------------------------------------
     #
@@ -1016,6 +982,9 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             self._state           = saga.job.NEW
             self._exit_code       = None
             self._exception       = None
+            self._created         = time.time ()
+            self._started         = None
+            self._finished        = None
 
         elif 'job_id' in job_info :
             # initialize job attribute values
@@ -1024,6 +993,9 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             self._state           = saga.job.UNKNOWN
             self._exit_code       = None
             self._exception       = None
+            self._created         = None
+            self._started         = None
+            self._finished        = None
 
         else :
             # don't know what to do...
@@ -1043,14 +1015,56 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     #
     @SYNC_CALL
     def get_state (self):
-        """ Implements saga.adaptors.cpi.job.Job.get_state()
-        """
+        """ Implements saga.adaptors.cpi.job.Job.get_state() """
 
         # may not yet have backend representation, state is probably 'NEW'
         if self._id == None :
             return self._state
 
-        return self.js._job_get_state (self._id)
+        # no need to re-fetch final states
+        if  self._state == saga.job.DONE      or \
+            self._state == saga.job.FAILED    or \
+            self._state == saga.job.CANCELED     :
+                return self._state
+
+        stats = self.js._job_get_stats (self._id)
+
+        if 'start' in stats : self._started  = stats['start']
+        if 'stop'  in stats : self._finished = stats['stop']
+        
+        if  not 'state' in stats :
+            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % id)
+
+        self._state = self._adaptor.string_to_state (stats['state'])
+
+        return self._state
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_created (self) : 
+
+        # no need to refresh stats -- this is set locally
+        return self._created
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_started (self) : 
+
+        self.get_state () # refresh stats
+        return self._started
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_finished (self) : 
+
+        self.get_state () # refresh stats
+        return self._finished
 
 
     # ----------------------------------------------------------------
@@ -1066,10 +1080,42 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
     # ----------------------------------------------------------------
     #
+    # TODO: this should also fetch the (final) state, to safe a hop
+    # TODO: implement via notifications
+    #
     @SYNC_CALL
     def wait (self, timeout):
-        return self.js._job_wait (self._id, timeout)
+        """ 
+        A call to the shell to do the WAIT would block the shell for any
+        other interactions.  In particular, it would practically kill it if the
+        Wait waits forever...
 
+        So we implement the wait via a state pull.  The *real* solution is, of
+        course, to implement state notifications, and wait for such
+        a notification to arrive within timeout seconds...
+        """
+
+        time_start = time.time ()
+        time_now   = time_start
+
+        while True :
+
+            state = self.get_state ()
+
+            if  state == saga.job.DONE      or \
+                state == saga.job.FAILED    or \
+                state == saga.job.CANCELED     :
+                    return True
+
+            # avoid busy poll
+            # FIXME: self-tune by checking call latency
+            time.sleep (0.5)
+
+            # check if we hit timeout
+            if  timeout >= 0 :
+                time_now = time.time ()
+                if  time_now - time_start > timeout :
+                    return False
    
     # ----------------------------------------------------------------
     #
