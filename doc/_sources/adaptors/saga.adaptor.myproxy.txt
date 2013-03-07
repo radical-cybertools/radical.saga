@@ -1,8 +1,10 @@
 
-********************
+####################
 saga.adaptor.myproxy
-********************
+####################
 
+Description
+-----------
 This adaptor fetches an X509 proxy from
 MyProxy when it is added to a saga.Session.
 
@@ -19,6 +21,12 @@ schema                   description
 **myproxy://**           this adaptor can only interact with myproxy backends        
 ======================== ============================================================
 
+
+
+Example
+-------
+
+.. literalinclude:: ../../../NO EXAMPLE AVAILABLE
 
 
 Configuration Options

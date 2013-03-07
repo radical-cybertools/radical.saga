@@ -1,8 +1,10 @@
 
-*******************
+###################
 saga.adaptor.pbsjob
-*******************
+###################
 
+Description
+-----------
 
 The PBS adaptor allows to run and manage jobs on `PBS <http://www.pbsworks.com/>`_
 and `TORQUE <http://www.adaptivecomputing.com/products/open-source/torque>`_ 
@@ -23,6 +25,12 @@ schema                   description
 **pbs+gsissh://**        connect to a remote cluster via GSISSH                      
 ======================== ============================================================
 
+
+
+Example
+-------
+
+.. literalinclude:: ../../../examples/jobs/pbsjob.py
 
 
 Configuration Options

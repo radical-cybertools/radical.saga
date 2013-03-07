@@ -1,8 +1,10 @@
 
-**********************
+######################
 saga.adaptor.condorjob
-**********************
+######################
 
+Description
+-----------
 
 The (HT)Condor(-G) adaptor allows to run and manage jobs on a 
 `Condor <http://research.cs.wisc.edu/htcondor/>`_ gateway.
@@ -22,6 +24,12 @@ schema                   description
 **condor+gsissh://**     connect to a remote gateway via GSISSH                      
 ======================== ============================================================
 
+
+
+Example
+-------
+
+.. literalinclude:: ../../../examples/jobs/condorjob.py
 
 
 Configuration Options

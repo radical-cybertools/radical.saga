@@ -1,8 +1,10 @@
 
-****************
+################
 saga.adaptor.ssh
-****************
+################
 
+Description
+-----------
 This adaptor points to a ssh public/private keypair and 
 user_id to be used for backend connections.
 
@@ -19,6 +21,12 @@ schema                   description
 **ssh://**               ssh private/public and userid information.                  
 ======================== ============================================================
 
+
+
+Example
+-------
+
+.. literalinclude:: ../../../NO EXAMPLE AVAILABLE
 
 
 Configuration Options

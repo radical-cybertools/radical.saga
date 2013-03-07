@@ -530,6 +530,7 @@
 <span class="sd">        Note: the returned lines do *not* get &#39;\\\\r&#39; stripped.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
+        <span class="n">found_eof</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="p">:</span>
@@ -577,7 +578,8 @@
                         <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s">&#39;darwin&#39;</span> <span class="p">:</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : MacOS EOF&quot;</span><span class="p">)</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">()</span>
-                            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;process on MacOS died (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                            <span class="n">found_eof</span> <span class="o">=</span> <span class="bp">True</span>
+                            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;unexpected EOF (</span><span class="si">%s</span><span class="s">)&quot;</span> \
                                              <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:])</span>
 
 
@@ -634,8 +636,12 @@
 
 
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
-                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;read from pty process [</span><span class="si">%s</span><span class="s">] failed (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                 <span class="o">%</span> <span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span><span class="p">()</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
+
+                <span class="k">if</span> <span class="n">found_eof</span> <span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">e</span>
+
+                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;read from process failed &#39;</span><span class="si">%s</span><span class="s">&#39; : (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                 <span class="o">%</span> <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:]))</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -726,8 +732,7 @@
 
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;find from pty process [</span><span class="si">%s</span><span class="s">] failed (</span><span class="si">%s</span><span class="s">) (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                             <span class="o">%</span> <span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span><span class="p">()</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;find failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
 
 
 
@@ -742,7 +747,7 @@
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
         
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="p">:</span>
-                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;cannot write to dead pty process (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;cannot write to dead process (</span><span class="si">%s</span><span class="s">)&quot;</span> \
                                  <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:])</span>
 
             <span class="k">try</span> <span class="p">:</span>
@@ -775,9 +780,7 @@
 
 
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
-                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;write to pty process [</span><span class="si">%s</span><span class="s">] failed (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                 <span class="o">%</span> <span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span><span class="p">()</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
-
+                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;write to process failed (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
 
 
 <span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>

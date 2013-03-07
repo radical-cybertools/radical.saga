@@ -32,7 +32,7 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <link rel="top" title="SAGA 0.9.2 documentation" href="../index.html" />
-    <link rel="up" title="5. Adaptors:" href="saga.adaptor.index.html" />
+    <link rel="up" title="3. Adaptors:" href="saga.adaptor.index.html" />
     <link rel="next" title="8. saga.adaptor.condorjob" href="saga.adaptor.condorjob.html" />
     <link rel="prev" title="6. saga.adaptor.sgejob" href="saga.adaptor.sgejob.html" /> 
   </head>
@@ -53,7 +53,7 @@
           <a href="saga.adaptor.sgejob.html" title="6. saga.adaptor.sgejob"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
-          <li><a href="saga.adaptor.index.html" accesskey="U">5. Adaptors:</a> &raquo;</li> 
+          <li><a href="saga.adaptor.index.html" accesskey="U">3. Adaptors:</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -64,11 +64,14 @@
             
   <div class="section" id="saga-adaptor-pbsjob">
 <h1>7. saga.adaptor.pbsjob<a class="headerlink" href="#saga-adaptor-pbsjob" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>7.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>The PBS adaptor allows to run and manage jobs on <a class="reference external" href="http://www.pbsworks.com/">PBS</a>
 and <a class="reference external" href="http://www.adaptivecomputing.com/products/open-source/torque">TORQUE</a>
 controlled HPC clusters.</p>
+</div>
 <div class="section" id="supported-schemas">
-<h2>7.1. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<h2>7.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
 <p>This adaptor is triggered by the following URL schemes:</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -93,8 +96,98 @@ controlled HPC clusters.</p>
 </tbody>
 </table>
 </div>
+<div class="section" id="example">
+<h2>7.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+
+<span class="sd">&quot;&quot;&quot; This examples shows how to run a job on a remote PBS/TORQUE cluster</span>
+<span class="sd">    using the &#39;PBS&#39; job adaptor.</span>
+
+<span class="sd">    More information about the saga-python job API can be found at:</span>
+<span class="sd">    http://saga-project.github.com/saga-python/doc/library/job/index.html</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Ole Weidner&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
+<span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">saga</span>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c"># Create a job service object that represent a remote pbs cluster.</span>
+        <span class="c"># The keyword &#39;pbs&#39; in the url scheme triggers the PBS adaptors</span>
+        <span class="c"># and &#39;+ssh&#39; enables PBS remote access via SSH.</span>
+        <span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;pbs+ssh://alamo.futuregrid.org&quot;</span><span class="p">)</span>
+
+        <span class="c"># Next, we describe the job we want to run. A complete set of job</span>
+        <span class="c"># description attributes can be found in the API documentation.</span>
+        <span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">queue</span>           <span class="o">=</span> <span class="s">&#39;batch&#39;</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">environment</span>     <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RUNTIME&#39;</span><span class="p">:</span> <span class="s">&#39;10&#39;</span><span class="p">}</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">wall_time_limit</span> <span class="o">=</span> <span class="mi">1</span> <span class="c"># minutes</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>      <span class="o">=</span> <span class="s">&#39;/bin/sleep&#39;</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&#39;$RUNTIME&#39;</span><span class="p">]</span>
+
+        <span class="c"># Create a new job from the job description. The initial state of </span>
+        <span class="c"># the job is &#39;New&#39;.</span>
+        <span class="n">sleepjob</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+
+        <span class="c"># Check our job&#39;s id and state</span>
+        <span class="k">print</span> <span class="s">&quot;Job ID    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Job State : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+
+        <span class="c"># Now we can start our job.</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">...starting job...</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="n">sleepjob</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+        <span class="k">print</span> <span class="s">&quot;Job ID    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Job State : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+
+        <span class="c"># List all jobs that are known by the adaptor.</span>
+        <span class="c"># This should show our job as well.</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Listing active jobs: &quot;</span>
+        <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">js</span><span class="o">.</span><span class="n">list</span><span class="p">():</span>
+            <span class="k">print</span> <span class="s">&quot; * </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job</span>
+
+        <span class="c"># Now we disconnect and reconnect to our job by using the get_job()</span>
+        <span class="c"># method and our job&#39;s id. While this doesn&#39;t make a lot of sense</span>
+        <span class="c"># here,  disconnect / reconnect can become very important for</span>
+        <span class="c"># long-running job.</span>
+        <span class="n">sleebjob_clone</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">get_job</span><span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+        <span class="c"># wait for our job to complete</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">...waiting for job...</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+
+        <span class="k">print</span> <span class="s">&quot;Job State   : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Exitcode    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">exit_code</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Exec. hosts : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">execution_hosts</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Create time : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">created</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Start time  : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">started</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;End time    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">finished</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">SagaException</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="c"># Catch all saga exceptions</span>
+        <span class="k">print</span> <span class="s">&quot;An exception occured: (</span><span class="si">%s</span><span class="s">) </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)))</span>
+        <span class="c"># Get the whole traceback in case of an exception -</span>
+        <span class="c"># this can be helpful for debugging the problem</span>
+        <span class="k">print</span> <span class="s">&quot; </span><span class="se">\n</span><span class="s">*** Backtrace:</span><span class="se">\n</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ex</span><span class="o">.</span><span class="n">traceback</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="configuration-options">
-<h2>7.2. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<h2>7.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
 <p>Configuration options can be used to control the adaptor&#8217;s runtime behavior. Most adaptors don&#8217;t need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.</p>
 <blockquote>
 <div><div class="admonition-see-also admonition seealso">
@@ -103,7 +196,7 @@ controlled HPC clusters.</p>
 </div>
 </div></blockquote>
 <div class="section" id="enabled">
-<h3>7.2.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<h3>7.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
 <p>enable / disable saga.adaptor.pbsjob adaptor</p>
 <blockquote>
 <div><ul class="simple">
@@ -116,9 +209,9 @@ controlled HPC clusters.</p>
 </div>
 </div>
 <div class="section" id="capabilities">
-<h2>7.3. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<h2>7.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="supported-monitorable-metrics">
-<h3>7.3.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
+<h3>7.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>State</li>
@@ -126,7 +219,7 @@ controlled HPC clusters.</p>
 </div></blockquote>
 </div>
 <div class="section" id="supported-job-attributes">
-<h3>7.3.2. Supported Job Attributes<a class="headerlink" href="#supported-job-attributes" title="Permalink to this headline">¶</a></h3>
+<h3>7.5.2. Supported Job Attributes<a class="headerlink" href="#supported-job-attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>ExitCode</li>
@@ -138,7 +231,7 @@ controlled HPC clusters.</p>
 </div></blockquote>
 </div>
 <div class="section" id="supported-context-types">
-<h3>7.3.3. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
+<h3>7.5.3. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li><em>x509</em>: GSISSH X509 proxy context</li>
@@ -148,7 +241,7 @@ controlled HPC clusters.</p>
 </div></blockquote>
 </div>
 <div class="section" id="supported-job-description-attributes">
-<h3>7.3.4. Supported Job Description Attributes<a class="headerlink" href="#supported-job-description-attributes" title="Permalink to this headline">¶</a></h3>
+<h3>7.5.4. Supported Job Description Attributes<a class="headerlink" href="#supported-job-description-attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>Name</li>
@@ -168,7 +261,7 @@ controlled HPC clusters.</p>
 </div>
 </div>
 <div class="section" id="supported-api-classes">
-<h2>7.4. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<h2>7.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt>This adaptor supports the following API classes:</dt>
 <dd><ul class="first last simple">
@@ -179,7 +272,7 @@ controlled HPC clusters.</p>
 </dl>
 <p>Method implementation details are listed below.</p>
 <div class="section" id="saga-job-service">
-<h3>7.4.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
+<h3>7.6.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.pbs.pbsjob.PBSJobService">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.pbs.pbsjob.</tt><tt class="descname">PBSJobService</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/pbs/pbsjob.html#PBSJobService"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.pbs.pbsjob.PBSJobService" title="Permalink to this definition">¶</a></dt>
@@ -224,7 +317,7 @@ controlled HPC clusters.</p>
 
 </div>
 <div class="section" id="saga-job-job">
-<h3>7.4.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
+<h3>7.6.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.pbs.pbsjob.PBSJob">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.pbs.pbsjob.</tt><tt class="descname">PBSJob</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/pbs/pbsjob.html#PBSJob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.pbs.pbsjob.PBSJob" title="Permalink to this definition">¶</a></dt>
@@ -305,21 +398,23 @@ controlled HPC clusters.</p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">7. saga.adaptor.pbsjob</a><ul>
-<li><a class="reference internal" href="#supported-schemas">7.1. Supported Schemas</a></li>
-<li><a class="reference internal" href="#configuration-options">7.2. Configuration Options</a><ul>
-<li><a class="reference internal" href="#enabled">7.2.1. enabled</a></li>
+<li><a class="reference internal" href="#description">7.1. Description</a></li>
+<li><a class="reference internal" href="#supported-schemas">7.2. Supported Schemas</a></li>
+<li><a class="reference internal" href="#example">7.3. Example</a></li>
+<li><a class="reference internal" href="#configuration-options">7.4. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">7.4.1. enabled</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#capabilities">7.3. Capabilities</a><ul>
-<li><a class="reference internal" href="#supported-monitorable-metrics">7.3.1. Supported Monitorable Metrics</a></li>
-<li><a class="reference internal" href="#supported-job-attributes">7.3.2. Supported Job Attributes</a></li>
-<li><a class="reference internal" href="#supported-context-types">7.3.3. Supported Context Types</a></li>
-<li><a class="reference internal" href="#supported-job-description-attributes">7.3.4. Supported Job Description Attributes</a></li>
+<li><a class="reference internal" href="#capabilities">7.5. Capabilities</a><ul>
+<li><a class="reference internal" href="#supported-monitorable-metrics">7.5.1. Supported Monitorable Metrics</a></li>
+<li><a class="reference internal" href="#supported-job-attributes">7.5.2. Supported Job Attributes</a></li>
+<li><a class="reference internal" href="#supported-context-types">7.5.3. Supported Context Types</a></li>
+<li><a class="reference internal" href="#supported-job-description-attributes">7.5.4. Supported Job Description Attributes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#supported-api-classes">7.4. Supported API Classes</a><ul>
-<li><a class="reference internal" href="#saga-job-service">7.4.1. saga.job.Service</a></li>
-<li><a class="reference internal" href="#saga-job-job">7.4.2. saga.job.Job</a></li>
+<li><a class="reference internal" href="#supported-api-classes">7.6. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-job-service">7.6.1. saga.job.Service</a></li>
+<li><a class="reference internal" href="#saga-job-job">7.6.2. saga.job.Job</a></li>
 </ul>
 </li>
 </ul>
@@ -370,7 +465,7 @@ controlled HPC clusters.</p>
           <a href="saga.adaptor.sgejob.html" title="6. saga.adaptor.sgejob"
              >previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
-          <li><a href="saga.adaptor.index.html" >5. Adaptors:</a> &raquo;</li> 
+          <li><a href="saga.adaptor.index.html" >3. Adaptors:</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">

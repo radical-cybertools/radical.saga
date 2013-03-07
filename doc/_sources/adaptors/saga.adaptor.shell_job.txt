@@ -1,14 +1,16 @@
 
-**********************
+######################
 saga.adaptor.shell_job
-**********************
+######################
 
+Description
+-----------
  
 The Shell job adaptor. This adaptor uses the sh command line tools (sh,
 ssh, gsissh) to run local and remote jobs.
 
 Known Limitations:
-------------------
+******************
 
   * number of system pty's are limited:  each job.service object bound
     to this adaptor will use 2 pairs of pty pipes.  Systems usually
@@ -109,6 +111,12 @@ schema                   description
 
 
 
+Example
+-------
+
+.. literalinclude:: ../../../examples/jobs/localjob.py
+
+
 Configuration Options
 ---------------------
 Configuration options can be used to control the adaptor's runtime behavior. Most adaptors don't need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.
@@ -173,6 +181,12 @@ Supported Job Description Attributes
   - Executable
   - Arguments
   - Environment
+  - WorkingDirectory
+  - Project
+  - Queue
+  - SPMDVariation
+  - TotalCPUCount
+  - WallTimeLimit
   - Input
   - Output
   - Error

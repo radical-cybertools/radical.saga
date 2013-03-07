@@ -1,8 +1,10 @@
 
-*******************
+###################
 saga.adaptor.sgejob
-*******************
+###################
 
+Description
+-----------
 
 The SGE (Sun/Oracle Grid Engine) adaptor allows to run and manage jobs on
 `SGE <http://en.wikipedia.org/wiki/Oracle_Grid_Engine>`_ controlled HPC clusters.
@@ -24,6 +26,12 @@ schema                   description
 
 
 
+Example
+-------
+
+.. literalinclude:: ../../../examples/jobs/sgejob.py
+
+
 Configuration Options
 ---------------------
 Configuration options can be used to control the adaptor's runtime behavior. Most adaptors don't need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.
@@ -37,15 +45,6 @@ enable / disable saga.adaptor.sgejob adaptor
 
   - **type** : <type 'bool'>
   - **default** : True
-  - **environment** : None
-  - **valid options** : [True, False]
-foo
-***
-
-Doc
-
-  - **type** : <type 'bool'>
-  - **default** : False
   - **environment** : None
   - **valid options** : [True, False]
 

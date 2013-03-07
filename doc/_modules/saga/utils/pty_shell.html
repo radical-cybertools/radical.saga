@@ -479,7 +479,7 @@
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span> <span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span> <span class="o">=</span> <span class="n">old_prompt</span>
-                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot use prompt, could not find it&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot use new prompt, parsing failed&quot;</span><span class="p">)</span>
 
             <span class="n">ret</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_prompt</span> <span class="p">(</span><span class="n">match</span><span class="p">)</span>
 
@@ -490,7 +490,7 @@
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span> <span class="o">=</span> <span class="n">old_prompt</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not set prompt (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not set shell prompt (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
 
 
 
@@ -514,11 +514,10 @@
         <span class="n">result</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="k">try</span> <span class="p">:</span>
             <span class="k">if</span>  <span class="ow">not</span> <span class="n">data</span> <span class="p">:</span>
-                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;could not parse prompt on empty string (</span><span class="si">%s</span><span class="s">) (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;cannot not parse prompt (</span><span class="si">%s</span><span class="s">), invalid data (</span><span class="si">%s</span><span class="s">)&quot;</span> \
                                    <span class="o">%</span> <span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
 
             <span class="n">result</span> <span class="o">=</span> <span class="n">prompt_re</span><span class="o">.</span><span class="n">match</span> <span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
 
             <span class="k">if</span>  <span class="ow">not</span> <span class="n">result</span> <span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span>    <span class="p">(</span><span class="s">&quot;could not parse prompt (</span><span class="si">%s</span><span class="s">) (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
@@ -609,7 +608,7 @@
 
         <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">strip</span> <span class="p">()</span>
         <span class="k">if</span> <span class="n">command</span><span class="o">.</span><span class="n">endswith</span> <span class="p">(</span><span class="s">&#39;&amp;&#39;</span><span class="p">)</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;can only run foreground jobs (&#39;</span><span class="si">%s</span><span class="s">&#39;)&quot;</span> \
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;run_sync can only run foreground jobs (&#39;</span><span class="si">%s</span><span class="s">&#39;)&quot;</span> \
                                   <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
 
         <span class="n">redir</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
@@ -633,8 +632,8 @@
         <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
             <span class="n">redir</span>  <span class="o">=</span>  <span class="s">&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&#39;run_sync: </span><span class="si">%s%s</span><span class="s">&#39;</span>   <span class="o">%</span> <span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">redir</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span>    <span class="p">(</span>          <span class="s">&quot;</span><span class="si">%s%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">redir</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span>    <span class="p">(</span><span class="s">&#39;run_sync: </span><span class="si">%s%s</span><span class="s">&#39;</span>   <span class="o">%</span> <span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">redir</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span>          <span class="s">&quot;</span><span class="si">%s%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">redir</span><span class="p">))</span>
 
 
         <span class="c"># If given, switch to new prompt pattern right now...</span>
@@ -713,7 +712,7 @@
         <span class="c"># command -- thus we can check if the shell is alive before doing so,</span>
         <span class="c"># and restart if needed</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;Can&#39;t run command -- shell died:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> \
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;Cannot run command:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> \
                                     <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">autopsy</span> <span class="p">())</span>
 
         <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">strip</span> <span class="p">()</span>
@@ -729,7 +728,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;Can&#39;t send data -- shell died:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> \
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;Cannot send data:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> \
                                     <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">autopsy</span> <span class="p">())</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span>    <span class="p">(</span><span class="s">&quot;send: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">data</span><span class="p">)</span>
@@ -876,7 +875,7 @@
         <span class="c"># we expect the master shell to be in alive when staging, as we need to</span>
         <span class="c"># spawn cp / scp slaves</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;Can&#39;t stage file -- shell died:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> \
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;Cannot stage file:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> \
                                     <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">autopsy</span> <span class="p">())</span>
 
         <span class="c"># FIXME: magic goes here...</span>

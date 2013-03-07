@@ -140,16 +140,16 @@
     <span class="s">&quot;cfg_options&quot;</span>      <span class="p">:</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">,</span> 
     <span class="s">&quot;capabilities&quot;</span>     <span class="p">:</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
     <span class="s">&quot;description&quot;</span>      <span class="p">:</span> <span class="s">&quot;&quot;&quot; </span>
-<span class="s">        The SLURM job adaptor. This adaptor uses the SLURM command line tools to run</span>
-<span class="s">        remote jobs.</span>
-<span class="s"> </span>
-<span class="s">        GENERAL NOTES</span>
+<span class="s">        The SLURM adaptor allows to run and manage jobs on a </span>
+<span class="s">        `SLURM &lt;https://computing.llnl.gov/linux/slurm/slurm.html&gt;`_ HPC cluster.</span>
+
+<span class="s">        General Notes</span>
 <span class="s">        -------------</span>
 
 <span class="s">        On Stampede, returning a non-zero exit code results in the scheduler</span>
 <span class="s">        putting the job into a FAILED state and assigning it an exit code of 127.</span>
 
-<span class="s">        EXAMPLE</span>
+<span class="s">        Example</span>
 <span class="s">        -------</span>
 
 <span class="s">        ::</span>
@@ -204,7 +204,7 @@
 
 <span class="s">        What exit code should be returned for a CANCELED job?</span>
 
-<span class="s">        IMPLEMENTATION NOTES</span>
+<span class="s">        Implementation Notes</span>
 <span class="s">        --------------------</span>
 
 <span class="s">         - If scontrol can&#39;t find an exit code, it returns None</span>
@@ -219,7 +219,7 @@
 <span class="s">         - Relating to the above, _job_get_info is written, but unused/untested</span>
 <span class="s">           (mostly from PBS adaptor)</span>
 
-<span class="s">        UNIMPLEMENTED ITEMS</span>
+<span class="s">        Unimplemented Items</span>
 <span class="s">        -------------------</span>
 
 <span class="s">         - Container submission not implemented</span>
@@ -231,9 +231,9 @@
 
 <span class="s">         - get_created/etc not in yet</span>
 <span class="s">        &quot;&quot;&quot;</span><span class="p">,</span>
-    <span class="s">&quot;schemas&quot;</span>          <span class="p">:</span> <span class="p">{</span><span class="s">&quot;slurm&quot;</span>        <span class="p">:</span><span class="s">&quot;use slurm to run local SLURM jobs&quot;</span><span class="p">,</span> 
-                          <span class="s">&quot;slurm+ssh&quot;</span>    <span class="p">:</span><span class="s">&quot;use ssh to run remote SLURM jobs&quot;</span><span class="p">,</span> 
-                          <span class="s">&quot;slurm+gsissh&quot;</span> <span class="p">:</span><span class="s">&quot;use gsissh to run remote SLURM jobs&quot;</span><span class="p">}</span>
+    <span class="s">&quot;schemas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;slurm&quot;</span><span class="p">:</span>        <span class="s">&quot;connect to a local cluster&quot;</span><span class="p">,</span>
+                <span class="s">&quot;slurm+ssh&quot;</span><span class="p">:</span>    <span class="s">&quot;conenct to a remote cluster via SSH&quot;</span><span class="p">,</span>
+                <span class="s">&quot;slurm+gsissh&quot;</span><span class="p">:</span> <span class="s">&quot;connect to a remote cluster via GSISSH&quot;</span><span class="p">}</span>
 <span class="p">}</span>
 
 <span class="c"># --------------------------------------------------------------------</span>
@@ -570,22 +570,31 @@
 
         <span class="k">if</span> <span class="n">job_contact</span><span class="p">:</span>
             <span class="n">slurm_script</span> <span class="o">+=</span> <span class="s">&quot;#SBATCH --mail-user=</span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job_contact</span>
-        
+
         <span class="c"># add on our environment variables</span>
         <span class="n">slurm_script</span> <span class="o">+=</span> <span class="n">env</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
 
         <span class="c"># create our commandline</span>
         <span class="n">slurm_script</span> <span class="o">+=</span> <span class="n">exe</span> <span class="o">+</span> <span class="n">arg</span>
 
+        <span class="c"># escape all double quotes, otherwise &#39;echo |&#39; further down</span>
+        <span class="c"># won&#39;t work</span>
+        <span class="n">slurm_script</span> <span class="o">=</span> <span class="n">slurm_script</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">&quot;&#39;</span><span class="p">)</span>
+
+        <span class="c"># escape &#39;!&#39; - this doesn&#39;t work well with bash either:</span>
+        <span class="c"># see: http://superuser.com/questions/133780/in-bash-how-do-i-escape-an-exclamation-mark</span>
+        <span class="n">slurm_script</span> <span class="o">=</span> <span class="n">slurm_script</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;!&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\&quot;</span><span class="s">&#39;!&#39;</span><span class="se">\&quot;</span><span class="s">&quot;</span><span class="p">)</span>
+
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;SLURM script generated:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">slurm_script</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Transferring SLURM script to remote host&quot;</span><span class="p">)</span>
 
         <span class="c"># transfer our script over</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">write_to_file</span> <span class="p">(</span><span class="n">src</span> <span class="o">=</span> <span class="n">slurm_script</span><span class="p">,</span> 
-                                  <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">/wrapper.sh&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base</span><span class="p">)</span>
+        <span class="c">#self.shell.write_to_file (src = slurm_script,</span>
+        <span class="c">#                          tgt = &quot;%s/wrapper.sh&quot; % self._base)</span>
 
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;sbatch </span><span class="si">%s</span><span class="s">/wrapper.sh&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base</span><span class="p">)</span>
-        
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;&quot;&quot;echo &quot;</span><span class="si">%s</span><span class="s">&quot; | sbatch&quot;&quot;&quot;</span> <span class="o">%</span> <span class="n">slurm_script</span><span class="p">)</span>
+
         <span class="c"># find out what our job ID will be</span>
         <span class="c"># TODO: Could make this more efficient</span>
         <span class="n">found_id</span> <span class="o">=</span> <span class="bp">False</span>

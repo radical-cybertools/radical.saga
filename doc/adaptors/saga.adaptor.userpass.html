@@ -32,7 +32,7 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <link rel="top" title="SAGA 0.9.2 documentation" href="../index.html" />
-    <link rel="up" title="5. Adaptors:" href="saga.adaptor.index.html" />
+    <link rel="up" title="3. Adaptors:" href="saga.adaptor.index.html" />
     <link rel="next" title="5. saga.adaptor.shell_job" href="saga.adaptor.shell_job.html" />
     <link rel="prev" title="3. saga.adaptor.ssh" href="saga.adaptor.ssh.html" /> 
   </head>
@@ -53,7 +53,7 @@
           <a href="saga.adaptor.ssh.html" title="3. saga.adaptor.ssh"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
-          <li><a href="saga.adaptor.index.html" accesskey="U">5. Adaptors:</a> &raquo;</li> 
+          <li><a href="saga.adaptor.index.html" accesskey="U">3. Adaptors:</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -64,10 +64,13 @@
             
   <div class="section" id="saga-adaptor-userpass">
 <h1>4. saga.adaptor.userpass<a class="headerlink" href="#saga-adaptor-userpass" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>4.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>This adaptor stores user_id and user_pass tokens, to
 be used for backend connections.</p>
+</div>
 <div class="section" id="supported-schemas">
-<h2>4.1. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<h2>4.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
 <p>This adaptor is triggered by the following URL schemes:</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -86,8 +89,11 @@ be used for backend connections.</p>
 </tbody>
 </table>
 </div>
+<div class="section" id="example">
+<h2>4.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+</div>
 <div class="section" id="configuration-options">
-<h2>4.2. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<h2>4.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
 <p>Configuration options can be used to control the adaptor&#8217;s runtime behavior. Most adaptors don&#8217;t need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.</p>
 <blockquote>
 <div><div class="admonition-see-also admonition seealso">
@@ -96,7 +102,7 @@ be used for backend connections.</p>
 </div>
 </div></blockquote>
 <div class="section" id="enabled">
-<h3>4.2.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<h3>4.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
 <p>enable / disable saga.adaptor.userpass adaptor</p>
 <blockquote>
 <div><ul class="simple">
@@ -109,9 +115,9 @@ be used for backend connections.</p>
 </div>
 </div>
 <div class="section" id="capabilities">
-<h2>4.3. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<h2>4.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="attributes">
-<h3>4.3.1. attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h3>
+<h3>4.5.1. attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>Type</li>
@@ -122,7 +128,7 @@ be used for backend connections.</p>
 </div>
 </div>
 <div class="section" id="supported-api-classes">
-<h2>4.4. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<h2>4.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt>This adaptor supports the following API classes:</dt>
 <dd><ul class="first last simple">
@@ -132,7 +138,7 @@ be used for backend connections.</p>
 </dl>
 <p>Method implementation details are listed below.</p>
 <div class="section" id="saga-context">
-<h3>4.4.1. saga.Context<a class="headerlink" href="#saga-context" title="Permalink to this headline">¶</a></h3>
+<h3>4.6.1. saga.Context<a class="headerlink" href="#saga-context" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.context.userpass.ContextUserPass">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.context.userpass.</tt><tt class="descname">ContextUserPass</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/context/userpass.html#ContextUserPass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.context.userpass.ContextUserPass" title="Permalink to this definition">¶</a></dt>
@@ -157,17 +163,19 @@ be used for backend connections.</p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">4. saga.adaptor.userpass</a><ul>
-<li><a class="reference internal" href="#supported-schemas">4.1. Supported Schemas</a></li>
-<li><a class="reference internal" href="#configuration-options">4.2. Configuration Options</a><ul>
-<li><a class="reference internal" href="#enabled">4.2.1. enabled</a></li>
+<li><a class="reference internal" href="#description">4.1. Description</a></li>
+<li><a class="reference internal" href="#supported-schemas">4.2. Supported Schemas</a></li>
+<li><a class="reference internal" href="#example">4.3. Example</a></li>
+<li><a class="reference internal" href="#configuration-options">4.4. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">4.4.1. enabled</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#capabilities">4.3. Capabilities</a><ul>
-<li><a class="reference internal" href="#attributes">4.3.1. attributes</a></li>
+<li><a class="reference internal" href="#capabilities">4.5. Capabilities</a><ul>
+<li><a class="reference internal" href="#attributes">4.5.1. attributes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#supported-api-classes">4.4. Supported API Classes</a><ul>
-<li><a class="reference internal" href="#saga-context">4.4.1. saga.Context</a></li>
+<li><a class="reference internal" href="#supported-api-classes">4.6. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-context">4.6.1. saga.Context</a></li>
 </ul>
 </li>
 </ul>
@@ -218,7 +226,7 @@ be used for backend connections.</p>
           <a href="saga.adaptor.ssh.html" title="3. saga.adaptor.ssh"
              >previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
-          <li><a href="saga.adaptor.index.html" >5. Adaptors:</a> &raquo;</li> 
+          <li><a href="saga.adaptor.index.html" >3. Adaptors:</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">

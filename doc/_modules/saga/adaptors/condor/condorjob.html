@@ -258,15 +258,15 @@
 <span class="n">_ADAPTOR_NAME</span>          <span class="o">=</span> <span class="s">&quot;saga.adaptor.condorjob&quot;</span>
 <span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&quot;condor&quot;</span><span class="p">,</span> <span class="s">&quot;condor+ssh&quot;</span><span class="p">,</span> <span class="s">&quot;condor+gsissh&quot;</span><span class="p">]</span>
 <span class="n">_ADAPTOR_OPTIONS</span>       <span class="o">=</span> <span class="p">[</span>
-    <span class="p">{</span>
-    <span class="s">&#39;category&#39;</span><span class="p">:</span>      <span class="s">&#39;saga.adaptor.condorjob&#39;</span><span class="p">,</span>
-    <span class="s">&#39;name&#39;</span><span class="p">:</span>          <span class="s">&#39;foo&#39;</span><span class="p">,</span>
-    <span class="s">&#39;type&#39;</span><span class="p">:</span>          <span class="nb">bool</span><span class="p">,</span>
-    <span class="s">&#39;default&#39;</span><span class="p">:</span>       <span class="bp">False</span><span class="p">,</span>
-    <span class="s">&#39;valid_options&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">True</span><span class="p">,</span> <span class="bp">False</span><span class="p">],</span>
-    <span class="s">&#39;documentation&#39;</span><span class="p">:</span> <span class="s">&quot;&quot;&quot;Doc&quot;&quot;&quot;</span><span class="p">,</span>
-    <span class="s">&#39;env_variable&#39;</span><span class="p">:</span>   <span class="bp">None</span>
-    <span class="p">},</span>
+    <span class="c"># {</span>
+    <span class="c"># &#39;category&#39;:      &#39;saga.adaptor.condorjob&#39;,</span>
+    <span class="c"># &#39;name&#39;:          &#39;foo&#39;,</span>
+    <span class="c"># &#39;type&#39;:          bool,</span>
+    <span class="c"># &#39;default&#39;:       False,</span>
+    <span class="c"># &#39;valid_options&#39;: [True, False],</span>
+    <span class="c"># &#39;documentation&#39;: &quot;&quot;&quot;Doc&quot;&quot;&quot;,</span>
+    <span class="c"># &#39;env_variable&#39;:   None</span>
+    <span class="c"># },</span>
 <span class="p">]</span>
 
 <span class="c"># --------------------------------------------------------------------</span>
@@ -305,11 +305,13 @@
     <span class="s">&quot;name&quot;</span><span class="p">:</span>          <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
     <span class="s">&quot;cfg_options&quot;</span><span class="p">:</span>   <span class="n">_ADAPTOR_OPTIONS</span><span class="p">,</span>
     <span class="s">&quot;capabilities&quot;</span><span class="p">:</span>  <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
-    <span class="s">&quot;description&quot;</span><span class="p">:</span>   <span class="s">&quot;&quot;&quot;The Condor adaptor can run and manage jobs on local and</span>
-<span class="s">                        remote Condor gateways.&quot;&quot;&quot;</span><span class="p">,</span>
-    <span class="s">&quot;schemas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;condor&quot;</span><span class="p">:</span>        <span class="s">&quot;connect to a local Condor gateway&quot;</span><span class="p">,</span>
-                <span class="s">&quot;condor+ssh&quot;</span><span class="p">:</span>    <span class="s">&quot;conenct to a remote Condor gateway via SSH&quot;</span><span class="p">,</span>
-                <span class="s">&quot;condor+gsissh&quot;</span><span class="p">:</span> <span class="s">&quot;connect to a remote Condor gateway via GSISSH&quot;</span><span class="p">}</span>
+    <span class="s">&quot;description&quot;</span><span class="p">:</span>  <span class="s">&quot;&quot;&quot;</span>
+<span class="s">The (HT)Condor(-G) adaptor allows to run and manage jobs on a </span>
+<span class="s">`Condor &lt;http://research.cs.wisc.edu/htcondor/&gt;`_ gateway.</span>
+<span class="s">&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;schemas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;condor&quot;</span><span class="p">:</span>        <span class="s">&quot;connect to a local gateway&quot;</span><span class="p">,</span>
+                <span class="s">&quot;condor+ssh&quot;</span><span class="p">:</span>    <span class="s">&quot;conenct to a remote gateway via SSH&quot;</span><span class="p">,</span>
+                <span class="s">&quot;condor+gsissh&quot;</span><span class="p">:</span> <span class="s">&quot;connect to a remote gateway via GSISSH&quot;</span><span class="p">}</span>
 <span class="p">}</span>
 
 <span class="c"># --------------------------------------------------------------------</span>
@@ -349,7 +351,6 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">id_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;^\[(.*)\]-\[(.*?)\]$&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_config</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">foo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="p">[</span><span class="s">&#39;foo&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_value</span><span class="p">()</span>
 
         <span class="c">#self._logger.info(&#39;debug trace : %s&#39; % self.debug_trace)</span>
 

@@ -256,11 +256,13 @@
     <span class="s">&quot;name&quot;</span><span class="p">:</span>          <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
     <span class="s">&quot;cfg_options&quot;</span><span class="p">:</span>   <span class="n">_ADAPTOR_OPTIONS</span><span class="p">,</span>
     <span class="s">&quot;capabilities&quot;</span><span class="p">:</span>  <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
-    <span class="s">&quot;description&quot;</span><span class="p">:</span>   <span class="s">&quot;&quot;&quot;The SGE adaptor can run and manage jobs on local and</span>
-<span class="s">                        remote SGE clusters.&quot;&quot;&quot;</span><span class="p">,</span>
-    <span class="s">&quot;schemas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;sge&quot;</span><span class="p">:</span>        <span class="s">&quot;connect to a local SGE cluster&quot;</span><span class="p">,</span>
-                <span class="s">&quot;sge+ssh&quot;</span><span class="p">:</span>    <span class="s">&quot;conenct to a remote SGE cluster via SSH&quot;</span><span class="p">,</span>
-                <span class="s">&quot;sge+gsissh&quot;</span><span class="p">:</span> <span class="s">&quot;connect to a remote SGE cluster via GSISSH&quot;</span><span class="p">}</span>
+    <span class="s">&quot;description&quot;</span><span class="p">:</span>  <span class="s">&quot;&quot;&quot;</span>
+<span class="s">The SGE (Sun/Oracle Grid Engine) adaptor allows to run and manage jobs on</span>
+<span class="s">`SGE &lt;http://en.wikipedia.org/wiki/Oracle_Grid_Engine&gt;`_ controlled HPC clusters.</span>
+<span class="s">&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;schemas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;sge&quot;</span><span class="p">:</span>        <span class="s">&quot;connect to a local cluster&quot;</span><span class="p">,</span>
+                <span class="s">&quot;sge+ssh&quot;</span><span class="p">:</span>    <span class="s">&quot;conenct to a remote cluster via SSH&quot;</span><span class="p">,</span>
+                <span class="s">&quot;sge+gsissh&quot;</span><span class="p">:</span> <span class="s">&quot;connect to a remote cluster via GSISSH&quot;</span><span class="p">}</span>
 <span class="p">}</span>
 
 <span class="c"># --------------------------------------------------------------------</span>
@@ -474,11 +476,16 @@
             <span class="n">script</span> <span class="o">=</span> <span class="n">_sgescript_generator</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span>
                                           <span class="n">jd</span><span class="o">=</span><span class="n">jd</span><span class="p">,</span> <span class="n">pe_list</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pe_list</span><span class="p">,</span>
                                           <span class="n">queue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span>
+
+            <span class="c"># escape all double quotes, otherwise &#39;echo |&#39; further down</span>
+            <span class="c"># won&#39;t work</span>
+            <span class="n">script</span> <span class="o">=</span> <span class="n">script</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">&quot;&#39;</span><span class="p">)</span>
+
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Generated SGE script: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">script</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">),</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
 
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;echo &#39;</span><span class="si">%s</span><span class="s">&#39; | </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;&quot;&quot;echo &quot;</span><span class="si">%s</span><span class="s">&quot; | </span><span class="si">%s</span><span class="s">&quot;&quot;&quot;</span> <span class="o">%</span>
             <span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qsub&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">]))</span>
 
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>

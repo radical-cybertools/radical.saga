@@ -32,7 +32,7 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <link rel="top" title="SAGA 0.9.2 documentation" href="../index.html" />
-    <link rel="up" title="5. Adaptors:" href="saga.adaptor.index.html" />
+    <link rel="up" title="3. Adaptors:" href="saga.adaptor.index.html" />
     <link rel="next" title="6. saga.adaptor.sgejob" href="saga.adaptor.sgejob.html" />
     <link rel="prev" title="4. saga.adaptor.userpass" href="saga.adaptor.userpass.html" /> 
   </head>
@@ -53,7 +53,7 @@
           <a href="saga.adaptor.userpass.html" title="4. saga.adaptor.userpass"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
-          <li><a href="saga.adaptor.index.html" accesskey="U">5. Adaptors:</a> &raquo;</li> 
+          <li><a href="saga.adaptor.index.html" accesskey="U">3. Adaptors:</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -64,10 +64,12 @@
             
   <div class="section" id="saga-adaptor-shell-job">
 <h1>5. saga.adaptor.shell_job<a class="headerlink" href="#saga-adaptor-shell-job" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>5.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>The Shell job adaptor. This adaptor uses the sh command line tools (sh,
 ssh, gsissh) to run local and remote jobs.</p>
 <div class="section" id="known-limitations">
-<h2>5.1. Known Limitations:<a class="headerlink" href="#known-limitations" title="Permalink to this headline">¶</a></h2>
+<h3>5.1.1. Known Limitations:<a class="headerlink" href="#known-limitations" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul>
 <li><p class="first">number of system pty&#8217;s are limited:  each job.service object bound
@@ -140,6 +142,7 @@ use should work as expected though.</p>
 </ul>
 </div></blockquote>
 </div>
+</div>
 <div class="section" id="supported-schemas">
 <h2>5.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
 <p>This adaptor is triggered by the following URL schemes:</p>
@@ -169,8 +172,96 @@ use should work as expected though.</p>
 </tbody>
 </table>
 </div>
+<div class="section" id="example">
+<h2>5.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+
+<span class="sd">&quot;&quot;&quot; This examples shows how to run a job on the local machine</span>
+<span class="sd">    using the &#39;local&#39; job adaptor.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Ole Weidner&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
+<span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">saga</span>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c"># Create a job service object that represent the local machine.</span>
+        <span class="c"># The keyword &#39;fork&#39; in the url scheme triggers the &#39;shell&#39; adaptor.</span>
+        <span class="c"># The adaptor also support ssh:// and gsissh://</span>
+        <span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;fork://localhost&quot;</span><span class="p">)</span>
+
+        <span class="c"># Next, we describe the job we want to run. A complete set of job</span>
+        <span class="c"># description attributes can be found in the API documentation.</span>
+        <span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
+
+        <span class="c"># Next, we describe the job we want to run. A complete set of job</span>
+        <span class="c"># description attributes can be found in the API documentation.</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">environment</span>     <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RUNTIME&#39;</span><span class="p">:</span> <span class="s">&#39;10&#39;</span><span class="p">}</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">wall_time_limit</span> <span class="o">=</span> <span class="mi">1</span> <span class="c"># minutes</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>      <span class="o">=</span> <span class="s">&#39;/bin/sleep&#39;</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&#39;$RUNTIME&#39;</span><span class="p">]</span>
+
+        <span class="c"># Create a new job from the job description. The initial state of</span>
+        <span class="c"># the job is &#39;New&#39;.</span>
+        <span class="n">sleepjob</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+
+        <span class="c"># Check our job&#39;s id and state</span>
+        <span class="k">print</span> <span class="s">&quot;Job ID    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Job State : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+
+        <span class="c"># Now we can start our job.</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">...starting job...</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="n">sleepjob</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+        <span class="k">print</span> <span class="s">&quot;Job ID    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Job State : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+
+        <span class="c"># List all jobs that are known by the adaptor.</span>
+        <span class="c"># This should show our job as well.</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Listing active jobs: &quot;</span>
+        <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">js</span><span class="o">.</span><span class="n">list</span><span class="p">():</span>
+            <span class="k">print</span> <span class="s">&quot; * </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job</span>
+
+        <span class="c"># Now we disconnect and reconnect to our job by using the get_job()</span>
+        <span class="c"># method and our job&#39;s id. While this doesn&#39;t make a lot of sense</span>
+        <span class="c"># here,  disconnect / reconnect can become very important for</span>
+        <span class="c"># long-running job.</span>
+        <span class="n">sleebjob_clone</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">get_job</span><span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+        <span class="c"># wait for our job to complete</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">...waiting for job...</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+
+        <span class="k">print</span> <span class="s">&quot;Job State   : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Exitcode    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">exit_code</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Exec. hosts : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">execution_hosts</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Create time : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">created</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Start time  : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">started</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;End time    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">finished</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">SagaException</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="c"># Catch all saga exceptions</span>
+        <span class="k">print</span> <span class="s">&quot;An exception occured: (</span><span class="si">%s</span><span class="s">) </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)))</span>
+        <span class="c"># Trace back the exception. That can be helpful for debugging.</span>
+        <span class="k">print</span> <span class="s">&quot; </span><span class="se">\n</span><span class="s">*** Backtrace:</span><span class="se">\n</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ex</span><span class="o">.</span><span class="n">traceback</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="configuration-options">
-<h2>5.3. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<h2>5.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
 <p>Configuration options can be used to control the adaptor&#8217;s runtime behavior. Most adaptors don&#8217;t need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.</p>
 <blockquote>
 <div><div class="admonition-see-also admonition seealso">
@@ -179,7 +270,7 @@ use should work as expected though.</p>
 </div>
 </div></blockquote>
 <div class="section" id="enabled">
-<h3>5.3.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<h3>5.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
 <p>enable / disable saga.adaptor.shell_job adaptor</p>
 <blockquote>
 <div><ul class="simple">
@@ -191,7 +282,7 @@ use should work as expected though.</p>
 </div></blockquote>
 </div>
 <div class="section" id="enable-notifications">
-<h3>5.3.2. enable_notifications<a class="headerlink" href="#enable-notifications" title="Permalink to this headline">¶</a></h3>
+<h3>5.4.2. enable_notifications<a class="headerlink" href="#enable-notifications" title="Permalink to this headline">¶</a></h3>
 <p>Enable support for job state notifications.  Note that
 enabling this option will create a local thread, a remote
 shell process, and an additional network connection.
@@ -210,9 +301,9 @@ instances per remote host.</p>
 </div>
 </div>
 <div class="section" id="capabilities">
-<h2>5.4. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<h2>5.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="supported-monitorable-metrics">
-<h3>5.4.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
+<h3>5.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>State</li>
@@ -221,7 +312,7 @@ instances per remote host.</p>
 </div></blockquote>
 </div>
 <div class="section" id="supported-job-attributes">
-<h3>5.4.2. Supported Job Attributes<a class="headerlink" href="#supported-job-attributes" title="Permalink to this headline">¶</a></h3>
+<h3>5.5.2. Supported Job Attributes<a class="headerlink" href="#supported-job-attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>ExitCode</li>
@@ -233,7 +324,7 @@ instances per remote host.</p>
 </div></blockquote>
 </div>
 <div class="section" id="supported-context-types">
-<h3>5.4.3. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
+<h3>5.5.3. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li><em>x509</em>: X509 proxy for gsissh</li>
@@ -243,12 +334,18 @@ instances per remote host.</p>
 </div></blockquote>
 </div>
 <div class="section" id="supported-job-description-attributes">
-<h3>5.4.4. Supported Job Description Attributes<a class="headerlink" href="#supported-job-description-attributes" title="Permalink to this headline">¶</a></h3>
+<h3>5.5.4. Supported Job Description Attributes<a class="headerlink" href="#supported-job-description-attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>Executable</li>
 <li>Arguments</li>
 <li>Environment</li>
+<li>WorkingDirectory</li>
+<li>Project</li>
+<li>Queue</li>
+<li>SPMDVariation</li>
+<li>TotalCPUCount</li>
+<li>WallTimeLimit</li>
 <li>Input</li>
 <li>Output</li>
 <li>Error</li>
@@ -257,7 +354,7 @@ instances per remote host.</p>
 </div>
 </div>
 <div class="section" id="supported-api-classes">
-<h2>5.5. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<h2>5.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt>This adaptor supports the following API classes:</dt>
 <dd><ul class="first last simple">
@@ -268,7 +365,7 @@ instances per remote host.</p>
 </dl>
 <p>Method implementation details are listed below.</p>
 <div class="section" id="saga-job-service">
-<h3>5.5.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
+<h3>5.6.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.shell.shell_job.ShellJobService">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.shell.shell_job.</tt><tt class="descname">ShellJobService</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService" title="Permalink to this definition">¶</a></dt>
@@ -338,7 +435,7 @@ instances per remote host.</p>
 
 </div>
 <div class="section" id="saga-job-job">
-<h3>5.5.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
+<h3>5.6.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.shell.shell_job.ShellJob">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.shell.shell_job.</tt><tt class="descname">ShellJob</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob" title="Permalink to this definition">¶</a></dt>
@@ -424,23 +521,27 @@ instances per remote host.</p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">5. saga.adaptor.shell_job</a><ul>
-<li><a class="reference internal" href="#known-limitations">5.1. Known Limitations:</a></li>
+<li><a class="reference internal" href="#description">5.1. Description</a><ul>
+<li><a class="reference internal" href="#known-limitations">5.1.1. Known Limitations:</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#supported-schemas">5.2. Supported Schemas</a></li>
-<li><a class="reference internal" href="#configuration-options">5.3. Configuration Options</a><ul>
-<li><a class="reference internal" href="#enabled">5.3.1. enabled</a></li>
-<li><a class="reference internal" href="#enable-notifications">5.3.2. enable_notifications</a></li>
+<li><a class="reference internal" href="#example">5.3. Example</a></li>
+<li><a class="reference internal" href="#configuration-options">5.4. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">5.4.1. enabled</a></li>
+<li><a class="reference internal" href="#enable-notifications">5.4.2. enable_notifications</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#capabilities">5.4. Capabilities</a><ul>
-<li><a class="reference internal" href="#supported-monitorable-metrics">5.4.1. Supported Monitorable Metrics</a></li>
-<li><a class="reference internal" href="#supported-job-attributes">5.4.2. Supported Job Attributes</a></li>
-<li><a class="reference internal" href="#supported-context-types">5.4.3. Supported Context Types</a></li>
-<li><a class="reference internal" href="#supported-job-description-attributes">5.4.4. Supported Job Description Attributes</a></li>
+<li><a class="reference internal" href="#capabilities">5.5. Capabilities</a><ul>
+<li><a class="reference internal" href="#supported-monitorable-metrics">5.5.1. Supported Monitorable Metrics</a></li>
+<li><a class="reference internal" href="#supported-job-attributes">5.5.2. Supported Job Attributes</a></li>
+<li><a class="reference internal" href="#supported-context-types">5.5.3. Supported Context Types</a></li>
+<li><a class="reference internal" href="#supported-job-description-attributes">5.5.4. Supported Job Description Attributes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#supported-api-classes">5.5. Supported API Classes</a><ul>
-<li><a class="reference internal" href="#saga-job-service">5.5.1. saga.job.Service</a></li>
-<li><a class="reference internal" href="#saga-job-job">5.5.2. saga.job.Job</a></li>
+<li><a class="reference internal" href="#supported-api-classes">5.6. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-job-service">5.6.1. saga.job.Service</a></li>
+<li><a class="reference internal" href="#saga-job-job">5.6.2. saga.job.Job</a></li>
 </ul>
 </li>
 </ul>
@@ -491,7 +592,7 @@ instances per remote host.</p>
           <a href="saga.adaptor.userpass.html" title="4. saga.adaptor.userpass"
              >previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.2 documentation</a> &raquo;</li>
-          <li><a href="saga.adaptor.index.html" >5. Adaptors:</a> &raquo;</li> 
+          <li><a href="saga.adaptor.index.html" >3. Adaptors:</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
