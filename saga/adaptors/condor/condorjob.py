@@ -98,7 +98,14 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
     # arguments -> arguments
     arguments = "arguments = "
     if jd.arguments is not None:
+
         for arg in jd.arguments:
+            # Condor can't deal with multi-line arguments. yep, that's how
+            # bad of a software it is.
+            if len(arg.split("\n")) > 1:
+                message = "Condor doesn't support multi-line arguments: %s" % arg
+                log_error_and_raise(message, saga.NoSuccess, logger)
+
             # Condor HATES double quotes in the arguments. It'll return
             # some crap like: "Found illegal unescaped double-quote: ...
             # That's why we esacpe them.

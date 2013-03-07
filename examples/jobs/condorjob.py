@@ -29,8 +29,18 @@ def main():
         jd.project         = 'TG-MCB090174'
         jd.environment     = {'RUNTIME': '10'}
         jd.wall_time_limit = 2 # minutes
-        jd.executable      = '/bin/sleep'
-        jd.arguments       = ['$RUNTIME']
+
+        jd.executable = '/bin/sh'
+        jd.arguments = ["""-c "python -c '
+import time
+if True :
+  if True :
+    time.sleep (3)
+'
+"
+"""]
+
+
         jd.output          = "saga_condorjob.stdout"
         jd.error           = "saga_condorjob.stderr"
         jd.candidate_hosts = ["FNAL_FERMIGRID", "cinvestav", "SPRACE",
