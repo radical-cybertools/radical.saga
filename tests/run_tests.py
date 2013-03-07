@@ -52,8 +52,6 @@ def launch_tests(options, testdir):
     # that we will use for the tests
     test_cfgs = []
 
-    print options.notimpl_warn_only
-
     for config in options.config.split(","):
         if os.path.exists(config):
             if os.path.isdir(config):
