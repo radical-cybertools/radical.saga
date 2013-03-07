@@ -98,7 +98,14 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
     # arguments -> arguments
     arguments = "arguments = "
     if jd.arguments is not None:
+
         for arg in jd.arguments:
+            # Condor can't deal with multi-line arguments. yep, that's how
+            # bad of a software it is.
+            if len(arg.split("\n")) > 1:
+                message = "Condor doesn't support multi-line arguments: %s" % arg
+                log_error_and_raise(message, saga.NoSuccess, logger)
+
             # Condor HATES double quotes in the arguments. It'll return
             # some crap like: "Found illegal unescaped double-quote: ...
             # That's why we esacpe them.
@@ -200,15 +207,15 @@ _PTY_TIMEOUT = 2.0
 _ADAPTOR_NAME          = "saga.adaptor.condorjob"
 _ADAPTOR_SCHEMAS       = ["condor", "condor+ssh", "condor+gsissh"]
 _ADAPTOR_OPTIONS       = [
-    {
-    'category':      'saga.adaptor.condorjob',
-    'name':          'foo',
-    'type':          bool,
-    'default':       False,
-    'valid_options': [True, False],
-    'documentation': """Doc""",
-    'env_variable':   None
-    },
+    # {
+    # 'category':      'saga.adaptor.condorjob',
+    # 'name':          'foo',
+    # 'type':          bool,
+    # 'default':       False,
+    # 'valid_options': [True, False],
+    # 'documentation': """Doc""",
+    # 'env_variable':   None
+    # },
 ]
 
 # --------------------------------------------------------------------
@@ -247,11 +254,14 @@ _ADAPTOR_DOC = {
     "name":          _ADAPTOR_NAME,
     "cfg_options":   _ADAPTOR_OPTIONS,
     "capabilities":  _ADAPTOR_CAPABILITIES,
-    "description":   """The Condor adaptor can run and manage jobs on local and
-                        remote Condor gateways.""",
-    "schemas": {"condor":        "connect to a local Condor gateway",
-                "condor+ssh":    "conenct to a remote Condor gateway via SSH",
-                "condor+gsissh": "connect to a remote Condor gateway via GSISSH"}
+    "description":  """
+The (HT)Condor(-G) adaptor allows to run and manage jobs on a 
+`Condor <http://research.cs.wisc.edu/htcondor/>`_ gateway.
+""",
+    "example": "examples/jobs/condorjob.py",
+    "schemas": {"condor":        "connect to a local gateway",
+                "condor+ssh":    "conenct to a remote gateway via SSH",
+                "condor+gsissh": "connect to a remote gateway via GSISSH"}
 }
 
 # --------------------------------------------------------------------
@@ -291,7 +301,6 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts = self.get_config()
-        self.foo = self.opts['foo'].get_value()
 
         #self._logger.info('debug trace : %s' % self.debug_trace)
 

@@ -35,17 +35,16 @@ _SCHEMAS_GSI = ['gsissh', 'gsiscp', 'gsisftp']   # 'gsiftp'?
 
 _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 
-# ssh master/slave flag magic # FIXME: make timeouts configurable
-_SSH_CONTROL_PATH   = "~/.saga/adaptors/shell/ssh_%%n_%%p.%s.ctrl" % (os.getpid ())
-_SSH_FLAGS_MASTER   = "-o ControlMaster=yes -o ControlPath=%s -o ControlPersist=30" % _SSH_CONTROL_PATH
-_SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%s -o ControlPersist=30" % _SSH_CONTROL_PATH
+# FIXME: '-o ControlPersist' is only supported for newer ssh versions.  We
+# should add detection, and enable that if available -- for now, just diable it.
+#
+# FIXME: we should use '%n' instead of '%h', but that is not supported by older
+# ssh versions...
 
-if sys.platform == 'darwin' :
-    # MacOS seems to use an older version of ssh which does not support
-    # connection persistency :-/
-    _SSH_CONTROL_PATH   = "~/.saga/adaptors/shell/ssh_%%h_%%p.%s.ctrl" % (os.getpid ())
-    _SSH_FLAGS_MASTER   = "-o ControlMaster=yes -o ControlPath=%s" % _SSH_CONTROL_PATH
-    _SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%s" % _SSH_CONTROL_PATH
+# ssh master/slave flag magic # FIXME: make timeouts configurable
+_SSH_CONTROL_PATH   = "~/.saga/adaptors/shell/ssh_%%h_%%p.%s.ctrl" % (os.getpid ())
+_SSH_FLAGS_MASTER   = "-o ControlMaster=yes -o ControlPath=%s" % _SSH_CONTROL_PATH
+_SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%s" % _SSH_CONTROL_PATH
 
 # FIXME: right now, we create a shell connection as master --
 # but a master does not actually need a shell, as it is never really
@@ -160,6 +159,9 @@ class PTYShellFactory (object) :
 
             m_cmd = _SCRIPTS[info['type']]['master'] % info
             info['pty'] = saga.utils.pty_process.PTYProcess (m_cmd, logger=logger)
+            if not info['pty'].alive () :
+                raise saga.NoSuccess._log (logger, \
+            	  "Shell not connected to %s" % info['host_str'])
 
             # master was created - register it
             self.registry[host_s][ctx_s][typ_s] = info 
@@ -172,7 +174,7 @@ class PTYShellFactory (object) :
 
             if  not info['pty'].alive (recover=True) :
                 raise saga.IncorrectState._log (logger, \
-            	  "Lost main connection to %s" % info['host_str'])
+            	  "Lost shell connection to %s" % info['host_str'])
 
         return info
 
@@ -206,26 +208,21 @@ class PTYShellFactory (object) :
                       'cp_flags' : cp_flags}.items ()+ info.items ())
 
         # at this point, we do have a valid, living master
-        try :
-            s_cmd = _SCRIPTS[info['type']]['copy_to']    % repl
-            s_in  = _SCRIPTS[info['type']]['copy_to_in'] % repl
+        s_cmd = _SCRIPTS[info['type']]['copy_to']    % repl
+        s_in  = _SCRIPTS[info['type']]['copy_to_in'] % repl
 
-            cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
-            cp_slave.write (s_in)
+        cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
+        cp_slave.write (s_in)
 
-          # try :
-          #     while True :
-          #         print cp_slave.read ()
-          # except :
-          #     pass
+      # try :
+      #     while True :
+      #         print cp_slave.read ()
+      # except :
+      #     pass
 
-            cp_slave.wait ()
+        cp_slave.wait ()
 
-            return cp_slave
-
-        except Exception as e :
-            self.logger.error ('exception: %s ' % e)
-            raise e
+        return cp_slave
 
 
     # --------------------------------------------------------------------------
@@ -242,26 +239,20 @@ class PTYShellFactory (object) :
 
 
         # at this point, we do have a valid, living master
-        try :
-            s_cmd = _SCRIPTS[info['type']]['copy_from']    % repl
-            s_in  = _SCRIPTS[info['type']]['copy_from_in'] % repl
+        s_cmd = _SCRIPTS[info['type']]['copy_from']    % repl
+        s_in  = _SCRIPTS[info['type']]['copy_from_in'] % repl
+        cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
+        cp_slave.write (s_in)
 
-            cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
-            cp_slave.write (s_in)
+      # try :
+      #     while True :
+      #         print cp_slave.read ()
+      # except :
+      #     pass
 
-          # try :
-          #     while True :
-          #         print cp_slave.read ()
-          # except :
-          #     pass
+        cp_slave.wait ()
 
-            cp_slave.wait ()
-
-            return cp_slave
-
-        except Exception as e :
-            self.logger.error ('exception: %s ' % e)
-            raise e
+        return cp_slave
 
 
     # --------------------------------------------------------------------------
@@ -310,7 +301,7 @@ class PTYShellFactory (object) :
 
         else :
             raise saga.BadParameter._log (self.logger, \
-            	  "can only handle '%s://' URLs, not %s" % (_SCHEMAS, info['schema']))
+            	  "cannot handle schema '%s://'" % url.schema)
 
 
         # depending on type, create command line (args, env etc)
@@ -369,9 +360,9 @@ class PTYShellFactory (object) :
                     if  info['schema'] in _SCHEMAS_GSI :
                         # FIXME: also use cert_dir etc.
                         if  context.attribute_exists ("user_proxy") :
-                            info['ssh_env']  = "X509_PROXY='%s' " % context.user_proxy
-                            info['scp_env']  = "X509_PROXY='%s' " % context.user_proxy
-                            info['sftp_env'] = "X509_PROXY='%s' " % context.user_proxy
+                            info['ssh_env']  += "X509_PROXY='%s' " % context.user_proxy
+                            info['scp_env']  += "X509_PROXY='%s' " % context.user_proxy
+                            info['sftp_env'] += "X509_PROXY='%s' " % context.user_proxy
                             info['ctx'].append (context)
 
             # all ssh based shells allow for user_id and user_pass from contexts

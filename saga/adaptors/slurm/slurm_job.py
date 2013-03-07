@@ -82,17 +82,16 @@ _ADAPTOR_DOC           = {
     "cfg_options"      : _ADAPTOR_OPTIONS, 
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "description"      : """ 
-        The SLURM job adaptor. This adaptor uses the SLURM command line tools to run
-        remote jobs.
- 
-        GENERAL NOTES
-        -------------
+        The SLURM adaptor allows to run and manage jobs on a 
+        `SLURM <https://computing.llnl.gov/linux/slurm/slurm.html>`_ HPC cluster.
+
+        General Notes
+        *************
 
         On Stampede, returning a non-zero exit code results in the scheduler
         putting the job into a FAILED state and assigning it an exit code of 127.
 
-        EXAMPLE
-        -------
+        **Example:**
 
         ::
 
@@ -146,8 +145,8 @@ _ADAPTOR_DOC           = {
 
         What exit code should be returned for a CANCELED job?
 
-        IMPLEMENTATION NOTES
-        --------------------
+        Implementation Notes
+        ********************
 
          - If scontrol can't find an exit code, it returns None
            (see _job_get_exit_code)
@@ -161,21 +160,11 @@ _ADAPTOR_DOC           = {
          - Relating to the above, _job_get_info is written, but unused/untested
            (mostly from PBS adaptor)
 
-        UNIMPLEMENTED ITEMS
-        -------------------
-
-         - Container submission not implemented
-         - Parts in job_description not parsed:         
-
-           - threads_per_process
-           - spmd_variation
-           - total_cpu_count
-
-         - get_created/etc not in yet
         """,
-    "schemas"          : {"slurm"        :"use slurm to run local SLURM jobs", 
-                          "slurm+ssh"    :"use ssh to run remote SLURM jobs", 
-                          "slurm+gsissh" :"use gsissh to run remote SLURM jobs"}
+    "example": "examples/jobs/slurmjob.py",
+    "schemas": {"slurm":        "connect to a local cluster",
+                "slurm+ssh":    "conenct to a remote cluster via SSH",
+                "slurm+gsissh": "connect to a remote cluster via GSISSH"}
 }
 
 # --------------------------------------------------------------------
@@ -514,22 +503,31 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         if job_contact:
             slurm_script += "#SBATCH --mail-user=%s\n" % job_contact
-        
+
         # add on our environment variables
         slurm_script += env + "\n"
 
         # create our commandline
         slurm_script += exe + arg
 
+        # escape all double quotes, otherwise 'echo |' further down
+        # won't work
+        slurm_script = slurm_script.replace('"', '\\"')
+
+        # escape '!' - this doesn't work well with bash either:
+        # see: http://superuser.com/questions/133780/in-bash-how-do-i-escape-an-exclamation-mark
+        slurm_script = slurm_script.replace("!", "\"'!'\"")
+
+
         self._logger.debug("SLURM script generated:\n%s" % slurm_script)
         self._logger.debug("Transferring SLURM script to remote host")
 
         # transfer our script over
-        self.shell.write_to_file (src = slurm_script, 
-                                  tgt = "%s/wrapper.sh" % self._base)
+        #self.shell.write_to_file (src = slurm_script,
+        #                          tgt = "%s/wrapper.sh" % self._base)
 
-        ret, out, _ = self.shell.run_sync("sbatch %s/wrapper.sh" % self._base)
-        
+        ret, out, _ = self.shell.run_sync("""echo "%s" | sbatch""" % slurm_script)
+
         # find out what our job ID will be
         # TODO: Could make this more efficient
         found_id = False
