@@ -56,14 +56,13 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
                           saga.job.WORKING_DIRECTORY,
+                          saga.job.PROJECT,         # FIXME
+                          saga.job.QUEUE,           # FIXME
+                          saga.job.SPMD_VARIATION,  # FIXME
+                          saga.job.TOTAL_CPU_COUNT, # FIXME
+                          saga.job.WALL_TIME_LIMIT, # FIXME
                           saga.job.INPUT,
                           saga.job.OUTPUT,
-                          saga.job.PROJECT,
-                          saga.job.QUEUE,
-                          saga.job.SPMD_VARIATION,
-                          saga.job.TOTAL_CPU_COUNT,
-                          saga.job.WALL_TIME_LIMIT,
-                          saga.job.WORKING_DIRECTORY,
                           saga.job.ERROR],
     "job_attributes"   : [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -389,19 +388,29 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         arg = ""
         env = ""
         cwd = ""
+        io  = ""
 
-        if jd.attribute_exists ("arguments") :
+        if  jd.attribute_exists (ARGUMENTS) :
             for a in jd.arguments :
-                arg += ' ' + a
+                arg += "%s " % a
 
-        if jd.attribute_exists ("environment") :
+        if  jd.attribute_exists (ENVIRONMENT) :
             for e in jd.environment :
                 env += "export %s=%s; "  %  (e, jd.environment[e])
 
-        if jd.attribute_exists ("working_directory") :
+        if  jd.attribute_exists (WORKING_DIRECTORY) :
             cwd = "cd %s && " % jd.working_directory
 
-        cmd = "%s%s %s %s"  %  (env, cwd, exe, arg)
+        if  jd.attribute_exists (INPUT) :
+            io += "<%s " % jd.input
+
+        if  jd.attribute_exists (OUTPUT) :
+            io += "1>%s " % jd.output
+
+        if  jd.attribute_exists (ERROR) :
+            io += "2>%s " % jd.error
+
+        cmd = "( %s%s%s %s) %s" % (env, cwd, exe, arg, io)
 
         return cmd
 
