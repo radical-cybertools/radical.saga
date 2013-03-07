@@ -160,6 +160,9 @@ class PTYShellFactory (object) :
 
                 m_cmd = _SCRIPTS[info['type']]['master'] % info
                 info['pty'] = saga.utils.pty_process.PTYProcess (m_cmd, logger=logger)
+                if not info['pty'].alive () :
+                    raise saga.NoSuccess._log (logger, \
+                	  "Shell not connected to %s" % info['host_str'])
 
                 # master was created - register it
                 self.registry[host_s][ctx_s][typ_s] = info 
@@ -174,14 +177,17 @@ class PTYShellFactory (object) :
                     raise saga.IncorrectState._log (logger, \
                 	  "Lost shell connection to %s" % info['host_str'])
 
+            print "ok"
             return info
 
         except Exception as e:
+            print "anything here?"
             raise e
             ## msg = str(e).lower ()
             ## if "authorization" in msg :
             ##     raise saga.BadParameter._log (self.logger, \
             ##     raise 
+        print "connect done"
 
 
     # --------------------------------------------------------------------------

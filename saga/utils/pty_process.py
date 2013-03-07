@@ -477,9 +477,10 @@ class PTYProcess (object) :
         with self.gc.active (self) :
 
             if not self.alive (recover=False) :
-                raise se.NoSuccess ("cannot read from dead pty process (%s)" \
-                                 % self.cache[-256:])
-
+                if self.cache :
+                    raise se.NoSuccess ("process I/O failed: %s" % self.cache[-256:])
+                else :
+                    raise se.NoSuccess ("process I/O failed")
 
             try:
                 # start the timeout timer right now.  Note that even if timeout is
@@ -675,7 +676,7 @@ class PTYProcess (object) :
 
 
         except Exception as e :
-            raise se.NoSuccess ("find failed: %s" % e)
+            raise se.NoSuccess ("find failed (%s): %s" % (e._plain_message, data))
 
 
 
