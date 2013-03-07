@@ -12,7 +12,9 @@ try :
     jd.error      = "/tmp/err"
   
     j = js.create_job (jd)
+    print j.created
     j.run ()
+    print j.started
     print "state: %s" % j.state
     time.sleep (1)
     print "state: %s" % j.state
@@ -21,6 +23,7 @@ try :
         print "..."
 
     print "state: %s" % j.state
+    print j.finished
 
     # print "list : %s" % js.list ()
     # for id in js.list () :
