@@ -828,7 +828,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         self._is_valid ()
 
-        ret, out, _ = self.shell.run_sync ("wc -c %s  | cut -f 1 -d ' '\n" % self.url.path)
+        ret, out, _ = self.shell.run_sync ("wc -c %s | xargs | cut -f 1 -d ' '\n" % self.url.path)
         if  ret != 0 :
             raise saga.NoSuccess ("get size for (%s) failed (%s): (%s)" \
                                % (tgt, ret, out))
