@@ -177,17 +177,14 @@ class PTYShellFactory (object) :
                     raise saga.IncorrectState._log (logger, \
                 	  "Lost shell connection to %s" % info['host_str'])
 
-            print "ok"
             return info
 
         except Exception as e:
-            print "anything here?"
             raise e
             ## msg = str(e).lower ()
             ## if "authorization" in msg :
             ##     raise saga.BadParameter._log (self.logger, \
             ##     raise 
-        print "connect done"
 
 
     # --------------------------------------------------------------------------
