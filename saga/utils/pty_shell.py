@@ -898,6 +898,12 @@ class PTYShell (object) :
         elif 'denied' in lmsg :
             e = saga.PermissionDenied (cmsg)
 
+        elif 'shared connection' in lmsg :
+            e = saga.NoSuccess ("Insufficient system resources: %s" % cmsg)
+
+        elif 'pty allocation' in lmsg :
+            e = saga.NoSuccess ("Insufficient system resources: %s" % cmsg)
+
         # print e.traceback
         return e
 
