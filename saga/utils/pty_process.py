@@ -189,7 +189,8 @@ class PTYProcess (object) :
         self.parent_out, self.child_out = pty.openpty ()
       # self.parent_err, self.child_err = pty.openpty ()
 
-        self.parent_io,  self.child_io  = pty.openpty ()
+        self.logger.info ("running %s" % self.command[0])
+        self.logger.info ("running %s" % ' '.join (self.command))
 
         # create the child
         try :
@@ -207,16 +208,31 @@ class PTYProcess (object) :
                 os.close (self.parent_out)
               # os.close (self.parent_err)
 
-                # reopen child stdio unbuffered (buffsize=0)
-                unbuf_in  = os.fdopen (sys.stdin.fileno  (), 'r+', 0)
-                unbuf_out = os.fdopen (sys.stdout.fileno (), 'w+', 0)
-                unbuf_err = os.fdopen (sys.stderr.fileno (), 'w+', 0)
-               
                 # redirect our precious stdio
-                os.dup2 (self.child_in,  unbuf_in.fileno  ())
-                os.dup2 (self.child_out, unbuf_out.fileno ())
-                os.dup2 (self.child_out, unbuf_err.fileno ())
-              # os.dup2 (self.child_err, unbuf_err.fileno ())
+                os.dup2 (self.child_in,  sys.stdin.fileno  ())
+                os.dup2 (self.child_out, sys.stdout.fileno ())
+                os.dup2 (self.child_out, sys.stderr.fileno ())
+
+              # # for tty's, reopen child stdio unbuffered (buffsize=0), then 
+              # # redirect our precious stdio
+              # if os.isatty (sys.stdin.fileno ()) :
+              #     unbuf_in  = os.fdopen (sys.stdin.fileno  (), 'r+', 0)
+              #     os.dup2 (self.child_in,  unbuf_in.fileno  ())
+              # else :
+              #     os.dup2 (self.child_in, sys.stdin.fileno ())
+              #
+              # if os.isatty (sys.stdout.fileno ()) :
+              #     unbuf_out = os.fdopen (sys.stdout.fileno (), 'w+', 0)
+              #     os.dup2 (self.child_out, unbuf_out.fileno ())
+              # else :
+              #     os.dup2 (self.child_out, sys.stdout.fileno ())
+              #
+              # if os.isatty (sys.stderr.fileno ()) :
+              #     unbuf_err = os.fdopen (sys.stderr.fileno (), 'w+', 0)
+              #     os.dup2 (self.child_out, unbuf_err.fileno ())
+              #   # os.dup2 (self.child_err, unbuf_err.fileno ())
+              # else :
+              #     os.dup2 (self.child_out, sys.stderr.fileno ())
 
                 # make a process group leader (should close tty tty)
                 os.setsid ()
