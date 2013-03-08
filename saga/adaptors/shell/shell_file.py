@@ -651,7 +651,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         ret, out, _ = self.shell.run_sync ("test -e %s" % self.url.path)
 
         if  ret != 0 :
-            raise saga.BadParameter ("file does not exist: '%s' - %s" % (self.url.path, out))
+            raise saga.DoesNotExist("file does not exist: '%s' - %s" % (self.url.path, out))
 
         self._logger.debug ("file initialized (%s)(%s)" % (ret, out))
 
