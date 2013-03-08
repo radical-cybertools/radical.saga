@@ -90,7 +90,7 @@ def url_get_dirname (url_1) :
     u1 = saga.Url (url_1)
     p1 = u1.path
 
-    return re.sub (r"[^/].*$", "", p1)
+    return re.sub (r"[^/]*$", "", p1)
 
 
 # --------------------------------------------------------------------

@@ -2,7 +2,7 @@ __author__    = "Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-import uuid
+import os
 import saga
 import unittest
 import saga.utils.test_config as sutc
@@ -16,8 +16,8 @@ class TestFile(unittest.TestCase):
     #
     def setUp(self):
         """Setup called once per class instance"""
-        self.uniquefilename1 = "saga-unittests-"+str(uuid.uuid1())
-        self.uniquefilename2 = "saga-unittests-"+str(uuid.uuid1())
+        self.uniquefilename1 = "saga-unittests-1-"+str(os.getpid())
+        self.uniquefilename2 = "saga-unittests-2-"+str(os.getpid())
 
     # -------------------------------------------------------------------------
     #
@@ -145,3 +145,7 @@ class TestFile(unittest.TestCase):
 
         except saga.SagaException as ex:
             assert False, "Unexpected exception: %s" % ex
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
