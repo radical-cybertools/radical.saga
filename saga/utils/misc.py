@@ -95,6 +95,26 @@ def url_get_dirname (url_1) :
 
 # --------------------------------------------------------------------
 #
+def url_get_filename (url_1) :
+    """ 
+    Extract the directory part of the given URL's path element.  We consider
+    everything up to the last '/' as directory.  That also holds for relative
+    paths.
+    """
+
+    import saga.url
+
+    u1 = saga.Url (url_1)
+    p1 = u1.path
+
+    if '/' in p1 :
+        return re.sub (r"^.*/(.*)$", "\1", p1)
+    else :
+        return p1
+
+
+# --------------------------------------------------------------------
+#
 def url_make_absolute (url_1, url_2) :
     """ 
     URL1 is expected to only have a path
