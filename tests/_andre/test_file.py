@@ -6,6 +6,10 @@ os.system ("mkdir /tmp/src ; ls -la /tmp > /tmp/src/src.dat")
 
 d = saga.filesystem.Directory ("file://localhost/tmp/src/")
 
+f = saga.filesystem.File("file://localhost/etc/passwd")
+print f.size
+f.copy('/tmp/')
+
 print "copy entry from dir"
 d.copy ("src.dat", "tgt.dat")
 
@@ -42,5 +46,3 @@ d.remove ("bak.dat")
 print "list"
 for name in d.list () :
   print name
-
-
