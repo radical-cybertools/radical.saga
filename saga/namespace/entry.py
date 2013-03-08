@@ -189,8 +189,7 @@ class Entry (saga.base.Base, saga.async.Async) :
             entry = saga.namespace.Directory("sftp://localhost/tmp/data/data.bin")
             entry.copy ("sftp://localhost/tmp/data/data.bak")
         '''
-    
-        # ------------------------------------------------------------
+        
         # parameter checks
         tgt_url = saga.url.Url (tgt)  # ensure valid and typed Url
     
@@ -282,8 +281,8 @@ class Entry (saga.base.Base, saga.async.Async) :
         '''
 
         return self._adaptor.link_self (tgt, flags, ttype=ttype) 
-  
-    
+
+
     def move (self, tgt, flags=0, ttype=None) :
         '''
         :param target: Url of the move target.
