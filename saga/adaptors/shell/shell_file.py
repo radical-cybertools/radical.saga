@@ -261,7 +261,16 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         # shell git started, found its prompt.  Now, change
         # to the initial (or later current) working directory.
 
-        ret, out, _ = self.shell.run_sync ("cd %s" % self.url.path)
+        cmd = ""
+
+        if  self.flags & saga.filesystem.CREATEPARENTS :
+            cmd = "mkdir -p %s; cd %s" % (self.url.path, self.url.path)
+        elif self.flags & saga.filesystem.CREATE :
+            cmd = "mkdir    %s; cd %s" % (self.url.path, self.url.path)
+        else :
+            cmd =              "cd %s" % (self.url.path               )
+
+        ret, out, _ = self.shell.run_sync (cmd)
 
         if  ret != 0 :
             raise saga.BadParameter ("invalid dir '%s': %s" % (self.url.path, out))
@@ -648,10 +657,34 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         # shell git started, found its prompt.  Now, change
         # to the initial (or later current) working directory.
 
-        ret, out, _ = self.shell.run_sync ("test -e %s" % self.url.path)
+        cmd = ""
+        dirname  = sumisc.url_get_dirname  (self.url)
+
+        if  self.flags & saga.filesystem.CREATEPARENTS :
+            cmd = "mkdir -p %s; touch %s" % (dirname, self.url.path)
+
+        elif self.flags & saga.filesystem.CREATE :
+            cmd = "touch %s" % (self.url.path)
+
+        else :
+            cmd = "true"
+
+
+        if  self.flags & saga.filesystem.READ :
+            cmd = "; test -r %s" % (self.url.path)
+
+        if  self.flags & saga.filesystem.WRITE :
+            cmd = "; test -w %s" % (self.url.path)
+
+        ret, out, _ = self.shell.run_sync (cmd)
 
         if  ret != 0 :
-            raise saga.DoesNotExist("file does not exist: '%s' - %s" % (self.url.path, out))
+            if self.flags & saga.filesystem.CREATEPARENTS :
+                raise saga.BadParameter ("cannot open/create: '%s' - %s" % (self.url.path, out))
+            elif self.flags & saga.filesystem.CREATE :
+                raise saga.BadParameter ("cannot open/create: '%s' - %s" % (self.url.path, out))
+            else :
+                raise saga.DoesNotExist("file does not exist: '%s' - %s" % (self.url.path, out))
 
         self._logger.debug ("file initialized (%s)(%s)" % (ret, out))
 
