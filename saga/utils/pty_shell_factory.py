@@ -156,7 +156,7 @@ class PTYShellFactory (object) :
             # new master: create an instance, and register it
             m_cmd = _SCRIPTS[info['type']]['master'] % info
 
-            self.logger.debug ("open master pty for [%s] [%s] %s: '" \
+            self.logger.debug ("open master pty for [%s] [%s] %s: %s'" \
                             % (typ_s, host_s, ctx_s, m_cmd))
 
             info['pty'] = saga.utils.pty_process.PTYProcess (m_cmd, logger=logger)
