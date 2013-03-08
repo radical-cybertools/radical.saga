@@ -154,10 +154,11 @@ class PTYShellFactory (object) :
         if not typ_s  in self.registry[host_s][ctx_s] : 
 
             # new master: create an instance, and register it
-            self.logger.info ("open master pty for [%s] [%s] [%s]'" \
-                           % (typ_s, host_s, ctx_s))
-
             m_cmd = _SCRIPTS[info['type']]['master'] % info
+
+            self.logger.debug ("open master pty for [%s] [%s] %s: '" \
+                            % (typ_s, host_s, ctx_s, m_cmd))
+
             info['pty'] = saga.utils.pty_process.PTYProcess (m_cmd, logger=logger)
             if not info['pty'].alive () :
                 raise saga.NoSuccess._log (logger, \
