@@ -263,7 +263,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         cmd = ""
 
-        if  self.flags & saga.filesystem.CREATEPARENTS :
+        if  self.flags & saga.filesystem.CREATE_PARENTS :
             cmd = "mkdir -p %s; cd %s" % (self.url.path, self.url.path)
         elif self.flags & saga.filesystem.CREATE :
             cmd = "mkdir    %s; cd %s" % (self.url.path, self.url.path)
@@ -660,7 +660,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         cmd = ""
         dirname  = sumisc.url_get_dirname  (self.url)
 
-        if  self.flags & saga.filesystem.CREATEPARENTS :
+        if  self.flags & saga.filesystem.CREATE_PARENTS :
             cmd = "mkdir -p %s; touch %s" % (dirname, self.url.path)
 
         elif self.flags & saga.filesystem.CREATE :
@@ -679,7 +679,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         ret, out, _ = self.shell.run_sync (cmd)
 
         if  ret != 0 :
-            if self.flags & saga.filesystem.CREATEPARENTS :
+            if self.flags & saga.filesystem.CREATE_PARENTS :
                 raise saga.BadParameter ("cannot open/create: '%s' - %s" % (self.url.path, out))
             elif self.flags & saga.filesystem.CREATE :
                 raise saga.BadParameter ("cannot open/create: '%s' - %s" % (self.url.path, out))
