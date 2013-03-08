@@ -671,10 +671,10 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
 
         if  self.flags & saga.filesystem.READ :
-            cmd = "; test -r %s" % (self.url.path)
+            cmd += "; test -r %s" % (self.url.path)
 
         if  self.flags & saga.filesystem.WRITE :
-            cmd = "; test -w %s" % (self.url.path)
+            cmd += "; test -w %s" % (self.url.path)
 
         ret, out, _ = self.shell.run_sync (cmd)
 
