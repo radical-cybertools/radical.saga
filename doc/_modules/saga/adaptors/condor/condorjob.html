@@ -156,7 +156,14 @@
     <span class="c"># arguments -&gt; arguments</span>
     <span class="n">arguments</span> <span class="o">=</span> <span class="s">&quot;arguments = &quot;</span>
     <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+
         <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>
+            <span class="c"># Condor can&#39;t deal with multi-line arguments. yep, that&#39;s how</span>
+            <span class="c"># bad of a software it is.</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Condor doesn&#39;t support multi-line arguments: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">arg</span>
+                <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="n">logger</span><span class="p">)</span>
+
             <span class="c"># Condor HATES double quotes in the arguments. It&#39;ll return</span>
             <span class="c"># some crap like: &quot;Found illegal unescaped double-quote: ...</span>
             <span class="c"># That&#39;s why we esacpe them.</span>
@@ -309,6 +316,7 @@
 <span class="s">The (HT)Condor(-G) adaptor allows to run and manage jobs on a </span>
 <span class="s">`Condor &lt;http://research.cs.wisc.edu/htcondor/&gt;`_ gateway.</span>
 <span class="s">&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;example&quot;</span><span class="p">:</span> <span class="s">&quot;examples/jobs/condorjob.py&quot;</span><span class="p">,</span>
     <span class="s">&quot;schemas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;condor&quot;</span><span class="p">:</span>        <span class="s">&quot;connect to a local gateway&quot;</span><span class="p">,</span>
                 <span class="s">&quot;condor+ssh&quot;</span><span class="p">:</span>    <span class="s">&quot;conenct to a remote gateway via SSH&quot;</span><span class="p">,</span>
                 <span class="s">&quot;condor+gsissh&quot;</span><span class="p">:</span> <span class="s">&quot;connect to a remote gateway via GSISSH&quot;</span><span class="p">}</span>

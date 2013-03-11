@@ -65,8 +65,8 @@
 <span class="kn">import</span> <span class="nn">saga</span>
 
 
-<div class="viewcode-block" id="Context"><a class="viewcode-back" href="../../library/context.html#saga.context.Context">[docs]</a><span class="k">class</span> <span class="nc">Context</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">Attributes</span><span class="p">)</span> <span class="p">:</span>
-    <span class="sd">&#39;&#39;&#39;A SAGA Context object as defined in GFD.90.</span>
+<span class="k">class</span> <span class="nc">Context</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">Attributes</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="Context"><a class="viewcode-back" href="../../library/context.html#saga.context.Context">[docs]</a>    <span class="sd">&#39;&#39;&#39;A SAGA Context object as defined in GFD.90.</span>
 
 <span class="sd">    A security context is a description of a security token.  It is important to</span>
 <span class="sd">    understand that, in general, a context really just *describes* a token, but</span>
@@ -112,7 +112,7 @@
 
 <span class="sd">    &#39;&#39;&#39;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_adaptor</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_adaptor_state</span><span class="o">=</span><span class="p">{})</span> <span class="p">:</span> 
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_adaptor</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_adaptor_state</span><span class="o">=</span><span class="p">{}):</span> 
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        type: string</span>
 <span class="sd">        ret:  None</span>
@@ -122,7 +122,7 @@
 
         <span class="n">saga</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">_adaptor</span><span class="p">,</span> <span class="n">_adaptor_state</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">ttype</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
 
-        <span class="c"># set attribute interface properties</span>
+        <span class="c"># set attribute interface propertiesP</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_extensible</span>  <span class="p">(</span><span class="bp">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_camelcasing</span> <span class="p">(</span><span class="bp">True</span><span class="p">)</span>
 

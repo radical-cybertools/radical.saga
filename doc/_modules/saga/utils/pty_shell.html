@@ -272,13 +272,15 @@
     <span class="c"># ----------------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">set_initialize_hook</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initialize_hook</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="PTYShell.set_initialize_hook"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.set_initialize_hook">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="o">=</span> <span class="n">initialize_hook</span>
+<div class="viewcode-block" id="PTYShell.set_initialize_hook"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.set_initialize_hook">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="o">=</span> <span class="n">initialize_hook</span>
 
 
     <span class="c"># ----------------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">set_finalize_hook</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">finalize_hook</span><span class="p">)</span> <span class="p">:</span></div>
-<div class="viewcode-block" id="PTYShell.set_finalize_hook"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.set_finalize_hook">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span> <span class="o">=</span> <span class="n">finalize_hook</span>
+<div class="viewcode-block" id="PTYShell.set_finalize_hook"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.set_finalize_hook">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span> <span class="o">=</span> <span class="n">finalize_hook</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -290,68 +292,76 @@
 <span class="sd">        startup prompts and messages.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span>    <span class="o">=</span> <span class="s">&quot;^(.*[\$#&gt;])\s*$&quot;</span> <span class="c"># greedy, look for line ending with # $ &gt;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">prompt_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span>    <span class="o">=</span> <span class="s">&quot;^(.*[\$#&gt;])\s*$&quot;</span> <span class="c"># greedy, look for line ending with # $ &gt;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prompt_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span>
 
-        <span class="n">prompt_patterns</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;assword\s*:\s*$&quot;</span><span class="p">,</span>            <span class="c"># password prompt</span>
-                           <span class="s">&quot;want to continue connecting&quot;</span><span class="p">,</span> <span class="c"># hostkey confirmation</span>
-                           <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">]</span>                   <span class="c"># native shell prompt </span>
+            <span class="n">prompt_patterns</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;assword\s*:\s*$&quot;</span><span class="p">,</span>            <span class="c"># password prompt</span>
+                               <span class="s">&quot;want to continue connecting&quot;</span><span class="p">,</span> <span class="c"># hostkey confirmation</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">]</span>                   <span class="c"># native shell prompt </span>
 
-        <span class="c"># self.prompt is all we need for local shell, so we could do:</span>
-        <span class="c">#</span>
-        <span class="c"># if  self.shell_type == &#39;sh&#39; :</span>
-        <span class="c">#     prompt_patterns = [self.prompt] </span>
-        <span class="c">#</span>
-        <span class="c"># but we don&#39;t and keep the other pattern around so that the switch in</span>
-        <span class="c"># the while loop below is the same for all shell types</span>
-
-
-        <span class="c"># find a prompt</span>
-        <span class="n">n</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">(</span><span class="n">prompt_patterns</span><span class="p">,</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
-
-        <span class="c"># this loop will run until we finally find the self.prompt.  At that</span>
-        <span class="c"># point, we&#39;ll try to set a different prompt, and when we found that,</span>
-        <span class="c"># too, we&#39;ll exit the loop and consider to be ready for running shell</span>
-        <span class="c"># commands.</span>
-        <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
-
-            <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
-                <span class="c"># we found none of the prompts, yet -- try again </span>
-                <span class="n">n</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">(</span><span class="n">prompt_patterns</span><span class="p">,</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
+            <span class="c"># self.prompt is all we need for local shell, so we could do:</span>
+            <span class="c">#</span>
+            <span class="c"># if  self.shell_type == &#39;sh&#39; :</span>
+            <span class="c">#     prompt_patterns = [self.prompt] </span>
+            <span class="c">#</span>
+            <span class="c"># but we don&#39;t and keep the other pattern around so that the switch in</span>
+            <span class="c"># the while loop below is the same for all shell types</span>
 
 
-            <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got password prompt&quot;</span><span class="p">)</span>
-                <span class="k">if</span>  <span class="ow">not</span> <span class="s">&#39;pwd&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span> <span class="ow">or</span> \
-                    <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">[</span><span class="s">&#39;pwd&#39;</span><span class="p">]</span>      <span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;prompted for unknown password (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                       <span class="o">%</span> <span class="n">match</span><span class="p">)</span>
+            <span class="c"># find a prompt</span>
+            <span class="n">n</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">(</span><span class="n">prompt_patterns</span><span class="p">,</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">[</span><span class="s">&#39;pwd&#39;</span><span class="p">])</span>
-                <span class="n">n</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">(</span><span class="n">prompt_patterns</span><span class="p">,</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
+            <span class="c"># this loop will run until we finally find the self.prompt.  At that</span>
+            <span class="c"># point, we&#39;ll try to set a different prompt, and when we found that,</span>
+            <span class="c"># too, we&#39;ll exit the loop and consider to be ready for running shell</span>
+            <span class="c"># commands.</span>
+            <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
 
-
-            <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got hostkey prompt&quot;</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;yes</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
-                <span class="n">n</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">(</span><span class="n">prompt_patterns</span><span class="p">,</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
+                    <span class="c"># we found none of the prompts, yet -- try again </span>
+                    <span class="n">n</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">(</span><span class="n">prompt_patterns</span><span class="p">,</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
 
 
-            <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">2</span> <span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got initial shell prompt&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got password prompt&quot;</span><span class="p">)</span>
+                    <span class="k">if</span>  <span class="ow">not</span> <span class="s">&#39;pwd&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span> <span class="ow">or</span> \
+                        <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">[</span><span class="s">&#39;pwd&#39;</span><span class="p">]</span>      <span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">AuthenticationFailed</span> <span class="p">(</span><span class="s">&quot;prompted for unknown password (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                                      <span class="o">%</span> <span class="n">match</span><span class="p">)</span>
 
-                <span class="c"># turn off shell echo, set/register new prompt</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;unset PROMPT_COMMAND ; stty -echo; PS1=&#39;PROMPT-$?-&gt;</span><span class="se">\\</span><span class="s">n&#39;; PS2=&#39;&#39;; export PS1 PS2</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> 
-                                <span class="n">new_prompt</span><span class="o">=</span><span class="s">&quot;PROMPT-(\d+)-&gt;\s*$&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">[</span><span class="s">&#39;pwd&#39;</span><span class="p">])</span>
+                    <span class="n">n</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">(</span><span class="n">prompt_patterns</span><span class="p">,</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got new shell prompt&quot;</span><span class="p">)</span>
 
-                <span class="c"># we are done waiting for a prompt</span>
-                <span class="k">break</span>
-        
-        <span class="c"># check if some additional initialization routines as registered</span>
-        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="p">()</span>
+                <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got hostkey prompt&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;yes</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+                    <span class="n">n</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">(</span><span class="n">prompt_patterns</span><span class="p">,</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
+
+
+                <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">2</span> <span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got initial shell prompt&quot;</span><span class="p">)</span>
+
+                    <span class="c"># turn off shell echo, set/register new prompt</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;unset PROMPT_COMMAND ; &quot;</span>
+                                   <span class="o">+</span> <span class="s">&quot;stty -echo; &quot;</span>
+                                   <span class="o">+</span> <span class="s">&quot;PS1=&#39;PROMPT-$?-&gt;</span><span class="se">\\</span><span class="s">n&#39;; &quot;</span>
+                                   <span class="o">+</span> <span class="s">&quot;PS2=&#39;&#39;; &quot;</span>
+                                   <span class="o">+</span> <span class="s">&quot;export PS1 PS2</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> 
+                                   <span class="n">new_prompt</span><span class="o">=</span><span class="s">&quot;PROMPT-(\d+)-&gt;\s*$&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got new shell prompt&quot;</span><span class="p">)</span>
+
+                    <span class="c"># we are done waiting for a prompt</span>
+                    <span class="k">break</span>
+            
+            <span class="c"># check if some additional initialization routines as registered</span>
+            <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="p">()</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -385,7 +395,12 @@
 <span class="sd">        The shell is assumed to be alive if the shell processes lives.</span>
 <span class="sd">        Attempt to restart shell if recover==True</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="p">)</span>
+
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -401,14 +416,19 @@
 <span class="sd">        versions of this call may add a timeout parameter.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">match</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">try</span> <span class="p">:</span>
 
-        <span class="k">while</span> <span class="ow">not</span> <span class="n">match</span> <span class="p">:</span>
-            <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="bp">None</span>
 
-        <span class="n">ret</span><span class="p">,</span> <span class="n">txt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_prompt</span> <span class="p">(</span><span class="n">match</span><span class="p">)</span>
+            <span class="k">while</span> <span class="ow">not</span> <span class="n">match</span> <span class="p">:</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">txt</span><span class="p">)</span>
+            <span class="n">ret</span><span class="p">,</span> <span class="n">txt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_prompt</span> <span class="p">(</span><span class="n">match</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">txt</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -418,7 +438,11 @@
 <span class="sd">        Note that this method blocks until pattern is found in the shell I/O.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">(</span><span class="n">patterns</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">(</span><span class="n">patterns</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -490,7 +514,7 @@
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span> <span class="o">=</span> <span class="n">old_prompt</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not set shell prompt (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s">&quot;Could not set shell prompt&quot;</span><span class="p">)</span>
 
 
 
@@ -503,16 +527,17 @@
 <span class="sd">        with all leading data, in a tuple</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">prompt</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span>
-        <span class="n">prompt_re</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt_re</span>
-
-        <span class="k">if</span>  <span class="n">new_prompt</span> <span class="p">:</span>
-            <span class="n">prompt</span>    <span class="o">=</span> <span class="n">new_prompt</span>
-            <span class="n">prompt_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span> <span class="p">(</span><span class="s">&quot;^(.*)</span><span class="si">%s</span><span class="s">\s*$&quot;</span> <span class="o">%</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span>
-
-
-        <span class="n">result</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="k">try</span> <span class="p">:</span>
+
+            <span class="n">prompt</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span>
+            <span class="n">prompt_re</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt_re</span>
+
+            <span class="k">if</span>  <span class="n">new_prompt</span> <span class="p">:</span>
+                <span class="n">prompt</span>    <span class="o">=</span> <span class="n">new_prompt</span>
+                <span class="n">prompt_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span> <span class="p">(</span><span class="s">&quot;^(.*)</span><span class="si">%s</span><span class="s">\s*$&quot;</span> <span class="o">%</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span>
+
+
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">None</span>
             <span class="k">if</span>  <span class="ow">not</span> <span class="n">data</span> <span class="p">:</span>
                 <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;cannot not parse prompt (</span><span class="si">%s</span><span class="s">), invalid data (</span><span class="si">%s</span><span class="s">)&quot;</span> \
                                    <span class="o">%</span> <span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
@@ -530,23 +555,16 @@
             <span class="n">txt</span> <span class="o">=</span>     <span class="n">result</span><span class="o">.</span><span class="n">group</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">ret</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">group</span> <span class="p">(</span><span class="mi">2</span><span class="p">))</span> 
 
+            <span class="c"># if that worked, we can permanently set new_prompt</span>
+            <span class="k">if</span>  <span class="n">new_prompt</span> <span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_prompt</span> <span class="p">(</span><span class="n">new_prompt</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">txt</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;data   : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">data</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;prompt : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">prompt</span><span class="p">)</span>
+            
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s">&quot;Could not eval prompt&quot;</span><span class="p">)</span>
 
-            <span class="k">if</span>  <span class="n">result</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">groups</span><span class="p">())</span> <span class="o">==</span> <span class="mi">2</span> <span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;match 1: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">result</span><span class="o">.</span><span class="n">group</span> <span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;match 2: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">result</span><span class="o">.</span><span class="n">group</span> <span class="p">(</span><span class="mi">2</span><span class="p">))</span>
-
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not eval prompt (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
-
-
-        <span class="c"># if that worked, we can permanently set new_prompt</span>
-        <span class="k">if</span>  <span class="n">new_prompt</span> <span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">set_prompt</span> <span class="p">(</span><span class="n">new_prompt</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">txt</span><span class="p">)</span>
 
 
 
@@ -606,91 +624,95 @@
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;Can&#39;t run command -- shell died:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> \
                                     <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">autopsy</span> <span class="p">())</span>
 
-        <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">strip</span> <span class="p">()</span>
-        <span class="k">if</span> <span class="n">command</span><span class="o">.</span><span class="n">endswith</span> <span class="p">(</span><span class="s">&#39;&amp;&#39;</span><span class="p">)</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;run_sync can only run foreground jobs (&#39;</span><span class="si">%s</span><span class="s">&#39;)&quot;</span> \
-                                  <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
+        <span class="k">try</span> <span class="p">:</span>
 
-        <span class="n">redir</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-        <span class="n">_err</span>  <span class="o">=</span> <span class="s">&quot;/tmp/saga-python.ssh-job.stderr.$$&quot;</span>
+            <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">strip</span> <span class="p">()</span>
+            <span class="k">if</span> <span class="n">command</span><span class="o">.</span><span class="n">endswith</span> <span class="p">(</span><span class="s">&#39;&amp;&#39;</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;run_sync can only run foreground jobs (&#39;</span><span class="si">%s</span><span class="s">&#39;)&quot;</span> \
+                                      <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
 
-        <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">IGNORE</span> <span class="p">:</span>
-            <span class="n">redir</span>  <span class="o">=</span>  <span class="s">&quot; 1&gt;&gt;/dev/null 2&gt;&gt;/dev/null&quot;</span>
+            <span class="n">redir</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+            <span class="n">_err</span>  <span class="o">=</span> <span class="s">&quot;/tmp/saga-python.ssh-job.stderr.$$&quot;</span>
 
-        <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">MERGED</span> <span class="p">:</span>
-            <span class="n">redir</span>  <span class="o">=</span>  <span class="s">&quot; 2&gt;&amp;1&quot;</span>
+            <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">IGNORE</span> <span class="p">:</span>
+                <span class="n">redir</span>  <span class="o">=</span>  <span class="s">&quot; 1&gt;&gt;/dev/null 2&gt;&gt;/dev/null&quot;</span>
 
-        <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">SEPARATE</span> <span class="p">:</span>
-            <span class="n">redir</span>  <span class="o">=</span>  <span class="s">&quot; 2&gt;</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">_err</span>
+            <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">MERGED</span> <span class="p">:</span>
+                <span class="n">redir</span>  <span class="o">=</span>  <span class="s">&quot; 2&gt;&amp;1&quot;</span>
 
-        <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">STDOUT</span> <span class="p">:</span>
-            <span class="n">redir</span>  <span class="o">=</span>  <span class="s">&quot; 2&gt;/dev/null&quot;</span>
+            <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">SEPARATE</span> <span class="p">:</span>
+                <span class="n">redir</span>  <span class="o">=</span>  <span class="s">&quot; 2&gt;</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">_err</span>
 
-        <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">STDERR</span> <span class="p">:</span>
-            <span class="n">redir</span>  <span class="o">=</span>  <span class="s">&quot; 2&gt;&amp;1 1&gt;/dev/null&quot;</span>
+            <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">STDOUT</span> <span class="p">:</span>
+                <span class="n">redir</span>  <span class="o">=</span>  <span class="s">&quot; 2&gt;/dev/null&quot;</span>
 
-        <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
-            <span class="n">redir</span>  <span class="o">=</span>  <span class="s">&quot;&quot;</span>
+            <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">STDERR</span> <span class="p">:</span>
+                <span class="n">redir</span>  <span class="o">=</span>  <span class="s">&quot; 2&gt;&amp;1 1&gt;/dev/null&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span>    <span class="p">(</span><span class="s">&#39;run_sync: </span><span class="si">%s%s</span><span class="s">&#39;</span>   <span class="o">%</span> <span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">redir</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span>          <span class="s">&quot;</span><span class="si">%s%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">redir</span><span class="p">))</span>
+            <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
+                <span class="n">redir</span>  <span class="o">=</span>  <span class="s">&quot;&quot;</span>
 
-
-        <span class="c"># If given, switch to new prompt pattern right now...</span>
-        <span class="n">prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span>
-        <span class="k">if</span>  <span class="n">new_prompt</span> <span class="p">:</span>
-            <span class="n">prompt</span> <span class="o">=</span> <span class="n">new_prompt</span>
-
-        <span class="c"># command has been started - now find prompt again.  </span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="n">prompt</span><span class="p">],</span> <span class="n">timeout</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c"># blocks</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span> <span class="p">:</span>
-            <span class="c"># not find prompt after blocking?  BAD!  Restart the shell</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">kill_pty</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;run_sync failed, no prompt (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span>    <span class="p">(</span><span class="s">&#39;run_sync: </span><span class="si">%s%s</span><span class="s">&#39;</span>   <span class="o">%</span> <span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">redir</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span>          <span class="s">&quot;</span><span class="si">%s%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">redir</span><span class="p">))</span>
 
 
-        <span class="n">ret</span><span class="p">,</span> <span class="n">txt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_prompt</span> <span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">new_prompt</span><span class="p">)</span>
+            <span class="c"># If given, switch to new prompt pattern right now...</span>
+            <span class="n">prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span>
+            <span class="k">if</span>  <span class="n">new_prompt</span> <span class="p">:</span>
+                <span class="n">prompt</span> <span class="o">=</span> <span class="n">new_prompt</span>
 
-        <span class="n">stdout</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="n">stderr</span> <span class="o">=</span> <span class="bp">None</span>
-
-        <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">IGNORE</span> <span class="p">:</span>
-            <span class="k">pass</span>
-
-        <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">MERGED</span> <span class="p">:</span>
-            <span class="n">stdout</span> <span class="o">=</span>  <span class="n">txt</span>
-
-        <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">SEPARATE</span> <span class="p">:</span>
-            <span class="n">stdout</span> <span class="o">=</span>  <span class="n">txt</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;cat </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">_err</span><span class="p">)</span>
-            <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">],</span> <span class="n">timeout</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c"># blocks</span>
+            <span class="c"># command has been started - now find prompt again.  </span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="n">prompt</span><span class="p">],</span> <span class="n">timeout</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c"># blocks</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span> <span class="p">:</span>
                 <span class="c"># not find prompt after blocking?  BAD!  Restart the shell</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">kill_pty</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;run_sync failed, no prompt (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                    <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
-
-            <span class="n">_ret</span><span class="p">,</span> <span class="n">_stderr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_prompt</span> <span class="p">(</span><span class="n">match</span><span class="p">)</span>
-            <span class="k">if</span>  <span class="n">_ret</span> <span class="p">:</span>
-                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;run_sync failed, no stderr (</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                   <span class="o">%</span> <span class="p">(</span><span class="n">_ret</span><span class="p">,</span> <span class="n">_stderr</span><span class="p">))</span>
-            <span class="n">stderr</span> <span class="o">=</span>  <span class="n">_stderr</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;run_sync failed, no prompt (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
 
 
-        <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">STDOUT</span> <span class="p">:</span>
-            <span class="n">stdout</span> <span class="o">=</span>  <span class="n">txt</span>
+            <span class="n">ret</span><span class="p">,</span> <span class="n">txt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_prompt</span> <span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">new_prompt</span><span class="p">)</span>
 
-        <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">STDERR</span> <span class="p">:</span>
-            <span class="n">stderr</span> <span class="o">=</span>  <span class="n">txt</span>
+            <span class="n">stdout</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">stderr</span> <span class="o">=</span> <span class="bp">None</span>
 
-        <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
-            <span class="n">stdout</span> <span class="o">=</span>  <span class="n">txt</span>
+            <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">IGNORE</span> <span class="p">:</span>
+                <span class="k">pass</span>
+
+            <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">MERGED</span> <span class="p">:</span>
+                <span class="n">stdout</span> <span class="o">=</span>  <span class="n">txt</span>
+
+            <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">SEPARATE</span> <span class="p">:</span>
+                <span class="n">stdout</span> <span class="o">=</span>  <span class="n">txt</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;cat </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">_err</span><span class="p">)</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">],</span> <span class="n">timeout</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c"># blocks</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span> <span class="p">:</span>
+                    <span class="c"># not find prompt after blocking?  BAD!  Restart the shell</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">kill_pty</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;run_sync failed, no prompt (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                            <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
+
+                <span class="n">_ret</span><span class="p">,</span> <span class="n">_stderr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_prompt</span> <span class="p">(</span><span class="n">match</span><span class="p">)</span>
+                <span class="k">if</span>  <span class="n">_ret</span> <span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;run_sync failed, no stderr (</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                            <span class="o">%</span> <span class="p">(</span><span class="n">_ret</span><span class="p">,</span> <span class="n">_stderr</span><span class="p">))</span>
+                <span class="n">stderr</span> <span class="o">=</span>  <span class="n">_stderr</span>
 
 
-        <span class="k">return</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">)</span>
+            <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">STDOUT</span> <span class="p">:</span>
+                <span class="n">stdout</span> <span class="o">=</span>  <span class="n">txt</span>
+
+            <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="n">STDERR</span> <span class="p">:</span>
+                <span class="n">stderr</span> <span class="o">=</span>  <span class="n">txt</span>
+
+            <span class="k">if</span>  <span class="n">iomode</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
+                <span class="n">stdout</span> <span class="o">=</span>  <span class="n">txt</span>
+
+            <span class="k">return</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -715,9 +737,12 @@
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;Cannot run command:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> \
                                     <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">autopsy</span> <span class="p">())</span>
 
-        <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">strip</span> <span class="p">()</span>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">strip</span> <span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">send</span> <span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">send</span> <span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -731,9 +756,11 @@
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;Cannot send data:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> \
                                     <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">autopsy</span> <span class="p">())</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span>    <span class="p">(</span><span class="s">&quot;send: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">data</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span>      <span class="s">&quot;</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">data</span><span class="p">)</span>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">data</span><span class="p">)</span>
 
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -753,19 +780,24 @@
 <span class="sd">        (missing permissions, incorrect path, etc.).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c"># FIXME: make this relative to the shell&#39;s pwd?  Needs pwd in</span>
-        <span class="c"># prompt, and updating pwd state on every find_prompt.</span>
+        <span class="k">try</span> <span class="p">:</span>
 
-        <span class="c"># first, write data into a tmp file</span>
-        <span class="n">fname</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">+</span> <span class="s">&quot;/staging.</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">fhandle</span> <span class="o">=</span> <span class="nb">open</span> <span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span>
-        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span>  <span class="p">(</span><span class="n">src</span><span class="p">)</span>
-        <span class="n">fhandle</span><span class="o">.</span><span class="n">flush</span>  <span class="p">()</span>
-        <span class="n">fhandle</span><span class="o">.</span><span class="n">close</span>  <span class="p">()</span>
+            <span class="c"># FIXME: make this relative to the shell&#39;s pwd?  Needs pwd in</span>
+            <span class="c"># prompt, and updating pwd state on every find_prompt.</span>
 
-        <span class="n">pty_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">run_copy_to</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+            <span class="c"># first, write data into a tmp file</span>
+            <span class="n">fname</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">+</span> <span class="s">&quot;/staging.</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">fhandle</span> <span class="o">=</span> <span class="nb">open</span> <span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span>
+            <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span>  <span class="p">(</span><span class="n">src</span><span class="p">)</span>
+            <span class="n">fhandle</span><span class="o">.</span><span class="n">flush</span>  <span class="p">()</span>
+            <span class="n">fhandle</span><span class="o">.</span><span class="n">close</span>  <span class="p">()</span>
 
-        <span class="n">os</span><span class="o">.</span><span class="n">remove</span> <span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+            <span class="n">pty_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">run_copy_to</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span> <span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -778,21 +810,25 @@
 <span class="sd">                    relative to the shell&#39;s URL.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c"># FIXME: make this relative to the shell&#39;s pwd?  Needs pwd in</span>
-        <span class="c"># prompt, and updating pwd state on every find_prompt.</span>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="c"># FIXME: make this relative to the shell&#39;s pwd?  Needs pwd in</span>
+            <span class="c"># prompt, and updating pwd state on every find_prompt.</span>
 
-        <span class="c"># first, write data into a tmp file</span>
-        <span class="n">fname</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">+</span> <span class="s">&quot;/staging.</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="c"># first, write data into a tmp file</span>
+            <span class="n">fname</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">+</span> <span class="s">&quot;/staging.</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">pty_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">run_copy_from</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pty_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">run_copy_from</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
 
-        <span class="n">fhandle</span> <span class="o">=</span> <span class="nb">open</span> <span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="n">fhandle</span><span class="o">.</span><span class="n">read</span>  <span class="p">()</span>
-        <span class="n">fhandle</span><span class="o">.</span><span class="n">close</span>  <span class="p">()</span>
+            <span class="n">fhandle</span> <span class="o">=</span> <span class="nb">open</span> <span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">fhandle</span><span class="o">.</span><span class="n">read</span>  <span class="p">()</span>
+            <span class="n">fhandle</span><span class="o">.</span><span class="n">close</span>  <span class="p">()</span>
 
-        <span class="n">os</span><span class="o">.</span><span class="n">remove</span> <span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span> <span class="p">(</span><span class="n">fname</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">out</span>
+            <span class="k">return</span> <span class="n">out</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -813,8 +849,11 @@
         <span class="c"># FIXME: make this relative to the shell&#39;s pwd?  Needs pwd in</span>
         <span class="c"># prompt, and updating pwd state on every find_prompt.</span>
 
-        <span class="n">pty_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">run_copy_to</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="n">pty_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">run_copy_to</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
 
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -834,7 +873,11 @@
         <span class="c"># FIXME: make this relative to the shell&#39;s pwd?  Needs pwd in</span>
         <span class="c"># prompt, and updating pwd state on every find_prompt.</span>
 
-        <span class="n">pty_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">run_copy_from</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="n">pty_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">run_copy_from</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -879,6 +922,47 @@
                                     <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">autopsy</span> <span class="p">())</span>
 
         <span class="c"># FIXME: magic goes here...</span>
+
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_translate_exception</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        In many cases, we should be able to roughly infer the exception cause</span>
+<span class="sd">        from the error message -- this is centrally done in this method.  If</span>
+<span class="sd">        possible, it will return a new exception with a more concise error</span>
+<span class="sd">        message and appropriate exception type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span>  <span class="ow">not</span> <span class="nb">issubclass</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">SagaException</span><span class="p">)</span> <span class="p">:</span>
+            <span class="c"># we do not touch non-saga exceptions</span>
+            <span class="k">return</span> <span class="n">e</span>
+
+        <span class="k">if</span>  <span class="ow">not</span> <span class="nb">issubclass</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">)</span> <span class="p">:</span>
+            <span class="c"># this seems to have a specific cause already, leave it alone</span>
+            <span class="k">return</span> <span class="n">e</span>
+
+        <span class="n">cmsg</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">_plain_message</span>
+        <span class="n">lmsg</span> <span class="o">=</span> <span class="n">cmsg</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span>
+
+        <span class="k">if</span> <span class="s">&#39;auth&#39;</span> <span class="ow">in</span> <span class="n">lmsg</span> <span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">AuthorizationFailed</span> <span class="p">(</span><span class="n">cmsg</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="s">&#39;pass&#39;</span> <span class="ow">in</span> <span class="n">lmsg</span> <span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">AuthenticationFailed</span> <span class="p">(</span><span class="n">cmsg</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="s">&#39;denied&#39;</span> <span class="ow">in</span> <span class="n">lmsg</span> <span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">PermissionDenied</span> <span class="p">(</span><span class="n">cmsg</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="s">&#39;shared connection&#39;</span> <span class="ow">in</span> <span class="n">lmsg</span> <span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Insufficient system resources: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cmsg</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="s">&#39;pty allocation&#39;</span> <span class="ow">in</span> <span class="n">lmsg</span> <span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Insufficient system resources: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cmsg</span><span class="p">)</span>
+
+        <span class="c"># print e.traceback</span>
+        <span class="k">return</span> <span class="n">e</span>
 
 
 <span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>

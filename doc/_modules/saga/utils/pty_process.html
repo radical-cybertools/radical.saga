@@ -246,7 +246,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">parent_out</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">child_out</span> <span class="o">=</span> <span class="n">pty</span><span class="o">.</span><span class="n">openpty</span> <span class="p">()</span>
       <span class="c"># self.parent_err, self.child_err = pty.openpty ()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">parent_io</span><span class="p">,</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child_io</span>  <span class="o">=</span> <span class="n">pty</span><span class="o">.</span><span class="n">openpty</span> <span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;running </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;running </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">))</span>
 
         <span class="c"># create the child</span>
         <span class="k">try</span> <span class="p">:</span>
@@ -264,16 +265,31 @@
                 <span class="n">os</span><span class="o">.</span><span class="n">close</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_out</span><span class="p">)</span>
               <span class="c"># os.close (self.parent_err)</span>
 
-                <span class="c"># reopen child stdio unbuffered (buffsize=0)</span>
-                <span class="n">unbuf_in</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fdopen</span> <span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">fileno</span>  <span class="p">(),</span> <span class="s">&#39;r+&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-                <span class="n">unbuf_out</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fdopen</span> <span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">fileno</span> <span class="p">(),</span> <span class="s">&#39;w+&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-                <span class="n">unbuf_err</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fdopen</span> <span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">fileno</span> <span class="p">(),</span> <span class="s">&#39;w+&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-               
                 <span class="c"># redirect our precious stdio</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">dup2</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_in</span><span class="p">,</span>  <span class="n">unbuf_in</span><span class="o">.</span><span class="n">fileno</span>  <span class="p">())</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">dup2</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_out</span><span class="p">,</span> <span class="n">unbuf_out</span><span class="o">.</span><span class="n">fileno</span> <span class="p">())</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">dup2</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_out</span><span class="p">,</span> <span class="n">unbuf_err</span><span class="o">.</span><span class="n">fileno</span> <span class="p">())</span>
-              <span class="c"># os.dup2 (self.child_err, unbuf_err.fileno ())</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">dup2</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_in</span><span class="p">,</span>  <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">fileno</span>  <span class="p">())</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">dup2</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_out</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">fileno</span> <span class="p">())</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">dup2</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_out</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">fileno</span> <span class="p">())</span>
+
+              <span class="c"># # for tty&#39;s, reopen child stdio unbuffered (buffsize=0), then </span>
+              <span class="c"># # redirect our precious stdio</span>
+              <span class="c"># if os.isatty (sys.stdin.fileno ()) :</span>
+              <span class="c">#     unbuf_in  = os.fdopen (sys.stdin.fileno  (), &#39;r+&#39;, 0)</span>
+              <span class="c">#     os.dup2 (self.child_in,  unbuf_in.fileno  ())</span>
+              <span class="c"># else :</span>
+              <span class="c">#     os.dup2 (self.child_in, sys.stdin.fileno ())</span>
+              <span class="c">#</span>
+              <span class="c"># if os.isatty (sys.stdout.fileno ()) :</span>
+              <span class="c">#     unbuf_out = os.fdopen (sys.stdout.fileno (), &#39;w+&#39;, 0)</span>
+              <span class="c">#     os.dup2 (self.child_out, unbuf_out.fileno ())</span>
+              <span class="c"># else :</span>
+              <span class="c">#     os.dup2 (self.child_out, sys.stdout.fileno ())</span>
+              <span class="c">#</span>
+              <span class="c"># if os.isatty (sys.stderr.fileno ()) :</span>
+              <span class="c">#     unbuf_err = os.fdopen (sys.stderr.fileno (), &#39;w+&#39;, 0)</span>
+              <span class="c">#     os.dup2 (self.child_out, unbuf_err.fileno ())</span>
+              <span class="c">#   # os.dup2 (self.child_err, unbuf_err.fileno ())</span>
+              <span class="c"># else :</span>
+              <span class="c">#     os.dup2 (self.child_out, sys.stderr.fileno ())</span>
 
                 <span class="c"># make a process group leader (should close tty tty)</span>
                 <span class="n">os</span><span class="o">.</span><span class="n">setsid</span> <span class="p">()</span>
@@ -534,9 +550,10 @@
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="p">:</span>
-                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;cannot read from dead pty process (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                 <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:])</span>
-
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;process I/O failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:])</span>
+                <span class="k">else</span> <span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;process I/O failed&quot;</span><span class="p">)</span>
 
             <span class="k">try</span><span class="p">:</span>
                 <span class="c"># start the timeout timer right now.  Note that even if timeout is</span>
@@ -732,7 +749,7 @@
 
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;find failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;find failed (</span><span class="si">%s</span><span class="s">): </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">_plain_message</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
 
 
 

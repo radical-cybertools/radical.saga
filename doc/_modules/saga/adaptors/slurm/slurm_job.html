@@ -144,13 +144,12 @@
 <span class="s">        `SLURM &lt;https://computing.llnl.gov/linux/slurm/slurm.html&gt;`_ HPC cluster.</span>
 
 <span class="s">        General Notes</span>
-<span class="s">        -------------</span>
+<span class="s">        *************</span>
 
 <span class="s">        On Stampede, returning a non-zero exit code results in the scheduler</span>
 <span class="s">        putting the job into a FAILED state and assigning it an exit code of 127.</span>
 
-<span class="s">        Example</span>
-<span class="s">        -------</span>
+<span class="s">        **Example:**</span>
 
 <span class="s">        ::</span>
 
@@ -205,7 +204,7 @@
 <span class="s">        What exit code should be returned for a CANCELED job?</span>
 
 <span class="s">        Implementation Notes</span>
-<span class="s">        --------------------</span>
+<span class="s">        ********************</span>
 
 <span class="s">         - If scontrol can&#39;t find an exit code, it returns None</span>
 <span class="s">           (see _job_get_exit_code)</span>
@@ -219,18 +218,8 @@
 <span class="s">         - Relating to the above, _job_get_info is written, but unused/untested</span>
 <span class="s">           (mostly from PBS adaptor)</span>
 
-<span class="s">        Unimplemented Items</span>
-<span class="s">        -------------------</span>
-
-<span class="s">         - Container submission not implemented</span>
-<span class="s">         - Parts in job_description not parsed:         </span>
-
-<span class="s">           - threads_per_process</span>
-<span class="s">           - spmd_variation</span>
-<span class="s">           - total_cpu_count</span>
-
-<span class="s">         - get_created/etc not in yet</span>
 <span class="s">        &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;example&quot;</span><span class="p">:</span> <span class="s">&quot;examples/jobs/slurmjob.py&quot;</span><span class="p">,</span>
     <span class="s">&quot;schemas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;slurm&quot;</span><span class="p">:</span>        <span class="s">&quot;connect to a local cluster&quot;</span><span class="p">,</span>
                 <span class="s">&quot;slurm+ssh&quot;</span><span class="p">:</span>    <span class="s">&quot;conenct to a remote cluster via SSH&quot;</span><span class="p">,</span>
                 <span class="s">&quot;slurm+gsissh&quot;</span><span class="p">:</span> <span class="s">&quot;connect to a remote cluster via GSISSH&quot;</span><span class="p">}</span>

@@ -113,14 +113,13 @@
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">ARGUMENTS</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">ENVIRONMENT</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">WORKING_DIRECTORY</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PROJECT</span><span class="p">,</span>         <span class="c"># FIXME</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">QUEUE</span><span class="p">,</span>           <span class="c"># FIXME</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">SPMD_VARIATION</span><span class="p">,</span>  <span class="c"># FIXME</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">TOTAL_CPU_COUNT</span><span class="p">,</span> <span class="c"># FIXME</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">WALL_TIME_LIMIT</span><span class="p">,</span> <span class="c"># FIXME</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">INPUT</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">OUTPUT</span><span class="p">,</span>
-                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PROJECT</span><span class="p">,</span>
-                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">QUEUE</span><span class="p">,</span>
-                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">SPMD_VARIATION</span><span class="p">,</span>
-                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">TOTAL_CPU_COUNT</span><span class="p">,</span>
-                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">WALL_TIME_LIMIT</span><span class="p">,</span>
-                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">WORKING_DIRECTORY</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">ERROR</span><span class="p">],</span>
     <span class="s">&quot;job_attributes&quot;</span>   <span class="p">:</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXIT_CODE</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXECUTION_HOSTS</span><span class="p">,</span>
@@ -146,7 +145,7 @@
 <span class="s">        ssh, gsissh) to run local and remote jobs.</span>
 
 <span class="s">        Known Limitations:</span>
-<span class="s">        ------------------</span>
+<span class="s">        ******************</span>
 
 <span class="s">          * number of system pty&#39;s are limited:  each job.service object bound</span>
 <span class="s">            to this adaptor will use 2 pairs of pty pipes.  Systems usually</span>
@@ -228,6 +227,7 @@
 <span class="s">            use should work as expected though.</span>
 
 <span class="s">        &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;example&quot;</span><span class="p">:</span> <span class="s">&quot;examples/jobs/localjob.py&quot;</span><span class="p">,</span>
     <span class="s">&quot;schemas&quot;</span>          <span class="p">:</span> <span class="p">{</span><span class="s">&quot;fork&quot;</span>   <span class="p">:</span><span class="s">&quot;use /bin/sh to run jobs&quot;</span><span class="p">,</span> 
                           <span class="s">&quot;local&quot;</span>  <span class="p">:</span><span class="s">&quot;alias for fork://&quot;</span><span class="p">,</span> 
                           <span class="s">&quot;ssh&quot;</span>    <span class="p">:</span><span class="s">&quot;use ssh to run remote jobs&quot;</span><span class="p">,</span> 
@@ -445,19 +445,29 @@
         <span class="n">arg</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
         <span class="n">env</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
         <span class="n">cwd</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="n">io</span>  <span class="o">=</span> <span class="s">&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;arguments&quot;</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="n">ARGUMENTS</span><span class="p">)</span> <span class="p">:</span>
             <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span> <span class="p">:</span>
-                <span class="n">arg</span> <span class="o">+=</span> <span class="s">&#39; &#39;</span> <span class="o">+</span> <span class="n">a</span>
+                <span class="n">arg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">a</span>
 
-        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;environment&quot;</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="n">ENVIRONMENT</span><span class="p">)</span> <span class="p">:</span>
             <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">environment</span> <span class="p">:</span>
                 <span class="n">env</span> <span class="o">+=</span> <span class="s">&quot;export </span><span class="si">%s</span><span class="s">=</span><span class="si">%s</span><span class="s">; &quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">environment</span><span class="p">[</span><span class="n">e</span><span class="p">])</span>
 
-        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="s">&quot;working_directory&quot;</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="n">WORKING_DIRECTORY</span><span class="p">)</span> <span class="p">:</span>
             <span class="n">cwd</span> <span class="o">=</span> <span class="s">&quot;cd </span><span class="si">%s</span><span class="s"> &amp;&amp; &quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span>
 
-        <span class="n">cmd</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">cwd</span><span class="p">,</span> <span class="n">exe</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+        <span class="k">if</span>  <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="n">INPUT</span><span class="p">)</span> <span class="p">:</span>
+            <span class="n">io</span> <span class="o">+=</span> <span class="s">&quot;&lt;</span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">input</span>
+
+        <span class="k">if</span>  <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="n">OUTPUT</span><span class="p">)</span> <span class="p">:</span>
+            <span class="n">io</span> <span class="o">+=</span> <span class="s">&quot;1&gt;</span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">output</span>
+
+        <span class="k">if</span>  <span class="n">jd</span><span class="o">.</span><span class="n">attribute_exists</span> <span class="p">(</span><span class="n">ERROR</span><span class="p">)</span> <span class="p">:</span>
+            <span class="n">io</span> <span class="o">+=</span> <span class="s">&quot;2&gt;</span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">error</span>
+
+        <span class="n">cmd</span> <span class="o">=</span> <span class="s">&quot;( </span><span class="si">%s%s%s</span><span class="s"> </span><span class="si">%s</span><span class="s">) </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">cwd</span><span class="p">,</span> <span class="n">exe</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">io</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">cmd</span>
 
@@ -480,6 +490,8 @@
         <span class="k">else</span> <span class="p">:</span>
             <span class="n">use_lrun</span> <span class="o">=</span> <span class="bp">True</span>
             <span class="n">run_cmd</span>  <span class="o">=</span> <span class="s">&quot;BULK</span><span class="se">\n</span><span class="s">LRUN</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s">LRUN_EOT</span><span class="se">\n</span><span class="s">BULK_RUN</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cmd</span>
+
+        <span class="n">run_cmd</span> <span class="o">=</span> <span class="n">run_cmd</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\\</span><span class="s">&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\\\\\\\\</span><span class="s">&quot;</span><span class="p">)</span> <span class="c"># hello MacOS</span>
 
         <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="n">run_cmd</span><span class="p">)</span>
         <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
@@ -512,34 +524,35 @@
         <span class="k">return</span> <span class="n">job_id</span>
         
 
-
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_job_get_state</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; get the job state from the wrapper shell &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_job_get_stats</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span> <span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; get the job stats from the wrapper shell &quot;&quot;&quot;</span>
 
         <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span> <span class="p">(</span><span class="nb">id</span><span class="p">)</span>
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;STATE </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">pid</span><span class="p">)</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;STATS </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">pid</span><span class="p">)</span>
 
         <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to get job state for &#39;</span><span class="si">%s</span><span class="s">&#39;: (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> \
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to get job stats for &#39;</span><span class="si">%s</span><span class="s">&#39;: (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> \
                                <span class="o">%</span> <span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
 
         <span class="n">lines</span> <span class="o">=</span> <span class="nb">filter</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="n">lines</span><span class="p">)</span>
 
-        <span class="k">if</span>  <span class="nb">len</span> <span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="p">:</span>
-            <span class="c"># shell did not manage to do &#39;stty -echo&#39;?</span>
-            <span class="k">del</span> <span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-
-        <span class="k">if</span>  <span class="nb">len</span> <span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to get job state for &#39;</span><span class="si">%s</span><span class="s">&#39;: (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">lines</span><span class="p">))</span>
-
         <span class="k">if</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&quot;OK&quot;</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to get valid job state for &#39;</span><span class="si">%s</span><span class="s">&#39; (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">lines</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">string_to_state</span> <span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">line</span> <span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">ret</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">strip</span> <span class="p">()</span><span class="o">.</span><span class="n">lower</span> <span class="p">()]</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">ret</span>
+
         
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -632,41 +645,6 @@
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to cancel job &#39;</span><span class="si">%s</span><span class="s">&#39; (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">lines</span><span class="p">))</span>
 
 
-
-    <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span>
-    <span class="c"># TODO: this should also fetch the (final) state, to safe a hop</span>
-    <span class="c"># TODO: implement via notifications</span>
-    <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_job_wait</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; </span>
-<span class="sd">        A call to the shell to do the WAIT would block the shell for any</span>
-<span class="sd">        other interactions.  In particular, it would practically kill it if the</span>
-<span class="sd">        Wait waits forever...</span>
-
-<span class="sd">        So we implement the wait via a state pull.  The *real* solution is, of</span>
-<span class="sd">        course, to implement state notifications, and wait for such</span>
-<span class="sd">        a notification to arrive within timeout seconds...</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
-        <span class="n">time_now</span>   <span class="o">=</span> <span class="n">time_start</span>
-        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span> <span class="p">(</span><span class="nb">id</span><span class="p">)</span>
-
-        <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
-            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_state</span> <span class="p">(</span><span class="nb">id</span><span class="p">)</span>
-            <span class="k">if</span>  <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span>      <span class="ow">or</span> \
-                <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span>    <span class="ow">or</span> \
-                <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span>     <span class="p">:</span>
-                    <span class="k">return</span> <span class="bp">True</span>
-            <span class="c"># avoid busy poll</span>
-            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
-
-            <span class="c"># check if we hit timeout</span>
-            <span class="k">if</span>  <span class="n">timeout</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="p">:</span>
-                <span class="n">time_now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
-                <span class="k">if</span>  <span class="n">time_now</span> <span class="o">-</span> <span class="n">time_start</span> <span class="o">&gt;</span> <span class="n">timeout</span> <span class="p">:</span>
-                    <span class="k">return</span> <span class="bp">False</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -1061,6 +1039,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_state</span>           <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NEW</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_exit_code</span>       <span class="o">=</span> <span class="bp">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_exception</span>       <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_created</span>         <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_started</span>         <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_finished</span>        <span class="o">=</span> <span class="bp">None</span>
 
         <span class="k">elif</span> <span class="s">&#39;job_id&#39;</span> <span class="ow">in</span> <span class="n">job_info</span> <span class="p">:</span>
             <span class="c"># initialize job attribute values</span>
@@ -1069,6 +1050,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_state</span>           <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">UNKNOWN</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_exit_code</span>       <span class="o">=</span> <span class="bp">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_exception</span>       <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_created</span>         <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_started</span>         <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_finished</span>        <span class="o">=</span> <span class="bp">None</span>
 
         <span class="k">else</span> <span class="p">:</span>
             <span class="c"># don&#39;t know what to do...</span>
@@ -1088,14 +1072,56 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_state</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="ShellJob.get_state"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_job.html#saga.adaptors.shell.shell_job.ShellJob.get_state">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_state()</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ShellJob.get_state"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_job.html#saga.adaptors.shell.shell_job.ShellJob.get_state">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_state() &quot;&quot;&quot;</span>
 
         <span class="c"># may not yet have backend representation, state is probably &#39;NEW&#39;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_state</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+        <span class="c"># no need to re-fetch final states</span>
+        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span>      <span class="ow">or</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span>    <span class="ow">or</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span>     <span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span>
+
+        <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_stats</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s">&#39;start&#39;</span> <span class="ow">in</span> <span class="n">stats</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span>  <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s">&#39;start&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s">&#39;stop&#39;</span>  <span class="ow">in</span> <span class="n">stats</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finished</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s">&#39;stop&#39;</span><span class="p">]</span>
+        
+        <span class="k">if</span>  <span class="ow">not</span> <span class="s">&#39;state&#39;</span> <span class="ow">in</span> <span class="n">stats</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to get job state for &#39;</span><span class="si">%s</span><span class="s">&#39;: (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="nb">id</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">string_to_state</span> <span class="p">(</span><span class="n">stats</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_created</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span> 
+<div class="viewcode-block" id="ShellJob.get_created"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_job.html#saga.adaptors.shell.shell_job.ShellJob.get_created">[docs]</a>
+        <span class="c"># no need to refresh stats -- this is set locally</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_created</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_started</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span> 
+<div class="viewcode-block" id="ShellJob.get_started"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_job.html#saga.adaptors.shell.shell_job.ShellJob.get_started">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_state</span> <span class="p">()</span> <span class="c"># refresh stats</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_finished</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span> 
+<div class="viewcode-block" id="ShellJob.get_finished"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_job.html#saga.adaptors.shell.shell_job.ShellJob.get_finished">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_state</span> <span class="p">()</span> <span class="c"># refresh stats</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finished</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -1111,10 +1137,42 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
+    <span class="c"># TODO: this should also fetch the (final) state, to safe a hop</span>
+    <span class="c"># TODO: implement via notifications</span>
+    <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">wait</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
-<div class="viewcode-block" id="ShellJob.wait"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_job.html#saga.adaptors.shell.shell_job.ShellJob.wait">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_wait</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+<div class="viewcode-block" id="ShellJob.wait"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_job.html#saga.adaptors.shell.shell_job.ShellJob.wait">[docs]</a>        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        A call to the shell to do the WAIT would block the shell for any</span>
+<span class="sd">        other interactions.  In particular, it would practically kill it if the</span>
+<span class="sd">        Wait waits forever...</span>
 
+<span class="sd">        So we implement the wait via a state pull.  The *real* solution is, of</span>
+<span class="sd">        course, to implement state notifications, and wait for such</span>
+<span class="sd">        a notification to arrive within timeout seconds...</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
+        <span class="n">time_now</span>   <span class="o">=</span> <span class="n">time_start</span>
+
+        <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
+
+            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_state</span> <span class="p">()</span>
+
+            <span class="k">if</span>  <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span>      <span class="ow">or</span> \
+                <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span>    <span class="ow">or</span> \
+                <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span>     <span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">True</span>
+
+            <span class="c"># avoid busy poll</span>
+            <span class="c"># FIXME: self-tune by checking call latency</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+
+            <span class="c"># check if we hit timeout</span>
+            <span class="k">if</span>  <span class="n">timeout</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="p">:</span>
+                <span class="n">time_now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
+                <span class="k">if</span>  <span class="n">time_now</span> <span class="o">-</span> <span class="n">time_start</span> <span class="o">&gt;</span> <span class="n">timeout</span> <span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">False</span>
    
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
