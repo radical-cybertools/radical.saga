@@ -8,8 +8,9 @@ __license__   = "MIT"
 
 from logging import Formatter
 
-DefaultFormatter = Formatter(fmt='%(asctime)s %(name)s: [%(levelname)-8s] %(message)s', 
-                             datefmt='%m/%d/%Y %I:%M:%S %p')
+# DefaultFormatter = Formatter(fmt=' %(funcName)-15s:%(module)-15s %(lineno)4d %(asctime)s %(name)-23s: [%(levelname)-8s] %(message)s', 
+DefaultFormatter = Formatter(fmt='%(asctime)s %(thread)d %(name)-22s: [%(levelname)-8s] %(message)s', 
+                             datefmt='%Y:%m:%d %H:%M:%S')
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

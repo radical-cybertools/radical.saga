@@ -5,31 +5,47 @@ import os
 import shutil
 
 import saga.url
-import saga.cpi.base
-import saga.cpi.filesystem
+import saga.adaptors.cpi.base
+import saga.adaptors.cpi.filesystem
 import saga.utils.misc
 
-from   saga.utils.singleton import Singleton
-
-SYNC_CALL  = saga.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
 ###############################################################################
 # adaptor info
 #
 
-_ADAPTOR_NAME          = 'saga.adaptor.dummysystem.local'
+_ADAPTOR_NAME          = 'saga.adaptors.local.dummyfile'
 _ADAPTOR_SCHEMAS       = ['dummy']
-_ADAPTOR_OPTIONS       = []
-_ADAPTOR_CAPABILITES   = {}
+_ADAPTOR_OPTIONS       = [
+    { 
+    'category'         : 'saga.engine',
+    'name'             : 'enable_ctrl_c', 
+    'type'             : bool, 
+    'default'          : True,
+    'valid_options'    : [True, False],
+    'documentation'    : 'install SIGINT signal handler to abort application.',
+    'env_variable'     : None
+    },
+    { 
+    'category'         : 'saga.engine',
+    'name'             : 'load_beta_adaptors', 
+    'type'             : bool, 
+    'default'          : False,
+    'valid_options'    : [True, False],
+    'documentation'    : 'load adaptors which are marked as beta (i.e. not released).',
+    'env_variable'     : None
+    }
+]
+_ADAPTOR_CAPABILITIES  = {}
 
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITES,
-    'description'      : 'The local filesystem adaptor.',
-    'details'          : """This adaptor interacts with local filesystem, by
+    'capabilities'     : _ADAPTOR_CAPABILITIES,
+    'description'      : """This adaptor interacts with local filesystem, by
                             using the (POSIX like) os and shutil Python packages.
                             It is named 'dummy', as this adaptor is only used
                             for testing and debugging -- it is *not* good for
@@ -57,23 +73,16 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
-
-    We only need one instance of this adaptor per process (actually per engine,
-    but engine is a singleton, too...) -- the engine will though create new CPI
-    implementation instances as needed (one per SAGA API object).
     """
-
-    __metaclass__ = Singleton
-
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
 
     def sanity_check (self) :
@@ -83,10 +92,12 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
 ###############################################################################
 #
-class DummyDirectory (saga.cpi.filesystem.Directory) :
+class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (DummyDirectory, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
@@ -99,7 +110,7 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
 
         self._init_check ()
 
-        return self._api
+        return self.get_api ()
 
 
     @ASYNC_CALL
@@ -114,7 +125,7 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
                                                     'url'     : url, 
                                                     'flags'   : flags, 
                                                     'session' : session})
-        t._set_result (saga.dummysystem.Directory (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
+        t._set_result (saga.filesystem.Directory (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -143,8 +154,8 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
 
         if not os.path.exists (path) :
 
-            if saga.dummysystem.CREATE & flags :
-                if saga.dummysystem.CREATE_PARENTS & flags :
+            if saga.filesystem.CREATE & flags :
+                if saga.filesystem.CREATE_PARENTS & flags :
                     try :
                         os.makedirs (path)
                     except Exception as e :
@@ -178,7 +189,7 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
         if not url.scheme and not url.host : 
             url = saga.url.Url (str(self._url) + '/' + str(url))
 
-        f = saga.dummysystem.File (url, flags, self._session, _adaptor_name=_ADAPTOR_NAME)
+        f = saga.filesystem.File (url, flags, self._session, _adaptor_name=_ADAPTOR_NAME)
         return f
 
 
@@ -186,10 +197,12 @@ class DummyDirectory (saga.cpi.filesystem.Directory) :
 #
 # file adaptor class
 #
-class DummyFile (saga.cpi.filesystem.File) :
+class DummyFile (saga.adaptors.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (DummyFile, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
@@ -215,7 +228,7 @@ class DummyFile (saga.cpi.filesystem.File) :
         
         t = saga.task.Task ()
 
-        t._set_result (saga.dummysystem.File (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
+        t._set_result (saga.filesystem.File (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -285,7 +298,7 @@ class DummyFile (saga.cpi.filesystem.File) :
 
         t = saga.task.Task ()
 
-        t._set_state  = saga.task.Done
+        t._set_state  = saga.task.DONE
         t._set_result = self._url
 
         return t

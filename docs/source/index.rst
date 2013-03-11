@@ -1,24 +1,30 @@
-.. SAGA documentation master file, created by
-   sphinx-quickstart on Mon Dec  3 21:55:42 2012.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
 ############################
 SAGA |version| documentation
 ############################
 
+SAGA-Python is a light-weight Python package that implements `OGF SAGA
+<http://www.ogf.org/documents/GFD.90.pdf>`_ interface specification and provides
+adaptors for different distributed middleware systems and services. SAGA-Python
+focuses on usability, extensibility and simple deployment in real-world
+heterogeneous distributed computing environments and application scenarios.
+
+More information can be found at https://github.com/saga-project/saga-python/ .
+
+
+#########
 Contents:
+#########
 
 .. toctree::
    :numbered:
    :maxdepth: 2
 
    usage/index.rst
-   adaptors/index.rst
    library/index.rst
-   examples/index.rst
-   tutorial/index.rst
+   adaptors/saga.adaptor.index.rst
    developers/index.rst
+
 
 ##################
 Indices and tables

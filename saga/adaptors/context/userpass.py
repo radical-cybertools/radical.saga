@@ -1,12 +1,10 @@
 
-from   saga.utils.singleton import Singleton
-
 import saga.context
-import saga.cpi.base
-import saga.cpi.context
+import saga.adaptors.cpi.base
+import saga.adaptors.cpi.context
 
-SYNC_CALL  = saga.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 ######################################################################
 #
@@ -16,7 +14,7 @@ _ADAPTOR_NAME          = 'saga.adaptor.userpass'
 _ADAPTOR_SCHEMAS       = ['UserPass']
 _ADAPTOR_OPTIONS       = []
 
-_ADAPTOR_CAPABILITES   = {
+_ADAPTOR_CAPABILITIES  = {
     'attributes'       : [saga.context.TYPE,
                           saga.context.USER_ID,
                           saga.context.USER_PASS]
@@ -25,9 +23,8 @@ _ADAPTOR_CAPABILITES   = {
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITES,
-    'description'      : 'The UserPass context adaptor.',
-    'details'          : """This adaptor stores user_id and user_pass tokens, to
+    'capabilities'     : _ADAPTOR_CAPABILITIES,
+    'description'      : """This adaptor stores user_id and user_pass tokens, to
                             be used for backend connections.""",
     'schemas'          : {'userpass' : 'this adaptor can only store username/password pairs.'},
 }
@@ -47,23 +44,16 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
-
-    We only need one instance of this adaptor per process (actually per engine,
-    but engine is a singleton, too...) -- the engine will though create new CPI
-    implementation instances as needed (one per SAGA API object).
     """
-
-    __metaclass__ = Singleton
-
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # there are no default myproxy contexts
         self._default_contexts = []
@@ -83,10 +73,12 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 #
 # job adaptor class
 #
-class ContextUserPass (saga.cpi.Context) :
+class ContextUserPass (saga.adaptors.cpi.context.Context) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (ContextUserPass, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL

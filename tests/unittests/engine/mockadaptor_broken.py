@@ -8,8 +8,8 @@ __license__   = "MIT"
 
 from   saga.utils.singleton import Singleton
 
-import saga.cpi.base
-import saga.cpi.job
+import saga.adaptors.cpi.base
+import saga.adaptors.cpi.job
 
 
 _ADAPTOR_NAME        = 'saga.adaptor.mock'
@@ -29,13 +29,13 @@ _ADAPTOR_INFO        = {
 }
 
 
-class Adaptor (saga.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
     __metaclass__ = Singleton
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS) 
+        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS) 
 
 
     def sanity_check (self) :
@@ -48,11 +48,11 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
 
 
-class MockJob (saga.cpi.job.Job) :
+class MockJob (saga.adaptors.cpi.job.Job) :
 
     def __init__ (self, api, adaptor) :
 
-        saga.cpi.Base.__init__ (self, api, adaptor)
+        saga.adaptors.cpi.Base.__init__ (self, api, adaptor)
 
 
 

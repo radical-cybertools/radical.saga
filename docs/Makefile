@@ -42,8 +42,12 @@ help:
 
 clean:
 	-rm -rf $(BUILDDIR)/*
+	-rm -rf source/aaptors/saga.adaptor.*
 
-html:
+generate_docs:
+	python generate_adaptor_docs.py 
+
+html: generate_docs
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
