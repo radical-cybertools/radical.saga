@@ -1,66 +1,83 @@
+#!/usr/bin/env python
+# encoding: utf-8
 
 """ This examples shows how to run a job on the local machine
-    using the 'local' job adaptor. 
+    using the 'local' job adaptor.
 """
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-import sys, saga
+import sys
+import saga
+
 
 def main():
-    
+
     try:
-        # create a job service for the local machine. both, 'fork' and 
-        # 'local' schemes trigger the local job adaptor. 
+        # Create a job service object that represent the local machine.
+        # The keyword 'fork' in the url scheme triggers the 'shell' adaptor.
+        # The adaptor also support ssh:// and gsissh://
         js = saga.job.Service("fork://localhost")
 
-        # describe our job
+        # Next, we describe the job we want to run. A complete set of job
+        # description attributes can be found in the API documentation.
         jd = saga.job.Description()
 
-        # environment, executable & arguments
-        jd.environment = {'CATME':'10'}       
-        jd.executable  = '/bin/sleep'
-        jd.arguments   = ['$CATME']
-        
-        # output options (will just be empty files for /bin/sleep)
-        jd.output = "saga_localjob.stdout"
-        jd.error  = "saga_localjob.stderr"
+        # Next, we describe the job we want to run. A complete set of job
+        # description attributes can be found in the API documentation.
+        jd.environment     = {'RUNTIME': '10'}
+        jd.wall_time_limit = 1 # minutes
+        jd.executable      = '/bin/sleep'
+        jd.arguments       = ['$RUNTIME']
 
-        # create the job (state: New)
-        catjob = js.create_job(jd)
+        # Create a new job from the job description. The initial state of
+        # the job is 'New'.
+        sleepjob = js.create_job(jd)
 
-        # check our job's id and state
-        print "Job ID    : %s" % (catjob.id)
-        print "Job State : %s" % (catjob.state)
+        # Check our job's id and state
+        print "Job ID    : %s" % (sleepjob.id)
+        print "Job State : %s" % (sleepjob.state)
 
+        # Now we can start our job.
         print "\n...starting job...\n"
-        catjob.run()
+        sleepjob.run()
 
-        print "Job ID    : %s" % (catjob.id)
-        print "Job State : %s" % (catjob.state)
+        print "Job ID    : %s" % (sleepjob.id)
+        print "Job State : %s" % (sleepjob.state)
 
+        # List all jobs that are known by the adaptor.
+        # This should show our job as well.
         print "\nListing active jobs: "
         for job in js.list():
             print " * %s" % job
 
+        # Now we disconnect and reconnect to our job by using the get_job()
+        # method and our job's id. While this doesn't make a lot of sense
+        # here,  disconnect / reconnect can become very important for
+        # long-running job.
+        sleebjob_clone = js.get_job(sleepjob.id)
+
         # wait for our job to complete
         print "\n...waiting for job...\n"
-        catjob.wait()
+        sleebjob_clone.wait()
 
-        print "Job State : %s" % (catjob.state)
-        print "Exitcode  : %s" % (catjob.exit_code)
+        print "Job State   : %s" % (sleebjob_clone.state)
+        print "Exitcode    : %s" % (sleebjob_clone.exit_code)
+        print "Exec. hosts : %s" % (sleebjob_clone.execution_hosts)
+        print "Create time : %s" % (sleebjob_clone.created)
+        print "Start time  : %s" % (sleebjob_clone.started)
+        print "End time    : %s" % (sleebjob_clone.finished)
+
+        return 0
 
     except saga.SagaException, ex:
-        print "An exception occured: %s " % ((str(ex)))
-        # get the whole traceback in case of an exception - 
-        # this can be helpful for debugging the problem
-        print " *** %s" % saga.utils.exception.get_traceback()
-        sys.exit(-1)
+        # Catch all saga exceptions
+        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        # Trace back the exception. That can be helpful for debugging.
+        print " \n*** Backtrace:\n %s" % ex.traceback
+        return -1
 
 if __name__ == "__main__":
-    main()
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
+    sys.exit(main())

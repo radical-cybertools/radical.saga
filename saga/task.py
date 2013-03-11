@@ -1,26 +1,22 @@
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
 __author__    = "Andre Merzky"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-""" SAGA task interface
+""" Task interface
 """
 
 import inspect
 import Queue
 
-import saga.job.job
+import saga.base          as sbase
+import saga.exceptions    as se
+import saga.attributes    as satt
 
-from   saga.exceptions    import *
 from   saga.constants     import *
-from   saga.base          import SimpleBase
-from   saga.attributes    import Attributes
 from   saga.utils.threads import Thread, NEW, RUNNING, DONE, FAILED
-from   saga.engine.logger import getLogger
 
 
-class Task (SimpleBase, Attributes) :
+class Task (sbase.SimpleBase, satt.Attributes) :
 
     # ----------------------------------------------------------------
     #
@@ -30,7 +26,7 @@ class Task (SimpleBase, Attributes) :
 
         ``_adaptor`` references the adaptor class instance from which this
         task was created via an asynchronous function.  Note that the API level
-        object instance can be inferred via ``_adaptor._api``.  Further, the
+        object instance can be inferred via ``_adaptor.get_api ()``.  Further, the
         adaptor will reference an _adaptor._container class, which will be
         considered the target for bulk operations for this task.
 
@@ -57,7 +53,8 @@ class Task (SimpleBase, Attributes) :
         a :class:`saga.util.threads.Thread` with that ``_call (_args)``.
         """
         
-        SimpleBase.__init__ (self)
+        self._base = super  (Task, self)
+        self._base.__init__ ()
 
         self._thread         = None
         self._ttype          = _ttype
@@ -71,15 +68,15 @@ class Task (SimpleBase, Attributes) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface
-        self._attributes_register   (RESULT,    None,    self.ANY, self.SCALAR, self.READONLY)
+        self._attributes_register   (RESULT,    None,    satt.ANY,  satt.SCALAR, satt.READONLY)
         self._attributes_set_getter (RESULT,    self.get_result)
         self._attributes_set_setter (RESULT,    self._set_result)
 
-        self._attributes_register   (EXCEPTION, None,    self.ANY, self.SCALAR, self.READONLY)
+        self._attributes_register   (EXCEPTION, None,    satt.ANY,  satt.SCALAR, satt.READONLY)
         self._attributes_set_getter (EXCEPTION, self.get_exception)
         self._attributes_set_setter (EXCEPTION, self._set_exception)
 
-        self._attributes_register   (STATE,     UNKNOWN, self.ENUM, self.SCALAR, self.READONLY)
+        self._attributes_register   (STATE,     UNKNOWN, satt.ENUM, satt.SCALAR, satt.READONLY)
         self._attributes_set_enums  (STATE,    [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED])
         self._attributes_set_getter (STATE,     self.get_state)
         self._attributes_set_setter (STATE,     self._set_state)
@@ -96,8 +93,7 @@ class Task (SimpleBase, Attributes) :
                 self._method_context['_kwargs'] = {}
 
             if  3 !=  len (self._method_context) :
-                raise saga.exceptions.BadParameter \
-                    ("invalid call context for callable task")
+                raise se.BadParameter ("invalid call context for callable task")
             
             call   = self._method_context['_call']
             args   = self._method_context['_args']
@@ -139,7 +135,7 @@ class Task (SimpleBase, Attributes) :
             return
 
         if self.state == CANCELED :
-            raise IncorrectState ("task.get_result() cannot be called on cancelled tasks")
+            raise se.IncorrectState ("task.get_result() cannot be called on cancelled tasks")
 
         if self.state == DONE :
 
@@ -154,7 +150,7 @@ class Task (SimpleBase, Attributes) :
     def _set_state (self, state) :
 
         if not state in [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED] :
-            raise BadParameter ("attempt to set invalid task state '%s'" % state)
+            raise se.BadParameter ("attempt to set invalid task state '%s'" % state)
 
         self._attributes_i_set (self._attributes_t_underscore (STATE), state, force=True)
 
@@ -233,7 +229,7 @@ class Task (SimpleBase, Attributes) :
 
 # --------------------------------------------------------------------
 #
-class Container (SimpleBase, Attributes) :
+class Container (sbase.SimpleBase, satt.Attributes) :
 
 
     # ----------------------------------------------------------------
@@ -241,7 +237,8 @@ class Container (SimpleBase, Attributes) :
     def __init__ (self) :
 
 
-        SimpleBase.__init__ (self)
+        self._base = super  (Container, self)
+        self._base.__init__ ()
 
         # set attribute interface properties
         self._attributes_allow_private (True)
@@ -249,13 +246,13 @@ class Container (SimpleBase, Attributes) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface
-        self._attributes_register   (SIZE,    0,    self.INT, self.SCALAR, self.READONLY)
+        self._attributes_register   (SIZE,    0,  satt.INT,  satt.SCALAR, satt.READONLY)
         self._attributes_set_getter (SIZE,    self.get_size)
 
-        self._attributes_register   (TASKS,   [],    self.ANY, self.VECTOR, self.READONLY)
+        self._attributes_register   (TASKS,   [], satt.ANY,  satt.VECTOR, satt.READONLY)
         self._attributes_set_getter (TASKS,   self.get_tasks)
 
-        self._attributes_register   (STATES,  [],    self.ENUM, self.VECTOR, self.READONLY)
+        self._attributes_register   (STATES,  [], satt.ENUM, satt.VECTOR, satt.READONLY)
         self._attributes_set_getter (STATES,  self.get_states)
 
         self._attributes_set_enums  (STATES,  [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED])
@@ -268,12 +265,14 @@ class Container (SimpleBase, Attributes) :
     #
     def add (self, t) :
 
+        import saga.job as sjob
+
         # AM: oh I hate that we don't use proper inheritance...
         if  not isinstance (t, Task) and \
-            not isinstance (t, saga.job.job.Job)      :
+            not isinstance (t, sjob.Job) :
             
-            raise BadParameter ("Container handles jobs or tasks, not %s" \
-                             % (type(t)))
+            raise se.BadParameter ("Container handles jobs or tasks, not %s" \
+                                % (type(t)))
 
         if not t in self.tasks :
             self.tasks.append (t)
@@ -286,7 +285,6 @@ class Container (SimpleBase, Attributes) :
 
         if t in self.tasks :
             self.tasks.delete (t)
-
 
 
     # ----------------------------------------------------------------
@@ -309,7 +307,7 @@ class Container (SimpleBase, Attributes) :
             # handle all methods
             for m in buckets['bound'][c] :
 
-                tasks         = buckets['bound'][c][m]
+                tasks    = buckets['bound'][c][m]
                 m_name   = "container_%s" % m
                 m_handle = None
 
@@ -340,9 +338,82 @@ class Container (SimpleBase, Attributes) :
                 thread.join ()
 
             if thread.get_state () == FAILED :
-                raise NoSuccess ("thread exception: %s\n%s" \
-                        %  (str(thread.get_exception ()),
-                            str(thread.get_traceback ())))
+                raise se.NoSuccess ("thread exception: %s\n%s" \
+                                 %  (str(thread.get_exception ()),
+                                     str(thread.get_traceback ())))
+
+
+    # ----------------------------------------------------------------
+    #
+    def get_states (self) :
+
+        buckets = self._get_buckets ()
+        threads = []  # threads running container ops
+        queues  = {}
+
+        # handle all tasks bound to containers
+        for c in buckets['bound'] :
+
+            # handle all methods -- all go to the same 'container_get_states' though)
+            tasks = []
+            for m in buckets['bound'][c] :
+                tasks += buckets['bound'][c][m]
+
+            threads.append (Thread.Run (c.container_get_states, tasks))
+
+        
+        # handle all tasks not bound to containers
+        for task in buckets['unbound'] :
+
+            threads.append (Thread.Run (task.get_state))
+            
+
+        # We still need to get the states from all threads.
+        # FIXME: order
+        states  = []
+
+        for thread in threads :
+            thread.join ()
+
+            if thread.get_state () == FAILED :
+                raise thread.get_exception ()
+
+            # FIXME: what about ordering tasks / states?
+            res = thread.get_result ()
+
+            if res != None :
+                states += res
+
+        return states
+
+
+    # ----------------------------------------------------------------
+    #
+    def cancel (self, timeout=-1) :
+
+        buckets = self._get_buckets ()
+        threads = []  # threads running container ops
+        queues  = {}
+
+        # handle all tasks bound to containers
+        for c in buckets['bound'] :
+
+            # handle all methods -- all go to the same 'container_cancel' though)
+            tasks = []
+            for m in buckets['bound'][c] :
+                tasks += buckets['bound'][c][m]
+
+            threads.append (Thread.Run (c.container_cancel, tasks, timeout))
+
+        
+        # handle all tasks not bound to containers
+        for task in buckets['unbound'] :
+
+            threads.append (Thread.Run (task.cancel, timeout))
+            
+
+        for thread in threads :
+            thread.join ()
 
 
     # ----------------------------------------------------------------
@@ -350,10 +421,10 @@ class Container (SimpleBase, Attributes) :
     def wait (self, mode=ALL, timeout=-1) :
 
         if not mode in [ANY, ALL] :
-            raise BadParameter ("wait mode must be saga.task.ANY or saga.task.ALL")
+            raise se.BadParameter ("wait mode must be saga.task.ANY or saga.task.ALL")
 
         if type (timeout) not in [int, long, float] : 
-            raise BadParameter ("wait timeout must be a floating point number (or integer)")
+            raise se.BadParameter ("wait timeout must be a floating point number (or integer)")
 
         if not len (self.tasks) :
             # nothing to do
@@ -382,7 +453,7 @@ class Container (SimpleBase, Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
-            threads.append (Thread.Run (c.container_wait, tasks, mode, timeout))
+            threads.append (Thread.Run (c.container_wait, tasks, ANY, timeout))
 
         
         # handle all tasks not bound to containers
@@ -398,7 +469,6 @@ class Container (SimpleBase, Attributes) :
         # running (FIXME: consider sending a signal at least)
 
         timeout = 0.01 # seconds, heuristic :-/
-        done    = False
 
         for thread in threads :
             thread.join (timeout)
@@ -434,6 +504,8 @@ class Container (SimpleBase, Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
+            # TODO: this is semantically not correct: timeout is applied
+            #       n times...
             c.container_wait (tasks, ALL, timeout)
             ret = tasks[0]
  
@@ -445,57 +517,6 @@ class Container (SimpleBase, Attributes) :
         # all done - return random task (first from last container, or last
         # unbound task)
         return ret
-
-
-
-    # ----------------------------------------------------------------
-    #
-    def cancel (self) :
-
-        if not len (self.tasks) :
-            # nothing to do
-            return None
-
-
-        buckets = self._get_buckets ()
-        threads = []  # threads running container ops
-        queues  = {}
-
-
-        # handle all tasks bound to containers
-        for c in buckets['bound'] :
-
-            # handle all methods -- all go to the same 'container_cancel' though)
-            tasks = []
-            for m in buckets['bound'][c] :
-
-                tasks += buckets['bound'][c]
-
-            queue  = Queue.Queue ()
-            thread = Thread.Run (c.container_cancel, (queue, tasks))
-
-            threads.append (thread)
-            queues[thread] = queue
-
-
-        # handle all tasks not bound to containers
-        for task in buckets['unbound'] :
-
-            queue  = Queue.Queue ()
-            thread = Thread.Run (task.cancel, (queue, timeout))
-
-            threads.append (thread)
-            queues[thread] = queue
-            
-
-        # wait for all threads to finish
-        for thread in threads :
-            thread.join ()
-
-            if thread.get_state () == FAILED :
-                raise NoSuccess ("thread exception: %s\n%s" \
-                        %  (str(thread.get_exception ()),
-                            str(thread.get_traceback ())))
 
 
     # ----------------------------------------------------------------
@@ -510,52 +531,6 @@ class Container (SimpleBase, Attributes) :
     def get_tasks (self) :
 
         return self.tasks
-
-
-    # ----------------------------------------------------------------
-    #
-    def get_states (self) :
-
-        if not len (self.tasks) :
-            # nothing to do
-            return None
-
-
-        buckets = self._get_buckets ()
-        threads = []  # threads running container ops
-        queues  = {}
-
-
-        for container in buckets['bound'] :
-
-            tasks  = buckets['bound'][container]
-            threads.append (Thread.Run (container.container_get_states, tasks))
-
-
-        for task in buckets['unbound'] :
-
-            threads.append (Thread.Run (task.get_states, timeout))
-            
-
-        # wait for all threads to finish
-        for thread in threads :
-            thread.join ()
-
-            if thread.get_state () == FAILED :
-                raise NoSuccess ("thread exception: %s\n%s" \
-                        %  (str(thread.get_exception ()),
-                            str(thread.get_traceback ())))
-
-
-        states = []
-        for queue in queues :
-            result = queue.get ()
-            
-            # FIXME: check if this was an exception
-            states.append (result)
-
-        return states
-
 
 
     # ----------------------------------------------------------------

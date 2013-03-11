@@ -1,3 +1,4 @@
+
 .. _chapter_library_reference:
 
 *****************
@@ -9,7 +10,15 @@ Intro library reference...
 .. toctree::
    :numbered:
 
-   exceptions.rst
-   attribute.rst
-   url.rst
    job/index.rst
+   filesystem/index.rst
+   url.rst
+   context.rst
+   session.rst
+   attribute.rst
+   exceptions.rst
+
+..   replica/index.rst
+..   advert/index.rst
+..   resource/index.rst
+

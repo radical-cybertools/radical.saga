@@ -2,14 +2,13 @@
 import os
 import subprocess
 
-from   saga.utils.singleton import Singleton
-
 import saga.context
-import saga.cpi.base
-import saga.cpi.context
+import saga.adaptors.cpi.base
+import saga.adaptors.cpi.decorators
+import saga.adaptors.cpi.context
 
-SYNC_CALL  = saga.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 ######################################################################
 #
@@ -19,7 +18,7 @@ _ADAPTOR_NAME          = 'saga.adaptor.myproxy'
 _ADAPTOR_SCHEMAS       = ['MyProxy']
 _ADAPTOR_OPTIONS       = []
 
-_ADAPTOR_CAPABILITES   = {
+_ADAPTOR_CAPABILITIES  = {
     'attributes'       : [saga.context.TYPE,
                           saga.context.SERVER,
                           saga.context.USER_ID,
@@ -30,9 +29,8 @@ _ADAPTOR_CAPABILITES   = {
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITES,
-    'description'      : 'The MyProxy context adaptor.',
-    'details'          : """This adaptor fetches an X509 proxy from
+    'capabilities'     : _ADAPTOR_CAPABILITIES,
+    'description'      : """This adaptor fetches an X509 proxy from
                             MyProxy when it is added to a saga.Session.""",
     'schemas'          : {'myproxy' : 'this adaptor can only interact with myproxy backends'},
 }
@@ -52,23 +50,16 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
-
-    We only need one instance of this adaptor per process (actually per engine,
-    but engine is a singleton, too...) -- the engine will though create new CPI
-    implementation instances as needed (one per SAGA API object).
     """
-
-    __metaclass__ = Singleton
-
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # there are no default myproxy contexts
         self._default_contexts = []
@@ -88,11 +79,12 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 #
 # job adaptor class
 #
-class ContextMyProxy (saga.cpi.Context) :
+class ContextMyProxy (saga.adaptors.cpi.context.Context) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
 
+        self._cpi_base = super  (ContextMyProxy, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
@@ -102,7 +94,7 @@ class ContextMyProxy (saga.cpi.Context) :
             raise saga.exceptions.BadParameter \
                     ("the MyProxy context adaptor only handles MyProxy contexts - duh!")
 
-        self._api.type = type
+        self.get_api ().type = type
 
         return self
 
@@ -111,7 +103,7 @@ class ContextMyProxy (saga.cpi.Context) :
     def _initialize (self, session) :
 
         # make sure we have server, username, password
-        api = self._api
+        api = self.get_api ()
 
 
         # set up the myproxy command
