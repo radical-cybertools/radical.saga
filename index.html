@@ -351,7 +351,6 @@ Exitcode    : 0</span></pre>
     </footer>
 
 
-
     <!-- Le javascript
     ================================================== -->
     <script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>
@@ -360,6 +359,7 @@ Exitcode    : 0</span></pre>
     <script type="text/javascript" src="js/smoothscroll.js"></script>
     <script type="text/javascript" src="js/application.js"></script>
     <script type="text/javascript" src="js/prettify.js"></script>
+
 
     <!-- Le google analytics
     ================================================== -->
@@ -376,5 +376,26 @@ Exitcode    : 0</span></pre>
       })();
 
     </script>
+
+
+    <!-- Get the current saga-python version number
+    ================================================== -->
+    <script type="text/javascript">
+
+      function getSAGAPythonVersion() {
+        function handleFile(data) {
+          jQuery('#filecontents').html(data);
+        }
+
+        // Issue a request to load test_file as text (don't eval it, jQuery!).
+        jQuery.get('https://raw.github.com/saga-project/saga-python/master/saga/VERSION',
+                   handleFile,
+                   'text');
+
+        document.write('<div id="filecontents"></div>');
+      }
+
+    </script>
+
   </body>
 </html>
