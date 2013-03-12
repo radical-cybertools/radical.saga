@@ -154,9 +154,9 @@ class Directory (entry.Entry) :
         return self._adaptor.change_dir (url, ttype=ttype)
   
     
-    def list (self, npat=None, flags=0, ttype=None) :
+    def list (self, pattern=None, flags=0, ttype=None) :
         '''
-        :param npat: Entry name pattern (like POSIX 'ls', e.g. '\*.txt')
+        :param pattern: Entry name pattern (like POSIX 'ls', e.g. '\*.txt')
 
         flags:         flags enum
         ttype:         saga.task.type enum
@@ -171,7 +171,7 @@ class Directory (entry.Entry) :
             for f in dir.list() :
                 print f
         '''
-        return self._adaptor.list (npat, flags, ttype=ttype)
+        return self._adaptor.list (pattern, flags, ttype=ttype)
 
 
     def exists (self, path, ttype=None) :
@@ -195,15 +195,14 @@ class Directory (entry.Entry) :
         return self._adaptor.exists (path, ttype=ttype)
   
   
-    
-    def find (self, npat, flags=RECURSIVE, ttype=None) :
+    def find (self, pattern, flags=RECURSIVE, ttype=None) :
         '''
-        npat:          string
+        pattern:       string
         flags:         flags enum
         ttype:         saga.task.type enum
         ret:           list [saga.Url] / saga.Task
         '''
-        return self._adaptor.find (npat, flags, ttype=ttype)
+        return self._adaptor.find (pattern, flags, ttype=ttype)
   
     
     def get_num_entries (self, ttype=None) :
