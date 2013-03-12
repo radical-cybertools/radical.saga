@@ -11,11 +11,11 @@
    report it at: https://github.com/saga-project/bliss/issues
 '''
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2011-2012, Ole Christian Weidner"
+__author__    = "Ole Weidner"
+__copyright__ = "Copyright 2011-2013, The SAGA Project"
 __license__   = "MIT"
 
-import sys, time
+import sys
 import saga
 
 def main():
