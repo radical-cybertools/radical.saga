@@ -11,32 +11,16 @@
    report it at: https://github.com/saga-project/bliss/issues
 '''
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2011-2012, Ole Christian Weidner"
+__author__    = "Ole Weidner"
+__copyright__ = "Copyright 2011-2013, The SAGA Project"
 __license__   = "MIT"
 
-import sys, time
-import bliss.saga as saga
+import sys
+import saga
 
 def main():
     
-    try:
-        # Optional:
-        # Set up a security context
-        # if no security context is defined, the SFTP
-        # plugin will pick up the default set of ssh 
-        # credentials of the user, i.e., ~/.ssh/id_rsa
-        #
-        #ctx = saga.Context()
-        #ctx.type = saga.Context.SSH
-        #ctx.userid  = 'loginname' # like 'ssh username@host ...'
-        #ctx.userkey = '/home/you/.ssh/id_rsa_custom' # like ssh -i ...'
-   
-        # Optional:  
-        # Append the custom security context to the session
-        #session = saga.Session()
-        #session.contexts.append(ctx)
- 
+    try: 
         # open home directory on a remote machine
         remote_dir = saga.filesystem.Directory('sftp://india.futuregrid.org/etc/')
         # Alternatively: 
@@ -52,7 +36,7 @@ def main():
 
 
 
-    except saga.Exception, ex:
+    except saga.SagaException, ex:
         print "An error occured during file operation: %s" % (str(ex))
         sys.exit(-1)
 
