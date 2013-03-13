@@ -160,6 +160,10 @@ class Configuration(object):
                       value = True
                     elif tmp_value.lower() == 'false':
                       value = False 
+                    elif tmp_value == '1':
+                      value = True
+                    elif tmp_value == '0':
+                      value = False
                     else:
                       raise ValueTypeError(option['category'], option['name'],
                           tmp_value, option['type'])
