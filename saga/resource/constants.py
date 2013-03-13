@@ -1,47 +1,59 @@
 
+# FIXME: OS enums, ARCH enums
+
 # resource type enum
-COMPUTE      =  1,            # accepting jobs
-NETWORK      =  2,            # connectes compute(s) and storage(s)
-STORAGE      =  3,            # mounted on / accessible by compute
-POOL         =  4,            # collection of resources
+COMPUTE      =  1,            """ resource accepting jobs """
+STORAGE      =  2,            """ storage resource (duh) """
+NETWORK      =  3,            """ connects compute and storage resources """
 
-# resource state enum
-UNKNOWN      =  None          # wut?
-PENDING      =  1,            # will become active eventually
-ACTIVE       =  2,            # accepting jobs, jobs can run
-DRAINING     =  4,            # jobs still run, not accepting new jobs
-RUNNING      = PENDING | ACTIVE | DRAINING
-CLOSED       =  8,            # closed by user
-EXPIRED      = 16,            # closed by system
-FAILED       = 32,            # closed unexpectedly by system or internally
-FINAL        = CLOSED | EXPIRED | FAILED
+# resource state enum """
+UNKNOWN      =  None          """ wut? """
+NEW          =  1,            """ requsted, not accepting jobs, yet;
+                                  initial state """
+PENDING      =  2,            """ accepting jobs, will become active eventually """
+ACTIVE       =  4,            """ accepting jobs, jobs can run """
+DRAINING     =  8,            """ jobs still run, not accepting new jobs """
+RUNNING      = PENDING  | ACTIVE | DRAINING
+CANCELED     = 16,            """ released by user; final state """
+EXPIRED      = 32,            """ released by system; final state """
+DONE         = EXPIRED,       """ alias """
+FAILED       = 64,            """ released unexpectedly by system or internally;
+                                  final state """
+FINAL        = CANCELED | DONE   | FAILED
 
-# resource attributes
-ID           = 'ID'           # url
-TYPE         = 'TYPE'         # type enum
-STATE        = 'STATE'        # state enum
-STATE_DETAIL = 'STATE_DETAIL' # string
-MANAGER      = 'MANAGER'      # url
-DESCRIPTION  = 'DESCRIPTION ' # dict
+# resource attributes """
+ID           = 'ID'           """ url identifying a resource instance """
+TYPE         = 'TYPE'         """ type enum, identifying the resource type """
+STATE        = 'STATE'        """ state enum, identifying the rsource state """
+STATE_DETAIL = 'STATE_DETAIL' """ string, representing the native backend state """
+MANAGER      = 'MANAGER'      """ url, pointing to the resource's manager """
+DESCRIPTION  = 'DESCRIPTION ' """ dict, containing resource attributes  """
 
-# generic resource description attributes
-TYPE         = 'Type'         # enum           - reuired
-TEMPLATE     = 'Template'     # list<string>
+# generic resource description attributes """
+TEMPLATE     = 'Template'     """ string, template to which the resource 
+                                  was created"""
 
-# resource lifetime attributes
-DYNAMIC      = 'Dynamic'      # bool
-START        = 'Start'        # time
-END          = 'End'          # time
-DURATION     = 'Duration'     # time
+# resource lifetime attributes """
+DYNAMIC      = 'Dynamic'      """ bool, enables/disables on-demand 
+                                  resource 
+                                  resizing """
+START        = 'Start'        """ time, expected time at which resource 
+                                  becomes ACTIVE """
+END          = 'End'          """ time, expected time at which resource 
+                                  will EXPIRE """
+DURATION     = 'Duration'     """ time, expected time span between ACTIVE 
+                                  and EXPIRED """
 
-# resource type specific (non-generic) attributes
-MACHINE_OS   = 'MachineOS'    # enum
-MACHINE_ARCH = 'MachineArch'  # enum
-NAMES        = 'Names'        # list<string>
-SIZE         = 'Size'         # int            - #slots, size in MB, #IPs
-MEMORY       = 'Memory'       # int
-ACCESS       = 'Access'       # string         - fqhn/ip, network device, 
-                              #                - mnt point or provisioning url
+# resource type specific (non-generic) attributes """
+MACHINE_OS   = 'MachineOS'    """ enum, identifying the resource's operating 
+                                  system """
+MACHINE_ARCH = 'MachineArch'  """ enum, identifying the machine architecture """
+SIZE         = 'Size'         """ int, identifying No. of slots / size in 
+                                  MB / No. of IPs """
+MEMORY       = 'Memory'       """ int, identifying memory size in MegaByte """
+ACCESS       = 'Access'       """ string, identifying the hostname/ip, mount
+                                  point or provisioning URL to access the
+                                  resource """
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
