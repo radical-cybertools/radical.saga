@@ -410,9 +410,10 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                                           jd=jd, pe_list=self.pe_list,
                                           queue=self.queue)
 
-            # escape all double quotes, otherwise 'echo |' further down
-            # won't work
+            # escape all double quotes and dollarsigns, otherwise 'echo |' 
+            # further down won't work
             script = script.replace('"', '\\"')
+            script = script.replace('$', '\\$')
 
             self._logger.debug("Generated SGE script: %s" % script)
         except Exception, ex:
