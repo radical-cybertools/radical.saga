@@ -564,7 +564,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     #    Jobs typically pass through several states in the course of their execution.  The typical states are PENDING, RUNNING, SUSPENDED, COMPLETING, and COMPLETED.   An  explanation  of  each
     #    state follows.
 
-    #    CA  CANCELLED       Job was explicitly cancelled by the user or system administrator.  The job may or may not have been initiated.
+    #    CA  CANCELED        Job was explicitly cancelled by the user or system administrator.  The job may or may not have been initiated.
     #    CD  COMPLETED       Job has terminated all processes on all nodes.
     #    CF  CONFIGURING     Job has been allocated resources, but are waiting for them to become ready for use (e.g. booting).
     #    CG  COMPLETING      Job is in the process of completing. Some processes on some nodes may still be active.

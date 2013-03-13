@@ -20,6 +20,7 @@ RUNNING   = 'Running'
 DONE      = 'Done'
 FAILED    = 'Failed'
 CANCELED  = 'Canceled'
+FINAL     = DONE | FAILED | CANCELED
 
 STATE     = 'State'
 RESULT    = 'Result'
