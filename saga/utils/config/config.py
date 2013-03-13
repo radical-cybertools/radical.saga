@@ -297,6 +297,7 @@ class ValueTypeError(ExceptionBase):
         name = "%s.%s" % (category_name, option_name)
         self.message = "Option %s requires value of type '%s' but got '%s'." % \
             (name, required_type, value_type)
+        ExceptionBase.__init__ (self, self.message)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
