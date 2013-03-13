@@ -449,9 +449,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                                          jd=jd, ppn=self.ppn,
                                          is_cray=self.is_cray, queue=self.queue)
 
-            # escape all double quotes, otherwise 'echo |' further down
-            # won't work
+            # escape all double quotes and dollarsigns, otherwise 'echo |' 
+            # further down won't work
             script = script.replace('"', '\\"')
+            script = script.replace('$', '\\$')
 
             self._logger.debug("Generated PBS script: %s" % script)
         except Exception, ex:
