@@ -51,8 +51,6 @@ class ConfigOption(object):
     def set_value(self, value):
         # make sure we got the right value type
         if type(value) != self._val_type:
-          # print str(type(value))
-          # print str(self._val_type)
             raise ValueTypeError(self._category, self._name, 
               type(value), self._val_type)
 
@@ -154,7 +152,19 @@ class Configuration(object):
             elif ev is not None:
                 #getLogger('engine').debug("Using environment variable '%s' to set config option '%s.%s' to '%s'." \
                 #    % (option['env_variable'], option['category'], option['name'], ev))
-                value = ev
+                tmp_value = ev
+                if option['type'] == list:
+                    value = tmp_value.split(",")
+                elif option['type'] == bool:
+                    if tmp_value.lower() == 'true':
+                      value = True
+                    elif tmp_value.lower() == 'false':
+                      value = False 
+                    else:
+                      raise ValueTypeError(option['category'], option['name'],
+                          tmp_value, option['type'])
+                else:
+                    value = tmp_value
             else:
                 value = option['default']
 
