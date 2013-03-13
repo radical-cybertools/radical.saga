@@ -205,12 +205,12 @@ class Engine(sconf.Configurable):
                 adaptor_info     = adaptor_instance.register ()
 
             except se.SagaException as e:
-                self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
-                self._logger.trace ()
+                self._logger.error ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
+              # self._logger.trace ()
                 continue # skip to next adaptor
             except Exception as e:
-                self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
-                self._logger.trace ()
+                self._logger.error ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
+              # self._logger.trace ()
                 continue # skip to next adaptor
 
 
