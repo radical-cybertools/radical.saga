@@ -581,7 +581,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         try :
             size = int (out)
         except Exception as e :
-            raise saga.NoSuccess ("cold not get file size: %s" % out)
+            raise saga.NoSuccess ("could not get file size: %s" % out)
 
         return size
    
