@@ -554,6 +554,15 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
+    def get_size_self (self) :
+
+        self._is_valid ()
+
+        return self.get_size (self.url)
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
     def get_size (self, tgt_in) :
 
         self._is_valid ()
@@ -563,7 +572,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         tgt_abs = sumisc.url_make_absolute (cwdurl, tgt)
 
-        ret, out, _ = self.shell.run_sync ("wc -c %s  | xargs | cut -f 1 -d ' '\n" % tgt.path)
+        ret, out, _ = self.shell.run_sync ("du -bs %s  | xargs | cut -f 1 -d ' '\n" % tgt.path)
         if  ret != 0 :
             raise saga.NoSuccess ("get size for (%s) failed (%s): (%s)" \
                                % (tgt, ret, out))
@@ -986,7 +995,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         self._is_valid ()
 
-        ret, out, _ = self.shell.run_sync ("wc -c %s | xargs | cut -f 1 -d ' '\n" % self.url.path)
+        ret, out, _ = self.shell.run_sync ("du -bs %s | xargs | cut -f 1 -d ' '\n" % self.url.path)
         if  ret != 0 :
             raise saga.NoSuccess ("get size for (%s) failed (%s): (%s)" \
                                % (self.url, ret, out))
