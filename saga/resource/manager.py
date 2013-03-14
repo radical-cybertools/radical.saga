@@ -23,7 +23,7 @@ class Manager (saga.base.Base, saga.async.Async) :
     This :class:`Manager` class represents the contact point to such
     ResourceManager instances -- the application can thus aquire compute, data
     or network resources, according to some resource specification, for a bound
-    or unbound amount of time.
+    or unbound amount of time. 
     """
     
     # --------------------------------------------------------------------------
@@ -164,7 +164,7 @@ class Manager (saga.base.Base, saga.async.Async) :
         :param id   : identifies the resource to be released.
 
         :type  drain: bool
-        :param drain: delay release until idle.
+        :param drain: delay release until workload has completed.
 
         This call requests to move a resource from any non-final state to the
         `CANCELED` state.  The `drain` flag will request the resource's release

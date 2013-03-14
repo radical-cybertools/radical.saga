@@ -184,7 +184,7 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
     def release (self, drain=False, ttype=None) :
         """
         :type  drain: bool
-        :param drain: ...
+        :param drain: flag to delay release until workload is completed.
 
         The semantics of this method is equivalent to the semantics of the
         :func:`release` call on the :class:`saga.resource.Manager` class.
@@ -196,6 +196,18 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
     # --------------------------------------------------------------------------
     #
     def wait (self, state=src.FINAL, timeout=-1.0, ttype=None) :
+        """
+        :type  state: state enum
+        :param state: state to wait for
+
+        :type  state: float
+        :param state: time to block while waiting.
+
+        The semantics of this method is equivalent to the semantics of the
+        :func:`wait` call on the :class:`saga.resource.Manager` class.
+        """
+        # FIXME: should we also have a wait() on the manager?
+        # FIXME: right now, we can not put a resource in a task container
     
         return self._adaptor.wait (state, timeout, ttype)
 
@@ -215,6 +227,13 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
 # ------------------------------------------------------------------------------
 #
 class Compute (Resource) :
+    """
+    A Compute resource is a resource which can execute compute jobs.  As such,
+    the 'Access' attribute of the compute resource (a URL) can be used to create
+    a :class:`saga.job.Service` instance to submit jobs to.
+    """
+    # FIXME: should 'ACCESS' be a list of URLs?  A VM could have an ssh *and*
+    #        a gram endpoint...
 
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
@@ -230,6 +249,12 @@ class Compute (Resource) :
 # ------------------------------------------------------------------------------
 #
 class Storage (Resource) :
+    """
+    A Storage resource is a resource which can store data.  As such,
+    the 'Access' attribute of the storage resource (a URL) can be used to create
+    a :class:`saga.filesystem.Directory` instance to manage the resource's data
+    space.
+    """
 
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
@@ -245,6 +270,10 @@ class Storage (Resource) :
 # ------------------------------------------------------------------------------
 #
 class Network (Resource) :
+    """
+    A Network resource is a resource which can connect arbitrary resources.
+    """
+
 
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
