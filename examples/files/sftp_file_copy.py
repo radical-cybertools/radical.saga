@@ -22,7 +22,7 @@ def main():
     
     try: 
         # open home directory on a remote machine
-        remote_dir = saga.filesystem.Directory('sftp://india.futuregrid.org/etc/')
+        remote_dir = saga.filesystem.Directory('sftp://merzky@india.futuregrid.org/etc/')
         # Alternatively: 
         # Use custom session to create Directory object
         #remote_dir = saga.filesystem.Directory('sftp://queenbee.loni.org/etc/', 

@@ -423,7 +423,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                 raise saga.BadParameter ("schema of copy target is not supported (%s)" \
                                       % (tgt))
 
-            self.shell.stage_from_file (src, tgt.path, rec_flag)
+            self.shell.stage_from_file (src.path, tgt.path, rec_flag)
 
 
         # we cannot support the combination of URLs
