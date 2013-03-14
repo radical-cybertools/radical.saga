@@ -6,7 +6,20 @@ import saga.resource.constants as src
 #-------------------------------------------------------------------------------
 #
 class Description (saga.attributes.Attributes) :
-    """ The resource description class. """
+    """ 
+    The resource description class. 
+
+    Resource descriptions are used for two purposes:
+
+      * an application can pass :class:`saga.resource.Description` instances to
+        a :class:`saga.resource.Manager` instance, to request control over the
+        resource slice described in the description; 
+
+      * an application requests a resource's description for inspection of
+      * resource properties.
+
+    
+    """
 
     # --------------------------------------------------------------------------
     #
