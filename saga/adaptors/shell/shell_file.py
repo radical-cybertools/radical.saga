@@ -126,6 +126,14 @@ _ADAPTOR_INFO          = {
     "schemas"          : _ADAPTOR_SCHEMAS,
     "cpis"             : [
         { 
+        "type"         : "saga.namespace.Directory",
+        "class"        : "ShellDirectory"
+        }, 
+        { 
+        "type"         : "saga.namespace.Entry",
+        "class"        : "ShellFile"
+        },
+        { 
         "type"         : "saga.filesystem.Directory",
         "class"        : "ShellDirectory"
         }, 
@@ -263,15 +271,15 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         # shell git started, found its prompt.  Now, change
         # to the initial (or later current) working directory.
-
+        
         cmd = ""
 
         if  self.flags & saga.filesystem.CREATE_PARENTS :
-            cmd = "mkdir -p %s; cd %s" % (self.url.path, self.url.path)
+            cmd = "mkdir -p %s ;  cd %s" % (self.url.path, self.url.path)
         elif self.flags & saga.filesystem.CREATE :
-            cmd = "mkdir    %s; cd %s" % (self.url.path, self.url.path)
+            cmd = "mkdir    %s ;  cd %s" % (self.url.path, self.url.path)
         else :
-            cmd =              "cd %s" % (self.url.path               )
+            cmd = "test -d  %s && cd %s" % (self.url.path, self.url.path)
 
         ret, out, _ = self.shell.run_sync (cmd)
 
@@ -568,6 +576,102 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         return size
    
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def is_dir_self (self):
+
+        self._is_valid ()
+
+        return self.is_dir (self.url)
+   
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def is_dir (self, tgt_in):
+
+        self._is_valid ()
+
+        cwdurl = saga.Url (self.url) # deep copy
+        tgturl = saga.Url (tgt_in)   # deep copy
+
+        tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
+
+        ret, out, _ = self.shell.run_sync ("test -d %s && test ! -h %s" % (tgt_abs.path, tgt_abs.path))
+
+        return True if ret == 0 else False
+   
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def is_entry_self (self):
+
+        self._is_valid ()
+
+        return self.is_entry (self.url)
+   
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def is_entry (self, tgt_in):
+
+        self._is_valid ()
+
+        cwdurl = saga.Url (self.url) # deep copy
+        tgturl = saga.Url (tgt_in)   # deep copy
+
+        tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
+
+        ret, out, _ = self.shell.run_sync ("test -f %s && test ! -h %s" % (tgt_abs.path, tgt_abs.path))
+
+        return True if ret == 0 else False
+   
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def is_link_self (self):
+
+        self._is_valid ()
+
+        return self.is_link (self.url)
+   
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def is_link (self, tgt_in):
+
+        self._is_valid ()
+
+        cwdurl = saga.Url (self.url) # deep copy
+        tgturl = saga.Url (tgt_in)   # deep copy
+
+        tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
+
+        ret, out, _ = self.shell.run_sync ("test -h %s" % tgt_abs.path)
+
+        return True if ret == 0 else False
+   
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def is_file_self (self):
+
+        return self.is_entry_self ()
+   
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def is_file (self, tgt_in):
+
+        return self.is_file (tgt_in)
    
    
 ###############################################################################
@@ -741,16 +845,6 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         return saga.Url (self.url) # deep copy
 
-    # ----------------------------------------------------------------
-    #
-    @SYNC_CALL
-    def is_file (self, flags):
-
-        self._is_valid ()
-
-        # FIXME: eval flags
-        return True
-
 
     # ----------------------------------------------------------------
     #
@@ -906,6 +1000,62 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         return size
    
 
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def is_dir_self (self):
+
+        self._is_valid ()
+
+        cwdurl = saga.Url (self.url) # deep copy
+
+        ret, out, _ = self.shell.run_sync ("test -d %s && test ! -h %s" % (cwdurl.path, cwdurl.path))
+
+        return True if ret == 0 else False
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def is_entry_self (self):
+
+        self._is_valid ()
+
+        cwdurl = saga.Url (self.url) # deep copy
+
+        ret, out, _ = self.shell.run_sync ("test -f %s && test ! -h %s" % (cwdurl.path, cwdurl.path))
+
+        return True if ret == 0 else False
+   
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def is_link_self (self):
+
+        self._is_valid ()
+
+        cwdurl = saga.Url (self.url) # deep copy
+
+        ret, out, _ = self.shell.run_sync ("test -h %s" % cwdurl.path)
+
+        return True if ret == 0 else False
+   
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def is_file_self (self):
+
+        self._is_valid ()
+
+        cwdurl = saga.Url (self.url) # deep copy
+
+        ret, out, _ = self.shell.run_sync ("test -f %s && test ! -h %s" % (cwdurl.path, cwdurl.path))
+
+        return True if ret == 0 else False
+   
+   
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

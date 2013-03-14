@@ -1,11 +1,51 @@
 
 import os
+import sys
 import saga
 
-os.system ("mkdir /tmp/src ; ls -la /tmp > /tmp/src/src.dat")
+os.system ("rm -rf /tmp/src ; mkdir /tmp/src ; ls -la /tmp > /tmp/src/src.dat; ln -s /tmp/src/src.dat /tmp/src/src.lnk")
+
+def test_tests (url) :
+
+    e = saga.namespace.Entry     (url)
+    print
+    print "ns_entry  : %s" % e.url
+    print "  is_dir  : %s" % e.is_dir ()
+    print "  is_link : %s" % e.is_link ()
+    print "  is_entry: %s" % e.is_entry ()
+    
+    if e.is_dir () :
+        e = saga.namespace.Directory (url)
+        print
+        print "ns_dir    : %s" % e.url
+        print "  is_dir  : %s" % e.is_dir ()
+        print "  is_link : %s" % e.is_link ()
+        print "  is_entry: %s" % e.is_entry ()
+    
+    e = saga.filesystem.File      (url)
+    print
+    print "fs_entry  : %s" % e.url
+    print "  is_dir  : %s" % e.is_dir ()
+    print "  is_link : %s" % e.is_link ()
+    print "  is_file : %s" % e.is_file ()
+    print "  is_entry: %s" % e.is_entry ()
+
+    if e.is_dir () :
+        e = saga.filesystem.Directory (url)
+        print
+        print "fs_dir    : %s" % e.url
+        print "  is_dir  : %s" % e.is_dir ()
+        print "  is_link : %s" % e.is_link ()
+        print "  is_file : %s" % e.is_file ()
+        print "  is_entry: %s" % e.is_entry ()
+    
+test_tests ("file://localhost/tmp/src/")
+test_tests ("file://localhost/tmp/src/src.dat")
+test_tests ("file://localhost/tmp/src/src.lnk")
+
+sys.exit (0)
 
 d = saga.filesystem.Directory ("file://localhost/tmp/src/")
-
 f = saga.filesystem.File("file://localhost/etc/passwd")
 print f.size
 f.copy('/tmp/')
