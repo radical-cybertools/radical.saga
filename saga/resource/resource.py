@@ -57,14 +57,7 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
     and become unable to serve usage requests, represented by a `FAILED` state,
     and the resource manager can retract control from the application because
     the agreed time duration has passed -- this is represented by the `EXPIRED`
-    state.  Again, before entering any of these final state, the resource can
-    pass through an intermediate state, `DRAINING`, where no new usage requests
-    are accepted, but previously submitted usage requests are continued to be
-    executed.  That semantics can be requested on active release (via a `drain`
-    flag) -- if the draining activities extend the resource life time beyond
-    what was agreed via the resource description, the resource manager MAY move
-    the resource to the `FAILED` state, without (fully) honoring the draining
-    request.
+    state.
     """
 
     # --------------------------------------------------------------------------
@@ -112,7 +105,6 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
         self._attributes_set_enums (src.STATE, [src.UNKNOWN ,
                                                 src.PENDING ,
                                                 src.ACTIVE  ,
-                                                src.DRAINING,
                                                 src.RUNNING ,
                                                 src.CLOSED  ,
                                                 src.EXPIRED ,
@@ -181,16 +173,13 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     #
-    def release (self, drain=False, ttype=None) :
+    def release (self, ttype=None) :
         """
-        :type  drain: bool
-        :param drain: flag to delay release until workload is completed.
-
         The semantics of this method is equivalent to the semantics of the
         :func:`release` call on the :class:`saga.resource.Manager` class.
         """
 
-        return self._adaptor.release (drain, ttype)
+        return self._adaptor.release (ttype)
 
 
     # --------------------------------------------------------------------------

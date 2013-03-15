@@ -158,24 +158,16 @@ class Manager (saga.base.Base, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     # 
-    def release (self, id, drain=False, ttype=None) :
+    def release (self, id, ttype=None) :
         """
         :type  id   : string
         :param id   : identifies the resource to be released.
 
-        :type  drain: bool
-        :param drain: delay release until workload has completed.
-
         This call requests to move a resource from any non-final state to the
-        `CANCELED` state.  The `drain` flag will request the resource's release
-        to be delayed until all active resource usage has completed -- during
-        that draining time, the resource should not accept new usage requests.
-        If the specific resource does not support the `drain` semantics,
-        a :class:`saga.BadParameter` exception is raised if the flag is et to
-        True.
+        `CANCELED` state.  
         """
 
-        return self._adaptor.release (id, drain, ttype)
+        return self._adaptor.release (id, ttype)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

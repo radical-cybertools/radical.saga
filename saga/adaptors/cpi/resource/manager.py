@@ -57,9 +57,9 @@ class Manager (cpi_base.CPIBase, cpi_async.Async) :
     def aquire                     (self, descr,     ttype)    : pass
 
     @SYNC
-    def release                    (self, id, drain, ttype)    : pass
-    @ASYNC
-    def release                    (self, id, drain, ttype)    : pass
+    def release                    (self, id,        ttype)    : pass
+    @ASYNC                                           
+    def release                    (self, id,        ttype)    : pass
 
 
 
