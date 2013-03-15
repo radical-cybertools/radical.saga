@@ -12,12 +12,10 @@ NEW          =  1,            """ requsted, not accepting jobs, yet;
                                   initial state """
 PENDING      =  2,            """ accepting jobs, will become active eventually """
 ACTIVE       =  4,            """ accepting jobs, jobs can run """
-DRAINING     =  8,            """ jobs still run, not accepting new jobs """
-RUNNING      = PENDING  | ACTIVE | DRAINING
-CANCELED     = 16,            """ released by user; final state """
-EXPIRED      = 32,            """ released by system; final state """
+CANCELED     =  8,            """ released by user; final state """
+EXPIRED      = 16,            """ released by system; final state """
 DONE         = EXPIRED,       """ alias """
-FAILED       = 64,            """ released unexpectedly by system or internally;
+FAILED       = 32,            """ released unexpectedly by system or internally;
                                   final state """
 FINAL        = CANCELED | DONE   | FAILED
 
@@ -32,6 +30,7 @@ DESCRIPTION  = 'DESCRIPTION ' """ dict, containing resource attributes  """
 # generic resource description attributes """
 TEMPLATE     = 'Template'     """ string, template to which the resource 
                                   was created"""
+IMAGE        = 'Image'        """ FIXME: """
 
 # resource lifetime attributes """
 DYNAMIC      = 'Dynamic'      """ bool, enables/disables on-demand 

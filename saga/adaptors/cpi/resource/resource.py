@@ -21,9 +21,9 @@ class Resource (cpi_base.CPIBase, cpi_async.Async) :
         self._cpi_base.__init__ (api, adaptor)
 
     @SYNC
-    def init_instance             (self, info, ttype)    : pass
-    @ASYNC
-    def init_instance_async       (self, info, ttype)    : pass
+    def init_instance             (self, info,    ttype) : pass
+    @ASYNC                                        
+    def init_instance_async       (self, info,    ttype) : pass
 
 
     # ----------------------------------------------------------------
@@ -31,14 +31,14 @@ class Resource (cpi_base.CPIBase, cpi_async.Async) :
     # resource methods
     #
     @SYNC
-    def reconfig           (self, descr, ttype)          : pass
-    @ASYNC                 
-    def reconfig           (self, descr, ttype)          : pass
+    def reconfig           (self, descr,          ttype) : pass
+    @ASYNC                                       
+    def reconfig           (self, descr,          ttype) : pass
                            
     @SYNC                  
-    def release            (self, drain, ttype)          : pass
-    @ASYNC                 
-    def release            (self, drain, ttype)          : pass
+    def release            (self,                 ttype) : pass
+    @ASYNC                                                     
+    def release            (self,                 ttype) : pass
                            
     @SYNC                  
     def wait               (self, state, timeout, ttype) : pass
