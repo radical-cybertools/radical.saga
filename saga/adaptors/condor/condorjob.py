@@ -88,7 +88,7 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
 
     ##### OPTIONS PASSED VIA JOB DESCRIPTION #####
     ##
-    condor_file += "\n\n##### OPTIONS PASSED VIA JOB SERVICE URL #####\n##"
+    condor_file += "\n\n##### OPTIONS PASSED VIA JOB DESCRIPTION #####\n##"
     requirements = "requirements = "
 
     # executable -> executable
