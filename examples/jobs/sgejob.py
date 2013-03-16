@@ -1,5 +1,8 @@
-#!/usr/bin/env python
-# encoding: utf-8
+
+__author__    = "Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 
 """ This examples shows how to run a job on a remote SGE cluster
     using the 'SGE' job adaptor.
@@ -7,10 +10,6 @@
     More information about the saga-python job API can be found at:
     http://saga-project.github.com/saga-python/doc/library/job/index.html
 """
-
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
-__license__   = "MIT"
 
 import sys
 import saga

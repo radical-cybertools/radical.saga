@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import saga
 
 d = saga.filesystem.Directory ("file://localhost/tmp/src/")
