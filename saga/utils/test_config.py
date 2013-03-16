@@ -293,9 +293,9 @@ class TestConfig (sconf.Configurable):
     #-----------------------------------------------------------------
     # 
     @property
-    def fs_url (self):
+    def filesystem_url (self):
 
-        return self._cfg['job_filesystem_url'].get_value ()
+        return self._cfg['filesystem_url'].get_value ()
 
 
     #-----------------------------------------------------------------

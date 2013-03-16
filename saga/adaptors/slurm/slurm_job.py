@@ -279,6 +279,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self.jobs = {}
         self._open ()
 
+        return self.get_api ()
+
     # # ----------------------------------------------------------------
     # #
     # def _alive (self) :

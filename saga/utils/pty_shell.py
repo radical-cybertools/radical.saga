@@ -781,7 +781,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def stage_to_file (self, src, tgt) :
+    def stage_to_file (self, src, tgt, cp_flags="") :
         """
         :type  src: string
         :param src: path of local source file to be stage from.
@@ -798,14 +798,14 @@ class PTYShell (object) :
         # prompt, and updating pwd state on every find_prompt.
 
         try :
-            pty_copy = self.factory.run_copy_to (self.pty_info, src, tgt)
+            pty_copy = self.factory.run_copy_to (self.pty_info, src, tgt, cp_flags)
 
         except Exception as e :
             raise self._translate_exception (e)
 
     # ----------------------------------------------------------------
     #
-    def stage_from_file (self, src, tgt) :
+    def stage_from_file (self, src, tgt, cp_flags="") :
         """
         :type  src: string
         :param tgt: path to source file to stage from.
@@ -822,7 +822,7 @@ class PTYShell (object) :
         # prompt, and updating pwd state on every find_prompt.
 
         try :
-            pty_copy = self.factory.run_copy_from (self.pty_info, src, tgt)
+            pty_copy = self.factory.run_copy_from (self.pty_info, src, tgt, cp_flags)
 
         except Exception as e :
             raise self._translate_exception (e)
@@ -830,37 +830,14 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def _copy_file (self, src, tgt, metrics) :
+    def copy_file (self, src, tgt) :
         """
         :type  src: string
-        :param src: path to file to be staged
+        :param src: path to file on target host to be copied
 
         :type  tgt: string
-        :param tgt: path to file after staging
+        :param tgt: path on target host to copy file to
 
-        :type  metrics: list of saga.Metric instances
-        :param metrics: list of metrics to be updated with status information
-
-        Return value: handle to copy process, which can be used for status
-        checks etc.
-
-        Both, `src` and `tgt` strings, need to be fully qualified names, in the
-        sense that they must be readily understood by cp (for `sh` type shells)
-        and scp (for `ssh` type shells), respectively.  
-        
-        Note that this is a private function, called by :func:`copy_to_remote`
-        and :func:`copy_from_remote`, which prepare the respective qualified
-        path names.
-
-        For a local shell (type = 'sh'), we run a ``popen ("cp src tgt")``.  For
-        remote shells (type == 'ssh'), we start a slave scp connection.  In both
-        cases, we provide status update once per second.  For `cp`, this is
-        achieved by calling `stat` on `src` and `tgt`, to compare size; for
-        `scp` we parse the progress meter on stdout.  The thusly obtained
-        information are fed to the respective metrics, which can be registered
-        either on start time (see `metrics` parameter), or during the lifetime
-        of the copy process, via ``add_metric (handle, metric)``.
-        
         """
 
         # we expect the master shell to be in alive when staging, as we need to
