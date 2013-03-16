@@ -3,7 +3,7 @@ __author__    = "Ole Christian Weidner"
 __copyright__ = "Copyright 2012, The SAGA Project"
 __license__   = "MIT"
 
-""" 
+"""
 List of all registered SAGA adaptor modules.
 
 This registry is used to locate and load adaptors.  The entries must be
@@ -13,20 +13,18 @@ configured so that the listed modules can be loaded.
 
 Note that a module listed in the registry is not guaranteed to be available:
 while the engine will attempt to load the module, it may be disabled by
-configure options, or due to missing pre-requisites.  
+configure options, or due to missing pre-requisites.
 """
 
 adaptor_registry = [
                     "saga.adaptors.context.myproxy",
                     "saga.adaptors.context.x509",
+                    "saga.adaptors.context.ssh",
                     "saga.adaptors.context.userpass",
-                    "saga.adaptors.local.localjob",
-                    "saga.adaptors.local.localfile",
-                    "saga.adaptors.local.dummyfile",
-                    "saga.adaptors.redis.redis_advert",
-                    "saga.adaptors.irods.irods_replica"
+                  # "saga.adaptors.shell.shell_file",
+                    "saga.adaptors.shell.shell_job",
+                    "saga.adaptors.sge.sgejob",
+                    "saga.adaptors.pbs.pbsjob",
+                    "saga.adaptors.condor.condorjob",
+                    "saga.adaptors.slurm.slurm_job"
                    ]
-
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-

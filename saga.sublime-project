@@ -2,21 +2,27 @@
 	"folders":
 	[
 		{
-			"path": ".",
-            "folder_exclude_patterns": ["build", "*.egg-info", "test", "temp"]
+			"folder_exclude_patterns":
+			[
+				"build",
+				"*.egg-info",
+				"test",
+				"temp",
+				"venv",
+				"egg*"
+			],
+			"path": "."
 		}
 	],
-
-    "settings":
-    {
-        "SublimeLinter":
-        {
-
-                "pep8_ignore":
-                [
-                    "E221", "E501"
-                ]
-        }
-    }
-
+	"settings":
+	{
+		"SublimeLinter":
+		{
+			"pep8_ignore":
+			[
+				"E221",
+				"E501"
+			]
+		}
+	}
 }
