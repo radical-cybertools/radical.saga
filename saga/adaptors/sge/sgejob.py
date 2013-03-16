@@ -392,7 +392,9 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def finalize(self, kill_shell=False):
-        pass
+        if  kill_shell :
+            if  self.shell :
+                self.shell.finalize (True)
 
     # ----------------------------------------------------------------
     #
