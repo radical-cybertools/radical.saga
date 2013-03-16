@@ -15,11 +15,7 @@ def test_ExceptionBase():
         raise ExceptionBase('message')
         assert False
     except ExceptionBase, eb:
-        if str(eb) != 'message':
-            assert False
-        else:
-            assert str(eb) == 'message'
-            assert True
+        assert (str(eb) == 'ExceptionBase: message'), "'%s' != '%s'" % (str(eb), 'message')
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
