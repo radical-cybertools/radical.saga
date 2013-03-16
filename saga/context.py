@@ -54,7 +54,7 @@ class Context (saga.base.Base, saga.Attributes) :
 
     '''
 
-    def __init__ (self, type=None, _adaptor=None, _adaptor_state={}) : 
+    def __init__ (self, type, _adaptor=None, _adaptor_state={}) : 
         '''
         type: string
         ret:  None

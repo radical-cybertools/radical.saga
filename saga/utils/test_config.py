@@ -200,18 +200,26 @@ class TestConfig (sconf.Configurable):
     @property
     def context (self):
         
-        cfg   = self._cfg
-        ctype = cfg['context_type'].get_value ()
+        cfg          = self._cfg
+        c_type       = cfg['context_type'].get_value ()
+        c_user_id    = cfg['context_user_id'].get_value ()
+        c_user_pass  = cfg['context_user_pass'].get_value ()
+        c_user_cert  = cfg['context_user_cert'].get_value ()
+        c_user_proxy = cfg['context_user_proxy'].get_value ()
 
-        if not ctype :
+        if  not c_type :
+            if  c_user_id    or c_user_pass  or \
+                c_user_cert  or c_user_proxy :
+                self._logger.warn ("ignoring incomplete context")
             return None
 
         c = saga.Context (ctype)
 
-        c.user_id    = cfg['context_user_id'].get_value ()
-        c.user_pass  = cfg['context_user_pass'].get_value ()
-        c.user_cert  = cfg['context_user_cert'].get_value ()
-        c.user_proxy = cfg['context_user_proxy'].get_value ()
+        c.user_id    = c_user_id
+        c.user_pass  = c_user_pass
+        c.user_cert  = c_user_cert
+        c.user_proxy = c_user_proxy
+
 
         return c
 
