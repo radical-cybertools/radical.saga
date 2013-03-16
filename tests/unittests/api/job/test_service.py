@@ -49,6 +49,8 @@ def test_list_jobs():
         assert j.id in all_jobs, \
             "%s not in %s" % (j.id, all_jobs)
 
+        del js
+
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
@@ -67,6 +69,8 @@ def test_run_job () :
         js = saga.job.Service (tc.js_url, tc.session)
         j  = js.run_job ("/bin/sleep 10")
         assert j.id
+
+        del js
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
@@ -97,6 +101,8 @@ def test_get_job () :
         j.run()
         j_clone = js.get_job(j.id)
         assert j.id in j_clone.id
+
+        del js
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
