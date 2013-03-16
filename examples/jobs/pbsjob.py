@@ -4,19 +4,12 @@ __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
 
-#!/usr/bin/env python
-# encoding: utf-8
-
 """ This examples shows how to run a job on a remote PBS/TORQUE cluster
     using the 'PBS' job adaptor.
 
     More information about the saga-python job API can be found at:
     http://saga-project.github.com/saga-python/doc/library/job/index.html
 """
-
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
-__license__   = "MIT"
 
 import sys
 import saga
