@@ -1,3 +1,9 @@
+
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2013, The SAGA Project"
+__license__   = "MIT"
+
+
 #!/usr/bin/env python
 # encoding: utf-8
 

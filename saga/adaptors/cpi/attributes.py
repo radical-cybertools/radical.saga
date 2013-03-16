@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import saga.adaptors.cpi.decorators as cpi_dec
 
 SYNC  = cpi_dec.CPI_SYNC_CALL
