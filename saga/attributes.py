@@ -429,6 +429,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  basestring)
+    @sus.returns (sus.nothing)
     def _attributes_t_call_cb (self, key, val) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -470,6 +474,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  basestring)
+    @sus.returns (sus.nothing)
     def _attributes_t_call_setter (self, key, val) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -534,6 +542,9 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (sus.nothing)
     def _attributes_t_call_getter (self, key) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -617,6 +628,9 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (sus.list_of (basestring))
     def _attributes_t_call_lister (self) :
         """
         This internal function is not to be used by the consumer of this API.
