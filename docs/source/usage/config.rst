@@ -1,6 +1,7 @@
-#############
+
+*************
 Configuration
-#############
+*************
 
 .. note::
 
@@ -56,7 +57,7 @@ Configuration Options
 Configuration API
 -----------------
 
-Module saga.engine.config
+Module saga.utils.config
 *************************
 
 The config module provides classes and functions to introspect and modify
@@ -64,12 +65,12 @@ SAGA's configuration. The :func:`getConfig` function is used to get the
 :class:`GlobalConfig` object which represents the current configuration 
 of SAGA::
 
-   from saga.engine.config import getConfig 
+   from saga.utils.config import getConfig 
 
    sagaconf = getConfig()
-   print sagaconf.get_category('saga.engine.logger')
+   print sagaconf.get_category('saga.utils.logger')
 
-.. automodule:: saga.engine.config
+.. automodule:: saga.utils.config
    :members:
 
 

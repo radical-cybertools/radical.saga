@@ -1,6 +1,7 @@
-##############
+
+**************
 Logging System
-##############
+**************
 
 In a distributed environment unified error logging and reporting is a crucial
 capability for debugging and monitoring. SAGA has a configurable logging system
@@ -73,6 +74,7 @@ executing shell and evaluated by SAGA at program startup.
 
        SAGA_VERBOSE=DEBUG SAGA_LOG_FILTERS=saga.engine,saga.adaptor.xyz python mysagaprog.py
 
+
 .. envvar:: SAGA_LOG_TARGETS
 
    Controls where the log messages go. Multiple concurrent locations are 
@@ -87,41 +89,30 @@ executing shell and evaluated by SAGA at program startup.
 
        SAGA_VERBOSE=DEBUG SAGA_LOG_TARGETS=STDOUT,/tmp/mysaga.log python mysagaprog.py
 
+
 .. _log_api:
 
-Logging API
------------
+Application Level Logging
+-------------------------
 
-The SAGA logging system can be controlled directly  
-from within an application using SAGA's logging API. This can come in handy if 
-you want to integrate SAGA log messages with an existing Python logging system, 
-re-format the output or something slightly more involved.
+The SAGA-Python logging utilities are a thin wrapper around Python's logging
+facilities, integrated into the SAGA-Python :link:`configuration` facilities.
+To support the seamless integration of application level logging needs, the
+:func:`saga.utils.logger.getLogger` allows to produce additional logger
+facilities, which are again native Python :class:`logging.Logger` instances, but
+preconfigured according to the SAGA-Python logging configuration.
+Those instances can then be further customized as needed::
+
+   from saga.utils.logger import getLogger, INFO
+
+   app_logger       = getLogger ('application.test')
+   app_logger.level = INFO
+
+   app_logger.info ('application level log message on INFO level')
 
 
-Module saga.engine.logger
-*************************
-
-The logging module provides classes and functions to change the behavior of
-SAGA's logging system. The :func:`getConfig` function is used to get a
-:class:`Config` object which can be used to introspect and change configuration
-system options::
-
-   from saga.engine.logger import getConfig as getLoggingConfig
-
-   log_conf = getLoggingConfig()
-   log_conf.level = "DEBUG" # or 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
-
-   # change output channels 
-   if "STDOUT" in log_conf.targets:
-       log_conf.targets.remove('STDOUT')
-       log_conf.targets.add('/tmp/myapp.log')
-
-   # reset all filters
-   log_conf.filters = set()
-
-   # show all active loggers
-   print log_conf.get_registered_logger_names()
-
-.. automodule:: saga.engine.logger
+.. automodule:: saga.utils.logger
    :members:
+
+oops
 

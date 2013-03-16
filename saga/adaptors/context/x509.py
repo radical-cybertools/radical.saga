@@ -1,14 +1,12 @@
 
 import os
 
-from   saga.utils.singleton import Singleton
-
 import saga.context
-import saga.cpi.base
-import saga.cpi.context
+import saga.adaptors.cpi.base
+import saga.adaptors.cpi.context
 
-SYNC_CALL  = saga.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 ######################################################################
 #
@@ -19,7 +17,7 @@ _ADAPTOR_SCHEMAS       = ['X509']
 _ADAPTOR_OPTIONS       = []
 
 # FIXME: complete attribute list
-_ADAPTOR_CAPABILITES   = {
+_ADAPTOR_CAPABILITIES  = {
     'attributes'       : [saga.context.TYPE,
                           saga.context.USER_PROXY,
                           saga.context.LIFE_TIME]
@@ -28,9 +26,8 @@ _ADAPTOR_CAPABILITES   = {
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITES,
-    'description'      : 'The X509 context adaptor.',
-    'details'          : """This adaptor points to a X509 proxy, or certificate,
+    'capabilities'     : _ADAPTOR_CAPABILITIES,
+    'description'      : """This adaptor points to a X509 proxy, or certificate,
                             be used for backend connections.  Note that this
                             context can be created by a MyProxy context instance.""",
     'schemas'          : {'x509' : 'x509 token information.'},
@@ -51,23 +48,16 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
-
-    We only need one instance of this adaptor per process (actually per engine,
-    but engine is a singleton, too...) -- the engine will though create new CPI
-    implementation instances as needed (one per SAGA API object).
     """
-
-    __metaclass__ = Singleton
-
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # there are no default myproxy contexts
         self._default_contexts = []
@@ -83,7 +73,6 @@ class Adaptor (saga.cpi.base.AdaptorBase):
         if not self._have_defaults :
 
             p = "/tmp/x509up_u%d"  %  os.getuid()
-            print p
 
             if  os.path.exists (p) and \
                 os.path.isfile (p)     :
@@ -114,21 +103,22 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 #
 # job adaptor class
 #
-class ContextX509 (saga.cpi.Context) :
+class ContextX509 (saga.adaptors.cpi.context.Context) :
 
     def __init__ (self, api, adaptor) :
 
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        self._cpi_base = super  (ContextX509, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
     def init_instance (self, adaptor_state, type) :
 
-        if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
+        if  not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
             raise saga.exceptions.BadParameter \
                     ("the x509 context adaptor only handles x509 contexts - duh!")
 
-        self._api.type = type
+        self.get_api ().type = type
 
         return self
 
@@ -137,13 +127,13 @@ class ContextX509 (saga.cpi.Context) :
     def _initialize (self, session) :
 
         # make sure we have can access the proxy
-        api = self._api
+        api = self.get_api ()
 
-        if not self._api.user_proxy :
-          self._api.user_proxy = "x509up_u%d"  %  os.getuid()
+        if  not api.user_proxy :
+            api.user_proxy = "x509up_u%d"  %  os.getuid()
 
-        if not os.path.exists (api.user_proxy) or \
-           not os.path.isfile (api.user_proxy)    :
+        if  not os.path.exists (api.user_proxy) or \
+            not os.path.isfile (api.user_proxy)    :
             raise saga.exceptions.BadParameter ("X509 proxy does not exist: %s"
                                                  % api.user_proxy)
 

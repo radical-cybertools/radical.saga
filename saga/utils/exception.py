@@ -6,6 +6,8 @@ __license__   = "MIT"
 """ Provides exception handling utilities and base classes.
 """
 
+import pdb
+import sys
 import traceback
 
 def get_traceback (limit=1) :
@@ -28,22 +30,35 @@ def get_traceback (limit=1) :
 
     return ret
 
+
+def breakpoint () :
+    """ set a breakpoint
+    """
+    pdb.pm()
+
+
+
+
 class ExceptionBase(Exception):
     """ Base exception class. 
     """
     def __init__(self, message):
         Exception.__init__(self, message)
+        self._message   = message
         self._traceback = get_traceback()
 
     def get_traceback (self) :
         """ Return the full traceback for this exception.
         """
         return self._traceback
+    traceback = property (get_traceback) 
 
-    traceback  = property (get_traceback) 
+    def __str__ (self) :
+        return "%s: %s" % (self.__class__.__name__, self._message)
+
 
     @classmethod
-    def _log (self, logger, message, level='error'):
+    def _log (cls, logger, message, level='error'):
         """ this class method allows to log the exception message while
             constructing a SAGA exception, like::
 
@@ -64,13 +79,13 @@ class ExceptionBase(Exception):
         log_method = logger.error
 
         try :
-            log_method = getattr (logger, level)
+            log_method = getattr (logger, level.lower())
         except :
             sys.stderr.write ("unknown log level '%s'"  %  level)
 
-        log_method (message)
+        log_method ("%s: %s" % (cls.__name__, message))
 
-        return self (message)
+        return cls (message)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

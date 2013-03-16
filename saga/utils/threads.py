@@ -33,7 +33,7 @@ class Thread (threading.Thread) :
     def Run (self, call, *args, **kwargs) :
 
         t = self (call, *args, **kwargs)
-        t.run ()
+        t.start ()
         return t
 
 
@@ -54,6 +54,12 @@ class Thread (threading.Thread) :
 
         if self.isAlive () :
             self.join ()
+
+
+    def cancel (self) :
+        # FIXME: this is not really implementable generically, so we ignore 
+        # cancel requests for now.
+        pass
 
 
     def get_state (self) :

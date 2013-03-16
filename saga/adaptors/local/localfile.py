@@ -7,14 +7,13 @@ import shutil
 import traceback
 
 import saga.url
-import saga.cpi.base
-import saga.cpi.filesystem
+import saga.adaptors.cpi.base
+import saga.adaptors.cpi.filesystem
+
 import saga.utils.misc
 
-from   saga.utils.singleton import Singleton
-
-SYNC_CALL  = saga.cpi.base.SYNC_CALL
-ASYNC_CALL = saga.cpi.base.ASYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
 ###############################################################################
@@ -24,14 +23,13 @@ ASYNC_CALL = saga.cpi.base.ASYNC_CALL
 _ADAPTOR_NAME          = 'saga.adaptor.filesystem.local'
 _ADAPTOR_SCHEMAS       = ['file', 'local']
 _ADAPTOR_OPTIONS       = []
-_ADAPTOR_CAPABILITES   = {}
+_ADAPTOR_CAPABILITIES  = {}
 
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
-    'capabilites'      : _ADAPTOR_CAPABILITES,
-    'description'      : 'The local filesystem adaptor.',
-    'details'          : """This adaptor interacts with local filesystem, by
+    'capabilities'     : _ADAPTOR_CAPABILITIES,
+    'description'      : """This adaptor interacts with local filesystem, by
                             using the (POSIX like) os and shutil Python packages.""",
     'schemas'          : {'file'  : 'local filesystem.', 
                           'local' : 'alias for *file*' 
@@ -57,23 +55,16 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
-
-    We only need one instance of this adaptor per process (actually per engine,
-    but engine is a singleton, too...) -- the engine will create new adaptor
-    class instances (see below) as needed (one per SAGA API object).
     """
-
-    __metaclass__ = Singleton
-
 
     def __init__ (self) :
 
-        saga.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # the adaptor *singleton* creates a (single) instance of a bulk handler
         # (BulkDirectory), which implements container_* bulk methods.
@@ -89,7 +80,7 @@ class Adaptor (saga.cpi.base.AdaptorBase):
 
 ###############################################################################
 #
-class BulkDirectory (saga.cpi.filesystem.Directory) :
+class BulkDirectory (saga.adaptors.cpi.filesystem.Directory) :
     """
     Well, this implementation can handle bulks, but cannot optimize them.
     We leave that code here anyway, for demonstration -- but those methods
@@ -102,21 +93,21 @@ class BulkDirectory (saga.cpi.filesystem.Directory) :
 
 
     def container_wait (self, tasks, mode, timeout) :
-        print " ~ bulk wait ~~~~~~~~~~~~~~~~~~~~~ "
-        pprint.pprint (tasks)
+      # print " ~ bulk wait ~~~~~~~~~~~~~~~~~~~~~ "
+      # pprint.pprint (tasks)
         if timeout >= 0 :
             raise saga.exceptions.BadParameter ("Cannot handle timeouts > 0")
         for task in tasks :
             task.wait ()
-        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+      # print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
 
     def container_cancel (self, tasks) :
-        print " ~ bulk wait ~~~~~~~~~~~~~~~~~~~~~ "
-        pprint.pprint (tasks)
+      # print " ~ bulk wait ~~~~~~~~~~~~~~~~~~~~~ "
+      # pprint.pprint (tasks)
         for task in tasks :
             task.cancel ()
-        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+      # print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
 
     def container_copy (self, tasks) :
@@ -126,11 +117,11 @@ class BulkDirectory (saga.cpi.filesystem.Directory) :
         individual tasks, falling back to the default non-bulk asynchronous copy
         operation...
         """
-        print " ~ bulk copy ~~~~~~~~~~~~~~~~~~~~~ "
-        pprint.pprint (tasks)
+      # print " ~ bulk copy ~~~~~~~~~~~~~~~~~~~~~ "
+      # pprint.pprint (tasks)
         for task in tasks :
             task.run ()
-        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+      # print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
 
     # the container methods for the other calls are obviously similar, and left
@@ -141,11 +132,12 @@ class BulkDirectory (saga.cpi.filesystem.Directory) :
 
 ###############################################################################
 #
-class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
+class LocalDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     def __init__ (self, api, adaptor) :
 
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+        self._cpi_base = super  (LocalDirectory, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
@@ -158,7 +150,7 @@ class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
 
         self._init_check ()
 
-        return self._api
+        return self.get_api ()
 
 
     @ASYNC_CALL
@@ -230,7 +222,7 @@ class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
     @SYNC_CALL
     def open (self, url, flags) :
 
-        print "sync open: - '%s' - '%s' - "  %  (url, flags)
+      # print "sync open: - '%s' - '%s' - "  %  (url, flags)
         
         if not url.scheme and not url.host : 
             url = saga.url.Url (str(self._url) + '/' + str(url))
@@ -253,7 +245,6 @@ class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
     @SYNC_CALL
     def copy (self, source, target, flags) :
 
-
         src_url = saga.url.Url (source)
         src     = src_url.path
         tgt_url = saga.url.Url (target)
@@ -268,7 +259,9 @@ class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
             raise saga.exceptions.BadParameter ("Cannot handle url %s (not local)"     %  source)
 
         if src[0] != '/' :
-            src = "%s/%s"   % (os.path.dirname (src), src)
+            if not src_url.scheme and not src_url.host :
+                if self._url.path[0] == '/' :
+                    src = "%s/%s"   % (self._url.path, src)
 
 
         if tgt_url.schema :
@@ -279,16 +272,34 @@ class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
             raise saga.exceptions.BadParameter ("Cannot handle url %s (not local)"     %  target)
 
         if tgt[0] != '/' :
-            tgt = "%s/%s"   % (os.path.dirname (src), tgt)
+            if not tgt_url.scheme and not tgt_url.host :
+                if self._url.path[0] == '/' :
+                    tgt = "%s/%s"   % (self._url.path, tgt)
 
-        print "sync copy %s -> %s" % (src, tgt)
-        shutil.copy2 (src, tgt)
+
+        # FIXME: eval flags, check for existence, etc.
+
+
+        if os.path.isdir (src) :
+          # print "sync copy tree %s -> %s" % (src, tgt)
+            shutil.copytree (src, tgt)
+
+        else : 
+          # print "sync copy %s -> %s" % (src, tgt)
+            shutil.copy2 (src, tgt)
+
+
+
+    @SYNC_CALL
+    def copy_self (self, target, flags) :
+
+        return self.copy (self._url, target, flags)
 
 
     @ASYNC_CALL
     def copy_async (self, src, tgt, flags, ttype) :
 
-        print "async copy %s -> %s [%s]" % (src, tgt, ttype)
+      # print "async copy %s -> %s [%s]" % (src, tgt, ttype)
 
         c = { 'src'     : src,
               'tgt'     : tgt,
@@ -321,7 +332,7 @@ class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
         elif call == 'init_instance' :
             try :
                 self.init_instance ({}, c['url'], c['flags'], c['session'])
-                task._set_result (self._api)
+                task._set_result (self.get_api ())
                 task._set_state  (saga.task.DONE)
             except Exception as e :
                 task._set_exception (e)
@@ -343,10 +354,12 @@ class LocalDirectory (saga.cpi.filesystem.Directory, saga.cpi.Async) :
 #
 # file adaptor class
 #
-class LocalFile (saga.cpi.filesystem.File) :
+class LocalFile (saga.adaptors.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
-        saga.cpi.CPIBase.__init__ (self, api, adaptor)
+
+        self._cpi_base = super  (LocalFile, self)
+        self._cpi_base.__init__ (api, adaptor)
 
 
     def _dump (self) :
@@ -455,7 +468,7 @@ class LocalFile (saga.cpi.filesystem.File) :
         t = saga.task.Task (self, 'get_url', c, ttype)
 
         # FIXME: move to task_run...
-        t._set_state  = saga.task.Done
+        t._set_state  = saga.task.DONE
         t._set_result = self._url
 
         return t
@@ -496,7 +509,7 @@ class LocalFile (saga.cpi.filesystem.File) :
         if tgt[0] != '/' :
             tgt = "%s/%s"   % (os.path.dirname (src), tgt)
 
-        print " copy %s %s" % (self._url, tgt)
+      # print " copy %s %s" % (self._url, tgt)
         shutil.copy2 (src, tgt)
 
 
@@ -517,7 +530,7 @@ class LocalFile (saga.cpi.filesystem.File) :
                 task._set_state     (saga.task.FAILED)
         elif call == 'get_size' :
             try :
-                task._set_result (self.get_size ())
+                task._set_result (self.get_size_self ())
                 task._set_state  (saga.task.DONE)
             except Exception as e :
                 task._set_exception (e)
