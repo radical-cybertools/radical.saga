@@ -100,7 +100,7 @@ for my $file ( @files )
   {
     if ( $begin )
     {
-      # still searching for the first valid file (non-empty, non-copyright...)
+      # still searching for the first valid line (non-empty, non-copyright...)
       if ( $old_line =~ /^\s*$/io )
       {
         next OLD_LINE;
