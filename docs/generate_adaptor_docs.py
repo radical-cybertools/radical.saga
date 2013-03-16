@@ -225,7 +225,12 @@ for a in saga.engine.registry.adaptor_registry :
         classes      = ""
         classes_long = ""
 
+        is_context = True
         for cpi in m._ADAPTOR_INFO['cpis'] :
+
+            if cpi['type'] != 'saga.Context' :
+                is_context = False
+
             classes      += "  - :class:`%s`\n" % cpi['type']
             classes_long += "\n"
             classes_long += "%s\n" % cpi['type']
@@ -235,6 +240,12 @@ for a in saga.engine.registry.adaptor_registry :
             classes_long += "   :members:\n"
           # classes_long += "   :undoc-members:\n"
             classes_long += "\n"
+
+        if is_context :
+            # do not auto-document context adaptors -- those are done manually
+            print "skip   %s (context)" % fn
+            continue
+
 
 
     f = open (fn, 'w')
