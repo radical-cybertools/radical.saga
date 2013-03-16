@@ -1,6 +1,8 @@
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+
+__author__    = "Ole Weidner"
+__copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
+
 
 ''' Provides a parser class for the file transfer specification as it is
     defined in GFD.90, sction 4.1.3.
