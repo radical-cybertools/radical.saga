@@ -4,8 +4,10 @@ __license__   = "MIT"
 
 import string
 
+import saga.utils.signatures as sus
 import saga.utils.logger
 import saga.engine.engine
+import saga.session
 
 class SimpleBase (object) :
     """ This is a very simple API base class which just initializes
@@ -48,6 +50,7 @@ class SimpleBase (object) :
 
 class Base (SimpleBase) :
 
+    
     def __init__  (self, schema, adaptor, adaptor_state, *args, **kwargs) :
 
         SimpleBase.__init__ (self)
@@ -67,6 +70,8 @@ class Base (SimpleBase) :
         self._init_task = self._adaptor.init_instance (adaptor_state, *args, **kwargs)
 
 
+    @sus.takes   ("Base")
+    @sus.returns ("saga.Session")
     def get_session (self) :
         """ 
         Returns the session which is managing the object instance.  For objects
