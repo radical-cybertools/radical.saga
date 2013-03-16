@@ -347,6 +347,9 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         self.initialize()
 
+        return self.get_api ()
+
+
     # ----------------------------------------------------------------
     #
     def initialize(self):

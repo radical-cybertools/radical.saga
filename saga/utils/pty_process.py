@@ -281,7 +281,7 @@ class PTYProcess (object) :
 
     # --------------------------------------------------------------------
     #
-    def finalize (self) :
+    def finalize (self, do_wait=True) :
         """ kill the child, close all I/O channels """
 
         # NOTE: do we need to lock?
@@ -302,6 +302,11 @@ class PTYProcess (object) :
                 os.kill (self.child, signal.SIGKILL)
         except OSError :
             pass
+
+        # collect exit vals etc.
+        if  do_wait :
+            self.wait ()
+
 
         self.child = None
 
@@ -330,6 +335,10 @@ class PTYProcess (object) :
         """
 
         with self.gc.active (self) :
+
+            if not self.child:
+                # this was quick ;-)
+                return
 
             # yes, for ever and ever...
             while True :
@@ -366,8 +375,9 @@ class PTYProcess (object) :
 
                 # either way, its dead -- make sure it stays dead, to avoid zombie
                 # apocalypse...
-                self.finalize ()
-                return
+                self.finalize (do_wait=False)
+
+
 
     # --------------------------------------------------------------------
     #
@@ -697,8 +707,10 @@ class PTYProcess (object) :
 
 
         except Exception as e :
-            raise se.NoSuccess ("find failed (%s): %s" % (e._plain_message, data))
-
+            if  issubclass (e.__class__, saga.SagaException) :
+                raise se.NoSuccess ("output parsing failed (%s): %s" % (e._plain_message, data))
+            raise se.NoSuccess ("output parsing failed (%s): %s" % (e, data))
+ 
 
 
     # ----------------------------------------------------------------

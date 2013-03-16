@@ -52,7 +52,8 @@ class Description (saga.Attributes) :
         self._attributes_register  (saga.job.PROJECT              , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.JOB_CONTACT          , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
 
-        #self._attributes_set_enums (saga.job.SPMD_VARIATION,      ['MPI', 'OpenMP', 'MPICH-G'])
+        # FIXME
+      # self._attributes_set_enums (saga.job.SPMD_VARIATION,      ['MPI', 'OpenMP', 'MPICH-G'])
 
         pass
 

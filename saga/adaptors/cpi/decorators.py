@@ -61,16 +61,17 @@ def ASYNC_CALL (async_function) :
 
 
 # ------------------------------------
-# sync cpi calls ae only called when an adaptor does not implement that call --
+# sync cpi calls are only called when an adaptor does not implement that call --
 # we thus raise a NotImplemented exception.
 def CPI_SYNC_CALL (cpi_sync_function) :
 
     def wrap_function (self, *args, **kwargs) :
-        raise se.NotImplemented ("%s.%s is not implemented for %s.%s" \
+        raise se.NotImplemented ("%s.%s is not implemented for %s.%s (%s)" \
                 %  (self.get_api ().__class__.__name__, 
                     inspect.stack ()[1][3],
                     self._adaptor._name, 
-                    self.__class__.__name__))
+                    self.__class__.__name__,
+                    inspect.getmembers (cpi_sync_function)[15][1]))
 
     return wrap_function
 

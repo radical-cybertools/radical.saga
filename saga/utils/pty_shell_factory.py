@@ -62,14 +62,14 @@ _SCRIPTS = {
       # 'copy_from'     : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s      %(root)s/%(src)s %(tgt)s",
         'copy_to'       : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s -b - %(host_str)s",
         'copy_from'     : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s -b - %(host_str)s",
-        'copy_to_in'    : "progress \n put %(src)s %(tgt)s \n exit \n",            
-        'copy_from_in'  : "progress \n get %(src)s %(tgt)s \n exit \n",
+        'copy_to_in'    : "progress \n put %(cp_flags)s %(src)s %(tgt)s \n exit \n",            
+        'copy_from_in'  : "progress \n get %(cp_flags)s %(src)s %(tgt)s \n exit \n",
     },
     'sh' : { 
         'master'        : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'shell'         : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'copy_to'       : "%(cp_env)s %(sh_exe)s -c \"cd ~; %(cp_exe)s  %(cp_args)s %(src)s %(tgt)s\"",
-        'copy_from'     : "%(cp_env)s %(sh_exe)s -c \"cd ~; %(cp_exe)s  %(cp_args)s %(src)s %(tgt)s\"",
+        'copy_to'       : "%(cp_env)s %(sh_exe)s -c \"cd ~; %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s\"",
+        'copy_from'     : "%(cp_env)s %(sh_exe)s -c \"cd ~; %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s\"",
         'copy_to_in'    : "",
         'copy_from_in'  : "",
     }
@@ -159,10 +159,11 @@ class PTYShellFactory (object) :
         if not typ_s  in self.registry[host_s][ctx_s] : 
 
             # new master: create an instance, and register it
-            self.logger.info ("open master pty for [%s] [%s] [%s]'" \
-                           % (typ_s, host_s, ctx_s))
-
             m_cmd = _SCRIPTS[info['type']]['master'] % info
+
+            self.logger.debug ("open master pty for [%s] [%s] %s: %s'" \
+                            % (typ_s, host_s, ctx_s, m_cmd))
+
             info['pty'] = saga.utils.pty_process.PTYProcess (m_cmd, logger=logger)
             if not info['pty'].alive () :
                 raise saga.NoSuccess._log (logger, \
@@ -202,52 +203,71 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def run_copy_to (self, info, src, tgt) :
+    def run_copy_to (self, info, src, tgt, cp_flags="") :
         """ 
         This initiates a slave copy connection.   Src is interpreted as local
         path, tgt as path on the remote host.
         """
 
-        # at this point, we do have a valid, living master
-        s_cmd = _SCRIPTS[info['type']]['copy_to'] \
-                % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
+        repl = dict ({'src'      : src, 
+                      'tgt'      : tgt, 
+                      'cp_flags' : cp_flags}.items ()+ info.items ())
 
-        s_in  = _SCRIPTS[info['type']]['copy_to_in'] \
-                % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
+        # at this point, we do have a valid, living master
+        s_cmd = _SCRIPTS[info['type']]['copy_to']    % repl
+        s_in  = _SCRIPTS[info['type']]['copy_to_in'] % repl
 
         cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
         cp_slave.write (s_in)
 
-      # try :
-      #     while True :
-      #         print cp_slave.read ()
-      # except :
-      #     pass
+        out = ""
+        try :
+            while True :
+                out += cp_slave.read ()
+        except :
+            pass
 
         cp_slave.wait ()
+   
+        if  cp_slave.exit_code == None :
+            raise saga.NoSuccess._log (self.logger, "file copy got interrupted by signal: %s" % out)
+        elif cp_slave.exit_code != 0 :
+            raise saga.NoSuccess._log (self.logger, "file copy failed: %s" % out)
 
         return cp_slave
 
 
     # --------------------------------------------------------------------------
     #
-    def run_copy_from (self, info, src, tgt) :
+    def run_copy_from (self, info, src, tgt, cp_flags="") :
         """ 
         This initiates a slave copy connection.   Src is interpreted as path on
         the remote host, tgt as local path.
         """
 
+        repl = dict ({'src'      : str(src), 
+                      'tgt'      : str(tgt), 
+                      'cp_flags' : cp_flags}.items ()+ info.items ())
+
         # at this point, we do have a valid, living master
-        s_cmd = _SCRIPTS[info['type']]['copy_from'] \
-                % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
-
-        s_in  = _SCRIPTS[info['type']]['copy_from_in'] \
-                % dict(info.items () + {'src':src, 'tgt':tgt}.items ())
-
+        s_cmd = _SCRIPTS[info['type']]['copy_from']    % repl
+        s_in  = _SCRIPTS[info['type']]['copy_from_in'] % repl
         cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
         cp_slave.write (s_in)
 
+        out = ""
+        try :
+            while True :
+                out += cp_slave.read ()
+        except :
+            pass
+
         cp_slave.wait ()
+   
+        if  cp_slave.exit_code == None :
+            raise saga.NoSuccess._log (self.logger, "file copy got interrupted by signal: %s" % out)
+        elif cp_slave.exit_code != 0 :
+            raise saga.NoSuccess._log (self.logger, "file copy failed: %s" % out)
 
         return cp_slave
 
@@ -285,7 +305,6 @@ class PTYShellFactory (object) :
         elif info['schema']  in _SCHEMAS_SH :
             info['type']     = "sh"
             info['sh_args']  = "-l -i"
-            info['cp_args']  = ""
             info['sh_env']   = "/usr/bin/env TERM=vt100"
             info['cp_env']   = "/usr/bin/env TERM=vt100"
             info['fs_root']  = "/"

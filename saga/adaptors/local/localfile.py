@@ -382,7 +382,7 @@ class LocalFile (saga.adaptors.cpi.filesystem.File) :
 
         self._init_check ()
 
-        return self
+        return self.get_api ()
 
 
     @ASYNC_CALL
