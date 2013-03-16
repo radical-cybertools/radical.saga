@@ -1,3 +1,9 @@
+
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2013, The SAGA Project"
+__license__   = "MIT"
+
+
 __author__    = ["Ole Weidner", "Andre Merzky"]
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -70,6 +76,8 @@ def test_job_service_create():
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
+
+        print str(tc.session.contexts)
 
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)

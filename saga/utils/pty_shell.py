@@ -1,4 +1,9 @@
 
+__author__    = "amerzky, Andre Merzky"
+__copyright__ = "Copyright 2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import re
 import os
 import sys
@@ -894,6 +899,9 @@ class PTYShell (object) :
 
         elif 'pass' in lmsg :
             e = saga.AuthenticationFailed (cmsg)
+
+        elif 'ssh_exchange_identification' in lmsg :
+            e = saga.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
 
         elif 'denied' in lmsg :
             e = saga.PermissionDenied (cmsg)
