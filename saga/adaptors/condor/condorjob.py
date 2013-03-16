@@ -4,15 +4,8 @@ __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
 
-#!/usr/bin/env python
-# encoding: utf-8
-
 """ Condor job adaptor implementation
 """
-
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2013, The SAGA Project"
-__license__   = "MIT"
 
 import saga.utils.which
 import saga.utils.pty_shell
