@@ -13,15 +13,24 @@ __license__   = "MIT"
 
 import sys
 import saga
+import getpass
 
 
 def main():
 
     try:
+        # Your ssh identity on the remote machine.
+        ctx = saga.Context("ssh")
+        ctx.user_id = getpass.getuser()  # Change if necessary
+
+        session = saga.Session()
+        session.add_context(ctx)
+
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the SGE adaptors
         # and '+ssh' enables SGE remote access via SSH.
-        js = saga.job.Service("sge+ssh://lonestar.tacc.utexas.edu")
+        js = saga.job.Service("sge+ssh://lonestar.tacc.utexas.edu",
+                              session=session)
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
