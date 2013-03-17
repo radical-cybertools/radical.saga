@@ -1,5 +1,8 @@
-#!/usr/bin/env python
-# encoding: utf-8
+
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 
 """ This examples shows how to run groups of jobs using the
     'local' file adaptor. This example uses job containers for
@@ -17,10 +20,6 @@
     special bulk operations for container management, which makes them
     generally much faster than iterating over and operating on individual jobs.
 """
-
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
-__license__   = "MIT"
 
 import sys
 import random
