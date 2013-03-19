@@ -75,8 +75,68 @@ messages) and 5 (print all messages). Give it a try with the above example:
   SAGA_VERBOSE=5 python saga_example_local.py
 
 
-Discussion and Explanation
---------------------------
+Discussion
+----------
 
+Now that we have successfully run our first job with saga-python, we will
+discuss some of the the building blocks and details of the code.
+
+The job submission and management capabilities of saga-python are packaged in
+the `saga.job module (API Doc). Three classes are defined in this module:
+
+* The ``job.Service`` class provides a handle to the resource manager, like for example a remote PBS cluster.
+* The ``job.Description`` class is used to describe the executable, arguments, environment and requirements (e.g., number of cores, etc) of a new job.
+* The ``job.Job`` class is a handle to a job associated with a job.Service. It is used to control (start, stop) the job and query its status (e.g., Running, Finished, etc).
+
+In order to use the Bliss Job API, we first need to import the saga-python
+module:
+
+.. code-block:: python
+
+    import saga
+
+Next, we create a ``job.Service`` object that represents the compute resource you
+want to use (see figure above). The job service takes a single URL as parameter.
+The URL is a way to tell saga-python what type of resource or middleware you
+want to use and where it is. The URL parameter is passed to saga-python's plug-
+in selector and based on the URL scheme, a plug-in is selected. In this case the
+Local job plug-in is selected for ``fork://``. URL scheme - Plug-in mapping is
+described in :ref:`chapter_adaptors`.
+
+.. code-block:: python
+
+    js = saga.job.Service("fork://localhost")
+
+To define a new job, a job.Description object needs to be created that contains
+information about the executable we want to run, its arguments, the environment
+that needs to be set and some other optional job requirements:
+
+.. code-block:: python
+
+    jd = saga.job.Description()
+    
+    # environment, executable & arguments
+    jd.environment = {'MYOUTPUT':'"Hello from SAGA"'}       
+    jd.executable  = '/bin/echo'
+    jd.arguments   = ['$MYOUTPUT']
+
+    # output options
+    jd.output = "mysagajob.stdout"
+    jd.error  = "mysagajob.stderr"
+    
+Once the ``job.Service`` has been created and the job has been defined via the
+``job.Description`` object, we can create a new instance of the job via the
+``create_job`` method of the ``job.Service`` and use the resulting object to
+control (start, stop) and monitor the job:
+
+.. code-block:: python
+
+    myjob = js.create_job(jd) # create a new job instance
+    myjob.run() # start the job instance
+    print "Initial Job ID    : %s" % (myjob.jobid)
+    print "Initial Job State : %s" % (myjob.get_state())
+    myjob.wait() # Wait for the job to reach either 'Done' or 'Failed' state
+    print "Final Job ID    : %s" % (myjob.jobid)
+    print "Final Job State : %s" % (myjob.get_state())
 
 
