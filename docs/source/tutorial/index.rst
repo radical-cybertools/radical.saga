@@ -5,9 +5,10 @@
 Tutorial
 ********
 
-This tutorial covers the job and filesystem packages of saga-python. It
-walks you through examples for local as well as remote job submission and 
-management (ssh, pbs, sge) and file operations (sftp).
+This tutorial explains the job and filesystem packages,  arguably the most
+widely used capabilities in saga-python. It covers local
+as well as remote job submission and  management (ssh, pbs, sge) and file
+operations (sftp).
 
 **Prerequisites:**
 
