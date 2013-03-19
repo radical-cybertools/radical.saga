@@ -65,7 +65,7 @@ The latest saga-python module is available via the `Python Package Index <https:
 
 You will see some downloading and unpacking action and if everything worked ok, the last two lines should look like this:
 
-.. code-block:: bash
+.. code-block::
 
    Finished processing dependencies for saga-python==0.9.3
 
