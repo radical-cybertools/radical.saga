@@ -236,7 +236,8 @@ $ easy_install saga-python</pre>
     <h3>Example Script</h3>
 
     <p>This example connects to a remote PBS cluster via SSH and runs a simple
-      <em>/bin/sleep</em> job.
+      <em>/bin/echo</em> job It then uses the SFTP file adpator to copy the 
+      output file back to the local machine. 
 
     More information about the saga-python job API can be found in the 
     respective <a href="doc/library/job/index.html">manual section</a>.</p>
@@ -249,55 +250,99 @@ $ easy_install saga-python</pre>
       in the <a href="doc/adaptors/saga.adaptor.index.html">manual</a>.</p>
 
     <pre class="prettyprint linenums languague-python">
+import sys
 import saga
 
-if __name__ == "__main__":
+REMOTE_HOST = "alamo.futuregrid.org"
 
+def main():
     try:
+        # Your ssh identity on the remote machine
+        ctx = saga.Context("ssh")
+        ctx.user_id = "oweidner"
+
+        session = saga.Session()
+        session.add_context(ctx)
+
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
         # and '+ssh' enables PBS remote access via SSH.
-        js = saga.job.Service("pbs+ssh://alamo.futuregrid.org")
+        js = saga.job.Service("pbs+ssh://%s" % REMOTE_HOST, session=session)
 
-        # Next, we describe the job we want to run. A complete set of job 
-        # description attributes can be found in the API documentation. 
+        # describe our job
         jd = saga.job.Description()
-        jd.queue           = 'batch'
-        jd.environment     = {'RUNTIME': '10'}
-        jd.wall_time_limit = 1 # minutes
-        jd.executable      = '/bin/sleep'
-        jd.arguments       = ['$RUNTIME']
 
-        # Create a new job from the job description. The initial state of 
+        # Next, we describe the job we want to run. A complete set of job
+        # description attributes can be found in the API documentation.
+        jd.environment     = {'MYOUTPUT':'"Hello from SAGA"'}
+        jd.executable      = '/bin/echo'
+        jd.arguments       = ['$MYOUTPUT']
+        jd.output          = "/tmp/mysagajob.stdout"
+        jd.error           = "/tmp/mysagajob.stderr"
+
+        # Create a new job from the job description. The initial state of
         # the job is 'New'.
-        sleepjob = js.create_job(jd)
+        myjob = js.create_job(jd)
+
+        # Check our job's id and state
+        print "Job ID    : %s" % (myjob.id)
+        print "Job State : %s" % (myjob.state)
+
+        print "\n...starting job...\n"
 
         # Now we can start our job.
-        sleepjob.run()
+        myjob.run()
 
-        print "Job ID      : %s" % (sleepjob.id)
-        print "Job State   : %s" % (sleepjob.state)
+        print "Job ID    : %s" % (myjob.id)
+        print "Job State : %s" % (myjob.state)
 
-        # Wait for our job to finish (or fail).
-        sleepjob.wait()
+        print "\n...waiting for job...\n"
+        # wait for the job to either finish or fail
+        myjob.wait()
 
-        print "Job State   : %s" % (sleepjob.state)
-        print "Exitcode    : %s" % (sleepjob.exit_code)
+        print "Job State : %s" % (myjob.state)
+        print "Exitcode  : %s" % (myjob.exit_code)
+
+        outfilesource = 'sftp://%s/tmp/mysagajob.stdout' % REMOTE_HOST
+        outfiletarget = 'file://localhost/tmp/'
+        out = saga.filesystem.File(outfilesource, session=session)
+        out.copy(outfiletarget)
+
+        print "Staged out %s to %s (size: %s bytes)\n" % (outfilesource, outfiletarget, out.get_size())
+
+
+        return 0
 
     except saga.SagaException, ex:
         # Catch all saga exceptions
         print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
         # Trace back the exception. That can be helpful for debugging.
-        print " \n*** Backtrace:\n %s" % ex.traceback</pre>
+        print " \n*** Backtrace:\n %s" % ex.traceback
+        return -1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+</pre>
 
         <p>Paste the above script into a file and run it. Your output 
           should look similar to this:</a>
 
     <pre class="prettyprint languague-bash">$ python ./sleepjob.py<span class="nocode">
-Job ID      : [pbs+ssh://alamo.futuregrid.org]-[209181]
-Job State   : Pending
-Job State   : Done
-Exitcode    : 0</span></pre>
+Job ID    : None
+Job State : New
+
+...starting job...
+
+Job ID    : [ssh://gw68.quarry.iu.teragrid.org]-[9969]
+Job State : Done
+
+...waiting for job...
+
+Job State : Done
+Exitcode  : 0
+
+Staged out sftp://gw68.quarry.iu.teragrid.org/tmp/mysagajob.stdout to file://localhost/tmp/ (size: 16 bytes)</span></pre>
 
     <!--p class="marketing-byline">For even more sites built with Bootstrap, <a href="http://builtwithbootstrap.tumblr.com/" target="_blank">visit the unofficial Tumblr</a> or <a href="./getting-started.html#examples">browse the examples</a>.</p>
     <div class="row-fluid">
