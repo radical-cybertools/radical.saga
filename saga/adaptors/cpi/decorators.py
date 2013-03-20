@@ -12,7 +12,7 @@ import saga.task       as st
 # decorator, which switches method to 
 # _async version if ttype is set and !None
 def SYNC_CALL (sync_function) :
-    
+
     def wrap_function (self, *args, **kwargs) :
 
         if 'ttype' in kwargs and kwargs['ttype'] != None :
@@ -74,8 +74,6 @@ def CPI_SYNC_CALL (cpi_sync_function) :
 def CPI_ASYNC_CALL (cpi_async_function) :
 
     def wrap_function (self, *args, **kwargs) :
-
-        print cpi_async_function
 
         my_ttype = None
         my_call  = None

@@ -96,12 +96,13 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
 
         # register properties with the attribute interface
 
-        self._attributes_register  (const.ID          , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
-        self._attributes_register  (const.RTYPE       , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
-        self._attributes_register  (const.STATE       , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
-        self._attributes_register  (const.STATE_DETAIL, None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
-        self._attributes_register  (const.MANAGER     , None, sa.URL,    sa.SCALAR, sa.WRITEABLE)
-        self._attributes_register  (const.DESCRIPTION , None, sa.ANY,    sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (const.ID          , None, sa.ENUM,   sa.SCALAR, sa.READONLY)
+        self._attributes_register  (const.RTYPE       , None, sa.ENUM,   sa.SCALAR, sa.READONLY)
+        self._attributes_register  (const.STATE       , None, sa.ENUM,   sa.SCALAR, sa.READONLY)
+        self._attributes_register  (const.STATE_DETAIL, None, sa.STRING, sa.SCALAR, sa.READONLY)
+        self._attributes_register  (const.ACCESS      , None, sa.URL,    sa.SCALAR, sa.READONLY)
+        self._attributes_register  (const.MANAGER     , None, sa.URL,    sa.SCALAR, sa.READONLY)
+        self._attributes_register  (const.DESCRIPTION , None, sa.ANY,    sa.SCALAR, sa.READONLY)
 
         self._attributes_set_enums (const.STATE, [const.UNKNOWN ,
                                                   const.PENDING ,
@@ -117,9 +118,10 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
 
 
         self._attributes_set_getter (const.ID          , self.get_id          )
-        self._attributes_set_getter (const.RTYPE       , self.get_rtype        )
+        self._attributes_set_getter (const.RTYPE       , self.get_rtype       )
         self._attributes_set_getter (const.STATE       , self.get_state       )
         self._attributes_set_getter (const.STATE_DETAIL, self.get_state_detail)
+        self._attributes_set_getter (const.ACCESS      , self.get_access      )
         self._attributes_set_getter (const.MANAGER     , self.get_manager     )
         self._attributes_set_getter (const.DESCRIPTION , self.get_description )
 
@@ -178,7 +180,7 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
         :func:`acquire` call on the :class:`saga.resource.Manager` class.
         """
 
-        return self._adaptor.reconfig (descr, ttype)
+        return self._adaptor.reconfig (descr, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -189,7 +191,7 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
         :func:`release` call on the :class:`saga.resource.Manager` class.
         """
 
-        return self._adaptor.release (ttype)
+        return self._adaptor.release (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -208,17 +210,18 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
         # FIXME: should we also have a wait() on the manager?
         # FIXME: right now, we can not put a resource in a task container
     
-        return self._adaptor.wait (state, timeout, ttype)
+        return self._adaptor.wait (state, timeout, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    def get_id           (self, ttype=None) : return self._adaptor.get_id            (ttype)
-    def get_rtype        (self, ttype=None) : return self._adaptor.get_rtype         (ttype)
-    def get_state        (self, ttype=None) : return self._adaptor.get_state         (ttype)
-    def get_state_detail (self, ttype=None) : return self._adaptor.get_state_detail  (ttype)
-    def get_manager      (self, ttype=None) : return self._adaptor.get_manager       (ttype)
-    def get_description  (self, ttype=None) : return self._adaptor.get_description   (ttype)
+    def get_id           (self, ttype=None) : return self._adaptor.get_id            (ttype=ttype)
+    def get_rtype        (self, ttype=None) : return self._adaptor.get_rtype         (ttype=ttype)
+    def get_state        (self, ttype=None) : return self._adaptor.get_state         (ttype=ttype)
+    def get_state_detail (self, ttype=None) : return self._adaptor.get_state_detail  (ttype=ttype)
+    def get_access       (self, ttype=None) : return self._adaptor.get_access        (ttype=ttype)
+    def get_manager      (self, ttype=None) : return self._adaptor.get_manager       (ttype=ttype)
+    def get_description  (self, ttype=None) : return self._adaptor.get_description   (ttype=ttype)
 # 
 # ------------------------------------------------------------------------------
 

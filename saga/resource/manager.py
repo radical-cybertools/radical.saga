@@ -69,7 +69,7 @@ class Manager (saga.base.Base, saga.async.Async) :
         List known resource instances (which can be acquired). 
         Returns a list of IDs.  
         """
-        return self._adaptor.list (rtype, ttype)
+        return self._adaptor.list (rtype, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -85,7 +85,7 @@ class Manager (saga.base.Base, saga.async.Async) :
         read-only attribs?  link to SD or ISN?
         """
 
-        return self._adaptor.get_description (id, ttype)
+        return self._adaptor.get_description (id, ttype=ttype)
 
     # --------------------------------------------------------------------------
     # 
@@ -98,7 +98,7 @@ class Manager (saga.base.Base, saga.async.Async) :
         Returns a list of strings.
         """
 
-        return self._adaptor.list_templates (rtype, ttype)
+        return self._adaptor.list_templates (rtype, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -117,7 +117,7 @@ class Manager (saga.base.Base, saga.async.Async) :
         specified in the call parameters.
         """
 
-        return self._adaptor.get_template (name, ttype)
+        return self._adaptor.get_template (name, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -140,7 +140,7 @@ class Manager (saga.base.Base, saga.async.Async) :
 
             id = saga.url.Url (spec)
             
-            return self._adaptor.acquire_by_id (id, ttype)
+            return self._adaptor.acquire_by_id (id, ttype=ttype)
 
         else :
 
@@ -167,7 +167,7 @@ class Manager (saga.base.Base, saga.async.Async) :
         `CANCELED` state.  
         """
 
-        return self._adaptor.release (id, ttype)
+        return self._adaptor.release (id, ttype=ttype)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
