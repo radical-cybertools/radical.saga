@@ -54,9 +54,9 @@ class Resource (cpi_base.CPIBase, cpi_async.Async) :
     def get_id_async           (self, ttype)             : pass
                                                
     @SYNC                                      
-    def get_type               (self, ttype)             : pass
+    def get_rtype              (self, ttype)             : pass
     @ASYNC                                     
-    def get_type_async         (self, ttype)             : pass
+    def get_rtype_async        (self, ttype)             : pass
                                                
     @SYNC                                      
     def get_state              (self, ttype)             : pass
@@ -69,6 +69,11 @@ class Resource (cpi_base.CPIBase, cpi_async.Async) :
     def get_state_detail_async (self, ttype)             : pass
                                                
     @SYNC                                      
+    def get_access             (self, ttype)             : pass
+    @ASYNC                                     
+    def get_access_async       (self, ttype)             : pass
+                                               
+    @SYNC                                      
     def get_manager            (self, ttype)             : pass
     @ASYNC                                     
     def get_manager_async      (self, ttype)             : pass
@@ -78,6 +83,10 @@ class Resource (cpi_base.CPIBase, cpi_async.Async) :
     @ASYNC                                     
     def get_description_async  (self, ttype)             : pass
 
+
+class Compute (Resource) : pass
+class Storage (Resource) : pass
+class Network (Resource) : pass
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

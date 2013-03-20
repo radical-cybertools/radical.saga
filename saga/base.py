@@ -4,7 +4,9 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+import sys
 import string
+import inspect
 
 import saga.utils.logger
 import saga.engine.engine
@@ -22,31 +24,32 @@ class SimpleBase (object) :
         self._engine    = saga.engine.engine.Engine ()
         self._logger    = saga.utils.logger.getLogger (self._apitype)
 
-        #self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
+      # self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
 
 
     def _get_apitype (self) :
 
-        apitype = self.__module__ + '.' + self.__class__.__name__
+        # apitype for saga.job.service.Service should be saga.job.Service --
+        # but we need to make sure that this actually exists and is equivalent.
 
-        name_parts = apitype.split ('.')
-        l = len(name_parts)
+        mname_1 = self.__module__           # saga.job.service
+        cname   = self.__class__.__name__   # Service
 
-        if len > 2 :
-          t1 = name_parts [l-1]
-          t2 = name_parts [l-2]
-          t2 = t2.replace ('_', ' ')
-          t2 = string.capwords (t2)
-          t2 = t2.replace (' ', '')
+        mname_1_elems = mname_1.split ('.') # ['saga', 'job', 'service']
+        mname_1_elems.pop ()                # ['saga', 'job']
+        mname_2 = '.'.join (mname_1_elems)  #  'saga.job'
 
-          if t1 == t2 :
-              del name_parts[l-2]
+        for mod_cname, mod_class in inspect.getmembers (sys.modules[mname_2]) :
+            if  mod_cname == cname           and \
+                inspect.isclass (mod_class)  and \
+                isinstance (self, mod_class)     :
 
-          apitype = string.join (name_parts, '.')
+                apitype = "%s.%s" % (mname_2, cname) # saga.job.Service
+                return apitype
 
+        apitype = "%s.%s" % (mname_1, cname) # saga.job.service.Service
         return apitype
 
-    
 
 class Base (SimpleBase) :
 
@@ -55,7 +58,7 @@ class Base (SimpleBase) :
         SimpleBase.__init__ (self)
 
         self._adaptor = adaptor
-        self._adaptor = self._engine.bind_adaptor   (self, self._apitype, schema, adaptor)
+        self._adaptor = self._engine.bind_adaptor (self, self._apitype, schema, adaptor)
 
 
         # Sync creation (normal __init__) will simply call the adaptor's
