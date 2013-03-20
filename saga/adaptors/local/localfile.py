@@ -12,7 +12,7 @@ import shutil
 import traceback
 
 import saga.url
-import saga.adaptors.cpi.base
+import saga.adaptors.base
 import saga.adaptors.cpi.filesystem
 
 import saga.utils.misc
@@ -60,7 +60,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -69,7 +69,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # the adaptor *singleton* creates a (single) instance of a bulk handler
         # (BulkDirectory), which implements container_* bulk methods.

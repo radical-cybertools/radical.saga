@@ -38,7 +38,6 @@ def test_ptyprocess_term () :
     assert (not pty.alive ())
     assert (pty.exit_signal == signal.SIGTERM)
 
-
 # ------------------------------------------------------------------------------
 #
 def test_ptyprocess_kill () :

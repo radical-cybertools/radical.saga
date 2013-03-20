@@ -8,7 +8,8 @@ import string
 
 import saga.utils.logger
 import saga.engine.engine
-import saga.utils.signatures as sus
+import saga.adaptors.base      as sab
+import saga.utils.signatures   as sus
 
 # ------------------------------------------------------------------------------
 #
@@ -28,8 +29,6 @@ class SimpleBase (object) :
         self._apitype   = self._get_apitype ()
         self._engine    = saga.engine.engine.Engine ()
         self._logger    = saga.utils.logger.getLogger (self._apitype)
-
-        #self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
 
 
     # --------------------------------------------------------------------------
@@ -66,7 +65,7 @@ class Base (SimpleBase) :
     #
     @sus.takes   ('Base',
                   basestring, 
-                  sus.optional ('saga.cpi.base.AdaptorBase'), 
+                  sus.optional (sab.Base), 
                   sus.optional (dict), 
                   sus.optional (sus.anything),
                   sus.optional (sus.anything))

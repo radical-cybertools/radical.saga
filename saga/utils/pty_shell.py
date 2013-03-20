@@ -860,6 +860,7 @@ class PTYShell (object) :
         message and appropriate exception type.
         """
 
+
         if  not issubclass (e.__class__, saga.SagaException) :
             # we do not touch non-saga exceptions
             return e

@@ -228,10 +228,10 @@ class PTYShellFactory (object) :
             pass
 
         cp_slave.wait ()
-   
-        if  cp_slave.exit_code == None :
+
+        if  cp_slave.exit_signal :
             raise saga.NoSuccess._log (self.logger, "file copy got interrupted by signal: %s" % out)
-        elif cp_slave.exit_code != 0 :
+        elif cp_slave.exit_code :
             raise saga.NoSuccess._log (self.logger, "file copy failed: %s" % out)
 
         return cp_slave
