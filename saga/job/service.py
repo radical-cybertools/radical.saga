@@ -8,17 +8,17 @@ __license__   = "MIT"
 """
 
 
-from saga.base            import Base
-from saga.async           import Async
-from saga.url             import Url
-from saga.job.description import Description
-from saga.exceptions      import BadParameter
-from saga.session         import Session
+import saga.base         as sb
+from   saga.async           import Async
+from   saga.url             import Url
+from   saga.job.description import Description
+from   saga.exceptions      import BadParameter
+from   saga.session         import Session
 
-from saga.constants       import SYNC, ASYNC, TASK, NOTASK # task constants
+from   saga.constants       import SYNC, ASYNC, TASK, NOTASK # task constants
 
 
-class Service (Base, Async) :
+class Service (sb.Base, Async) :
     """
     The job.Service represents a resource management backend, and as such allows
     the creation, submission and management of jobs.
@@ -70,8 +70,9 @@ class Service (Base, Async) :
         url     = Url (url)
         scheme  = url.scheme.lower ()
 
-        Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
-                       url, session, ttype=_ttype)
+        self._super = super  (Service, self)
+        self._super.__init__ (scheme, _adaptor, _adaptor_state, 
+                              url, session, ttype=_ttype)
 
 
     @classmethod

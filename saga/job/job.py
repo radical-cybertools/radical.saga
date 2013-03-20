@@ -74,7 +74,7 @@ class Job (Base, Attributes, Async) :
 
         # We need to specify a schema for adaptor selection -- and
         # simply choose the first one the adaptor offers.
-        schema = 'fork' # _adaptor.get_schemas()[0]
+        schema = _adaptor.get_schemas()[0]
         if  'job_schema' in _adaptor_state :
             schema = _adaptor_state['job_schema']
 

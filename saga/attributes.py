@@ -431,7 +431,7 @@ class Attributes (_AttributesBase) :
     #
     @sus.takes   ('Attributes', 
                   basestring,
-                  basestring)
+                  sus.anything)
     @sus.returns (sus.nothing)
     def _attributes_t_call_cb (self, key, val) :
         """
@@ -476,7 +476,7 @@ class Attributes (_AttributesBase) :
     #
     @sus.takes   ('Attributes', 
                   basestring,
-                  basestring)
+                  sus.anything)
     @sus.returns (sus.nothing)
     def _attributes_t_call_setter (self, key, val) :
         """
@@ -666,6 +666,11 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  int,
+                  callable)
+    @sus.returns (sus.anything)
     def _attributes_t_call_caller (self, key, id, cb) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -699,12 +704,15 @@ class Attributes (_AttributesBase) :
             finally :
                 d['recursion'] = False
 
-        return []
+        return
 
 
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (basestring)
     def _attributes_t_underscore (self, key) :
         """ 
         This internal function is not to be used by the consumer of this API.
@@ -729,6 +737,9 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (sus.anything)
     def _attributes_t_conversion (self, key, val) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -774,6 +785,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.anything)
+    @sus.returns (sus.anything)
     def _attributes_t_conversion_flavor (self, key, val) :
         """ 
         This internal function is not to be used by the consumer of this API.
@@ -846,6 +861,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.anything)
+    @sus.returns (sus.anything)
     def _attributes_t_conversion_type (self, key, val) :
         """ 
         This internal function is not to be used by the consumer of this API.
@@ -874,6 +893,9 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (basestring)
     def _attributes_t_wildcard2regex (self, pattern) :
         """ 
         This internal function is not to be used by the consumer of this API.
@@ -919,6 +941,8 @@ class Attributes (_AttributesBase) :
             # done - find next bracket pair...
             first = re.find ('{', last + 1)
             last  = re.find ('}', first + 1)
+
+        return re
 
 
     # --------------------------------------------------------------------------
@@ -1169,6 +1193,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_exists (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1193,6 +1221,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_is_extended (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1212,6 +1244,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_is_private (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1231,6 +1267,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_is_readonly (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1255,6 +1295,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_is_writeable (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1270,6 +1314,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_is_removable (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1288,6 +1336,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_is_vector (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1308,6 +1360,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_is_final (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1331,6 +1387,11 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  callable,
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (int)
     def _attributes_i_add_cb (self, key, cb, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1354,6 +1415,11 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.optional (int),
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (sus.nothing)
     def _attributes_i_del_cb (self, key, id=None, flow=_DOWN) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1390,6 +1456,15 @@ class Attributes (_AttributesBase) :
     #
     # Naming: _attributes_*
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.optional (sus.optional (sus.anything)),
+                  sus.optional (sus.one_of (ANY, URL, INT, FLOAT, STRING, BOOL, ENUM, TIME)),
+                  sus.optional (sus.one_of (SCALAR, VECTOR)),
+                  sus.optional (sus.one_of (READONLY, WRITEABLE, ALIAS, FINAL)),
+                  sus.optional (sus.one_of (bool, EXTENDED)),
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_register (self, key, default=None, typ=ANY, flavor=SCALAR,
                               mode=WRITEABLE, ext=False, flow=_DOWN) :
         """
@@ -1475,6 +1550,11 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (sus.nothing)
     def _attributes_register_deprecated (self, key, alias, flow) :
         """
         Often enough, there is the need to use change attribute names.  It is
@@ -1538,6 +1618,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (sus.nothing)
     def _attributes_unregister (self, key, flow) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1567,6 +1651,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (sus.nothing)
     def _attributes_remove (self, key, flow) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1588,6 +1676,11 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus,optional (sus.list_of (sys.anything)),
+                  sus,optional (sus.one_of  (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_enums (self, key, enums=None, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1605,6 +1698,14 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  sus.optional (bool),
+                  sus.optional (callable),
+                  sus.optional (callable),
+                  sus.optional (callable),
+                  sus.optional (callable),
+                  sus.optional (sus.one_of  (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_extensible (self, e=True, 
                                 getter=None, setter=None, 
                                 lister=None, caller=None, 
@@ -1631,6 +1732,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  sus.optional (bool),
+                  sus.optional (sus.one_of  (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_allow_private (self, p=True, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1649,6 +1754,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  sus.optional (bool),
+                  sus.optional (sus.one_of  (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_camelcasing (self, c=True, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1667,6 +1776,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  'Attributes', 
+                  sus.optional (sus.one_of  (_UP, _DOWN)))
+    @sus.returns ('Attributes')
     def _attributes_deep_copy (self, other, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1735,6 +1848,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  sus.optional (basestring),
+                  sus.optional (sus.one_of  (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_dump (self, msg=None, flow=_DOWN) :
         """ 
         This interface method is not part of the public consumer API, but can
@@ -1824,6 +1941,11 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.anything),
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_final (self, key, val=None, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1863,6 +1985,11 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (float),
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_ttl (self, key, ttl=0.0, flow=_DOWN) :
         """ set attributes TTL in seconds (float) -- see L{_attributes_i_set} """
 
@@ -1876,6 +2003,11 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (float),
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_add_check (self, key, check, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1902,6 +2034,11 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  caller,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_getter (self, key, getter, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
