@@ -79,7 +79,7 @@ _ADAPTOR_INFO          = {
         }, 
         { 
         "type"         : "saga.resource.Compute",
-        "class"        : "ShellResource"
+        "class"        : "ShellResourceCompute"
         },
     ]
 }
@@ -266,13 +266,13 @@ class ShellResourceManager (saga.adaptors.cpi.resource.Manager) :
 
 ###############################################################################
 #
-class ShellResource (saga.adaptors.cpi.resource.Compute) :
+class ShellResourceCompute (saga.adaptors.cpi.resource.Compute) :
 
     # ----------------------------------------------------------------
     #
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (ShellResource, self)
+        self._cpi_base = super  (ShellResourceCompute, self)
         self._cpi_base.__init__ (api, adaptor)
 
         self.state       = ACTIVE
