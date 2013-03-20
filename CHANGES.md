@@ -1,4 +1,23 @@
-Version 0.9.1 released 
+Version 0.9.2 released 2013-
+----------------------------------------------------------------------
+
+* Added SFTP adaptor
+* Added tutorial examples
+* Closed issues:
+  - https://github.com/saga-project/saga-python/issues/55
+  - https://github.com/saga-project/saga-python/issues/22
+  - https://github.com/saga-project/saga-python/issues/51
+  - https://github.com/saga-project/saga-python/issues/53
+  - https://github.com/saga-project/saga-python/issues/26
+  - https://github.com/saga-project/saga-python/issues/49
+  - https://github.com/saga-project/saga-python/issues/50
+  - https://github.com/saga-project/saga-python/issues/47
+  - https://github.com/saga-project/saga-python/issues/45
+  - https://github.com/saga-project/saga-python/issues/46
+  - https://github.com/saga-project/saga-python/issues/43
+  - https://github.com/saga-project/saga-python/issues/27
+
+Version 0.9.1 released 2013-03-11
 ----------------------------------------------------------------------
 
 * Major re-write of engine and adaptor interface
@@ -6,14 +25,6 @@ Version 0.9.1 released
 * Improved PTYWrapper for ssh/gsissh remote execution
 * Added SLURM job adaptor 
 * Added Condor job adaptor
-
-
-
-======================================================================
-REWRITE - SAGA-PYTHON 1.0
-======================================================================
-
-
 
 Version 0.2.7 released 2012-11-09
 ----------------------------------------------------------------------
