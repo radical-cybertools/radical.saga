@@ -6,6 +6,7 @@ __license__   = "MIT"
 
 import string
 
+import saga.utils.signatures
 import saga.utils.logger
 import saga.engine.engine
 import saga.adaptors.base      as sab
