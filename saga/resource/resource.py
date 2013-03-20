@@ -4,9 +4,10 @@ import saga.async
 import saga.url
 import saga.attributes
 import saga.session
-import saga.exceptions          as se
-import saga.constants           as sc
-import saga.resource.constants  as src
+import saga.exceptions as se
+import saga.constants  as sc
+
+import constants       as const
 
 
 # ------------------------------------------------------------------------------
@@ -95,47 +96,56 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
 
         # register properties with the attribute interface
 
-        self._attributes_register  (src.ID          , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
-        self._attributes_register  (src.TYPE        , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
-        self._attributes_register  (src.STATE       , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
-        self._attributes_register  (src.STATE_DETAIL, None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
-        self._attributes_register  (src.MANAGER     , None, sa.URL,    sa.SCALAR, sa.WRITEABLE)
-        self._attributes_register  (src.DESCRIPTION , None, sa.ANY,    sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (const.ID          , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (const.RTYPE       , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (const.STATE       , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (const.STATE_DETAIL, None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (const.MANAGER     , None, sa.URL,    sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (const.DESCRIPTION , None, sa.ANY,    sa.SCALAR, sa.WRITEABLE)
 
-        self._attributes_set_enums (src.STATE, [src.UNKNOWN ,
-                                                src.PENDING ,
-                                                src.ACTIVE  ,
-                                                src.RUNNING ,
-                                                src.CLOSED  ,
-                                                src.EXPIRED ,
-                                                src.FAILED  ,
-                                                src.FINAL   ])
+        self._attributes_set_enums (const.STATE, [const.UNKNOWN ,
+                                                  const.PENDING ,
+                                                  const.ACTIVE  ,
+                                                  const.CANCELED,
+                                                  const.EXPIRED ,
+                                                  const.FAILED  ,
+                                                  const.FINAL   ])
 
-        self._attributes_set_enums (src.TYPE,  [src.COMPUTE ,
-                                                src.STORAGE ,
-                                                src.NETWORK ])
+        self._attributes_set_enums (const.RTYPE, [const.COMPUTE ,
+                                                  const.STORAGE ,
+                                                  const.NETWORK ])
 
 
-        self._attributes_set_getter (src.ID          , self.get_id          )
-        self._attributes_set_getter (src.TYPE        , self.get_type        )
-        self._attributes_set_getter (src.STATE       , self.get_state       )
-        self._attributes_set_getter (src.STATE_DETAIL, self.get_state_detail)
-        self._attributes_set_getter (src.MANAGER     , self.get_manager     )
-        self._attributes_set_getter (src.DESCRIPTION , self.get_description )
+        self._attributes_set_getter (const.ID          , self.get_id          )
+        self._attributes_set_getter (const.RTYPE       , self.get_rtype        )
+        self._attributes_set_getter (const.STATE       , self.get_state       )
+        self._attributes_set_getter (const.STATE_DETAIL, self.get_state_detail)
+        self._attributes_set_getter (const.MANAGER     , self.get_manager     )
+        self._attributes_set_getter (const.DESCRIPTION , self.get_description )
 
 
         # we need the ID to be an URL, as we don't have a scheme otherwise,
         # which means we can't select an adaptor.  Duh! :-/
 
         # param checks
-        url    = saga.url.Url (id)
-        scheme = url.scheme.lower ()
+        scheme = None
+        if  not id :
+            if  not 'resource_schema' in _adaptor_state :
+                raise se.BadParameter ("Cannot initialize resource without id" \
+                                    % self.rtype)
+            else :
+                scheme = _adaptor_state['resource_schema']
+        else :
+            url    = saga.Url (id)
+            scheme = url.scheme.lower ()
+
 
         if not session :
+
             session = saga.session.Session (default=True)
 
         saga.base.Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
-                                 url, session, ttype=_ttype)
+                                 id, session, ttype=_ttype)
 
 
     # --------------------------------------------------------------------------
@@ -155,7 +165,7 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
     #
     def reconfig (self, descr, ttype=None) :
         """
-        A resource is aquired according to a resource description, i.e. to
+        A resource is acquired according to a resource description, i.e. to
         a specific set of attributes.  At some point in time, while the
         resource is running, the application requirements on the resource may
         have changed -- in that case, the application can request to change the
@@ -184,7 +194,7 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     #
-    def wait (self, state=src.FINAL, timeout=-1.0, ttype=None) :
+    def wait (self, state=const.FINAL, timeout=-1.0, ttype=None) :
         """
         :type  state: state enum
         :param state: state to wait for
@@ -204,7 +214,7 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
     # --------------------------------------------------------------------------
     #
     def get_id           (self, ttype=None) : return self._adaptor.get_id            (ttype)
-    def get_type         (self, ttype=None) : return self._adaptor.get_type          (ttype)
+    def get_rtype        (self, ttype=None) : return self._adaptor.get_rtype         (ttype)
     def get_state        (self, ttype=None) : return self._adaptor.get_state         (ttype)
     def get_state_detail (self, ttype=None) : return self._adaptor.get_state_detail  (ttype)
     def get_manager      (self, ttype=None) : return self._adaptor.get_manager       (ttype)
@@ -230,9 +240,9 @@ class Compute (Resource) :
         self._resrc = super  (Compute, self)
         self._resrc.__init__ (id, session, _adaptor, _adaptor_state, _ttype)
 
-        if  self.type != src.COMPUTE :
+        if  self.rtype != const.COMPUTE :
             raise se.BadParameter ("Cannot initialize Compute resource with %s id" \
-                                % self.type)
+                                % self.rtype)
 
 
 # ------------------------------------------------------------------------------
@@ -251,9 +261,9 @@ class Storage (Resource) :
         self._resrc = super  (Storage, self)
         self._resrc.__init__ (id, session, _adaptor, _adaptor_state, _ttype)
 
-        if  self.type != src.STORAGE :
+        if  self.rtype != const.STORAGE :
             raise se.BadParameter ("Cannot initialize Storage resource with %s id" \
-                                % self.type)
+                                % self.rtype)
 
 
 # ------------------------------------------------------------------------------
@@ -270,9 +280,9 @@ class Network (Resource) :
         self._resrc = super  (Network, self)
         self._resrc.__init__ (id, session, _adaptor, _adaptor_state, _ttype)
 
-        if  self.type != src.NETWORK :
+        if  self.rtype != const.NETWORK :
             raise se.BadParameter ("Cannot initialize Network resource with %s id" \
-                                % self.type)
+                                % self.rtype)
 # 
 # ------------------------------------------------------------------------------
 
