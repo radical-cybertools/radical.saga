@@ -17,7 +17,7 @@ import saga.exceptions as se
 #
 _CHUNKSIZE = 1024  # default size of each read
 _POLLDELAY = 0.01  # seconds in between read attempts
-_DEBUG_MAX = 60
+_DEBUG_MAX = 600
 
 
 # --------------------------------------------------------------------
@@ -355,6 +355,7 @@ class PTYProcess (object) :
                 # either way, its dead -- make sure it stays dead, to avoid zombie
                 # apocalypse...
                 self.finalize (do_wait=False)
+                return
 
 
 
