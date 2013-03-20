@@ -24,7 +24,7 @@ implement input and output file staging.
 Installation
 ============
 
-.. warning:: SAGA-Python requires Python >= 2.5. It won't work with an older version of Python!
+.. warning:: SAGA-Python requires **Python >= 2.5**. It won't work with an older version of Python.
 
 Install Virtualenv
 ------------------
@@ -45,7 +45,9 @@ If you don't have virtualenv installed and you don't have root access on your ma
 
    curl --insecure -s https://raw.github.com/pypa/virtualenv/master/virtualenv.py | python - $HOME/tutorial
 
-You need to activate your Python environment in order to make it work. Run the command below. ('activate' will temporarily modify your ``PYTHONPATH`` so that it points to ``$HOME/tutorial/lib/python2.7/site-packages/`` instead of the the global site-package directory).
+.. note:: If you have multiple Python versions installed on your system, you can use the ``virtualenv --python=PYTHON_EXE`` flag to force virtualenv to use a specific version.
+
+Next, you need to activate your Python environment in order to make it work:
 
 .. code-block:: bash
 
@@ -69,11 +71,9 @@ You will see some downloading and unpacking action and if everything worked ok, 
 
    Finished processing dependencies for saga-python==0.9.3
 
-Successfully installed bliss paramiko-on-pypi pycrypto-on-pypi
-Cleaning up...
-NOTE: fatal error: Python.h: No such file or directory. If you see this error message during installation, you don't have the Python header files installed. In order to fix this, please refer to Known Problems And Solutions.
-
-To make sure that your installation works, run the following command to check if the SAGA Python module (bliss) can be imported by the interpreter (the output should be version number of the bliss module):
+To make sure that your installation works, run the following command to check if
+the saga-python module can be imported by the interpreter (the output of the
+command below should be version number of the saga-python module):
 
 .. code-block:: bash
 
