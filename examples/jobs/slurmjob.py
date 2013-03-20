@@ -1,5 +1,8 @@
-#!/usr/bin/env python
-# encoding: utf-8
+
+__author__    = "Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 
 """ This examples shows how to run a job on a remote SLURM cluster
     using the 'SLURM' job adaptor.
@@ -8,21 +11,26 @@
     http://saga-project.github.com/saga-python/doc/library/job/index.html
 """
 
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
-__license__   = "MIT"
-
 import sys
 import saga
+import getpass
 
 
 def main():
 
     try:
+        # Your ssh identity on the remote machine.
+        ctx = saga.Context("ssh")
+        ctx.user_id = getpass.getuser()  # Change if necessary
+
+        session = saga.Session()
+        session.add_context(ctx)
+
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the SGE adaptors
         # and '+ssh' enables SGE remote access via SSH.
-        js = saga.job.Service("slurm+ssh://login1.stampede.tacc.utexas.edu")
+        js = saga.job.Service("slurm+ssh://login1.stampede.tacc.utexas.edu",
+                              session=session)
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
