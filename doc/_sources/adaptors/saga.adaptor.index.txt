@@ -1,6 +1,8 @@
-*********
-Adaptors:
-*********
+.. _chapter_adaptors:
+
+********
+Adaptors
+********
 
 .. toctree::
    :numbered:
@@ -10,6 +12,7 @@ Adaptors:
    saga.adaptor.x509
    saga.adaptor.ssh
    saga.adaptor.userpass
+   saga.adaptor.shell_file
    saga.adaptor.shell_job
    saga.adaptor.sgejob
    saga.adaptor.pbsjob

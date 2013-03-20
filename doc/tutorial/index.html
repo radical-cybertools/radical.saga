@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>Tutorial &mdash; SAGA 0.9.2 documentation</title>
+    <title>2. Tutorial &mdash; SAGA 0.9.3 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.2',
+        VERSION:     '0.9.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,9 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.2 documentation" href="../index.html" /> 
+    <link rel="top" title="SAGA 0.9.3 documentation" href="../index.html" />
+    <link rel="next" title="1. Part 1: Introduction" href="part1.html" />
+    <link rel="prev" title="3. Logging System" href="../usage/logger.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,7 +45,13 @@
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.2 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="part1.html" title="1. Part 1: Introduction"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../usage/logger.html" title="3. Logging System"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.3 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -53,8 +61,35 @@
           <div class="body">
             
   <div class="section" id="tutorial">
-<span id="chapter-tutorial"></span><h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
-<p>Intro tutorial</p>
+<span id="chapter-tutorial"></span><h1>2. Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<p>This tutorial explains the job and filesystem packages,  arguably the most
+widely used capabilities in saga-python. It covers local
+as well as remote job submission and  management (ssh, pbs, sge) and file
+operations (sftp).</p>
+<p><strong>Prerequisites:</strong></p>
+<ul class="simple">
+<li>You are familiar with Linux or UNIX</li>
+<li>You can read and write Python code</li>
+<li>You can use SSH and understand how public and private keys work</li>
+<li>You understand the basic concepts of distributed computing</li>
+</ul>
+<p><strong>You will learn how to:</strong></p>
+<ul class="simple">
+<li>Install SAGA on your own machine</li>
+<li>Write a program that runs a job locally on your machine</li>
+<li>Use the same program with a different plug-in to run the job on a remote site</li>
+<li>Add file transfer capabilities to the program to retrieve results</li>
+</ul>
+<p><strong>Contents:</strong></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="part1.html">1. Part 1: Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="part2.html">2. Part 2: Local Job Submission</a></li>
+<li class="toctree-l1"><a class="reference internal" href="part3.html">3. Part 3: Remote Job Submission</a></li>
+<li class="toctree-l1"><a class="reference internal" href="part4.html">4. Part 4: Adding File Transfer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="part5.html">5. Part 5: A More Complex Example: Mandelbrot</a></li>
+</ul>
+</div>
 </div>
 
 
@@ -63,6 +98,12 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../usage/logger.html"
+                        title="previous chapter">3. Logging System</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="part1.html"
+                        title="next chapter">1. Part 1: Introduction</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/tutorial/index.txt"
@@ -94,7 +135,13 @@
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.2 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="part1.html" title="1. Part 1: Introduction"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../usage/logger.html" title="3. Logging System"
+             >previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.3 documentation</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">

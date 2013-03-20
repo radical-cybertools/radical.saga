@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>SAGA 0.9.2 documentation &mdash; SAGA 0.9.2 documentation</title>
+    <title>SAGA 0.9.3 documentation &mdash; SAGA 0.9.3 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.9.2',
+        VERSION:     '0.9.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.2 documentation" href="#" />
+    <link rel="top" title="SAGA 0.9.3 documentation" href="#" />
     <link rel="next" title="1. Installation and Usage" href="usage/index.html" /> 
   </head>
   <body>
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="usage/index.html" title="1. Installation and Usage"
              accesskey="N">next</a> |</li>
-        <li><a href="#">SAGA 0.9.2 documentation</a> &raquo;</li> 
+        <li><a href="#">SAGA 0.9.3 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -57,7 +57,7 @@
           <div class="body">
             
   <div class="section" id="saga-version-documentation">
-<h1>SAGA 0.9.2 documentation<a class="headerlink" href="#saga-version-documentation" title="Permalink to this headline">¶</a></h1>
+<h1>SAGA 0.9.3 documentation<a class="headerlink" href="#saga-version-documentation" title="Permalink to this headline">¶</a></h1>
 <p>SAGA-Python is a light-weight Python package that implements <a class="reference external" href="http://www.ogf.org/documents/GFD.90.pdf">OGF SAGA</a> interface specification and provides
 adaptors for different distributed middleware systems and services. SAGA-Python
 focuses on usability, extensibility and simple deployment in real-world
@@ -74,7 +74,15 @@ heterogeneous distributed computing environments and application scenarios.</p>
 <li class="toctree-l2"><a class="reference internal" href="usage/logger.html">3. Logging System</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="library/index.html">2. Library Reference</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial/index.html">2. Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/part1.html">1. Part 1: Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/part2.html">2. Part 2: Local Job Submission</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/part3.html">3. Part 3: Remote Job Submission</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/part4.html">4. Part 4: Adding File Transfer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/part5.html">5. Part 5: A More Complex Example: Mandelbrot</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="library/index.html">3. Library Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="library/job/index.html">1. Working with Jobs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="library/filesystem/index.html">2. Working with Files and Directories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="library/url.html">3. Using URLs</a></li>
@@ -84,19 +92,16 @@ heterogeneous distributed computing environments and application scenarios.</p>
 <li class="toctree-l2"><a class="reference internal" href="library/exceptions.html">7. Exception Handling</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="adaptors/saga.adaptor.index.html">3. Adaptors:</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.myproxy.html">1. saga.adaptor.myproxy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.x509.html">2. saga.adaptor.x509</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.ssh.html">3. saga.adaptor.ssh</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.userpass.html">4. saga.adaptor.userpass</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.shell_job.html">5. saga.adaptor.shell_job</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.sgejob.html">6. saga.adaptor.sgejob</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.pbsjob.html">7. saga.adaptor.pbsjob</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.condorjob.html">8. saga.adaptor.condorjob</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.slurm_job.html">9. saga.adaptor.slurm_job</a></li>
+<li class="toctree-l1"><a class="reference internal" href="adaptors/saga.adaptor.index.html">4. Adaptors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.shell_file.html">1. saga.adaptor.shell_file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.shell_job.html">2. saga.adaptor.shell_job</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.sgejob.html">3. saga.adaptor.sgejob</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.pbsjob.html">4. saga.adaptor.pbsjob</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.condorjob.html">5. saga.adaptor.condorjob</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adaptors/saga.adaptor.slurm_job.html">6. saga.adaptor.slurm_job</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="developers/index.html">4. Developer Documentation</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="developers/index.html">5. Developer Documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="developers/adaptorwriting.html">1. Writing SAGA-Python Adaptors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developers/timeout_gc.html">2. Timout Garbage Collection</a></li>
 </ul>
@@ -121,7 +126,7 @@ heterogeneous distributed computing environments and application scenarios.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="#">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">SAGA 0.9.2 documentation</a></li>
+<li><a class="reference internal" href="#">SAGA 0.9.3 documentation</a></li>
 <li><a class="reference internal" href="#contents">Contents:</a><ul>
 </ul>
 </li>
@@ -165,7 +170,7 @@ heterogeneous distributed computing environments and application scenarios.</p>
         <li class="right" >
           <a href="usage/index.html" title="1. Installation and Usage"
              >next</a> |</li>
-        <li><a href="#">SAGA 0.9.2 documentation</a> &raquo;</li> 
+        <li><a href="#">SAGA 0.9.3 documentation</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">

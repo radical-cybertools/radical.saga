@@ -47,6 +47,15 @@ enable / disable saga.adaptor.condorjob adaptor
   - **default** : True
   - **environment** : None
   - **valid options** : [True, False]
+ptydebug
+********
+
+Turns PTYWrapper debugging on or off.
+
+  - **type** : <type 'bool'>
+  - **default** : False
+  - **environment** : SAGA_PTYDEBUG
+  - **valid options** : [True, False]
 
 
 Capabilities
