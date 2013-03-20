@@ -490,7 +490,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                 raise saga.BadParameter ("schema of move target is not supported (%s)" \
                                       % (tgt))
 
-            self.shell.stage_from_file (src, tgt.path, rec_flag)
+            self.shell.stage_from_file (src.path, tgt.path, rec_flag)
 
             # we now have to remove the remote src 
             # FIXME: eval flags (recursive)
@@ -900,7 +900,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                 raise saga.BadParameter ("schema of copy target is not supported (%s)" \
                                       % (tgt))
 
-            self.shell.stage_from_file (src, tgt.path, rec_flag)
+            self.shell.stage_from_file (src.path, tgt.path, rec_flag)
 
 
         # we cannot support the combination of URLs
@@ -950,7 +950,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             sumisc.url_is_compatible (cwdurl, src) and \
             sumisc.url_is_local      (tgt)             :
 
-            self.shell.stage_from_file (src, tgt.path, rec_flag)
+            self.shell.stage_from_file (src.path, tgt.path, rec_flag)
 
             # we now have to remove the remote src 
             # FIXME: eval flags (recursive)

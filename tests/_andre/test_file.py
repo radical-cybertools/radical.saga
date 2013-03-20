@@ -3,6 +3,15 @@ import os
 import sys
 import saga
 
+
+host = "gw68.quarry.iu.teragrid.org"
+src  = saga.Url('sftp://%s/etc/passwd' % host)
+tgt  = saga.Url('file://localhost/tmp/')
+f    = saga.filesystem.File (src)
+f.copy (tgt)
+
+sys.exit (0)
+
 os.system ("rm -rf /tmp/src ; mkdir /tmp/src ; ls -la /tmp > /tmp/src/src.dat; ln -s /tmp/src/src.dat /tmp/src/src.lnk")
 
 def test_tests (url) :

@@ -242,7 +242,7 @@ class PTYShellFactory (object) :
 
         repl = dict ({'src'      : str(src), 
                       'tgt'      : str(tgt), 
-                      'cp_flags' : cp_flags}.items ()+ info.items ())
+                      'cp_flags' : cp_flags}.items () + info.items ())
 
         # at this point, we do have a valid, living master
         s_cmd = _SCRIPTS[info['type']]['copy_from']    % repl
