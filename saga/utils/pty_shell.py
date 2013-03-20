@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import re
 import os
 import sys
@@ -872,8 +877,17 @@ class PTYShell (object) :
         elif 'pass' in lmsg :
             e = saga.AuthenticationFailed (cmsg)
 
+        elif 'ssh_exchange_identification' in lmsg :
+            e = saga.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
+
         elif 'denied' in lmsg :
             e = saga.PermissionDenied (cmsg)
+
+        elif 'shared connection' in lmsg :
+            e = saga.NoSuccess ("Insufficient system resources: %s" % cmsg)
+
+        elif 'pty allocation' in lmsg :
+            e = saga.NoSuccess ("Insufficient system resources: %s" % cmsg)
 
         # print e.traceback
         return e

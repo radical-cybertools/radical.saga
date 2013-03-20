@@ -1,3 +1,9 @@
+
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 __author__    = ["Andre Merzky", "Ole Weidner"]
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -89,9 +95,11 @@ def cleanup (text) :
 idx = "%s/%s.rst" % (DOCROOT, 'saga.adaptor.index')
 i   = open (idx, 'w')
 
-i.write ("*********\n")
-i.write ("Adaptors:\n")
-i.write ("*********\n")
+i.write (".. _chapter_adaptors:\n")
+i.write ("\n")
+i.write ("********\n")
+i.write ("Adaptors\n")
+i.write ("********\n")
 i.write ("\n")
 i.write (".. toctree::\n")
 i.write ("   :numbered:\n")
@@ -219,7 +227,12 @@ for a in saga.engine.registry.adaptor_registry :
         classes      = ""
         classes_long = ""
 
+        is_context = True
         for cpi in m._ADAPTOR_INFO['cpis'] :
+
+            if cpi['type'] != 'saga.Context' :
+                is_context = False
+
             classes      += "  - :class:`%s`\n" % cpi['type']
             classes_long += "\n"
             classes_long += "%s\n" % cpi['type']
@@ -229,6 +242,12 @@ for a in saga.engine.registry.adaptor_registry :
             classes_long += "   :members:\n"
           # classes_long += "   :undoc-members:\n"
             classes_long += "\n"
+
+        if is_context :
+            # do not auto-document context adaptors -- those are done manually
+            print "skip   %s (context)" % fn
+            continue
+
 
 
     f = open (fn, 'w')

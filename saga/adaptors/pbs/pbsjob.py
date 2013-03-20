@@ -1,12 +1,11 @@
-#!/usr/bin/env python
-# encoding: utf-8
+
+__author__    = "Andre Merzky, Mark Santcroos, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 
 """ PBS job adaptor implementation
 """
-
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2013, The SAGA Project"
-__license__   = "MIT"
 
 import saga.utils.which
 import saga.utils.pty_shell
@@ -151,15 +150,15 @@ _PTY_TIMEOUT = 2.0
 _ADAPTOR_NAME          = "saga.adaptor.pbsjob"
 _ADAPTOR_SCHEMAS       = ["pbs", "pbs+ssh", "pbs+gsissh"]
 _ADAPTOR_OPTIONS       = [
-    # {
-    # 'category':      'saga.adaptor.pbsjob',
-    # 'name':          'foo',
-    # 'type':          bool,
-    # 'default':       False,
-    # 'valid_options': [True, False],
-    # 'documentation': """Doc""",
-    # 'env_variable':   None
-    # },
+     {
+     'category':      'saga.adaptor.pbsjob',
+     'name':          'ptydebug',
+     'type':          bool,
+     'default':       False,
+     'valid_options': [True, False],
+     'documentation': """Turns PTYWrapper debugging on or off.""",
+     'env_variable':  "SAGA_PTYDEBUG"
+     }
 ]
 
 # --------------------------------------------------------------------
@@ -244,9 +243,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts = self.get_config()
-        # self.foo = self.opts['foo'].get_value()
-
-        #self._logger.info('debug trace : %s' % self.debug_trace)
+        self.ptydebug = self.opts['ptydebug'].get_value()
 
     # ----------------------------------------------------------------
     #
@@ -270,7 +267,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 ###############################################################################
 #
 class PBSJobService (saga.adaptors.cpi.job.Service):
-    """ implements saga.adaptors.cpi.job.Service 
+    """ implements saga.adaptors.cpi.job.Service
     """
 
     # ----------------------------------------------------------------
@@ -280,17 +277,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self._cpi_base = super(PBSJobService, self)
         self._cpi_base.__init__(api, adaptor)
 
+        self._adaptor = adaptor
+
     # ----------------------------------------------------------------
     #
     def __del__(self):
-
-        # FIXME: not sure if we should PURGE here -- that removes states which
-        # might not be evaluated, yet.  Should we mark state evaluation
-        # separately?
-        #   cmd_state () { touch $DIR/purgeable; ... }
-        # When should that be done?
-        #self._logger.error("adaptor dying... %s" % self.njobs)
-        #self._logger.trace()
 
         self.finalize(kill_shell=True)
 
@@ -300,9 +291,6 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     def init_instance(self, adaptor_state, rm_url, session):
         """ service instance constructor
         """
-        # Turn this off by default.
-        self._disable_ptywrapper_logging = True
-
         self.rm      = rm_url
         self.session = session
         self.ppn     = 0
@@ -339,7 +327,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                           'qsub':     None,
                           'qdel':     None}
 
-        if self._disable_ptywrapper_logging:
+        if self._adaptor.ptydebug == False:
             # create a null logger to silence the PTY wrapper!
             import logging
 
@@ -433,7 +421,9 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def finalize(self, kill_shell=False):
-        pass
+        if  kill_shell :
+            if  self.shell :
+                self.shell.finalize (True)
 
     # ----------------------------------------------------------------
     #
@@ -451,9 +441,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                                          jd=jd, ppn=self.ppn,
                                          is_cray=self.is_cray, queue=self.queue)
 
-            # escape all double quotes, otherwise 'echo |' further down
-            # won't work
+            # escape all double quotes and dollarsigns, otherwise 'echo |' 
+            # further down won't work
             script = script.replace('"', '\\"')
+            script = script.replace('$', '\\$')
 
             self._logger.debug("Generated PBS script: %s" % script)
         except Exception, ex:
