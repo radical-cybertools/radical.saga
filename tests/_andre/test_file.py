@@ -7,6 +7,10 @@ import os
 import sys
 import saga
 
+f = saga.filesystem.File ("file://localhost/tmp/tmp.txt")
+f.copy ("sftp://merzky@india.futuregrid.org/tmp/")
+
+sys.exit (0)
 
 host = "gw68.quarry.iu.teragrid.org"
 src  = saga.Url('sftp://%s/etc/passwd' % host)
