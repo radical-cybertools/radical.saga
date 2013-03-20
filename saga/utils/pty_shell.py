@@ -83,8 +83,8 @@ class PTYShell (object) :
             raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" % (ret, out))
 
         # stage some data from a local string variable into a file on the remote system
-        self.shell.stage_to_file (src = pbs_job_script, 
-                                  tgt = "/tmp/data.$$/job_1.pbs")
+        self.shell.stage_to_remote (src = pbs_job_script, 
+                                    tgt = "/tmp/data.$$/job_1.pbs")
 
         # check size of staged script (this is actually done on PTYShell level
         # already, with no extra hop):
@@ -712,7 +712,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def write_to_file (self, src, tgt) :
+    def write_to_remote (self, src, tgt) :
         """
         :type  src: string
         :param src: data to be staged into the target file
@@ -750,7 +750,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def read_from_file (self, src) :
+    def read_from_remote (self, src) :
         """
         :type  src: string
         :param src: path to source file to staged from
@@ -781,7 +781,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def stage_to_file (self, src, tgt, cp_flags="") :
+    def stage_to_remote (self, src, tgt, cp_flags="") :
         """
         :type  src: string
         :param src: path of local source file to be stage from.
@@ -805,7 +805,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def stage_from_file (self, src, tgt, cp_flags="") :
+    def stage_from_remote (self, src, tgt, cp_flags="") :
         """
         :type  src: string
         :param tgt: path to source file to stage from.
