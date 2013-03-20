@@ -1,7 +1,7 @@
 
 import saga.attributes
-import saga.exceptions         as se
-import saga.resource.constants as src
+import saga.exceptions as se
+import constants       as const
 
 #-------------------------------------------------------------------------------
 #
@@ -23,7 +23,7 @@ class Description (saga.attributes.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    def __init__(self, d={}):
+    def __init__(self, d=None):
 
         # set attribute interface properties
 
@@ -34,26 +34,29 @@ class Description (saga.attributes.Attributes) :
 
         # register properties with the attribute interface
 
-        self._attributes_register  (src.TYPE        , None , sa.ENUM  , sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (src.TEMPLATE    , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (src.IMAGE       , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (src.DYNAMIC     , False, sa.BOOL  , sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (src.START       , None , sa.TIME  , sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (src.END         , None , sa.TIME  , sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (src.DURATION    , None , sa.TIME  , sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (src.MACHINE_OS  , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (src.MACHINE_ARCH, None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (src.SIZE        , 1    , sa.INT   , sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (src.MEMORY      , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (src.ACCESS      , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register  (const.RTYPE       , None , sa.ENUM  , sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register  (const.TEMPLATE    , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register  (const.IMAGE       , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register  (const.DYNAMIC     , False, sa.BOOL  , sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register  (const.START       , None , sa.TIME  , sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register  (const.END         , None , sa.TIME  , sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register  (const.DURATION    , None , sa.TIME  , sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register  (const.MACHINE_OS  , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register  (const.MACHINE_ARCH, None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register  (const.SIZE        , 1    , sa.INT   , sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register  (const.MEMORY      , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register  (const.ACCESS      , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
 
-        self._attributes_set_enums (src.TYPE, [src.COMPUTE ,
-                                               src.STORAGE ,
-                                               src.NETWORK ])
+        self._attributes_set_enums (const.RTYPE, [const.COMPUTE ,
+                                                  const.STORAGE ,
+                                                  const.NETWORK ])
 
-        # FIXME: initialization should be done in Attributes...
-        for key in d :
-            self.set_attribute (key, d[key]) 
+        # FIXME: initialization should be done in Attributes: initialization
+        # from dict or from other attributable
+        #
+        if  d :
+            for key in d.list_attributes () :
+                self.set_attribute (key, d.get_attribute (key)) 
 
 
     # --------------------------------------------------------------------------
@@ -82,42 +85,54 @@ class Description (saga.attributes.Attributes) :
 #
 class ComputeDescription (Description) : 
 
-    def __init__ (self, d={}) :
+    def __init__ (self, d=None) :
         
-        if  src.TYPE in d and d[src.TYPE] != src.COMPUTE :
-            raise se.BadParameter ("Cannot create ComputeResource with type '%s'" \
-                                % d[src.TYPE])
+        if  d :
+            if  const.RTYPE in d and d[const.RTYPE] != const.COMPUTE :
+                raise se.BadParameter ("Cannot create ComputeResource with type '%s'" \
+                                    % d[const.RTYPE])
 
         self._descr = super  (ComputeDescription, self)
         self._descr.__init__ (d)
+
+        self.rtype = const.COMPUTE
+        self.set_attribute (const.RTYPE, const.COMPUTE)
+
+        self._attributes_dump ()
 
 
 # ------------------------------------------------------------------------------
 #
 class StorageDescription (Description) :
 
-    def __init__ (self, d={}) :
+    def __init__ (self, d=None) :
         
-        if  src.TYPE in d and d[src.TYPE] != src.STORAGE :
-            raise se.BadParameter ("Cannot create StorageResource with type '%s'" \
-                                % d[src.TYPE])
+        if  d :
+            if  const.RTYPE in d and d[const.RTYPE] != const.STORAGE :
+                raise se.BadParameter ("Cannot create StorageResource with type '%s'" \
+                                    % d[const.RTYPE])
 
         self._descr = super  (StorageDescription, self)
         self._descr.__init__ (d)
+
+        self.rtype = const.STORAGE
 
 
 # ------------------------------------------------------------------------------
 #
 class NetworkDescription (Description) :
 
-    def __init__ (self, d={}) :
+    def __init__ (self, d=None) :
         
-        if  src.TYPE in d and d[src.TYPE] != src.NETWORK :
-            raise se.BadParameter ("Cannot create NetworkResource with type '%s'" \
-                                % d[src.TYPE])
+        if  d :
+            if  const.RTYPE in d and d[const.RTYPE] != const.NETWORK :
+                raise se.BadParameter ("Cannot create NetworkResource with type '%s'" \
+                                    % d[const.RTYPE])
 
         self._descr = super  (NetworkDescription, self)
-        self._descr.__init__ (d)
+        self._descr.__init__ ()
+
+        self.rtype = const.NETWORK
 
 
 

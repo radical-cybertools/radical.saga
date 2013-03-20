@@ -189,7 +189,7 @@ class Engine(sconf.Configurable):
                 adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
 
             except Exception as e:
-                self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
+                self._logger.error ("Skipping adaptor %s 1: module loading failed: %s" % (module_name, e))
                 self._logger.trace ()
                 continue # skip to next adaptor
 
@@ -205,11 +205,13 @@ class Engine(sconf.Configurable):
                 adaptor_info     = adaptor_instance.register ()
 
             except se.SagaException as e:
-                self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
+                self._logger.error ("Skipping adaptor %s 2: loading failed: %s" % (module_name, e))
                 self._logger.trace ()
                 continue # skip to next adaptor
             except Exception as e:
-                self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
+                print type(e)
+                print repr(e)
+                self._logger.error ("Skipping adaptor %s 3: loading failed: %s" % (module_name, e))
                 self._logger.trace ()
                 continue # skip to next adaptor
 

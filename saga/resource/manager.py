@@ -6,10 +6,10 @@ import saga.base
 import saga.async
 import saga.url
 import saga.session
-import saga.exceptions         as se
-import saga.constants          as sc
-import saga.resource.constants as src
-import saga.resource.description
+import saga.exceptions  as se
+import saga.constants   as sc
+import constants        as const
+import description      as descr
 
 
 # ------------------------------------------------------------------------------
@@ -21,7 +21,7 @@ class Manager (saga.base.Base, saga.async.Async) :
     control over subsets of those resources (resource slices) to an application.
 
     This :class:`Manager` class represents the contact point to such
-    ResourceManager instances -- the application can thus aquire compute, data
+    ResourceManager instances -- the application can thus acquire compute, data
     or network resources, according to some resource specification, for a bound
     or unbound amount of time. 
     """
@@ -61,15 +61,15 @@ class Manager (saga.base.Base, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     # 
-    def list (self, type=None, ttype=None) :
+    def list (self, rtype=None, ttype=None) :
         """ 
-        :type  type: None or enum (COMPUTE | STORAGE | NETWORK)
-        :param type: specifies a filter of resource types to list.
+        :type  rtype: None or enum (COMPUTE | STORAGE | NETWORK)
+        :param rtype: specifies a filter of resource types to list.
 
-        List known resource instances (which can be aquired). 
+        List known resource instances (which can be acquired). 
         Returns a list of IDs.  
         """
-        return self._adaptor.list (type, ttype)
+        return self._adaptor.list (rtype, ttype)
 
 
     # --------------------------------------------------------------------------
@@ -89,16 +89,16 @@ class Manager (saga.base.Base, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     # 
-    def list_templates (self, type=None, ttype=None) :
+    def list_templates (self, rtype=None, ttype=None) :
         """
-        :type  type: None or enum (COMPUTE | STORAGE | NETWORK)
-        :param type: specifies a filter of resource types to list.
+        :type  rtype: None or enum (COMPUTE | STORAGE | NETWORK)
+        :param rtype: specifies a filter of resource types to list.
 
         List template names available for the specified resource type(s).
         Returns a list of strings.
         """
 
-        return self._adaptor.list_templates (type, ttype)
+        return self._adaptor.list_templates (rtype, ttype)
 
 
     # --------------------------------------------------------------------------
@@ -122,13 +122,13 @@ class Manager (saga.base.Base, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     # 
-    def aquire (self, descr, ttype=None) :
+    def acquire (self, spec, ttype=None) :
         """
         :type  descr: :class:`Description`
         :param descr: specifies the resource to be acquired.
 
         Get a :class:`saga.resource.Resource` handle for the specified
-        description.  Depending on the `TYPE` attribute in the description, the
+        description.  Depending on the `RTYPE` attribute in the description, the
         returned resource may be a :class:`saga.resource.Compute`,
         :class:`saga.resource.Storage` or :class:`saga.resource.Network`
         instance.  The returned resource will be in NEW, PENDING or ACTIVE
@@ -140,17 +140,17 @@ class Manager (saga.base.Base, saga.async.Async) :
 
             id = saga.url.Url (spec)
             
-            return self._adaptor.aquire_by_id (id, ttype)
+            return self._adaptor.acquire_by_id (id, ttype)
 
         else :
 
-            descr = saga.resource.description.Description (spec)
+            descr = saga.resource.Description (spec)
 
             # make sure at least 'executable' is defined
-            if descr.type is None:
+            if descr.rtype is None:
                 raise se.BadParameter ("No resource type defined in resource description")
     
-            descr_copy = saga.resource.description.Description ()
+            descr_copy = saga.resource.Description ()
             descr._attributes_deep_copy (descr_copy)
 
             return self._adaptor.acquire (descr_copy, ttype=ttype)

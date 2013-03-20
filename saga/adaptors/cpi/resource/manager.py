@@ -17,7 +17,7 @@ class Manager (cpi_base.CPIBase, cpi_async.Async) :
     #
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (Service, self)
+        self._cpi_base = super  (Manager, self)
         self._cpi_base.__init__ (api, adaptor)
 
     @SYNC
@@ -52,9 +52,9 @@ class Manager (cpi_base.CPIBase, cpi_async.Async) :
     def get_template               (self, name,      ttype)    : pass
 
     @SYNC
-    def aquire                     (self, descr,     ttype)    : pass
+    def acquire                    (self, descr,     ttype)    : pass
     @ASYNC
-    def aquire                     (self, descr,     ttype)    : pass
+    def acquire                    (self, descr,     ttype)    : pass
 
     @SYNC
     def release                    (self, id,        ttype)    : pass
