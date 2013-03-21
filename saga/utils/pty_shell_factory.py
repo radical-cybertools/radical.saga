@@ -337,7 +337,7 @@ class PTYShellFactory (object) :
         else :
             import saga.utils.misc as sum
             if not sum.host_is_valid (url.host) :
-                raise saga.BadParameter._log (self.logger, "invalid host in '%s'" % (url))
+                raise saga.BadParameter._log (self.logger, "Could not resolve host '%s'" % (url))
 
             info['ssh_env']   =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
             info['scp_env']   =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
