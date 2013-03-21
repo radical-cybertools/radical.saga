@@ -249,7 +249,6 @@ class PTYShellFactory (object) :
                       'tgt'      : str(tgt), 
                       'cp_flags' : cp_flags}.items () + info.items ())
 
-        print "copy_from"
         # at this point, we do have a valid, living master
         s_cmd = _SCRIPTS[info['type']]['copy_from']    % repl
         s_in  = _SCRIPTS[info['type']]['copy_from_in'] % repl
