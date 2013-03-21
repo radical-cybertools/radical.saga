@@ -99,7 +99,8 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__ (self) :
 
-        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        self.base = super  (Adaptor, self)
+        self.base.__init__ (_ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # for id parsing
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')

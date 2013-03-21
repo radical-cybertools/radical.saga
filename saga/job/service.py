@@ -15,7 +15,7 @@ from   saga.job.description import Description
 from   saga.exceptions      import BadParameter
 from   saga.session         import Session
 
-from   saga.constants       import SYNC, ASYNC, TASK, NOTASK # task constants
+from   saga.constants       import SYNC # task constants
 
 
 class Service (sb.Base, Async) :
