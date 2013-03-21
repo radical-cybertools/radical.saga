@@ -110,8 +110,8 @@ def test_ptyshell_file_stage () :
     shell = sups.PTYShell (saga.Url("fork://localhost"), saga.Session ())
 
     txt = "______1______2_____3_____"
-    shell.write_to_file (txt, "/tmp/saga-test-staging-111")
-    out = shell.read_from_file ("/tmp/saga-test-staging-111")
+    shell.stage_to_remote (txt, "/tmp/saga-test-staging-$$")
+    out = shell.stage_from_remote ("/tmp/saga-test-staging-$$")
 
     assert (txt == out)
 

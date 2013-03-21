@@ -10,14 +10,22 @@ __license__   = "MIT"
 
 import sys
 import saga
+import getpass
 
 
 def main():
-
     try:
+        # Your ssh identity on the remote machine.
+        ctx = saga.Context("ssh")
+        ctx.user_id = getpass.getuser()  # Change if necessary
+
+        session = saga.Session()
+        session.add_context(ctx)
+
         # create a job service for the local machine. both, 'fork' and
         # 'local' schemes trigger the local job adaptor.
-        js = saga.job.Service("condor+ssh://gw68.quarry.iu.teragrid.org?WhenToTransferOutput=ON_EXIT&should_transfer_files=YES&notification=Always")
+        js = saga.job.Service("condor+ssh://gw68.quarry.iu.teragrid.org?WhenToTransferOutput=ON_EXIT&should_transfer_files=YES&notification=Always",
+                              session=session)
 
         # describe our job
         jd = saga.job.Description()
@@ -29,16 +37,8 @@ def main():
         jd.environment     = {'RUNTIME': '10'}
         jd.wall_time_limit = 2 # minutes
 
-        jd.executable = '/bin/sh'
-        jd.arguments = ["""-c "python -c '
-import time
-if True :
-  if True :
-    time.sleep (3)
-'
-"
-"""]
-
+        jd.executable = '/bin/sleep'
+        jd.arguments = ["$RUNTIME"]
 
         jd.output          = "saga_condorjob.stdout"
         jd.error           = "saga_condorjob.stderr"
