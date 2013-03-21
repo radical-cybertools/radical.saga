@@ -303,9 +303,9 @@ class PTYProcess (object) :
         except OSError :
             pass
 
-        # collect exit vals etc.
-        if  do_wait :
-            self.wait ()
+      # # collect exit vals etc.
+      # if  do_wait :
+      #     self.wait ()
 
 
         self.child = None
