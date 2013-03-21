@@ -218,7 +218,7 @@ class TestConfig (sconf.Configurable):
                 self._logger.warn ("ignoring incomplete context")
             return None
 
-        c = saga.Context (ctype)
+        c = saga.Context (c_type)
 
         c.user_id    = c_user_id
         c.user_pass  = c_user_pass
