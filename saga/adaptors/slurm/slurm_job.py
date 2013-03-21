@@ -486,7 +486,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if threads_per_process:
             pass
 
-        if working_directory:
+        if cwd is not "":
             slurm_script += "#SBATCH -D %s\n" % cwd
 
         if output:
