@@ -190,7 +190,7 @@ class Engine(sconf.Configurable):
                 adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
 
             except Exception as e:
-                self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
+                self._logger.error ("Skipping adaptor %s 1: module loading failed: %s" % (module_name, e))
                 self._logger.trace ()
                 continue # skip to next adaptor
 
@@ -209,6 +209,7 @@ class Engine(sconf.Configurable):
                 self._logger.error ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
               # self._logger.trace ()
                 continue # skip to next adaptor
+
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
               # self._logger.trace ()
@@ -324,30 +325,79 @@ class Engine(sconf.Configurable):
                     continue # skip to next adaptor
 
                 # make sure the cpi class is a valid cpi for the given type.
-                # Note that saga.job.service.Service is the same as
-                # saga.job.Service -- so we also make sure the module name does
-                # not have duplicated last element.  Also, the last element
-                # needs to be translated from CamelCase to camel_case
-                cpi_last = re.sub (r'.*\.', '',                      cpi_type)
-                cpi_modn = re.sub (r'^saga\.', 'saga.adaptors.cpi.', cpi_type)
-                cpi_modn = re.sub (r'([^.]+)\.\1$', r'\1',           cpi_modn)
-                cpi_modn = re.sub (r'(.*)([a-z])([A-Z])([^\.]*)$', r'\1\2_\3\4', cpi_modn).lower ()
+                # We walk through the list of known modules, and try to find
+                # a modules which could have that class.  We do the following
+                # tests:
+                #
+                #   cpi_class: ShellJobService
+                #   cpi_type:  saga.job.Service
+                #   modules:   saga.adaptors.cpi.job
+                #   modules:   saga.adaptors.cpi.job.service
+                #   classes:   saga.adaptors.cpi.job.Service
+                #   classes:   saga.adaptors.cpi.job.service.Service
+                #
+                #   cpi_class: X509Context
+                #   cpi_type:  saga.Context
+                #   modules:   saga.adaptors.cpi.context
+                #   classes:   saga.adaptors.cpi.context.Context
+                #
+                # So, we add a 'adaptors.cpi' after the 'saga' namespace
+                # element, then append the rest of the given namespace.  If that
+                # gives a module which has the requested class, fine -- if not,
+                # we add a lower cased version of the class name as last
+                # namespace element, and check again.
 
-                # does that module exist?
-                if not cpi_modn in sys.modules :
+                # ->   saga .  job .  Service 
+                # <- ['saga', 'job', 'Service']
+                cpi_type_nselems = cpi_type.split ('.')
+
+                if  len(cpi_type_nselems) < 2 or \
+                    len(cpi_type_nselems) > 3    :
+                    self._logger.error ("Skipping adaptor %s: cpi type not valid: '%s'" \
+                                     % (module_name, cpi_type))
+                    continue # skip to next cpi info
+
+                if cpi_type_nselems[0] != 'saga' :
+                    self._logger.error ("Skipping adaptor %s: cpi namespace not valid: '%s'" \
+                                     % (module_name, cpi_type))
+                    continue # skip to next cpi info
+
+                # -> ['saga',                    'job', 'Service'] 
+                # <- ['saga', 'adaptors', 'cpi', 'job', 'Service']
+                cpi_type_nselems.insert (1, 'adaptors')
+                cpi_type_nselems.insert (2, 'cpi')
+
+                # -> ['saga', 'adaptors', 'cpi', 'job',  'Service']
+                # <- ['saga', 'adaptors', 'cpi', 'job'], 'Service'
+                cpi_type_cname = cpi_type_nselems.pop ()
+
+                # -> ['saga', 'adaptors', 'cpi', 'job'], 'Service'
+                # <-  'saga.adaptors.cpi.job
+                # <-  'saga.adaptors.cpi.job.service
+                cpi_type_modname_1 = '.'.join (cpi_type_nselems)
+                cpi_type_modname_2 = '.'.join (cpi_type_nselems + [cpi_type_cname.lower()])
+
+                # does either module exist?
+                cpi_type_modname = None
+                if  cpi_type_modname_1 in sys.modules :
+                    cpi_type_modname = cpi_type_modname_1 
+
+                if  cpi_type_modname_2 in sys.modules :
+                    cpi_type_modname = cpi_type_modname_2 
+
+                if  not cpi_type_modname :
                     self._logger.error ("Skipping adaptor %s: cpi type not known: '%s'" \
                                      % (module_name, cpi_type))
                     continue # skip to next cpi info
 
-
                 # so, make sure the given cpi is actually
                 # implemented by the adaptor class
                 cpi_ok = False
-                for name, cpi_obj in inspect.getmembers (sys.modules[cpi_modn]) :
-                    if name == cpi_last            and \
-                       inspect.isclass (cpi_obj)   and \
-                       issubclass (cpi_class, cpi_obj) :
-                           cpi_ok = True
+                for name, cpi_obj in inspect.getmembers (sys.modules[cpi_type_modname]) :
+                    if  name == cpi_type_cname      and \
+                        inspect.isclass (cpi_obj)       :
+                        if  issubclass (cpi_class, cpi_obj) :
+                            cpi_ok = True
 
                 if not cpi_ok :
                     self._logger.error ("Skipping adaptor %s: doesn't implement cpi '%s (%s)'" \
