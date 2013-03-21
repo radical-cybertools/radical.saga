@@ -213,8 +213,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
             ret, out, _ = self.shell.run_sync ("mkdir -p %s\n" % (dirname))
             if  ret != 0 :
-                raise saga.NoSuccess ("move (%s -> %s) failed at mkdir stage (%s): (%s)" \
-                                   % (src, tgt, ret, out))
+                raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
+                                   % (dirname, ret, out))
 
         elif sumisc.url_is_local (tgt) :
 
@@ -224,12 +224,12 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
             ret, out, _ = self.local.run_sync ("mkdir -p %s\n" % (dirname))
             if  ret != 0 :
-                raise saga.NoSuccess ("move (%s -> %s) failed at mkdir stage (%s): (%s)" \
-                                   % (src, tgt, ret, out))
+                raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
+                                   % (dirname, ret, out))
 
         else :
-            raise saga.BadParameter ("move (%s -> %s) failed: cannot create targtet dir (%s): (%s)" \
-                                  % (src, tgt, ret, out))
+            raise saga.BadParameter ("failed: cannot create target dir for '%s': (%s) (%s)" \
+                                  % (tgt, ret, out))
 
 
     # ----------------------------------------------------------------
@@ -402,34 +402,95 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             self._create_parent (cwdurl, tgt)
 
 
+        # print cwdurl
+        # print src
+        # print tgt
+
         # if cwd, src and tgt point to the same host, we just run a shell cp
         # command on that host
         if  sumisc.url_is_compatible (cwdurl, src) and \
-            sumisc.url_is_compatible (cwdurl, tgt)     :
+            sumisc.url_is_compatible (cwdurl, tgt) :
 
+            # print "shell cp"
             ret, out, _ = self.shell.run_sync ("cp %s %s %s\n" % (rec_flag, src.path, tgt.path))
             if  ret != 0 :
                 raise saga.NoSuccess ("copy (%s -> %s) failed (%s): (%s)" \
                                    % (src, tgt, ret, out))
 
 
-        # if cwd and src are on the same host, and tgt is local, we stage from
-        # that host to local
-        elif \
-            sumisc.url_is_compatible (cwdurl, src) and \
-            sumisc.url_is_local      (tgt)             :
-
-            if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
-                raise saga.BadParameter ("schema of copy target is not supported (%s)" \
-                                      % (tgt))
-
-            self.shell.stage_from_file (src.path, tgt.path, rec_flag)
-
-
-        # we cannot support the combination of URLs
+        # src and tgt are on different hosts, we need to find out which of them
+        # is local (stage_from vs. stage_to).
         else :
-            raise saga.BadParameter ("copy from %s to %s is not supported" \
-                                  % (src, tgt))
+            # print "! shell cp"
+
+            # if cwd is remote, we use stage from/to
+            if not sumisc.url_is_local (cwdurl) :
+
+                # print "cwd remote"
+
+                if sumisc.url_is_local (src) :
+                
+                    # need a compatible target scheme
+                    if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
+                        raise saga.BadParameter ("schema of copy target is not supported (%s)" \
+                                              % (tgt))
+
+                    # print "from remote to local"
+                    self.shell.stage_from_remote (src.path, tgt.path, rec_flag)
+
+                elif sumisc.url_is_local (tgt) :
+                    
+                    # need a compatible source scheme
+                    if src.scheme and not src.scheme.lower () in _ADAPTOR_SCHEMAS :
+                        raise saga.BadParameter ("schema of copy source is not supported (%s)" \
+                                              % (src))
+
+                    # print "from local to remote"
+                    self.shell.stage_to_remote (src.path, tgt.path, rec_flag)
+
+                else :
+                    # print "from remote to other remote -- fail"
+                    # we cannot support the combination of URLs
+                    raise saga.BadParameter ("copy from %s to %s is not supported" \
+                                          % (src, tgt))
+   
+
+            # if cwd is local, and src or tgt are remote, we need to actually
+            # create a new pipe to the target host.  note that we may not have
+            # a useful session for that!
+            else : # sumisc.url_is_local (cwdurl) :
+
+                # print "cwd local"
+
+                if sumisc.url_is_local (src) :
+                
+                    # need a compatible target scheme
+                    if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
+                        raise saga.BadParameter ("schema of copy target is not supported (%s)" \
+                                              % (tgt))
+
+                    # print "from local to remote"
+                    tmp_shell = sups.PTYShell (tgt, self.session, self._logger)
+                    tmp_shell.stage_to_remote (src.path, tgt.path, rec_flag)
+
+                elif sumisc.url_is_local (tgt) :
+                    
+                    # need a compatible source scheme
+                    if src.scheme and not src.scheme.lower () in _ADAPTOR_SCHEMAS :
+                        raise saga.BadParameter ("schema of copy source is not supported (%s)" \
+                                              % (src))
+
+                    # print "from remote to local"
+                    tmp_shell = sups.PTYShell (src, self.session, self._logger)
+                    tmp_shell.stage_from_remote (src.path, tgt.path, rec_flag)
+
+                else :
+
+                    # print "from remote to other remote -- fail"
+                    # we cannot support the combination of URLs
+                    raise saga.BadParameter ("copy from %s to %s is not supported" \
+                                          % (src, tgt))
+
    
 
 
@@ -442,7 +503,12 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         # FIXME: eval flags
 
-        return self.move (self.url, tgt, flags)
+        self.move (self.url, tgt, flags)
+
+        # need to re-initialize for new location
+        self.url   = tgt
+        self.flags = flags
+        self.initialize ()
    
    
     # ----------------------------------------------------------------
@@ -450,60 +516,9 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     @SYNC_CALL
     def move (self, src_in, tgt_in, flags):
 
-        self._is_valid ()
-
-        # FIXME: eval flags
-
-        cwdurl = saga.Url (self.url) # deep copy
-        src    = saga.Url (src_in)   # deep copy
-        tgt    = saga.Url (tgt_in)   # deep copy
-
-        if sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
-        if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
-
-        rec_flag = ""
-        if flags & saga.filesystem.RECURSIVE : 
-            rec_flag  += "-r "
-
-        if flags & saga.filesystem.CREATE_PARENTS : 
-            self._create_parent (cwdurl, tgt)
-
-
-        # if cwd, src and tgt point to the same host, we just run a shell mv
-        # command on that host
-        if  sumisc.url_is_compatible (cwdurl, src) and \
-            sumisc.url_is_compatible (cwdurl, tgt)     :
-
-            ret, out, _ = self.shell.run_sync ("mv %s %s %s\n" % (rec_flag, src.path, tgt.path))
-            if  ret != 0 :
-                raise saga.NoSuccess ("move (%s -> %s) failed (%s): (%s)" \
-                                   % (src, tgt, ret, out))
-
-
-        # if cwd and src are on the same host, and tgt is local, we stage from
-        # that host to local
-        elif \
-            sumisc.url_is_compatible (cwdurl, src) and \
-            sumisc.url_is_local      (tgt)             :
-
-            if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
-                raise saga.BadParameter ("schema of move target is not supported (%s)" \
-                                      % (tgt))
-
-            self.shell.stage_from_file (src, tgt.path, rec_flag)
-
-            # we now have to remove the remote src 
-            # FIXME: eval flags (recursive)
-            ret, out, _ = self.shell.run_sync ("rm %s %s\n" % (rec_flag, src.path))
-            if  ret != 0 :
-                raise saga.NoSuccess ("move (%s -> %s) failed at remove stage (%s): (%s)" \
-                                   % (src, tgt, ret, out))
-
-
-        # we cannot support the combination of URLs
-        else :
-            raise saga.BadParameter ("move from %s to %s is not supported" \
-                                  % (src, tgt))
+        # we handle move non-atomically, i.e. as copy/remove
+        self.copy   (src_in, tgt_in, flags);
+        self.remove (src_in, flags);
    
    
     # ----------------------------------------------------------------
@@ -720,8 +735,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
             ret, out, _ = self.shell.run_sync ("mkdir -p %s\n" % (dirname))
             if  ret != 0 :
-                raise saga.NoSuccess ("move (%s -> %s) failed at mkdir stage (%s): (%s)" \
-                                   % (src, tgt, ret, out))
+                raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
+                                   % (dirname, ret, out))
 
         elif sumisc.url_is_local (tgt) :
 
@@ -731,12 +746,12 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
             ret, out, _ = self.local.run_sync ("mkdir -p %s\n" % (dirname))
             if  ret != 0 :
-                raise saga.NoSuccess ("move (%s -> %s) failed at mkdir stage (%s): (%s)" \
-                                   % (src, tgt, ret, out))
+                raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
+                                   % (dirname, ret, out))
 
         else :
-            raise saga.BadParameter ("move (%s -> %s) failed: cannot create targtet dir (%s): (%s)" \
-                                  % (src, tgt, ret, out))
+            raise saga.BadParameter ("failed: cannot create target dir for '%s': (%s) (%s)" \
+                                  % (tgt, ret, out))
 
 
     # ----------------------------------------------------------------
@@ -878,93 +893,110 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         if flags & saga.filesystem.CREATE_PARENTS : 
             self._create_parent (cwdurl, tgt)
 
+        # print cwdurl
+        # print src
+        # print tgt
 
         # if cwd, src and tgt point to the same host, we just run a shell cp
         # command on that host
         if  sumisc.url_is_compatible (cwdurl, src) and \
             sumisc.url_is_compatible (cwdurl, tgt) :
 
+            # print "shell cp"
             ret, out, _ = self.shell.run_sync ("cp %s %s %s\n" % (rec_flag, src.path, tgt.path))
             if  ret != 0 :
                 raise saga.NoSuccess ("copy (%s -> %s) failed (%s): (%s)" \
                                    % (src, tgt, ret, out))
 
 
-        # if cwd and src are on the same host, and tgt is local, we stage from
-        # that host to local
-        elif \
-            sumisc.url_is_compatible (cwdurl, src) and \
-            sumisc.url_is_local      (tgt)          :
-
-            if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
-                raise saga.BadParameter ("schema of copy target is not supported (%s)" \
-                                      % (tgt))
-
-            self.shell.stage_from_file (src, tgt.path, rec_flag)
-
-
-        # we cannot support the combination of URLs
+        # src and tgt are on different hosts, we need to find out which of them
+        # is local (stage_from vs. stage_to).
         else :
-            raise saga.BadParameter ("copy from %s to %s is not supported" \
-                                  % (src, tgt))
+            # print "! shell cp"
+
+            # if cwd is remote, we use stage from/to
+            if not sumisc.url_is_local (cwdurl) :
+
+                # print "cwd remote"
+
+                if sumisc.url_is_local (src) :
+                
+                    # need a compatible target scheme
+                    if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
+                        raise saga.BadParameter ("schema of copy target is not supported (%s)" \
+                                              % (tgt))
+
+                    # print "from remote to local"
+                    self.shell.stage_from_remote (src.path, tgt.path, rec_flag)
+
+                elif sumisc.url_is_local (tgt) :
+                    
+                    # need a compatible source scheme
+                    if src.scheme and not src.scheme.lower () in _ADAPTOR_SCHEMAS :
+                        raise saga.BadParameter ("schema of copy source is not supported (%s)" \
+                                              % (src))
+
+                    # print "from local to remote"
+                    self.shell.stage_to_remote (src.path, tgt.path, rec_flag)
+
+                else :
+                    # print "from remote to other remote -- fail"
+                    # we cannot support the combination of URLs
+                    raise saga.BadParameter ("copy from %s to %s is not supported" \
+                                          % (src, tgt))
    
+
+            # if cwd is local, and src or tgt are remote, we need to actually
+            # create a new pipe to the target host.  note that we may not have
+            # a useful session for that!
+            else : # sumisc.url_is_local (cwdurl) :
+
+                # print "cwd local"
+
+                if sumisc.url_is_local (src) :
+                
+                    # need a compatible target scheme
+                    if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
+                        raise saga.BadParameter ("schema of copy target is not supported (%s)" \
+                                              % (tgt))
+
+                    # print "from local to remote"
+                    tmp_shell = sups.PTYShell (tgt, self.session, self._logger)
+                    tmp_shell.stage_to_remote (src.path, tgt.path, rec_flag)
+
+                elif sumisc.url_is_local (tgt) :
+                    
+                    # need a compatible source scheme
+                    if src.scheme and not src.scheme.lower () in _ADAPTOR_SCHEMAS :
+                        raise saga.BadParameter ("schema of copy source is not supported (%s)" \
+                                              % (src))
+
+                    # print "from remote to local"
+                    tmp_shell = sups.PTYShell (src, self.session, self._logger)
+                    tmp_shell.stage_from_remote (src.path, tgt.path, rec_flag)
+
+                else :
+
+                    # print "from remote to other remote -- fail"
+                    # we cannot support the combination of URLs
+                    raise saga.BadParameter ("copy from %s to %s is not supported" \
+                                          % (src, tgt))
+
    
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def move_self (self, tgt_in, flags):
 
-        self._is_valid ()
+        # we handle move non-atomically, i.e. as copy/remove
+        self.copy_self   (tgt_in, flags)
+        self.remove_self (tgt_in, flags)
 
-        # FIXME: eval flags
+        # however, we are not closed at this point, but need to re-initialize
+        self.url   = tgt_in
+        self.flags = flags
+        self.initialize ()
 
-        cwdurl = saga.Url (self.cwdurl)  # deep copy
-        src    = saga.Url (self.url)     # deep copy
-        tgt    = saga.Url (tgt_in)       # deep copy
-
-        if sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
-        if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
-
-        rec_flag = ""
-        if flags & saga.filesystem.RECURSIVE : 
-            rec_flag  += "-r "
-
-        if flags & saga.filesystem.CREATE_PARENTS : 
-            self._create_parent (cwd, tgt)
-
-
-        # if cwd, src and tgt point to the same host, we just run a shell mv
-        # command on that host
-        if  sumisc.url_is_compatible (cwdurl, src) and \
-            sumisc.url_is_compatible (cwdurl, tgt)     :
-
-            ret, out, _ = self.shell.run_sync ("mv %s %s %s\n" % (rec_flag, src.path, tgt.path))
-            if  ret != 0 :
-                raise saga.NoSuccess ("move (%s -> %s) failed (%s): (%s)" \
-                                   % (src, tgt, ret, out))
-
-
-        # if cwd and src are on the same host, and tgt is local, we stage from
-        # that host to local
-        elif \
-            sumisc.url_is_compatible (cwdurl, src) and \
-            sumisc.url_is_local      (tgt)             :
-
-            self.shell.stage_from_file (src, tgt.path, rec_flag)
-
-            # we now have to remove the remote src 
-            # FIXME: eval flags (recursive)
-            ret, out, _ = self.shell.run_sync ("rm %s %s\n" % (rec_flag, src.path))
-            if  ret != 0 :
-                raise saga.NoSuccess ("move (%s -> %s) failed at remove stage (%s): (%s)" \
-                                   % (src, tgt, ret, out))
-
-
-        # we cannot support the combination of URLs
-        else :
-            raise saga.BadParameter ("copy from %s to %s is not supported" \
-                                  % (src, tgt))
-   
    
     # ----------------------------------------------------------------
     #

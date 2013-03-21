@@ -58,6 +58,8 @@ def test_job_service_invalid_url():
         js = saga.job.Service(invalid_url, tc.session)
         assert False, "Expected XYZ exception but got none."
 
+        del js
+
     except saga.BadParameter:
         assert True
     except saga.SagaException as ex:
@@ -81,6 +83,8 @@ def test_job_service_create():
         j1 = js.create_job(jd)
         assert j1.state == j1.get_state()
         assert j1.state == saga.job.NEW
+
+        del js
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
@@ -113,6 +117,8 @@ def test_job_run():
 
         global long_job
         long_job = j1
+
+        del js
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
@@ -151,6 +157,8 @@ if True :
         j1.wait()
         assert j1.state == saga.job.DONE
 
+        del js
+
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
@@ -187,6 +195,8 @@ def test_job_suspend_resume():
 
         j1.cancel()
 
+        del js
+
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
@@ -215,6 +225,8 @@ def test_job_cancel():
         j1.run()
         j1.cancel()
         assert j1.state == saga.job.CANCELED
+
+        del js
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
@@ -252,6 +264,8 @@ def test_job_states_OLD():
         j4.wait ()       
         assert j4.state == saga.job.FAILED
 
+        del js
+
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
@@ -283,6 +297,8 @@ def test_get_exit_code():
         ec = j.exit_code
         assert ec == 3, "%s != 3" % ec
 
+        del js
+
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
@@ -310,6 +326,8 @@ def test_get_service_url():
         j = js.create_job(jd)
 
         assert j.service_url == js.url
+
+        del js
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
@@ -341,6 +359,8 @@ def test_get_id():
         assert j.id != None
         assert j.id == j.get_id()
 
+        del js
+
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
@@ -361,6 +381,8 @@ def test_job_wait():
         j1 = long_job
         j1.wait()
         assert j1.state == saga.job.DONE
+
+        del js
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
