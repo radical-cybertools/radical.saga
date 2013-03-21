@@ -394,8 +394,9 @@ class PTYShellFactory (object) :
             if url.username   :  info['user'] = url.username
             if url.password   :  info['pass'] = url.password
 
-            if 'user' in info : 
-                info['host_str'] = "%s@%s"  % (info['user'], info['host_str'])
+            if  'user' in info : 
+                if  info['user'] :
+                    info['host_str'] = "%s@%s"  % (info['user'], info['host_str'])
 
             info['m_flags']  = _SSH_FLAGS_MASTER
             info['s_flags']  = _SSH_FLAGS_SLAVE
