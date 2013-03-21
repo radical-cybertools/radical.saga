@@ -11,7 +11,6 @@ __license__   = "MIT"
 #
 # task constansts
 #
-NOTASK    = None     # makes some implementation internal method invocations more readable
 SYNC      = 1        # 'Sync'
 ASYNC     = 2        # 'Async'
 TASK      = 3        # 'Task'

@@ -4,12 +4,19 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-from   saga.constants  import *
 
-import saga
+import saga.utils.signatures as sus
+import saga.adaptors.base    as sab
+import saga.attributes       as sa
+import saga.base             as sb
 
+from   saga.constants import TYPE,       SERVER,    USER_CERT,   CERT_REPOSITORY
+from   saga.constants import USER_PROXY, USER_KEY,  USER_ID,     USER_PASS, USER_VO
+from   saga.constants import LIFE_TIME,  REMOTE_ID, REMOTE_HOST, REMOTE_PORT 
 
-class Context (saga.base.Base, saga.Attributes) :
+# ------------------------------------------------------------------------------
+#
+class Context (sb.Base, sa.Attributes) :
     '''A SAGA Context object as defined in GFD.90.
 
     A security context is a description of a security token.  It is important to
@@ -56,15 +63,20 @@ class Context (saga.base.Base, saga.Attributes) :
 
     '''
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Context', 
+                  basestring, 
+                  sus.optional (sab.Base),
+                  sus.optional (dict))
+    @sus.returns (sus.nothing)
     def __init__ (self, type, _adaptor=None, _adaptor_state={}) : 
         '''
         type: string
         ret:  None
         '''
 
-        import saga.attributes as sa
-
-        saga.base.Base.__init__ (self, type.lower(), _adaptor, _adaptor_state, type, ttype=None)
+        sb.Base.__init__ (self, type.lower(), _adaptor, _adaptor_state, type, ttype=None)
 
         # set attribute interface properties
         self._attributes_extensible  (False)
@@ -88,6 +100,11 @@ class Context (saga.base.Base, saga.Attributes) :
         self.type = type
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Context', 
+                  'Session')
+    @sus.returns (sus.nothing)
     def _initialize (self, session) :
         '''
         ret:  None

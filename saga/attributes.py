@@ -2096,6 +2096,11 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  callable,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_setter (self, key, setter, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -2114,6 +2119,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  callable,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_global_lister (self, lister, flow) :
         """
         This interface method is not part of the public consumer API, but can
@@ -2130,6 +2139,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  callable,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_global_caller (self, caller, flow) :
         """
         This interface method is not part of the public consumer API, but can
@@ -2146,6 +2159,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  callable,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_global_getter (self, getter, flow) :
         """
         This interface method is not part of the public consumer API, but can
@@ -2162,6 +2179,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  callable,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_global_setter (self, setter, flow) :
         """
         This interface method is not part of the public consumer API, but can
@@ -2183,6 +2204,11 @@ class Attributes (_AttributesBase) :
     # The GFD.90 interface supports CamelCasing, and thus converts all keys to
     # underscore before using them.
     # 
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.anything,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def set_attribute (self, key, val, _flow=_DOWN) :
         """
         set_attribute(key, val)
@@ -2218,6 +2244,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.anything)
     def get_attribute (self, key, _flow=_DOWN) :
         """
         get_attribute(key)
@@ -2235,6 +2265,11 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.list_of (sus.anything),
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def set_vector_attribute (self, key, val, _flow=_DOWN) :
         """
         set_vector_attribute (key, val)
@@ -2253,6 +2288,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.list_of (sus.anything))
     def get_vector_attribute (self, key, _flow=_DOWN) :
         """
         get_vector_attribute (key)
@@ -2271,6 +2310,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def remove_attribute (self, key, _flow=_DOWN) :
         """
         remove_attribute (key)
@@ -2288,6 +2331,9 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.list_of (basestring))
     def list_attributes (self, _flow=_DOWN) :
         """
         list_attributes ()
@@ -2300,6 +2346,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.list_of (basestring))
     def find_attributes (self, pattern, _flow=_DOWN) :
         """
         find_attributes (pattern)
@@ -2315,6 +2365,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (bool)
     def attribute_exists (self, key, _flow=_DOWN) :
         """
         attribute_exist (key)
@@ -2330,6 +2384,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (bool)
     def attribute_is_readonly (self, key, _flow=_DOWN) :
         """
         attribute_is_readonly (key)
@@ -2345,6 +2403,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (bool)
     def attribute_is_writeable (self, key, _flow=_DOWN) :
         """
         attribute_is_writeable (key)
@@ -2359,6 +2421,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (bool)
     def attribute_is_removable (self, key, _flow=_DOWN) :
         """
         attribute_is_writeable (key)
@@ -2373,6 +2439,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (bool)
     def attribute_is_vector (self, key, _flow=_DOWN) :
         """
         attribute_is_vector (key)
@@ -2389,6 +2459,11 @@ class Attributes (_AttributesBase) :
     #
     # fold the GFD.90 monitoring API into the attributes API
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  callable, 
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (int)
     def add_callback (self, key, cb, _flow=_DOWN) :
         """
         add_callback (key, cb)
@@ -2426,6 +2501,11 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  int, 
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def remove_callback (self, key, id, _flow=_DOWN) :
         """
         remove_callback (key, id)
@@ -2450,6 +2530,9 @@ class Attributes (_AttributesBase) :
     #
     # we assume that properties are always used in under_score notation.
     #
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (sus.anything)
     def __getattr__ (self, key) :
         """ see L{get_attribute} (key) for details. """
         
@@ -2459,6 +2542,10 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.anything)
+    @sus.returns (sus.nothing)
     def __setattr__ (self, key, val) :
         """ see L{set_attribute} (key, val) for details. """
 
@@ -2468,6 +2555,9 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (sus.nothing)
     def __delattr__ (self, key) :
         """ see L{remove_attribute} (key) for details. """
         
@@ -2476,7 +2566,9 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
-    def __str__ (self) :
+    @sus.takes   ('Attributes')
+    @sus.returns (basestring)
+    def __str__  (self) :
         """ return a string representation of all set attributes """
         d = {}
 

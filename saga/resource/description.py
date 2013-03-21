@@ -98,7 +98,6 @@ class ComputeDescription (Description) :
         self.rtype = const.COMPUTE
         self.set_attribute (const.RTYPE, const.COMPUTE)
 
-        self._attributes_dump ()
 
 
 # ------------------------------------------------------------------------------
