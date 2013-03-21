@@ -356,7 +356,9 @@ class PTYShellFactory (object) :
                         if  context.attribute_exists ("user_id")  or \
                             context.attribute_exists ("user_key") :
                             if  context.attribute_exists ("user_id") :
-                                info['user']  = context.user_id
+                                user_id = context.user_id
+                                if user_id :
+                                    info['user']  = context.user_id
                             if  context.attribute_exists ("user_key") :
                                 info['ssh_args']  += "-i %s " % context.user_key
                                 info['scp_args']  += "-i %s " % context.user_key
@@ -368,9 +370,13 @@ class PTYShellFactory (object) :
                         if  context.attribute_exists ("user_id")   or \
                             context.attribute_exists ("user_pass") :
                             if  context.attribute_exists ("user_id") :
-                                info['user'] = context.user_id
+                                user_id = context.user_id
+                                if user_id :
+                                    info['user'] = user_id
                             if  context.attribute_exists ("user_pass") :
-                                info['pwd']  = context.user_pass
+                                user_pass = context.user_pass
+                                if user_pass :
+                                    info['pass'] = user_pass
                             info['ctx'].append (context)
 
                 if  context.type.lower () == "x509" :
@@ -386,7 +392,7 @@ class PTYShellFactory (object) :
             # -- but the data given in the URL take precedence
 
             if url.username   :  info['user'] = url.username
-            if url.password   :  info['pwd']  = url.password
+            if url.password   :  info['pass'] = url.password
 
             if 'user' in info : 
                 info['host_str'] = "%s@%s"  % (info['user'], info['host_str'])

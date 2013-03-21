@@ -77,8 +77,6 @@ def test_job_service_create():
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
 
-        print str(tc.session.contexts)
-
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
