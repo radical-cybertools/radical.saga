@@ -388,4 +388,3 @@ def test_job_wait():
                 print "%s " % ni
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
-

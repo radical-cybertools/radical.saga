@@ -337,7 +337,7 @@ class PTYShellFactory (object) :
         else :
             import saga.utils.misc as sum
             if not sum.host_is_valid (url.host) :
-                raise saga.BadParameter._log (self.logger, "invalid host in '%s'" % (url))
+                raise saga.BadParameter._log (self.logger, "Could not resolve host '%s'" % (url))
 
             info['ssh_env']   =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
             info['scp_env']   =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
@@ -359,6 +359,7 @@ class PTYShellFactory (object) :
                                 user_id = context.user_id.strip ()
                                 if user_id :
                                     info['user']  = user_id
+
                             if  context.attribute_exists ("user_key") :
                                 info['ssh_args']  += "-i %s " % context.user_key
                                 info['scp_args']  += "-i %s " % context.user_key
@@ -369,10 +370,16 @@ class PTYShellFactory (object) :
                     if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
                         if  context.attribute_exists ("user_id")   or \
                             context.attribute_exists ("user_pass") :
+
                             if  context.attribute_exists ("user_id") :
-                                info['user'] = context.user_id
+                                user_id = context.user_id.strip ()
+                                if user_id :
+                                    info['user'] = user_id
+
                             if  context.attribute_exists ("user_pass") :
-                                info['pwd']  = context.user_pass
+                                user_pass = context.user_pass.strip ()
+                                if user_pass :
+                                    info['pass'] = user_pass
                             info['ctx'].append (context)
 
                 if  context.type.lower () == "x509" :
@@ -388,7 +395,7 @@ class PTYShellFactory (object) :
             # -- but the data given in the URL take precedence
 
             if url.username   :  info['user'] = url.username
-            if url.password   :  info['pwd']  = url.password
+            if url.password   :  info['pass'] = url.password
 
             if 'user' in info : 
                 info['host_str'] = "%s@%s"  % (info['user'], info['host_str'])
