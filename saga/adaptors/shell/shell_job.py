@@ -350,7 +350,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         src = shell_wrapper._WRAPPER_SCRIPT
         tgt = ".saga/adaptors/shell_job/wrapper.sh"
 
-        self.shell.write_to_file (src, tgt)
+        self.shell.write_to_remote (src, tgt)
 
         # we run the script.  In principle, we should set a new / different
         # prompt -- but, due to some strange and very unlikely coincidence, the

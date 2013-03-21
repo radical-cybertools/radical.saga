@@ -249,7 +249,6 @@ class PTYShellFactory (object) :
                       'tgt'      : str(tgt), 
                       'cp_flags' : cp_flags}.items () + info.items ())
 
-        print "copy_from"
         # at this point, we do have a valid, living master
         s_cmd = _SCRIPTS[info['type']]['copy_from']    % repl
         s_in  = _SCRIPTS[info['type']]['copy_from_in'] % repl
@@ -357,7 +356,9 @@ class PTYShellFactory (object) :
                         if  context.attribute_exists ("user_id")  or \
                             context.attribute_exists ("user_key") :
                             if  context.attribute_exists ("user_id") :
-                                info['user']  = context.user_id
+                                user_id = context.user_id.strip ()
+                                if user_id :
+                                    info['user']  = user_id
                             if  context.attribute_exists ("user_key") :
                                 info['ssh_args']  += "-i %s " % context.user_key
                                 info['scp_args']  += "-i %s " % context.user_key

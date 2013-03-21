@@ -1678,8 +1678,8 @@ class Attributes (_AttributesBase) :
     #
     @sus.takes   ('Attributes', 
                   basestring, 
-                  sus,optional (sus.list_of (sys.anything)),
-                  sus,optional (sus.one_of  (_UP, _DOWN)))
+                  sus.optional (sus.list_of (sus.anything)),
+                  sus.optional (sus.one_of  (_UP, _DOWN)))
     @sus.returns (sus.nothing)
     def _attributes_set_enums (self, key, enums=None, flow=_DOWN) :
         """
@@ -2005,7 +2005,7 @@ class Attributes (_AttributesBase) :
     #
     @sus.takes   ('Attributes', 
                   basestring,
-                  sus.optional (float),
+                  callable,
                   sus.optional (sus.one_of (_UP, _DOWN)))
     @sus.returns (sus.nothing)
     def _attributes_add_check (self, key, check, flow=_DOWN) :
@@ -2036,7 +2036,7 @@ class Attributes (_AttributesBase) :
     #
     @sus.takes   ('Attributes', 
                   basestring,
-                  caller,
+                  callable,
                   sus.optional (sus.one_of (_UP, _DOWN)))
     @sus.returns (sus.nothing)
     def _attributes_set_getter (self, key, getter, flow=_DOWN) :

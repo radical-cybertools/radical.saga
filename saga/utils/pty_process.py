@@ -405,9 +405,6 @@ class PTYProcess (object) :
                 self.child = None
                 self.finalize (wstat=wstat)
 
-                # either way, its dead -- make sure it stays dead, to avoid zombie
-                # apocalypse...
-                self.finalize (do_wait=False)
                 return
 
 

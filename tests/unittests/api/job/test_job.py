@@ -382,8 +382,6 @@ def test_job_wait():
         j1.wait()
         assert j1.state == saga.job.DONE
 
-        del js
-
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
