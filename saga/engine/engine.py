@@ -319,7 +319,7 @@ class Engine(sconf.Configurable):
 
                 except Exception as e:
                     # this exception likely means that the adaptor does
-                    # not call the cpi.AdaptorBase initializer (correctly)
+                    # not call the saga.adaptors.Base initializer (correctly)
                     self._logger.warning ("Skipping adaptor %s: adaptor class invalid %s: %s" \
                                        % (module_name, cpi_info['class'], str(e)))
                     continue # skip to next adaptor
