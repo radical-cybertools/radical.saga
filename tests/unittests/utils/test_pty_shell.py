@@ -106,7 +106,7 @@ def test_ptyshell_file_stage () :
     shell = sups.PTYShell (saga.Url(conf.js_url), conf.session)
 
     txt = "______1______2_____3_____"
-    shell.write_to_remote (txt, "/tmp/saga-test-staging")
+    shell.write_to_remote   (txt, "/tmp/saga-test-staging")
     out = shell.read_from_remote ("/tmp/saga-test-staging")
 
     assert (txt == out)  , "%s == %s" % (repr(out), repr(txt))
