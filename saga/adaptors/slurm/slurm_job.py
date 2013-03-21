@@ -403,7 +403,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         total_cpu_count = None
         number_of_processes = None
         threads_per_process = None
-        working_directory = None
         output = "saga-python-slurm-default.out"
         error = None
         file_transfer = None
@@ -488,7 +487,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             pass
 
         if working_directory:
-            slurm_script += "#SBATCH -D %s\n" % working_directory
+            slurm_script += "#SBATCH -D %s\n" % cwd
 
         if output:
             slurm_script+= "#SBATCH -o %s\n" % output
