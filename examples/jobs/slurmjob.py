@@ -40,7 +40,6 @@ def main():
         jd.executable      = '/bin/sleep'
         jd.queue           = "development"
         jd.project         = "TG-MCB090174"
-        jd.wall_time_limit = 1 # minutes
 
         # Create a new job from the job description. The initial state of
         # the job is 'New'.
