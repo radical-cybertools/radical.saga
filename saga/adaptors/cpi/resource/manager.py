@@ -34,32 +34,32 @@ class Manager (cpi_base.CPIBase, cpi_async.Async) :
     @SYNC
     def list                       (self, type,      ttype)    : pass
     @ASYNC
-    def list                       (self, type,      ttype)    : pass
+    def list_async                 (self, type,      ttype)    : pass
 
     @SYNC
     def get_description            (self, id,        ttype)    : pass
     @ASYNC
-    def get_description            (self, id,        ttype)    : pass
+    def get_description_async      (self, id,        ttype)    : pass
 
     @SYNC
     def list_templates             (self, type,      ttype)    : pass
     @ASYNC
-    def list_templates             (self, type,      ttype)    : pass
+    def list_templates_async       (self, type,      ttype)    : pass
 
     @SYNC
     def get_template               (self, name,      ttype)    : pass
     @ASYNC
-    def get_template               (self, name,      ttype)    : pass
+    def get_template_async         (self, name,      ttype)    : pass
 
     @SYNC
     def acquire                    (self, descr,     ttype)    : pass
     @ASYNC
-    def acquire                    (self, descr,     ttype)    : pass
+    def acquire_async              (self, descr,     ttype)    : pass
 
     @SYNC
     def release                    (self, id,        ttype)    : pass
     @ASYNC                                           
-    def release                    (self, id,        ttype)    : pass
+    def release_async              (self, id,        ttype)    : pass
 
 
 

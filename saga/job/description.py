@@ -7,6 +7,7 @@ __license__   = "MIT"
 """ SAGA job description interface """
 
 import saga
+import saga.utils.signatures as sus
 
 #-------------------------------------------------------------------------------
 #
@@ -15,6 +16,8 @@ class Description (saga.Attributes) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Description')
+    @sus.returns (sus.nothing)
     def __init__(self):
 
         # set attribute interface properties
@@ -59,11 +62,17 @@ class Description (saga.Attributes) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Description',
+                  'Description')
+    @sus.returns ('Description')
     def __deepcopy__ (self, other) :
         return self.clone (other)
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Description',
+                  'Description')
+    @sus.returns ('Description')
     def clone (self, other=None) :
         """ 
         deep copy: unlike the default python assignment (copy object reference),

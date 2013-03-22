@@ -4,13 +4,19 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.url
-import saga.exceptions
-import saga.namespace.entry
+import saga.utils.signatures     as sus
+import saga.adaptors.base        as sab
+import saga.session              as ss
+import saga.task                 as st
+import saga.url                  as surl
+import saga.namespace.entry      as nsentry
 
 from   saga.filesystem.constants import *
+from   saga.constants            import SYNC, ASYNC, TASK
 
-class File (saga.namespace.entry.Entry) :
+# ------------------------------------------------------------------------------
+#
+class File (nsentry.Entry) :
     '''
     Represents a SAGA file as defined in GFD.90
 
@@ -28,7 +34,16 @@ class File (saga.namespace.entry.Entry) :
         file.move ("sftp://localhost/tmp/data/data.new")
     '''
 
-
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  sus.optional (surl.Url), 
+                  sus.optional (int), 
+                  sus.optional (ss.Session),
+                  sus.optional (sab.Base), 
+                  sus.optional (dict), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
     def __init__ (self, url=None, flags=READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
@@ -55,13 +70,21 @@ class File (saga.namespace.entry.Entry) :
         '''
 
         # param checks
-        url = saga.url.Url (url)
+        url = surl.Url (url)
 
         self._nsentry = super  (File, self)
         self._nsentry.__init__ (url, flags, session, 
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
     @classmethod
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  sus.optional (surl.Url), 
+                  sus.optional (int), 
+                  sus.optional (ss.Session),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (st.Task)
     def create (cls, url=None, flags=READ, session=None, ttype=None) :
         '''
         url:       saga.Url
@@ -79,6 +102,11 @@ class File (saga.namespace.entry.Entry) :
     #
     # filesystem methods
     #
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((bool, st.Task))
     def is_file (self, ttype=None) :
         '''
         ttype:    saga.task.type enum
@@ -87,6 +115,11 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.is_file_self (ttype=ttype)
 
   
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((int, st.Task))
     def get_size (self, ttype=None) :
         '''
         ttype:    saga.task.type enum
@@ -106,7 +139,13 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.get_size_self (ttype=ttype)
 
   
-    def read (self, size=-1, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((basestring, st.Task))
+    def read     (self, size=-1, ttype=None) :
         '''
         size :    int
         ttype:    saga.task.type enum
@@ -115,7 +154,13 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.read (size, ttype=ttype)
 
   
-    def write (self, data, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  basestring,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((int, st.Task))
+    def write    (self, data, ttype=None) :
         '''
         data :    string / bytearray
         ttype:    saga.task.type enum
@@ -124,6 +169,13 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.write (data, ttype=ttype)
 
   
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  int,
+                  sus.optional (sus.one_of (START, CURRENT, END )),
+                  sus.optional (sus.one_of (SYNC,  ASYNC,   TASK)))
+    @sus.returns ((int, st.Task))
     def seek (self, off, whence=START, ttype=None) :
         '''
         off :     int
@@ -134,7 +186,13 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.seek (off, whence, ttype=ttype)
 
   
-    def read_v (self, iovecs, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  sus.list_of  (sus.tuple_of (int)),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((basestring, st.Task))
+    def read_v   (self, iovecs, ttype=None) :
         '''
         iovecs:   list [tuple (int, int)]
         ttype:    saga.task.type enum
@@ -143,6 +201,12 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.read_v (iovecs, ttype=ttype)
 
   
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  sus.list_of  (sus.tuple_of ((int, basestring))),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.list_of (int), st.Task))
     def write_v (self, data, ttype=None) :
         '''
         data:     list [tuple (int, string / bytearray)]
@@ -152,6 +216,12 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.write_v (data, ttype=ttype)
 
   
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  basestring,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((int, st.Task))
     def size_p (self, pattern, ttype=None) :
         '''
         pattern:  string 
@@ -161,6 +231,12 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.size_p (pattern, ttype=ttype)
   
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  basestring,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((basestring, st.Task))
     def read_p (self, pattern, ttype=None) :
         '''
         pattern:  string
@@ -170,6 +246,13 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.read_p (pattern, ttype=ttype)
 
   
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  basestring,
+                  basestring,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((int, st.Task))
     def write_p (self, pattern, data, ttype=None) :
         '''
         pattern:  string
@@ -180,6 +263,11 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.write_p (pattern, data, ttype=ttype)
 
   
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.list_of (basestring), st.Task))
     def modes_e (self, ttype=None) :
         '''
         ttype:    saga.task.type enum
@@ -188,6 +276,13 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.modes_e (ttype=ttype)
 
   
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  basestring,
+                  basestring,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((int, st.Task))
     def size_e (self, emode, spec, ttype=None) :
         '''
         emode:    string
@@ -198,6 +293,13 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.size_e (emode, spec, ttype=ttype)
 
   
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  basestring,
+                  basestring,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((basestring, st.Task))
     def read_e (self, emode, spec, ttype=None) :
         '''
         emode:    string
@@ -208,6 +310,14 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.read_e (emode, spec, ttype=ttype)
 
   
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('File', 
+                  basestring,
+                  basestring,
+                  basestring,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((int, st.Task))
     def write_e (self, emode, spec, data, ttype=None) :
         '''
         emode:    string

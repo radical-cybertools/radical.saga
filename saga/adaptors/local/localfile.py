@@ -473,8 +473,8 @@ class LocalFile (saga.adaptors.cpi.filesystem.File) :
         t = saga.task.Task (self, 'get_url', c, ttype)
 
         # FIXME: move to task_run...
-        t._set_state  = saga.task.DONE
-        t._set_result = self._url
+        t._set_state  (saga.task.DONE)
+        t._set_result (self._url)
 
         return t
 

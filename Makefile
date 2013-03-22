@@ -21,7 +21,7 @@ pylint:
 				 echo $$res | sed -e 's/ \([FEWRC]:\)/\n\1/g' ;\
 				 echo \
 		) \
-	done
+	done | tee pylint.out
 
 clean:
 	-rm -rf build/ saga.egg-info/ temp/ MANIFEST dist/

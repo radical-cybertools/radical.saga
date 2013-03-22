@@ -17,6 +17,7 @@ import saga.adaptors.base    as sab
 import saga.utils.signatures as sus
 
 from   saga.constants     import SYNC, ASYNC, TASK, ALL, ANY, UNKNOWN, CANCELED
+from   saga.constants     import RESULT, EXCEPTION, STATE, SIZE, TASKS, STATES
 from   saga.utils.threads import Thread, NEW, RUNNING, DONE, FAILED
 
 

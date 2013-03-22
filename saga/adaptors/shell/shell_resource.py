@@ -293,10 +293,10 @@ class ShellResourceCompute (saga.adaptors.cpi.resource.Compute) :
             self.manager_url, self.access_url = self._adaptor.parse_id (id)
             self.manager = saga.resource.Manager (self.manager_url)
 
-            if  self.access.scheme in self.manager.list (COMPUTE) :
+            if  self.access_url.scheme in self.manager.list (COMPUTE) :
                 self.rtype = COMPUTE
 
-            elif self.access.scheme in self.manager.list (STORAGE) :
+            elif self.access_url.scheme in self.manager.list (STORAGE) :
                 self.rtype = STORAGE
 
             else :
