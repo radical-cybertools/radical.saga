@@ -2,19 +2,27 @@
 """ """
 
 
-import saga.base
-import saga.async
-import saga.url
-import saga.session
-import saga.exceptions  as se
-import saga.constants   as sc
-import constants        as const
-import description      as descr
+import saga.utils.signatures    as sus
+import saga.adaptors.base       as sab
+import saga.async               as async
+import saga.task                as st
+import saga.base                as sb
+import saga.session             as ss
+import saga.exceptions          as se
+import saga.attributes          as sa
+import saga.constants           as sc
+import saga.url                 as surl
+import constants                as const
+import description              as descr
+import resource                 as resrc
+
+from   saga.resource.constants  import *
+from   saga.constants           import SYNC, ASYNC, TASK
 
 
 # ------------------------------------------------------------------------------
 # 
-class Manager (saga.base.Base, saga.async.Async) :
+class Manager (sb.Base, async.Async) :
     """
     In the context of SAGA-Python, a *ResourceManager* is a service which asserts
     control over a set of resources.  That manager can, on request, render
@@ -28,7 +36,14 @@ class Manager (saga.base.Base, saga.async.Async) :
     
     # --------------------------------------------------------------------------
     # 
-    def __init__ (self, url_in, session=None,
+    @sus.takes   ('Manager', 
+                  sus.optional (surl.Url), 
+                  sus.optional (ss.Session),
+                  sus.optional (sab.Base), 
+                  sus.optional (dict), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
+    def __init__ (self, url_in=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         """
         :type  url_in: :class:`saga.Url`
@@ -36,20 +51,26 @@ class Manager (saga.base.Base, saga.async.Async) :
         """
 
         # param checks
-        url    = saga.url.Url (url_in)
+        url    = surl.Url (url_in)
         scheme = url.scheme.lower ()
 
         if not session :
-            session = saga.session.Session (default=True)
+            session = ss.Session (default=True)
 
-        saga.base.Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
-                                 url, session, ttype=_ttype)
+        self._base = super  (Manager, self)
+        self._base.__init__ (scheme, _adaptor, _adaptor_state, 
+                             url, session, ttype=_ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @classmethod
-    def create (cls, url_in=None, session=None, ttype=sc.SYNC) :
+    @sus.takes   ('Manager', 
+                  sus.optional (surl.Url), 
+                  sus.optional (ss.Session),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (st.Task)
+    def create   (cls, url_in=None, session=None, ttype=sc.SYNC) :
         """ 
         This is the asynchronous class constructor, returning
         a :class:`saga:Task` instance.  For details on the accepted parameters,
@@ -61,7 +82,11 @@ class Manager (saga.base.Base, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     # 
-    def list (self, rtype=None, ttype=None) :
+    @sus.takes   ('Manager', 
+                  sus.optional (sus.one_of (COMPUTE, STORAGE, NETWORK)),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.list_of (basestring), st.Task))
+    def list     (self, rtype=None, ttype=None) :
         """ 
         :type  rtype: None or enum (COMPUTE | STORAGE | NETWORK)
         :param rtype: specifies a filter of resource types to list.
@@ -74,6 +99,10 @@ class Manager (saga.base.Base, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     # 
+    @sus.takes   ('Manager', 
+                  sus.optional (basestring),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((descr.Description, st.Task))
     def get_description (self, id, ttype=None) :
         """ 
         :type  id: string
@@ -89,6 +118,10 @@ class Manager (saga.base.Base, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     # 
+    @sus.takes   ('Manager', 
+                  sus.optional (sus.one_of (COMPUTE, STORAGE, NETWORK)),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.list_of (basestring), st.Task))
     def list_templates (self, rtype=None, ttype=None) :
         """
         :type  rtype: None or enum (COMPUTE | STORAGE | NETWORK)
@@ -103,6 +136,10 @@ class Manager (saga.base.Base, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     # 
+    @sus.takes   ('Manager', 
+                  sus.optional (basestring),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((descr.Description, st.Task))
     def get_template (self, name, ttype=None) :
         """
         :type  name: string
@@ -122,7 +159,11 @@ class Manager (saga.base.Base, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     # 
-    def acquire (self, spec, ttype=None) :
+    @sus.takes   ('Manager', 
+                  descr.Description,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((resrc.Resource, st.Task))
+    def acquire  (self, spec, ttype=None) :
         """
         :type  descr: :class:`Description`
         :param descr: specifies the resource to be acquired.
@@ -135,22 +176,22 @@ class Manager (saga.base.Base, saga.async.Async) :
         state.
         """
 
-        if  type(spec) == type(saga.url.Url) or \
+        if  type(spec) == type(surl.Url) or \
             type(spec) == type(basestring)      :
 
-            id = saga.url.Url (spec)
+            id = surl.Url (spec)
             
             return self._adaptor.acquire_by_id (id, ttype=ttype)
 
         else :
 
-            descr = saga.resource.Description (spec)
+            descr = descr.Description (spec)
 
             # make sure at least 'executable' is defined
             if descr.rtype is None:
                 raise se.BadParameter ("No resource type defined in resource description")
     
-            descr_copy = saga.resource.Description ()
+            descr_copy = descr.Description ()
             descr._attributes_deep_copy (descr_copy)
 
             return self._adaptor.acquire (descr_copy, ttype=ttype)
@@ -158,13 +199,39 @@ class Manager (saga.base.Base, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     # 
-    def release (self, id, ttype=None) :
+    @sus.takes   ('Manager', 
+                  basestring,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def release  (self, id, ttype=None) :
         """
         :type  id   : string
         :param id   : identifies the resource to be released.
 
         This call requests to move a resource from any non-final state to the
         `CANCELED` state.  
+        """
+
+        return self._adaptor.release (id, ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    # 
+    @sus.takes   ('Manager', 
+                  basestring,
+                  sus.optional (sus.one_of (UNKNOWN, NEW, PENDING, ACTIVE, DONE,
+                                            FAILED, EXPIRED, CANCELED, FINAL)),
+                  sus.optional (float),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def wait     (self, id, timeout=-1.0, ttype=None) :
+        """
+        :type  id   : string
+        :param id   : identifies the resource to be released.
+
+        This call will block for at more 'timeout' seconds, or until the
+        specified resource has entered the specified stat, whatever occurs
+        first. If the timeout is smaller 0, the call can block forever.
         """
 
         return self._adaptor.release (id, ttype=ttype)

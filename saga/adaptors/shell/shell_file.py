@@ -799,6 +799,14 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         self.initialize ()
 
+
+        # we create a local shell handle, too, if only to support copy and move
+        # to and from local file systems (mkdir for staging target, remove of move
+        # source).  Not that we do not perform a cd on the local shell -- all
+        # operations are assumed to be performed on absolute paths.
+        self.local = sups.PTYShell ('fork://localhost/', saga.Session(default=True), 
+                                    self._logger)
+
         return self.get_api ()
 
 

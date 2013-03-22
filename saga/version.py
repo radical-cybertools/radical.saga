@@ -25,6 +25,8 @@ except IOError:
             stdout=PIPE, stderr=STDOUT)
         out = p.communicate()[0]
 
+
+        # ignore pylint error on p.returncode -- false positive
         if (not p.returncode) and out:
             v = VERSION_MATCH.search(out)
             if v:

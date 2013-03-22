@@ -4,18 +4,32 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.url
-import saga.exceptions
-import saga.namespace.entry
-import saga.attributes
+import saga.utils.signatures     as sus
+import saga.adaptors.base        as sab
+import saga.attributes           as sa
+import saga.session              as ss
+import saga.task                 as st
+import saga.url                  as surl
+import saga.namespace.entry      as nsentry
 
-from   saga.replica.constants import *
+from   saga.filesystem.constants import *
+from   saga.constants            import SYNC, ASYNC, TASK
 
 
-# keep order of inheritance!  super() below uses MRO
-class LogicalFile (saga.namespace.entry.Entry,
-                   saga.attributes.Attributes) :
+# ------------------------------------------------------------------------------
+#
+class LogicalFile (nsentry.Entry, sa.Attributes) :
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('LogicalFile', 
+                  sus.optional (surl.Url), 
+                  sus.optional (int), 
+                  sus.optional (ss.Session),
+                  sus.optional (sab.Base), 
+                  sus.optional (dict), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
     def __init__ (self, url=None, flags=READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
@@ -26,14 +40,22 @@ class LogicalFile (saga.namespace.entry.Entry,
         '''
 
         # param checks
-        url = saga.url.Url (url)
+        url = surl.Url (url)
 
         self._nsentry = super  (LogicalFile, self)
         self._nsentry.__init__ (url, flags, session, 
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
     @classmethod
+    @sus.takes   ('LogicalFile', 
+                  sus.optional (surl.Url), 
+                  sus.optional (int), 
+                  sus.optional (ss.Session),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (st.Task)
     def create (cls, url=None, flags=READ, session=None, ttype=None) :
         '''
         url:       saga.Url
@@ -48,10 +70,14 @@ class LogicalFile (saga.namespace.entry.Entry,
 
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     # replica methods
     #
+    @sus.takes   ('LogicalFile', 
+                  sus.optional (surl.Url), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def add_location (self, name, ttype=None) :
         '''
         name:           saga.Url
@@ -61,6 +87,12 @@ class LogicalFile (saga.namespace.entry.Entry,
         return self._adaptor.add_location (name, ttype=ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('LogicalFile', 
+                  sus.optional (surl.Url), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def remove_location (self, name, ttype=None) :
         '''
         name:           saga.Url
@@ -70,6 +102,13 @@ class LogicalFile (saga.namespace.entry.Entry,
         return self._adaptor.remove_location (name, ttype=ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('LogicalFile', 
+                  sus.optional (surl.Url), 
+                  sus.optional (surl.Url), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def update_location (self, old, new, ttype=None) :
         '''
         old:            saga.Url
@@ -80,6 +119,11 @@ class LogicalFile (saga.namespace.entry.Entry,
         return self._adaptor.update_location (old, new, ttype=ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('LogicalFile', 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.list_of (surl.Url), st.Task))
     def list_locations (self, ttype=None) :
         '''
         ttype:          saga.task.type enum
@@ -88,6 +132,13 @@ class LogicalFile (saga.namespace.entry.Entry,
         return self._adaptor.list_locations (ttype=ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('LogicalFile', 
+                  surl.Url, 
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def replicate (self, name, flags=None, ttype=None) :
         '''
         name:           saga.Url
@@ -98,7 +149,15 @@ class LogicalFile (saga.namespace.entry.Entry,
         return self._adaptor.replicate (name, flags, ttype=ttype)
     
 
-    def upload (self, name, tgt="", flags=None, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('LogicalFile', 
+                  surl.Url, 
+                  sus.optional (surl.Url),
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def upload (self, name, tgt=None, flags=None, ttype=None) :
         '''
         name:           saga.Url
         tgt:            saga.Url
@@ -109,7 +168,15 @@ class LogicalFile (saga.namespace.entry.Entry,
         return self._adaptor.upload (name, tgt, flags, ttype=ttype)
     
   
-    def download (self, name, src="", flags=None, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('LogicalFile', 
+                  surl.Url, 
+                  sus.optional (surl.Url),
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def download (self, name, src=None, flags=None, ttype=None) :
         '''
         name:           saga.Url
         src:            saga.Url
