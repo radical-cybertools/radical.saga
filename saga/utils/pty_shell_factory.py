@@ -285,10 +285,6 @@ class PTYShellFactory (object) :
         info['logger']   = logger
         info['ctx']      = []
 
-        if url.port and url.port != -1 :
-          info['host_str'] += ":%s" % url.port
-
-
         # find out what type of shell we have to deal with
         if  info['schema']   in _SCHEMAS_SSH :
             info['type']     = "ssh"
@@ -387,6 +383,12 @@ class PTYShellFactory (object) :
                             info['scp_env']  += "X509_PROXY='%s' " % context.user_proxy
                             info['sftp_env'] += "X509_PROXY='%s' " % context.user_proxy
                             info['ctx'].append (context)
+
+            if url.port and url.port != -1 :
+                info['ssh_args']  += "-p %d " % int(url.port)
+                info['scp_args']  += "-p %d " % int(url.port)
+                info['sftp_args'] += "-P %d " % int(url.port)
+
 
             # all ssh based shells allow for user_id and user_pass from contexts
             # -- but the data given in the URL take precedence
