@@ -369,7 +369,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # a different username than what we expect
         if not self.rm.username:
             self._logger.debug ("No username provided in URL %s, so we are"
-                                "going to find it with whoami" % shell_url)
+                                " going to find it with whoami" % self.rm)
             ret, out, _ = self.shell.run_sync("whoami")
             self.rm.detected_username = out.strip()
             self._logger.debug("Username detected as: %s",
