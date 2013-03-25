@@ -76,7 +76,7 @@ messages) and 5 (print all messages). Give it a try with the above example:
 
 
 Discussion
-----------
+==========
 
 Now that we have successfully run our first job with saga-python, we will
 discuss some of the the building blocks and details of the code.
