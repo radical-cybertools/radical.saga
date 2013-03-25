@@ -509,6 +509,15 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if job_contact:
             slurm_script += "#SBATCH --mail-user=%s\n" % job_contact
 
+        # make sure we are not missing anything important
+        if not queue:
+            raise saga.BadParameter._log (self._logger, 
+                                          "No queue has been specified, "
+                                          "and the SLURM adaptor "
+                                          "requires that a queue be "
+                                          "specified.  Please specify "
+                                          "a queue to submit the job to.")
+
         # add on our environment variables
         slurm_script += env + "\n"
 
