@@ -116,6 +116,8 @@ class Directory (saga.namespace.directory.Directory) :
         if tgt    :  return self._adaptor.is_file      (tgt, ttype=ttype)
         else      :  return self._adaptor.is_file_self (     ttype=ttype)
 
+
+    size  = property (get_size)  # int
     
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
