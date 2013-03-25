@@ -105,7 +105,7 @@ _ADAPTOR_DOC           = {
           * Other system limits (memory, CPU, selinux, accounting etc.) apply as
             usual.
 
-          
+
           * thread safety: it is safe to create multiple ``filesystem.*``
             instances to the same target host at a time -- they should not
             interfere with each other.
@@ -194,7 +194,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     def __del__ (self) :
 
         self.finalize (kill=True)
-    
+
 
     # ----------------------------------------------------------------
     #
@@ -271,7 +271,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         # shell git started, found its prompt.  Now, change
         # to the initial (or later current) working directory.
-        
+
         cmd = ""
 
         if  self.flags & saga.filesystem.CREATE_PARENTS :
@@ -386,7 +386,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self._is_valid ()
 
         # FIXME: eval flags
-        
+
         cwdurl = saga.Url (self.url) # deep copy
         src    = saga.Url (src_in)   # deep copy
         tgt    = saga.Url (tgt_in)   # deep copy
@@ -463,7 +463,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                 # print "cwd local"
 
                 if sumisc.url_is_local (src) :
-                
+
                     # need a compatible target scheme
                     if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
                         raise saga.BadParameter ("schema of copy target is not supported (%s)" \
@@ -474,7 +474,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                     tmp_shell.stage_to_remote (src.path, tgt.path, rec_flag)
 
                 elif sumisc.url_is_local (tgt) :
-                    
+
                     # need a compatible source scheme
                     if src.scheme and not src.scheme.lower () in _ADAPTOR_SCHEMAS :
                         raise saga.BadParameter ("schema of copy source is not supported (%s)" \
@@ -716,7 +716,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     def __del__ (self) :
 
         self.finalize (kill=True)
-    
+
 
     # ----------------------------------------------------------------
     #
@@ -954,7 +954,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                 # print "cwd local"
 
                 if sumisc.url_is_local (src) :
-                
+
                     # need a compatible target scheme
                     if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
                         raise saga.BadParameter ("schema of copy target is not supported (%s)" \
@@ -965,7 +965,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                     tmp_shell.stage_to_remote (src.path, tgt.path, rec_flag)
 
                 elif sumisc.url_is_local (tgt) :
-                    
+
                     # need a compatible source scheme
                     if src.scheme and not src.scheme.lower () in _ADAPTOR_SCHEMAS :
                         raise saga.BadParameter ("schema of copy source is not supported (%s)" \
@@ -1027,7 +1027,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         self._is_valid ()
 
-        ret, out, _ = self.shell.run_sync ("du -bs %s | xargs | cut -f 1 -d ' '\n" % self.url.path)
+        ret, out, _ = self.shell.run_sync ("wc -c %s | xargs | cut -f 1 -d ' '\n" % self.url.path)
         if  ret != 0 :
             raise saga.NoSuccess ("get size for (%s) failed (%s): (%s)" \
                                % (self.url, ret, out))
