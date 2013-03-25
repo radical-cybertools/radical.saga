@@ -86,7 +86,7 @@ class Directory (saga.namespace.directory.Directory) :
     #
     # filesystem directory methods
     #
-    def get_size (self, tgt, flags=None, ttype=None) :
+    def get_size (self, tgt=None, flags=None, ttype=None) :
         '''
         :param tgt: path of the file or directory
 
