@@ -369,7 +369,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # a different username than what we expect
         if not self.rm.username:
             self._logger.debug ("No username provided in URL %s, so we are"
-                                "going to find it with whoami" % shell_url)
+                                " going to find it with whoami" % self.rm)
             ret, out, _ = self.shell.run_sync("whoami")
             self.rm.detected_username = out.strip()
             self._logger.debug("Username detected as: %s",
@@ -508,6 +508,15 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         if job_contact:
             slurm_script += "#SBATCH --mail-user=%s\n" % job_contact
+
+        # make sure we are not missing anything important
+        if not queue:
+            raise saga.BadParameter._log (self._logger, 
+                                          "No queue has been specified, "
+                                          "and the SLURM adaptor "
+                                          "requires that a queue be "
+                                          "specified.  Please specify "
+                                          "a queue to submit the job to.")
 
         # add on our environment variables
         slurm_script += env + "\n"
