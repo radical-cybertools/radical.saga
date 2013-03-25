@@ -118,7 +118,8 @@ plug-in, we have introduced another new aspect in this tutorial example:
 Contexts. Contexts are used to define security / log-in contexts for SAGA
 objects and are passed to the executing plug-in (e.g., the SSH plug-in).
 
-A context always has a type that matches the executing plug-in. The two most commonly used contexts in SAGA are ``ssh`` and ``gsissh``:
+A context always has a type that matches the executing plug-in. The two most
+commonly used contexts in SAGA are ``ssh`` and ``gsissh``:
 
 .. code-block:: python
 
