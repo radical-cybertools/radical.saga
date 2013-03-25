@@ -428,25 +428,17 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
                 # print "cwd remote"
 
-                if sumisc.url_is_local (src) :
-                
-                    # need a compatible target scheme
-                    if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
-                        raise saga.BadParameter ("schema of copy target is not supported (%s)" \
-                                              % (tgt))
-
-                    # print "from remote to local"
-                    self.shell.stage_from_remote (src.path, tgt.path, rec_flag)
-
-                elif sumisc.url_is_local (tgt) :
-                    
-                    # need a compatible source scheme
-                    if src.scheme and not src.scheme.lower () in _ADAPTOR_SCHEMAS :
-                        raise saga.BadParameter ("schema of copy source is not supported (%s)" \
-                                              % (src))
+                if sumisc.url_is_local (src)          and \
+                   sumisc.url_is_compatible (cwdurl, tgt) :
 
                     # print "from local to remote"
                     self.shell.stage_to_remote (src.path, tgt.path, rec_flag)
+
+                elif sumisc.url_is_local (tgt)          and \
+                     sumisc.url_is_compatible (cwdurl, src) :
+
+                    # print "from remote to loca"
+                    self.shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
                 else :
                     # print "from remote to other remote -- fail"
@@ -879,6 +871,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         # FIXME: eval flags
 
+        # print "copy self %s -> %s" % (self.url, tgt_in)
+
         cwdurl = saga.Url (self.cwdurl) # deep copy
         src    = saga.Url (self.url)    # deep copy
         tgt    = saga.Url (tgt_in)      # deep copy
@@ -914,30 +908,22 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         else :
             # print "! shell cp"
 
-            # if cwd is remote, we use stage from/to
+            # if cwd is remote, we use stage from/to on the existing pipe
             if not sumisc.url_is_local (cwdurl) :
 
                 # print "cwd remote"
 
-                if sumisc.url_is_local (src) :
-                
-                    # need a compatible target scheme
-                    if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
-                        raise saga.BadParameter ("schema of copy target is not supported (%s)" \
-                                              % (tgt))
-
-                    # print "from remote to local"
-                    self.shell.stage_from_remote (src.path, tgt.path, rec_flag)
-
-                elif sumisc.url_is_local (tgt) :
-                    
-                    # need a compatible source scheme
-                    if src.scheme and not src.scheme.lower () in _ADAPTOR_SCHEMAS :
-                        raise saga.BadParameter ("schema of copy source is not supported (%s)" \
-                                              % (src))
+                if sumisc.url_is_local (src)          and \
+                   sumisc.url_is_compatible (cwdurl, tgt) :
 
                     # print "from local to remote"
                     self.shell.stage_to_remote (src.path, tgt.path, rec_flag)
+
+                elif sumisc.url_is_local (tgt)          and \
+                     sumisc.url_is_compatible (cwdurl, src) :
+
+                    # print "from remote to loca"
+                    self.shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
                 else :
                     # print "from remote to other remote -- fail"
