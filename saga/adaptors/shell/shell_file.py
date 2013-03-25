@@ -587,14 +587,14 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         tgt_abs = sumisc.url_make_absolute (cwdurl, tgt)
 
-        ret, out, _ = self.shell.run_sync ("du -bs %s  | xargs | cut -f 1 -d ' '\n" % tgt.path)
+        ret, out, _ = self.shell.run_sync ("du -ks %s  | xargs | cut -f 1 -d ' '\n" % tgt.path)
         if  ret != 0 :
             raise saga.NoSuccess ("get size for (%s) failed (%s): (%s)" \
                                % (tgt, ret, out))
 
         size = None
         try :
-            size = int (out)
+            size = int (out) * 1024 # see '-k' option to 'du'
         except Exception as e :
             raise saga.NoSuccess ("could not get file size: %s" % out)
 
