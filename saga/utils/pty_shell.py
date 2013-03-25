@@ -273,12 +273,12 @@ class PTYShell (object) :
 
                 if n == 0 :
                     self.logger.debug ("got password prompt")
-                    if  not 'pwd' in self.pty_info or \
-                        not self.pty_info['pwd']      :
+                    if  not 'pass' in self.pty_info or \
+                        not self.pty_info['pass']      :
                         raise saga.AuthenticationFailed ("prompted for unknown password (%s)" \
                                                       % match)
 
-                    self.pty_shell.write ("%s\n" % self.pty_info['pwd'])
+                    self.pty_shell.write ("%s\n" % self.pty_info['pass'])
                     n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
 
 

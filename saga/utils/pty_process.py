@@ -543,7 +543,7 @@ class PTYProcess (object) :
 
                 # read until we have enough data, or hit timeout ceiling...
                 while True :
-                
+
                     # first, lets see if we still have data in the cache we can return
                     if len (self.cache) :
 
