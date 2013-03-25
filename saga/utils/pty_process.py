@@ -8,11 +8,13 @@ import re
 import os
 import sys
 import pty
+import tty
 import time
 import errno
 import shlex
 import select
 import signal
+import termios
 import threading
 
 import saga.utils.logger
@@ -187,6 +189,8 @@ class PTYProcess (object) :
     #
     def initialize (self) :
 
+        return self.initialize_pty ()
+
         # NOTE: do we need to lock?
 
         self.logger.debug ("PTYProcess: '%s'" % ' '.join ((self.command)))
@@ -272,6 +276,54 @@ class PTYProcess (object) :
             os.close (self.child_in)
             os.close (self.child_out)
           # os.close (self.child_err)
+
+
+        # check if some additional initialization routines as registered
+        if  self.initialize_hook :
+            self.initialize_hook ()
+
+
+    # ----------------------------------------------------------------------
+    #
+    def initialize_pty (self) :
+
+        # NOTE: do we need to lock?
+
+        self.logger.debug ("PTYProcess: '%s'" % ' '.join ((self.command)))
+
+      # self.parent_err, self.child_err = pty.openpty ()
+
+        self.logger.info ("running: %s" % ' '.join (self.command))
+
+        # create the child
+        try :
+             self.child, self.child_fd = pty.fork ()
+        except Exception as e:
+            raise se.NoSuccess ("Could not run (%s): %s" \
+                             % (' '.join (self.command), e))
+        
+        if  not self.child :
+            # this is the child
+
+            try :
+                # all I/O set up, have a pty (*fingers crossed*), lift-off!
+                os.execvpe (self.command[0], self.command, os.environ)
+
+            except OSError as e:
+                self.logger.error ("Could not execute (%s): %s" \
+                                % (' '.join (self.command), e))
+                sys.exit (-1)
+
+        else :
+            # this is the parent
+            new = termios.tcgetattr (self.child_fd)
+            new[3] = new[3] & ~termios.ECHO
+
+            termios.tcsetattr (self.child_fd, termios.TCSADRAIN, new)
+
+
+            self.parent_in  = self.child_fd
+            self.parent_out = self.child_fd
 
 
         # check if some additional initialization routines as registered

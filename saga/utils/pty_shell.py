@@ -63,7 +63,7 @@ class PTYShell (object) :
 
     Note that ``PTYShell`` will change the shell prompts (``PS1`` and ``PS2``),
     to simplify output parsing.  ``PS2`` will be empty, ``PS1`` will be set
-    ``PROMPT-$?->\\n`` -- that way, the prompt will report the exit value of the
+    ``PROMPT-$?->`` -- that way, the prompt will report the exit value of the
     last command, saving an extra roundtrip.  Users of this class should be
     careful when setting other prompts -- see :func:`set_prompt` for more
     details.
@@ -294,10 +294,10 @@ class PTYShell (object) :
                     # turn off shell echo, set/register new prompt
                     self.run_sync ("unset PROMPT_COMMAND ; "
                                    + "stty -echo; "
-                                   + "PS1='PROMPT-$?->\\n'; "
+                                   + "PS1='PROMPT-$?->'; "
                                    + "PS2=''; "
                                    + "export PS1 PS2\n", 
-                                   new_prompt="PROMPT-(\d+)->\s*$")
+                                   new_prompt="PROMPT-(\d+)->$")
 
                     self.logger.debug ("got new shell prompt")
 
@@ -411,23 +411,23 @@ class PTYShell (object) :
         By encoding the exit value in the command prompt, we safe one roundtrip.
         The prompt on Posix compliant shells can be set, for example, via::
 
-          PS1='PROMPT-$?->\\n'; export PS1
+          PS1='PROMPT-$?->'; export PS1
 
         The newline in the example above allows to nicely anchor the regular
         expression, which would look like::
 
-          PROMPT-(\d+)->\s*$
+          PROMPT-(\d+)->$
 
         The regex is compiled with 're.DOTALL', so the dot character matches
         all characters, including line breaks.  Be careful not to match more
         than the exact prompt -- otherwise, a prompt search will swallow stdout
         data.  For example, the following regex::
 
-          PROMPT-(.+)->\s*$
+          PROMPT-(.+)->$
 
         would capture arbitrary strings, and would thus match *all* of::
 
-          PROMPT-0-> ls
+          PROMPT-0->ls
           data/ info
           PROMPT-0->
 

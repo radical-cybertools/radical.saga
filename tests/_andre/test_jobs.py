@@ -8,7 +8,14 @@ import time
 import saga
 
 try :
-    js = saga.job.Service ('ssh://localhost/')
+    c = saga.Context ('UserPass')
+    c.user_id   = 'test_user'
+    c.user_pass = 'test_pass'
+
+    s = saga.Session ()
+  # s.add_context (c)
+
+    js = saga.job.Service ('ssh://localhost/', session=s)
   
     jd = saga.job.Description ()
     jd.executable = '/bin/echo'
