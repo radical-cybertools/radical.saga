@@ -56,11 +56,17 @@
           <div class="body">
             
   <h1>Source code for saga.utils.pty_process</h1><div class="highlight"><pre>
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
+<span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
+
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">pty</span>
 <span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">errno</span>
 <span class="kn">import</span> <span class="nn">shlex</span>
 <span class="kn">import</span> <span class="nn">select</span>
 <span class="kn">import</span> <span class="nn">signal</span>
@@ -74,7 +80,7 @@
 <span class="c">#</span>
 <span class="n">_CHUNKSIZE</span> <span class="o">=</span> <span class="mi">1024</span>  <span class="c"># default size of each read</span>
 <span class="n">_POLLDELAY</span> <span class="o">=</span> <span class="mf">0.01</span>  <span class="c"># seconds in between read attempts</span>
-<span class="n">_DEBUG_MAX</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="n">_DEBUG_MAX</span> <span class="o">=</span> <span class="mi">600</span>
 
 
 <span class="c"># --------------------------------------------------------------------</span>
@@ -246,12 +252,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">parent_out</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">child_out</span> <span class="o">=</span> <span class="n">pty</span><span class="o">.</span><span class="n">openpty</span> <span class="p">()</span>
       <span class="c"># self.parent_err, self.child_err = pty.openpty ()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;running </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;running </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;running: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">))</span>
 
         <span class="c"># create the child</span>
         <span class="k">try</span> <span class="p">:</span>
-             <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span>  <span class="n">os</span><span class="o">.</span><span class="n">fork</span> <span class="p">()</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fork</span> <span class="p">()</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not run (</span><span class="si">%s</span><span class="s">): </span><span class="si">%s</span><span class="s">&quot;</span> \
                              <span class="o">%</span> <span class="p">(</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">),</span> <span class="n">e</span><span class="p">))</span>
@@ -333,29 +338,57 @@
 
     <span class="c"># --------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">finalize</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+    <span class="k">def</span> <span class="nf">finalize</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wstat</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span></div>
 <div class="viewcode-block" id="PTYProcess.finalize"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.finalize">[docs]</a>        <span class="sd">&quot;&quot;&quot; kill the child, close all I/O channels &quot;&quot;&quot;</span>
 
         <span class="c"># NOTE: do we need to lock?</span>
 
-        <span class="c"># as long as the chiuld lives, run any higher level shutdown routine.</span>
+        <span class="c"># as long as the child may live, run any higher level shutdown routine.</span>
         <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span> <span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span> <span class="p">()</span>
 
-        <span class="c"># now we can safely kill the child process, and close all I/O channels</span>
-        <span class="k">try</span> <span class="p">:</span>
-            <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="p">:</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">kill</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">OSError</span> <span class="p">:</span>
-            <span class="k">pass</span>
+        <span class="c"># now we can safely kill the process -- unless some wait did that before</span>
+        <span class="k">if</span>  <span class="n">wstat</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
 
-        <span class="k">try</span> <span class="p">:</span>
             <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="p">:</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">kill</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGKILL</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">OSError</span> <span class="p">:</span>
-            <span class="k">pass</span>
+                <span class="c"># yes, we have something to kill!</span>
+                <span class="k">try</span> <span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">kill</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGKILL</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">OSError</span> <span class="p">:</span>
+                    <span class="k">pass</span>
 
+                <span class="c"># hey, kiddo, how did that go?</span>
+                <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
+                    <span class="k">try</span> <span class="p">:</span>
+                        <span class="n">wpid</span><span class="p">,</span> <span class="n">wstat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">waitpid</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+                    <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+
+                        <span class="c"># this should not have failed -- child disappeared?</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="bp">None</span> 
+                        <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="bp">None</span>
+                        <span class="n">wstat</span>            <span class="o">=</span> <span class="bp">None</span>
+                        <span class="k">break</span>
+
+                    <span class="k">if</span> <span class="n">wpid</span> <span class="p">:</span>
+                        <span class="k">break</span>
+
+        <span class="c"># at this point, we declare the process to be gone for good</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c"># lets see if we can perform some post-mortem analysis</span>
+        <span class="k">if</span>  <span class="n">wstat</span> <span class="o">!=</span> <span class="bp">None</span> <span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFEXITED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="p">:</span>
+                <span class="c"># child died of natural causes - perform autopsy...</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">WEXITSTATUS</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="bp">None</span>
+
+            <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFSIGNALED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="p">:</span>
+                <span class="c"># murder!! Child got killed by someone!  recover evidence...</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="bp">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">WTERMSIG</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>
+
 
      <span class="c">## try : </span>
      <span class="c">##     os.close (self.parent_in)  </span>
@@ -383,11 +416,29 @@
 
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">:</span>
+                <span class="c"># this was quick ;-)</span>
+                <span class="k">return</span>
+
             <span class="c"># yes, for ever and ever...</span>
             <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
 
                 <span class="c"># hey, kiddo, whats up?</span>
-                <span class="n">wpid</span><span class="p">,</span> <span class="n">wstat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">waitpid</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">try</span> <span class="p">:</span>
+                    <span class="n">wpid</span><span class="p">,</span> <span class="n">wstat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">waitpid</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+
+                    <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span> <span class="o">==</span> <span class="n">errno</span><span class="o">.</span><span class="n">ECHILD</span> <span class="p">:</span>
+
+                        <span class="c"># child disappeared</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="bp">None</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="bp">None</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">()</span>
+                        <span class="k">return</span>
+
+                    <span class="c"># no idea what happened -- it is likely bad</span>
+                    <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;waitpid failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+
 
                 <span class="c"># did we get a note about child termination?</span>
                 <span class="k">if</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">wpid</span> <span class="p">:</span>
@@ -405,21 +456,14 @@
                     <span class="k">continue</span>
 
 
-                <span class="c"># not stopped, poor thing... - soooo, what happened??</span>
-                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFEXITED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="p">:</span>
-                    <span class="c"># child died of natural causes - perform autopsy...</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">WEXITSTATUS</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="c"># not stopped, poor thing... - soooo, what happened??  But hey,</span>
+                <span class="c"># either way, its dead -- make sure it stays dead, to avoid</span>
+                <span class="c"># zombie apocalypse...</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">wstat</span><span class="o">=</span><span class="n">wstat</span><span class="p">)</span>
 
-                <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFSIGNALED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="p">:</span>
-                    <span class="c"># murder!! Child got killed by someone!  recover evidence...</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="bp">None</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">WTERMSIG</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>
-
-                <span class="c"># either way, its dead -- make sure it stays dead, to avoid zombie</span>
-                <span class="c"># apocalypse...</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">()</span>
                 <span class="k">return</span>
+
 
     <span class="c"># --------------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -445,38 +489,31 @@
             <span class="c"># do we have a child which we can check?</span>
             <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="p">:</span>
 
-                <span class="c"># hey, kiddo, whats up?</span>
-                <span class="n">wpid</span><span class="p">,</span> <span class="n">wstat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">waitpid</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">WNOHANG</span><span class="p">)</span>
+                <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
+                    <span class="c"># hey, kiddo, whats up?</span>
+                    <span class="n">wpid</span><span class="p">,</span> <span class="n">wstat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">waitpid</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">WNOHANG</span><span class="p">)</span>
 
-                <span class="c"># did we get a note about child termination?</span>
-                <span class="k">if</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">wpid</span> <span class="p">:</span>
-                    <span class="c"># nope, all is well - carry on</span>
-                    <span class="k">return</span> <span class="bp">True</span>
-
-
-                <span class="c"># Yes, we got a note.  </span>
-                <span class="c"># Well, maybe the child fooled us and is just playing dead?</span>
-                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFSTOPPED</span>   <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="ow">or</span> \
-                   <span class="n">os</span><span class="o">.</span><span class="n">WIFCONTINUED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>    <span class="p">:</span>
-                    <span class="c"># we don&#39;t care if someone stopped/resumed the child -- that is up</span>
-                    <span class="c"># to higher powers.  For our purposes, the child is alive.  Ha!</span>
-                    <span class="k">return</span> <span class="bp">True</span>
+                    <span class="c"># did we get a note about child termination?</span>
+                    <span class="k">if</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">wpid</span> <span class="p">:</span>
+                        <span class="c"># nope, all is well - carry on</span>
+                        <span class="k">return</span> <span class="bp">True</span>
 
 
-                <span class="c"># not stopped, poor thing... - soooo, what happened??</span>
-                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFEXITED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="p">:</span>
-                    <span class="c"># child died of natural causes - perform autopsy...</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">WEXITSTATUS</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="bp">None</span>
+                    <span class="c"># Yes, we got a note.  </span>
+                    <span class="c"># Well, maybe the child fooled us and is just playing dead?</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFSTOPPED</span>   <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="ow">or</span> \
+                       <span class="n">os</span><span class="o">.</span><span class="n">WIFCONTINUED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>    <span class="p">:</span>
+                        <span class="c"># we don&#39;t care if someone stopped/resumed the child -- that is up</span>
+                        <span class="c"># to higher powers.  For our purposes, the child is alive.  Ha!</span>
+                        <span class="k">continue</span>
 
-                <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFSIGNALED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="p">:</span>
-                    <span class="c"># murder!! Child got killed by someone!  recover evidence...</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="bp">None</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">WTERMSIG</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>
+                    <span class="k">break</span>
 
-                <span class="c"># either way, its dead -- make sure it stays dead, to avoid zombie</span>
+                <span class="c"># so its dead -- make sure it stays dead, to avoid zombie</span>
                 <span class="c"># apocalypse...</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">wstat</span><span class="o">=</span><span class="n">wstat</span><span class="p">)</span>
+
 
             <span class="c"># check if we can attempt a post-mortem revival though</span>
             <span class="k">if</span>  <span class="ow">not</span> <span class="n">recover</span> <span class="p">:</span>
@@ -749,8 +786,10 @@
 
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;find failed (</span><span class="si">%s</span><span class="s">): </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">_plain_message</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
-
+            <span class="k">if</span>  <span class="nb">issubclass</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">SagaException</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;output parsing failed (</span><span class="si">%s</span><span class="s">): </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">_plain_message</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;output parsing failed (</span><span class="si">%s</span><span class="s">): </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
+ 
 
 
     <span class="c"># ----------------------------------------------------------------</span>

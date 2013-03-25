@@ -56,6 +56,11 @@
           <div class="body">
             
   <h1>Source code for saga.adaptors.slurm.slurm_job</h1><div class="highlight"><pre>
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Ashley Z, Ole Weidner&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
+<span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
+
 <span class="sd">&quot;&quot;&quot; SLURM job adaptor implementation &quot;&quot;&quot;</span>
 
 <span class="c">#TODO: Throw errors if a user does not specify the MINIMUM number of</span>
@@ -282,8 +287,8 @@
 
 <span class="c">###############################################################################</span>
 <span class="c">#</span>
-<div class="viewcode-block" id="SLURMJobService"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService">[docs]</a><span class="k">class</span> <span class="nc">SLURMJobService</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">)</span> <span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service &quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">SLURMJobService</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SLURMJobService"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService">[docs]</a>    <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service &quot;&quot;&quot;</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -322,14 +327,16 @@
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJobService.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.init_instance">[docs]</a>    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">rm_url</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; Service instance constructor &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">rm_url</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SLURMJobService.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; Service instance constructor &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">rm</span>      <span class="o">=</span> <span class="n">rm_url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_open</span> <span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
     <span class="c"># # ----------------------------------------------------------------</span>
     <span class="c"># #</span>
@@ -348,8 +355,8 @@
 
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="k">def</span> <span class="nf">_open</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_open</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Open our persistent shell for this job adaptor.  We use</span>
 <span class="sd">        the pty_shell functionality for this.  </span>
@@ -419,7 +426,7 @@
         <span class="c"># a different username than what we expect</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">username</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;No username provided in URL </span><span class="si">%s</span><span class="s">, so we are&quot;</span>
-                                <span class="s">&quot;going to find it with whoami&quot;</span> <span class="o">%</span> <span class="n">shell_url</span><span class="p">)</span>
+                                <span class="s">&quot; going to find it with whoami&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">)</span>
             <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;whoami&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">detected_username</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Username detected as: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span>
@@ -453,7 +460,6 @@
         <span class="n">total_cpu_count</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="n">number_of_processes</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="n">threads_per_process</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="n">working_directory</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="n">output</span> <span class="o">=</span> <span class="s">&quot;saga-python-slurm-default.out&quot;</span>
         <span class="n">error</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="n">file_transfer</span> <span class="o">=</span> <span class="bp">None</span>
@@ -537,8 +543,8 @@
         <span class="k">if</span> <span class="n">threads_per_process</span><span class="p">:</span>
             <span class="k">pass</span>
 
-        <span class="k">if</span> <span class="n">working_directory</span><span class="p">:</span>
-            <span class="n">slurm_script</span> <span class="o">+=</span> <span class="s">&quot;#SBATCH -D </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">working_directory</span>
+        <span class="k">if</span> <span class="n">cwd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="n">slurm_script</span> <span class="o">+=</span> <span class="s">&quot;#SBATCH -D </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cwd</span>
 
         <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
             <span class="n">slurm_script</span><span class="o">+=</span> <span class="s">&quot;#SBATCH -o </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">output</span>
@@ -560,6 +566,15 @@
         <span class="k">if</span> <span class="n">job_contact</span><span class="p">:</span>
             <span class="n">slurm_script</span> <span class="o">+=</span> <span class="s">&quot;#SBATCH --mail-user=</span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job_contact</span>
 
+        <span class="c"># make sure we are not missing anything important</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">queue</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> 
+                                          <span class="s">&quot;No queue has been specified, &quot;</span>
+                                          <span class="s">&quot;and the SLURM adaptor &quot;</span>
+                                          <span class="s">&quot;requires that a queue be &quot;</span>
+                                          <span class="s">&quot;specified.  Please specify &quot;</span>
+                                          <span class="s">&quot;a queue to submit the job to.&quot;</span><span class="p">)</span>
+
         <span class="c"># add on our environment variables</span>
         <span class="n">slurm_script</span> <span class="o">+=</span> <span class="n">env</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
 
@@ -579,8 +594,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Transferring SLURM script to remote host&quot;</span><span class="p">)</span>
 
         <span class="c"># transfer our script over</span>
-        <span class="c">#self.shell.write_to_file (src = slurm_script,</span>
-        <span class="c">#                          tgt = &quot;%s/wrapper.sh&quot; % self._base)</span>
+        <span class="c">#self.shell.write_to_remote (src = slurm_script,</span>
+        <span class="c">#                            tgt = &quot;%s/wrapper.sh&quot; % self._base)</span>
 
         <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;&quot;&quot;echo &quot;</span><span class="si">%s</span><span class="s">&quot; | sbatch&quot;&quot;&quot;</span> <span class="o">%</span> <span class="n">slurm_script</span><span class="p">)</span>
 
@@ -728,8 +743,8 @@
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJobService.create_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.create_job">[docs]</a>    <span class="k">def</span> <span class="nf">create_job</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jd</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_url()</span>
+    <span class="k">def</span> <span class="nf">create_job</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jd</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SLURMJobService.create_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.create_job">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_url()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># check that only supported attributes are provided</span>
         <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">list_attributes</span><span class="p">():</span>
@@ -747,25 +762,25 @@
         <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span> <span class="p">(</span><span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">,</span>
                              <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
 
-    <span class="c"># ----------------------------------------------------------------</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJobService.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.get_url">[docs]</a>    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_url()</span>
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SLURMJobService.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.get_url">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_url()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span>
-</div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJobService.run_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.run_job">[docs]</a>    <span class="k">def</span> <span class="nf">run_job</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">host</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NotImplemented</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;run_job not implemented&quot;</span>
+
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">run_job</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">host</span><span class="p">):</span>
+<div class="viewcode-block" id="SLURMJobService.run_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.run_job">[docs]</a>        <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NotImplemented</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;run_job not implemented&quot;</span>
                                         <span class="s">&quot; for SLURM jobs -- please construct&quot;</span>
                                         <span class="s">&quot; a job description and create a job&quot;</span>
                                         <span class="s">&quot; manually.&quot;</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJobService.list"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.list">[docs]</a>    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.list()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SLURMJobService.list"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.list">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.list()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c"># ashleyz@login1:~$ squeue -h -o &quot;%i&quot; -u ashleyz                                                                                                                                                                       </span>
@@ -783,10 +798,10 @@
         <span class="k">return</span> <span class="n">output</span>
 
   <span class="c"># # ----------------------------------------------------------------</span>
-  <span class="c"># #</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJobService.get_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.get_job">[docs]</a>    <span class="k">def</span> <span class="nf">get_job</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobid</span><span class="p">):</span>
-        <span class="c"># try to get some information about this job and throw it into</span>
+  <span class="c"># #</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_job</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobid</span><span class="p">):</span>
+<div class="viewcode-block" id="SLURMJobService.get_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.get_job">[docs]</a>        <span class="c"># try to get some information about this job and throw it into</span>
         <span class="c"># our job dictionary.</span>
         <span class="c"># self.jobs[jobid] = self._retrieve_job(jobid)</span>
 
@@ -838,9 +853,9 @@
 
 
 <span class="c">###############################################################################</span>
-<span class="c">#</span></div></div>
-<div class="viewcode-block" id="SLURMJob"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob">[docs]</a><span class="k">class</span> <span class="nc">SLURMJob</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">SLURMJob</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">):</span></div></div>
+<div class="viewcode-block" id="SLURMJob"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob">[docs]</a>    <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -852,8 +867,8 @@
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.init_instance">[docs]</a>    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_info</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.init_instance()</span>
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_info</span><span class="p">):</span>
+<div class="viewcode-block" id="SLURMJob.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.init_instance()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">jd</span> <span class="o">=</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&quot;job_description&quot;</span><span class="p">]</span>
@@ -881,8 +896,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="bp">False</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
-</div>
-    <span class="k">def</span> <span class="nf">_job_get_info</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_job_get_info</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span></div>
         <span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">        use scontrol to grab job info </span>
 <span class="sd">        NOT CURRENTLY USED/TESTED, here for later</span>
@@ -1002,32 +1017,32 @@
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.get_state"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_state">[docs]</a>    <span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_state()</span>
+    <span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SLURMJob.get_state"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_state">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_state()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_state</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.get_description"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_description">[docs]</a>    <span class="k">def</span> <span class="nf">get_description</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jd</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_description</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SLURMJob.get_description"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_description">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jd</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.get_service_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_service_url">[docs]</a>    <span class="k">def</span> <span class="nf">get_service_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_service_url()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_service_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SLURMJob.get_service_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_service_url">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_service_url()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">rm</span>
    
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.wait"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.wait">[docs]</a>    <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
-        <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+<div class="viewcode-block" id="SLURMJob.wait"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.wait">[docs]</a>        <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="n">time_now</span>   <span class="o">=</span> <span class="n">time_start</span>
         <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
 
@@ -1054,71 +1069,71 @@
     <span class="c"># Andre Merzky: In general, the job ID is something which is generated by the adaptor or by the backend, and the user should not interpret it.  So, you can do that.  Two caveats though:</span>
     <span class="c"># (a) The ID MUST remain constant once it is assigned to a job (imagine an application hashes on job ids, for example.</span>
     <span class="c"># (b) the ID SHOULD follow the scheme [service_url]-[backend-id] -- and in that case, you should make sure that the URL part of the ID can be used to create a new job service instance...</span>
-</div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.get_id"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_id</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_id() &quot;&quot;&quot;</span>        
+
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_id</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SLURMJob.get_id"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_id">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_id() &quot;&quot;&quot;</span>        
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span>
    
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.get_exit_code"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_exit_code">[docs]</a>    <span class="k">def</span> <span class="nf">get_exit_code</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_exit_code()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_exit_code</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SLURMJob.get_exit_code"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_exit_code">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_exit_code()</span>
 <span class="sd">        &quot;&quot;&quot;</span>   
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_exit_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
 
     <span class="c">#  ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.suspend"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.suspend">[docs]</a>    <span class="k">def</span> <span class="nf">suspend</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_exit_code()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">suspend</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SLURMJob.suspend"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.suspend">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_exit_code()</span>
 <span class="sd">        &quot;&quot;&quot;</span> 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_suspend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
 
-    <span class="c"># ----------------------------------------------------------------</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.resume"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.resume">[docs]</a>    <span class="k">def</span> <span class="nf">resume</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_exit_code()</span>
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">resume</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SLURMJob.resume"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.resume">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_exit_code()</span>
 <span class="sd">        &quot;&quot;&quot;</span> 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_resume</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
 
   
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.get_created"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_created">[docs]</a>    <span class="k">def</span> <span class="nf">get_created</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_created()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_created</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SLURMJob.get_created"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_created">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_created()</span>
 <span class="sd">        &quot;&quot;&quot;</span>     
         <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NotImplemented</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;get_created not&quot;</span>
                                         <span class="s">&quot; implemented for SLURM jobs.&quot;</span><span class="p">)</span>
         <span class="k">return</span>
   
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.get_started"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_started">[docs]</a>    <span class="k">def</span> <span class="nf">get_started</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_started()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_started</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SLURMJob.get_started"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_started">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_started()</span>
 <span class="sd">        &quot;&quot;&quot;</span>        
         <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NotImplemented</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;get_started not&quot;</span>
                                         <span class="s">&quot; implemented for SLURM jobs.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span>
   
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.get_finished"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_finished">[docs]</a>    <span class="k">def</span> <span class="nf">get_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_finished()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SLURMJob.get_finished"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_finished">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_finished()</span>
 <span class="sd">        &quot;&quot;&quot;</span>        
         <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NotImplemented</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;get_finished not&quot;</span>
                                         <span class="s">&quot; implemented for SLURM jobs.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finished</span>
    
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.get_execution_hosts"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_execution_hosts">[docs]</a>    <span class="k">def</span> <span class="nf">get_execution_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_execution_hosts()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_execution_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SLURMJob.get_execution_hosts"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.get_execution_hosts">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.get_execution_hosts()</span>
 <span class="sd">        &quot;&quot;&quot;</span>        
         <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NotImplemented</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;get_execution_hosts not&quot;</span>
                                         <span class="s">&quot; implemented for SLURM jobs.&quot;</span><span class="p">)</span>
@@ -1126,18 +1141,18 @@
         <span class="k">return</span>
   
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.cancel"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.cancel">[docs]</a>    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
-        <span class="c">#scancel id</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+<div class="viewcode-block" id="SLURMJob.cancel"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.cancel">[docs]</a>        <span class="c">#scancel id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_cancel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">=</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="SLURMJob.run"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.run()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
+<div class="viewcode-block" id="SLURMJob.run"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJob.run">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Job.run()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_run</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="bp">True</span>

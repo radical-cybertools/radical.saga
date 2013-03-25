@@ -56,15 +56,13 @@
           <div class="body">
             
   <h1>Source code for saga.adaptors.condor.condorjob</h1><div class="highlight"><pre>
-<span class="c">#!/usr/bin/env python</span>
-<span class="c"># encoding: utf-8</span>
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Mark Santcroos, Ole Weidner&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
+<span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
 
 <span class="sd">&quot;&quot;&quot; Condor job adaptor implementation</span>
 <span class="sd">&quot;&quot;&quot;</span>
-
-<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Ole Weidner&quot;</span>
-<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2013, The SAGA Project&quot;</span>
-<span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
 
 <span class="kn">import</span> <span class="nn">saga.utils.which</span>
 <span class="kn">import</span> <span class="nn">saga.utils.pty_shell</span>
@@ -146,7 +144,7 @@
 
     <span class="c">##### OPTIONS PASSED VIA JOB DESCRIPTION #####</span>
     <span class="c">##</span>
-    <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n\n</span><span class="s">##### OPTIONS PASSED VIA JOB SERVICE URL #####</span><span class="se">\n</span><span class="s">##&quot;</span>
+    <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n\n</span><span class="s">##### OPTIONS PASSED VIA JOB DESCRIPTION #####</span><span class="se">\n</span><span class="s">##&quot;</span>
     <span class="n">requirements</span> <span class="o">=</span> <span class="s">&quot;requirements = &quot;</span>
 
     <span class="c"># executable -&gt; executable</span>
@@ -265,15 +263,15 @@
 <span class="n">_ADAPTOR_NAME</span>          <span class="o">=</span> <span class="s">&quot;saga.adaptor.condorjob&quot;</span>
 <span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&quot;condor&quot;</span><span class="p">,</span> <span class="s">&quot;condor+ssh&quot;</span><span class="p">,</span> <span class="s">&quot;condor+gsissh&quot;</span><span class="p">]</span>
 <span class="n">_ADAPTOR_OPTIONS</span>       <span class="o">=</span> <span class="p">[</span>
-    <span class="c"># {</span>
-    <span class="c"># &#39;category&#39;:      &#39;saga.adaptor.condorjob&#39;,</span>
-    <span class="c"># &#39;name&#39;:          &#39;foo&#39;,</span>
-    <span class="c"># &#39;type&#39;:          bool,</span>
-    <span class="c"># &#39;default&#39;:       False,</span>
-    <span class="c"># &#39;valid_options&#39;: [True, False],</span>
-    <span class="c"># &#39;documentation&#39;: &quot;&quot;&quot;Doc&quot;&quot;&quot;,</span>
-    <span class="c"># &#39;env_variable&#39;:   None</span>
-    <span class="c"># },</span>
+     <span class="p">{</span>
+     <span class="s">&#39;category&#39;</span><span class="p">:</span>      <span class="s">&#39;saga.adaptor.condorjob&#39;</span><span class="p">,</span>
+     <span class="s">&#39;name&#39;</span><span class="p">:</span>          <span class="s">&#39;ptydebug&#39;</span><span class="p">,</span>
+     <span class="s">&#39;type&#39;</span><span class="p">:</span>          <span class="nb">bool</span><span class="p">,</span>
+     <span class="s">&#39;default&#39;</span><span class="p">:</span>       <span class="bp">False</span><span class="p">,</span>
+     <span class="s">&#39;valid_options&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">True</span><span class="p">,</span> <span class="bp">False</span><span class="p">],</span>
+     <span class="s">&#39;documentation&#39;</span><span class="p">:</span> <span class="s">&quot;&quot;&quot;Turns PTYWrapper debugging on or off.&quot;&quot;&quot;</span><span class="p">,</span>
+     <span class="s">&#39;env_variable&#39;</span><span class="p">:</span>  <span class="s">&quot;SAGA_PTYDEBUG&quot;</span>
+     <span class="p">}</span>
 <span class="p">]</span>
 
 <span class="c"># --------------------------------------------------------------------</span>
@@ -359,8 +357,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">id_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;^\[(.*)\]-\[(.*?)\]$&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_config</span><span class="p">()</span>
-
-        <span class="c">#self._logger.info(&#39;debug trace : %s&#39; % self.debug_trace)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ptydebug</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="p">[</span><span class="s">&#39;ptydebug&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_value</span><span class="p">()</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -383,8 +380,8 @@
 
 <span class="c">###############################################################################</span>
 <span class="c">#</span>
-<div class="viewcode-block" id="CondorJobService"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService">[docs]</a><span class="k">class</span> <span class="nc">CondorJobService</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service</span>
+<span class="k">class</span> <span class="nc">CondorJobService</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJobService"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService">[docs]</a>    <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -394,29 +391,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">CondorJobService</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span> <span class="o">=</span> <span class="n">adaptor</span>
+
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-
-        <span class="c"># FIXME: not sure if we should PURGE here -- that removes states which</span>
-        <span class="c"># might not be evaluated, yet.  Should we mark state evaluation</span>
-        <span class="c"># separately?</span>
-        <span class="c">#   cmd_state () { touch $DIR/purgeable; ... }</span>
-        <span class="c"># When should that be done?</span>
-        <span class="c">#self._logger.error(&quot;adaptor dying... %s&quot; % self.njobs)</span>
-        <span class="c">#self._logger.trace()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">(</span><span class="n">kill_shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJobService.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.init_instance">[docs]</a>    <span class="k">def</span> <span class="nf">init_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">rm_url</span><span class="p">,</span> <span class="n">session</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; service instance constructor</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># Turn this off by default.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_disable_ptywrapper_logging</span> <span class="o">=</span> <span class="bp">True</span>
-        
+    <span class="k">def</span> <span class="nf">init_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">rm_url</span><span class="p">,</span> <span class="n">session</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJobService.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; service instance constructor</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
         <span class="bp">self</span><span class="o">.</span><span class="n">rm</span>            <span class="o">=</span> <span class="n">rm_url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">session</span>       <span class="o">=</span> <span class="n">session</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ppn</span>           <span class="o">=</span> <span class="mi">0</span>
@@ -451,7 +439,7 @@
                           <span class="s">&#39;condor_q&#39;</span><span class="p">:</span>       <span class="bp">None</span><span class="p">,</span>
                           <span class="s">&#39;condor_rm&#39;</span><span class="p">:</span>      <span class="bp">None</span><span class="p">}</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disable_ptywrapper_logging</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">ptydebug</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
             <span class="c"># create a null logger to silence the PTY wrapper!</span>
             <span class="kn">import</span> <span class="nn">logging</span>
 
@@ -473,10 +461,12 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
 
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
+
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-<div class="viewcode-block" id="CondorJobService.initialize"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c"># check if all required condor tools are available</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div>
+<div class="viewcode-block" id="CondorJobService.initialize"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.initialize">[docs]</a>        <span class="c"># check if all required condor tools are available</span>
         <span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;which </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
@@ -505,13 +495,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Found Condor tools: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-<div class="viewcode-block" id="CondorJobService.finalize"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.finalize">[docs]</a>    <span class="k">def</span> <span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kill_shell</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="k">pass</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kill_shell</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span></div>
+<div class="viewcode-block" id="CondorJobService.finalize"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.finalize">[docs]</a>        <span class="k">pass</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="k">def</span> <span class="nf">_job_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jd</span><span class="p">):</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_job_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jd</span><span class="p">):</span></div>
         <span class="sd">&quot;&quot;&quot; runs a job via qsub</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># create a Condor job script from SAGA job description</span>
@@ -794,8 +784,8 @@
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJobService.create_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.create_job">[docs]</a>    <span class="k">def</span> <span class="nf">create_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jd</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service.get_url()</span>
+    <span class="k">def</span> <span class="nf">create_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jd</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJobService.create_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.create_job">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service.get_url()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># check that only supported attributes are provided</span>
         <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">list_attributes</span><span class="p">():</span>
@@ -816,10 +806,10 @@
                             <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJobService.get_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.get_job">[docs]</a>    <span class="k">def</span> <span class="nf">get_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobid</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_job()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobid</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJobService.get_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.get_job">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_job()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c"># try to get some information about this job and throw it into</span>
@@ -840,18 +830,18 @@
                             <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJobService.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.get_url">[docs]</a>    <span class="k">def</span> <span class="nf">get_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service.get_url()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJobService.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.get_url">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service.get_url()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJobService.list"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.list">[docs]</a>    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service.list()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJobService.list"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.list">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service.list()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ids</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -905,9 +895,9 @@
 
 
 <span class="c">###############################################################################</span>
-<span class="c">#</span></div></div>
-<div class="viewcode-block" id="CondorJob"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob">[docs]</a><span class="k">class</span> <span class="nc">CondorJob</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">CondorJob</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">):</span></div></div>
+<div class="viewcode-block" id="CondorJob"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob">[docs]</a>    <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">):</span>
@@ -917,8 +907,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
     <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJob.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.init_instance">[docs]</a>    <span class="k">def</span> <span class="nf">init_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_info</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.init_instance()</span>
+    <span class="k">def</span> <span class="nf">init_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_info</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJob.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.init_instance()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># init_instance is called for every new saga.job.Job object</span>
         <span class="c"># that is created</span>
@@ -935,10 +925,10 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span><span class="p">()</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJob.get_state"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_state">[docs]</a>    <span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; mplements saga.adaptors.cpi.job.Job.get_state()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJob.get_state"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_state">[docs]</a>        <span class="sd">&quot;&quot;&quot; mplements saga.adaptors.cpi.job.Job.get_state()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="c"># jobs that are not started are always in &#39;NEW&#39; state</span>
@@ -947,10 +937,10 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJob.wait"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.wait">[docs]</a>    <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.wait()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJob.wait"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.wait">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.wait()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="s">&quot;Can&#39;t wait for job that hasn&#39;t been started&quot;</span><span class="p">,</span>
@@ -959,10 +949,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJob.cancel"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.cancel">[docs]</a>    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.cancel()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJob.cancel"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.cancel">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.cancel()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="s">&quot;Can&#39;t wait for job that hasn&#39;t been started&quot;</span><span class="p">,</span>
@@ -971,35 +961,35 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_cancel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJob.run"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.run()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJob.run"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.run">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.run()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="bp">True</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJob.get_service_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_service_url">[docs]</a>    <span class="k">def</span> <span class="nf">get_service_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_service_url()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_service_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJob.get_service_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_service_url">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_service_url()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">rm</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJob.get_id"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_id()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJob.get_id"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_id">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_id()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJob.get_exit_code"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_exit_code">[docs]</a>    <span class="k">def</span> <span class="nf">get_exit_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_exit_code()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_exit_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJob.get_exit_code"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_exit_code">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_exit_code()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
@@ -1007,10 +997,10 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_exit_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJob.get_created"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_created">[docs]</a>    <span class="k">def</span> <span class="nf">get_created</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_created()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_created</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJob.get_created"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_created">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_created()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
@@ -1018,10 +1008,10 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_create_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJob.get_started"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_started">[docs]</a>    <span class="k">def</span> <span class="nf">get_started</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_started()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_started</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJob.get_started"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_started">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_started()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
@@ -1029,10 +1019,10 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_start_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJob.get_finished"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_finished">[docs]</a>    <span class="k">def</span> <span class="nf">get_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_finished()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJob.get_finished"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_finished">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_finished()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
@@ -1040,10 +1030,10 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_end_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="CondorJob.get_execution_hosts"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_execution_hosts">[docs]</a>    <span class="k">def</span> <span class="nf">get_execution_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_execution_hosts()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_execution_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="CondorJob.get_execution_hosts"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_execution_hosts">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_execution_hosts()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>

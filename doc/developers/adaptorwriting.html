@@ -647,7 +647,7 @@ etc.) &#8211; in particular, we expect the following features:
 <tt class="docutils literal"><span class="pre">PS2</span></tt>.</p>
 <p>Note that <tt class="docutils literal"><span class="pre">PTYShell</span></tt> will change the shell prompts (<tt class="docutils literal"><span class="pre">PS1</span></tt> and <tt class="docutils literal"><span class="pre">PS2</span></tt>),
 to simplify output parsing.  <tt class="docutils literal"><span class="pre">PS2</span></tt> will be empty, <tt class="docutils literal"><span class="pre">PS1</span></tt> will be set
-<tt class="docutils literal"><span class="pre">PROMPT-$?-&gt;\n</span></tt> &#8211; that way, the prompt will report the exit value of the
+<tt class="docutils literal"><span class="pre">PROMPT-$?-&gt;</span></tt> &#8211; that way, the prompt will report the exit value of the
 last command, saving an extra roundtrip.  Users of this class should be
 careful when setting other prompts &#8211; see <tt class="xref py py-func docutils literal"><span class="pre">set_prompt()</span></tt> for more
 details.</p>
@@ -662,7 +662,7 @@ if  ret != 0 :</p>
 <blockquote>
 <div>raise saga.NoSuccess (&#8220;failed to prepare base dir (%s)(%s)&#8221; % (ret, out))</div></blockquote>
 <p># stage some data from a local string variable into a file on the remote system
-self.shell.stage_to_file (src = pbs_job_script,</p>
+self.shell.stage_to_remote (src = pbs_job_script,</p>
 <blockquote>
 <div>tgt = &#8220;/tmp/data.$$/job_1.pbs&#8221;)</div></blockquote>
 <p># check size of staged script (this is actually done on PTYShell level
@@ -783,20 +783,20 @@ prompt with the exit value &#8216;0&#8217;.</p>
 thus effectively flushing the pty output.</p>
 <p>By encoding the exit value in the command prompt, we safe one roundtrip.
 The prompt on Posix compliant shells can be set, for example, via:</p>
-<div class="highlight-python"><pre>PS1='PROMPT-$?-&gt;\n'; export PS1</pre>
+<div class="highlight-python"><pre>PS1='PROMPT-$?-&gt;'; export PS1</pre>
 </div>
 <p>The newline in the example above allows to nicely anchor the regular
 expression, which would look like:</p>
-<div class="highlight-python"><pre>PROMPT-(\d+)-&gt;\s*$</pre>
+<div class="highlight-python"><pre>PROMPT-(\d+)-&gt;$</pre>
 </div>
 <p>The regex is compiled with &#8216;re.DOTALL&#8217;, so the dot character matches
 all characters, including line breaks.  Be careful not to match more
 than the exact prompt &#8211; otherwise, a prompt search will swallow stdout
 data.  For example, the following regex:</p>
-<div class="highlight-python"><pre>PROMPT-(.+)-&gt;\s*$</pre>
+<div class="highlight-python"><pre>PROMPT-(.+)-&gt;$</pre>
 </div>
 <p>would capture arbitrary strings, and would thus match <em>all</em> of:</p>
-<div class="highlight-python"><pre>PROMPT-0-&gt; ls
+<div class="highlight-python"><pre>PROMPT-0-&gt;ls
 data/ info
 PROMPT-0-&gt;</pre>
 </div>
@@ -898,8 +898,8 @@ command, via the I/O channels.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="saga.utils.pty_shell.PTYShell.write_to_file">
-<tt class="descname">write_to_file</tt><big>(</big><em>src</em>, <em>tgt</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.write_to_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.write_to_file" title="Permalink to this definition">¶</a></dt>
+<dt id="saga.utils.pty_shell.PTYShell.write_to_remote">
+<tt class="descname">write_to_remote</tt><big>(</big><em>src</em>, <em>tgt</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.write_to_remote"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.write_to_remote" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -921,8 +921,8 @@ A NoSuccess exception is raised if writing the file was not possible
 </dd></dl>
 
 <dl class="method">
-<dt id="saga.utils.pty_shell.PTYShell.read_from_file">
-<tt class="descname">read_from_file</tt><big>(</big><em>src</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.read_from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.read_from_file" title="Permalink to this definition">¶</a></dt>
+<dt id="saga.utils.pty_shell.PTYShell.read_from_remote">
+<tt class="descname">read_from_remote</tt><big>(</big><em>src</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.read_from_remote"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.read_from_remote" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -936,8 +936,8 @@ relative to the shell&#8217;s URL.</td>
 </dd></dl>
 
 <dl class="method">
-<dt id="saga.utils.pty_shell.PTYShell.stage_to_file">
-<tt class="descname">stage_to_file</tt><big>(</big><em>src</em>, <em>tgt</em>, <em>cp_flags=''</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.stage_to_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.stage_to_file" title="Permalink to this definition">¶</a></dt>
+<dt id="saga.utils.pty_shell.PTYShell.stage_to_remote">
+<tt class="descname">stage_to_remote</tt><big>(</big><em>src</em>, <em>tgt</em>, <em>cp_flags=''</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.stage_to_remote"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.stage_to_remote" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -957,8 +957,8 @@ relative to the shell&#8217;s URL.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="saga.utils.pty_shell.PTYShell.stage_from_file">
-<tt class="descname">stage_from_file</tt><big>(</big><em>src</em>, <em>tgt</em>, <em>cp_flags=''</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.stage_from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.stage_from_file" title="Permalink to this definition">¶</a></dt>
+<dt id="saga.utils.pty_shell.PTYShell.stage_from_remote">
+<tt class="descname">stage_from_remote</tt><big>(</big><em>src</em>, <em>tgt</em>, <em>cp_flags=''</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.stage_from_remote"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.stage_from_remote" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -979,7 +979,7 @@ relative to the current working directory.</li>
 
 <dl class="method">
 <dt id="saga.utils.pty_shell.PTYShell.copy_file">
-<tt class="descname">copy_file</tt><big>(</big><em>src</em>, <em>tgt</em><big>)</big><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.copy_file" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">copy_file</tt><big>(</big><em>src</em>, <em>tgt</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.copy_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.copy_file" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1077,8 +1077,13 @@ initialization hooks.</p>
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="saga.utils.pty_process.PTYProcess.initialize_pty">
+<tt class="descname">initialize_pty</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.initialize_pty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="saga.utils.pty_process.PTYProcess.finalize">
-<tt class="descname">finalize</tt><big>(</big><em>do_wait=True</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_process.html#PTYProcess.finalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.finalize" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">finalize</tt><big>(</big><em>wstat=None</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_process.html#PTYProcess.finalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.finalize" title="Permalink to this definition">¶</a></dt>
 <dd><p>kill the child, close all I/O channels</p>
 </dd></dl>
 

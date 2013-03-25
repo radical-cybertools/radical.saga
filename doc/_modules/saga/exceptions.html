@@ -56,9 +56,10 @@
           <div class="body">
             
   <h1>Source code for saga.exceptions</h1><div class="highlight"><pre>
-<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Ole Weidner&quot;</span>
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Ole Weidner&quot;</span>
 <span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
 
 <span class="sd">&quot;&quot;&quot; Exception classes</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -69,8 +70,8 @@
 <span class="kn">import</span> <span class="nn">saga.utils.exception</span>
 
 
-<div class="viewcode-block" id="SagaException"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException">[docs]</a><span class="k">class</span> <span class="nc">SagaException</span><span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">ExceptionBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">SagaException</span><span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">ExceptionBase</span><span class="p">):</span>
+<div class="viewcode-block" id="SagaException"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The Exception class encapsulates information about error conditions</span>
 <span class="sd">    encountered in SAGA.</span>
 
@@ -140,31 +141,31 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-<div class="viewcode-block" id="SagaException.get_message"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_message">[docs]</a>    <span class="k">def</span> <span class="nf">get_message</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; Return the exception message as a string.  That message is also</span>
+    <span class="k">def</span> <span class="nf">get_message</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SagaException.get_message"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_message">[docs]</a>        <span class="sd">&quot;&quot;&quot; Return the exception message as a string.  That message is also</span>
 <span class="sd">        available via the &#39;message&#39; property.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_message</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="k">def</span> <span class="nf">_get_plain_message</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_get_plain_message</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
         <span class="sd">&quot;&quot;&quot; Return the plain error message as a string. &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_message</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-<div class="viewcode-block" id="SagaException.get_type"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_type">[docs]</a>    <span class="k">def</span> <span class="nf">get_type</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Return the type of the exception as string.</span>
+    <span class="k">def</span> <span class="nf">get_type</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SagaException.get_type"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_type">[docs]</a>        <span class="sd">&quot;&quot;&quot; Return the type of the exception as string.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_type</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-<div class="viewcode-block" id="SagaException.get_object"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_object">[docs]</a>    <span class="k">def</span> <span class="nf">get_object</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; Return the object that raised this exception. An object may not</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">get_object</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="SagaException.get_object"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_object">[docs]</a>        <span class="sd">&quot;&quot;&quot; Return the object that raised this exception. An object may not</span>
 <span class="sd">        always be available -- for example, exceptions raised during object</span>
 <span class="sd">        creation may not have the option to keep an incomplete object instance</span>
 <span class="sd">        around.  In those cases, this method will return &#39;None&#39;.  Either way,</span>
@@ -184,8 +185,8 @@
 
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="k">def</span> <span class="nf">_add_exception</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">:</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_add_exception</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">:</span></div>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Some sub-operation raised a SAGA exception, but other exceptions may</span>
 <span class="sd">        be catched later on.  In that case the later exceptions can be added to</span>
@@ -235,19 +236,19 @@
                 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-<div class="viewcode-block" id="SagaException.get_all_exceptions"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_all_exceptions">[docs]</a>    <span class="k">def</span> <span class="nf">get_all_exceptions</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exceptions</span>
+    <span class="k">def</span> <span class="nf">get_all_exceptions</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="SagaException.get_all_exceptions"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_all_exceptions">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exceptions</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-<div class="viewcode-block" id="SagaException.get_all_messages"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_all_messages">[docs]</a>    <span class="k">def</span> <span class="nf">get_all_messages</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_messages</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">get_all_messages</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="SagaException.get_all_messages"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_all_messages">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_messages</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span></div>
-    <span class="k">def</span> <span class="nf">__str__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__str__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span> <span class="p">()</span>
 
 
@@ -260,9 +261,9 @@
 
 
 <span class="c"># --------------------------------------------------------------------</span>
-<span class="c">#</span></div>
-<div class="viewcode-block" id="NotImplemented"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.NotImplemented">[docs]</a><span class="k">class</span> <span class="nc">NotImplemented</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; SAGA-Python does not implement this method or class. (rank: 11)&quot;&quot;&quot;</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">NotImplemented</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span></div>
+<div class="viewcode-block" id="NotImplemented"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.NotImplemented">[docs]</a>    <span class="sd">&quot;&quot;&quot; SAGA-Python does not implement this method or class. (rank: 11)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">11</span>
 
@@ -271,9 +272,9 @@
 
 
 <span class="c"># --------------------------------------------------------------------</span>
-<span class="c">#</span></div>
-<div class="viewcode-block" id="IncorrectURL"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.IncorrectURL">[docs]</a><span class="k">class</span> <span class="nc">IncorrectURL</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> 
-    <span class="sd">&quot;&quot;&quot; The given URL could not be interpreted, for example due to an incorrect</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">IncorrectURL</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
+<div class="viewcode-block" id="IncorrectURL"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.IncorrectURL">[docs]</a>    <span class="sd">&quot;&quot;&quot; The given URL could not be interpreted, for example due to an incorrect</span>
 <span class="sd">        / unknown schema. (rank: 10)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">10</span>
@@ -283,9 +284,9 @@
 
 
 <span class="c"># --------------------------------------------------------------------</span>
-<span class="c">#</span></div>
-<div class="viewcode-block" id="BadParameter"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.BadParameter">[docs]</a><span class="k">class</span> <span class="nc">BadParameter</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> 
-    <span class="sd">&quot;&quot;&quot; A given parameter is out of bound or ill formatted. (rank: 9)&quot;&quot;&quot;</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">BadParameter</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
+<div class="viewcode-block" id="BadParameter"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.BadParameter">[docs]</a>    <span class="sd">&quot;&quot;&quot; A given parameter is out of bound or ill formatted. (rank: 9)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">9</span>
     
@@ -294,9 +295,9 @@
 
 
 <span class="c"># --------------------------------------------------------------------</span>
-<span class="c">#</span></div>
-<div class="viewcode-block" id="AlreadyExists"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.AlreadyExists">[docs]</a><span class="k">class</span> <span class="nc">AlreadyExists</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> 
-    <span class="sd">&quot;&quot;&quot; The entity to be created already exists. (rank: 8)&quot;&quot;&quot;</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">AlreadyExists</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
+<div class="viewcode-block" id="AlreadyExists"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.AlreadyExists">[docs]</a>    <span class="sd">&quot;&quot;&quot; The entity to be created already exists. (rank: 8)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">8</span>
     
@@ -305,9 +306,9 @@
 
 
 <span class="c"># --------------------------------------------------------------------</span>
-<span class="c">#</span></div>
-<div class="viewcode-block" id="DoesNotExist"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.DoesNotExist">[docs]</a><span class="k">class</span> <span class="nc">DoesNotExist</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; An operation tried to access a non-existing entity. (rank: 7)&quot;&quot;&quot;</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">DoesNotExist</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span></div>
+<div class="viewcode-block" id="DoesNotExist"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.DoesNotExist">[docs]</a>    <span class="sd">&quot;&quot;&quot; An operation tried to access a non-existing entity. (rank: 7)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">7</span>
     
@@ -316,9 +317,9 @@
 
 
 <span class="c"># --------------------------------------------------------------------</span>
-<span class="c">#</span></div>
-<div class="viewcode-block" id="IncorrectState"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.IncorrectState">[docs]</a><span class="k">class</span> <span class="nc">IncorrectState</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> 
-    <span class="sd">&quot;&quot;&quot; The operation is not allowed on the entity in its current state. (rank: 6)&quot;&quot;&quot;</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">IncorrectState</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
+<div class="viewcode-block" id="IncorrectState"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.IncorrectState">[docs]</a>    <span class="sd">&quot;&quot;&quot; The operation is not allowed on the entity in its current state. (rank: 6)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">6</span>
     
@@ -327,9 +328,9 @@
 
 
 <span class="c"># --------------------------------------------------------------------</span>
-<span class="c">#</span></div>
-<div class="viewcode-block" id="PermissionDenied"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.PermissionDenied">[docs]</a><span class="k">class</span> <span class="nc">PermissionDenied</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> 
-    <span class="sd">&quot;&quot;&quot; The used identity is not permitted to perform the requested operation. (rank: 5)&quot;&quot;&quot;</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">PermissionDenied</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
+<div class="viewcode-block" id="PermissionDenied"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.PermissionDenied">[docs]</a>    <span class="sd">&quot;&quot;&quot; The used identity is not permitted to perform the requested operation. (rank: 5)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">5</span>
     
@@ -338,9 +339,9 @@
 
 
 <span class="c"># --------------------------------------------------------------------</span>
-<span class="c">#</span></div>
-<div class="viewcode-block" id="AuthorizationFailed"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.AuthorizationFailed">[docs]</a><span class="k">class</span> <span class="nc">AuthorizationFailed</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> 
-    <span class="sd">&quot;&quot;&quot; The backend could not establish a valid identity. (rank: 4)&quot;&quot;&quot;</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">AuthorizationFailed</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
+<div class="viewcode-block" id="AuthorizationFailed"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.AuthorizationFailed">[docs]</a>    <span class="sd">&quot;&quot;&quot; The backend could not establish a valid identity. (rank: 4)&quot;&quot;&quot;</span>
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">4</span>
     
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
@@ -348,9 +349,9 @@
 
 
 <span class="c"># --------------------------------------------------------------------</span>
-<span class="c">#</span></div>
-<div class="viewcode-block" id="AuthenticationFailed"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.AuthenticationFailed">[docs]</a><span class="k">class</span> <span class="nc">AuthenticationFailed</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> 
-    <span class="sd">&quot;&quot;&quot; The backend could not establish a valid identity. (rank: 3)&quot;&quot;&quot;</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">AuthenticationFailed</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
+<div class="viewcode-block" id="AuthenticationFailed"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.AuthenticationFailed">[docs]</a>    <span class="sd">&quot;&quot;&quot; The backend could not establish a valid identity. (rank: 3)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">3</span>
     
@@ -359,9 +360,9 @@
 
 
 <span class="c"># --------------------------------------------------------------------</span>
-<span class="c">#</span></div>
-<div class="viewcode-block" id="Timeout"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.Timeout">[docs]</a><span class="k">class</span> <span class="nc">Timeout</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> 
-    <span class="sd">&quot;&quot;&quot; The interaction with the backend times out. (rank: 2)&quot;&quot;&quot;</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">Timeout</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
+<div class="viewcode-block" id="Timeout"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.Timeout">[docs]</a>    <span class="sd">&quot;&quot;&quot; The interaction with the backend times out. (rank: 2)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">2</span>
     
@@ -370,15 +371,15 @@
 
 
 <span class="c"># --------------------------------------------------------------------</span>
-<span class="c">#</span></div>
-<div class="viewcode-block" id="NoSuccess"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.NoSuccess">[docs]</a><span class="k">class</span> <span class="nc">NoSuccess</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> 
-    <span class="sd">&quot;&quot;&quot; Some other error occurred. (rank: 1)&quot;&quot;&quot;</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">NoSuccess</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
+<div class="viewcode-block" id="NoSuccess"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.NoSuccess">[docs]</a>    <span class="sd">&quot;&quot;&quot; Some other error occurred. (rank: 1)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">1</span>
     
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
-        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span></div>
-</pre></div>
+        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+</pre></div></div>
 
           </div>
         </div>

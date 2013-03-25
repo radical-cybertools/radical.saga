@@ -56,6 +56,11 @@
           <div class="body">
             
   <h1>Source code for saga.utils.pty_shell</h1><div class="highlight"><pre>
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
+<span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
+
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
@@ -135,8 +140,8 @@
 <span class="sd">            raise saga.NoSuccess (&quot;failed to prepare base dir (%s)(%s)&quot; % (ret, out))</span>
 
 <span class="sd">        # stage some data from a local string variable into a file on the remote system</span>
-<span class="sd">        self.shell.stage_to_file (src = pbs_job_script, </span>
-<span class="sd">                                  tgt = &quot;/tmp/data.$$/job_1.pbs&quot;)</span>
+<span class="sd">        self.shell.stage_to_remote (src = pbs_job_script, </span>
+<span class="sd">                                    tgt = &quot;/tmp/data.$$/job_1.pbs&quot;)</span>
 
 <span class="sd">        # check size of staged script (this is actually done on PTYShell level</span>
 <span class="sd">        # already, with no extra hop):</span>
@@ -764,8 +769,8 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">write_to_file</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span></div>
-<div class="viewcode-block" id="PTYShell.write_to_file"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.write_to_file">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">write_to_remote</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYShell.write_to_remote"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.write_to_remote">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :type  src: string</span>
 <span class="sd">        :param src: data to be staged into the target file</span>
 
@@ -802,8 +807,8 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">read_from_file</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span> <span class="p">:</span></div>
-<div class="viewcode-block" id="PTYShell.read_from_file"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.read_from_file">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">read_from_remote</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYShell.read_from_remote"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.read_from_remote">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :type  src: string</span>
 <span class="sd">        :param src: path to source file to staged from</span>
 <span class="sd">                    The src path is not an URL, but expected to be a path</span>
@@ -833,8 +838,8 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">stage_to_file</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span></div>
-<div class="viewcode-block" id="PTYShell.stage_to_file"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.stage_to_file">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">stage_to_remote</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">cp_flags</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYShell.stage_to_remote"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.stage_to_remote">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :type  src: string</span>
 <span class="sd">        :param src: path of local source file to be stage from.</span>
 <span class="sd">                    The tgt path is not an URL, but expected to be a path</span>
@@ -850,15 +855,15 @@
         <span class="c"># prompt, and updating pwd state on every find_prompt.</span>
 
         <span class="k">try</span> <span class="p">:</span>
-            <span class="n">pty_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">run_copy_to</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+            <span class="n">pty_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">run_copy_to</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">cp_flags</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">stage_from_file</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span></div>
-<div class="viewcode-block" id="PTYShell.stage_from_file"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.stage_from_file">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">stage_from_remote</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">cp_flags</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYShell.stage_from_remote"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.stage_from_remote">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :type  src: string</span>
 <span class="sd">        :param tgt: path to source file to stage from.</span>
 <span class="sd">                    The tgt path is not an URL, but expected to be a path</span>
@@ -874,7 +879,7 @@
         <span class="c"># prompt, and updating pwd state on every find_prompt.</span>
 
         <span class="k">try</span> <span class="p">:</span>
-            <span class="n">pty_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">run_copy_from</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+            <span class="n">pty_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">run_copy_from</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">cp_flags</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_exception</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span>
@@ -882,37 +887,14 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_copy_file</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">metrics</span><span class="p">)</span> <span class="p">:</span></div>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">copy_file</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYShell.copy_file"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.copy_file">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :type  src: string</span>
-<span class="sd">        :param src: path to file to be staged</span>
+<span class="sd">        :param src: path to file on target host to be copied</span>
 
 <span class="sd">        :type  tgt: string</span>
-<span class="sd">        :param tgt: path to file after staging</span>
+<span class="sd">        :param tgt: path on target host to copy file to</span>
 
-<span class="sd">        :type  metrics: list of saga.Metric instances</span>
-<span class="sd">        :param metrics: list of metrics to be updated with status information</span>
-
-<span class="sd">        Return value: handle to copy process, which can be used for status</span>
-<span class="sd">        checks etc.</span>
-
-<span class="sd">        Both, `src` and `tgt` strings, need to be fully qualified names, in the</span>
-<span class="sd">        sense that they must be readily understood by cp (for `sh` type shells)</span>
-<span class="sd">        and scp (for `ssh` type shells), respectively.  </span>
-<span class="sd">        </span>
-<span class="sd">        Note that this is a private function, called by :func:`copy_to_remote`</span>
-<span class="sd">        and :func:`copy_from_remote`, which prepare the respective qualified</span>
-<span class="sd">        path names.</span>
-
-<span class="sd">        For a local shell (type = &#39;sh&#39;), we run a ``popen (&quot;cp src tgt&quot;)``.  For</span>
-<span class="sd">        remote shells (type == &#39;ssh&#39;), we start a slave scp connection.  In both</span>
-<span class="sd">        cases, we provide status update once per second.  For `cp`, this is</span>
-<span class="sd">        achieved by calling `stat` on `src` and `tgt`, to compare size; for</span>
-<span class="sd">        `scp` we parse the progress meter on stdout.  The thusly obtained</span>
-<span class="sd">        information are fed to the respective metrics, which can be registered</span>
-<span class="sd">        either on start time (see `metrics` parameter), or during the lifetime</span>
-<span class="sd">        of the copy process, via ``add_metric (handle, metric)``.</span>
-<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c"># we expect the master shell to be in alive when staging, as we need to</span>
@@ -927,7 +909,7 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_translate_exception</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_translate_exception</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">:</span></div>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        In many cases, we should be able to roughly infer the exception cause</span>
 <span class="sd">        from the error message -- this is centrally done in this method.  If</span>
@@ -951,6 +933,9 @@
 
         <span class="k">elif</span> <span class="s">&#39;pass&#39;</span> <span class="ow">in</span> <span class="n">lmsg</span> <span class="p">:</span>
             <span class="n">e</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">AuthenticationFailed</span> <span class="p">(</span><span class="n">cmsg</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="s">&#39;ssh_exchange_identification&#39;</span> <span class="ow">in</span> <span class="n">lmsg</span> <span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">AuthenticationFailed</span> <span class="p">(</span><span class="s">&quot;too frequent login attempts, or sshd misconfiguration: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cmsg</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="s">&#39;denied&#39;</span> <span class="ow">in</span> <span class="n">lmsg</span> <span class="p">:</span>
             <span class="n">e</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">PermissionDenied</span> <span class="p">(</span><span class="n">cmsg</span><span class="p">)</span>

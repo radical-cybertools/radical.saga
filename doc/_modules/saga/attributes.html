@@ -56,9 +56,10 @@
           <div class="body">
             
   <h1>Source code for saga.attributes</h1><div class="highlight"><pre>
-<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky&quot;</span>
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Ole Weidner&quot;</span>
 <span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
 
 <span class="sd">&quot;&quot;&quot; Attribute interface &quot;&quot;&quot;</span>
 
@@ -119,8 +120,8 @@
 <span class="c">#</span>
 <span class="c"># Callback (Abstract) Class</span>
 <span class="c">#</span>
-<div class="viewcode-block" id="Callback"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Callback">[docs]</a><span class="k">class</span> <span class="nc">Callback</span> <span class="p">()</span> <span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">Callback</span> <span class="p">()</span> <span class="p">:</span>
+<div class="viewcode-block" id="Callback"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Callback">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Callback base class.</span>
 
 <span class="sd">    All objects using the Attribute Interface allow to register a callback for</span>
@@ -173,8 +174,8 @@
     <span class="k">def</span> <span class="nf">__call__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cb</span> <span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Callback.cb"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Callback.cb">[docs]</a>    <span class="k">def</span> <span class="nf">cb</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot; This is the method that needs to be implemented by the application</span>
+    <span class="k">def</span> <span class="nf">cb</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="Callback.cb"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Callback.cb">[docs]</a>        <span class="sd">&quot;&quot;&quot; This is the method that needs to be implemented by the application</span>
 
 <span class="sd">            Keyword arguments::</span>
 
@@ -202,8 +203,8 @@
 <span class="c">################################################################################</span>
 <span class="c">#</span>
 <span class="c">#</span>
-<span class="c">#</span></div></div>
-<span class="k">class</span> <span class="nc">_AttributesBase</span> <span class="p">(</span><span class="nb">object</span><span class="p">)</span> <span class="p">:</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">_AttributesBase</span> <span class="p">(</span><span class="nb">object</span><span class="p">)</span> <span class="p">:</span></div></div>
     <span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">    This class only exists to host properties -- as object itself does *not* have</span>
 <span class="sd">    properties!  This class is not part of the public attribute API.</span>
@@ -212,8 +213,8 @@
         <span class="k">pass</span>
 
 
-<div class="viewcode-block" id="Attributes"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes">[docs]</a><span class="k">class</span> <span class="nc">Attributes</span> <span class="p">(</span><span class="n">_AttributesBase</span><span class="p">)</span> <span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">Attributes</span> <span class="p">(</span><span class="n">_AttributesBase</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="Attributes"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Attribute Interface Class</span>
 
 <span class="sd">    The Attributes interface implements the attribute semantics of the SAGA Core</span>
@@ -2036,8 +2037,8 @@
     <span class="c"># underscore before using them.</span>
     <span class="c"># </span>
     <span class="c">####################################</span>
-<div class="viewcode-block" id="Attributes.set_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.set_attribute">[docs]</a>    <span class="k">def</span> <span class="nf">set_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">set_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="Attributes.set_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.set_attribute">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        set_attribute(key, val)</span>
 
 <span class="sd">        This method sets the value of the specified attribute.  If that</span>
@@ -2069,9 +2070,9 @@
         <span class="k">return</span>   <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_set</span>        <span class="p">(</span><span class="n">us_key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_flow</span><span class="p">)</span>
 
 
-    <span class="c">####################################</span></div>
-<div class="viewcode-block" id="Attributes.get_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.get_attribute">[docs]</a>    <span class="k">def</span> <span class="nf">get_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="c">####################################</span>
+    <span class="k">def</span> <span class="nf">get_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="Attributes.get_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.get_attribute">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        get_attribute(key)</span>
 
 <span class="sd">        This method returns the value of the specified attribute.  If that</span>
@@ -2085,9 +2086,9 @@
         <span class="k">return</span>   <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_get</span>        <span class="p">(</span><span class="n">us_key</span><span class="p">,</span> <span class="n">_flow</span><span class="p">)</span>
 
 
-    <span class="c">####################################</span></div>
-<div class="viewcode-block" id="Attributes.set_vector_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.set_vector_attribute">[docs]</a>    <span class="k">def</span> <span class="nf">set_vector_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="c">####################################</span>
+    <span class="k">def</span> <span class="nf">set_vector_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="Attributes.set_vector_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.set_vector_attribute">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        set_vector_attribute (key, val)</span>
 
 <span class="sd">        See also: :func:`saga.Attributes.set_attribute` (key, val).</span>
@@ -2102,9 +2103,9 @@
         <span class="k">return</span>   <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_set</span>        <span class="p">(</span><span class="n">us_key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">_flow</span><span class="p">)</span>
 
 
-    <span class="c">####################################</span></div>
-<div class="viewcode-block" id="Attributes.get_vector_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.get_vector_attribute">[docs]</a>    <span class="k">def</span> <span class="nf">get_vector_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="c">####################################</span>
+    <span class="k">def</span> <span class="nf">get_vector_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="Attributes.get_vector_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.get_vector_attribute">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        get_vector_attribute (key)</span>
 
 <span class="sd">        See also: :func:`bliss.saga.AttributeInterface.get_attribute` (key).</span>
@@ -2119,9 +2120,9 @@
         <span class="k">return</span>   <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_get</span>        <span class="p">(</span><span class="n">us_key</span><span class="p">,</span> <span class="n">_flow</span><span class="p">)</span>
 
 
-    <span class="c">####################################</span></div>
-<div class="viewcode-block" id="Attributes.remove_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.remove_attribute">[docs]</a>    <span class="k">def</span> <span class="nf">remove_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="c">####################################</span>
+    <span class="k">def</span> <span class="nf">remove_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="Attributes.remove_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.remove_attribute">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        remove_attribute (key)</span>
 
 <span class="sd">        Removing an attribute is actually different from unsetting it, or from</span>
@@ -2135,9 +2136,9 @@
         <span class="k">return</span>   <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_remove</span>       <span class="p">(</span><span class="n">us_key</span><span class="p">,</span> <span class="n">_flow</span><span class="p">)</span>
 
 
-    <span class="c">####################################</span></div>
-<div class="viewcode-block" id="Attributes.list_attributes"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.list_attributes">[docs]</a>    <span class="k">def</span> <span class="nf">list_attributes</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="c">####################################</span>
+    <span class="k">def</span> <span class="nf">list_attributes</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="Attributes.list_attributes"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.list_attributes">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        list_attributes ()</span>
 
 <span class="sd">        List all attributes which have been explicitly set. </span>
@@ -2146,9 +2147,9 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_list</span> <span class="p">(</span><span class="n">_flow</span><span class="p">)</span>
 
 
-    <span class="c">####################################</span></div>
-<div class="viewcode-block" id="Attributes.find_attributes"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.find_attributes">[docs]</a>    <span class="k">def</span> <span class="nf">find_attributes</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="c">####################################</span>
+    <span class="k">def</span> <span class="nf">find_attributes</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="Attributes.find_attributes"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.find_attributes">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        find_attributes (pattern)</span>
 
 <span class="sd">        Similar to list(), but also grep for a given attribute pattern.  That</span>
@@ -2160,9 +2161,9 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_find</span> <span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">_flow</span><span class="p">)</span>
 
 
-    <span class="c">####################################</span></div>
-<div class="viewcode-block" id="Attributes.attribute_exists"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_exists">[docs]</a>    <span class="k">def</span> <span class="nf">attribute_exists</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="c">####################################</span>
+    <span class="k">def</span> <span class="nf">attribute_exists</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="Attributes.attribute_exists"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_exists">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        attribute_exist (key)</span>
 
 <span class="sd">        This method will check if the given key is known and was set explicitly.</span>
@@ -2174,9 +2175,9 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_exists</span> <span class="p">(</span><span class="n">us_key</span><span class="p">,</span> <span class="n">_flow</span><span class="p">)</span>
 
 
-    <span class="c">####################################</span></div>
-<div class="viewcode-block" id="Attributes.attribute_is_readonly"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_is_readonly">[docs]</a>    <span class="k">def</span> <span class="nf">attribute_is_readonly</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="c">####################################</span>
+    <span class="k">def</span> <span class="nf">attribute_is_readonly</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="Attributes.attribute_is_readonly"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_is_readonly">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        attribute_is_readonly (key)</span>
 
 <span class="sd">        This method will check if the given key is readonly, i.e. cannot be</span>
@@ -2188,9 +2189,9 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_is_readonly</span> <span class="p">(</span><span class="n">us_key</span><span class="p">,</span> <span class="n">_flow</span><span class="p">)</span>
 
 
-    <span class="c">####################################</span></div>
-<div class="viewcode-block" id="Attributes.attribute_is_writeable"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_is_writeable">[docs]</a>    <span class="k">def</span> <span class="nf">attribute_is_writeable</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="c">####################################</span>
+    <span class="k">def</span> <span class="nf">attribute_is_writeable</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="Attributes.attribute_is_writeable"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_is_writeable">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        attribute_is_writeable (key)</span>
 
 <span class="sd">        This method will check if the given key is writeable - i.e. not readonly.</span>
@@ -2201,9 +2202,9 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_is_writeable</span> <span class="p">(</span><span class="n">us_key</span><span class="p">,</span> <span class="n">_flow</span><span class="p">)</span>
 
 
-    <span class="c">####################################</span></div>
-<div class="viewcode-block" id="Attributes.attribute_is_removable"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_is_removable">[docs]</a>    <span class="k">def</span> <span class="nf">attribute_is_removable</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="c">####################################</span>
+    <span class="k">def</span> <span class="nf">attribute_is_removable</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="Attributes.attribute_is_removable"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_is_removable">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        attribute_is_writeable (key)</span>
 
 <span class="sd">        This method will check if the given key can be removed.</span>
@@ -2214,9 +2215,9 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_is_removable</span> <span class="p">(</span><span class="n">us_key</span><span class="p">,</span> <span class="n">_flow</span><span class="p">)</span>
 
 
-    <span class="c">####################################</span></div>
-<div class="viewcode-block" id="Attributes.attribute_is_vector"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_is_vector">[docs]</a>    <span class="k">def</span> <span class="nf">attribute_is_vector</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="c">####################################</span>
+    <span class="k">def</span> <span class="nf">attribute_is_vector</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="Attributes.attribute_is_vector"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_is_vector">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        attribute_is_vector (key)</span>
 
 <span class="sd">        This method will check if the given attribute has a vector value type.</span>
@@ -2229,9 +2230,9 @@
 
     <span class="c">####################################</span>
     <span class="c"># fold the GFD.90 monitoring API into the attributes API</span>
-    <span class="c">####################################</span></div>
-<div class="viewcode-block" id="Attributes.add_callback"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.add_callback">[docs]</a>    <span class="k">def</span> <span class="nf">add_callback</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="c">####################################</span>
+    <span class="k">def</span> <span class="nf">add_callback</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="Attributes.add_callback"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.add_callback">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        add_callback (key, cb)</span>
 
 <span class="sd">        For any attribute change, the API will check if any callbacks are</span>
@@ -2265,9 +2266,9 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_add_cb</span> <span class="p">(</span><span class="n">us_key</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">_flow</span><span class="p">)</span>
 
 
-    <span class="c">####################################</span></div>
-<div class="viewcode-block" id="Attributes.remove_callback"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.remove_callback">[docs]</a>    <span class="k">def</span> <span class="nf">remove_callback</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="c">####################################</span>
+    <span class="k">def</span> <span class="nf">remove_callback</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="Attributes.remove_callback"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.remove_callback">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        remove_callback (key, id)</span>
 
 <span class="sd">        This method allows to unregister a previously registered callback, by</span>
@@ -2290,8 +2291,8 @@
     <span class="c">#</span>
     <span class="c"># we assume that properties are always used in under_score notation.</span>
     <span class="c">#</span>
-    <span class="c">####################################</span></div>
-    <span class="k">def</span> <span class="nf">__getattr__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="p">:</span>
+    <span class="c">####################################</span>
+    <span class="k">def</span> <span class="nf">__getattr__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="p">:</span></div>
         <span class="sd">&quot;&quot;&quot; see L{get_attribute} (key) for details. &quot;&quot;&quot;</span>
         
         <span class="n">key</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_keycheck</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span>

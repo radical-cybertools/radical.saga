@@ -328,7 +328,7 @@ ret:       saga.Task</p>
 
 <dl class="method">
 <dt id="saga.filesystem.Directory.get_size">
-<tt class="descname">get_size</tt><big>(</big><em>tgt</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.get_size" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_size</tt><big>(</big><em>tgt=None</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.get_size" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -356,6 +356,30 @@ ret:      int / saga.Task</p>
 <dd><p>tgt:      saga.Url
 ttype:    saga.task.type enum
 ret:      bool / saga.Task</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="saga.filesystem.Directory.size">
+<tt class="descname">size</tt><a class="headerlink" href="#saga.filesystem.Directory.size" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tgt</strong> &#8211; path of the file or directory</td>
+</tr>
+</tbody>
+</table>
+<p>flags:    saga.namespace.flags enum
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+<p>Returns the size of a file or directory (in bytes)</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># inspect a file for its size</span>
+<span class="nb">dir</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/&quot;</span><span class="p">)</span>
+<span class="n">size</span> <span class="o">=</span> <span class="nb">dir</span><span class="o">.</span><span class="n">get_size</span> <span class="p">(</span><span class="s">&#39;data/data.bin&#39;</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">size</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </dd></dl>
