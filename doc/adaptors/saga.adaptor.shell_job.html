@@ -297,6 +297,22 @@ instances per remote host.</p>
 </ul>
 </div></blockquote>
 </div>
+<div class="section" id="purge-on-start">
+<h3>2.4.3. purge_on_start<a class="headerlink" href="#purge-on-start" title="Permalink to this headline">¶</a></h3>
+<p>Purge job information (state, stdio, ...) for all
+jobs which are in final state when starting the job
+service instance.  Note that this will purge <em>all</em>
+suitable jobs, including the ones managed by another,
+live job service instance.</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>type</strong> : &lt;type &#8216;bool&#8217;&gt;</li>
+<li><strong>default</strong> : True</li>
+<li><strong>environment</strong> : None</li>
+<li><strong>valid options</strong> : [True, False]</li>
+</ul>
+</div></blockquote>
+</div>
 </div>
 <div class="section" id="capabilities">
 <h2>2.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
@@ -543,6 +559,7 @@ instances per remote host.</p>
 <li><a class="reference internal" href="#configuration-options">2.4. Configuration Options</a><ul>
 <li><a class="reference internal" href="#enabled">2.4.1. enabled</a></li>
 <li><a class="reference internal" href="#enable-notifications">2.4.2. enable_notifications</a></li>
+<li><a class="reference internal" href="#purge-on-start">2.4.3. purge_on_start</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#capabilities">2.5. Capabilities</a><ul>

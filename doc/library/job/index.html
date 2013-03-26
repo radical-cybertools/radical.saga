@@ -434,16 +434,12 @@ after a deep copy, a change on one instance will not affect the other.</p>
 <p>SAGA defines the following constants as valid job description attributes:</p>
 <dl class="data">
 <dt id="saga.job.EXECUTABLE">
-<tt class="descclassname">saga.job.</tt><tt class="descname">EXECUTABLE</tt><em class="property"> = 'Executable'</em><a class="headerlink" href="#saga.job.EXECUTABLE" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
-<p>Return a nice string representation of the object.
-If the argument is a string, the return value is the same object.</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="saga.job.executable">
-<tt class="descclassname">saga.job.</tt><tt class="descname">executable</tt><a class="headerlink" href="#saga.job.executable" title="Permalink to this definition">¶</a></dt>
-<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.EXECUTABLE" title="saga.job.EXECUTABLE"><tt class="xref py py-data docutils literal"><span class="pre">EXECUTABLE</span></tt></a>.</p>
+<tt class="descclassname">saga.job.</tt><tt class="descname">EXECUTABLE</tt><a class="headerlink" href="#saga.job.EXECUTABLE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The executable to start once the job starts running:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&quot;/bin/sleep&quot;</span>
+</pre></div>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -455,39 +451,43 @@ If the argument is a string, the return value is the same object.</p>
 </dd></dl>
 
 <dl class="data">
-<dt id="saga.job.ARGUMENTS">
-<tt class="descclassname">saga.job.</tt><tt class="descname">ARGUMENTS</tt><em class="property"> = 'Arguments'</em><a class="headerlink" href="#saga.job.ARGUMENTS" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
-<p>Return a nice string representation of the object.
-If the argument is a string, the return value is the same object.</p>
+<dt id="saga.job.executable">
+<tt class="descclassname">saga.job.</tt><tt class="descname">executable</tt><a class="headerlink" href="#saga.job.executable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as attribute <a class="reference internal" href="#saga.job.EXECUTABLE" title="saga.job.EXECUTABLE"><tt class="xref py py-data docutils literal"><span class="pre">EXECUTABLE</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="data">
-<dt id="saga.job.arguments">
-<tt class="descclassname">saga.job.</tt><tt class="descname">arguments</tt><a class="headerlink" href="#saga.job.arguments" title="Permalink to this definition">¶</a></dt>
-<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.ARGUMENTS" title="saga.job.ARGUMENTS"><tt class="xref py py-data docutils literal"><span class="pre">ARGUMENTS</span></tt></a>.</p>
+<dt id="saga.job.ARGUMENTS">
+<tt class="descclassname">saga.job.</tt><tt class="descname">ARGUMENTS</tt><a class="headerlink" href="#saga.job.ARGUMENTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Arguments to pass to the <a class="reference internal" href="#saga.job.EXECUTABLE" title="saga.job.EXECUTABLE"><tt class="xref py py-data docutils literal"><span class="pre">EXECUTABLE</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">arguments</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;--flag1&#39;</span><span class="p">,</span> <span class="s">&#39;--flag2&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">list()</td>
+<tr class="field-odd field"><th class="field-name">Tpye :</th><td class="field-body">list()</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="data">
-<dt id="saga.job.ENVIRONMENT">
-<tt class="descclassname">saga.job.</tt><tt class="descname">ENVIRONMENT</tt><em class="property"> = 'Environment'</em><a class="headerlink" href="#saga.job.ENVIRONMENT" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
-<p>Return a nice string representation of the object.
-If the argument is a string, the return value is the same object.</p>
+<dt id="saga.job.arguments">
+<tt class="descclassname">saga.job.</tt><tt class="descname">arguments</tt><a class="headerlink" href="#saga.job.arguments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as attribute <a class="reference internal" href="#saga.job.ARGUMENTS" title="saga.job.ARGUMENTS"><tt class="xref py py-data docutils literal"><span class="pre">ARGUMENTS</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="data">
-<dt id="saga.job.environment">
-<tt class="descclassname">saga.job.</tt><tt class="descname">environment</tt><a class="headerlink" href="#saga.job.environment" title="Permalink to this definition">¶</a></dt>
-<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.ENVIRONMENT" title="saga.job.ENVIRONMENT"><tt class="xref py py-data docutils literal"><span class="pre">ENVIRONMENT</span></tt></a>.</p>
+<dt id="saga.job.ENVIRONMENT">
+<tt class="descclassname">saga.job.</tt><tt class="descname">ENVIRONMENT</tt><a class="headerlink" href="#saga.job.ENVIRONMENT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Environment variables to set in the job&#8217;s context:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">environemnt</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;FOO&#39;</span><span class="p">:</span> <span class="s">&#39;BAR&#39;</span><span class="p">,</span> <span class="s">&#39;FREE&#39;</span><span class="p">:</span> <span class="s">&#39;BEER&#39;</span><span class="p">}</span>
+</pre></div>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -499,17 +499,19 @@ If the argument is a string, the return value is the same object.</p>
 </dd></dl>
 
 <dl class="data">
-<dt id="saga.job.WORKING_DIRECTORY">
-<tt class="descclassname">saga.job.</tt><tt class="descname">WORKING_DIRECTORY</tt><em class="property"> = 'WorkingDirectory'</em><a class="headerlink" href="#saga.job.WORKING_DIRECTORY" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
-<p>Return a nice string representation of the object.
-If the argument is a string, the return value is the same object.</p>
+<dt id="saga.job.environment">
+<tt class="descclassname">saga.job.</tt><tt class="descname">environment</tt><a class="headerlink" href="#saga.job.environment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as attribute <a class="reference internal" href="#saga.job.ENVIRONMENT" title="saga.job.ENVIRONMENT"><tt class="xref py py-data docutils literal"><span class="pre">ENVIRONMENT</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="data">
-<dt id="saga.job.working_directory">
-<tt class="descclassname">saga.job.</tt><tt class="descname">working_directory</tt><a class="headerlink" href="#saga.job.working_directory" title="Permalink to this definition">¶</a></dt>
-<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.WORKING_DIRECTORY" title="saga.job.WORKING_DIRECTORY"><tt class="xref py py-data docutils literal"><span class="pre">WORKING_DIRECTORY</span></tt></a>.</p>
+<dt id="saga.job.WORKING_DIRECTORY">
+<tt class="descclassname">saga.job.</tt><tt class="descname">WORKING_DIRECTORY</tt><a class="headerlink" href="#saga.job.WORKING_DIRECTORY" title="Permalink to this definition">¶</a></dt>
+<dd><p>The working directory of the job:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span> <span class="o">=</span> <span class="s">&quot;/scratch/experiments/123/&quot;</span>
+</pre></div>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -521,17 +523,79 @@ If the argument is a string, the return value is the same object.</p>
 </dd></dl>
 
 <dl class="data">
-<dt id="saga.job.FILE_TRANSFER">
-<tt class="descclassname">saga.job.</tt><tt class="descname">FILE_TRANSFER</tt><em class="property"> = 'FileTransfer'</em><a class="headerlink" href="#saga.job.FILE_TRANSFER" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
-<p>Return a nice string representation of the object.
-If the argument is a string, the return value is the same object.</p>
+<dt id="saga.job.working_directory">
+<tt class="descclassname">saga.job.</tt><tt class="descname">working_directory</tt><a class="headerlink" href="#saga.job.working_directory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as attribute <a class="reference internal" href="#saga.job.WORKING_DIRECTORY" title="saga.job.WORKING_DIRECTORY"><tt class="xref py py-data docutils literal"><span class="pre">WORKING_DIRECTORY</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="data">
-<dt id="saga.job.file_transfer">
-<tt class="descclassname">saga.job.</tt><tt class="descname">file_transfer</tt><a class="headerlink" href="#saga.job.file_transfer" title="Permalink to this definition">¶</a></dt>
-<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.FILE_TRANSFER" title="saga.job.FILE_TRANSFER"><tt class="xref py py-data docutils literal"><span class="pre">FILE_TRANSFER</span></tt></a>.</p>
+<dt id="saga.job.OUTPUT">
+<tt class="descclassname">saga.job.</tt><tt class="descname">OUTPUT</tt><a class="headerlink" href="#saga.job.OUTPUT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filename to capture the executable&#8217;s STDOUT stream. If <tt class="docutils literal"><span class="pre">output</span></tt> is
+a relative filename, the file is relative to <a class="reference internal" href="#saga.job.WORKING_DIRECTORY" title="saga.job.WORKING_DIRECTORY"><tt class="xref py py-data docutils literal"><span class="pre">WORKING_DIRECTORY</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="s">&quot;myjob_stdout.txt&quot;</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.output">
+<tt class="descclassname">saga.job.</tt><tt class="descname">output</tt><a class="headerlink" href="#saga.job.output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as attribute <a class="reference internal" href="#saga.job.OUTPUT" title="saga.job.OUTPUT"><tt class="xref py py-data docutils literal"><span class="pre">OUTPUT</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.ERROR">
+<tt class="descclassname">saga.job.</tt><tt class="descname">ERROR</tt><a class="headerlink" href="#saga.job.ERROR" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filename to capture the executable&#8217;s STDERR stream. If <tt class="docutils literal"><span class="pre">error</span></tt> is
+a relative filename, the file is relative to <a class="reference internal" href="#saga.job.WORKING_DIRECTORY" title="saga.job.WORKING_DIRECTORY"><tt class="xref py py-data docutils literal"><span class="pre">WORKING_DIRECTORY</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="s">&quot;myjob_stderr.txt&quot;</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.error">
+<tt class="descclassname">saga.job.</tt><tt class="descname">error</tt><a class="headerlink" href="#saga.job.error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as attribute <a class="reference internal" href="#saga.job.ERROR" title="saga.job.ERROR"><tt class="xref py py-data docutils literal"><span class="pre">ERROR</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.FILE_TRANSFER">
+<tt class="descclassname">saga.job.</tt><tt class="descname">FILE_TRANSFER</tt><a class="headerlink" href="#saga.job.FILE_TRANSFER" title="Permalink to this definition">¶</a></dt>
+<dd><p>Files to stage-in before the job starts running and to stage out once
+the job has finished running. The syntax is as follows:</p>
+<blockquote>
+<div><tt class="docutils literal"><span class="pre">local_file</span> <span class="pre">OPERATOR</span> <span class="pre">remote_file</span></tt></div></blockquote>
+<p><tt class="docutils literal"><span class="pre">OPERATOR</span></tt> can be one of the following:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">&gt;</span></tt> copies the local file to the remote fille before the job starts. Overwrites the remote file if it exists.</li>
+<li><tt class="docutils literal"><span class="pre">&lt;</span></tt> copies the remote file to the local file after the job finishes. Overwrites the local file if it exists</li>
+</ul>
+<p>Example:</p>
+<div class="highlight-python"><pre>jd = saga.job.Description()
+jd.input_file_transfer = ["file://localhost/data/input/test.dat &gt; "test.dat",
+                          "file://localhost/data/results/1/result.dat &lt; "result1.dat"
+                         ]</pre>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -543,83 +607,43 @@ If the argument is a string, the return value is the same object.</p>
 </dd></dl>
 
 <dl class="data">
-<dt id="saga.job.INPUT">
-<tt class="descclassname">saga.job.</tt><tt class="descname">INPUT</tt><em class="property"> = 'Input'</em><a class="headerlink" href="#saga.job.INPUT" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
-<p>Return a nice string representation of the object.
-If the argument is a string, the return value is the same object.</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="saga.job.input">
-<tt class="descclassname">saga.job.</tt><tt class="descname">input</tt><a class="headerlink" href="#saga.job.input" title="Permalink to this definition">¶</a></dt>
-<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.INPUT" title="saga.job.INPUT"><tt class="xref py py-data docutils literal"><span class="pre">INPUT</span></tt></a>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="data">
-<dt id="saga.job.OUTPUT">
-<tt class="descclassname">saga.job.</tt><tt class="descname">OUTPUT</tt><em class="property"> = 'Output'</em><a class="headerlink" href="#saga.job.OUTPUT" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
-<p>Return a nice string representation of the object.
-If the argument is a string, the return value is the same object.</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="saga.job.output">
-<tt class="descclassname">saga.job.</tt><tt class="descname">output</tt><a class="headerlink" href="#saga.job.output" title="Permalink to this definition">¶</a></dt>
-<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.OUTPUT" title="saga.job.OUTPUT"><tt class="xref py py-data docutils literal"><span class="pre">OUTPUT</span></tt></a>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="data">
-<dt id="saga.job.ERROR">
-<tt class="descclassname">saga.job.</tt><tt class="descname">ERROR</tt><em class="property"> = 'Error'</em><a class="headerlink" href="#saga.job.ERROR" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
-<p>Return a nice string representation of the object.
-If the argument is a string, the return value is the same object.</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="saga.job.error">
-<tt class="descclassname">saga.job.</tt><tt class="descname">error</tt><a class="headerlink" href="#saga.job.error" title="Permalink to this definition">¶</a></dt>
-<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.ERROR" title="saga.job.ERROR"><tt class="xref py py-data docutils literal"><span class="pre">ERROR</span></tt></a>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
-</tr>
-</tbody>
-</table>
+<dt id="saga.job.file_transfer">
+<tt class="descclassname">saga.job.</tt><tt class="descname">file_transfer</tt><a class="headerlink" href="#saga.job.file_transfer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as attribute <a class="reference internal" href="#saga.job.FILE_TRANSFER" title="saga.job.FILE_TRANSFER"><tt class="xref py py-data docutils literal"><span class="pre">FILE_TRANSFER</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="saga.job.QUEUE">
-<tt class="descclassname">saga.job.</tt><tt class="descname">QUEUE</tt><em class="property"> = 'Queue'</em><a class="headerlink" href="#saga.job.QUEUE" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
-<p>Return a nice string representation of the object.
-If the argument is a string, the return value is the same object.</p>
+<tt class="descclassname">saga.job.</tt><tt class="descname">QUEUE</tt><a class="headerlink" href="#saga.job.QUEUE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the queue to submit the job to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="s">&quot;mpi_long&quot;</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="data">
 <dt id="saga.job.queue">
 <tt class="descclassname">saga.job.</tt><tt class="descname">queue</tt><a class="headerlink" href="#saga.job.queue" title="Permalink to this definition">¶</a></dt>
-<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.QUEUE" title="saga.job.QUEUE"><tt class="xref py py-data docutils literal"><span class="pre">QUEUE</span></tt></a>.</p>
+<dd><p>Same as attribute <a class="reference internal" href="#saga.job.QUEUE" title="saga.job.QUEUE"><tt class="xref py py-data docutils literal"><span class="pre">QUEUE</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.PROJECT">
+<tt class="descclassname">saga.job.</tt><tt class="descname">PROJECT</tt><a class="headerlink" href="#saga.job.PROJECT" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the project / allocation to charged for the job</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">project</span> <span class="o">=</span> <span class="s">&quot;TG-XYZ123456&quot;</span>
+</pre></div>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -628,20 +652,18 @@ If the argument is a string, the return value is the same object.</p>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="data">
-<dt id="saga.job.PROJECT">
-<tt class="descclassname">saga.job.</tt><tt class="descname">PROJECT</tt><em class="property"> = 'Project'</em><a class="headerlink" href="#saga.job.PROJECT" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
-<p>Return a nice string representation of the object.
-If the argument is a string, the return value is the same object.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="saga.job.project">
 <tt class="descclassname">saga.job.</tt><tt class="descname">project</tt><a class="headerlink" href="#saga.job.project" title="Permalink to this definition">¶</a></dt>
-<dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.PROJECT" title="saga.job.PROJECT"><tt class="xref py py-data docutils literal"><span class="pre">PROJECT</span></tt></a>.</p>
+<dd><p>Same as attribute <a class="reference internal" href="#saga.job.PROJECT" title="saga.job.PROJECT"><tt class="xref py py-data docutils literal"><span class="pre">PROJECT</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.job.SPMD_VARIATION">
+<tt class="descclassname">saga.job.</tt><tt class="descname">SPMD_VARIATION</tt><a class="headerlink" href="#saga.job.SPMD_VARIATION" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describe me!</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -650,30 +672,12 @@ If the argument is a string, the return value is the same object.</p>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="data">
-<dt id="saga.job.SPMD_VARIATION">
-<tt class="descclassname">saga.job.</tt><tt class="descname">SPMD_VARIATION</tt><em class="property"> = 'SPMDVariation'</em><a class="headerlink" href="#saga.job.SPMD_VARIATION" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
-<p>Return a nice string representation of the object.
-If the argument is a string, the return value is the same object.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="saga.job.spmd_variation">
 <tt class="descclassname">saga.job.</tt><tt class="descname">spmd_variation</tt><a class="headerlink" href="#saga.job.spmd_variation" title="Permalink to this definition">¶</a></dt>
 <dd><p>(Property) Same as attribute <a class="reference internal" href="#saga.job.SPMD_VARIATION" title="saga.job.SPMD_VARIATION"><tt class="xref py py-data docutils literal"><span class="pre">SPMD_VARIATION</span></tt></a>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Valid Options:</th><td class="field-body">Single (default), MPI or OpenMP</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 <dl class="data">

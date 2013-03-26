@@ -115,7 +115,7 @@ favorite editor and paste the following content:</p>
 
         <span class="c"># create a working directory in /scratch</span>
         <span class="n">dirname</span> <span class="o">=</span> <span class="s">&#39;sftp://</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">/mbrot/&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">REMOTE_HOST</span><span class="p">,</span> <span class="s">&#39;/tmp&#39;</span><span class="p">)</span>
-        <span class="n">workdir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Create</span><span class="p">,</span>
+        <span class="n">workdir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE</span><span class="p">,</span>
                                             <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
 
         <span class="c"># copy the executable into our working directory</span>
