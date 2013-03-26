@@ -71,15 +71,21 @@ tiles. This example shows how SAGA can be used to create more complex
 application workflows that involve multiple aspects of the API.</p>
 <div class="section" id="hands-on-distributed-mandelbrot-fractals">
 <h2>5.1. Hands-On: Distributed Mandelbrot Fractals<a class="headerlink" href="#hands-on-distributed-mandelbrot-fractals" title="Permalink to this headline">¶</a></h2>
-<p>In order for this example to work, we need to install an additional Python module, the Python Image Library (PIL). This is done via pip:</p>
+<p>In order for this example to work, we need to install an additional Python
+module, the Python Image Library (PIL). This is done via pip:</p>
 <div class="highlight-bash"><div class="highlight"><pre>pip install PIL
 </pre></div>
 </div>
-<p>Next, we need to download the Mandelbrot fractal generator itself. It is really just a very simple python script that, if invoked on the command line, outputs a full or part of a Mandelbrot fractal as a PNG image. Download the script into your $HOME directory:</p>
+<p>Next, we need to download the Mandelbrot fractal generator itself as well as the
+shell wrapper scrip. It is really just a very simple python script that, if
+invoked on the command line, outputs a full or part of a Mandelbrot fractal as a
+PNG image. Download the scripts into your $HOME directory:</p>
 <div class="highlight-bash"><div class="highlight"><pre>curl --insecure -Os https://raw.github.com/saga-project/saga-python/devel/examples/tutorial/mandelbrot/mandelbrot.py
+curl --insecure -Os https://raw.github.com/saga-project/saga-python/devel/examples/tutorial/mandelbrot/mandelbrot.sh
 </pre></div>
 </div>
-<p>You can give mandelbrot.py a test-drive locally by calculating a single-tiled 1024x1024 Mandelbrot fractal:</p>
+<p>You can give mandelbrot.py a test-drive locally by calculating a single-tiled
+1024x1024 Mandelbrot fractal:</p>
 <div class="highlight-bash"><div class="highlight"><pre>python mandelbrot.py 1024 1024 0 1024 0 1024 frac.gif
 </pre></div>
 </div>
@@ -91,7 +97,9 @@ favorite editor and paste the following content:</p>
 <span class="kn">import</span> <span class="nn">saga</span>
 <span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
 
-<span class="n">REMOTE_HOST</span> <span class="o">=</span> <span class="s">&quot;alamo.futuregrid.org&quot;</span>
+<span class="n">REMOTE_HOST</span> <span class="o">=</span> <span class="s">&quot;india.futuregrid.org&quot;</span>
+<span class="n">REMOTE_JOB_ENDPOINT</span> <span class="o">=</span> <span class="s">&quot;pbs+ssh://&quot;</span> <span class="o">+</span> <span class="n">REMOTE_HOST</span> 
+<span class="n">REMOTE_FILE_ENDPOINT</span> <span class="o">=</span> <span class="s">&quot;sftp://&quot;</span> <span class="o">+</span> <span class="n">REMOTE_HOST</span>
 
 <span class="c"># the dimension (in pixel) of the whole fractal</span>
 <span class="n">imgx</span> <span class="o">=</span> <span class="mi">2048</span> 
@@ -114,18 +122,20 @@ favorite editor and paste the following content:</p>
         <span class="n">jobs</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="c"># create a working directory in /scratch</span>
-        <span class="n">dirname</span> <span class="o">=</span> <span class="s">&#39;sftp://</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">/mbrot/&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">REMOTE_HOST</span><span class="p">,</span> <span class="s">&#39;/tmp&#39;</span><span class="p">)</span>
+        <span class="n">dirname</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">/mbrot/&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">REMOTE_FILE_ENDPOINT</span><span class="p">,</span> <span class="s">&#39;/N/u/oweidner/&#39;</span><span class="p">)</span>
         <span class="n">workdir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE</span><span class="p">,</span>
                                             <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
 
-        <span class="c"># copy the executable into our working directory</span>
-        <span class="n">mbexe</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s">&#39;sftp://</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">/mandelbrot.py&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">REMOTE_HOST</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()))</span>
+        <span class="c"># copy the executable and warpper script to the remote host</span>
+        <span class="n">mbwrapper</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s">&#39;file://localhost/</span><span class="si">%s</span><span class="s">/mandelbrot.sh&#39;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+        <span class="n">mbwrapper</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">workdir</span><span class="o">.</span><span class="n">get_url</span><span class="p">())</span>
+        <span class="n">mbexe</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s">&#39;file://localhost/</span><span class="si">%s</span><span class="s">/mandelbrot.py&#39;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
         <span class="n">mbexe</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">workdir</span><span class="o">.</span><span class="n">get_url</span><span class="p">())</span>
 
         <span class="c"># the saga job services connects to and provides a handle</span>
         <span class="c"># to a remote machine. In this case, it&#39;s your machine.</span>
         <span class="c"># fork can be replaced with ssh here:</span>
-        <span class="n">jobservice</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="n">REMOTE_HOST</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+        <span class="n">jobservice</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="n">REMOTE_JOB_ENDPOINT</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">tilesx</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">tilesy</span><span class="p">):</span>
@@ -134,12 +144,12 @@ favorite editor and paste the following content:</p>
                 <span class="c"># directory created above as the job&#39;s working directory</span>
                 <span class="n">outputfile</span> <span class="o">=</span> <span class="s">&#39;tile_x</span><span class="si">%s</span><span class="s">_y</span><span class="si">%s</span><span class="s">.gif&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
                 <span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
-                <span class="n">jd</span><span class="o">.</span><span class="n">queue</span>             <span class="o">=</span> <span class="s">&quot;development&quot;</span>
+                <span class="c">#jd.queue             = &quot;development&quot;</span>
                 <span class="n">jd</span><span class="o">.</span><span class="n">wall_time_limit</span>   <span class="o">=</span> <span class="mi">10</span>
                 <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span>   <span class="o">=</span> <span class="mi">1</span>
                 <span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span> <span class="o">=</span> <span class="n">workdir</span><span class="o">.</span><span class="n">get_url</span><span class="p">()</span><span class="o">.</span><span class="n">path</span>
-                <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>        <span class="o">=</span> <span class="s">&#39;python&#39;</span>
-                <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span>         <span class="o">=</span> <span class="p">[</span><span class="s">&#39;mandelbrot.py&#39;</span><span class="p">,</span> <span class="n">imgx</span><span class="p">,</span> <span class="n">imgy</span><span class="p">,</span> 
+                <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>        <span class="o">=</span> <span class="s">&#39;sh&#39;</span>
+                <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span>         <span class="o">=</span> <span class="p">[</span><span class="s">&#39;mandelbrot.sh&#39;</span><span class="p">,</span> <span class="n">imgx</span><span class="p">,</span> <span class="n">imgy</span><span class="p">,</span> 
                                         <span class="p">(</span><span class="n">imgx</span><span class="o">/</span><span class="n">tilesx</span><span class="o">*</span><span class="n">x</span><span class="p">),</span> <span class="p">(</span><span class="n">imgx</span><span class="o">/</span><span class="n">tilesx</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">)),</span>
                                         <span class="p">(</span><span class="n">imgy</span><span class="o">/</span><span class="n">tilesy</span><span class="o">*</span><span class="n">y</span><span class="p">),</span> <span class="p">(</span><span class="n">imgy</span><span class="o">/</span><span class="n">tilesy</span><span class="o">*</span><span class="p">(</span><span class="n">y</span><span class="o">+</span><span class="mi">1</span><span class="p">)),</span>
                                         <span class="n">outputfile</span><span class="p">]</span>
@@ -148,21 +158,23 @@ favorite editor and paste the following content:</p>
                 <span class="n">job</span> <span class="o">=</span> <span class="n">jobservice</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
                 <span class="n">job</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
                 <span class="n">jobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
-                <span class="k">print</span> <span class="s">&#39; * Submitted </span><span class="si">%s</span><span class="s">. Output will be written to: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">jobid</span><span class="p">,</span> <span class="n">outputfile</span><span class="p">)</span>
+                <span class="k">print</span> <span class="s">&#39; * Submitted </span><span class="si">%s</span><span class="s">. Output will be written to: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">outputfile</span><span class="p">)</span>
 
         <span class="c"># wait for all jobs to finish</span>
         <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">jobs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">jobs</span><span class="p">:</span>
                 <span class="n">jobstate</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
-                <span class="k">print</span> <span class="s">&#39; * Job </span><span class="si">%s</span><span class="s"> status: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">jobid</span><span class="p">,</span> <span class="n">jobstate</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">jobstate</span> <span class="ow">is</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Done</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39; * Job </span><span class="si">%s</span><span class="s"> status: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">jobstate</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">jobstate</span> <span class="ow">in</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span><span class="p">]:</span>
                     <span class="n">jobs</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
 
         <span class="c"># copy image tiles back to our &#39;local&#39; directory</span>
         <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">workdir</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="s">&#39;*.gif&#39;</span><span class="p">):</span>
-            <span class="k">print</span> <span class="s">&#39; * Copying </span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s"> back to </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">workdir</span><span class="o">.</span><span class="n">get_url</span><span class="p">(),</span> <span class="n">image</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
-            <span class="n">workdir</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="s">&#39;sftp://</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">/&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">REMOTE_HOST</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()))</span>
+            <span class="k">print</span> <span class="s">&#39; * Copying </span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s"> back to </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">REMOTE_FILE_ENDPOINT</span><span class="p">,</span>
+                                                      <span class="n">workdir</span><span class="o">.</span><span class="n">get_url</span><span class="p">(),</span>
+                                                      <span class="n">image</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+            <span class="n">workdir</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="s">&#39;file://localhost/</span><span class="si">%s</span><span class="s">/&#39;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
 
         <span class="c"># stitch together the final image</span>
         <span class="n">fullimage</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s">&#39;RGB&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">imgx</span><span class="p">,</span> <span class="n">imgy</span><span class="p">),</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">))</span>

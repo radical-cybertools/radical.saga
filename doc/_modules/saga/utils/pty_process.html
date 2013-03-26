@@ -65,11 +65,13 @@
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">pty</span>
+<span class="kn">import</span> <span class="nn">tty</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">errno</span>
 <span class="kn">import</span> <span class="nn">shlex</span>
 <span class="kn">import</span> <span class="nn">select</span>
 <span class="kn">import</span> <span class="nn">signal</span>
+<span class="kn">import</span> <span class="nn">termios</span>
 <span class="kn">import</span> <span class="nn">threading</span>
 
 <span class="kn">import</span> <span class="nn">saga.utils.logger</span>
@@ -244,6 +246,8 @@
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">initialize</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
 <div class="viewcode-block" id="PTYProcess.initialize"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.initialize">[docs]</a>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialize_pty</span> <span class="p">()</span>
+
         <span class="c"># NOTE: do we need to lock?</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;PTYProcess: &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">)))</span>
@@ -329,6 +333,54 @@
             <span class="n">os</span><span class="o">.</span><span class="n">close</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_in</span><span class="p">)</span>
             <span class="n">os</span><span class="o">.</span><span class="n">close</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_out</span><span class="p">)</span>
           <span class="c"># os.close (self.child_err)</span>
+
+
+        <span class="c"># check if some additional initialization routines as registered</span>
+        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="p">()</span>
+
+
+    <span class="c"># ----------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">initialize_pty</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PTYProcess.initialize_pty"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.initialize_pty">[docs]</a>
+        <span class="c"># NOTE: do we need to lock?</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;PTYProcess: &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">)))</span>
+
+      <span class="c"># self.parent_err, self.child_err = pty.openpty ()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;running: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">))</span>
+
+        <span class="c"># create the child</span>
+        <span class="k">try</span> <span class="p">:</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">child_fd</span> <span class="o">=</span> <span class="n">pty</span><span class="o">.</span><span class="n">fork</span> <span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not run (</span><span class="si">%s</span><span class="s">): </span><span class="si">%s</span><span class="s">&quot;</span> \
+                             <span class="o">%</span> <span class="p">(</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">),</span> <span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span>  <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="p">:</span>
+            <span class="c"># this is the child</span>
+
+            <span class="k">try</span> <span class="p">:</span>
+                <span class="c"># all I/O set up, have a pty (*fingers crossed*), lift-off!</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">execvpe</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span> <span class="p">(</span><span class="s">&quot;Could not execute (</span><span class="si">%s</span><span class="s">): </span><span class="si">%s</span><span class="s">&quot;</span> \
+                                <span class="o">%</span> <span class="p">(</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">),</span> <span class="n">e</span><span class="p">))</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="c"># this is the parent</span>
+            <span class="n">new</span> <span class="o">=</span> <span class="n">termios</span><span class="o">.</span><span class="n">tcgetattr</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_fd</span><span class="p">)</span>
+            <span class="n">new</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">new</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">termios</span><span class="o">.</span><span class="n">ECHO</span>
+
+            <span class="n">termios</span><span class="o">.</span><span class="n">tcsetattr</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_fd</span><span class="p">,</span> <span class="n">termios</span><span class="o">.</span><span class="n">TCSADRAIN</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
+
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">parent_in</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">child_fd</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parent_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">child_fd</span>
 
 
         <span class="c"># check if some additional initialization routines as registered</span>
@@ -600,7 +652,7 @@
 
                 <span class="c"># read until we have enough data, or hit timeout ceiling...</span>
                 <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
-                
+
                     <span class="c"># first, lets see if we still have data in the cache we can return</span>
                     <span class="k">if</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
 

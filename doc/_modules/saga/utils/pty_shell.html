@@ -120,7 +120,7 @@
 
 <span class="sd">    Note that ``PTYShell`` will change the shell prompts (``PS1`` and ``PS2``),</span>
 <span class="sd">    to simplify output parsing.  ``PS2`` will be empty, ``PS1`` will be set</span>
-<span class="sd">    ``PROMPT-$?-&gt;\\n`` -- that way, the prompt will report the exit value of the</span>
+<span class="sd">    ``PROMPT-$?-&gt;`` -- that way, the prompt will report the exit value of the</span>
 <span class="sd">    last command, saving an extra roundtrip.  Users of this class should be</span>
 <span class="sd">    careful when setting other prompts -- see :func:`set_prompt` for more</span>
 <span class="sd">    details.</span>
@@ -330,12 +330,12 @@
 
                 <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got password prompt&quot;</span><span class="p">)</span>
-                    <span class="k">if</span>  <span class="ow">not</span> <span class="s">&#39;pwd&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span> <span class="ow">or</span> \
-                        <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">[</span><span class="s">&#39;pwd&#39;</span><span class="p">]</span>      <span class="p">:</span>
+                    <span class="k">if</span>  <span class="ow">not</span> <span class="s">&#39;pass&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span> <span class="ow">or</span> \
+                        <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">[</span><span class="s">&#39;pass&#39;</span><span class="p">]</span>      <span class="p">:</span>
                         <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">AuthenticationFailed</span> <span class="p">(</span><span class="s">&quot;prompted for unknown password (</span><span class="si">%s</span><span class="s">)&quot;</span> \
                                                       <span class="o">%</span> <span class="n">match</span><span class="p">)</span>
 
-                    <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">[</span><span class="s">&#39;pwd&#39;</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">[</span><span class="s">&#39;pass&#39;</span><span class="p">])</span>
                     <span class="n">n</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">(</span><span class="n">prompt_patterns</span><span class="p">,</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
 
 
@@ -351,10 +351,10 @@
                     <span class="c"># turn off shell echo, set/register new prompt</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;unset PROMPT_COMMAND ; &quot;</span>
                                    <span class="o">+</span> <span class="s">&quot;stty -echo; &quot;</span>
-                                   <span class="o">+</span> <span class="s">&quot;PS1=&#39;PROMPT-$?-&gt;</span><span class="se">\\</span><span class="s">n&#39;; &quot;</span>
+                                   <span class="o">+</span> <span class="s">&quot;PS1=&#39;PROMPT-$?-&gt;&#39;; &quot;</span>
                                    <span class="o">+</span> <span class="s">&quot;PS2=&#39;&#39;; &quot;</span>
                                    <span class="o">+</span> <span class="s">&quot;export PS1 PS2</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> 
-                                   <span class="n">new_prompt</span><span class="o">=</span><span class="s">&quot;PROMPT-(\d+)-&gt;\s*$&quot;</span><span class="p">)</span>
+                                   <span class="n">new_prompt</span><span class="o">=</span><span class="s">&quot;PROMPT-(\d+)-&gt;$&quot;</span><span class="p">)</span>
 
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got new shell prompt&quot;</span><span class="p">)</span>
 
@@ -468,23 +468,23 @@
 <span class="sd">        By encoding the exit value in the command prompt, we safe one roundtrip.</span>
 <span class="sd">        The prompt on Posix compliant shells can be set, for example, via::</span>
 
-<span class="sd">          PS1=&#39;PROMPT-$?-&gt;\\n&#39;; export PS1</span>
+<span class="sd">          PS1=&#39;PROMPT-$?-&gt;&#39;; export PS1</span>
 
 <span class="sd">        The newline in the example above allows to nicely anchor the regular</span>
 <span class="sd">        expression, which would look like::</span>
 
-<span class="sd">          PROMPT-(\d+)-&gt;\s*$</span>
+<span class="sd">          PROMPT-(\d+)-&gt;$</span>
 
 <span class="sd">        The regex is compiled with &#39;re.DOTALL&#39;, so the dot character matches</span>
 <span class="sd">        all characters, including line breaks.  Be careful not to match more</span>
 <span class="sd">        than the exact prompt -- otherwise, a prompt search will swallow stdout</span>
 <span class="sd">        data.  For example, the following regex::</span>
 
-<span class="sd">          PROMPT-(.+)-&gt;\s*$</span>
+<span class="sd">          PROMPT-(.+)-&gt;$</span>
 
 <span class="sd">        would capture arbitrary strings, and would thus match *all* of::</span>
 
-<span class="sd">          PROMPT-0-&gt; ls</span>
+<span class="sd">          PROMPT-0-&gt;ls</span>
 <span class="sd">          data/ info</span>
 <span class="sd">          PROMPT-0-&gt;</span>
 

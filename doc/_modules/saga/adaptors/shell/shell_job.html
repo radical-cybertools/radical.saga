@@ -107,6 +107,19 @@
 <span class="s">                          effectively halfs the number of available job service</span>
 <span class="s">                          instances per remote host.&#39;&#39;&#39;</span><span class="p">,</span>
     <span class="s">&#39;env_variable&#39;</span>     <span class="p">:</span> <span class="bp">None</span>
+    <span class="p">},</span>
+    <span class="p">{</span> 
+    <span class="s">&#39;category&#39;</span>         <span class="p">:</span> <span class="s">&#39;saga.adaptor.shell_job&#39;</span><span class="p">,</span>
+    <span class="s">&#39;name&#39;</span>             <span class="p">:</span> <span class="s">&#39;purge_on_start&#39;</span><span class="p">,</span> 
+    <span class="s">&#39;type&#39;</span>             <span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> 
+    <span class="s">&#39;default&#39;</span>          <span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+    <span class="s">&#39;valid_options&#39;</span>    <span class="p">:</span> <span class="p">[</span><span class="bp">True</span><span class="p">,</span> <span class="bp">False</span><span class="p">],</span>
+    <span class="s">&#39;documentation&#39;</span>    <span class="p">:</span> <span class="s">&#39;&#39;&#39;Purge job information (state, stdio, ...) for all</span>
+<span class="s">                          jobs which are in final state when starting the job</span>
+<span class="s">                          service instance.  Note that this will purge *all*</span>
+<span class="s">                          suitable jobs, including the ones managed by another,</span>
+<span class="s">                          live job service instance.&#39;&#39;&#39;</span><span class="p">,</span>
+    <span class="s">&#39;env_variable&#39;</span>     <span class="p">:</span> <span class="bp">None</span>
     <span class="p">}</span>
 <span class="p">]</span>
 
@@ -279,6 +292,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">opts</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_config</span> <span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">notifications</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="p">[</span><span class="s">&#39;enable_notifications&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_value</span> <span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">purge_on_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="p">[</span><span class="s">&#39;purge_on_start&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_value</span> <span class="p">()</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -341,7 +355,9 @@
         <span class="c"># separately? </span>
         <span class="c">#   cmd_state () { touch $DIR/purgeable; ... }</span>
         <span class="c"># When should that be done?</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span> <span class="p">(</span><span class="s">&quot;adaptor dying... </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">njobs</span><span class="p">)</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;QUIT&quot;</span><span class="p">)</span>
+
+        <span class="n">ielf</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span> <span class="p">(</span><span class="s">&quot;adaptor dying... </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">njobs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">trace</span> <span class="p">()</span>
     
         <span class="c">#     try :</span>
@@ -404,7 +420,7 @@
         <span class="c"># TODO: replace some constants in the script with values from config</span>
         <span class="c"># files, such as &#39;timeout&#39; or &#39;purge_on_quit&#39; ...</span>
         <span class="c">#</span>
-        <span class="n">src</span> <span class="o">=</span> <span class="n">shell_wrapper</span><span class="o">.</span><span class="n">_WRAPPER_SCRIPT</span>
+        <span class="n">src</span> <span class="o">=</span> <span class="n">shell_wrapper</span><span class="o">.</span><span class="n">_WRAPPER_SCRIPT</span> <span class="o">%</span> <span class="p">({</span> <span class="s">&#39;PURGE_ON_START&#39;</span> <span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">purge_on_start</span><span class="p">)</span> <span class="p">})</span>
         <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;.saga/adaptors/shell_job/wrapper.sh&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">write_to_remote</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
