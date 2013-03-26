@@ -34,4 +34,4 @@ You can give mandelbrot.py a test-drive locally by calculating a single-tiled 10
 In your ``$HOME`` directory, open a new file saga_mandelbrot.py with your 
 favorite editor and paste the following content:
 
-.. literalinclude:: ../../../examples/tutorial/mandelbrot/mandelbrot.py
+.. literalinclude:: ../../../examples/tutorial/mandelbrot/saga_mandelbrot.py
