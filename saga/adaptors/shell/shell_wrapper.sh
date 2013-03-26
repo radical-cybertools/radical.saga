@@ -21,6 +21,7 @@ TIMEOUT=30
 # update timestamp function
 TIMESTAMP=0
 
+PURGE_ON_START="%(PURGE_ON_START)s"
 
 # --------------------------------------------------------------------
 #
@@ -55,7 +56,7 @@ idle_checker () {
 # --------------------------------------------------------------------
 #
 # it is suprisingly difficult to get seconds since epoch in POSIX -- 
-# 'date +%s' is a GNU extension...  Anyway, awk to the rescue! 
+# 'date +%%s' is a GNU extension...  Anyway, awk to the rescue! 
 #
 timestamp () {
   TIMESTAMP=`awk 'BEGIN{srand(); print srand()}'`
@@ -200,10 +201,11 @@ EOT
 # jobs would be canceled as soon as this master script finishes...
 #
 # Note further that we perform a double fork, effectively turning the monitor
-# into a daemon.  That provides a speedup of ~300%, as the wait in cmd_run now
-# will return very quickly (it just waits on the second fork).  We can achieve
-# near same performance be removing the wait, but that will result in one zombie
-# per command, which sticks around as long as the wrapper script itself lives.
+# into a daemon.  That provides a speedup of ~300 percent, as the wait in 
+# cmd_run now will return very quickly (it just waits on the second fork).  
+# We can achieve near same performance be removing the wait, but that will 
+# result in one zombie per command, which sticks around as long as the wrapper 
+# script itself lives.
 #
 # Note that the working directory is created on the fly.  As the name of the dir
 # is the pid, it must be unique -- we thus purge whatever trace we find of an
@@ -753,6 +755,12 @@ listen() {
 #
 stty -echo   2> /dev/null
 stty -echonl 2> /dev/null
+
+if test "$PURGE_ON_START" = "True"
+then
+  cmd_purge &
+fi
+
 create_monitor
 listen $1
 #
