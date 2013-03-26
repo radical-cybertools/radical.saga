@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
         # create a working directory in /scratch
         dirname = 'sftp://%s/%s/mbrot/' % (REMOTE_HOST, '/tmp')
-        workdir = saga.filesystem.Directory(dirname, saga.filesystem.Create,
+        workdir = saga.filesystem.Directory(dirname, saga.filesystem.CREATE,
                                             session=session)
 
         # copy the executable into our working directory
