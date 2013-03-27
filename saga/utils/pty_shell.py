@@ -234,82 +234,23 @@ class PTYShell (object) :
     # ----------------------------------------------------------------
     #
     def initialize (self) :
-        """ 
-        initialize the shell connection.  We expect the pty_process to be in virgin
-        state, i.e. to be newly forked and executed.  We thus expect shell
-        startup prompts and messages.
-        """
+        """ initialize the shell connection.  """
 
-        try :
-            self.prompt    = "^(.*[\$#>])\s*$" # greedy, look for line ending with # $ >
-            self.prompt_re = re.compile (self.prompt, re.DOTALL)
+        self.prompt    = "^(.*[\$#>])\s*$" # greedy, look for line ending with # $ >
+        self.prompt_re = re.compile (self.prompt, re.DOTALL)
 
-            prompt_patterns = ["assword\s*:\s*$",            # password prompt
-                               "want to continue connecting", # hostkey confirmation
-                               self.prompt]                   # native shell prompt 
+        # turn off shell echo, set/register new prompt
+        self.run_sync ( "unset PROMPT_COMMAND ; "
+                             + "stty -echo; "
+                             + "PS1='PROMPT-$?->'; "
+                             + "PS2=''; "
+                             + "export PS1 PS2\n", 
+                               new_prompt="PROMPT-(\d+)->$")
 
-            # self.prompt is all we need for local shell, so we could do:
-            #
-            # if  self.shell_type == 'sh' :
-            #     prompt_patterns = [self.prompt] 
-            #
-            # but we don't and keep the other pattern around so that the switch in
-            # the while loop below is the same for all shell types
+        self.logger.debug ("got new shell prompt")
 
-
-            # find a prompt
-            n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
-
-            # this loop will run until we finally find the self.prompt.  At that
-            # point, we'll try to set a different prompt, and when we found that,
-            # too, we'll exit the loop and consider to be ready for running shell
-            # commands.
-            while True :
-
-                if n == None :
-                    # we found none of the prompts, yet -- try again 
-                    n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
-
-
-                if n == 0 :
-                    self.logger.debug ("got password prompt")
-                    if  not 'pass' in self.pty_info or \
-                        not self.pty_info['pass']      :
-                        raise saga.AuthenticationFailed ("prompted for unknown password (%s)" \
-                                                      % match)
-
-                    self.pty_shell.write ("%s\n" % self.pty_info['pass'])
-                    n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
-
-
-                elif n == 1 :
-                    self.logger.debug ("got hostkey prompt")
-                    self.pty_shell.write ("yes\n")
-                    n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
-
-
-                elif n == 2 :
-                    self.logger.debug ("got initial shell prompt")
-
-                    # turn off shell echo, set/register new prompt
-                    self.run_sync ("unset PROMPT_COMMAND ; "
-                                   + "stty -echo; "
-                                   + "PS1='PROMPT-$?->'; "
-                                   + "PS2=''; "
-                                   + "export PS1 PS2\n", 
-                                   new_prompt="PROMPT-(\d+)->$")
-
-                    self.logger.debug ("got new shell prompt")
-
-                    # we are done waiting for a prompt
-                    break
-            
-            # check if some additional initialization routines as registered
-            if  self.initialize_hook :
-                self.initialize_hook ()
-
-        except Exception as e :
-            raise self._translate_exception (e)
+        if  self.initialize_hook :
+            self.initialize_hook ()
 
 
     # ----------------------------------------------------------------
@@ -740,7 +681,7 @@ class PTYShell (object) :
             fhandle.flush  ()
             fhandle.close  ()
 
-            pty_copy = self.factory.run_copy_to (self.pty_info, fname, tgt)
+            self.factory.run_copy_to (self.pty_info, fname, tgt)
 
             os.remove (fname)
 
@@ -765,7 +706,7 @@ class PTYShell (object) :
             # first, write data into a tmp file
             fname   = self.base + "/staging.%s" % id(self)
 
-            self.pty_copy = self.factory.run_copy_from (self.pty_info, src, fname)
+            self.factory.run_copy_from (self.pty_info, src, fname)
 
             fhandle = open (fname, 'r')
             out = fhandle.read  ()
@@ -798,7 +739,7 @@ class PTYShell (object) :
         # prompt, and updating pwd state on every find_prompt.
 
         try :
-            pty_copy = self.factory.run_copy_to (self.pty_info, src, tgt, cp_flags)
+            self.factory.run_copy_to (self.pty_info, src, tgt, cp_flags)
 
         except Exception as e :
             raise self._translate_exception (e)
@@ -822,7 +763,7 @@ class PTYShell (object) :
         # prompt, and updating pwd state on every find_prompt.
 
         try :
-            pty_copy = self.factory.run_copy_from (self.pty_info, src, tgt, cp_flags)
+            self.factory.run_copy_from (self.pty_info, src, tgt, cp_flags)
 
         except Exception as e :
             raise self._translate_exception (e)

@@ -24,7 +24,9 @@ _ADAPTOR_OPTIONS       = []
 # FIXME: complete attribute list
 _ADAPTOR_CAPABILITIES  = {
     'attributes'       : [saga.context.TYPE,
-                          saga.context.USER_PROXY,
+                          saga.context.USER_KEY,
+                          saga.context.USER_CERT,
+                          saga.context.USER_PASS,
                           saga.context.LIFE_TIME]
 }
 
@@ -49,9 +51,8 @@ _ADAPTOR_INFO          = {
 }
 
 
-###############################################################################
-# The adaptor class
-
+# ------------------------------------------------------------------------------
+# 
 class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
@@ -59,6 +60,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     provide the adaptor's functionality.
     """
 
+    # --------------------------------------------------------------------------
+    #
     def __init__ (self) :
 
         saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
@@ -68,53 +71,82 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         self._have_defaults    = False
 
 
+    # --------------------------------------------------------------------------
+    #
     def sanity_check (self) :
         pass
 
 
+    # --------------------------------------------------------------------------
+    #
     def _get_default_contexts (self) :
 
-        # if not self._have_defaults :
+        if not self._have_defaults :
+ 
+            import glob
+            candidate_certs = glob.glob ("%s/.ssh/*" % os.environ['HOME'])
 
-        #     p = "/tmp/x509up_u%d"  %  os.getuid()
+            for cert in candidate_certs :
+                key  = "%s.pub" % cert
+            
+                if  not os.path.exists (key)  or \
+                    not os.path.isfile (key)  or \
+                    not os.path.exists (cert) or \
+                    not os.path.isfile (cert)    :
+                  # self._logger.info ("incomplete SSH  context for cert  at %s" %  cert)
+                    continue
 
-        #     if  os.path.exists (p) and \
-        #         os.path.isfile (p)     :
 
-        #         try :
-        #             fh = open (p)
+                try :
+                    fh_key  = open (key )
+                    fh_cert = open (cert)
 
-        #         except Exception as e:
-        #             pass
+                except Exception as e:
+                    self._logger.info ("unreadable SSH  context for cert  at %s" %  cert)
+                    continue
 
-        #         else :
-        #             fh.close ()
 
-        #             c = saga.Context ('X509')
-        #             c.user_proxy = p
+                fh_key.close  ()
+                fh_cert.close ()
 
-        #             self._logger.info ("default X509 context for proxy at %s"  %  p)
+                import subprocess
+                
+                if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % cert]) :
+                    # needs passphrase.  Great, but won't work for
+                    # default contexts
+                    self._logger.info ("ignore  SSH  context for cert  at %s (needs pass)" %  cert)
+                    continue
 
-        #             self._default_contexts.append (c)
-        #             self._have_defaults = True
+                c = saga.Context ('ssh')
+                c.user_key  = key
+                c.user_cert = cert
+
+                self._default_contexts.append (c)
+
+                self._logger.info ("default SSH  context for cert  at %s" %  cert)
+
+            self._have_defaults = True
+
 
         # have defaults, and can return them...
         return self._default_contexts
 
 
 
-######################################################################
-#
-# job adaptor class
+# ------------------------------------------------------------------------------
 #
 class ContextSSH (saga.adaptors.cpi.context.Context) :
 
+    # --------------------------------------------------------------------------
+    #
     def __init__ (self, api, adaptor) :
 
         self._cpi_base = super  (ContextSSH, self)
         self._cpi_base.__init__ (api, adaptor)
 
 
+    # --------------------------------------------------------------------------
+    #
     @SYNC_CALL
     def init_instance (self, adaptor_state, type) :
 
@@ -127,27 +159,69 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
         return self.get_api ()
 
 
+    # --------------------------------------------------------------------------
+    #
     @SYNC_CALL
     def _initialize (self, session) :
 
-        # make sure we have can access the proxy
-        api = self.get_api ()
+        # make sure we have can access the key
+        _api  = self.get_api ()
 
-        # if  not api.user_proxy :
-        #     api.user_proxy = "x509up_u%d"  %  os.getuid()
+        _key  = None
+        _cert = None
+        _pass = None
 
-        # if  not os.path.exists (api.user_proxy) or \
-        #     not os.path.isfile (api.user_proxy)    :
-        #     raise saga.exceptions.BadParameter ("X509 proxy does not exist: %s"
-        #                                          % api.user_proxy)
+        
+        if          _api.attribute_exists (saga.context.USER_KEY ) :
+            _key  = _api.get_attribute    (saga.context.USER_KEY )
+        if          _api.attribute_exists (saga.context.USER_CERT) :
+            _cert = _api.get_attribute    (saga.context.USER_CERT)
+        if          _api.attribute_exists (saga.context.USER_PASS) :
+            _pass = _api.get_attribute    (saga.context.USER_PASS)
 
-        # try :
-        #     fh = open (api.user_proxy)
-        # except Exception as e:
-        #     raise saga.exceptions.PermissionDenied ("X509 proxy '%s' not readable: %s"
-        #                                          % (api.user_proxy, str(e)))
-        # else :
-        #     fh.close ()
+
+        if  not _cert :
+            # nothing to do, really
+            return
+
+        if  not _key :
+            _key = "%s.pub" % _cert
+            _api.set_attribute (saga.context.USER_KEY, _key)
+
+
+        if  not os.path.exists (_key ) or \
+            not os.path.isfile (_key ) or \
+            not os.path.exists (_cert) or \
+            not os.path.isfile (_cert)    :
+
+            raise saga.exceptions.BadParameter ("ssh keys incomplete: %s / %s" % (_cert, _key))
+
+
+        try :
+            fh_key  = open (_key )
+            fh_cert = open (_cert)
+
+        except Exception as e:
+            raise saga.exceptions.PermissionDenied ("ssh keys '%s / %s' not readable: %s"
+                                                 % (_cert, _key, e))
+        else :
+            fh_key .close ()
+            fh_cert.close ()
+
+
+        import subprocess
+        if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % _cert]) :
+            if  not _pass :
+                raise saga.exceptions.PermissionDenied ("ssh key '%s' is encrypted, need password" % (_cert))
+
+
+        if  subprocess.call (["sh", "-c", "ssh-keygen -y -f %s -P %s > /dev/null"
+                          % (_cert, _pass)]) :
+            raise saga.exceptions.PermissionDenied ("ssh key '%s' is encrypted, incorrect password" % (_cert))
+
+
+        self._logger.info ("init SSH context for cert  at %s" %  _cert)
+
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

@@ -8,12 +8,13 @@ import time
 import saga
 
 try :
-    c = saga.Context ('UserPass')
-    c.user_id   = 'test_user'
+    c = saga.Context ('ssh')
+    c.user_cert = '/home/merzky/.ssh/id_rsa_test'
+    c.user_key  = '/home/merzky/.ssh/id_rsa_test.pub'
     c.user_pass = 'test_pass'
 
-    s = saga.Session ()
-  # s.add_context (c)
+    s = saga.Session (default=False)
+    s.add_context (c)
 
     js = saga.job.Service ('ssh://localhost/', session=s)
   
