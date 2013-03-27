@@ -8,6 +8,10 @@ from   saga.constants  import *
 
 import saga
 
+from saga.constants import TYPE, SERVER, CERT_REPOSITORY, USER_PROXY, USER_CERT
+from saga.constants import USER_KEY, USER_ID, USER_PASS, USER_VO, LIFE_TIME
+from saga.constants import REMOTE_ID, REMOTE_HOST, REMOTE_PORT
+
 
 class Context (saga.base.Base, saga.Attributes) :
     '''A SAGA Context object as defined in GFD.90.
@@ -30,7 +34,7 @@ class Context (saga.base.Base, saga.Attributes) :
         c = saga.Context()
         c.context_type = 'ssh'
         c.user_cert = '$HOME/.ssh/special_id_rsa'
-        c.user_key = '$HOME/.ssh/special_id_rsa.pub'
+        c.user_key  = '$HOME/.ssh/special_id_rsa.pub'
 
         # add the context to a session
         s = saga.Session()

@@ -26,11 +26,6 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
 # --------------------------------------------------------------------
-# some private defs
-#
-_PTY_TIMEOUT = 2.0
-
-# --------------------------------------------------------------------
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.shell_job"

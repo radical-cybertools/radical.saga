@@ -6,9 +6,14 @@ __license__   = "MIT"
 
 import os
 import sys
+import string
 
 import saga.utils.singleton
 import saga.utils.pty_process
+
+# ------------------------------------------------------------------------------
+#
+_PTY_TIMEOUT = 2.0
 
 # ------------------------------------------------------------------------------
 #
@@ -56,22 +61,22 @@ _SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%s" % _SSH_CONTROL_PA
 # used to run commands...
 _SCRIPTS = {
     'ssh' : { 
-        'master'        : "%(ssh_env)s %(ssh_exe)s   %(ssh_args)s  %(m_flags)s      %(host_str)s",
-        'shell'         : "%(ssh_env)s %(ssh_exe)s   %(ssh_args)s  %(s_flags)s      %(host_str)s",
-      # 'copy_to'       : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s      %(src)s %(root)s/%(tgt)s",
-      # 'copy_from'     : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s      %(root)s/%(src)s %(tgt)s",
-        'copy_to'       : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s -b - %(host_str)s",
-        'copy_from'     : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s -b - %(host_str)s",
+        'master'        : "%(ssh_env)s %(ssh_exe)s   %(ssh_args)s  %(m_flags)s  %(host_str)s",
+        'shell'         : "%(ssh_env)s %(ssh_exe)s   %(ssh_args)s  %(s_flags)s  %(host_str)s",
+      # 'copy_to'       : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s  %(src)s %(root)s/%(tgt)s",
+      # 'copy_from'     : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s  %(root)s/%(src)s %(tgt)s",
+        'copy_to'       : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
+        'copy_from'     : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
         'copy_to_in'    : "progress \n put %(cp_flags)s %(src)s %(tgt)s \n exit \n",            
         'copy_from_in'  : "progress \n get %(cp_flags)s %(src)s %(tgt)s \n exit \n",
     },
     'sh' : { 
         'master'        : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'shell'         : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'copy_to'       : "%(cp_env)s %(sh_exe)s -c \"cd ~; %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s\"",
-        'copy_from'     : "%(cp_env)s %(sh_exe)s -c \"cd ~; %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s\"",
-        'copy_to_in'    : "",
-        'copy_from_in'  : "",
+        'copy_to'       : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
+        'copy_from'     : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
+        'copy_to_in'    : "cd ~ && exec %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s",
+        'copy_from_in'  : "cd ~ && exec %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s",
     }
 }
 
@@ -169,6 +174,9 @@ class PTYShellFactory (object) :
                 raise saga.NoSuccess._log (logger, \
             	  "Shell not connected to %s" % info['host_str'])
 
+            # authorization, prompt setup, etc
+            self._initialize_pty (info['pty'], info['pass'], info['cert_pass'], info['logger'])
+
             # master was created - register it
             self.registry[host_s][ctx_s][typ_s] = info 
 
@@ -187,6 +195,82 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
+    def _initialize_pty (self, pty_shell, shell_pass, cert_pass, logger) :
+
+        try :
+            prompt_patterns = ["password:\s*$",                      # password   prompt
+                               "Enter passphrase for key '.*':\s*$", # passphrase prompt
+                               "want to continue connecting",        # hostkey confirmation
+                               "^(.*[\$#>])\s*$"]                    # greedy native shell prompt 
+
+            # find a prompt
+            n, match = pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
+
+            # this loop will run until we finally find the shell prompt.  At
+            # that point, we'll try to set a different prompt, and when we found
+            # that, too, we exit the loop and are be ready to running shell
+            # commands.
+            while True :
+
+                # --------------------------------------------------------------
+                if n == None :
+
+                    # we found none of the prompts, yet -- try again 
+                    # FIXME:  consider timeout
+                    n, match = pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
+
+
+                # --------------------------------------------------------------
+                if n == 0 :
+                    logger.debug ("got password prompt")
+                    if  not shell_pass :
+                        raise saga.AuthenticationFailed ("prompted for unknown password (%s)" \
+                                                      % match)
+
+                    pty_shell.write ("%s\n" % shell_pass)
+                    n, match = pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
+
+
+                # --------------------------------------------------------------
+                if n == 1 :
+                    logger.debug ("got passphrase prompt: %s" % match)
+
+                    start = string.find (match, "'", 0)
+                    end   = string.find (match, "'", start+1)
+
+                    if start == -1 or end == -1 :
+                        raise saga.AuthenticationFailed ("could not extract cert name (%s)" % match)
+
+                    cert = match[start+1:end]
+
+                    if  not cert in cert_pass    :
+                        raise saga.AuthenticationFailed ("prompted for unknown certificate password (%s)" \
+                                                      % cert)
+
+                    pty_shell.write ("%s\n" % cert_pass[cert])
+                    n, match = pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
+
+
+                # --------------------------------------------------------------
+                elif n == 2 :
+                    logger.debug ("got hostkey prompt")
+                    pty_shell.write ("yes\n")
+                    n, match = pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
+
+
+                # --------------------------------------------------------------
+                elif n == 3 :
+                    logger.debug ("got initial shell prompt")
+
+                    # we are done waiting for a prompt
+                    break
+            
+        except Exception as e :
+            raise self._translate_exception (e)
+
+
+    # --------------------------------------------------------------------------
+    #
     def run_shell (self, info) :
         """ 
         This initiates a master connection.  If there is a suitable master
@@ -198,6 +282,13 @@ class PTYShellFactory (object) :
 
         # at this point, we do have a valid, living master
         sh_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
+
+        # authorization, prompt setup, etc
+        self._initialize_pty (sh_slave, 
+                              info['pass'], 
+                              info['cert_pass'], 
+                              info['logger'])
+
         return sh_slave
 
 
@@ -218,23 +309,19 @@ class PTYShellFactory (object) :
         s_in  = _SCRIPTS[info['type']]['copy_to_in'] % repl
 
         cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
-        cp_slave.write (s_in)
 
-        out = ""
-        try :
-            while True :
-                out += cp_slave.read ()
-        except :
-            pass
+        self._initialize_pty (cp_slave, 
+                              info['pass'], 
+                              info['cert_pass'], 
+                              info['logger'])
 
-        cp_slave.wait ()
-   
-        if  cp_slave.exit_code == None :
-            raise saga.NoSuccess._log (self.logger, "file copy got interrupted by signal: %s" % out)
-        elif cp_slave.exit_code != 0 :
-            raise saga.NoSuccess._log (self.logger, "file copy failed: %s" % out)
+        cp_slave.write ("%s\n" % s_in)
+        cp_slave.wait  ()
 
-        return cp_slave
+        if  cp_slave.exit_code != 0 :
+            raise saga.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+
+        info['logger'].debug ("copy done")
 
 
     # --------------------------------------------------------------------------
@@ -245,31 +332,28 @@ class PTYShellFactory (object) :
         the remote host, tgt as local path.
         """
 
-        repl = dict ({'src'      : str(src), 
-                      'tgt'      : str(tgt), 
-                      'cp_flags' : cp_flags}.items () + info.items ())
+        repl = dict ({'src'      : src, 
+                      'tgt'      : tgt, 
+                      'cp_flags' : cp_flags}.items ()+ info.items ())
 
         # at this point, we do have a valid, living master
         s_cmd = _SCRIPTS[info['type']]['copy_from']    % repl
         s_in  = _SCRIPTS[info['type']]['copy_from_in'] % repl
+
         cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
-        cp_slave.write (s_in)
 
-        out = ""
-        try :
-            while True :
-                out += cp_slave.read ()
-        except :
-            pass
+        self._initialize_pty (cp_slave, 
+                              info['pass'], 
+                              info['cert_pass'], 
+                              info['logger'])
 
-        cp_slave.wait ()
-   
-        if  cp_slave.exit_code == None :
-            raise saga.NoSuccess._log (self.logger, "file copy got interrupted by signal: %s" % out)
-        elif cp_slave.exit_code != 0 :
-            raise saga.NoSuccess._log (self.logger, "file copy failed: %s" % out)
+        cp_slave.write ("%s\n" % s_in)
+        cp_slave.wait  ()
 
-        return cp_slave
+        if  cp_slave.exit_code != 0 :
+            raise saga.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+
+        info['logger'].debug ("copy done")
 
 
     # --------------------------------------------------------------------------
@@ -280,10 +364,12 @@ class PTYShellFactory (object) :
 
         info = {}
 
-        info['schema']   = url.schema.lower ()
-        info['host_str'] = url.host
-        info['logger']   = logger
-        info['ctx']      = []
+        info['schema']    = url.schema.lower ()
+        info['host_str']  = url.host
+        info['logger']    = logger
+        info['ctx']       = []
+        info['pass']      =  ""
+        info['cert_pass'] =  {}
 
         # find out what type of shell we have to deal with
         if  info['schema']   in _SCHEMAS_SSH :
@@ -350,35 +436,40 @@ class PTYShellFactory (object) :
                 if  context.type.lower () == "ssh" :
                     if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
                         if  context.attribute_exists ("user_id")  or \
-                            context.attribute_exists ("user_key") :
-                            if  context.attribute_exists ("user_id") :
+                            context.attribute_exists ("user_cert") :
+
+                            if  context.attribute_exists ("user_id") and context.user_id :
                                 user_id = context.user_id
                                 if user_id :
                                     info['user']  = context.user_id
-                            if  context.attribute_exists ("user_key") :
-                                info['ssh_args']  += "-i %s " % context.user_key
-                                info['scp_args']  += "-i %s " % context.user_key
-                                info['sftp_args'] += "-i %s " % context.user_key
+                            if  context.attribute_exists ("user_cert") and context.user_cert :
+                                info['ssh_args']  += "-i %s " % context.user_cert
+                                info['scp_args']  += "-i %s " % context.user_cert
+                                info['sftp_args'] += "-i %s " % context.user_cert
+
+                                if  context.attribute_exists ("user_pass") and context.user_pass :
+                                    info['cert_pass'][context.user_cert] = context.user_pass
+
                             info['ctx'].append (context)
 
                 if  context.type.lower () == "userpass" :
                     if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
                         if  context.attribute_exists ("user_id")   or \
                             context.attribute_exists ("user_pass") :
-                            if  context.attribute_exists ("user_id") :
-                                user_id = context.user_id
-                                if user_id :
-                                    info['user'] = user_id
-                            if  context.attribute_exists ("user_pass") :
-                                user_pass = context.user_pass
-                                if user_pass :
-                                    info['pass'] = user_pass
+
+                            if  context.attribute_exists ("user_id") and context.user_id :
+                                info['user'] = context.user_id
+
+                            if  context.attribute_exists ("user_pass") and context.user_pass :
+                                info['pass'] = context.user_pass
+
                             info['ctx'].append (context)
 
                 if  context.type.lower () == "x509" :
                     if  info['schema'] in _SCHEMAS_GSI :
                         # FIXME: also use cert_dir etc.
-                        if  context.attribute_exists ("user_proxy") :
+                        
+                        if  context.attribute_exists ("user_proxy") and context.user_proxy :
                             info['ssh_env']  += "X509_PROXY='%s' " % context.user_proxy
                             info['scp_env']  += "X509_PROXY='%s' " % context.user_proxy
                             info['sftp_env'] += "X509_PROXY='%s' " % context.user_proxy
@@ -410,6 +501,50 @@ class PTYShellFactory (object) :
         # keep all collected info in the master dict, and return it for
         # registration
         return info
+
+
+    # ----------------------------------------------------------------
+    #
+    def _translate_exception (self, e) :
+        """
+        In many cases, we should be able to roughly infer the exception cause
+        from the error message -- this is centrally done in this method.  If
+        possible, it will return a new exception with a more concise error
+        message and appropriate exception type.
+        """
+
+        if  not issubclass (e.__class__, saga.SagaException) :
+            # we do not touch non-saga exceptions
+            return e
+
+        if  not issubclass (e.__class__, saga.NoSuccess) :
+            # this seems to have a specific cause already, leave it alone
+            return e
+
+        cmsg = e._plain_message
+        lmsg = cmsg.lower ()
+
+        if 'auth' in lmsg :
+            e = saga.AuthorizationFailed (cmsg)
+
+        elif 'pass' in lmsg :
+            e = saga.AuthenticationFailed (cmsg)
+
+        elif 'ssh_exchange_identification' in lmsg :
+            e = saga.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
+
+        elif 'denied' in lmsg :
+            e = saga.PermissionDenied (cmsg)
+
+        elif 'shared connection' in lmsg :
+            e = saga.NoSuccess ("Insufficient system resources: %s" % cmsg)
+
+        elif 'pty allocation' in lmsg :
+            e = saga.NoSuccess ("Insufficient system resources: %s" % cmsg)
+
+        # print e.traceback
+        return e
+
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
