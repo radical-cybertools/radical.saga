@@ -21,7 +21,7 @@ long_job = None
 # # ------------------------------------------------------------------------------
 # #
 # def test_job_invalid_session():
-#     """ Testing if an invalid session results in a proper exception
+#     """ Test if an invalid session results in a proper exception
 #     """
 #     try:
 #         tc = sutc.TestConfig()
@@ -44,12 +44,12 @@ long_job = None
 #         assert True
 #     except saga.SagaException as ex:
 #         assert False, "Expected BadParameter exception, but got %s" % ex
-# 
+
 
 # ------------------------------------------------------------------------------
 #
 def test_job_service_invalid_url():
-    """ Testing if a non-resolvable hostname results in a proper exception
+    """ Test if a non-resolvable hostname results in a proper exception
     """
     try:
         tc = sutc.TestConfig()
@@ -68,7 +68,7 @@ def test_job_service_invalid_url():
 # ------------------------------------------------------------------------------
 #
 def test_job_service_create():
-    """ Testing service.create_job() - expecting state 'NEW'
+    """ Test service.create_job() - expecting state 'NEW'
     """
     try:
         tc = sutc.TestConfig()
@@ -97,7 +97,7 @@ def test_job_service_create():
 # ------------------------------------------------------------------------------
 #
 def test_job_run():
-    """ Testing job.run() - expecting state: RUNNING/PENDING
+    """ Test job.run() - expecting state: RUNNING/PENDING
     """
     try:
         tc = sutc.TestConfig()
@@ -131,7 +131,7 @@ def test_job_run():
 # ------------------------------------------------------------------------------
 #
 def test_job_multiline_run():
-    """ Testing job.run() with multiline command
+    """ Test job.run() with multiline command
     """
     try:
         tc = sutc.TestConfig()
@@ -170,7 +170,7 @@ if True :
 # ------------------------------------------------------------------------------
 #
 def test_job_suspend_resume():
-    """ Testing job.suspend()/resume() - expecting state: SUSPENDED/RUNNIG
+    """ Test job.suspend()/resume() - expecting state: SUSPENDED/RUNNIG
     """
     try:
         tc = sutc.TestConfig()
@@ -208,7 +208,7 @@ def test_job_suspend_resume():
 # ------------------------------------------------------------------------------
 #
 def test_job_cancel():
-    """ Testing job.cancel() - expecting state: CANCELED
+    """ Test job.cancel() - expecting state: CANCELED
     """
     try:
         tc = sutc.TestConfig()
@@ -239,6 +239,7 @@ def test_job_cancel():
 # ------------------------------------------------------------------------------
 #
 def test_job_states_OLD():
+    """ Test job states (disabled) """
 
     return 0
 
@@ -277,7 +278,7 @@ def test_job_states_OLD():
 # ------------------------------------------------------------------------------
 #
 def test_get_exit_code():
-    """ Testing job.exit_code
+    """ Test job.exit_code
     """
     try:
         tc = sutc.TestConfig()
@@ -310,7 +311,7 @@ def test_get_exit_code():
 # ------------------------------------------------------------------------------
 #
 def test_get_service_url():
-    """ Testing if job.service_url == Service.url
+    """ Test if job.service_url == Service.url
     """
     try:
         tc = sutc.TestConfig()
@@ -340,7 +341,7 @@ def test_get_service_url():
 # ------------------------------------------------------------------------------
 #
 def test_get_id():
-    """ Testing job.get_id() / job.id
+    """ Test job.get_id() / job.id
     """
     try:
         tc = sutc.TestConfig()
@@ -371,7 +372,7 @@ def test_get_id():
 # ------------------------------------------------------------------------------
 #
 def test_job_wait():
-    """ Testing job.wait() - expecting state: DONE (this test might take a while)
+    """ Test job.wait() - expecting state: DONE (this test might take a while)
     """
     try:
         # we re-use the job from the RUNNING/PENDING state test, to cut waiting
