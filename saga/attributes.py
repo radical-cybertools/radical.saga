@@ -14,6 +14,7 @@ import datetime
 import datetime
 import traceback
 import inspect
+import string
 import re
 from   pprint import pprint
 
@@ -57,6 +58,7 @@ PRIVATE     = 'private'    # attribute added as private
 
 # flavor enums
 SCALAR      = 'scalar'     # the attribute value is a single data element
+DICT        = 'dict'       # the attribute value is a dict of data elements
 VECTOR      = 'vector'     # the attribute value is a list of data elements
 
 ################################################################################
@@ -755,6 +757,7 @@ class Attributes (_AttributesBase) :
 
         # check if we need to serialize a list into a scalar
         f = d['attributes'][key]['flavor']
+        t = d['attributes'][key]['type']
         if f == VECTOR :
             # we want a vector
             if isinstance (val, list) :
@@ -777,6 +780,42 @@ class Attributes (_AttributesBase) :
                     # all non-string types are interpreted as only element of
                     # a single-member list
                     return [self._attributes_t_conversion_type (key, val)]
+
+
+
+        elif f == DICT :
+            # we want a dict
+            if  isinstance (val, dict) :
+                # done :-)
+                return val
+
+            if  isinstance (val, list) :
+                # if target type is a dict, we parse the values and
+                # split on '=', creating the dict.  That will only work for
+                # string typed values
+                out = {}
+                for elem in val :
+                    (key, val) = str(elem).split ('=', 1)
+                    out[key] = val
+                return out
+
+            if  isinstance (val, basestring) :
+                # we assume a colon or comma separated list of = separated
+                # key/value pairs
+                elems = val.split (':')
+                out   = {}
+                if  len(elems) == 1 :
+                    elems = val.split (',')
+
+                for elem in elems :
+                    (key, val) = str(elem).strip ().split ('=', 1)
+                    out[key] = val
+                return out
+
+
+
+
+            # can't handle any other types...
 
 
         elif f == SCALAR :
@@ -805,7 +844,7 @@ class Attributes (_AttributesBase) :
 
 
         # we should never get here...
-        raise NoSuccess ("Cannot evaluate attribute flavor (%s) : %s"  %  (key, str(f)))
+        raise BadParameter ("Cannot evaluate attribute flavor (%s) : %s"  %  (key, str(f)))
 
 
     ####################################
@@ -833,7 +872,7 @@ class Attributes (_AttributesBase) :
             raise BadParameter ("attribute value %s has incorrect type: %s" %  (key, val))
 
         # we should never get here...
-        raise NoSuccess ("Cannot evaluate attribute type (%s) : %s"  %  (key, str(t)))
+        raise BadParameter ("Cannot evaluate attribute type (%s) : %s"  %  (key, str(t)))
 
     ####################################
     def _attributes_t_wildcard2regex (self, pattern) :

@@ -15,7 +15,7 @@ import saga.utils.test_config as sutc
 # ------------------------------------------------------------------------------
 #
 def test_get_url():
-    """ Testing job service url/get_url()
+    """ Test job service url/get_url()
     """
     try:
         tc = sutc.TestConfig()
@@ -34,7 +34,7 @@ def test_get_url():
 # ------------------------------------------------------------------------------
 #
 def test_list_jobs():
-    """ Testing if a submitted job shows up in Service.list() """
+    """ Test if a submitted job shows up in Service.list() """
     try:
         tc = sutc.TestConfig()
 
@@ -67,7 +67,7 @@ def test_list_jobs():
 # ------------------------------------------------------------------------------
 #
 def test_run_job () :
-    """ submit a job via run_job, and retrieve id """
+    """ Tets to submit a job via run_job, and retrieve id """
     try:
         tc = sutc.TestConfig ()
 
@@ -88,7 +88,7 @@ def test_run_job () :
 # ------------------------------------------------------------------------------
 #
 def test_get_job () :
-    """ submit a job, and retrieve it by id """
+    """ Test to submit a job, and retrieve it by id """
     try:
         tc = sutc.TestConfig ()
 
