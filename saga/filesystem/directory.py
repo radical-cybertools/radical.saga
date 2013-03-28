@@ -115,7 +115,7 @@ class Directory (nsdir.Directory) :
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((int, st.Task))
-    def get_size (self, tgt, flags=None, ttype=None) :
+    def get_size (self, tgt=None, flags=None, ttype=None) :
         '''
         :param tgt: path of the file or directory
 
@@ -151,6 +151,8 @@ class Directory (nsdir.Directory) :
         if tgt    :  return self._adaptor.is_file      (tgt, ttype=ttype)
         else      :  return self._adaptor.is_file_self (     ttype=ttype)
 
+
+    size  = property (get_size)  # int
     
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
