@@ -181,10 +181,10 @@ class Service (sb.Base, sasync.Async) :
     #
     @sus.takes   ('Service', 
                   basestring,
-                  basestring,
+                  sus.optional (basestring),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((j.Job, st.Task))
-    def run_job  (self, cmd, host="", ttype=None) :
+    def run_job  (self, cmd, host=None, ttype=None) :
         """ .. warning:: |not_implemented|
         """
         return self._adaptor.run_job (cmd, host, ttype=ttype)
