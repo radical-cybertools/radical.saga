@@ -24,7 +24,7 @@ pylint:
 	done | tee pylint.out
 
 clean:
-	-rm -rf build/ saga.egg-info/ temp/ MANIFEST dist/
+	-rm -rf build/ saga.egg-info/ temp/ MANIFEST dist/ saga_python.egg-info
 	make -C docs clean
 	find . -name \*.pyc -exec rm -f {} \;
 

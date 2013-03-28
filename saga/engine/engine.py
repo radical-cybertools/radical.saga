@@ -543,8 +543,8 @@ class Engine(sconf.Configurable):
                 # instantiate cpi
                 cpi_instance = cpi_class (api_instance, adaptor_instance)
 
-                self._logger.debug("Successfully bound %s.%s to %s" \
-                                 % (adaptor_name, cpi_cname, api_instance))
+              # self._logger.debug("Successfully bound %s.%s to %s" \
+              #                  % (adaptor_name, cpi_cname, api_instance))
                 return cpi_instance
 
 

@@ -10,7 +10,7 @@ def main():
         ctx.user_id = "oweidner"
 
         session = saga.Session()
-        session.add_context(ctx)
+      # session.add_context(ctx)
 
         # Create a job service object that represent the local machine.
         # The keyword 'fork://' in the url scheme triggers the 'shell' adaptor
