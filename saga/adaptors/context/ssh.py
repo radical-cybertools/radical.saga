@@ -194,7 +194,7 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
             not os.path.exists (_cert) or \
             not os.path.isfile (_cert)    :
 
-            raise saga.exceptions.BadParameter ("ssh keys incomplete: %s / %s" % (_cert, _key))
+            raise saga.exceptions.BadParameter ("ssh keys inaccessible: %s / %s" % (_cert, _key))
 
 
         try :
