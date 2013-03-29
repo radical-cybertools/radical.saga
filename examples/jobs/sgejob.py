@@ -21,7 +21,7 @@ def main():
     try:
         # Your ssh identity on the remote machine.
         ctx = saga.Context("ssh")
-        ctx.user_id = "bla" # getpass.getuser()  # Change if necessary
+        ctx.user_id = getpass.getuser()  # Change if necessary
 
         session = saga.Session()
         session.add_context(ctx)
