@@ -1004,6 +1004,9 @@ class Attributes (_AttributesBase) :
 
         # permissions are confirmed, set the attribute with conversion etc.
 
+        # NOTE: keep the original value around for the setter
+        orig_val = val
+
         # apply any attribute conversion
         val = self._attributes_t_conversion (key, val)
 
@@ -1030,7 +1033,9 @@ class Attributes (_AttributesBase) :
         d['attributes'][key]['last']  = now ()
 
         if flow==self._DOWN :
-            self._attributes_t_call_setter (key, val)
+            # NOTE: we use the orig_val here, to make the environment hooks
+            # happy which we introduced for BJ backward compatibility (FIXME)
+            self._attributes_t_call_setter (key, orig_val)
 
         self._attributes_t_call_cb (key, val)
 

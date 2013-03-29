@@ -55,7 +55,29 @@ class Description (saga.Attributes) :
         # FIXME
       # self._attributes_set_enums (saga.job.SPMD_VARIATION,      ['MPI', 'OpenMP', 'MPICH-G'])
 
-        pass
+        self._env_is_list = False
+
+        self._attributes_set_getter (saga.job.ENVIRONMENT, self._get_env)
+        self._attributes_set_setter (saga.job.ENVIRONMENT, self._set_env)
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _set_env (self, val) :
+        if  isinstance (val, list) :
+            self._env_is_list = True
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _get_env (self) :
+        env = self.get_attribute (saga.job.ENVIRONMENT)
+        if  self._env_is_list :
+            self._env_is_list = False
+            return ["%s=%s" % (key, val) for (key, val) in env.items ()]
+        return env
+
+
 
     # --------------------------------------------------------------------------
     #
