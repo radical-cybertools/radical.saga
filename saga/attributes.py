@@ -480,8 +480,8 @@ class Attributes (_AttributesBase) :
         all_setter = d['setter']
         key_setter = d['attributes'][key]['setter']
 
-        # Get the value via the attribute getter.  The getter will not call
-        # attrib getters or callbacks, due to the recursion guard.
+        # Get the value via the attribute setter.  The setter will not call
+        # attrib setters or callbacks, due to the recursion guard.
         # Set the value via the native setter (to the backend), 
         # always raise and lower the recursion shield
         #
@@ -498,7 +498,7 @@ class Attributes (_AttributesBase) :
                 all_setter (key, val)
             except Exception as e :
                 print "setter exception: " + str(e)
-                # ignoring failures from getter
+                # ignoring failures from setter
                 pass
             except Exception as e :
                 can_ignore -= 1
