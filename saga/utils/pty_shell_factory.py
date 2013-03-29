@@ -198,7 +198,7 @@ class PTYShellFactory (object) :
     def _initialize_pty (self, pty_shell, shell_pass, cert_pass, logger) :
 
         try :
-            prompt_patterns = ["password:\s*$",                      # password   prompt
+            prompt_patterns = ["[Pp]assword:\s*$",                   # password   prompt
                                "Enter passphrase for key '.*':\s*$", # passphrase prompt
                                "want to continue connecting",        # hostkey confirmation
                                "^(.*[\$#>])\s*$"]                    # greedy native shell prompt 
