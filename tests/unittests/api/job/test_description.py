@@ -31,27 +31,25 @@ def test_deepcopy():
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
 
-def test_environment ():
-    """ Test environment type conversion """
-
-    target = {'A': 'a', 'B': 'b'}
+def test_environment_list ():
+    """ Test environment support for list type """
 
     jd = saga.job.Description ()
     jd.environment = ['A=a', 'B=b']
-    assert (jd.environment == target), "'%s' == '%s'" % (jd.environment, target)
+    assert (type(jd.environment) == list), "Expected list() type but got %s" % type(jd.environment)
+    assert (jd.environment == ['A=a', 'B=b']), "'%s' == '%s'" % (jd.environment, ['A=a', 'B=b'])
     
+def test_environment_dict ():
+    """ Test environment support for dict type """
+
     jd = saga.job.Description ()
     jd.environment = {'A':'a', 'B':'b'}
-    assert (jd.environment == target), "'%s' == '%s'" % (jd.environment, target)
-    
-    jd = saga.job.Description ()
-    jd.environment = 'A=a, B=b'
-    assert (jd.environment == target), "'%s' == '%s'" % (jd.environment, target)
-    
-    jd = saga.job.Description ()
-    jd.environment = 'A=a:B=b'
-    assert (jd.environment == target), "'%s' == '%s'" % (jd.environment, target)
-    
+    assert (type(jd.environment) == dict), "Expected dict() type but got %s" % type(jd.environment)
+    assert (jd.environment == {'A':'a', 'B':'b'}), "'%s' == '%s'" % (jd.environment, {'A':'a', 'B':'b'})
+        
+def test_environment ():
+    """ Test environment type exceptions """
+
     try :
         jd = saga.job.Description ()
         jd.environment = 1
@@ -60,4 +58,3 @@ def test_environment ():
         assert (True)
     except saga.SagaException as se:
         assert (False), "expected BadParameter exception, got %s" % se
-    
