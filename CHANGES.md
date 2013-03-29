@@ -4,6 +4,14 @@ Version 0.9.2 released 2013-
 * Added SFTP adaptor
 * Added tutorial examples
 * Closed issues:
+  - https://github.com/saga-project/saga-python/issues/66
+  - https://github.com/saga-project/saga-python/issues/63
+  - https://github.com/saga-project/saga-python/issues/62
+  - https://github.com/saga-project/saga-python/issues/61
+  - https://github.com/saga-project/saga-python/issues/60
+  - https://github.com/saga-project/saga-python/issues/58
+  - https://github.com/saga-project/saga-python/issues/57
+  - https://github.com/saga-project/saga-python/issues/56
   - https://github.com/saga-project/saga-python/issues/55
   - https://github.com/saga-project/saga-python/issues/22
   - https://github.com/saga-project/saga-python/issues/51
