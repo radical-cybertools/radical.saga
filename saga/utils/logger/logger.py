@@ -73,12 +73,25 @@ class _Logger(Configurable):
     __metaclass__ = Singleton
 
     class _MultiNameFilter(logging.Filter):
-        def __init__(self, names):
-            self._names = names
+        def __init__(self, pos_filters, neg_filters=[]):
+            self._pos_filters = pos_filters
+            self._neg_filters = neg_filters
+
         def filter(self, record):
-            for n in self._names:
-                if n in record.name:
-                    return True
+            print_it = False
+
+            if not len(self._pos_filters) :
+                print_it = True
+            else :
+                for f in self._pos_filters:
+                    if  f in record.name:
+                        print_it = True
+
+            for f in self._neg_filters:
+                if  f in record.name:
+                    print_it = False
+
+            return print_it
 
     def __init__(self):
 
@@ -123,7 +136,16 @@ class _Logger(Configurable):
             handler.setFormatter(DefaultFormatter)
 
             if self._filters != []:
-                handler.addFilter(self._MultiNameFilter(self._filters))
+                pos_filters = []
+                neg_filters = []
+
+                for f in self._filters :
+                    if  f and f[0] == '!' :
+                        neg_filters.append (f[1:])
+                    else :
+                        pos_filters.append (f)
+
+                handler.addFilter(self._MultiNameFilter (pos_filters, neg_filters))
 
             self._handlers.append(handler)
 
