@@ -15,8 +15,6 @@ import saga.utils.test_config as sutc
 
 from copy import deepcopy
 
-long_job = None
-
 
 # # ------------------------------------------------------------------------------
 # #
@@ -115,9 +113,6 @@ def test_job_run():
         assert (j1.state in [saga.job.RUNNING, saga.job.PENDING])
         assert j1.state == j1.get_state()
 
-        global long_job
-        long_job = j1
-
         del js
 
     except saga.NotImplemented as ni:
@@ -128,6 +123,35 @@ def test_job_run():
         assert False, "Unexpected exception: %s" % se
 
 
+# ------------------------------------------------------------------------------
+#
+def test_job_wait():
+    """ Test job.wait() - expecting state: DONE (this test might take a while)
+    """
+    try:
+        tc = sutc.TestConfig()
+        js = saga.job.Service(tc.js_url, tc.session)
+        jd = saga.job.Description()
+        jd.executable = '/bin/sleep'
+        jd.arguments = ['10']
+
+        # add options from the test .cfg file if set
+        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+
+        j1 = js.create_job(jd)
+
+        j1.run()
+        j1.wait()
+        assert j1.state == saga.job.DONE
+
+        del js
+
+    except saga.NotImplemented as ni:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
+                print "%s " % ni
+    except saga.SagaException as se:
+        assert False, "Unexpected exception: %s" % se
 # ------------------------------------------------------------------------------
 #
 def test_job_multiline_run():
@@ -369,23 +393,3 @@ def test_get_id():
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
 
-# ------------------------------------------------------------------------------
-#
-def test_job_wait():
-    """ Test job.wait() - expecting state: DONE (this test might take a while)
-    """
-    try:
-        # we re-use the job from the RUNNING/PENDING state test, to cut waiting
-        # time
-
-        assert (long_job != None)
-        j1 = long_job
-        j1.wait()
-        assert j1.state == saga.job.DONE
-
-    except saga.NotImplemented as ni:
-            assert tc.notimpl_warn_only, "%s " % ni
-            if tc.notimpl_warn_only:
-                print "%s " % ni
-    except saga.SagaException as se:
-        assert False, "Unexpected exception: %s" % se
