@@ -17,7 +17,7 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 # --------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.httpfile"
+_ADAPTOR_NAME          = "saga.adaptor.http_file"
 _ADAPTOR_SCHEMAS       = ["http", "https"]
 _ADAPTOR_OPTIONS       = []
 
