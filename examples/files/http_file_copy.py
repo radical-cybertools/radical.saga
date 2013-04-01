@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''This examples shows how to use the saga.Filesystem API
-   with the SFTP file adaptor.
+   with the HTTP file adaptor.
 
    If something doesn't work as expected, try to set
    SAGA_VERBOSE=3 in your environment before you run the
@@ -14,29 +14,16 @@ __license__   = "MIT"
 
 import sys
 import saga
-import getpass
 
 
 def main():
 
     try:
-        # Your ssh identity on the remote machine.
-        ctx = saga.Context("ssh")
-        ctx.user_id = getpass.getuser()  # Change if necessary
-
-        session = saga.Session()
-        session.add_context(ctx)
-
-        # open home directory on a remote machine
-        remote_dir = saga.filesystem.Directory('sftp://india.futuregrid.org/etc/',
-                                               session=session)
+        # open file on a remote machine
+        remote_file = saga.filesystem.File('http://hgdownload.cse.ucsc.edu/goldenPath/hg19/bigZips/hg19.2bit')
 
         # copy .bash_history to /tmp/ on the local machine
-        remote_dir.copy('hosts', 'file://localhost/tmp/')
-
-        # list 'h*' in local /tmp/ directory
-        local_dir = saga.filesystem.Directory('file://localhost/tmp/')
-        print local_dir.list(pattern='h*')
+        remote_file.copy('hosts', 'file://localhost/tmp/')
         return 0
 
     except saga.SagaException, ex:
