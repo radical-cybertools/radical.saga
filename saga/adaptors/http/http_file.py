@@ -199,21 +199,20 @@ class HTTPFile (saga.adaptors.cpi.filesystem.File):
                     target = local_path
                 else:
                     raise saga.BadParameter("Local file '%s' exists." % local_path)
+
             elif os.path.isdir(tgt.path):
                 # add source filename to target path
                 target = os.path.join(local_path, src_filename)
 
                 if os.path.exists(target):
-                    if flags & saga.filesystem.OVERWRITE:
-                        target = local_path
-                    else:
+                    if not flags & saga.filesystem.OVERWRITE:
                         raise saga.BadParameter("Local file '%s' exists." % target)
 
         try:
             urllib.urlretrieve(str(src), target)
         except Exception, e:
             raise saga.BadParameter("Couldn't copy %s to %s: %s" %
-                (str(src), target, str(e)))
+                                    (str(src), target, str(e)))
 
     # ----------------------------------------------------------------
     #
