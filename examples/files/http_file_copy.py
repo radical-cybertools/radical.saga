@@ -23,7 +23,7 @@ def main():
         remote_file = saga.filesystem.File('http://hgdownload.cse.ucsc.edu/goldenPath/hg19/bigZips/hg19.2bit')
 
         # copy .bash_history to /tmp/ on the local machine
-        remote_file.copy('hosts', 'file://localhost/tmp/')
+        remote_file.copy('file://localhost/tmp/')
         return 0
 
     except saga.SagaException, ex:
