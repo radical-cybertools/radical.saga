@@ -718,7 +718,7 @@ about finished jobs. Setting state to 'DONE'.")
                          "job_description": jd,
                          "job_schema":      self.rm.schema,
                          "reconnect":       False
-                        }
+                         }
 
         return saga.job.Job(_adaptor=self._adaptor,
                             _adaptor_state=adaptor_state)
@@ -742,7 +742,7 @@ about finished jobs. Setting state to 'DONE'.")
                          "job_schema":      self.rm.schema,
                          "reconnect":       True,
                          "reconnect_jobid": jobid
-                        }
+                         }
 
         return saga.job.Job(_adaptor=self._adaptor,
                             _adaptor_state=adaptor_state)
@@ -763,8 +763,8 @@ about finished jobs. Setting state to 'DONE'.")
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("%s -l | grep `whoami`"\
-            % self._commands['qstat']['path'])
+        ret, out, _ = self.shell.run_sync("%s | grep `whoami`" %
+                                          self._commands['qstat']['path'])
 
         if ret != 0 and len(out) > 0:
             message = "failed to list jobs via 'qstat': %s" % out
