@@ -36,7 +36,8 @@ def main():
 
         # list 'h*' in local /tmp/ directory
         local_dir = saga.filesystem.Directory('file://localhost/tmp/')
-        print local_dir.list(pattern='h*')
+        for entry in local_dir.list(pattern='h*'):
+            print entry
         return 0
 
     except saga.SagaException, ex:
