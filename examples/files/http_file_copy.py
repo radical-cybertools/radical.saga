@@ -19,11 +19,11 @@ import saga
 def main():
 
     try:
-        # open file on a remote machine
+        # open file on a remote web server - WARNING: size is ~ 800 MB
         remote_file = saga.filesystem.File('http://hgdownload.cse.ucsc.edu/goldenPath/hg19/bigZips/hg19.2bit')
 
-        # copy .bash_history to /tmp/ on the local machine
-        remote_file.copy('file://localhost/tmp/')
+        # copy the remote file to /tmp/ on the local machine
+        remote_file.copy('file://localhost/tmp/', flags=saga.filesystem.OVERWRITE)
         return 0
 
     except saga.SagaException, ex:

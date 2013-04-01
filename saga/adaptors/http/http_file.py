@@ -195,7 +195,7 @@ class HTTPFile (saga.adaptors.cpi.filesystem.File):
         if os.path.exists(tgt.path):
             if os.path.isfile(tgt.path):
                 # fail if overwtrite flag is not set, otherwise copy
-                if self.flags & saga.filesystem.OVERWRITE:
+                if flags & saga.filesystem.OVERWRITE:
                     target = local_path
                 else:
                     raise saga.BadParameter("Local file '%s' exists." % local_path)
@@ -204,7 +204,7 @@ class HTTPFile (saga.adaptors.cpi.filesystem.File):
                 target = os.path.join(local_path, src_filename)
 
                 if os.path.exists(target):
-                    if self.flags & saga.filesystem.OVERWRITE:
+                    if flags & saga.filesystem.OVERWRITE:
                         target = local_path
                     else:
                         raise saga.BadParameter("Local file '%s' exists." % target)
