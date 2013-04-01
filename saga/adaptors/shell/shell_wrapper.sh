@@ -582,7 +582,7 @@ cmd_purge () {
     do
       dir=`dirname "$d"`
       id=`basename "$dir"`
-      rm -rf "$BASE/$id"
+      rm -rf "$BASE/$id" >/dev/null 2>&1
     done
     RETVAL="purged finished jobs"
   fi
