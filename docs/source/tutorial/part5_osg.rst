@@ -1,19 +1,15 @@
+.. _tutorial_mandelbrot_osg:
 
-Part 5: A More Complex Example: Mandelbrot
-******************************************
+Part 5: A More Complex Example: Mandelbrot (OSG VERSION)
+********************************************************
 
-.. warning:: If you want to run the Mandelbrot example on OSG with Condor, please refer to the OSG-specific instructions: :ref:`tutorial_mandelbrot_osg`.
+Description... why is this different from XSEDE?
 
+Hands-On: Mandelbrot with Condor on OSG
+=======================================
 
-In this example, we split up the calculation of a Mandelbrot set into several
-tiles, submit a job for each tile using the SAGA Job API, retrieve the tiles
-using the SAGA File API and stitch together the final image from the individual
-tiles. This example shows how SAGA can be used to create more complex
-application workflows that involve multiple aspects of the API.
-
-
-Hands-On: Distributed Mandelbrot Fractals
-=========================================
+**This examples assumes that you are logged in to an OSG gateway node and that
+you can submit regular Condor jobs from that node to OSG.** 
 
 In order for this example to work, we need to install an additional Python
 module, the Python Image Library (PIL). This is done via pip:
@@ -42,4 +38,4 @@ You can give mandelbrot.py a test-drive locally by calculating a single-tiled
 In your ``$HOME`` directory, open a new file saga_mandelbrot.py with your 
 favorite editor and paste the following content:
 
-.. literalinclude:: ../../../examples/tutorial/mandelbrot/saga_mandelbrot.py
+.. literalinclude:: ../../../examples/tutorial/mandelbrot/saga_mandelbrot_osg.py
