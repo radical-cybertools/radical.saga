@@ -65,6 +65,10 @@
 
 <span class="kn">import</span> <span class="nn">saga</span>
 
+<span class="kn">from</span> <span class="nn">saga.constants</span> <span class="kn">import</span> <span class="n">TYPE</span><span class="p">,</span> <span class="n">SERVER</span><span class="p">,</span> <span class="n">CERT_REPOSITORY</span><span class="p">,</span> <span class="n">USER_PROXY</span><span class="p">,</span> <span class="n">USER_CERT</span>
+<span class="kn">from</span> <span class="nn">saga.constants</span> <span class="kn">import</span> <span class="n">USER_KEY</span><span class="p">,</span> <span class="n">USER_ID</span><span class="p">,</span> <span class="n">USER_PASS</span><span class="p">,</span> <span class="n">USER_VO</span><span class="p">,</span> <span class="n">LIFE_TIME</span>
+<span class="kn">from</span> <span class="nn">saga.constants</span> <span class="kn">import</span> <span class="n">REMOTE_ID</span><span class="p">,</span> <span class="n">REMOTE_HOST</span><span class="p">,</span> <span class="n">REMOTE_PORT</span>
+
 
 <span class="k">class</span> <span class="nc">Context</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">Attributes</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Context"><a class="viewcode-back" href="../../library/context.html#saga.context.Context">[docs]</a>    <span class="sd">&#39;&#39;&#39;A SAGA Context object as defined in GFD.90.</span>
@@ -87,7 +91,7 @@
 <span class="sd">        c = saga.Context()</span>
 <span class="sd">        c.context_type = &#39;ssh&#39;</span>
 <span class="sd">        c.user_cert = &#39;$HOME/.ssh/special_id_rsa&#39;</span>
-<span class="sd">        c.user_key = &#39;$HOME/.ssh/special_id_rsa.pub&#39;</span>
+<span class="sd">        c.user_key  = &#39;$HOME/.ssh/special_id_rsa.pub&#39;</span>
 
 <span class="sd">        # add the context to a session</span>
 <span class="sd">        s = saga.Session()</span>

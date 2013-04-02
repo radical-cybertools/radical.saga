@@ -119,7 +119,7 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="c"># Your ssh identity on the remote machine.</span>
         <span class="n">ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&quot;ssh&quot;</span><span class="p">)</span>
-        <span class="n">ctx</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="n">getpass</span><span class="o">.</span><span class="n">getuser</span><span class="p">()</span>  <span class="c"># Change if necessary</span>
+        <span class="c">#ctx.user_id = getpass.getuser()  # Change if necessary</span>
 
         <span class="n">session</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
         <span class="n">session</span><span class="o">.</span><span class="n">add_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>

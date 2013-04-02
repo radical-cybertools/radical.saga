@@ -800,7 +800,7 @@
                          <span class="s">&quot;job_description&quot;</span><span class="p">:</span> <span class="n">jd</span><span class="p">,</span>
                          <span class="s">&quot;job_schema&quot;</span><span class="p">:</span>      <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span>
                          <span class="s">&quot;reconnect&quot;</span><span class="p">:</span>       <span class="bp">False</span>
-                        <span class="p">}</span>
+                         <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">(</span><span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">,</span>
                             <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
@@ -824,7 +824,7 @@
                          <span class="s">&quot;job_schema&quot;</span><span class="p">:</span>      <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span>
                          <span class="s">&quot;reconnect&quot;</span><span class="p">:</span>       <span class="bp">True</span><span class="p">,</span>
                          <span class="s">&quot;reconnect_jobid&quot;</span><span class="p">:</span> <span class="n">jobid</span>
-                        <span class="p">}</span>
+                         <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">(</span><span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">,</span>
                             <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
@@ -845,8 +845,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ids</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> -l | grep `whoami`&quot;</span>\
-            <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qstat&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">])</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> | grep `whoami`&quot;</span> <span class="o">%</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qstat&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;failed to list jobs via &#39;qstat&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>

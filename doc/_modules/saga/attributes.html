@@ -71,6 +71,7 @@
 <span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">import</span> <span class="nn">traceback</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">string</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">from</span>   <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
 
@@ -114,6 +115,7 @@
 
 <span class="c"># flavor enums</span>
 <span class="n">SCALAR</span>      <span class="o">=</span> <span class="s">&#39;scalar&#39;</span>     <span class="c"># the attribute value is a single data element</span>
+<span class="n">DICT</span>        <span class="o">=</span> <span class="s">&#39;dict&#39;</span>       <span class="c"># the attribute value is a dict of data elements</span>
 <span class="n">VECTOR</span>      <span class="o">=</span> <span class="s">&#39;vector&#39;</span>     <span class="c"># the attribute value is a list of data elements</span>
 
 <span class="c">################################################################################</span>
@@ -535,8 +537,8 @@
         <span class="n">all_setter</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;setter&#39;</span><span class="p">]</span>
         <span class="n">key_setter</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;setter&#39;</span><span class="p">]</span>
 
-        <span class="c"># Get the value via the attribute getter.  The getter will not call</span>
-        <span class="c"># attrib getters or callbacks, due to the recursion guard.</span>
+        <span class="c"># Get the value via the attribute setter.  The setter will not call</span>
+        <span class="c"># attrib setters or callbacks, due to the recursion guard.</span>
         <span class="c"># Set the value via the native setter (to the backend), </span>
         <span class="c"># always raise and lower the recursion shield</span>
         <span class="c">#</span>
@@ -553,7 +555,7 @@
                 <span class="n">all_setter</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
                 <span class="k">print</span> <span class="s">&quot;setter exception: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-                <span class="c"># ignoring failures from getter</span>
+                <span class="c"># ignoring failures from setter</span>
                 <span class="k">pass</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
                 <span class="n">can_ignore</span> <span class="o">-=</span> <span class="mi">1</span>
@@ -812,6 +814,7 @@
 
         <span class="c"># check if we need to serialize a list into a scalar</span>
         <span class="n">f</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;flavor&#39;</span><span class="p">]</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;type&#39;</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">f</span> <span class="o">==</span> <span class="n">VECTOR</span> <span class="p">:</span>
             <span class="c"># we want a vector</span>
             <span class="k">if</span> <span class="nb">isinstance</span> <span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="p">:</span>
@@ -834,6 +837,42 @@
                     <span class="c"># all non-string types are interpreted as only element of</span>
                     <span class="c"># a single-member list</span>
                     <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_conversion_type</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)]</span>
+
+
+
+        <span class="k">elif</span> <span class="n">f</span> <span class="o">==</span> <span class="n">DICT</span> <span class="p">:</span>
+            <span class="c"># we want a dict</span>
+            <span class="k">if</span>  <span class="nb">isinstance</span> <span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="p">:</span>
+                <span class="c"># done :-)</span>
+                <span class="k">return</span> <span class="n">val</span>
+
+            <span class="k">if</span>  <span class="nb">isinstance</span> <span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="p">:</span>
+                <span class="c"># if target type is a dict, we parse the values and</span>
+                <span class="c"># split on &#39;=&#39;, creating the dict.  That will only work for</span>
+                <span class="c"># string typed values</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">val</span> <span class="p">:</span>
+                    <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="n">out</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+                <span class="k">return</span> <span class="n">out</span>
+
+            <span class="k">if</span>  <span class="nb">isinstance</span> <span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">)</span> <span class="p">:</span>
+                <span class="c"># we assume a colon or comma separated list of = separated</span>
+                <span class="c"># key/value pairs</span>
+                <span class="n">elems</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span>
+                <span class="n">out</span>   <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">elems</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">:</span>
+                    <span class="n">elems</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">elems</span> <span class="p">:</span>
+                    <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span> <span class="p">()</span><span class="o">.</span><span class="n">split</span> <span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="n">out</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+                <span class="k">return</span> <span class="n">out</span>
+
+
+
+
+            <span class="c"># can&#39;t handle any other types...</span>
 
 
         <span class="k">elif</span> <span class="n">f</span> <span class="o">==</span> <span class="n">SCALAR</span> <span class="p">:</span>
@@ -862,7 +901,7 @@
 
 
         <span class="c"># we should never get here...</span>
-        <span class="k">raise</span> <span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Cannot evaluate attribute flavor (</span><span class="si">%s</span><span class="s">) : </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">)))</span>
+        <span class="k">raise</span> <span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot evaluate attribute flavor (</span><span class="si">%s</span><span class="s">) : </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">)))</span>
 
 
     <span class="c">####################################</span>
@@ -890,7 +929,7 @@
             <span class="k">raise</span> <span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;attribute value </span><span class="si">%s</span><span class="s"> has incorrect type: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>  <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">))</span>
 
         <span class="c"># we should never get here...</span>
-        <span class="k">raise</span> <span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Cannot evaluate attribute type (</span><span class="si">%s</span><span class="s">) : </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)))</span>
+        <span class="k">raise</span> <span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot evaluate attribute type (</span><span class="si">%s</span><span class="s">) : </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)))</span>
 
     <span class="c">####################################</span>
     <span class="k">def</span> <span class="nf">_attributes_t_wildcard2regex</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">)</span> <span class="p">:</span>
@@ -1022,6 +1061,9 @@
 
         <span class="c"># permissions are confirmed, set the attribute with conversion etc.</span>
 
+        <span class="c"># NOTE: keep the original value around for the setter</span>
+        <span class="n">orig_val</span> <span class="o">=</span> <span class="n">val</span>
+
         <span class="c"># apply any attribute conversion</span>
         <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_conversion</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
@@ -1048,7 +1090,9 @@
         <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;last&#39;</span><span class="p">]</span>  <span class="o">=</span> <span class="n">now</span> <span class="p">()</span>
 
         <span class="k">if</span> <span class="n">flow</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">_DOWN</span> <span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_call_setter</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+            <span class="c"># NOTE: we use the orig_val here, to make the environment hooks</span>
+            <span class="c"># happy which we introduced for BJ backward compatibility (FIXME)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_call_setter</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">orig_val</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_call_cb</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
