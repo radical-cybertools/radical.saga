@@ -27,15 +27,36 @@ _ADAPTOR_CAPABILITIES  = {
                            saga.context.USER_ID   : "user name on target machine",
                            saga.context.USER_KEY  : "maps to the public ssh key",
                            saga.context.USER_CERT : "maps to the public ssh key",
+<<<<<<< HEAD
                            saga.context.USER_PASS : "passphrase for encryped keys"}
+=======
+                           saga.context.USER_PASS : "passphrase for encrypted keys"}
+>>>>>>> devel
 }
 
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
-    'description'      : """This adaptor points to a ssh public/private keypair and 
-                            user_id to be used for backend connections.""",
+    'description'      : """ 
+    
+This SSH :class:`saga.Context` adaptor points to a ssh public/private keypair
+and user_id to be used for ssh based backend connections.  For example, an ssh
+context can be use to start jobs (:class:`saga.job.Job`) via ssh, to copy files
+(:class:`saga.filesystem.File`) via sftp, etc.
+
+Not all supported attributes have to be defined when using an ssh context
+adaptor -- unspecified attributes will have sensible default values.  For
+example, if a private key is defined as ``c.user_cert``, then the corresponding
+public key (``c.user_key``) will be automatically derived by adding ``'.pub'``.
+The ``c.user_id`` will default to the local user id, and the default passphrase
+in ``c.user_pass`` will be empty.
+
+
+    """,
+
+
+
     'schemas'          : {'ssh' : 'ssh private/public and userid information.'},
     'example'          : "examples/context/context_ssh.py"
 }
