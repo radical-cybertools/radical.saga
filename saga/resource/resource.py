@@ -196,7 +196,7 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     #
-    def wait (self, state=const.FINAL, timeout=-1.0, ttype=None) :
+    def wait (self, state=const.FINAL, timeout=None, ttype=None) :
         """
         :type  state: state enum
         :param state: state to wait for

@@ -169,6 +169,10 @@ class Manager (saga.base.Base, saga.async.Async) :
 
         return self._adaptor.release (id, ttype=ttype)
 
+  # FIXME: add 
+  # templates = property (list_templates, get_template)  # dict {string : Description}
+  # resources = property (get_resources)                 # list [string]
+
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
