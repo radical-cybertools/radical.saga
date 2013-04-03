@@ -1,3 +1,9 @@
+
+__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 """ SLURM job adaptor implementation """
 
 #TODO: Throw errors if a user does not specify the MINIMUM number of
@@ -273,6 +279,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self.jobs = {}
         self._open ()
 
+        return self.get_api ()
+
     # # ----------------------------------------------------------------
     # #
     # def _alive (self) :
@@ -361,7 +369,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # a different username than what we expect
         if not self.rm.username:
             self._logger.debug ("No username provided in URL %s, so we are"
-                                "going to find it with whoami" % shell_url)
+                                " going to find it with whoami" % self.rm)
             ret, out, _ = self.shell.run_sync("whoami")
             self.rm.detected_username = out.strip()
             self._logger.debug("Username detected as: %s",
@@ -395,7 +403,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         total_cpu_count = None
         number_of_processes = None
         threads_per_process = None
-        working_directory = None
         output = "saga-python-slurm-default.out"
         error = None
         file_transfer = None
@@ -479,8 +486,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if threads_per_process:
             pass
 
-        if working_directory:
-            slurm_script += "#SBATCH -D %s\n" % working_directory
+        if cwd is not "":
+            slurm_script += "#SBATCH -D %s\n" % cwd
 
         if output:
             slurm_script+= "#SBATCH -o %s\n" % output
@@ -502,6 +509,15 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if job_contact:
             slurm_script += "#SBATCH --mail-user=%s\n" % job_contact
 
+        # make sure we are not missing anything important
+        if not queue:
+            raise saga.BadParameter._log (self._logger, 
+                                          "No queue has been specified, "
+                                          "and the SLURM adaptor "
+                                          "requires that a queue be "
+                                          "specified.  Please specify "
+                                          "a queue to submit the job to.")
+
         # add on our environment variables
         slurm_script += env + "\n"
 
@@ -521,8 +537,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self._logger.debug("Transferring SLURM script to remote host")
 
         # transfer our script over
-        #self.shell.write_to_file (src = slurm_script,
-        #                          tgt = "%s/wrapper.sh" % self._base)
+        #self.shell.write_to_remote (src = slurm_script,
+        #                            tgt = "%s/wrapper.sh" % self._base)
 
         ret, out, _ = self.shell.run_sync("""echo "%s" | sbatch""" % slurm_script)
 

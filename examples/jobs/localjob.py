@@ -1,13 +1,12 @@
-#!/usr/bin/env python
-# encoding: utf-8
-
-""" This examples shows how to run a job on the local machine
-    using the 'local' job adaptor.
-"""
 
 __author__    = "Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
+
+""" This examples shows how to run a job on the local machine
+    using the 'local' job adaptor.
+"""
 
 import sys
 import saga

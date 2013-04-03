@@ -1,6 +1,8 @@
-__author__    = "Andre Merzky"
+
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 import saga.utils.singleton
 import saga.utils.logger
@@ -61,7 +63,7 @@ class Session (saga.base.SimpleBase) :
         c = saga.Context()
         c.context_type = 'ssh'
         c.user_cert = '$HOME/.ssh/special_id_rsa'
-        c.user_key = '$HOME/.ssh/special_id_rsa.pub'
+        c.user_key  = '$HOME/.ssh/special_id_rsa.pub'
 
         # add it to a session
         s = saga.Session

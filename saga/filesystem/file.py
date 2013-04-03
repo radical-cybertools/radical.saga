@@ -1,4 +1,8 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 
 import saga.url
 import saga.exceptions
@@ -80,7 +84,7 @@ class File (saga.namespace.entry.Entry) :
         ttype:    saga.task.type enum
         ret:      bool / saga.Task
         '''
-        return self._adaptor.is_file (ttype=ttype)
+        return self._adaptor.is_file_self (ttype=ttype)
 
   
     def get_size (self, ttype=None) :
@@ -99,7 +103,7 @@ class File (saga.namespace.entry.Entry) :
                print file.get_size ()
 
         '''
-        return self._adaptor.get_size (ttype=ttype)
+        return self._adaptor.get_size_self (ttype=ttype)
 
   
     def read (self, size=-1, ttype=None) :

@@ -1,7 +1,8 @@
 
-__author__    = "Ole Weidner"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 ################################################################################
 #
@@ -35,7 +36,6 @@ CANCELED              = 'Canceled';  """ The job has been canceled either by the
 ################################################################################
 #
 # JobDescription attributes:
-NAME                  = 'Name';                """ The name of your job.  """ 
 EXECUTABLE            = 'Executable';          """ The path to the application 
                                                    executable.  """ 
 ARGUMENTS             = 'Arguments';           """ The arguments for to the 
@@ -65,6 +65,7 @@ OPERATING_SYSTEM_TYPE = 'OperatingSystemType'; """ :todo: docstring """
 CANDIDATE_HOSTS       = 'CandidateHosts';      """ :todo: docstring """ 
 QUEUE                 = 'Queue';               """ :todo: docstring """ 
 JOB_CONTACT           = 'JobContact';          """ :todo: docstring """
+NAME                  = 'Name';                """ The name of your job.  """ 
 
 ################################################################################
 # Job attributes:

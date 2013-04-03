@@ -1,7 +1,8 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """
 List of all registered SAGA adaptor modules.
@@ -21,6 +22,7 @@ adaptor_registry = [
                     "saga.adaptors.context.x509",
                     "saga.adaptors.context.ssh",
                     "saga.adaptors.context.userpass",
+                    "saga.adaptors.shell.shell_file",
                     "saga.adaptors.shell.shell_job",
                     "saga.adaptors.shell.shell_file",
                     "saga.adaptors.shell.shell_resource",
