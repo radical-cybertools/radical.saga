@@ -6,6 +6,7 @@ include saga/job/*.py
 include saga/namespace/*.py
 include saga/filesystem/*.py
 include saga/replica/*.py
+include saga/resource/*.py
 include saga/advert/*.py
 
 include saga/engine/*.py
@@ -22,6 +23,7 @@ include saga/adaptors/cpi/job/*.py
 include saga/adaptors/cpi/namespace/*.py
 include saga/adaptors/cpi/filesystem/*.py
 include saga/adaptors/cpi/replica/*.py
+include saga/adaptors/cpi/resource/*.py
 include saga/adaptors/cpi/advert/*.py
 include saga/adaptors/context/*.py
 include saga/adaptors/local/*.py
