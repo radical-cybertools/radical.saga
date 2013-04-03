@@ -29,7 +29,7 @@ class File (saga.namespace.entry.Entry) :
     '''
 
 
-    def __init__ (self, url=None, flags=READ, session=None, 
+    def __init__ (self, url, flags=READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         :param url: Url of the (remote) file
@@ -62,7 +62,7 @@ class File (saga.namespace.entry.Entry) :
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
     @classmethod
-    def create (cls, url=None, flags=READ, session=None, ttype=None) :
+    def create (cls, url, flags=READ, session=None, ttype=None) :
         '''
         url:       saga.Url
         flags:     saga.replica.flags enum
@@ -106,7 +106,7 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.get_size_self (ttype=ttype)
 
   
-    def read (self, size=-1, ttype=None) :
+    def read (self, size=None, ttype=None) :
         '''
         size :    int
         ttype:    saga.task.type enum
@@ -124,9 +124,9 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.write (data, ttype=ttype)
 
   
-    def seek (self, off, whence=START, ttype=None) :
+    def seek (self, offset, whence=START, ttype=None) :
         '''
-        off :     int
+        offset:   int
         whence:   seek_mode enum
         ttype:    saga.task.type enum
         ret:      int / saga.Task
@@ -219,8 +219,8 @@ class File (saga.namespace.entry.Entry) :
         return self._adaptor.read_e (emode, spec, data, ttype=ttype)
 
   
-    size  = property (get_size)  # int
-    modes = property (modes_e)   # list [string]
+    size    = property (get_size)  # int
+    modes_e = property (modes_e)   # list [string]
   
   
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

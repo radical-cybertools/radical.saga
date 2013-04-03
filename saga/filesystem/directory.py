@@ -34,7 +34,7 @@ class Directory (saga.namespace.directory.Directory) :
                 dir.copy (f, "sftp://localhost/tmp/data/")
     '''
 
-    def __init__ (self, url=None, flags=READ, session=None, 
+    def __init__ (self, url, flags=READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         :param url: Url of the (remote) file system directory.
@@ -86,6 +86,38 @@ class Directory (saga.namespace.directory.Directory) :
     #
     # filesystem directory methods
     #
+    def open (self, path, flags=READ, ttype=None) :
+        '''
+        path:     saga.Url
+        flags:    saga.namespace.flags enum
+        ttype:    saga.task.type enum
+        ret:      saga.namespace.Entry / saga.Task
+        '''
+        url = saga.url.Url(path)
+        return self._adaptor.open (url, flags, ttype=ttype)
+
+
+    def open_dir (self, path, flags=READ, ttype=None) :
+        '''
+        :param path: name/path of the directory to open
+        :param flags: directory creation flags
+
+        ttype:    saga.task.type enum
+        ret:      saga.namespace.Directory / saga.Task
+        
+        Open and return a new directoy
+
+           The call opens and returns a directory at the given location.
+
+           Example::
+
+               # create a subdir 'data' in /tmp
+               dir = saga.namespace.Directory("sftp://localhost/tmp/")
+               data = dir.open_dir ('data/', saga.namespace.Create)
+        '''
+        return self._adaptor.open_dir (path, flags, ttype=ttype)
+
+
     def get_size (self, tgt=None, flags=None, ttype=None) :
         '''
         :param tgt: path of the file or directory

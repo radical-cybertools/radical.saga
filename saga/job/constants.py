@@ -16,7 +16,7 @@ NEW                   = 'New'
     yet been submitted / started to run.
 """
 
-PENDING               = 'Pending'
+PENDING               = 'Pending'  # non-GFD.90
 """ This state identifies a job instance which has been submitted / started 
     but is not yet executing on the resource.
 """
@@ -48,10 +48,6 @@ SUSPENDED             = 'Suspended'
 ################################################################################
 #
 # JobDescription attributes:
-NAME                  = 'Name'
-""" The name of your job. 
-"""
-
 EXECUTABLE            = 'Executable'
 """ The path to the executable. 
 """
@@ -60,26 +56,6 @@ EXECUTABLE            = 'Executable'
 """
 ARGUMENTS             = 'Arguments'
 """ The arguments for to the executable. 
-"""
-
-SPMD_VARIATION        = 'SPMDVariation'
-""" The type of parallelism required by this job 
-"""
-
-TOTAL_CPU_COUNT       = 'TotalCPUCount'
-""" The number of CPUs required by this job. 
-"""
-
-NUMBER_OF_PROCESSES   = 'NumberOfProcesses'
-""" Number of instances of 
-"""
-
-PROCESSES_PER_HOST    = 'ProcessesPerHost'
-""" :todo: docstring
-"""
-
-THREADS_PER_PROCESS   = 'ThreadsPerProcess'
-""" :todo: docstring
 """
 
 ENVIRONMENT           = 'Environment'    # dict {string:string} / list [string]
@@ -126,6 +102,10 @@ WALL_TIME_LIMIT       = 'WallTimeLimit'
 """ :todo: docstring
 """
 
+TOTAL_CPU_TIME        = "TotalCPUTime"
+""" :todo: docstring
+"""
+
 TOTAL_PHYSICAL_MEMORY = 'TotalPhysicalMemory'
 """ :todo: docstring
 """
@@ -146,9 +126,34 @@ QUEUE                 = 'Queue'
 """ :todo: docstring
 """
 
+SPMD_VARIATION        = 'SPMDVariation'
+""" The type of parallelism required by this job 
+"""
+
+TOTAL_CPU_COUNT       = 'TotalCPUCount'
+""" The number of CPUs required by this job. 
+"""
+
+NUMBER_OF_PROCESSES   = 'NumberOfProcesses'
+""" Number of instances of 
+"""
+
+PROCESSES_PER_HOST    = 'ProcessesPerHost'
+""" :todo: docstring
+"""
+
+THREADS_PER_PROCESS   = 'ThreadsPerProcess'
+""" :todo: docstring
+"""
+
 JOB_CONTACT           = 'JobContact'
 """ :todo: docstring
 """
+
+NAME                  = 'Name'  # non-GFD.90
+""" The name of your job. 
+"""
+
 
 ################################################################################
 # Job attributes:
@@ -180,7 +185,7 @@ TERMSIG               = 'Termsig'
 """ :todo: docstring
 """
 
-SERVICE_URL           = 'ServiceUrl'
+SERVICE_URL           = 'ServiceUrl'  # non-GFD.90
 """ :todo: docstring
 """
 

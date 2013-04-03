@@ -47,7 +47,7 @@ class Directory (entry.Entry) :
     case switching based on the provided parameter set.
     '''
 
-    def __init__ (self, url=None, flags=READ, session=None, 
+    def __init__ (self, url, flags=0, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         :param url: Url of the (remote) entry system directory.
@@ -80,7 +80,7 @@ class Directory (entry.Entry) :
 
 
     @classmethod
-    def create (cls, url=None, flags=READ, session=None, ttype=None) :
+    def create (cls, url, flags=0, session=None, ttype=None) :
         '''
         url:       saga.Url
         flags:     saga.namespace.flags enum
@@ -93,7 +93,18 @@ class Directory (entry.Entry) :
         return _nsentry.create (url, flags, session, ttype=ttype)
 
 
-    def open_dir (self, path, flags=READ, ttype=None) :
+    def open (self, path, flags=0, ttype=None) :
+        '''
+        path:     saga.Url
+        flags:    saga.namespace.flags enum
+        ttype:    saga.task.type enum
+        ret:      saga.namespace.Entry / saga.Task
+        '''
+        url = saga.url.Url(path)
+        return self._adaptor.open (url, flags, ttype=ttype)
+
+
+    def open_dir (self, path, flags=0, ttype=None) :
         '''
         :param path: name/path of the directory to open
         :param flags: directory creation flags
@@ -114,17 +125,6 @@ class Directory (entry.Entry) :
         return self._adaptor.open_dir (path, flags, ttype=ttype)
 
     
-    def open (self, name, flags=READ, ttype=None) :
-        '''
-        name:     saga.Url
-        flags:    saga.namespace.flags enum
-        ttype:    saga.task.type enum
-        ret:      saga.namespace.Entry / saga.Task
-        '''
-        url = saga.url.Url(name)
-        return self._adaptor.open (url, flags, ttype=ttype)
-
-
     # ----------------------------------------------------------------
     #
     # namespace directory methods

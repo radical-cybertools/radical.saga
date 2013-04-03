@@ -31,7 +31,7 @@ class Entry (saga.base.Base, saga.async.Async) :
     '''
 
 
-    def __init__ (self, url=None, flags=READ, session=None, 
+    def __init__ (self, url, flags=0, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         :param url: Url of the (remote) entry
@@ -71,7 +71,7 @@ class Entry (saga.base.Base, saga.async.Async) :
 
 
     @classmethod
-    def create (cls, url=None, flags=READ, session=None, ttype=None) :
+    def create (cls, url, flags=0, session=None, ttype=None) :
         '''
         url:       saga.Url
         flags:     saga.namespace.flags enum
@@ -253,8 +253,8 @@ class Entry (saga.base.Base, saga.async.Async) :
                         # get an tgt-scheme'd adaptor for the new src url, and try copy again
                         adaptor = self._engine.bind_adaptor (self, 'saga.namespace.Entry', tgt_url.scheme, 
                                                              adaptor_instance)
-                        adaptor.init_instance ({}, tmp_url, READ, self._session)
-                        tmp     = saga.namespace.Entry (tmp_url, READ, self._session, _adaptor=adaptor_instance)
+                        adaptor.init_instance ({}, tmp_url, flags, self._session)
+                        tmp     = saga.namespace.Entry (tmp_url, flags, self._session, _adaptor=adaptor_instance)
     
                         ret = tmp.copy (tgt_url, flags)
     

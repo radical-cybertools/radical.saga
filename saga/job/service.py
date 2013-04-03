@@ -53,13 +53,13 @@ class Service (Base, Async) :
           else                                        : print "job is already final!"
     """
 
-    def __init__ (self, url=None, session=None,
+    def __init__ (self, rm=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         """
         Create a new job.Service instance.
         
-        :param url: Url of the (remote) job manager.
-        :type  url: :class:`saga.Url` 
+        :param rm: Url of the (remote) job manager.
+        :type  rm: :class:`saga.Url` 
         """
 
 
@@ -67,7 +67,7 @@ class Service (Base, Async) :
         if not session :
             session = Session (default=True)
 
-        url     = Url (url)
+        url     = Url (rm)
         scheme  = url.scheme.lower ()
 
         Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
@@ -75,11 +75,11 @@ class Service (Base, Async) :
 
 
     @classmethod
-    def create (cls, url=None, session=None, ttype=SYNC) :
+    def create (cls, rm=None, session=None, ttype=SYNC) :
         """ Create a new job.Service instance asynchronously.
 
-            :param url:     resource manager URL
-            :type  url:     string or :class:`saga.Url`
+            :param rm:     resource manager URL
+            :type  rm:     string or :class:`saga.Url`
             :param session: an optional session object with security contexts
             :type  session: :class:`saga.Session`
             :rtype:         :class:`saga.Task`
@@ -89,7 +89,7 @@ class Service (Base, Async) :
         if not session :
             session = Session (default=True)
 
-        url     = Url (url)
+        url     = Url (rm)
         scheme  = url.scheme.lower ()
 
         return cls (url, session, _ttype=ttype)._init_task
@@ -148,9 +148,11 @@ class Service (Base, Async) :
         return self._adaptor.create_job (jd_copy, ttype=ttype)
 
 
-    def run_job (self, cmd, host="", ttype=None) :
+    def run_job (self, cmd, host=None, ttype=None) :
         """ .. warning:: |not_implemented|
         """
+        if  None == host :
+            host = "" # FIXME
         return self._adaptor.run_job (cmd, host, ttype=ttype)
 
 
@@ -230,6 +232,7 @@ class Service (Base, Async) :
         """
         return self._adaptor.get_job (job_id, ttype=ttype)
 
+# FIXME: add get_self()
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

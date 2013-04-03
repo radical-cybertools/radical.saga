@@ -117,6 +117,67 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # ----------------------------------------------------------------
     #
+    def run (self) :
+
+        if self._thread :
+            self._thread.run ()
+
+        else :
+            # FIXME: make sure task_run exists.  Should be part of the CPI!
+            self._adaptor.task_run (self)
+
+
+    # ----------------------------------------------------------------
+    #
+    def wait (self, timeout=None) :
+
+        if  None == timeout :
+            timeout = -1.0  # FIXME
+
+        if self._thread :
+            self._thread.wait ()  # FIXME: timeout?!
+            self._set_state   (self._thread.state)
+
+        else :
+            # FIXME: make sure task_wait exists.  Should be part of the CPI!
+            self._adaptor.task_wait (self, timeout)
+
+
+    # ----------------------------------------------------------------
+    #
+    def cancel (self) :
+
+        if self._thread :
+            self._thread.cancel ()
+            self._set_state (CANCELED)
+
+        else :
+            # FIXME: make sure task_cancel exists.  Should be part of the CPI!
+            self._adaptor.task_cancel (self)
+
+
+    # ----------------------------------------------------------------
+    #
+    def _set_state (self, state) :
+
+        if not state in [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED] :
+            raise se.BadParameter ("attempt to set invalid task state '%s'" % state)
+
+        self._attributes_i_set (self._attributes_t_underscore (STATE), state, force=True)
+
+
+    # ----------------------------------------------------------------
+    #
+    def get_state (self) :
+
+        if self._thread :
+            self._set_state (self._thread.state)
+
+        return self.state
+
+
+    # ----------------------------------------------------------------
+    #
     def _set_result (self, result) :
 
         self._attributes_i_set (self._attributes_t_underscore (RESULT), result, force=True)
@@ -145,64 +206,6 @@ class Task (sbase.SimpleBase, satt.Attributes) :
                 self._set_result (self._thread.result)
 
             return self.result
-
-
-    # ----------------------------------------------------------------
-    #
-    def _set_state (self, state) :
-
-        if not state in [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED] :
-            raise se.BadParameter ("attempt to set invalid task state '%s'" % state)
-
-        self._attributes_i_set (self._attributes_t_underscore (STATE), state, force=True)
-
-
-    # ----------------------------------------------------------------
-    #
-    def get_state (self) :
-
-        if self._thread :
-            self._set_state (self._thread.state)
-
-        return self.state
-
-
-    # ----------------------------------------------------------------
-    #
-    def wait (self, timeout=-1) :
-
-        if self._thread :
-            self._thread.wait ()  # FIXME: timeout?!
-            self._set_state   (self._thread.state)
-
-        else :
-            # FIXME: make sure task_wait exists.  Should be part of the CPI!
-            self._adaptor.task_wait (self, timeout)
-
-
-    # ----------------------------------------------------------------
-    #
-    def run (self) :
-
-        if self._thread :
-            self._thread.run ()
-
-        else :
-            # FIXME: make sure task_run exists.  Should be part of the CPI!
-            self._adaptor.task_run (self)
-
-
-    # ----------------------------------------------------------------
-    #
-    def cancel (self) :
-
-        if self._thread :
-            self._thread.cancel ()
-            self._set_state (CANCELED)
-
-        else :
-            # FIXME: make sure task_cancel exists.  Should be part of the CPI!
-            self._adaptor.task_cancel (self)
 
 
     # ----------------------------------------------------------------
@@ -265,28 +268,28 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # ----------------------------------------------------------------
     #
-    def add (self, t) :
+    def add (self, task) :
 
         import saga.job as sjob
 
         # AM: oh I hate that we don't use proper inheritance...
-        if  not isinstance (t, Task) and \
-            not isinstance (t, sjob.Job) :
+        if  not isinstance (task, Task) and \
+            not isinstance (task, sjob.Job) :
             
             raise se.BadParameter ("Container handles jobs or tasks, not %s" \
-                                % (type(t)))
+                                % (type(task)))
 
-        if not t in self.tasks :
-            self.tasks.append (t)
+        if not task in self.tasks :
+            self.tasks.append (task)
 
 
 
     # ----------------------------------------------------------------
     #
-    def remove (self, t) :
+    def remove (self, task) :
 
-        if t in self.tasks :
-            self.tasks.delete (t)
+        if task in self.tasks :
+            self.tasks.delete (task)
 
 
     # ----------------------------------------------------------------
@@ -347,80 +350,10 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # ----------------------------------------------------------------
     #
-    def get_states (self) :
+    def wait (self, mode=ALL, timeout=None) :
 
-        buckets = self._get_buckets ()
-        threads = []  # threads running container ops
-        queues  = {}
-
-        # handle all tasks bound to containers
-        for c in buckets['bound'] :
-
-            # handle all methods -- all go to the same 'container_get_states' though)
-            tasks = []
-            for m in buckets['bound'][c] :
-                tasks += buckets['bound'][c][m]
-
-            threads.append (Thread.Run (c.container_get_states, tasks))
-
-        
-        # handle all tasks not bound to containers
-        for task in buckets['unbound'] :
-
-            threads.append (Thread.Run (task.get_state))
-            
-
-        # We still need to get the states from all threads.
-        # FIXME: order
-        states  = []
-
-        for thread in threads :
-            thread.join ()
-
-            if thread.get_state () == FAILED :
-                raise thread.get_exception ()
-
-            # FIXME: what about ordering tasks / states?
-            res = thread.get_result ()
-
-            if res != None :
-                states += res
-
-        return states
-
-
-    # ----------------------------------------------------------------
-    #
-    def cancel (self, timeout=-1) :
-
-        buckets = self._get_buckets ()
-        threads = []  # threads running container ops
-        queues  = {}
-
-        # handle all tasks bound to containers
-        for c in buckets['bound'] :
-
-            # handle all methods -- all go to the same 'container_cancel' though)
-            tasks = []
-            for m in buckets['bound'][c] :
-                tasks += buckets['bound'][c][m]
-
-            threads.append (Thread.Run (c.container_cancel, tasks, timeout))
-
-        
-        # handle all tasks not bound to containers
-        for task in buckets['unbound'] :
-
-            threads.append (Thread.Run (task.cancel, timeout))
-            
-
-        for thread in threads :
-            thread.join ()
-
-
-    # ----------------------------------------------------------------
-    #
-    def wait (self, mode=ALL, timeout=-1) :
+        if  None == timeout :
+            timeout = -1.0 # FIXME
 
         if not mode in [ANY, ALL] :
             raise se.BadParameter ("wait mode must be saga.task.ANY or saga.task.ALL")
@@ -512,13 +445,45 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             ret = tasks[0]
  
         # handle all tasks not bound to containers
-        for t in buckets['unbound'] :
-            t.wait ()
-            ret = t
+        for task in buckets['unbound'] :
+            task.wait ()
+            ret = task
 
         # all done - return random task (first from last container, or last
         # unbound task)
         return ret
+
+
+    # ----------------------------------------------------------------
+    #
+    def cancel (self, timeout=None) :
+
+        if  None == timeout :
+            timeout = -1.0 # FIXME
+
+        buckets = self._get_buckets ()
+        threads = []  # threads running container ops
+        queues  = {}
+
+        # handle all tasks bound to containers
+        for c in buckets['bound'] :
+
+            # handle all methods -- all go to the same 'container_cancel' though)
+            tasks = []
+            for m in buckets['bound'][c] :
+                tasks += buckets['bound'][c][m]
+
+            threads.append (Thread.Run (c.container_cancel, tasks, timeout))
+
+        
+        # handle all tasks not bound to containers
+        for task in buckets['unbound'] :
+
+            threads.append (Thread.Run (task.cancel, timeout))
+            
+
+        for thread in threads :
+            thread.join ()
 
 
     # ----------------------------------------------------------------
@@ -537,6 +502,50 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # ----------------------------------------------------------------
     #
+    def get_states (self) :
+
+        buckets = self._get_buckets ()
+        threads = []  # threads running container ops
+        queues  = {}
+
+        # handle all tasks bound to containers
+        for c in buckets['bound'] :
+
+            # handle all methods -- all go to the same 'container_get_states' though)
+            tasks = []
+            for m in buckets['bound'][c] :
+                tasks += buckets['bound'][c][m]
+
+            threads.append (Thread.Run (c.container_get_states, tasks))
+
+        
+        # handle all tasks not bound to containers
+        for task in buckets['unbound'] :
+
+            threads.append (Thread.Run (task.get_state))
+            
+
+        # We still need to get the states from all threads.
+        # FIXME: order
+        states  = []
+
+        for thread in threads :
+            thread.join ()
+
+            if thread.get_state () == FAILED :
+                raise thread.get_exception ()
+
+            # FIXME: what about ordering tasks / states?
+            res = thread.get_result ()
+
+            if res != None :
+                states += res
+
+        return states
+
+
+    # ----------------------------------------------------------------
+    #
     def _get_buckets (self) :
         # collective container ops: walk through the task list, and sort into
         # buckets of tasks which have (a) the same task._container, or if that
@@ -547,14 +556,14 @@ class Container (sbase.SimpleBase, satt.Attributes) :
         buckets['unbound'] = [] # no container adaptor for these [tasks]
         buckets['bound']   = {} # dict  of container adaptors [tasks]
 
-        for t in self.tasks :
+        for task in self.tasks :
 
-            if  t._adaptor and t._adaptor._container :
+            if  task._adaptor and task._adaptor._container :
 
                 # the task's adaptor has a valid associated container class 
                 # which can handle the container ops - great!
-                c = t._adaptor._container
-                m = t._method_type
+                c = task._adaptor._container
+                m = task._method_type
 
                 if not c in buckets['bound'] :
                     buckets['bound'][c] = {}
@@ -562,16 +571,18 @@ class Container (sbase.SimpleBase, satt.Attributes) :
                 if not m in buckets['bound'][c] :
                     buckets['bound'][c][m] = []
 
-                buckets['bound'][c][m].append (t)
+                buckets['bound'][c][m].append (task)
 
             else :
 
                 # we have no container to handle this task -- so
                 # put it into the fallback list
-                buckets['unbound'].append (t)
+                buckets['unbound'].append (task)
 
         return buckets
 
+
+# FIXME: add get_apiobject
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

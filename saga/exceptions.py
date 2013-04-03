@@ -210,8 +210,8 @@ class NotImplemented(SagaException):
 
     _rank = 11
 
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
 # --------------------------------------------------------------------
@@ -222,8 +222,8 @@ class IncorrectURL(SagaException):
 
     _rank = 10
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
 # --------------------------------------------------------------------
@@ -233,8 +233,8 @@ class BadParameter(SagaException):
 
     _rank = 9
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
 # --------------------------------------------------------------------
@@ -244,8 +244,8 @@ class AlreadyExists(SagaException):
 
     _rank = 8
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
 # --------------------------------------------------------------------
@@ -255,8 +255,8 @@ class DoesNotExist(SagaException):
 
     _rank = 7
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
 # --------------------------------------------------------------------
@@ -266,8 +266,8 @@ class IncorrectState(SagaException):
 
     _rank = 6
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
 # --------------------------------------------------------------------
@@ -277,8 +277,8 @@ class PermissionDenied(SagaException):
 
     _rank = 5
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
 # --------------------------------------------------------------------
@@ -287,8 +287,8 @@ class AuthorizationFailed(SagaException):
     """ The backend could not establish a valid identity. (rank: 4)"""
     _rank = 4
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
 # --------------------------------------------------------------------
@@ -298,8 +298,8 @@ class AuthenticationFailed(SagaException):
 
     _rank = 3
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
 # --------------------------------------------------------------------
@@ -309,8 +309,8 @@ class Timeout(SagaException):
 
     _rank = 2
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
 # --------------------------------------------------------------------
@@ -320,5 +320,5 @@ class NoSuccess(SagaException):
 
     _rank = 1
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)

@@ -15,17 +15,16 @@ EXCLUSIVE      = ns.EXCLUSIVE       #     16
 LOCK           = ns.LOCK            #     32
 CREATE_PARENTS = ns.CREATE_PARENTS  #     64
 TRUNCATE       =                         128
-APPEND         =                         256
-READ           = ns.READ            #    512
-WRITE          = ns.WRITE           #   1024
-READ_WRITE     = ns.READ_WRITE      #   1536
+# APPEND       = reserved           #    256
+READ           =                         512
+WRITE          =                        1024
+READ_WRITE     =                        1536
 # BINARY       = reserved           #   2048
 
 
 # attributes
 ATTRIBUTE      = 'Attribute'
 OBJECT         = 'Object'
-EXPIRES        = 'Expires'
 TTL            = 'TTL'
 CHANGE         = 'Change'
 NEW            = 'New'
