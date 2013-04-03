@@ -21,6 +21,7 @@ TIMEOUT=30
 # update timestamp function
 TIMESTAMP=0
 
+PURGE_ON_START="%(PURGE_ON_START)s"
 
 # --------------------------------------------------------------------
 #
@@ -55,7 +56,7 @@ idle_checker () {
 # --------------------------------------------------------------------
 #
 # it is suprisingly difficult to get seconds since epoch in POSIX -- 
-# 'date +%s' is a GNU extension...  Anyway, awk to the rescue! 
+# 'date +%%s' is a GNU extension...  Anyway, awk to the rescue! 
 #
 timestamp () {
   TIMESTAMP=`awk 'BEGIN{srand(); print srand()}'`
@@ -200,10 +201,11 @@ EOT
 # jobs would be canceled as soon as this master script finishes...
 #
 # Note further that we perform a double fork, effectively turning the monitor
-# into a daemon.  That provides a speedup of ~300%, as the wait in cmd_run now
-# will return very quickly (it just waits on the second fork).  We can achieve
-# near same performance be removing the wait, but that will result in one zombie
-# per command, which sticks around as long as the wrapper script itself lives.
+# into a daemon.  That provides a speedup of ~300 percent, as the wait in 
+# cmd_run now will return very quickly (it just waits on the second fork).  
+# We can achieve near same performance be removing the wait, but that will 
+# result in one zombie per command, which sticks around as long as the wrapper 
+# script itself lives.
 #
 # Note that the working directory is created on the fly.  As the name of the dir
 # is the pid, it must be unique -- we thus purge whatever trace we find of an
@@ -214,7 +216,7 @@ EOT
 #
 # The script has a small race condition, between starting the job (the 'nohup'
 # line), and the next line where the jobs now known pid is stored away.  I don't
-# see an option to make those two ops atomic, or resilient against script
+# see an option to make those two ops atomic, or resilient against system
 # failure - so, in worst case, you might get a running job for which the job id
 # is not stored (i.e. not known).
 #
@@ -228,39 +230,31 @@ EOT
 cmd_run () {
   #
   # do a double fork to avoid zombies (need to do a wait in this process)
-  #
-  # FIXME: do some checks here, such as if executable exists etc.
-  # FIXME: do some checks here, such as if executable exists etc.
-  #
-  # FIXME: Now, this is *the* *strangest* *error* I *ever* saw... - the above
-  # two comment lines are, in source, identical -- but for local bash
-  # connections, when written to disk via cat, the second line will have only 14
-  # characters!  I see the correct data given to os.write(), and that is the
-  # *only* place data are missing - but why?  It seems to be an offset problem:
-  # removing a character earlier in this string will extend the shortened line
-  # by one character.  Sooo, basically this long comment here will (a) document
-  # the problem, and (b) shield the important code below from truncation.
-  #
-  # go figure...
 
   cmd_run2 "$@" &
 
-  SAGA_PID=$!      # this is the (native) job id!
+  SAGA_PID=$!      # this is the (SAGA-level) job id!
   wait $SAGA_PID   # this will return very quickly -- look at cmd_run2... ;-)
-  RETVAL=$SAGA_PID # report id
+
+  if test "$SAGA_PID" = '0'  
+  then
+    # some error occured, assume RETVAL is set
+    ERROR="NOK"
+    return
+  fi
+
+  # success
+  RETVAL=$SAGA_PID 
 
   # we have to wait though 'til the job enters RUNNING (this is a sync job
   # startup)
   DIR="$BASE/$SAGA_PID"
-
-  touch "$DIR/state"
 
   while true
   do
     grep "RUNNING" "$DIR/state" && break
     sleep 0  # sleep 0 will wait for just some millisecs
   done
-
 }
 
 
@@ -268,8 +262,6 @@ cmd_run2 () {
   # this is the second part of the double fork -- run the actual workload in the
   # background and return - voila!  Note: no wait here, as the spawned script is
   # supposed to stay alive with the job.
-  #
-  # FIXME: not sure if the error reporting on mkdir problems actually works...
   #
   # NOTE: we could, in principle, separate SUBMIT from RUN -- in this case, move
   # the job into NEW state.
@@ -282,11 +274,10 @@ cmd_run2 () {
   timestamp
   START=$TIMESTAMP
 
-  test -d "$DIR"            && rm    -rf "$DIR"  # re-use old pid's
-  test -d "$DIR"            || mkdir -p  "$DIR"  || (ERROR="cannot use job id"; return 0)
+  test -d "$DIR"            && rm    -rf "$DIR"     # re-use old pid if needed
+  test -d "$DIR"            || mkdir -p  "$DIR"  || (RETVAL="cannot use job id"; return 0)
   printf "START : $START\n"  > "$DIR/stats"
   printf "NEW \n"           >> "$DIR/state"
-
 
   cmd_run_process "$SAGA_PID" "$@" &
   return $!
@@ -581,22 +572,20 @@ cmd_list () {
 #
 cmd_purge () {
 
-  if test -z "$1"
+  if ! test -z "$1"
   then
-    # FIXME - this is slow
-    for d in `grep -l -e 'DONE' -e 'FAILED' -e 'CANCELED' "$BASE"/*/state`
+    DIR="$BASE/$1"
+    rm -rf "$DIR"
+    RETVAL="purged $1"
+  else
+    for d in `grep -l -e 'DONE' -e 'FAILED' -e 'CANCELED' "$BASE"/*/state 2>/dev/null`
     do
       dir=`dirname "$d"`
       id=`basename "$dir"`
-      rm -rf "$BASE/$id"
+      rm -rf "$BASE/$id" >/dev/null 2>&1
     done
     RETVAL="purged finished jobs"
-    return
   fi
-
-  DIR="$BASE/$1"
-  rm -rf "$DIR"
-  RETVAL="purged $1"
 }
 
 
@@ -753,6 +742,12 @@ listen() {
 #
 stty -echo   2> /dev/null
 stty -echonl 2> /dev/null
+
+if test "$PURGE_ON_START" = "True"
+then
+  cmd_purge &
+fi
+
 create_monitor
 listen $1
 #

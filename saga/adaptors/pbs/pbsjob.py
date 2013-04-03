@@ -1,12 +1,11 @@
-#!/usr/bin/env python
-# encoding: utf-8
+
+__author__    = "Andre Merzky, Mark Santcroos, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 
 """ PBS job adaptor implementation
 """
-
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2013, The SAGA Project"
-__license__   = "MIT"
 
 import saga.utils.which
 import saga.utils.pty_shell
@@ -150,17 +149,7 @@ _PTY_TIMEOUT = 2.0
 #
 _ADAPTOR_NAME          = "saga.adaptor.pbsjob"
 _ADAPTOR_SCHEMAS       = ["pbs", "pbs+ssh", "pbs+gsissh"]
-_ADAPTOR_OPTIONS       = [
-    # {
-    # 'category':      'saga.adaptor.pbsjob',
-    # 'name':          'foo',
-    # 'type':          bool,
-    # 'default':       False,
-    # 'valid_options': [True, False],
-    # 'documentation': """Doc""",
-    # 'env_variable':   None
-    # },
-]
+_ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -244,9 +233,6 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts = self.get_config()
-        # self.foo = self.opts['foo'].get_value()
-
-        #self._logger.info('debug trace : %s' % self.debug_trace)
 
     # ----------------------------------------------------------------
     #
@@ -270,7 +256,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 ###############################################################################
 #
 class PBSJobService (saga.adaptors.cpi.job.Service):
-    """ implements saga.adaptors.cpi.job.Service 
+    """ implements saga.adaptors.cpi.job.Service
     """
 
     # ----------------------------------------------------------------
@@ -280,17 +266,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self._cpi_base = super(PBSJobService, self)
         self._cpi_base.__init__(api, adaptor)
 
+        self._adaptor = adaptor
+
     # ----------------------------------------------------------------
     #
     def __del__(self):
-
-        # FIXME: not sure if we should PURGE here -- that removes states which
-        # might not be evaluated, yet.  Should we mark state evaluation
-        # separately?
-        #   cmd_state () { touch $DIR/purgeable; ... }
-        # When should that be done?
-        #self._logger.error("adaptor dying... %s" % self.njobs)
-        #self._logger.trace()
 
         self.finalize(kill_shell=True)
 
@@ -300,9 +280,6 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     def init_instance(self, adaptor_state, rm_url, session):
         """ service instance constructor
         """
-        # Turn this off by default.
-        self._disable_ptywrapper_logging = True
-
         self.rm      = rm_url
         self.session = session
         self.ppn     = 0
@@ -339,26 +316,14 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                           'qsub':     None,
                           'qdel':     None}
 
-        if self._disable_ptywrapper_logging:
-            # create a null logger to silence the PTY wrapper!
-            import logging
-
-            class NullHandler(logging.Handler):
-                def emit(self, record):
-                    pass
-            nh = NullHandler()
-            null_logger = logging.getLogger("PTYShell").addHandler(nh)
-
-            self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-                self.session, null_logger)
-        else:
-            self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-                self.session)
+        self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
         self.shell.set_initialize_hook(self.initialize)
         self.shell.set_finalize_hook(self.finalize)
 
         self.initialize()
+
+        return self.get_api ()
 
     # ----------------------------------------------------------------
     #
@@ -431,7 +396,9 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def finalize(self, kill_shell=False):
-        pass
+        if  kill_shell :
+            if  self.shell :
+                self.shell.finalize (True)
 
     # ----------------------------------------------------------------
     #
@@ -449,9 +416,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                                          jd=jd, ppn=self.ppn,
                                          is_cray=self.is_cray, queue=self.queue)
 
-            # escape all double quotes, otherwise 'echo |' further down
-            # won't work
+            # escape all double quotes and dollarsigns, otherwise 'echo |' 
+            # further down won't work
             script = script.replace('"', '\\"')
+            script = script.replace('$', '\\$')
 
             self._logger.debug("Generated PBS script: %s" % script)
         except Exception, ex:
@@ -750,7 +718,7 @@ about finished jobs. Setting state to 'DONE'.")
                          "job_description": jd,
                          "job_schema":      self.rm.schema,
                          "reconnect":       False
-                        }
+                         }
 
         return saga.job.Job(_adaptor=self._adaptor,
                             _adaptor_state=adaptor_state)
@@ -774,7 +742,7 @@ about finished jobs. Setting state to 'DONE'.")
                          "job_schema":      self.rm.schema,
                          "reconnect":       True,
                          "reconnect_jobid": jobid
-                        }
+                         }
 
         return saga.job.Job(_adaptor=self._adaptor,
                             _adaptor_state=adaptor_state)
@@ -795,8 +763,8 @@ about finished jobs. Setting state to 'DONE'.")
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("%s -l | grep `whoami`"\
-            % self._commands['qstat']['path'])
+        ret, out, _ = self.shell.run_sync("%s | grep `whoami`" %
+                                          self._commands['qstat']['path'])
 
         if ret != 0 and len(out) > 0:
             message = "failed to list jobs via 'qstat': %s" % out

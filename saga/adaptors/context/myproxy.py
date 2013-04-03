@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import os
 import subprocess
 
@@ -96,7 +101,7 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
 
         self.get_api ().type = type
 
-        return self
+        return self.get_api ()
 
 
     @SYNC_CALL

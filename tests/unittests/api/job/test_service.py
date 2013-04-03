@@ -1,3 +1,9 @@
+
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2013, The SAGA Project"
+__license__   = "MIT"
+
+
 __author__    = ["Ole Weidner", "Andre Merzky"]
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -9,7 +15,7 @@ import saga.utils.test_config as sutc
 # ------------------------------------------------------------------------------
 #
 def test_get_url():
-    """ Testing job service url/get_url()
+    """ Test job service url/get_url()
     """
     try:
         tc = sutc.TestConfig()
@@ -28,7 +34,7 @@ def test_get_url():
 # ------------------------------------------------------------------------------
 #
 def test_list_jobs():
-    """ Testing if a submitted job shows up in Service.list() """
+    """ Test if a submitted job shows up in Service.list() """
     try:
         tc = sutc.TestConfig()
 
@@ -49,6 +55,8 @@ def test_list_jobs():
         assert j.id in all_jobs, \
             "%s not in %s" % (j.id, all_jobs)
 
+        del js
+
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
@@ -59,7 +67,7 @@ def test_list_jobs():
 # ------------------------------------------------------------------------------
 #
 def test_run_job () :
-    """ submit a job via run_job, and retrieve id """
+    """ Tets to submit a job via run_job, and retrieve id """
     try:
         tc = sutc.TestConfig ()
 
@@ -67,6 +75,8 @@ def test_run_job () :
         js = saga.job.Service (tc.js_url, tc.session)
         j  = js.run_job ("/bin/sleep 10")
         assert j.id
+
+        del js
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
@@ -78,7 +88,7 @@ def test_run_job () :
 # ------------------------------------------------------------------------------
 #
 def test_get_job () :
-    """ submit a job, and retrieve it by id """
+    """ Test to submit a job, and retrieve it by id """
     try:
         tc = sutc.TestConfig ()
 
@@ -97,6 +107,8 @@ def test_get_job () :
         j.run()
         j_clone = js.get_job(j.id)
         assert j.id in j_clone.id
+
+        del js
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni

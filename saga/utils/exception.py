@@ -1,7 +1,8 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ Provides exception handling utilities and base classes.
 """
@@ -44,14 +45,18 @@ class ExceptionBase(Exception):
     """
     def __init__(self, message):
         Exception.__init__(self, message)
+        self._message   = message
         self._traceback = get_traceback()
 
     def get_traceback (self) :
         """ Return the full traceback for this exception.
         """
         return self._traceback
+    traceback = property (get_traceback) 
 
-    traceback  = property (get_traceback) 
+    def __str__ (self) :
+        return "%s: %s" % (self.__class__.__name__, self._message)
+
 
     @classmethod
     def _log (cls, logger, message, level='error'):

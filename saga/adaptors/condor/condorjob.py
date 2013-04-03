@@ -1,12 +1,11 @@
-#!/usr/bin/env python
-# encoding: utf-8
+
+__author__    = "Andre Merzky, Mark Santcroos, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 
 """ Condor job adaptor implementation
 """
-
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2013, The SAGA Project"
-__license__   = "MIT"
 
 import saga.utils.which
 import saga.utils.pty_shell
@@ -88,7 +87,7 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
 
     ##### OPTIONS PASSED VIA JOB DESCRIPTION #####
     ##
-    condor_file += "\n\n##### OPTIONS PASSED VIA JOB SERVICE URL #####\n##"
+    condor_file += "\n\n##### OPTIONS PASSED VIA JOB DESCRIPTION #####\n##"
     requirements = "requirements = "
 
     # executable -> executable
@@ -206,17 +205,7 @@ _PTY_TIMEOUT = 2.0
 #
 _ADAPTOR_NAME          = "saga.adaptor.condorjob"
 _ADAPTOR_SCHEMAS       = ["condor", "condor+ssh", "condor+gsissh"]
-_ADAPTOR_OPTIONS       = [
-    # {
-    # 'category':      'saga.adaptor.condorjob',
-    # 'name':          'foo',
-    # 'type':          bool,
-    # 'default':       False,
-    # 'valid_options': [True, False],
-    # 'documentation': """Doc""",
-    # 'env_variable':   None
-    # },
-]
+_ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -302,8 +291,6 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts = self.get_config()
 
-        #self._logger.info('debug trace : %s' % self.debug_trace)
-
     # ----------------------------------------------------------------
     #
     def sanity_check(self):
@@ -336,17 +323,11 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         self._cpi_base = super(CondorJobService, self)
         self._cpi_base.__init__(api, adaptor)
 
+        self._adaptor = adaptor
+
     # ----------------------------------------------------------------
     #
     def __del__(self):
-
-        # FIXME: not sure if we should PURGE here -- that removes states which
-        # might not be evaluated, yet.  Should we mark state evaluation
-        # separately?
-        #   cmd_state () { touch $DIR/purgeable; ... }
-        # When should that be done?
-        #self._logger.error("adaptor dying... %s" % self.njobs)
-        #self._logger.trace()
 
         self.finalize(kill_shell=True)
 
@@ -355,10 +336,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     @SYNC_CALL
     def init_instance(self, adaptor_state, rm_url, session):
         """ service instance constructor
-        """
-        # Turn this off by default.
-        self._disable_ptywrapper_logging = True
-        
+        """        
         self.rm            = rm_url
         self.session       = session
         self.ppn           = 0
@@ -393,27 +371,14 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                           'condor_q':       None,
                           'condor_rm':      None}
 
-        if self._disable_ptywrapper_logging:
-            # create a null logger to silence the PTY wrapper!
-            import logging
-
-            class NullHandler(logging.Handler):
-                def emit(self, record):
-                    pass
-            nh = NullHandler()
-            null_logger = logging.getLogger("PTYShell").addHandler(nh)
-
-            self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-                self.session, null_logger)
-        else:
-            self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-                self.session)
-
+        self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
         self.shell.set_initialize_hook(self.initialize)
         self.shell.set_finalize_hook(self.finalize)
 
         self.initialize()
+
+        return self.get_api ()
 
     # ----------------------------------------------------------------
     #
