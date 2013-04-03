@@ -437,13 +437,13 @@ class Job (Base, Attributes, Async) :
     # attribute getters
     #
     def _get_exit_code (self, ttype=None) :
-        # exit code is always an int. if this 'cast' fails, the adaptor
-        # is doing something stupid
         ec = self._adaptor.get_exit_code(ttype=ttype)
-        if ec not in [None, ""]:
-            return int(ec)
+        if ec in [None, ""]:
+            return None
         else:
-            return ec
+            # Exit code is always an int. If this 'cast' fails, 
+            # the adaptor is doing something stupid.
+            return int(ec)
 
     def _get_created (self, ttype=None) :
         return self._adaptor.get_created (ttype=ttype)

@@ -24,6 +24,8 @@ adaptor_registry = [
                     "saga.adaptors.context.userpass",
                     "saga.adaptors.shell.shell_file",
                     "saga.adaptors.shell.shell_job",
+                    "saga.adaptors.shell.shell_file",
+                    "saga.adaptors.shell.shell_resource",
                     "saga.adaptors.sge.sgejob",
                     "saga.adaptors.pbs.pbsjob",
                     "saga.adaptors.condor.condorjob",

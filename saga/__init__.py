@@ -28,4 +28,5 @@ import saga.job
 import saga.filesystem
 import saga.replica
 import saga.advert
+import saga.resource
 
