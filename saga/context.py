@@ -60,15 +60,15 @@ class Context (saga.base.Base, saga.Attributes) :
 
     '''
 
-    def __init__ (self, type, _adaptor=None, _adaptor_state={}) : 
+    def __init__ (self, ctype, _adaptor=None, _adaptor_state={}) : 
         '''
-        type: string
-        ret:  None
+        ctype: string
+        ret:   None
         '''
 
         import saga.attributes as sa
 
-        saga.base.Base.__init__ (self, type.lower(), _adaptor, _adaptor_state, type, ttype=None)
+        saga.base.Base.__init__ (self, ctype.lower(), _adaptor, _adaptor_state, ctype, ttype=None)
 
         # set attribute interface properties
         self._attributes_extensible  (False)
@@ -89,7 +89,7 @@ class Context (saga.base.Base, saga.Attributes) :
         self._attributes_register  (REMOTE_HOST,     None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (REMOTE_PORT,     None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
 
-        self.type = type
+        self.type = ctype
 
 
     def _initialize (self, session) :

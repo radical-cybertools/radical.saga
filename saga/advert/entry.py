@@ -45,7 +45,6 @@ class Entry (saga.namespace.entry.Entry,
         # register properties with the attribute interface 
         self._attributes_register   (ATTRIBUTE, None, sa.STRING, sa.SCALAR, sa.READONLY)
         self._attributes_register   (OBJECT,    None, sa.ANY,    sa.SCALAR, sa.READONLY)
-        self._attributes_register   (EXPIRES,   None, sa.STRING, sa.SCALAR, sa.READONLY)
         self._attributes_register   (TTL,       None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
 
         self._attributes_set_setter (TTL,    self.set_ttl)

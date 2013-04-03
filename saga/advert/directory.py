@@ -46,7 +46,6 @@ class Directory (saga.namespace.directory.Directory,
         self._attributes_register   (CHANGE,    None, sa.STRING, sa.SCALAR, sa.READONLY)
         self._attributes_register   (NEW,       None, sa.STRING, sa.SCALAR, sa.READONLY)
         self._attributes_register   (DELETE,    None, sa.STRING, sa.SCALAR, sa.READONLY)
-        self._attributes_register   (EXPIRES,   None, sa.STRING, sa.SCALAR, sa.READONLY)
         self._attributes_register   (TTL,       None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
 
         self._attributes_set_setter (TTL, self.set_ttl)

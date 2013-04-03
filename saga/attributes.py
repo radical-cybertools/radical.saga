@@ -2315,7 +2315,15 @@ class Attributes (_AttributesBase) :
 
 ################################################################################
 
-# FIXME: add 'as_dict()'
+# FIXME: add 
+#   - as_dict()
+#   - class metric()
+#   - add_metric()
+#   - remove_metric()
+#   - fire_metric()
+#   - list_metrics()
+#   - get_metric()
+#   - list_calbacks()
 
 ################################################################################
 

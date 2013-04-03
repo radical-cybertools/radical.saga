@@ -54,7 +54,7 @@ USER_PASS       = "UserPass"
 USER_VO         = "UserVO"
 LIFE_TIME       = "LifeTime"
 REMOTE_ID       = "RemoteID"
-REMOTE_HOST     = "RemoteID"
+REMOTE_HOST     = "RemoteHost"
 REMOTE_PORT     = "RemotePort"
 
 

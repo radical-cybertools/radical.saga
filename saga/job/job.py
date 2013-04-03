@@ -222,6 +222,7 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.signal (signum, ttype=ttype)
 
 
+    id          = property (get_d)            # string
     description = property (get_description)  # Description
     stdin       = property (get_stdin)        # os.File
     stdout      = property (get_stdout)       # os.File
@@ -309,7 +310,7 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.cancel (timeout, ttype=ttype)
 
 
-    def wait (self, timeout=-1, ttype=None) :
+    def wait (self, timeout=none, ttype=None) :
         '''
         timeout:    float 
         ret:        None
@@ -359,6 +360,9 @@ class Job (Base, Attributes, Async) :
               print "oops!"
         '''
 
+        if  None == timeout :
+            timeout = -1.0 # FIXME
+
         return self._adaptor.wait (timeout, ttype=ttype)
 
 
@@ -406,6 +410,16 @@ class Job (Base, Attributes, Async) :
             :note: this will return the job_service which created the job.
         """
         return self._adaptor.get_object (ttype=ttype)
+
+
+    def get_exception (self, ttype=None) :
+        """ :todo: describe me
+
+            :note: if job failed, that will get an exception describing 
+                   why, if that exists.  Otherwise, the call returns None.
+        """
+        # FIXME: add CPI
+        return self._adaptor.get_exception (ttype=ttype)
 
 
     def re_raise (self, ttype=None) :

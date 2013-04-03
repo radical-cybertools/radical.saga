@@ -48,6 +48,14 @@ class LogicalFile (saga.namespace.entry.Entry,
 
 
 
+    def is_file (self, ttype=None) :
+        '''
+        ttype:          saga.task.type enum
+        ret:            bool / saga.Task
+        '''
+        return self.is_entry (ttype=ttype)
+
+
     # ----------------------------------------------------------------
     #
     # replica methods
@@ -98,6 +106,7 @@ class LogicalFile (saga.namespace.entry.Entry,
         return self._adaptor.replicate (name, flags, ttype=ttype)
     
 
+    # non-GFD.90
     def upload (self, name, tgt="", flags=None, ttype=None) :
         '''
         name:           saga.Url
@@ -108,7 +117,8 @@ class LogicalFile (saga.namespace.entry.Entry,
         '''
         return self._adaptor.upload (name, tgt, flags, ttype=ttype)
     
-  
+ 
+    # non-GFD.90
     def download (self, name, src="", flags=None, ttype=None) :
         '''
         name:           saga.Url
