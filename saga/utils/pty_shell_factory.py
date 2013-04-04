@@ -494,7 +494,7 @@ class PTYShellFactory (object) :
 
             if  'user' in info and info['user'] :
                 info['host_str'] = "%s@%s"  % (info['user'], info['host_str'])
-                info['ctrl'] = "~/.saga/adaptors/shell/ssh_%%h_%%p.%s.%s.ctrl" % (os.getpid (), user)
+                info['ctrl'] = "~/.saga/adaptors/shell/ssh_%%h_%%p.%s.%s.ctrl" % (os.getpid (), info['user'])
             else :
                 info['user'] = getpass.getuser ()
                 info['ctrl'] = "~/.saga/adaptors/shell/ssh_%%h_%%p.%s.ctrl" % (os.getpid ())
