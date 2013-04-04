@@ -320,13 +320,13 @@ class Job (Base, Attributes, Async) :
         The optional timeout parameter specifies the time to wait, and accepts
         the following values::
 
-          timeout <  0  : wait forever (block)
+          timeout <  0  : wait forever (block) -- same for 'None'
           timeout == 0  : wait not at all (non-blocking test)
           timeout >  0  : wait for 'timeout' seconds
 
         On a non-negative timeout, the call can thus return even if the job is
         not in final state, and the application should check the actual job
-        state.  The default timeout value is '-1.0' (blocking).
+        state.  The default timeout value is 'None' (blocking).
 
 
         **Example**::
