@@ -132,7 +132,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     def wait (self, timeout=None) :
 
         if  None == timeout :
-            timeout = -1.0  # FIXME
+            timeout = -1.0 # FIXME
 
         if self._thread :
             self._thread.wait ()  # FIXME: timeout?!
