@@ -1,9 +1,8 @@
-#!/usr/bin/env python
-# encoding: utf-8
 
-__author__    = ["Ole Weidner", "Andre Merzky"]
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__author__    = "Ole Weidner"
+__copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
+
 
 import re
 import os
@@ -51,8 +50,6 @@ def launch_tests(options, testdir):
     # test_cfgs will contain a list of all configuation files
     # that we will use for the tests
     test_cfgs = []
-
-    print options.notimpl_warn_only
 
     for config in options.config.split(","):
         if os.path.exists(config):

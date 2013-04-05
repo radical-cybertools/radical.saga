@@ -11,7 +11,7 @@
 				"venv",
 				"egg*"
 			],
-			"path": "/Users/oweidner/Projects/saga-python"
+			"path": "."
 		}
 	],
 	"settings":

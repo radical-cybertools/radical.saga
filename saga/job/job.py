@@ -1,7 +1,8 @@
 
-__author__    = "Andre Merzky"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ SAGA job interface
 """
@@ -424,8 +425,11 @@ class Job (Base, Attributes, Async) :
     def _get_exit_code (self, ttype=None) :
         # exit code is always an int. if this 'cast' fails, the adaptor
         # is doing something stupid
-        ec = int(self._adaptor.get_exit_code (ttype=ttype))
-        return ec
+        ec = self._adaptor.get_exit_code(ttype=ttype)
+        if ec not in [None, ""]:
+            return int(ec)
+        else:
+            return ec
 
     def _get_created (self, ttype=None) :
         return self._adaptor.get_created (ttype=ttype)
@@ -524,6 +528,9 @@ class Self (Job) :
         # self._attributes_extensible  (False)
         # self._attributes_camelcasing (True)
 
+        if not session :
+            session = saga.Session (default=True)
+
         Base.__init__ (self, 'fork', session, ttype=_ttype)
 
 
@@ -534,6 +541,9 @@ class Self (Job) :
         ttype:     saga.task.type enum
         ret:       saga.Task
         '''
+        if not session :
+            session = saga.Session (default=True)
+
 
         return cls (session, _ttype=ttype)._init_task
     

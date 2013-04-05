@@ -1,6 +1,8 @@
-__author__    = "Andre Merzky"
+
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 import string
 
@@ -11,7 +13,7 @@ class SimpleBase (object) :
     """ This is a very simple API base class which just initializes
     the self._logger and self._engine members, but does not perform any further
     initialization, nor any adaptor binding.  This base is used for API classes
-    which are not backed by a (single) adaptor (session, task, etc).
+    which are not backed by multiple adaptors (no session, tasks, etc).
     """
 
     def __init__  (self) :
@@ -55,6 +57,15 @@ class Base (SimpleBase) :
         self._adaptor = adaptor
         self._adaptor = self._engine.bind_adaptor   (self, self._apitype, schema, adaptor)
 
+
+        # Sync creation (normal __init__) will simply call the adaptor's
+        # init_instance at this point.  _init_task should *not* be evaluated,
+        # ever, for __init__ based construction! (it is private, see?)
+        #
+        # For any async creation (create()), we need to return a task which
+        # performs initialization.  We rely on the sync/async method decorators
+        # on CPI level to provide the task instance itself, and point the task's
+        # workload to the adaptor level init_instance method.
         self._init_task = self._adaptor.init_instance (adaptor_state, *args, **kwargs)
 
 
@@ -69,7 +80,6 @@ class Base (SimpleBase) :
         return self._adaptor.get_session ()
 
     session = property (get_session)
-
 
 
 

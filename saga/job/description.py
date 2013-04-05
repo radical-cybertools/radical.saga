@@ -1,7 +1,8 @@
 
-__author__    = "Andre Merzky"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ SAGA job description interface """
 
@@ -28,7 +29,7 @@ class Description (saga.Attributes) :
         self._attributes_register  (saga.job.NAME                 , None, sa.STRING, sa.SCALAR, sa.WRITEABLE) 
         self._attributes_register  (saga.job.EXECUTABLE           , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.ARGUMENTS            , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
-        self._attributes_register  (saga.job.ENVIRONMENT          , None, sa.ANY,    sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (saga.job.ENVIRONMENT          , None, sa.STRING, sa.DICT,   sa.WRITEABLE)
         self._attributes_register  (saga.job.SPMD_VARIATION       , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.TOTAL_CPU_COUNT      , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.NUMBER_OF_PROCESSES  , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
@@ -51,13 +52,41 @@ class Description (saga.Attributes) :
         self._attributes_register  (saga.job.PROJECT              , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.JOB_CONTACT          , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
 
-        self._attributes_set_enums (saga.job.SPMD_VARIATION,      ['MPI', 'OpenMP', 'MPICH-G'])
+        # FIXME
+      # self._attributes_set_enums (saga.job.SPMD_VARIATION,      ['MPI', 'OpenMP', 'MPICH-G'])
 
-        pass
+        self._env_is_list = False
+
+        self._attributes_set_getter (saga.job.ENVIRONMENT, self._get_env)
+        self._attributes_set_setter (saga.job.ENVIRONMENT, self._set_env)
+
 
     # --------------------------------------------------------------------------
     #
-    def clone (self) :
+    def _set_env (self, val) :
+        if  isinstance (val, list) :
+            self._env_is_list = True
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _get_env (self) :
+        env = self.get_attribute (saga.job.ENVIRONMENT)
+        if  self._env_is_list :
+            self._env_is_list = False
+            return ["%s=%s" % (key, val) for (key, val) in env.items ()]
+        return env
+
+
+
+    # --------------------------------------------------------------------------
+    #
+    def __deepcopy__ (self, other) :
+        return self.clone (other)
+
+    # --------------------------------------------------------------------------
+    #
+    def clone (self, other=None) :
         """ 
         deep copy: unlike the default python assignment (copy object reference),
         a deep copy will create a new object instance with the same state --
@@ -66,10 +95,10 @@ class Description (saga.Attributes) :
 
         # a job description only has attributes - so create a new instance,
         # clone the attribs, and done.
-        ret = saga.job.Description ()
-        self._attributes_deep_copy (self, ret)
+        if not other :
+            other = saga.job.Description ()
 
-        return ret
+        return self._attributes_deep_copy (other)
 
 
 

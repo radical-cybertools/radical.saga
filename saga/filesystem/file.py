@@ -1,4 +1,8 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 
 import saga.url
 import saga.exceptions
@@ -57,6 +61,19 @@ class File (saga.namespace.entry.Entry) :
         self._nsentry.__init__ (url, flags, session, 
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
+    @classmethod
+    def create (cls, url=None, flags=READ, session=None, ttype=None) :
+        '''
+        url:       saga.Url
+        flags:     saga.replica.flags enum
+        session:   saga.Session
+        ttype:     saga.task.type enum
+        ret:       saga.Task
+        '''
+
+        _nsentry = super (File, cls)
+        return _nsentry.create (url, flags, session, ttype=ttype)
+
 
     # ----------------------------------------------------------------
     #
@@ -67,7 +84,7 @@ class File (saga.namespace.entry.Entry) :
         ttype:    saga.task.type enum
         ret:      bool / saga.Task
         '''
-        return self._adaptor.is_file (ttype=ttype)
+        return self._adaptor.is_file_self (ttype=ttype)
 
   
     def get_size (self, ttype=None) :
@@ -86,7 +103,7 @@ class File (saga.namespace.entry.Entry) :
                print file.get_size ()
 
         '''
-        return self._adaptor.get_size (ttype=ttype)
+        return self._adaptor.get_size_self (ttype=ttype)
 
   
     def read (self, size=-1, ttype=None) :

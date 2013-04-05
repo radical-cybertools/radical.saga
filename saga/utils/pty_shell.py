@@ -1,38 +1,31 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import re
 import os
+import sys
+import errno
 
-import saga.utils.pty_process
 import saga.utils.logger
+import saga.utils.which
+import saga.utils.pty_shell_factory as supsf
 
 _PTY_TIMEOUT = 2.0
-_SCHEMAS     = ['ssh', 'gsissh', 'fork', 'shell']
+_SCHEMAS     = ['ssh', 'gsissh', 'fork', 'shell', 'file', 'scp', 'sftp', 'gsiscp', 'gsisftp']
+# FIXME: gsiftp?
 
+# ------------------------------------------------------------------------------
+#
+# iomode flags
+#
 IGNORE   = 0    # discard stdout / stderr
 MERGED   = 1    # merge stdout and stderr
 SEPARATE = 2    # fetch stdout and stderr individually (one more hop)
 STDOUT   = 3    # fetch stdout only, discard stderr
 STDERR   = 4    # fetch stderr only, discard stdout
-
-# ssh options:
-#   -e none         : no escape character
-#   -M              : master mode for connection sharing
-#   -S control_path : slave mode for connection sharing
-#   -t              : force pty allocation
-#   -x              : disable x11 forwarding
-#   
-#   ServerAliveInterval
-#   CheckHostIP no
-#   ConnectTimeout
-#   ControlMaster  yes | no | no ...
-#   ControlPath    $BASE/ssh_control_%n_%p.$$.sock
-#                  %r (remote id)? would need inspection
-#   ControlPersist 10   : close master after 10 seconds idle
-#   EscapeChar     none : transparent for binary data
-#   TCPKeepAlive   yes  : detect connection failure
-#
-#   
-#
 
 
 # --------------------------------------------------------------------
@@ -42,56 +35,41 @@ class PTYShell (object) :
     This class wraps a shell process and runs it as a :class:`PTYProcess`.  The
     user of this class can start that shell, and run arbitrary commands on it.
 
-    The shell to be run is expected to be POSIX compliant (bash, csh, sh, zsh
-    etc) -- in particular, we expect the following features:
+    The shell to be run is expected to be POSIX compliant (bash, dash, sh, ksh
+    etc.) -- in particular, we expect the following features:
     ``$?``,
     ``$!``,
-    ``$*``,
     ``$#``,
+    ``$*``,
     ``$@``,
+    ``$$``,
     ``$PPID``,
     ``>&``,
     ``>>``,
     ``>``,
     ``<``,
-    ``2>&1``,
     ``|``,
     ``||``,
+    ``()``,
+    ``&``,
     ``&&``,
     ``wait``,
     ``kill``,
     ``nohup``,
     ``shift``,
+    ``export``,
     ``PS1``, and
     ``PS2``.
 
     Note that ``PTYShell`` will change the shell prompts (``PS1`` and ``PS2``),
     to simplify output parsing.  ``PS2`` will be empty, ``PS1`` will be set
-    ``PROMPT-$?->\\n`` -- that way, the prompt will report the exit value of the
+    ``PROMPT-$?->`` -- that way, the prompt will report the exit value of the
     last command, saving an extra roundtrip.  Users of this class should be
     careful when setting other prompts -- see :func:`set_prompt` for more
     details.
 
-
-    Data Staging and Data Management:
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-    The PTYShell class does not only support commnd execution, but also basic
-    data management: for SSH based shells, it will create a tunneled scp/sftp
-    connection for file staging.  Other data management operations (mkdir, size,
-    list, ...) are executed either as shell commands, or on the scp/sftp channel
-    (if possible on the data channel, to keep the shell pty free for concurrent
-    command execution).  Ssh tunneling is implemented via ssh.v2 'ControlMaster'
-    capabilities (see `ssh_config(5)`).
-    
-    For local shells, PTYShell will create an additional shell pty for data
-    management operations.  
-
-    Future versions of this class may support additional command channels for
-    more efficient asynchronous operations.
-
-
     Usage Example::
+    ^^^^^^^^^^^^^^^
 
         # start the shell, find its prompt.  
         self.shell = saga.utils.pty_shell.PTYShell ("ssh://user@remote.host.net/", contexts, self._logger)
@@ -105,179 +83,126 @@ class PTYShell (object) :
             raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" % (ret, out))
 
         # stage some data from a local string variable into a file on the remote system
-        self.shell.stage_to_file (src = pbs_job_script, 
-                                  tgt = "/tmp/data.$$/job_1.pbs")
+        self.shell.stage_to_remote (src = pbs_job_script, 
+                                    tgt = "/tmp/data.$$/job_1.pbs")
 
-        # check size of staged script
+        # check size of staged script (this is actually done on PTYShell level
+        # already, with no extra hop):
         ret, out, _ = self.shell.run_sync ("stat -c '%s' /tmp/data.$$/job_1.pbs" )
         if  ret != 0 :
             raise saga.NoSuccess ("failed to check size (%s)(%s)" % (ret, out))
 
         assert (len(pbs_job_script) == int(out))
 
-    Known Problems:
-    ^^^^^^^^^^^^^^^
 
-    It seems that for some reasons which I cannot fathom, the pty line swallows
-    a ^D now and then.  But ^D was used for file staging like this::
+    Data Staging and Data Management:
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    The PTYShell class does not only support command execution, but also basic
+    data management: for SSH based shells, it will create a tunneled scp/sftp
+    connection for file staging.  Other data management operations (mkdir, size,
+    list, ...) are executed either as shell commands, or on the scp/sftp channel
+    (if possible on the data channel, to keep the shell pty free for concurrent
+    command execution).  Ssh tunneling is implemented via ssh.v2 'ControlMaster'
+    capabilities (see `ssh_config(5)`).
     
-      self.run_async ("cat > %s.$$" % tgt)
-      self.pty_shell.write (src)
-      self.pty_shell.write ("\n\x04\nmv %s.$$ %s\n", (tgt, tgt))
+    For local shells, PTYShell will create an additional shell pty for data
+    management operations.  
+
+
+    Asynchronous Notifications:
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    A third pty process will be created for asynchronous notifications.  For
+    that purpose, the shell started on the first channel will create a named
+    pipe, at::
+
+      $HOME/.saga/adaptors/shell/async.$$
+
+    ``$$`` here represents the pid of the shell process.  It will also set the
+    environment variable ``SAGA_ASYNC_PIPE`` to point to that named pipe -- any
+    application running on the remote host can write event messages to that
+    pipe, which will be available on the local end (see below).  `PTYShell`
+    leaves it unspecified what format those messages have, but messages are
+    expected to be separated by newlines.
     
-    If the \x04 == ^D is gone, then the cat process will wait forever on input.
-    Instead of the construct above, we now use a HERE document::
-    
-      self.run_async ("cat > %s.$$ <<\"SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\"" % tgt)
-      self.pty_shell.write (src)
-      self.pty_shell.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\nmv %s.$$ %s\n" % (tgt, tgt))  
-    
-    which works fine.  Note that this does not fix the disappearing ^D -- the
-    pty classes don't use it anywhere, but applications of these classes might
-    still attempt to send it to the remote shell...
+    An adaptor using `PTYShell` can subscribe for messages via::
+
+      self.pty_shell.subscribe (callback)
+
+    where callback is a Python callable.  PTYShell will listen on the event
+    channel *in a separate thread* and invoke that callback on any received
+    message, passing the message text (sans newline) to the callback.
+
+    An example usage: the command channel may run the following command line::
+
+      ( sh -c 'sleep 100 && echo "job $$ done" > $SAGA_ASYNC_PIPE" \
+                         || echo "job $$ fail" > $SAGA_ASYNC_PIPE" ) &
+
+    which will return immediately, and send a notification message at job
+    completion.
+
+    Note that writes to named pipes are not atomic.  From POSIX:
+
+    ``A write is atomic if the whole amount written in one operation is not
+    interleaved with data from any other process. This is useful when there are
+    multiple writers sending data to a single reader. Applications need to know
+    how large a write request can be expected to be performed atomically. This
+    maximum is called {PIPE_BUF}. This volume of IEEE Std 1003.1-2001 does not
+    say whether write requests for more than {PIPE_BUF} bytes are atomic, but
+    requires that writes of {PIPE_BUF} or fewer bytes shall be atomic.`
+
+    Thus the user is responsible for ensuring that either messages are smaller
+    than *PIPE_BUF* bytes on the remote system (usually at least 1024, on Linux
+    usually 4096), or to lock the pipe on larger writes.
+
+
+    Automated Restart, Timeouts:
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    For timeout and restart semantics, please see the documentation to the
+    underlying :class:`saga.utils.pty_process.PTYProcess` class.
 
     """
 
+    # TODO: 
+    #   - on client shell activitites, also mark the master as active, to
+    #     avoid timeout garbage collection.
+    #   - use ssh mechanisms for master timeout (and persist), as custom
+    #     mechanisms will interfere with gc_timout.
+
     # ----------------------------------------------------------------
     #
-    def __init__ (self, url, contexts=[], logger=None, init=None) :
+    def __init__ (self, url, session, logger=None, init=None) :
 
         self.url       = url               # describes the shell to run
-        self.contexts  = contexts          # get security tokens from these
         self.logger    = logger            # possibly log to here
         self.init      = init              # call after reconnect
 
         self.initialize_hook = None
         self.finalize_hook   = None
+
+        # we need a local dir for file staging caches.  At this point we use
+        # $HOME, but should make this configurable (FIXME)
+        self.base = os.environ['HOME'] + '/.saga/adaptors/shell/'
+
+        try:
+            os.makedirs (self.base)
+
+        except OSError as e:
+            if e.errno == errno.EEXIST and os.path.isdir (self.base):
+                pass
+            else: 
+                raise saga.NoSuccess ("could not create staging dir: %s" % e)
+
         
         # need a new logger?
         if not self.logger :
             self.logger = saga.utils.logger.getLogger ('PTYShell')
 
-        schema  = self.url.schema.lower ()
-        self.shell_type = ""
-
-        self.shell_exe  = ""
-        self.shell_user = ""
-        self.shell_pass = ""
-        self.shell_host = ""
-
-        self.data_exe   = ""
-        self.data_user  = ""
-        self.data_pass  = ""
-        self.data_host  = ""
-
-        # on demand, we open a second channel for scp
-        self.pty_shell = None
-        self.pty_data  = None
-
-        # find out what type of shell we have to deal with
-        if  schema   == "ssh" :
-            self.shell_type  =  "ssh"
-            self.shell_exe   =  saga.utils.which.which ("ssh")
-            self.data_exe    =  saga.utils.which.which ("scp")
-
-        elif schema  == "gsissh" :
-            self.shell_type  =  "ssh"
-            self.shell_exe   =  saga.utils.which.which ("gsissh")
-            self.data_exe    =  saga.utils.which.which ("gsiscp")
-
-        elif schema  == "fork"  or \
-             schema  == "shell" :
-            self.shell_type  =  "sh"
-            if  "SHELL" in os.environ :
-                self.shell_exe =  saga.utils.which.which (os.environ["SHELL"])
-            else :
-                self.shell_exe =  saga.utils.which.which ("sh")
-
-            self.data_exe = self.shell_exe
-
-        else :
-            raise saga.BadParameter._log (self.logger, \
-            	  "PTYShell utility can only handle %s schema URLs, not %s" \
-                  % (_SCHEMAS, schema))
-
-
-        # make sure we have something to run
-        if not self.shell_exe :
-            raise saga.BadParameter._log (self.logger, \
-            	  "adaptor cannot handle %s://, no shell exe found" % schema)
-
-
-        # depending on type, create PTYProcess command line (args, env etc)
-        #
-        # We always set term=vt100 to avoid ansi-escape sequences in the prompt
-        # and elsewhere.  Also, we have to make sure that the shell is an
-        # interactive login shell, so that it interprets the users startup
-        # files, and reacts on commands.
-        if  self.shell_type == "ssh" :
-
-            self.shell_env  =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
-            self.shell_args =  "-t "                       # force pty
-
-            for context in self.contexts :
-
-                if  context.type.lower () == "ssh" :
-                    # ssh can handle user_id and user_key of ssh contexts
-                    if  schema == "ssh" :
-                        if  context.attribute_exists ("user_id") :
-                            self.shell_user  = context.user_id
-                        if  context.attribute_exists ("user_key") :
-                            self.shell_args += "-i %s " % context.user_key
-
-                if  context.type.lower () == "userpass" :
-                    # FIXME: ssh should also be able to handle UserPass contexts
-                    if  schema == "ssh" :
-                        if  context.attribute_exists ("user_id") :
-                            self.shell_user = context.user_id
-                        if  context.attribute_exists ("user_pass") :
-                            self.shell_pass = context.user_pass
-
-                if  context.type.lower () == "gsissh" :
-                    # gsissh can handle user_proxy of X509 contexts
-                    # FIXME: also use cert_dir etc.
-                    if  context.attribute_exists ("user_proxy") :
-                        if  schema == "gsissh" :
-                            self.shell_env = "X509_PROXY='%s' " % context.user_proxy
-
-            # all ssh based shells allow for user_id from contexts -- but the
-            # username given in the URL takes precedence
-            if self.url.username :
-                self.shell_user = self.url.username
-
-            if self.shell_user :
-                self.shell_args += "-l %s " % self.shell_user
-
-
-            self.data_env  = self.shell_env
-            self.data_args = self.shell_args
-            self.data_host = self.shell_host
-
-            # build the ssh command line
-            self.shell_cmd = "%s %s %s %s" % (self.shell_env, 
-                                              self.shell_exe,
-                                              self.shell_args, 
-                                              self.url.host)
-            self.data_cmd  = "%s %s %s %s" % (self.shell_env, 
-                                              self.data_exe,
-                                              self.shell_args, 
-                                              self.url.host)
-
-        # a local shell
-        elif self.shell_type == "sh" :
-            # Make sure we have an interactive login shell w/o ansi escapes.
-            # Note that we redirect the shell's stderr to stdout -- pty-process
-            # does not expose stderr separately...
-            self.shell_args =  "-l -i"
-            self.shell_env  =  "/usr/bin/env TERM=vt100"
-            self.shell_cmd  =  "%s %s %s" % (self.shell_env, 
-                                             self.shell_exe,
-                                             self.shell_args)
-
-        # we got the shell command - now run it!
-        self.logger.info ("job service opens pty for '%s'" % self.shell_cmd)
-        self.pty_shell = saga.utils.pty_process.PTYProcess (self.shell_cmd, 
-                                                            logger=self.logger)
+        self.factory    = supsf.PTYShellFactory   ()
+        self.pty_info   = self.factory.initialize (url, session, self.logger)
+        self.pty_shell  = self.factory.run_shell  (self.pty_info)
 
         self.pty_shell.set_initialize_hook (self.initialize)
         self.pty_shell.set_finalize_hook   (self.finalize)
@@ -295,94 +220,37 @@ class PTYShell (object) :
     # ----------------------------------------------------------------------
     #
     def set_initialize_hook (self, initialize_hook) :
+
         self.initialize_hook = initialize_hook
 
 
     # ----------------------------------------------------------------------
     #
     def set_finalize_hook (self, finalize_hook) :
+
         self.finalize_hook = finalize_hook
 
 
     # ----------------------------------------------------------------
     #
     def initialize (self) :
-        """ 
-        initialize the shell connection.  We expect the pty_process to be in virgin
-        state, i.e. to be newly forked and executed.  We thus expect shell
-        startup prompts and messages.
-        """
+        """ initialize the shell connection.  """
 
         self.prompt    = "^(.*[\$#>])\s*$" # greedy, look for line ending with # $ >
         self.prompt_re = re.compile (self.prompt, re.DOTALL)
 
-        prompt_patterns = ["password\s*:\s*$",            # password prompt
-                           "want to continue connecting", # hostkey confirmation
-                           self.prompt]                   # native shell prompt 
+        # turn off shell echo, set/register new prompt
+        self.run_sync ( "unset PROMPT_COMMAND ; "
+                             + "stty -echo; "
+                             + "PS1='PROMPT-$?->'; "
+                             + "PS2=''; "
+                             + "export PS1 PS2\n", 
+                               new_prompt="PROMPT-(\d+)->$")
 
-        # self.prompt is all we need for local shell, so we could do:
-        #
-        # if  self.shell_type == 'sh' :
-        #     prompt_patterns = [self.prompt] 
-        #
-        # but we don't and keep the other pattern around so that the switch in
-        # the while loop below is the same for shell types
+        self.logger.debug ("got new shell prompt")
 
-
-        # find a prompt
-        n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
-
-        # this loop will run until we finally find the self.prompt.  At that
-        # point, we'll try to set a different prompt, and when we found that,
-        # too, we'll exit the loop and consider to be ready for running shell
-        # commands.
-        while True :
-
-            if n == None :
-                # we found none of the prompts, yet -- try again 
-                n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
-
-
-            if n == 0 :
-                self.logger.debug ("got password prompt")
-                if not self.shell_pass :
-                    raise saga.NoSuccess ("prompted for unknown password (%s)" \
-                                       % match)
-
-                self.pty_shell.write ("%s\n" % self.shell_pass)
-                n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
-
-
-            elif n == 1 :
-                self.logger.debug ("got hostkey prompt")
-                self.pty_shell.write ("yes\n")
-                n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
-
-
-            elif n == 2 :
-                self.logger.debug ("got initial shell prompt")
-
-                # turn off shell echo, set/register new prompt
-                self.run_sync ("stty -echo; PS1='PROMPT-$?->\\n'; PS2=''; export PS1 PS2\n", 
-                                new_prompt="PROMPT-(\d+)->\s*$")
-
-                self.logger.debug ("got new shell prompt")
-
-                # we are done waiting for a prompt
-                break
-        
-        # check if some additional initialization routines as registered
         if  self.initialize_hook :
             self.initialize_hook ()
-
-    # ----------------------------------------------------------------
-    #
-    def initialize_scp (self) :
-
-        if self.scp :
-            return
-
-
 
 
     # ----------------------------------------------------------------
@@ -411,6 +279,21 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
+    def alive (self, recover=False) :
+        """
+        The shell is assumed to be alive if the shell processes lives.
+        Attempt to restart shell if recover==True
+        """
+
+        try :
+            return self.pty_shell.alive (recover)
+
+        except Exception as e :
+            raise self._translate_exception (e)
+
+
+    # ----------------------------------------------------------------
+    #
     def find_prompt (self) :
         """
         If run_async was called, a command is running on the shell.  find_prompt
@@ -422,14 +305,33 @@ class PTYShell (object) :
         versions of this call may add a timeout parameter.
         """
 
-        match = None
+        try :
 
-        while not match :
-            _, match = self.pty_shell.find ([self.prompt], _PTY_TIMEOUT)
+            match = None
 
-        ret, txt = self._eval_prompt (match)
+            while not match :
+                _, match = self.pty_shell.find ([self.prompt], _PTY_TIMEOUT)
 
-        return (ret, txt)
+            ret, txt = self._eval_prompt (match)
+
+            return (ret, txt)
+
+        except Exception as e :
+            raise self._translate_exception (e)
+
+
+    # ----------------------------------------------------------------
+    #
+    def find (self, patterns) :
+        """
+        Note that this method blocks until pattern is found in the shell I/O.
+        """
+
+        try :
+            return self.pty_shell.find (patterns, timeout=-1)
+
+        except Exception as e :
+            raise self._translate_exception (e)
 
 
     # ----------------------------------------------------------------
@@ -450,23 +352,23 @@ class PTYShell (object) :
         By encoding the exit value in the command prompt, we safe one roundtrip.
         The prompt on Posix compliant shells can be set, for example, via::
 
-          PS1='PROMPT-$?->\\n'; export PS1
+          PS1='PROMPT-$?->'; export PS1
 
         The newline in the example above allows to nicely anchor the regular
         expression, which would look like::
 
-          PROMPT-(\d+)->\s*$
+          PROMPT-(\d+)->$
 
         The regex is compiled with 're.DOTALL', so the dot character matches
         all characters, including line breaks.  Be careful not to match more
         than the exact prompt -- otherwise, a prompt search will swallow stdout
         data.  For example, the following regex::
 
-          PROMPT-(.+)->\s*$
+          PROMPT-(.+)->$
 
         would capture arbitrary strings, and would thus match *all* of::
 
-          PROMPT-0-> ls
+          PROMPT-0->ls
           data/ info
           PROMPT-0->
 
@@ -490,7 +392,7 @@ class PTYShell (object) :
 
             if not match :
                 self.prompt = old_prompt
-                raise saga.BadParameter ("Cannot use prompt, could not find it")
+                raise saga.BadParameter ("Cannot use new prompt, parsing failed")
 
             ret, _ = self._eval_prompt (match)
 
@@ -501,7 +403,7 @@ class PTYShell (object) :
 
         except Exception as e :
             self.prompt = old_prompt
-            raise saga.NoSuccess ("Could not set prompt (%s)" % e)
+            raise self._translate_exception (e, "Could not set shell prompt")
 
 
 
@@ -514,22 +416,22 @@ class PTYShell (object) :
         with all leading data, in a tuple
         """
 
-        prompt    = self.prompt
-        prompt_re = self.prompt_re
-
-        if  new_prompt :
-            prompt    = new_prompt
-            prompt_re = re.compile ("^(.*)%s\s*$" % prompt, re.DOTALL)
-
-
-        result = None
         try :
+
+            prompt    = self.prompt
+            prompt_re = self.prompt_re
+
+            if  new_prompt :
+                prompt    = new_prompt
+                prompt_re = re.compile ("^(.*)%s\s*$" % prompt, re.DOTALL)
+
+
+            result = None
             if  not data :
-                raise saga.NoSuccess ("could not parse prompt on empty string (%s) (%s)" \
+                raise saga.NoSuccess ("cannot not parse prompt (%s), invalid data (%s)" \
                                    % (prompt, data))
 
             result = prompt_re.match (data)
-
 
             if  not result :
                 self.logger.debug    ("could not parse prompt (%s) (%s)" % (prompt, data))
@@ -542,23 +444,16 @@ class PTYShell (object) :
             txt =     result.group (1)
             ret = int(result.group (2)) 
 
+            # if that worked, we can permanently set new_prompt
+            if  new_prompt :
+                self.set_prompt (new_prompt)
+
+            return (ret, txt)
 
         except Exception as e :
-            self.logger.debug ("data   : %s" % data)
-            self.logger.debug ("prompt : %s" % prompt)
+            
+            raise self._translate_exception (e, "Could not eval prompt")
 
-            if  result and len(result.groups()) == 2 :
-                self.logger.debug ("match 1: %s" % result.group (1))
-                self.logger.debug ("match 2: %s" % result.group (2))
-
-            raise saga.NoSuccess ("Could not eval prompt (%s)" % e)
-
-
-        # if that worked, we can permanently set new_prompt
-        if  new_prompt :
-            self.set_prompt (new_prompt)
-
-        return (ret, txt)
 
 
 
@@ -611,91 +506,102 @@ class PTYShell (object) :
         expect the prompt regex to capture the exit status of the process.
         """
 
-        command = command.strip ()
-        if command.endswith ('&') :
-            raise saga.BadParameter ("can only run foreground jobs ('%s')" \
-                                  % command)
+        # we expect the shell to be in 'ground state' when running a syncronous
+        # command -- thus we can check if the shell is alive before doing so,
+        # and restart if needed
+        if not self.pty_shell.alive (recover=True) :
+            raise saga.IncorrectState ("Can't run command -- shell died:\n%s" \
+                                    % self.pty_shell.autopsy ())
 
-        redir = ""
-        _err  = "/tmp/saga-python.ssh-job.stderr.$$"
+        try :
 
-        if  iomode == IGNORE :
-            redir  =  " 1>>/dev/null 2>>/dev/null"
+            command = command.strip ()
+            if command.endswith ('&') :
+                raise saga.BadParameter ("run_sync can only run foreground jobs ('%s')" \
+                                      % command)
 
-        if  iomode == MERGED :
-            redir  =  " 2>&1"
+            redir = ""
+            _err  = "/tmp/saga-python.ssh-job.stderr.$$"
 
-        if  iomode == SEPARATE :
-            redir  =  " 2>%s" % _err
+            if  iomode == IGNORE :
+                redir  =  " 1>>/dev/null 2>>/dev/null"
 
-        if  iomode == STDOUT :
-            redir  =  " 2>/dev/null"
+            if  iomode == MERGED :
+                redir  =  " 2>&1"
 
-        if  iomode == STDERR :
-            redir  =  " 2>&1 1>/dev/null"
+            if  iomode == SEPARATE :
+                redir  =  " 2>%s" % _err
 
-        if  iomode == None :
-            redir  =  ""
+            if  iomode == STDOUT :
+                redir  =  " 2>/dev/null"
 
-        self.logger.debug ('run_sync: %s%s'   % (command, redir))
-        self.pty_shell.write    (          "%s%s\n" % (command, redir))
+            if  iomode == STDERR :
+                redir  =  " 2>&1 1>/dev/null"
 
+            if  iomode == None :
+                redir  =  ""
 
-        # If given, switch to new prompt pattern right now...
-        prompt = self.prompt
-        if  new_prompt :
-            prompt = new_prompt
-
-        # command has been started - now find prompt again.  
-        _, match = self.pty_shell.find ([prompt], timeout=-1.0)  # blocks
-
-        if not match :
-            # not find prompt after blocking?  BAD!  Restart the shell
-            self.finalize (kill_pty=True)
-            raise saga.NoSuccess ("run_sync failed, no prompt (%s)" % command)
+            self.logger.debug    ('run_sync: %s%s'   % (command, redir))
+            self.pty_shell.write (          "%s%s\n" % (command, redir))
 
 
-        ret, txt = self._eval_prompt (match, new_prompt)
+            # If given, switch to new prompt pattern right now...
+            prompt = self.prompt
+            if  new_prompt :
+                prompt = new_prompt
 
-        stdout = None
-        stderr = None
-
-        if  iomode == IGNORE :
-            pass
-
-        if  iomode == MERGED :
-            stdout =  txt
-
-        if  iomode == SEPARATE :
-            stdout =  txt
-
-            self.pty_shell.write ("cat %s\n" % _err)
-            _, match = self.pty_shell.find ([self.prompt], timeout=-1.0)  # blocks
+            # command has been started - now find prompt again.  
+            _, match = self.pty_shell.find ([prompt], timeout=-1.0)  # blocks
 
             if not match :
                 # not find prompt after blocking?  BAD!  Restart the shell
                 self.finalize (kill_pty=True)
-                raise saga.NoSuccess ("run_sync failed, no prompt (%s)" \
-                                    % command)
-
-            _ret, _stderr = self._eval_prompt (match)
-            if  _ret :
-                raise saga.NoSuccess ("run_sync failed, no stderr (%s: %s)" \
-                                   % (_ret, _stderr))
-            stderr =  _stderr
+                raise saga.IncorrectState ("run_sync failed, no prompt (%s)" % command)
 
 
-        if  iomode == STDOUT :
-            stdout =  txt
+            ret, txt = self._eval_prompt (match, new_prompt)
 
-        if  iomode == STDERR :
-            stderr =  txt
+            stdout = None
+            stderr = None
 
-        if  iomode == None :
-            stdout =  txt
+            if  iomode == IGNORE :
+                pass
+
+            if  iomode == MERGED :
+                stdout =  txt
+
+            if  iomode == SEPARATE :
+                stdout =  txt
+
+                self.pty_shell.write ("cat %s\n" % _err)
+                _, match = self.pty_shell.find ([self.prompt], timeout=-1.0)  # blocks
+
+                if not match :
+                    # not find prompt after blocking?  BAD!  Restart the shell
+                    self.finalize (kill_pty=True)
+                    raise saga.IncorrectState ("run_sync failed, no prompt (%s)" \
+                                            % command)
+
+                _ret, _stderr = self._eval_prompt (match)
+                if  _ret :
+                    raise saga.IncorrectState ("run_sync failed, no stderr (%s: %s)" \
+                                            % (_ret, _stderr))
+                stderr =  _stderr
 
 
-        return (ret, stdout, stderr)
+            if  iomode == STDOUT :
+                stdout =  txt
+
+            if  iomode == STDERR :
+                stderr =  txt
+
+            if  iomode == None :
+                stdout =  txt
+
+            return (ret, stdout, stderr)
+
+        except Exception as e :
+            raise self._translate_exception (e)
 
 
     # ----------------------------------------------------------------
@@ -713,95 +619,219 @@ class PTYShell (object) :
         For async execution, we don't care if the command is doing i/o redirection or not.
         """
 
-        command = command.strip ()
+        # we expect the shell to be in 'ground state' when running an asyncronous
+        # command -- thus we can check if the shell is alive before doing so,
+        # and restart if needed
+        if not self.pty_shell.alive (recover=True) :
+            raise saga.IncorrectState ("Cannot run command:\n%s" \
+                                    % self.pty_shell.autopsy ())
 
-        self.logger.debug ('run_async: %s'   % command)
-        self.pty_shell.write    (           "%s\n" % command)
+        try :
+            command = command.strip ()
+            self.send ("%s\n" % command)
 
-        return
+        except Exception as e :
+            raise self._translate_exception (e)
 
 
     # ----------------------------------------------------------------
     #
-    def stage_to_file (self, src, tgt) :
+    def send (self, data) :
+        """
+        send data to the shell.  No newline is appended!
+        """
+
+        if not self.pty_shell.alive (recover=False) :
+            raise saga.IncorrectState ("Cannot send data:\n%s" \
+                                    % self.pty_shell.autopsy ())
+
+        try :
+            self.pty_shell.write ("%s" % data)
+
+        except Exception as e :
+            raise self._translate_exception (e)
+
+    # ----------------------------------------------------------------
+    #
+    def write_to_remote (self, src, tgt) :
         """
         :type  src: string
         :param src: data to be staged into the target file
 
         :type  tgt: string
-        :param tgt: path to file to be staged
+        :param tgt: path to target file to staged to
+                    The tgt path is not an URL, but expected to be a path
+                    relative to the shell's URL.
 
         The content of the given string is pasted into a file (specified by tgt)
         on the remote system.  If that file exists, it is overwritten.
         A NoSuccess exception is raised if writing the file was not possible
         (missing permissions, incorrect path, etc.).
-
-        See also :func:`stage_from_file`.
         """
 
-        size_src = len (src)
+        try :
 
-        while True :
+            # FIXME: make this relative to the shell's pwd?  Needs pwd in
+            # prompt, and updating pwd state on every find_prompt.
 
-            ret, out, _ = self.run_sync ("wc -c %s.$$ | cut -f 1 -d ' '" % tgt)
+            # first, write data into a tmp file
+            fname   = self.base + "/staging.%s" % id(self)
+            fhandle = open (fname, 'wb')
+            fhandle.write  (src)
+            fhandle.flush  ()
+            fhandle.close  ()
 
-            if  ret == 0 :
-                size_tgt = out.strip ()
+            self.factory.run_copy_to (self.pty_info, fname, tgt)
 
-                if str(size_src) == str(size_tgt) :
-                    break
-                else :
-                    # print "try again (%s)(%s)!" % (size_src, size_tgt)
-                    pass
+            os.remove (fname)
 
-
-            
-            src_hex = ""
-            for i in [hex(ord(x)) for x in src] :
-                h = i.replace ('0x', '')
-                if len(h) == 1 : src_hex += '0'
-                src_hex += h
-
-            self.pty_shell.write ("""\
-            ( sed -e 's/\(..\)/\\1\\n/g' | 
-              while read A; do
-               if ! test -z "$A"; then printf "\\x$A"; fi
-              done ) > %s.$$ <<SAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n""" % tgt)
-            self.pty_shell.write (src_hex)
-            self.pty_shell.write ("\nSAGA_ADAPTOR_SHELL_PTY_PROCESS_EOT\n")
-
-            # we send two commands at once (cat, mv), so need to find two prompts
-            ret, txt = self.find_prompt ()
-            if  ret != 0 :
-                raise saga.NoSuccess ("failed to stage (cat) string to file (%s)(%s)" % (ret, txt))
-
-
-        self.pty_shell.write ("mv %s.$$ %s\n" % (tgt, tgt))  
-
-        ret, txt = self.find_prompt ()
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to stage (mv) string to file (%s)(%s)" % (ret, txt))
+        except Exception as e :
+            raise self._translate_exception (e)
 
 
     # ----------------------------------------------------------------
     #
-    def stage_from_file (self, src) :
+    def read_from_remote (self, src) :
         """
         :type  src: string
-        :param src: path to file to be fetched
-
-        This is inverse to :func:`stage_to_file`: the content of a remote file
-        specified by `src` will be returned as string.  A NoSuccess exception is
-        raised if reading the file was not possible (missing permissions,
-        incorrect path, etc.).  
+        :param src: path to source file to staged from
+                    The src path is not an URL, but expected to be a path
+                    relative to the shell's URL.
         """
 
-        ret, out, _ = self.run_sync ("cat %s" % src)
+        try :
+            # FIXME: make this relative to the shell's pwd?  Needs pwd in
+            # prompt, and updating pwd state on every find_prompt.
 
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to stage file to string (%s)(%s)" % (ret, out))
+            # first, write data into a tmp file
+            fname   = self.base + "/staging.%s" % id(self)
 
-        return out
+            self.factory.run_copy_from (self.pty_info, src, fname)
+
+            fhandle = open (fname, 'r')
+            out = fhandle.read  ()
+            fhandle.close  ()
+
+            os.remove (fname)
+
+            return out
+
+        except Exception as e :
+            raise self._translate_exception (e)
+
+
+    # ----------------------------------------------------------------
+    #
+    def stage_to_remote (self, src, tgt, cp_flags="") :
+        """
+        :type  src: string
+        :param src: path of local source file to be stage from.
+                    The tgt path is not an URL, but expected to be a path
+                    relative to the current working directory.
+
+        :type  tgt: string
+        :param tgt: path to target file to stage to.
+                    The tgt path is not an URL, but expected to be a path
+                    relative to the shell's URL.
+        """
+
+        # FIXME: make this relative to the shell's pwd?  Needs pwd in
+        # prompt, and updating pwd state on every find_prompt.
+
+        try :
+            self.factory.run_copy_to (self.pty_info, src, tgt, cp_flags)
+
+        except Exception as e :
+            raise self._translate_exception (e)
+
+    # ----------------------------------------------------------------
+    #
+    def stage_from_remote (self, src, tgt, cp_flags="") :
+        """
+        :type  src: string
+        :param tgt: path to source file to stage from.
+                    The tgt path is not an URL, but expected to be a path
+                    relative to the shell's URL.
+
+        :type  tgt: string
+        :param src: path of local target file to stage to.
+                    The tgt path is not an URL, but expected to be a path
+                    relative to the current working directory.
+        """
+
+        # FIXME: make this relative to the shell's pwd?  Needs pwd in
+        # prompt, and updating pwd state on every find_prompt.
+
+        try :
+            self.factory.run_copy_from (self.pty_info, src, tgt, cp_flags)
+
+        except Exception as e :
+            raise self._translate_exception (e)
+
+
+    # ----------------------------------------------------------------
+    #
+    def copy_file (self, src, tgt) :
+        """
+        :type  src: string
+        :param src: path to file on target host to be copied
+
+        :type  tgt: string
+        :param tgt: path on target host to copy file to
+
+        """
+
+        # we expect the master shell to be in alive when staging, as we need to
+        # spawn cp / scp slaves
+        if not self.pty_shell.alive (recover=True) :
+            raise saga.IncorrectState ("Cannot stage file:\n%s" \
+                                    % self.pty_shell.autopsy ())
+
+        # FIXME: magic goes here...
+
+
+
+    # ----------------------------------------------------------------
+    #
+    def _translate_exception (self, e) :
+        """
+        In many cases, we should be able to roughly infer the exception cause
+        from the error message -- this is centrally done in this method.  If
+        possible, it will return a new exception with a more concise error
+        message and appropriate exception type.
+        """
+
+        if  not issubclass (e.__class__, saga.SagaException) :
+            # we do not touch non-saga exceptions
+            return e
+
+        if  not issubclass (e.__class__, saga.NoSuccess) :
+            # this seems to have a specific cause already, leave it alone
+            return e
+
+        cmsg = e._plain_message
+        lmsg = cmsg.lower ()
+
+        if 'auth' in lmsg :
+            e = saga.AuthorizationFailed (cmsg)
+
+        elif 'pass' in lmsg :
+            e = saga.AuthenticationFailed (cmsg)
+
+        elif 'ssh_exchange_identification' in lmsg :
+            e = saga.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
+
+        elif 'denied' in lmsg :
+            e = saga.PermissionDenied (cmsg)
+
+        elif 'shared connection' in lmsg :
+            e = saga.NoSuccess ("Insufficient system resources: %s" % cmsg)
+
+        elif 'pty allocation' in lmsg :
+            e = saga.NoSuccess ("Insufficient system resources: %s" % cmsg)
+
+        # print e.traceback
+        return e
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

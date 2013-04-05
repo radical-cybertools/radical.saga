@@ -1,6 +1,8 @@
-__author__    = "Ole Weidner"
+
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ Exception classes
 """
@@ -54,8 +56,9 @@ class SagaException(saga.utils.exception.ExceptionBase):
         """
         saga.utils.exception.ExceptionBase.__init__ (self, message)
 
+        self._type          = self.__class__.__name__
         self._message       = message
-        self._messages      = [message]
+        self._messages      = [self.get_message ()]
         self._exceptions    = [self]
         self._top_exception = self
         self._traceback     = saga.utils.exception.get_traceback (1)
@@ -74,6 +77,7 @@ class SagaException(saga.utils.exception.ExceptionBase):
         clone._messages  = self._messages
         clone._exception = self._exceptions
         clone._traceback = self._traceback
+        clone._type      = self._type
 
         return clone
 
@@ -83,7 +87,22 @@ class SagaException(saga.utils.exception.ExceptionBase):
     def get_message (self) :
         """ Return the exception message as a string.  That message is also
         available via the 'message' property."""
+        return "%s: %s" % (self.type, self._message)
+
+
+    # ----------------------------------------------------------------
+    #
+    def _get_plain_message (self) :
+        """ Return the plain error message as a string. """
         return self._message
+
+
+    # ----------------------------------------------------------------
+    #
+    def get_type (self):
+        """ Return the type of the exception as string.
+        """
+        return self._type
 
 
     # ----------------------------------------------------------------
@@ -173,14 +192,15 @@ class SagaException(saga.utils.exception.ExceptionBase):
     # ----------------------------------------------------------------
     #
     def __str__ (self) :
-        return self._message
+        return self.get_message ()
 
 
-    message    = property (get_message)         # string
-    object     = property (get_object)          # object type
-    exceptions = property (get_all_exceptions)  # list [Exception]
-    messages   = property (get_all_messages)    # list [string]
-
+    _plain_message = property (_get_plain_message)  # string
+    message        = property (get_message)         # string
+    object         = property (get_object)          # object type
+    type           = property (get_type)            # exception type
+    exceptions     = property (get_all_exceptions)  # list [Exception]
+    messages       = property (get_all_messages)    # list [string]
 
 
 # --------------------------------------------------------------------
@@ -302,7 +322,3 @@ class NoSuccess(SagaException):
     
     def __init__ (self, msg, obj=None) :
         SagaException.__init__ (self, msg, obj)
-
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-

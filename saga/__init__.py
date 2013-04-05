@@ -1,12 +1,15 @@
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 from   saga.attributes     import Attributes, Callback
 from   saga.session        import Session
 from   saga.context        import Context
 from   saga.url            import Url
 from   saga.task           import Task, Container
+from   saga.version        import version
 
 from   saga.exceptions     import SagaException
 from   saga.exceptions     import NotImplemented

@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import copy
 
 import saga.exceptions      as se
@@ -7,6 +12,23 @@ import saga.utils.logger    as slog
 import saga.utils.config    as sconf
 
 import saga
+
+# ------------------------------------------------------------------------------
+#
+def add_tc_params_to_jd(tc, jd):
+    if tc.job_walltime_limit != "":
+        jd.wall_time_limit = tc.job_walltime_limit
+    if tc.job_project != "":
+        jd.project = tc.job_project
+    if tc.job_queue != "":
+        jd.queue = tc.job_queue
+    if tc.job_total_cpu_count != "":
+        jd.total_cpu_count = tc.job_total_cpu_count
+    if tc.job_spmd_variation != "":
+        jd.spmd_variation = tc.job_spmd_variation
+
+    return jd
+
 
 ############# These are all supported options for saga.engine ####################
 ##
@@ -42,6 +64,22 @@ _config_options = [
     'default'       : "",
     'documentation' : "walltime limit to pass to the job scheduler",
     'env_variable'  : "SAGA_TEST_JOB_WALLTIME_LIMIT"
+    },
+    { 
+    'category'      : 'saga.tests',
+    'name'          : 'job_total_cpu_count', 
+    'type'          : str, 
+    'default'       : "",
+    'documentation' : "number of processes to pass to the job scheduler",
+    'env_variable'  : "SAGA_TEST_NUMBER_OF_PROCESSES"
+    },
+    { 
+    'category'      : 'saga.tests',
+    'name'          : 'job_spmd_variation', 
+    'type'          : str, 
+    'default'       : "",
+    'documentation' : "spmd variation to pass to the job scheduler",
+    'env_variable'  : "SAGA_TEST_SPMD_VARIATION"
     },
     { 
     'category'      : 'saga.tests',
@@ -167,18 +205,26 @@ class TestConfig (sconf.Configurable):
     @property
     def context (self):
         
-        cfg   = self._cfg
-        ctype = cfg['context_type'].get_value ()
+        cfg          = self._cfg
+        c_type       = cfg['context_type'].get_value ()
+        c_user_id    = cfg['context_user_id'].get_value ()
+        c_user_pass  = cfg['context_user_pass'].get_value ()
+        c_user_cert  = cfg['context_user_cert'].get_value ()
+        c_user_proxy = cfg['context_user_proxy'].get_value ()
 
-        if not ctype :
+        if  not c_type :
+            if  c_user_id    or c_user_pass  or \
+                c_user_cert  or c_user_proxy :
+                self._logger.warn ("ignoring incomplete context")
             return None
 
-        c = saga.Context (ctype)
+        c = saga.Context (c_type)
 
-        c.user_id    = cfg['context_user_id'].get_value ()
-        c.user_pass  = cfg['context_user_pass'].get_value ()
-        c.user_cert  = cfg['context_user_cert'].get_value ()
-        c.user_proxy = cfg['context_user_proxy'].get_value ()
+        c.user_id    = c_user_id
+        c.user_pass  = c_user_pass
+        c.user_cert  = c_user_cert
+        c.user_proxy = c_user_proxy
+
 
         return c
 
@@ -192,7 +238,10 @@ class TestConfig (sconf.Configurable):
         c = self.context
 
         if c :
-            s.add_context (c)
+            try :
+                s.add_context (c)
+            except saga.exceptions.BadParameter as e :
+                print "ERROR: could not use invalid context"
 
         return s
 
@@ -231,7 +280,23 @@ class TestConfig (sconf.Configurable):
     #-----------------------------------------------------------------
     # 
     @property
-    def fs_url (self):
+    def job_total_cpu_count (self):
+
+        return self._cfg['job_total_cpu_count'].get_value ()
+
+
+    #-----------------------------------------------------------------
+    # 
+    @property
+    def job_spmd_variation (self):
+
+        return self._cfg['job_spmd_variation'].get_value ()
+
+
+    #-----------------------------------------------------------------
+    # 
+    @property
+    def filesystem_url (self):
 
         return self._cfg['filesystem_url'].get_value ()
 
@@ -241,7 +306,7 @@ class TestConfig (sconf.Configurable):
     @property
     def replica_url (self):
 
-        return self._cfg['replica_url'].get_value ()
+        return self._cfg['job_replica_url'].get_value ()
 
 
     #-----------------------------------------------------------------
@@ -249,9 +314,5 @@ class TestConfig (sconf.Configurable):
     @property
     def advert_url (self):
 
-        return self._cfg['advert_url'].get_value ()
-
-
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+        return self._cfg['job_advert_url'].get_value ()
 

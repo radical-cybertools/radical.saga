@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 """ Local filesystem adaptor implementation """
 
 import os
@@ -29,8 +34,7 @@ _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
-    'description'      : 'The local filesystem adaptor.',
-    'details'          : """This adaptor interacts with local filesystem, by
+    'description'      : """This adaptor interacts with local filesystem, by
                             using the (POSIX like) os and shutil Python packages.""",
     'schemas'          : {'file'  : 'local filesystem.', 
                           'local' : 'alias for *file*' 
@@ -378,7 +382,7 @@ class LocalFile (saga.adaptors.cpi.filesystem.File) :
 
         self._init_check ()
 
-        return self
+        return self.get_api ()
 
 
     @ASYNC_CALL
