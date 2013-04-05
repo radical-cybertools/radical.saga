@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import os
 import subprocess
 
@@ -30,8 +35,7 @@ _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
-    'description'      : 'The MyProxy context adaptor.',
-    'details'          : """This adaptor fetches an X509 proxy from
+    'description'      : """This adaptor fetches an X509 proxy from
                             MyProxy when it is added to a saga.Session.""",
     'schemas'          : {'myproxy' : 'this adaptor can only interact with myproxy backends'},
 }
@@ -97,7 +101,7 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
 
         self.get_api ().type = type
 
-        return self
+        return self.get_api ()
 
 
     @SYNC_CALL

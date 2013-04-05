@@ -1,7 +1,8 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ Provides the SAGA runtime. """
 
@@ -9,7 +10,6 @@ import re
 import sys
 import pprint
 import string
-import signal
 import inspect
 
 import saga.exceptions      as se
@@ -23,15 +23,6 @@ import saga.engine.registry  # adaptors to load
 ############# These are all supported options for saga.engine ####################
 ##
 _config_options = [
-    { 
-    'category'      : 'saga.engine',
-    'name'          : 'enable_ctrl_c', 
-    'type'          : bool, 
-    'default'       : True,
-    'valid_options' : [True, False],
-    'documentation' : 'install SIGINT signal handler to abort application.',
-    'env_variable'  : None
-    },
     { 
     'category'      : 'saga.engine',
     'name'          : 'load_beta_adaptors', 
@@ -154,17 +145,6 @@ class Engine(sconf.Configurable):
         self._logger = slog.getLogger ('saga.engine')
 
 
-        # install signal handler, if requested
-        if self._cfg['enable_ctrl_c'].get_value () :
-
-            def signal_handler (signal, frame):
-                sys.stderr.write ("Ctrl+C caught. Exiting...")
-                sys.exit (0)
-
-            self._logger.debug ("installing signal handler for SIGTERM")
-            signal.signal (signal.SIGTERM, signal_handler)
-
-
         # load adaptors
         self._load_adaptors ()
 
@@ -201,7 +181,7 @@ class Engine(sconf.Configurable):
         # attempt to load all registered modules
         for module_name in registry:
 
-            self._logger.info ("Trying to load adaptor %s"  %  module_name)
+            self._logger.info ("Loading  adaptor %s"  %  module_name)
 
 
             # first, import the module
@@ -226,12 +206,12 @@ class Engine(sconf.Configurable):
                 adaptor_info     = adaptor_instance.register ()
 
             except se.SagaException as e:
-                self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
-                self._logger.trace ()
+                self._logger.error ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
+              # self._logger.trace ()
                 continue # skip to next adaptor
             except Exception as e:
-                self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
-                self._logger.trace ()
+                self._logger.error ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
+              # self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -409,7 +389,7 @@ class Engine(sconf.Configurable):
                     self._adaptor_registry[cpi_type][adaptor_schema].append(info)
                     registered_schemas.append(str("%s://" % adaptor_schema))
 
-                self._logger.info("Registering %s for %s API with URL scheme %s" %
+                self._logger.info("Register adaptor %s for %s API with URL scheme(s) %s" %
                                       (module_name,
                                        cpi_type,
                                        registered_schemas))
@@ -513,8 +493,8 @@ class Engine(sconf.Configurable):
                 # instantiate cpi
                 cpi_instance = cpi_class (api_instance, adaptor_instance)
 
-                self._logger.debug("Successfully bound %s.%s to %s" \
-                                 % (adaptor_name, cpi_cname, api_instance))
+              # self._logger.debug("Successfully bound %s.%s to %s" \
+              #                  % (adaptor_name, cpi_cname, api_instance))
                 return cpi_instance
 
 

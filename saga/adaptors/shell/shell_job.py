@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 """ shell based job adaptor implementation """
 
 import saga.utils.which
@@ -21,11 +26,6 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
 # --------------------------------------------------------------------
-# some private defs
-#
-_PTY_TIMEOUT = 2.0
-
-# --------------------------------------------------------------------
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.shell_job"
@@ -45,6 +45,19 @@ _ADAPTOR_OPTIONS       = [
                           effectively halfs the number of available job service
                           instances per remote host.''',
     'env_variable'     : None
+    },
+    { 
+    'category'         : 'saga.adaptor.shell_job',
+    'name'             : 'purge_on_start', 
+    'type'             : bool, 
+    'default'          : True,
+    'valid_options'    : [True, False],
+    'documentation'    : '''Purge job information (state, stdio, ...) for all
+                          jobs which are in final state when starting the job
+                          service instance.  Note that this will purge *all*
+                          suitable jobs, including the ones managed by another,
+                          live job service instance.''',
+    'env_variable'     : None
     }
 ]
 
@@ -55,6 +68,12 @@ _ADAPTOR_CAPABILITIES  = {
     "jdes_attributes"  : [saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
+                          saga.job.WORKING_DIRECTORY,
+                          saga.job.PROJECT,         # FIXME
+                          saga.job.QUEUE,           # FIXME
+                          saga.job.SPMD_VARIATION,  # FIXME
+                          saga.job.TOTAL_CPU_COUNT, # FIXME
+                          saga.job.WALL_TIME_LIMIT, # FIXME
                           saga.job.INPUT,
                           saga.job.OUTPUT,
                           saga.job.ERROR],
@@ -79,13 +98,10 @@ _ADAPTOR_DOC           = {
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "description"      : """ 
         The Shell job adaptor. This adaptor uses the sh command line tools (sh,
-        ssh, gsissh) to run remote jobs.
-        """,
-    "details"          : """ 
-        A more elaborate description....
+        ssh, gsissh) to run local and remote jobs.
 
         Known Limitations:
-        ------------------
+        ******************
 
           * number of system pty's are limited:  each job.service object bound
             to this adaptor will use 2 pairs of pty pipes.  Systems usually
@@ -138,7 +154,7 @@ _ADAPTOR_DOC           = {
 
           * number of files are limited, as is disk space: the job.service will
             
-            keep job state on the remote disk, in ``$HOME/.saga/adaptors/shell_job/``.
+            keep job state on the remote disk, in ``~/.saga/adaptors/shell_job/``.
             Quota limitations may limit the number of files created there,
             and/or the total size of that directory.  
 
@@ -167,6 +183,7 @@ _ADAPTOR_DOC           = {
             use should work as expected though.
 
         """,
+    "example": "examples/jobs/localjob.py",
     "schemas"          : {"fork"   :"use /bin/sh to run jobs", 
                           "local"  :"alias for fork://", 
                           "ssh"    :"use ssh to run remote jobs", 
@@ -213,8 +230,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         self.opts  = self.get_config ()
 
         self.notifications = self.opts['enable_notifications'].get_value ()
-
-        self._logger.debug ('threading id: %s' % threading.current_thread ().name)
+        self.purge_on_start = self.opts['purge_on_start'].get_value ()
 
 
     # ----------------------------------------------------------------
@@ -277,7 +293,9 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # separately? 
         #   cmd_state () { touch $DIR/purgeable; ... }
         # When should that be done?
-        self._logger.error ("adaptor dying... %s" % self.njobs)
+        ret, out, _ = self.shell.run_sync ("QUIT")
+
+        ielf._logger.error ("adaptor dying... %s" % self.njobs)
         self._logger.trace ()
     
         #     try :
@@ -302,13 +320,15 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         self.session = session
         self.njobs   = 0
 
-        self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session.contexts, 
+        self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
                                                     self._logger)
 
         self.shell.set_initialize_hook (self.initialize)
         self.shell.set_finalize_hook   (self.finalize)
 
         self.initialize ()
+
+        return self.get_api ()
 
     # ----------------------------------------------------------------
     #
@@ -321,11 +341,11 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # and running, we can requests job start / management operations via its
         # stdio.
 
-        base = "$HOME/.saga/adaptors/shell_job"
+        base = "~/.saga/adaptors/shell_job"
 
         ret, out, _ = self.shell.run_sync ("mkdir -p %s" % base)
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" % (ret, out))
+            raise saga.NoSuccess ("host setup failed (%s): (%s)" % (ret, out))
 
         # FIXME: this is a race condition is multiple job services stage the
         # script at the same time.  We should make that atomic by
@@ -338,8 +358,10 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # TODO: replace some constants in the script with values from config
         # files, such as 'timeout' or 'purge_on_quit' ...
         #
-        self.shell.stage_to_file (src = shell_wrapper._WRAPPER_SCRIPT, 
-                                  tgt = "%s/wrapper.sh" % base)
+        src = shell_wrapper._WRAPPER_SCRIPT % ({ 'PURGE_ON_START' : str(self._adaptor.purge_on_start) })
+        tgt = ".saga/adaptors/shell_job/wrapper.sh"
+
+        self.shell.write_to_remote (src, tgt)
 
         # we run the script.  In principle, we should set a new / different
         # prompt -- but, due to some strange and very unlikely coincidence, the
@@ -360,7 +382,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # either way, we somehow ran the script, and just need to check if it
         # came up all right...
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to run wrapper (%s)(%s)" % (ret, out))
+            raise saga.NoSuccess ("host setup failed (%s): (%s)" % (ret, out))
 
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out.strip ()))
 
@@ -384,19 +406,29 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         arg = ""
         env = ""
         cwd = ""
+        io  = ""
 
-        if jd.attribute_exists ("arguments") :
+        if  jd.attribute_exists (ARGUMENTS) :
             for a in jd.arguments :
-                arg += ' ' + a
+                arg += "%s " % a
 
-        if jd.attribute_exists ("environment") :
+        if  jd.attribute_exists (ENVIRONMENT) :
             for e in jd.environment :
                 env += "export %s=%s; "  %  (e, jd.environment[e])
 
-        if jd.attribute_exists ("working_directory") :
+        if  jd.attribute_exists (WORKING_DIRECTORY) :
             cwd = "cd %s && " % jd.working_directory
 
-        cmd = "%s%s %s %s"  %  (env, cwd, exe, arg)
+        if  jd.attribute_exists (INPUT) :
+            io += "<%s " % jd.input
+
+        if  jd.attribute_exists (OUTPUT) :
+            io += "1>%s " % jd.output
+
+        if  jd.attribute_exists (ERROR) :
+            io += "2>%s " % jd.error
+
+        cmd = "( %s%s%s %s) %s" % (env, cwd, exe, arg, io)
 
         return cmd
 
@@ -407,8 +439,22 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         """ runs a job on the wrapper via pty, and returns the job id """
 
         cmd = self._jd2cmd (jd)
+        ret = 1
+        out = ""
 
-        ret, out, _ = self.shell.run_sync ("RUN %s" % cmd)
+        run_cmd  = ""
+        use_lrun = False
+
+        # simple one-liners use RUN, otherwise LRUN
+        if not "\n" in cmd :
+            run_cmd = "RUN %s\n" % cmd
+        else :
+            use_lrun = True
+            run_cmd  = "BULK\nLRUN\n%s\nLRUN_EOT\nBULK_RUN\n" % cmd
+
+        run_cmd = run_cmd.replace ("\\", "\\\\\\\\") # hello MacOS
+
+        ret, out, _ = self.shell.run_sync (run_cmd)
         if  ret != 0 :
             raise saga.NoSuccess ("failed to run job '%s': (%s)(%s)" % (cmd, ret, out))
 
@@ -429,37 +475,45 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         self.njobs += 1
 
+        # before we return, we need to clean the 'BULK COMPLETED message from lrun
+        if use_lrun :
+            ret, out = self.shell.find_prompt ()
+            if  ret != 0 :
+                raise saga.NoSuccess ("failed to run multiline job '%s': (%s)(%s)" % (run_cmd, ret, out))
+
+
         return job_id
         
-
 
     # ----------------------------------------------------------------
     #
     #
-    def _job_get_state (self, id) :
-        """ get the job state from the wrapper shell """
+    def _job_get_stats (self, id) :
+        """ get the job stats from the wrapper shell """
 
         rm, pid     = self._adaptor.parse_id (id)
-        ret, out, _ = self.shell.run_sync ("STATE %s\n" % pid)
+        ret, out, _ = self.shell.run_sync ("STATS %s\n" % pid)
 
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to get job state for '%s': (%s)(%s)" \
+            raise saga.NoSuccess ("failed to get job stats for '%s': (%s)(%s)" \
                                % (id, ret, out))
 
         lines = filter (None, out.split ("\n"))
         self._logger.debug (lines)
 
-        if  len (lines) == 3 :
-            # shell did not manage to do 'stty -echo'?
-            del (lines[0])
-
-        if  len (lines) != 2 :
-            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % (id, lines))
-
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
 
-        return self._adaptor.string_to_state (lines[1])
+        ret = {}
+        for line in lines :
+            if not ':' in line :
+                continue
+
+            key, val = line.split (":", 2)
+            ret[key.strip ().lower ()] = val.strip()
+
+        return ret
+
         
 
     # ----------------------------------------------------------------
@@ -555,66 +609,24 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
     # ----------------------------------------------------------------
     #
-    # TODO: this should also fetch the (final) state, to safe a hop
-    # TODO: implement via notifications
-    #
-    def _job_wait (self, id, timeout) :
-        """ 
-        A call to the shell to do the WAIT would block the shell for any
-        other interactions.  In particular, it would practically kill it if the
-        Wait waits forever...
-
-        So we implement the wait via a state pull.  The *real* solution is, of
-        course, to implement state notifications, and wait for such
-        a notification to arrive within timeout seconds...
-        """
-
-        time_start = time.time ()
-        time_now   = time_start
-        rm, pid    = self._adaptor.parse_id (id)
-
-        while True :
-            state = self._job_get_state (id)
-            if  state == saga.job.DONE      or \
-                state == saga.job.FAILED    or \
-                state == saga.job.CANCELED     :
-                    return True
-            # avoid busy poll
-            time.sleep (0.5)
-
-            # check if we hit timeout
-            if  timeout >= 0 :
-                time_now = time.time ()
-                if  time_now - time_start > timeout :
-                    return False
-
-    # ----------------------------------------------------------------
-    #
     @SYNC_CALL
     def run_job (self, cmd, host) :
         """ Implements saga.adaptors.cpi.job.Service.run_job()
         """
 
         if not cmd :
-            raise saga.BadParameter._log (self._logger, "run_hosts needs a command to run")
-
-        if "'" in cmd :
-            raise saga.BadParameter._log (self._logger, "command cannot contain \"'\" (%s)"  \
-                                       % cmd)
+            raise saga.BadParameter._log (self._logger, "run_job needs a command to run")
 
         if  host and host != self.rm.host :
-            raise saga.BadParameter._log (self._logger, "Can only run jobs on %s"
-                                       % self.rm.host)
+            raise saga.BadParameter._log (self._logger, "Can only run jobs on %s, not on %s" \
+                                       % (self.rm.host, host))
 
-        cmd_elems = cmd.split ()
-
-        if not len(cmd_elems) :
-            raise saga.BadParameter._log (self._logger, "run_hosts needs a non-empty command to run")
+        cmd_quoted = cmd.replace ("'", "\\\\'")
 
         jd = saga.job.Description ()
 
         jd.executable = "/bin/sh"
-        jd.arguments  = ["-c", "'%s'" % " ".join (cmd_elems)]
+        jd.arguments  = ["-c", "'%s'" % cmd_quoted]
 
         job = self.create_job (jd)
         job.run ()
@@ -677,7 +689,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 job_id = "[%s]-[%s]" % (self.rm, pid)
                 self._ids.append (job_id)
             except Exception as e:
-                self._logger.error ("Ignore non-int job pid (%s) (%s)" % (line, e))
+                self._logger.error ("Ignore ill-formatted job id (%s) (%s)" % (line, e))
 
         return self._ids
    
@@ -692,7 +704,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         known_jobs = self.list ()
 
         if jobid not in known_jobs :
-            raise saga.BadParameter._log (self._logger, "job id %s unknown"
+            raise saga.BadParameter._log (self._logger, "job id '%s' unknown"
                                        % jobid)
 
         else:
@@ -988,6 +1000,9 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             self._state           = saga.job.NEW
             self._exit_code       = None
             self._exception       = None
+            self._created         = time.time ()
+            self._started         = None
+            self._finished        = None
 
         elif 'job_id' in job_info :
             # initialize job attribute values
@@ -996,6 +1011,9 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             self._state           = saga.job.UNKNOWN
             self._exit_code       = None
             self._exception       = None
+            self._created         = None
+            self._started         = None
+            self._finished        = None
 
         else :
             # don't know what to do...
@@ -1015,19 +1033,56 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     #
     @SYNC_CALL
     def get_state (self):
-        """ Implements saga.adaptors.cpi.job.Job.get_state()
-        """
+        """ Implements saga.adaptors.cpi.job.Job.get_state() """
 
-        # we may not yet have a backend representation...
-        try :
-            self._state = self.js._job_get_state (self._id)
+        # may not yet have backend representation, state is probably 'NEW'
+        if self._id == None :
             return self._state
-        except Exception as e :
-            if self._id == None :
-                # no ID yet, we should still have New state...
+
+        # no need to re-fetch final states
+        if  self._state == saga.job.DONE      or \
+            self._state == saga.job.FAILED    or \
+            self._state == saga.job.CANCELED     :
                 return self._state
-            else :
-                raise e
+
+        stats = self.js._job_get_stats (self._id)
+
+        if 'start' in stats : self._started  = stats['start']
+        if 'stop'  in stats : self._finished = stats['stop']
+        
+        if  not 'state' in stats :
+            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % id)
+
+        self._state = self._adaptor.string_to_state (stats['state'])
+
+        return self._state
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_created (self) : 
+
+        # no need to refresh stats -- this is set locally
+        return self._created
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_started (self) : 
+
+        self.get_state () # refresh stats
+        return self._started
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_finished (self) : 
+
+        self.get_state () # refresh stats
+        return self._finished
 
 
     # ----------------------------------------------------------------
@@ -1043,10 +1098,42 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
     # ----------------------------------------------------------------
     #
+    # TODO: this should also fetch the (final) state, to safe a hop
+    # TODO: implement via notifications
+    #
     @SYNC_CALL
     def wait (self, timeout):
-        return self.js._job_wait (self._id, timeout)
+        """ 
+        A call to the shell to do the WAIT would block the shell for any
+        other interactions.  In particular, it would practically kill it if the
+        Wait waits forever...
 
+        So we implement the wait via a state pull.  The *real* solution is, of
+        course, to implement state notifications, and wait for such
+        a notification to arrive within timeout seconds...
+        """
+
+        time_start = time.time ()
+        time_now   = time_start
+
+        while True :
+
+            state = self.get_state ()
+
+            if  state == saga.job.DONE      or \
+                state == saga.job.FAILED    or \
+                state == saga.job.CANCELED     :
+                    return True
+
+            # avoid busy poll
+            # FIXME: self-tune by checking call latency
+            time.sleep (0.5)
+
+            # check if we hit timeout
+            if  timeout >= 0 :
+                time_now = time.time ()
+                if  time_now - time_start > timeout :
+                    return False
    
     # ----------------------------------------------------------------
     #

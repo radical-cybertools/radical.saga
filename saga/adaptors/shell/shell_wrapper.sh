@@ -18,7 +18,10 @@ BASE=$HOME/.saga/adaptors/shell_job/
 # this process will terminate when idle for longer than TIMEOUT seconds
 TIMEOUT=30
 
+# update timestamp function
+TIMESTAMP=0
 
+PURGE_ON_START="%(PURGE_ON_START)s"
 
 # --------------------------------------------------------------------
 #
@@ -47,6 +50,16 @@ idle_checker () {
 
     touch   "$BASE/idle.$ppid"
   done
+}
+
+
+# --------------------------------------------------------------------
+#
+# it is suprisingly difficult to get seconds since epoch in POSIX -- 
+# 'date +%%s' is a GNU extension...  Anyway, awk to the rescue! 
+#
+timestamp () {
+  TIMESTAMP=`awk 'BEGIN{srand(); print srand()}'`
 }
 
 
@@ -123,7 +136,7 @@ create_monitor () {
   touch "\$DIR/in"
 
   (
-    printf  "RUNNING \\\\n" >> "\$DIR/state"  ;
+    printf  "RUNNING \\n" >> "\$DIR/state"  ;
     exec sh "\$DIR/cmd"   < "\$DIR/in" > "\$DIR/out" 2> "\$DIR/err"
   ) 1> /dev/null 2>/dev/null 3</dev/null &
 
@@ -132,7 +145,7 @@ create_monitor () {
 
   # we don't care when the wrapper sees these, echo can hang forever as far as
   # we care...
-  ( printf "\$RPID \$MPID\\\\n" > "\$DIR/fifo" & )
+  ( printf "\$RPID \$MPID\\n" > "\$DIR/fifo" & )
   
 
   while true
@@ -157,11 +170,14 @@ create_monitor () {
       continue
     fi
 
-    # evaluate exit val
-    printf "\$retv\\\\n" > "\$DIR/exit"
+    STOP=\`awk 'BEGIN{srand(); print srand()}'\`
+    printf "STOP  : \$STOP\\n"  >> "\$DIR/stats"
 
-    test   "\$retv" -eq 0  && printf "DONE \\\\n"   >> "\$DIR/state"
-    test   "\$retv" -eq 0  || printf "FAILED \\\\n" >> "\$DIR/state"
+    # evaluate exit val
+    printf "\$retv\\n" > "\$DIR/exit"
+
+    test   "\$retv" -eq 0  && printf "DONE \\n"   >> "\$DIR/state"
+    test   "\$retv" -eq 0  || printf "FAILED \\n" >> "\$DIR/state"
 
     # done waiting
     break
@@ -185,10 +201,11 @@ EOT
 # jobs would be canceled as soon as this master script finishes...
 #
 # Note further that we perform a double fork, effectively turning the monitor
-# into a daemon.  That provides a speedup of ~300%, as the wait in cmd_run now
-# will return very quickly (it just waits on the second fork).  We can achieve
-# near same performance be removing the wait, but that will result in one zombie
-# per command, which sticks around as long as the wrapper script itself lives.
+# into a daemon.  That provides a speedup of ~300 percent, as the wait in 
+# cmd_run now will return very quickly (it just waits on the second fork).  
+# We can achieve near same performance be removing the wait, but that will 
+# result in one zombie per command, which sticks around as long as the wrapper 
+# script itself lives.
 #
 # Note that the working directory is created on the fly.  As the name of the dir
 # is the pid, it must be unique -- we thus purge whatever trace we find of an
@@ -199,7 +216,7 @@ EOT
 #
 # The script has a small race condition, between starting the job (the 'nohup'
 # line), and the next line where the jobs now known pid is stored away.  I don't
-# see an option to make those two ops atomic, or resilient against script
+# see an option to make those two ops atomic, or resilient against system
 # failure - so, in worst case, you might get a running job for which the job id
 # is not stored (i.e. not known).
 #
@@ -213,39 +230,31 @@ EOT
 cmd_run () {
   #
   # do a double fork to avoid zombies (need to do a wait in this process)
-  #
-  # FIXME: do some checks here, such as if executable exists etc.
-  # FIXME: do some checks here, such as if executable exists etc.
-  #
-  # FIXME: Now, this is *the* *strangest* *error* I *ever* saw... - the above
-  # two comment lines are, in source, identical -- but for local bash
-  # connections, when written to disk via cat, the second line will have only 14
-  # characters!  I see the correct data given to os.write(), and that is the
-  # *only* place data are missing - but why?  It seems to be an offset problem:
-  # removing a character earlier in this string will extend the shortened line
-  # by one character.  Sooo, basically this long comment here will (a) document
-  # the problem, and (b) shield the important code below from truncation.
-  #
-  # go figure...
 
   cmd_run2 "$@" &
 
-  SAGA_PID=$!      # this is the (native) job id!
+  SAGA_PID=$!      # this is the (SAGA-level) job id!
   wait $SAGA_PID   # this will return very quickly -- look at cmd_run2... ;-)
-  RETVAL=$SAGA_PID # report id
+
+  if test "$SAGA_PID" = '0'  
+  then
+    # some error occured, assume RETVAL is set
+    ERROR="NOK"
+    return
+  fi
+
+  # success
+  RETVAL=$SAGA_PID 
 
   # we have to wait though 'til the job enters RUNNING (this is a sync job
   # startup)
   DIR="$BASE/$SAGA_PID"
-
-  touch "$DIR/state"
 
   while true
   do
     grep "RUNNING" "$DIR/state" && break
     sleep 0  # sleep 0 will wait for just some millisecs
   done
-
 }
 
 
@@ -253,8 +262,6 @@ cmd_run2 () {
   # this is the second part of the double fork -- run the actual workload in the
   # background and return - voila!  Note: no wait here, as the spawned script is
   # supposed to stay alive with the job.
-  #
-  # FIXME: not sure if the error reporting on mkdir problems actually works...
   #
   # NOTE: we could, in principle, separate SUBMIT from RUN -- in this case, move
   # the job into NEW state.
@@ -264,10 +271,13 @@ cmd_run2 () {
   SAGA_PID=`sh -c 'printf "$PPID"'`
   DIR="$BASE/$SAGA_PID"
 
-  test -d "$DIR"    && rm    -rf "$DIR"  # re-use old pid's
-  test -d "$DIR"    || mkdir -p  "$DIR"  || (ERROR="cannot use job id"; return 0)
-  printf "NEW \\n"  >> "$DIR/state"
+  timestamp
+  START=$TIMESTAMP
 
+  test -d "$DIR"            && rm    -rf "$DIR"     # re-use old pid if needed
+  test -d "$DIR"            || mkdir -p  "$DIR"  || (RETVAL="cannot use job id"; return 0)
+  printf "START : $START\n"  > "$DIR/stats"
+  printf "NEW \n"           >> "$DIR/state"
 
   cmd_run_process "$SAGA_PID" "$@" &
   return $!
@@ -283,7 +293,7 @@ cmd_run_process () {
   DIR="$BASE/$SAGA_PID"
 
   mkfifo "$DIR/fifo"           # to communicate with the monitor
-  printf "$*\\n" >  "$DIR/cmd"  # job to run by the monitor
+  printf "$*\n" >  "$DIR/cmd"  # job to run by the monitor
 
   # start the monitor script, which makes sure
   # that the job state is properly watched and captured.
@@ -296,12 +306,30 @@ cmd_run_process () {
   read RPID MPID < "$DIR/fifo"
   rm -rf $DIR/fifo
 
-  printf "$RPID\\n" >  "$DIR/rpid"  # real job id
-  printf "$MPID\\n" >  "$DIR/mpid"  # monitor pid
+  printf "$RPID\n" >  "$DIR/rpid"  # real job id
+  printf "$MPID\n" >  "$DIR/mpid"  # monitor pid
   
   exit
 }
 
+
+cmd_lrun () {
+  # LRUN allows to run shell commands which span more than one line.
+  CMD=""
+  # need IFS to preserve white space,
+  OLDIFS=$IFS
+  IFS=
+  while read -r IN
+  do
+    if test "$IN" = "LRUN_EOT "
+    then
+      break
+    fi
+    CMD="$CMD$IN\n"
+  done
+  IFS=$OLDIFS
+  cmd_run "$CMD"
+}
 
 # --------------------------------------------------------------------
 #
@@ -312,6 +340,21 @@ cmd_state () {
 
   DIR="$BASE/$1"
   RETVAL=`grep -e ' $' "$DIR/state" | tail -n 1 | tr -d ' '`
+}
+
+
+# --------------------------------------------------------------------
+#
+# retrieve job stats
+#
+cmd_stats () {
+  # stats are only defined for jobs in some state
+  verify_state $1 || return
+
+  DIR="$BASE/$1"
+  STATE=`grep -e ' $' "$DIR/state" | tail -n 1 | tr -d ' '`
+  RETVAL="STATE : $STATE\n"
+  RETVAL="$RETVAL\n`cat $DIR/stats`\n"
 }
 
 
@@ -391,8 +434,8 @@ cmd_suspend () {
 
   if test "$ECODE" = "0"
   then
-    printf "SUSPENDED \\n" >>  "$DIR/state"
-    printf "$state \\n"    >   "$DIR/state.susp"
+    printf "SUSPENDED \n" >>  "$DIR/state"
+    printf "$state \n"    >   "$DIR/state.susp"
     RETVAL="$1 suspended"
   else
     rm -f   "$DIR/suspended"
@@ -426,8 +469,8 @@ cmd_resume () {
 
   if test "$ECODE" = "0"
   then
-    test -s "$DIR/state.susp" || printf "RUNNING \\n" >  "$DIR/state.susp"
-    cat     "$DIR/state.susp"                         >> "$DIR/state"
+    test -s "$DIR/state.susp" || printf "RUNNING \n" >  "$DIR/state.susp"
+    cat     "$DIR/state.susp"                        >> "$DIR/state"
     rm -f   "$DIR/state.susp"
     RETVAL="$1 resumed"
   else
@@ -453,8 +496,8 @@ cmd_cancel () {
   mpid=`cat "$DIR/mpid"`
 
   # first kill monitor, so that it does not interfer with state management
-  /bin/kill -TERM $mpid
-  /bin/kill -KILL $mpid
+  /bin/kill -TERM $mpid 2>/dev/null
+  /bin/kill -KILL $mpid 2>/dev/null
 
   # now make sure that job did not reach final state before monitor died
   state=`grep -e ' $' "$DIR/state" | tail -n 1 | tr -d ' '`
@@ -465,13 +508,13 @@ cmd_cancel () {
   fi
 
   # now kill the job process group, and to be sure also the job shell
-  /bin/kill -TERM -- -$mpid 
-  /bin/kill -KILL -- -$mpid 
-  /bin/kill -TERM     $rpid 
-  /bin/kill -KILL     $rpid
+  /bin/kill -TERM -- -$mpid # this is the important one...
+  /bin/kill -KILL -- -$mpid 2>/dev/null
+  /bin/kill -TERM     $rpid 2>/dev/null
+  /bin/kill -KILL     $rpid 2>/dev/null
 
   # FIXME: how can we check for success?  ps?
-  printf "CANCELED \\n" >> "$DIR/state"
+  printf "CANCELED \n" >> "$DIR/state"
   RETVAL="$1 canceled"
 }
 
@@ -529,22 +572,20 @@ cmd_list () {
 #
 cmd_purge () {
 
-  if test -z "$1"
+  if ! test -z "$1"
   then
-    # FIXME - this is slow
-    for d in `grep -l -e 'DONE' -e 'FAILED' -e 'CANCELED' "$BASE"/*/state`
+    DIR="$BASE/$1"
+    rm -rf "$DIR"
+    RETVAL="purged $1"
+  else
+    for d in `grep -l -e 'DONE' -e 'FAILED' -e 'CANCELED' "$BASE"/*/state 2>/dev/null`
     do
       dir=`dirname "$d"`
       id=`basename "$dir"`
-      rm -rf "$BASE/$id"
+      rm -rf "$BASE/$id" >/dev/null 2>&1
     done
     RETVAL="purged finished jobs"
-    return
   fi
-
-  DIR="$BASE/$1"
-  rm -rf "$DIR"
-  RETVAL="purged $1"
 }
 
 
@@ -556,7 +597,7 @@ cmd_quit () {
 
   if test "$1" = "TIMEOUT"
   then
-    printf "IDLE TIMEOUT\\n"
+    printf "IDLE TIMEOUT\n"
     touch "$BASE/timed_out.$$"
   fi
 
@@ -590,13 +631,15 @@ listen() {
 
   # report our own pid
   if ! test -z $1; then
-    printf "PID: $1\\n"
+    printf "PID: $1\n"
   fi
 
   # prompt for commands...
-  printf "PROMPT-0->\\n"
+  printf "PROMPT-0->\n"
 
   # and read those from stdin
+  OLDIFS=$IFS
+  IFS=
   while read -r CMD ARGS
   do
 
@@ -607,9 +650,9 @@ listen() {
                  BULK_EXITVAL="0"
                  ;;
       BULK_RUN ) IN_BULK=""
-                 printf "BULK_EVAL\\n"  >> "$BASE/bulk.$$"
+                 printf "BULK_EVAL\n"  >> "$BASE/bulk.$$"
                  ;;
-      *        ) printf "$CMD $ARGS\\n" >> "$BASE/bulk.$$"
+      *        ) printf "$CMD $ARGS\n" >> "$BASE/bulk.$$"
                  ;;
     esac
 
@@ -621,6 +664,7 @@ listen() {
 
     # no more bulk collection (if there ever was any) -- execute the collected
     # command lines.
+    IFS=$OLDIFS
     while read -r CMD ARGS
     do
 
@@ -632,11 +676,13 @@ listen() {
       # is not known
       case $CMD in
         RUN       ) cmd_run     "$ARGS"  ;;
+        LRUN      ) cmd_lrun    "$ARGS"  ;;
         SUSPEND   ) cmd_suspend "$ARGS"  ;;
         RESUME    ) cmd_resume  "$ARGS"  ;;
         CANCEL    ) cmd_cancel  "$ARGS"  ;;
         RESULT    ) cmd_result  "$ARGS"  ;;
         STATE     ) cmd_state   "$ARGS"  ;;
+        STATS     ) cmd_stats   "$ARGS"  ;;
         WAIT      ) cmd_wait    "$ARGS"  ;;
         STDIN     ) cmd_stdin   "$ARGS"  ;;
         STDOUT    ) cmd_stdout  "$ARGS"  ;;
@@ -656,15 +702,15 @@ listen() {
 
       # the called function will report state and results in 'ERROR' and 'RETVAL'
       if test "$ERROR" = "OK"; then
-        printf "OK\\n"
-        printf "$RETVAL\\n"
+        printf "OK\n"
+        printf "$RETVAL\n"
       elif test "$ERROR" = "NOOP"; then
         # nothing
         true
       else
-        printf "ERROR\\n"
-        printf "$ERROR\\n"
-        printf "$RETVAL\\n"
+        printf "ERROR\n"
+        printf "$ERROR\n"
+        printf "$RETVAL\n"
         BULK_ERROR="NOK - bulk error '$ERROR'"  # a single error spoils the bulk
         BULK_EXITVAL="$EXITVAL"
       fi
@@ -674,7 +720,7 @@ listen() {
 
       # well done - prompt for next command (even in bulk mode, for easier
       # parsing and EXITVAL communication)
-      printf "PROMPT-$EXITVAL->\\n"
+      printf "PROMPT-$EXITVAL->\n"
 
     # closing thye read loop for the bulk data file
     done < "$BASE/bulk.$$"
@@ -696,6 +742,12 @@ listen() {
 #
 stty -echo   2> /dev/null
 stty -echonl 2> /dev/null
+
+if test "$PURGE_ON_START" = "True"
+then
+  cmd_purge &
+fi
+
 create_monitor
 listen $1
 #

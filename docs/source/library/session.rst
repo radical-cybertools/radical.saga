@@ -1,6 +1,5 @@
-
-SAGA Session
-************
+Sessions
+********
 
 .. todo:: Intro to SAGA Session
 

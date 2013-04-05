@@ -6,6 +6,11 @@ all: docs
 docs:
 	make -C docs html
 
+test:
+	nosetests tests.restapi --config=tests/nose.cfg
+
+copyright:
+
 pylint:
 	@for f in `find saga/ -name \*.py`; do \
 	  res=`pylint -r n -f text $$f 2>&1 | grep -e '^[FE]'` ;\
@@ -19,7 +24,7 @@ pylint:
 	done
 
 clean:
-	-rm -rf build/ saga.egg-info/ temp/
+	-rm -rf build/ saga.egg-info/ temp/ MANIFEST dist/ saga_python.egg-info
 	make -C docs clean
 	find . -name \*.pyc -exec rm -f {} \;
 

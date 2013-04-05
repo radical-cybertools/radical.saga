@@ -1,7 +1,8 @@
 
-__author__    = "Andre Merzky"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ SAGA job service interface
 """
@@ -63,11 +64,11 @@ class Service (Base, Async) :
 
 
         # param checks
-        url     = Url (url)
-        scheme  = url.scheme.lower ()
-
         if not session :
             session = Session (default=True)
+
+        url     = Url (url)
+        scheme  = url.scheme.lower ()
 
         Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
                        url, session, ttype=_ttype)
@@ -85,6 +86,9 @@ class Service (Base, Async) :
         """
 
         # param checks
+        if not session :
+            session = Session (default=True)
+
         url     = Url (url)
         scheme  = url.scheme.lower ()
 
