@@ -28,7 +28,7 @@ def test_advert_callback () :
         tc = sutc.TestConfig()
         
         d_1 = saga.advert.Directory (tc.advert_url + '/tmp/test1/test1/',
-                                     saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS)
+                                     saga.advert.CREATE | saga.advert.CREATE_PARENTS)
 
         d_1.set_attribute ('foo', 'bar')
         d_1.add_callback  ('foo',  cb  )
