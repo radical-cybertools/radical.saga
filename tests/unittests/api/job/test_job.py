@@ -110,8 +110,8 @@ def test_job_run():
         j1 = js.create_job(jd)
 
         j1.run()
+
         assert (j1.state in [saga.job.RUNNING, saga.job.PENDING])
-        assert j1.state == j1.get_state()
 
         del js
 
@@ -142,7 +142,7 @@ def test_job_wait():
 
         j1.run()
         j1.wait()
-        assert j1.state == saga.job.DONE
+        assert j1.state == saga.job.DONE, "%s != %s" % (j1.state, saga.job.DONE)
 
         del js
 
@@ -177,7 +177,6 @@ if True :
 
         j1.run()
         assert (j1.state in [saga.job.RUNNING, saga.job.PENDING])
-        assert j1.state == j1.get_state()
         j1.wait()
         assert j1.state == saga.job.DONE
 
