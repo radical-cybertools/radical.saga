@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>5. Developer Documentation &mdash; SAGA 0.9.3 documentation</title>
+    <title>2. saga.adaptor.x509 &mdash; SAGA 0.9.3 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -32,8 +32,9 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <link rel="top" title="SAGA 0.9.3 documentation" href="../index.html" />
-    <link rel="next" title="1. Writing SAGA-Python Adaptors" href="adaptorwriting.html" />
-    <link rel="prev" title="10. saga.adaptor.slurm_job" href="../adaptors/saga.adaptor.slurm_job.html" /> 
+    <link rel="up" title="4. Adaptors" href="saga.adaptor.index.html" />
+    <link rel="next" title="3. saga.adaptor.ssh" href="saga.adaptor.ssh.html" />
+    <link rel="prev" title="1. saga.adaptor.myproxy" href="saga.adaptor.myproxy.html" /> 
   </head>
   <body>
     <div class="related">
@@ -46,12 +47,13 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="adaptorwriting.html" title="1. Writing SAGA-Python Adaptors"
+          <a href="saga.adaptor.ssh.html" title="3. saga.adaptor.ssh"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../adaptors/saga.adaptor.slurm_job.html" title="10. saga.adaptor.slurm_job"
+          <a href="saga.adaptor.myproxy.html" title="1. saga.adaptor.myproxy"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.3 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" accesskey="U">4. Adaptors</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -60,25 +62,29 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="developer-documentation">
-<span id="chapter-middleware-adaptors"></span><h1>5. Developer Documentation<a class="headerlink" href="#developer-documentation" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="adaptorwriting.html">1. Writing SAGA-Python Adaptors</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="adaptorwriting.html#adaptor-structure">1.1. Adaptor Structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptorwriting.html#adaptor-registration">1.2. Adaptor Registration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptorwriting.html#adaptor-binding">1.3. Adaptor Binding</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptorwriting.html#adaptor-state">1.4. Adaptor State</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptorwriting.html#creating-api-objects">1.5. Creating API Objects</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptorwriting.html#exception-handling">1.6. Exception Handling</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptorwriting.html#asynchronous-methods">1.7. Asynchronous Methods</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptorwriting.html#bulk-operations">1.8. Bulk Operations:</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptorwriting.html#adaptor-logging">1.9. Adaptor Logging</a></li>
-<li class="toctree-l2"><a class="reference internal" href="adaptorwriting.html#external-processes">1.10. External Processes</a></li>
+  <div class="section" id="saga-adaptor-x509">
+<h1>2. saga.adaptor.x509<a class="headerlink" href="#saga-adaptor-x509" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>2.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>This adaptor points to a X509 proxy, or certificate,
+be used for backend connections.  Note that this
+context can be created by a MyProxy context instance.</p>
+</div>
+<div class="section" id="example">
+<h2>2.2. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="capabilities">
+<h2>2.3. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="attributes">
+<h3>2.3.1. attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>Type</li>
+<li>UserProxy</li>
+<li>LifeTime</li>
 </ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="timeout_gc.html">2. Timout Garbage Collection</a></li>
-</ul>
+</div></blockquote>
+</div>
 </div>
 </div>
 
@@ -88,15 +94,28 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">2. saga.adaptor.x509</a><ul>
+<li><a class="reference internal" href="#description">2.1. Description</a></li>
+<li><a class="reference internal" href="#example">2.2. Example</a></li>
+<li><a class="reference internal" href="#capabilities">2.3. Capabilities</a><ul>
+<li><a class="reference internal" href="#attributes">2.3.1. attributes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../adaptors/saga.adaptor.slurm_job.html"
-                        title="previous chapter">10. saga.adaptor.slurm_job</a></p>
+  <p class="topless"><a href="saga.adaptor.myproxy.html"
+                        title="previous chapter">1. saga.adaptor.myproxy</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="adaptorwriting.html"
-                        title="next chapter">1. Writing SAGA-Python Adaptors</a></p>
+  <p class="topless"><a href="saga.adaptor.ssh.html"
+                        title="next chapter">3. saga.adaptor.ssh</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../_sources/developers/index.txt"
+    <li><a href="../_sources/adaptors/saga.adaptor.x509.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -126,12 +145,13 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="adaptorwriting.html" title="1. Writing SAGA-Python Adaptors"
+          <a href="saga.adaptor.ssh.html" title="3. saga.adaptor.ssh"
              >next</a> |</li>
         <li class="right" >
-          <a href="../adaptors/saga.adaptor.slurm_job.html" title="10. saga.adaptor.slurm_job"
+          <a href="saga.adaptor.myproxy.html" title="1. saga.adaptor.myproxy"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.3 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" >4. Adaptors</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">

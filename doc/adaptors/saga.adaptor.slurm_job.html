@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>6. saga.adaptor.slurm_job &mdash; SAGA 0.9.3 documentation</title>
+    <title>10. saga.adaptor.slurm_job &mdash; SAGA 0.9.3 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -34,7 +34,7 @@
     <link rel="top" title="SAGA 0.9.3 documentation" href="../index.html" />
     <link rel="up" title="4. Adaptors" href="saga.adaptor.index.html" />
     <link rel="next" title="5. Developer Documentation" href="../developers/index.html" />
-    <link rel="prev" title="5. saga.adaptor.condorjob" href="saga.adaptor.condorjob.html" /> 
+    <link rel="prev" title="9. saga.adaptor.condorjob" href="saga.adaptor.condorjob.html" /> 
   </head>
   <body>
     <div class="related">
@@ -50,7 +50,7 @@
           <a href="../developers/index.html" title="5. Developer Documentation"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.condorjob.html" title="5. saga.adaptor.condorjob"
+          <a href="saga.adaptor.condorjob.html" title="9. saga.adaptor.condorjob"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" accesskey="U">4. Adaptors</a> &raquo;</li> 
@@ -63,13 +63,13 @@
           <div class="body">
             
   <div class="section" id="saga-adaptor-slurm-job">
-<h1>6. saga.adaptor.slurm_job<a class="headerlink" href="#saga-adaptor-slurm-job" title="Permalink to this headline">¶</a></h1>
+<h1>10. saga.adaptor.slurm_job<a class="headerlink" href="#saga-adaptor-slurm-job" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
-<h2>6.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<h2>10.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>The SLURM adaptor allows to run and manage jobs on a
 <a class="reference external" href="https://computing.llnl.gov/linux/slurm/slurm.html">SLURM</a> HPC cluster.</p>
 <div class="section" id="general-notes">
-<h3>6.1.1. General Notes<a class="headerlink" href="#general-notes" title="Permalink to this headline">¶</a></h3>
+<h3>10.1.1. General Notes<a class="headerlink" href="#general-notes" title="Permalink to this headline">¶</a></h3>
 <p>On Stampede, returning a non-zero exit code results in the scheduler
 putting the job into a FAILED state and assigning it an exit code of 127.</p>
 <p><strong>Example:</strong></p>
@@ -120,7 +120,7 @@ but I&#8217;m not sure that this is reported correctly everywhere yet.</p>
 <p>What exit code should be returned for a CANCELED job?</p>
 </div>
 <div class="section" id="implementation-notes">
-<h3>6.1.2. Implementation Notes<a class="headerlink" href="#implementation-notes" title="Permalink to this headline">¶</a></h3>
+<h3>10.1.2. Implementation Notes<a class="headerlink" href="#implementation-notes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>If scontrol can&#8217;t find an exit code, it returns None
@@ -139,7 +139,7 @@ not gone over theis extensively...</li>
 </div>
 </div>
 <div class="section" id="supported-schemas">
-<h2>6.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<h2>10.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
 <p>This adaptor is triggered by the following URL schemes:</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -165,7 +165,7 @@ not gone over theis extensively...</li>
 </table>
 </div>
 <div class="section" id="example">
-<h2>6.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<h2>10.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Ole Weidner&quot;</span>
 <span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
@@ -262,16 +262,12 @@ not gone over theis extensively...</li>
 </div>
 </div>
 <div class="section" id="configuration-options">
-<h2>6.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
-<p>Configuration options can be used to control the adaptor&#8217;s runtime behavior. Most adaptors don&#8217;t need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.</p>
+<h2>10.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<p>Configuration options can be used to control the adaptor&#8217;s runt    ime behavior. Most adaptors don&#8217;t need any configuration options to b    e set in order to work. They are mostly for controlling experimental feat    ures and properties of the adaptors.</p>
 <blockquote>
-<div><div class="admonition-see-also admonition seealso">
-<p class="first admonition-title">See also</p>
-<p class="last">More information about configuration options can be found in the <a class="reference internal" href="../usage/config.html#conf-file"><em>Configuration Files</em></a> section.</p>
-</div>
-</div></blockquote>
+<div></div></blockquote>
 <div class="section" id="enabled">
-<h3>6.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<h3>10.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
 <p>enable / disable saga.adaptor.slurm_job adaptor</p>
 <blockquote>
 <div><ul class="simple">
@@ -284,9 +280,9 @@ not gone over theis extensively...</li>
 </div>
 </div>
 <div class="section" id="capabilities">
-<h2>6.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<h2>10.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="supported-monitorable-metrics">
-<h3>6.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
+<h3>10.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>State</li>
@@ -295,7 +291,7 @@ not gone over theis extensively...</li>
 </div></blockquote>
 </div>
 <div class="section" id="supported-job-attributes">
-<h3>6.5.2. Supported Job Attributes<a class="headerlink" href="#supported-job-attributes" title="Permalink to this headline">¶</a></h3>
+<h3>10.5.2. Supported Job Attributes<a class="headerlink" href="#supported-job-attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>ExitCode</li>
@@ -307,17 +303,32 @@ not gone over theis extensively...</li>
 </div></blockquote>
 </div>
 <div class="section" id="supported-context-types">
-<h3>6.5.3. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
-<li><em>x509</em>: X509 proxy for gsissh</li>
-<li><em>userpass</em>: username/password pair for simple ssh</li>
-<li><em>ssh</em>: public/private keypair</li>
-</ul>
-</div></blockquote>
+<h3>10.5.3. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="29%" />
+<col width="71%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Attribute</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>x509</td>
+<td>X509 proxy for gsissh</td>
+</tr>
+<tr class="row-odd"><td>userpass</td>
+<td>username/password pair for simple ssh</td>
+</tr>
+<tr class="row-even"><td>ssh</td>
+<td>public/private keypair</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section" id="supported-job-description-attributes">
-<h3>6.5.4. Supported Job Description Attributes<a class="headerlink" href="#supported-job-description-attributes" title="Permalink to this headline">¶</a></h3>
+<h3>10.5.4. Supported Job Description Attributes<a class="headerlink" href="#supported-job-description-attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>Name</li>
@@ -346,7 +357,7 @@ not gone over theis extensively...</li>
 </div>
 </div>
 <div class="section" id="supported-api-classes">
-<h2>6.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<h2>10.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt>This adaptor supports the following API classes:</dt>
 <dd><ul class="first last simple">
@@ -357,7 +368,7 @@ not gone over theis extensively...</li>
 </dl>
 <p>Method implementation details are listed below.</p>
 <div class="section" id="saga-job-service">
-<h3>6.6.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
+<h3>10.6.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.slurm.slurm_job.SLURMJobService">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.slurm.slurm_job.</tt><tt class="descname">SLURMJobService</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJobService"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJobService" title="Permalink to this definition">¶</a></dt>
@@ -397,7 +408,7 @@ not gone over theis extensively...</li>
 
 </div>
 <div class="section" id="saga-job-job">
-<h3>6.6.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
+<h3>10.6.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.slurm.slurm_job.SLURMJob">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.slurm.slurm_job.</tt><tt class="descname">SLURMJob</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/slurm/slurm_job.html#SLURMJob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.slurm.slurm_job.SLURMJob" title="Permalink to this definition">¶</a></dt>
@@ -492,28 +503,28 @@ not gone over theis extensively...</li>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">6. saga.adaptor.slurm_job</a><ul>
-<li><a class="reference internal" href="#description">6.1. Description</a><ul>
-<li><a class="reference internal" href="#general-notes">6.1.1. General Notes</a></li>
-<li><a class="reference internal" href="#implementation-notes">6.1.2. Implementation Notes</a></li>
+<li><a class="reference internal" href="#">10. saga.adaptor.slurm_job</a><ul>
+<li><a class="reference internal" href="#description">10.1. Description</a><ul>
+<li><a class="reference internal" href="#general-notes">10.1.1. General Notes</a></li>
+<li><a class="reference internal" href="#implementation-notes">10.1.2. Implementation Notes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#supported-schemas">6.2. Supported Schemas</a></li>
-<li><a class="reference internal" href="#example">6.3. Example</a></li>
-<li><a class="reference internal" href="#configuration-options">6.4. Configuration Options</a><ul>
-<li><a class="reference internal" href="#enabled">6.4.1. enabled</a></li>
+<li><a class="reference internal" href="#supported-schemas">10.2. Supported Schemas</a></li>
+<li><a class="reference internal" href="#example">10.3. Example</a></li>
+<li><a class="reference internal" href="#configuration-options">10.4. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">10.4.1. enabled</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#capabilities">6.5. Capabilities</a><ul>
-<li><a class="reference internal" href="#supported-monitorable-metrics">6.5.1. Supported Monitorable Metrics</a></li>
-<li><a class="reference internal" href="#supported-job-attributes">6.5.2. Supported Job Attributes</a></li>
-<li><a class="reference internal" href="#supported-context-types">6.5.3. Supported Context Types</a></li>
-<li><a class="reference internal" href="#supported-job-description-attributes">6.5.4. Supported Job Description Attributes</a></li>
+<li><a class="reference internal" href="#capabilities">10.5. Capabilities</a><ul>
+<li><a class="reference internal" href="#supported-monitorable-metrics">10.5.1. Supported Monitorable Metrics</a></li>
+<li><a class="reference internal" href="#supported-job-attributes">10.5.2. Supported Job Attributes</a></li>
+<li><a class="reference internal" href="#supported-context-types">10.5.3. Supported Context Types</a></li>
+<li><a class="reference internal" href="#supported-job-description-attributes">10.5.4. Supported Job Description Attributes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#supported-api-classes">6.6. Supported API Classes</a><ul>
-<li><a class="reference internal" href="#saga-job-service">6.6.1. saga.job.Service</a></li>
-<li><a class="reference internal" href="#saga-job-job">6.6.2. saga.job.Job</a></li>
+<li><a class="reference internal" href="#supported-api-classes">10.6. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-job-service">10.6.1. saga.job.Service</a></li>
+<li><a class="reference internal" href="#saga-job-job">10.6.2. saga.job.Job</a></li>
 </ul>
 </li>
 </ul>
@@ -522,7 +533,7 @@ not gone over theis extensively...</li>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="saga.adaptor.condorjob.html"
-                        title="previous chapter">5. saga.adaptor.condorjob</a></p>
+                        title="previous chapter">9. saga.adaptor.condorjob</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="../developers/index.html"
                         title="next chapter">5. Developer Documentation</a></p>
@@ -561,7 +572,7 @@ not gone over theis extensively...</li>
           <a href="../developers/index.html" title="5. Developer Documentation"
              >next</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.condorjob.html" title="5. saga.adaptor.condorjob"
+          <a href="saga.adaptor.condorjob.html" title="9. saga.adaptor.condorjob"
              >previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" >4. Adaptors</a> &raquo;</li> 

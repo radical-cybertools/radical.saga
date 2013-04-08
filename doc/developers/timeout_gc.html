@@ -176,7 +176,7 @@ this gc thread decided to finalize it.  But hey, that&#8217;s the idea, right?</
 
 <dl class="method">
 <dt id="saga.utils.timeout_gc.TimeoutGC.register">
-<tt class="descclassname">TimeoutGC.</tt><tt class="descname">register</tt><big>(</big><em>obj</em>, <em>obj_initialize</em>, <em>obj_finalize</em>, <em>timeout=60</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/timeout_gc.html#TimeoutGC.register"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.timeout_gc.TimeoutGC.register" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">TimeoutGC.</tt><tt class="descname">register</tt><big>(</big><em>obj</em>, <em>obj_initialize</em>, <em>obj_finalize</em>, <em>timeout=99999</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/timeout_gc.html#TimeoutGC.register"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.timeout_gc.TimeoutGC.register" title="Permalink to this definition">¶</a></dt>
 <dd><p>Register an object instance for teimout garbage collection.  The
 <tt class="docutils literal"><span class="pre">obj_finalize</span></tt> method is called when the object instance seems idle
 for longer than <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds, the <tt class="docutils literal"><span class="pre">obj_initialize</span></tt> method is

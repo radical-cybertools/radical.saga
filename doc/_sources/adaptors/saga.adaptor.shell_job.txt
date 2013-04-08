@@ -119,9 +119,9 @@ Example
 
 Configuration Options
 ---------------------
-Configuration options can be used to control the adaptor's runtime behavior. Most adaptors don't need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.
+Configuration options can be used to control the adaptor's runt    ime behavior. Most adaptors don't need any configuration options to b    e set in order to work. They are mostly for controlling experimental feat    ures and properties of the adaptors.
 
- .. seealso:: More information about configuration options can be found in the :ref:`conf_file` section.
+     .. s    eealso:: More information about configuration options can be found in the     :ref:`conf_file` section.
 
 enabled
 *******
@@ -185,9 +185,13 @@ Supported Job Attributes
 Supported Context Types
 ***********************
 
-  - *x509*: X509 proxy for gsissh
-  - *userpass*: username/password pair for ssh
-  - *ssh*: public/private keypair
+========================= ============================================================
+                Attribute Description
+========================= ============================================================
+                     x509 X509 proxy for gsissh
+                 userpass username/password pair for ssh
+                      ssh public/private keypair
+========================= ============================================================
 
 Supported Job Description Attributes
 ************************************

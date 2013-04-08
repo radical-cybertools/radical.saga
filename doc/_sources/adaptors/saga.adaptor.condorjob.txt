@@ -34,9 +34,9 @@ Example
 
 Configuration Options
 ---------------------
-Configuration options can be used to control the adaptor's runtime behavior. Most adaptors don't need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.
+Configuration options can be used to control the adaptor's runt    ime behavior. Most adaptors don't need any configuration options to b    e set in order to work. They are mostly for controlling experimental feat    ures and properties of the adaptors.
 
- .. seealso:: More information about configuration options can be found in the :ref:`conf_file` section.
+     .. s    eealso:: More information about configuration options can be found in the     :ref:`conf_file` section.
 
 enabled
 *******
@@ -46,15 +46,6 @@ enable / disable saga.adaptor.condorjob adaptor
   - **type** : <type 'bool'>
   - **default** : True
   - **environment** : None
-  - **valid options** : [True, False]
-ptydebug
-********
-
-Turns PTYWrapper debugging on or off.
-
-  - **type** : <type 'bool'>
-  - **default** : False
-  - **environment** : SAGA_PTYDEBUG
   - **valid options** : [True, False]
 
 
@@ -78,9 +69,13 @@ Supported Job Attributes
 Supported Context Types
 ***********************
 
-  - *x509*: GSISSH X509 proxy context
-  - *userpass*: username/password pair (ssh)
-  - *ssh*: SSH public/private keypair
+========================= ============================================================
+                Attribute Description
+========================= ============================================================
+                     x509 GSISSH X509 proxy context
+                 userpass username/password pair (ssh)
+                      ssh SSH public/private keypair
+========================= ============================================================
 
 Supported Job Description Attributes
 ************************************

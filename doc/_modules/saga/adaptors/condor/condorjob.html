@@ -262,17 +262,7 @@
 <span class="c">#</span>
 <span class="n">_ADAPTOR_NAME</span>          <span class="o">=</span> <span class="s">&quot;saga.adaptor.condorjob&quot;</span>
 <span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&quot;condor&quot;</span><span class="p">,</span> <span class="s">&quot;condor+ssh&quot;</span><span class="p">,</span> <span class="s">&quot;condor+gsissh&quot;</span><span class="p">]</span>
-<span class="n">_ADAPTOR_OPTIONS</span>       <span class="o">=</span> <span class="p">[</span>
-     <span class="p">{</span>
-     <span class="s">&#39;category&#39;</span><span class="p">:</span>      <span class="s">&#39;saga.adaptor.condorjob&#39;</span><span class="p">,</span>
-     <span class="s">&#39;name&#39;</span><span class="p">:</span>          <span class="s">&#39;ptydebug&#39;</span><span class="p">,</span>
-     <span class="s">&#39;type&#39;</span><span class="p">:</span>          <span class="nb">bool</span><span class="p">,</span>
-     <span class="s">&#39;default&#39;</span><span class="p">:</span>       <span class="bp">False</span><span class="p">,</span>
-     <span class="s">&#39;valid_options&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">True</span><span class="p">,</span> <span class="bp">False</span><span class="p">],</span>
-     <span class="s">&#39;documentation&#39;</span><span class="p">:</span> <span class="s">&quot;&quot;&quot;Turns PTYWrapper debugging on or off.&quot;&quot;&quot;</span><span class="p">,</span>
-     <span class="s">&#39;env_variable&#39;</span><span class="p">:</span>  <span class="s">&quot;SAGA_PTYDEBUG&quot;</span>
-     <span class="p">}</span>
-<span class="p">]</span>
+<span class="n">_ADAPTOR_OPTIONS</span>       <span class="o">=</span> <span class="p">[]</span>
 
 <span class="c"># --------------------------------------------------------------------</span>
 <span class="c"># the adaptor capabilities &amp; supported attributes</span>
@@ -357,7 +347,6 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">id_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;^\[(.*)\]-\[(.*?)\]$&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_config</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ptydebug</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="p">[</span><span class="s">&#39;ptydebug&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_value</span><span class="p">()</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -439,22 +428,7 @@
                           <span class="s">&#39;condor_q&#39;</span><span class="p">:</span>       <span class="bp">None</span><span class="p">,</span>
                           <span class="s">&#39;condor_rm&#39;</span><span class="p">:</span>      <span class="bp">None</span><span class="p">}</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">ptydebug</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
-            <span class="c"># create a null logger to silence the PTY wrapper!</span>
-            <span class="kn">import</span> <span class="nn">logging</span>
-
-            <span class="k">class</span> <span class="nc">NullHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">):</span>
-                <span class="k">def</span> <span class="nf">emit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
-                    <span class="k">pass</span>
-            <span class="n">nh</span> <span class="o">=</span> <span class="n">NullHandler</span><span class="p">()</span>
-            <span class="n">null_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&quot;PTYShell&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">nh</span><span class="p">)</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span><span class="p">(</span><span class="n">pty_url</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">null_logger</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span><span class="p">(</span><span class="n">pty_url</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span><span class="p">(</span><span class="n">pty_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">set_initialize_hook</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">set_finalize_hook</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">)</span>
