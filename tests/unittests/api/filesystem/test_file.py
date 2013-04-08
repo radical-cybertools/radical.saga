@@ -40,7 +40,7 @@ class TestFile(unittest.TestCase):
         try:
             tc = sutc.TestConfig()
             invalid_url = deepcopy(saga.Url(tc.filesystem_url))
-            invalid_url.host += ".does.not.exist"
+            invalid_url.host = "does.not.exist"
             f = saga.filesystem.File(invalid_url)
             assert False, "Expected BadParameter exception but got none."
         except saga.BadParameter:

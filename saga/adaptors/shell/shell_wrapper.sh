@@ -728,6 +728,10 @@ listen() {
     # empty the bulk data file
     rm -f "$BASE/bulk.$$"
 
+    # next main loop read needs IFS reset again
+    OLDIFS=$IFS
+    IFS=
+
   done
 }
 

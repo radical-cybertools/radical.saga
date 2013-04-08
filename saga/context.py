@@ -13,6 +13,8 @@ from saga.constants import USER_KEY, USER_ID, USER_PASS, USER_VO, LIFE_TIME
 from saga.constants import REMOTE_ID, REMOTE_HOST, REMOTE_PORT
 
 
+# ------------------------------------------------------------------------------
+#
 class Context (saga.base.Base, saga.Attributes) :
     '''A SAGA Context object as defined in GFD.90.
 
@@ -60,6 +62,8 @@ class Context (saga.base.Base, saga.Attributes) :
 
     '''
 
+    # --------------------------------------------------------------------------
+    #
     def __init__ (self, type, _adaptor=None, _adaptor_state={}) : 
         '''
         type: string
@@ -92,6 +96,25 @@ class Context (saga.base.Base, saga.Attributes) :
         self.type = type
 
 
+    # --------------------------------------------------------------------------
+    #
+    def __str__ (self) :
+
+        d = self.as_dict ()
+        s = "{"
+
+        for key in sorted (d.keys ()) :
+            if  key == 'UserPass' :
+                s += "'UserPass' : '%s'" % ('x'*len(d[key]))
+            else :
+                s += "'%s' : '%s'" % (key, d[key])
+            s += ', '
+
+        return "%s}" % s[0:-2]
+
+
+    # --------------------------------------------------------------------------
+    #
     def _initialize (self, session) :
         '''
         ret:  None
