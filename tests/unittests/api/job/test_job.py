@@ -65,7 +65,7 @@ def test_job_service_invalid_url():
     try:
         tc = sutc.TestConfig()
         invalid_url       = deepcopy(saga.Url(tc.js_url))
-        invalid_url.host += ".does.not.exist"
+        invalid_url.host  = "does.not.exist"
         tmp_js = saga.job.Service(invalid_url, tc.session)
         assert False, "Expected XYZ exception but got none."
 
