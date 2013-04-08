@@ -1,6 +1,8 @@
-__author__    = ["Ole Weidner", "Andre Merzky"]
+
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 import os
 import sys
@@ -11,6 +13,7 @@ import saga.utils.test_config as sutc
 # ------------------------------------------------------------------------------
 #
 def test_deepcopy():
+    """ Test deep copy """
 
     try:
         jd1 = saga.job.Description ()
@@ -27,3 +30,31 @@ def test_deepcopy():
                 print "%s " % ni
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
+
+def test_environment_list ():
+    """ Test environment support for list type """
+
+    jd = saga.job.Description ()
+    jd.environment = ['A=a', 'B=b']
+    assert (type(jd.environment) == list), "Expected list() type but got %s" % type(jd.environment)
+    assert (jd.environment == ['A=a', 'B=b']), "'%s' == '%s'" % (jd.environment, ['A=a', 'B=b'])
+    
+def test_environment_dict ():
+    """ Test environment support for dict type """
+
+    jd = saga.job.Description ()
+    jd.environment = {'A':'a', 'B':'b'}
+    assert (type(jd.environment) == dict), "Expected dict() type but got %s" % type(jd.environment)
+    assert (jd.environment == {'A':'a', 'B':'b'}), "'%s' == '%s'" % (jd.environment, {'A':'a', 'B':'b'})
+        
+def test_environment ():
+    """ Test environment type exceptions """
+
+    try :
+        jd = saga.job.Description ()
+        jd.environment = 1
+        assert (False), "expected BadParameter exception, got none"
+    except saga.BadParameter :
+        assert (True)
+    except saga.SagaException as se:
+        assert (False), "expected BadParameter exception, got %s" % se

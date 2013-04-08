@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import re
 import os
 import sys
@@ -58,7 +63,7 @@ class PTYShell (object) :
 
     Note that ``PTYShell`` will change the shell prompts (``PS1`` and ``PS2``),
     to simplify output parsing.  ``PS2`` will be empty, ``PS1`` will be set
-    ``PROMPT-$?->\\n`` -- that way, the prompt will report the exit value of the
+    ``PROMPT-$?->`` -- that way, the prompt will report the exit value of the
     last command, saving an extra roundtrip.  Users of this class should be
     careful when setting other prompts -- see :func:`set_prompt` for more
     details.
@@ -78,8 +83,8 @@ class PTYShell (object) :
             raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" % (ret, out))
 
         # stage some data from a local string variable into a file on the remote system
-        self.shell.stage_to_file (src = pbs_job_script, 
-                                  tgt = "/tmp/data.$$/job_1.pbs")
+        self.shell.stage_to_remote (src = pbs_job_script, 
+                                    tgt = "/tmp/data.$$/job_1.pbs")
 
         # check size of staged script (this is actually done on PTYShell level
         # already, with no extra hop):
@@ -229,82 +234,23 @@ class PTYShell (object) :
     # ----------------------------------------------------------------
     #
     def initialize (self) :
-        """ 
-        initialize the shell connection.  We expect the pty_process to be in virgin
-        state, i.e. to be newly forked and executed.  We thus expect shell
-        startup prompts and messages.
-        """
+        """ initialize the shell connection.  """
 
-        try :
-            self.prompt    = "^(.*[\$#>])\s*$" # greedy, look for line ending with # $ >
-            self.prompt_re = re.compile (self.prompt, re.DOTALL)
+        self.prompt    = "^(.*[\$#>])\s*$" # greedy, look for line ending with # $ >
+        self.prompt_re = re.compile (self.prompt, re.DOTALL)
 
-            prompt_patterns = ["assword\s*:\s*$",            # password prompt
-                               "want to continue connecting", # hostkey confirmation
-                               self.prompt]                   # native shell prompt 
+        # turn off shell echo, set/register new prompt
+        self.run_sync ( "unset PROMPT_COMMAND ; "
+                             + "stty -echo; "
+                             + "PS1='PROMPT-$?->'; "
+                             + "PS2=''; "
+                             + "export PS1 PS2\n", 
+                               new_prompt="PROMPT-(\d+)->$")
 
-            # self.prompt is all we need for local shell, so we could do:
-            #
-            # if  self.shell_type == 'sh' :
-            #     prompt_patterns = [self.prompt] 
-            #
-            # but we don't and keep the other pattern around so that the switch in
-            # the while loop below is the same for all shell types
+        self.logger.debug ("got new shell prompt")
 
-
-            # find a prompt
-            n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
-
-            # this loop will run until we finally find the self.prompt.  At that
-            # point, we'll try to set a different prompt, and when we found that,
-            # too, we'll exit the loop and consider to be ready for running shell
-            # commands.
-            while True :
-
-                if n == None :
-                    # we found none of the prompts, yet -- try again 
-                    n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
-
-
-                if n == 0 :
-                    self.logger.debug ("got password prompt")
-                    if  not 'pwd' in self.pty_info or \
-                        not self.pty_info['pwd']      :
-                        raise saga.AuthenticationFailed ("prompted for unknown password (%s)" \
-                                                      % match)
-
-                    self.pty_shell.write ("%s\n" % self.pty_info['pwd'])
-                    n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
-
-
-                elif n == 1 :
-                    self.logger.debug ("got hostkey prompt")
-                    self.pty_shell.write ("yes\n")
-                    n, match = self.pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
-
-
-                elif n == 2 :
-                    self.logger.debug ("got initial shell prompt")
-
-                    # turn off shell echo, set/register new prompt
-                    self.run_sync ("unset PROMPT_COMMAND ; "
-                                   + "stty -echo; "
-                                   + "PS1='PROMPT-$?->\\n'; "
-                                   + "PS2=''; "
-                                   + "export PS1 PS2\n", 
-                                   new_prompt="PROMPT-(\d+)->\s*$")
-
-                    self.logger.debug ("got new shell prompt")
-
-                    # we are done waiting for a prompt
-                    break
-            
-            # check if some additional initialization routines as registered
-            if  self.initialize_hook :
-                self.initialize_hook ()
-
-        except Exception as e :
-            raise self._translate_exception (e)
+        if  self.initialize_hook :
+            self.initialize_hook ()
 
 
     # ----------------------------------------------------------------
@@ -406,23 +352,23 @@ class PTYShell (object) :
         By encoding the exit value in the command prompt, we safe one roundtrip.
         The prompt on Posix compliant shells can be set, for example, via::
 
-          PS1='PROMPT-$?->\\n'; export PS1
+          PS1='PROMPT-$?->'; export PS1
 
         The newline in the example above allows to nicely anchor the regular
         expression, which would look like::
 
-          PROMPT-(\d+)->\s*$
+          PROMPT-(\d+)->$
 
         The regex is compiled with 're.DOTALL', so the dot character matches
         all characters, including line breaks.  Be careful not to match more
         than the exact prompt -- otherwise, a prompt search will swallow stdout
         data.  For example, the following regex::
 
-          PROMPT-(.+)->\s*$
+          PROMPT-(.+)->$
 
         would capture arbitrary strings, and would thus match *all* of::
 
-          PROMPT-0-> ls
+          PROMPT-0->ls
           data/ info
           PROMPT-0->
 
@@ -707,7 +653,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def write_to_file (self, src, tgt) :
+    def write_to_remote (self, src, tgt) :
         """
         :type  src: string
         :param src: data to be staged into the target file
@@ -735,7 +681,7 @@ class PTYShell (object) :
             fhandle.flush  ()
             fhandle.close  ()
 
-            pty_copy = self.factory.run_copy_to (self.pty_info, fname, tgt)
+            self.factory.run_copy_to (self.pty_info, fname, tgt)
 
             os.remove (fname)
 
@@ -745,7 +691,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def read_from_file (self, src) :
+    def read_from_remote (self, src) :
         """
         :type  src: string
         :param src: path to source file to staged from
@@ -760,7 +706,7 @@ class PTYShell (object) :
             # first, write data into a tmp file
             fname   = self.base + "/staging.%s" % id(self)
 
-            self.pty_copy = self.factory.run_copy_from (self.pty_info, src, fname)
+            self.factory.run_copy_from (self.pty_info, src, fname)
 
             fhandle = open (fname, 'r')
             out = fhandle.read  ()
@@ -776,7 +722,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def stage_to_file (self, src, tgt) :
+    def stage_to_remote (self, src, tgt, cp_flags="") :
         """
         :type  src: string
         :param src: path of local source file to be stage from.
@@ -793,14 +739,14 @@ class PTYShell (object) :
         # prompt, and updating pwd state on every find_prompt.
 
         try :
-            pty_copy = self.factory.run_copy_to (self.pty_info, src, tgt)
+            self.factory.run_copy_to (self.pty_info, src, tgt, cp_flags)
 
         except Exception as e :
             raise self._translate_exception (e)
 
     # ----------------------------------------------------------------
     #
-    def stage_from_file (self, src, tgt) :
+    def stage_from_remote (self, src, tgt, cp_flags="") :
         """
         :type  src: string
         :param tgt: path to source file to stage from.
@@ -817,7 +763,7 @@ class PTYShell (object) :
         # prompt, and updating pwd state on every find_prompt.
 
         try :
-            pty_copy = self.factory.run_copy_from (self.pty_info, src, tgt)
+            self.factory.run_copy_from (self.pty_info, src, tgt, cp_flags)
 
         except Exception as e :
             raise self._translate_exception (e)
@@ -825,37 +771,14 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def _copy_file (self, src, tgt, metrics) :
+    def copy_file (self, src, tgt) :
         """
         :type  src: string
-        :param src: path to file to be staged
+        :param src: path to file on target host to be copied
 
         :type  tgt: string
-        :param tgt: path to file after staging
+        :param tgt: path on target host to copy file to
 
-        :type  metrics: list of saga.Metric instances
-        :param metrics: list of metrics to be updated with status information
-
-        Return value: handle to copy process, which can be used for status
-        checks etc.
-
-        Both, `src` and `tgt` strings, need to be fully qualified names, in the
-        sense that they must be readily understood by cp (for `sh` type shells)
-        and scp (for `ssh` type shells), respectively.  
-        
-        Note that this is a private function, called by :func:`copy_to_remote`
-        and :func:`copy_from_remote`, which prepare the respective qualified
-        path names.
-
-        For a local shell (type = 'sh'), we run a ``popen ("cp src tgt")``.  For
-        remote shells (type == 'ssh'), we start a slave scp connection.  In both
-        cases, we provide status update once per second.  For `cp`, this is
-        achieved by calling `stat` on `src` and `tgt`, to compare size; for
-        `scp` we parse the progress meter on stdout.  The thusly obtained
-        information are fed to the respective metrics, which can be registered
-        either on start time (see `metrics` parameter), or during the lifetime
-        of the copy process, via ``add_metric (handle, metric)``.
-        
         """
 
         # we expect the master shell to be in alive when staging, as we need to
@@ -894,6 +817,9 @@ class PTYShell (object) :
 
         elif 'pass' in lmsg :
             e = saga.AuthenticationFailed (cmsg)
+
+        elif 'ssh_exchange_identification' in lmsg :
+            e = saga.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
 
         elif 'denied' in lmsg :
             e = saga.PermissionDenied (cmsg)

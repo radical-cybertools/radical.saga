@@ -80,83 +80,151 @@ adaptor-specific lists of supported attributes.
 SAGA defines the following constants as valid job description attributes:
 
 .. currentmodule:: saga.job
-.. autodata:: EXECUTABLE
-.. data:: executable 
+.. data:: EXECUTABLE
 
-   (Property) Same as attribute :data:`~saga.job.EXECUTABLE`.
+   The executable to start once the job starts running::
+
+       jd = saga.job.Description()
+       jd.executable = "/bin/sleep"
 
    :type: str
 
-.. autodata:: ARGUMENTS
+.. data:: executable 
+
+   Same as attribute :data:`~saga.job.EXECUTABLE`.
+
+.. data:: ARGUMENTS
+
+   Arguments to pass to the :data:`~saga.job.EXECUTABLE`::
+
+       jd = saga.job.Description()
+       jd.arguments = ['--flag1', '--flag2']
+
+   :tpye: list()
+
 .. data:: arguments 
 
-   (Property) Same as attribute :data:`~saga.job.ARGUMENTS`.
+   Same as attribute :data:`~saga.job.ARGUMENTS`.
 
-   :type: list()
+.. data:: ENVIRONMENT
 
-.. autodata:: ENVIRONMENT
-.. data:: environment 
+   Environment variables to set in the job's context::
 
-   (Property) Same as attribute :data:`~saga.job.ENVIRONMENT`.
+       jd = saga.job.Description()
+       jd.environemnt = {'FOO': 'BAR', 'FREE': 'BEER'}
 
    :type: dict()
 
-.. autodata:: WORKING_DIRECTORY
-.. data:: working_directory 
+.. data:: environment 
 
-   (Property) Same as attribute :data:`~saga.job.WORKING_DIRECTORY`.
+   Same as attribute :data:`~saga.job.ENVIRONMENT`.
+
+.. data:: WORKING_DIRECTORY
+
+   The working directory of the job::
+
+       jd = saga.job.Description()
+       jd.working_directory = "/scratch/experiments/123/"
 
    :type: str()
 
-.. autodata:: FILE_TRANSFER
-.. data:: file_transfer 
+.. data:: working_directory 
 
-   (Property) Same as attribute :data:`~saga.job.FILE_TRANSFER`.
+   Same as attribute :data:`~saga.job.WORKING_DIRECTORY`.
+
+.. data:: OUTPUT
+
+   Filename to capture the executable's STDOUT stream. If ``output`` is 
+   a relative filename, the file is relative to :data:`~saga.job.WORKING_DIRECTORY`::
+
+       jd = saga.job.Description()
+       jd.output = "myjob_stdout.txt"
+
+   :type: str()
+
+.. data:: output 
+
+   Same as attribute :data:`~saga.job.OUTPUT`. 
+
+
+.. data:: ERROR
+
+   Filename to capture the executable's STDERR stream. If ``error`` is 
+   a relative filename, the file is relative to :data:`~saga.job.WORKING_DIRECTORY`::
+
+       jd = saga.job.Description()
+       jd.error = "myjob_stderr.txt"
+
+   :type: str()
+
+.. data:: error 
+
+   Same as attribute :data:`~saga.job.ERROR`.
+
+.. data:: FILE_TRANSFER
+
+   Files to stage-in before the job starts running and to stage out once 
+   the job has finished running. The syntax is as follows:
+
+      ``local_file OPERATOR remote_file``
+
+   ``OPERATOR`` can be one of the following:
+
+   * ``>`` copies the local file to the remote fille before the job starts. Overwrites the remote file if it exists.
+   * ``<`` copies the remote file to the local file after the job finishes. Overwrites the local file if it exists
+
+   Example::
+
+       jd = saga.job.Description()
+       jd.input_file_transfer = ["file://localhost/data/input/test.dat > "test.dat",
+                                 "file://localhost/data/results/1/result.dat < "result1.dat"
+                                ]
 
    :type: list()
 
-.. autodata:: INPUT
-.. data:: input 
+.. data:: file_transfer 
 
-   (Property) Same as attribute :data:`~saga.job.INPUT`.
+   Same as attribute :data:`~saga.job.FILE_TRANSFER`.
 
-   :type: str()
+.. data:: QUEUE
 
-.. autodata:: OUTPUT
-.. data:: output 
+   The name of the queue to submit the job to:: 
 
-   (Property) Same as attribute :data:`~saga.job.OUTPUT`.
-
-   :type: str()
-
-.. autodata:: ERROR
-.. data:: error 
-
-   (Property) Same as attribute :data:`~saga.job.ERROR`.
+       jd = saga.job.Description()
+       jd.queue = "mpi_long"
 
    :type: str()
 
-.. autodata:: QUEUE
 .. data:: queue 
 
-   (Property) Same as attribute :data:`~saga.job.QUEUE`.
+   Same as attribute :data:`~saga.job.QUEUE`.
+
+.. data:: PROJECT
+
+   The name of the project / allocation to charged for the job :: 
+
+       jd = saga.job.Description()
+       jd.project = "TG-XYZ123456"
 
    :type: str()
 
-.. autodata:: PROJECT
 .. data:: project 
 
-   (Property) Same as attribute :data:`~saga.job.PROJECT`.
+   Same as attribute :data:`~saga.job.PROJECT`.
+
+
+
+.. data:: SPMD_VARIATION
+
+   Describe me! 
 
    :type: str()
 
-.. autodata:: SPMD_VARIATION
 .. data:: spmd_variation 
 
    (Property) Same as attribute :data:`~saga.job.SPMD_VARIATION`.
 
-   :type: str()
-   :Valid Options: Single (default), MPI or OpenMP
+
 
 .. autodata:: TOTAL_CPU_COUNT
 .. data:: total_cpu_count 

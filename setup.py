@@ -1,9 +1,8 @@
-#!/usr/bin/env python
-# encoding: utf-8
 
-__author__    = "Ole Weidner"
+__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ Setup script. Used by easy_install and pip.
 """
