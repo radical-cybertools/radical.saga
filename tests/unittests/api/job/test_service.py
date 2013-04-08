@@ -1,3 +1,9 @@
+
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2013, The SAGA Project"
+__license__   = "MIT"
+
+
 __author__    = ["Ole Weidner", "Andre Merzky"]
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -6,12 +12,15 @@ import saga
 import saga.utils.test_config as sutc
 
 
+js = None
+
 # ------------------------------------------------------------------------------
 #
 def test_get_url():
-    """ Testing job service url/get_url()
+    """ Test job service url/get_url()
     """
     try:
+        global js
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
         assert str(js.get_url()) == str(tc.js_url)
@@ -28,12 +37,12 @@ def test_get_url():
 # ------------------------------------------------------------------------------
 #
 def test_list_jobs():
-    """ Testing if a submitted job shows up in Service.list() """
+    """ Test if a submitted job shows up in Service.list() """
     try:
+        global js
         tc = sutc.TestConfig()
 
         # create job service and job
-        js = saga.job.Service(tc.js_url, tc.session)
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
@@ -59,12 +68,12 @@ def test_list_jobs():
 # ------------------------------------------------------------------------------
 #
 def test_run_job () :
-    """ submit a job via run_job, and retrieve id """
+    """ Test to submit a job via run_job, and retrieve id """
     try:
+        global js
         tc = sutc.TestConfig ()
 
         # create job service and job
-        js = saga.job.Service (tc.js_url, tc.session)
         j  = js.run_job ("/bin/sleep 10")
         assert j.id
 
@@ -78,12 +87,12 @@ def test_run_job () :
 # ------------------------------------------------------------------------------
 #
 def test_get_job () :
-    """ submit a job, and retrieve it by id """
+    """ Test to submit a job, and retrieve it by id """
     try:
+        global js
         tc = sutc.TestConfig ()
 
         # create job service and job
-        js = saga.job.Service (tc.js_url, tc.session)
         jd = saga.job.Description ()
         jd.executable = '/bin/sleep'
         jd.arguments  = ['10']
@@ -104,3 +113,28 @@ def test_get_job () :
                 print "%s " % ni
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
+
+# # ------------------------------------------------------------------------------
+# #
+# def test_multiple_services () :
+#     """ Test to create multiple job service instances  (this test might take a while) """
+#     try:
+#         for i in range (0, 20) :
+#             tc = sutc.TestConfig ()
+#             js = saga.job.Service(tc.js_url, tc.session)
+#             jd = saga.job.Description ()
+#             jd.executable = '/bin/sleep'
+#             jd.arguments  = ['10']
+#             jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+#             j = js.create_job(jd)
+#             j.run()
+#             assert (j.state in [saga.job.RUNNING, saga.job.PENDING]), "job submission failed"
+# 
+#     except saga.NotImplemented as ni:
+#             assert tc.notimpl_warn_only, "%s " % ni
+#             if tc.notimpl_warn_only:
+#                 print "%s " % ni
+# 
+#     except saga.SagaException as se:
+#         assert False, "Unexpected exception: %s" % se
+

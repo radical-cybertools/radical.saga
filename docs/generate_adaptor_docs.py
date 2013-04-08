@@ -1,3 +1,9 @@
+
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 __author__    = ["Andre Merzky", "Ole Weidner"]
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -89,9 +95,11 @@ def cleanup (text) :
 idx = "%s/%s.rst" % (DOCROOT, 'saga.adaptor.index')
 i   = open (idx, 'w')
 
-i.write ("*********\n")
-i.write ("Adaptors:\n")
-i.write ("*********\n")
+i.write (".. _chapter_adaptors:\n")
+i.write ("\n")
+i.write ("********\n")
+i.write ("Adaptors\n")
+i.write ("********\n")
 i.write ("\n")
 i.write (".. toctree::\n")
 i.write ("   :numbered:\n")
@@ -134,6 +142,9 @@ for a in saga.engine.registry.adaptor_registry :
     if 'description' in m._ADAPTOR_DOC :
         description  =  m._ADAPTOR_DOC['description']
         description  =  cleanup(description)
+
+    print m._ADAPTOR_INFO['name']
+    print m._ADAPTOR_DOC.keys ()
 
     if 'example' in m._ADAPTOR_DOC :
         example = m._ADAPTOR_DOC['example']
@@ -187,10 +198,11 @@ for a in saga.engine.registry.adaptor_registry :
         capable  = ""
 
         cap_headers = {
-            'jdes_attributes'   : 'Supported Job Description Attributes' ,
-            'job_attributes'    : 'Supported Job Attributes' ,
-            'metrics'           : 'Supported Monitorable Metrics' ,
-            'contexts'          : 'Supported Context Types' 
+            'jdes_attributes': 'Supported Job Description Attributes' ,
+            'job_attributes' : 'Supported Job Attributes' ,
+            'metrics'        : 'Supported Monitorable Metrics' ,
+            'contexts'       : 'Supported Context Types' ,
+            'ctx_attributes' : 'Supported Context Attributes' 
         }
 
         for cname in capabs  :
@@ -204,13 +216,20 @@ for a in saga.engine.registry.adaptor_registry :
 
             capab = capabs[cname]
 
+
             if type(capab) == list :
                 for key in capab :
                     capable += "  - %s\n" % key
             elif type(capab) == dict :
+            
+                capable += "%s %s\n"       % ('='*25, '='*60)
+                capable += "%25s %s\n"     % ('Attribute', 'Description')
+                capable += "%s %s\n"       % ('='*25, '='*60)
                 for key in capab :
                     val = capab[key]
-                    capable += "  - *%s*: %s\n" % (key,val)
+                  # capable += "  - *%s*: %s\n" % (key,val)
+                    capable += "%25s %s\n" % (key, val)
+                capable += "%s %s\n"       % ('='*25, '='*60)
 
             capable += "\n"
 
@@ -219,7 +238,12 @@ for a in saga.engine.registry.adaptor_registry :
         classes      = ""
         classes_long = ""
 
+        is_context = True
         for cpi in m._ADAPTOR_INFO['cpis'] :
+
+            if cpi['type'] != 'saga.Context' :
+                is_context = False
+
             classes      += "  - :class:`%s`\n" % cpi['type']
             classes_long += "\n"
             classes_long += "%s\n" % cpi['type']
@@ -229,6 +253,12 @@ for a in saga.engine.registry.adaptor_registry :
             classes_long += "   :members:\n"
           # classes_long += "   :undoc-members:\n"
             classes_long += "\n"
+
+      # if is_context :
+      #     # do not auto-document context adaptors -- those are done manually
+      #     print "skip   %s (context)" % fn
+      #     continue
+
 
 
     f = open (fn, 'w')
@@ -243,42 +273,50 @@ for a in saga.engine.registry.adaptor_registry :
     f.write ("%s\n" % description)
     f.write ("\n")
     f.write ("\n")
-    f.write ("Supported Schemas\n")
-    f.write ("-----------------\n")
-    f.write ("\nThis adaptor is triggered by the following URL schemes:\n\n")
-    f.write ("%s\n" % schemas)
-    f.write ("\n")
-    f.write ("\n")
+
+    if not is_context :
+        f.write ("Supported Schemas\n")
+        f.write ("-----------------\n")
+        f.write ("\nThis adaptor is triggered by the following URL schemes:\n\n")
+        f.write ("%s\n" % schemas)
+        f.write ("\n")
+        f.write ("\n")
+
     f.write ("Example\n")
     f.write ("-------\n")
     f.write ("\n")
     f.write (".. literalinclude:: ../../../%s\n" % example)
     f.write ("\n")
     f.write ("\n")
-    f.write ("Configuration Options\n")
-    f.write ("---------------------\n")
-    f.write ("Configuration options can be used to control the adaptor's \
-runtime behavior. Most adaptors don't need any configuration options \
-to be set in order to work. They are mostly for controlling experimental \
-features and properties of the adaptors.\
-\n\n \
-.. seealso:: More information about configuration options can be found in \
-the :ref:`conf_file` section.\n")
-    f.write ("\n")
-    f.write ("%s\n" % options)
-    f.write ("\n")
+
+    if not is_context :
+        f.write ("Configuration Options\n")
+        f.write ("---------------------\n")
+        f.write ("Configuration options can be used to control the adaptor's \
+runt    ime behavior. Most adaptors don't need any configuration options \
+to b    e set in order to work. They are mostly for controlling experimental \
+feat    ures and properties of the adaptors.\
+\n\n     \
+.. s    eealso:: More information about configuration options can be found in \
+the     :ref:`conf_file` section.\n")
+        f.write ("\n")
+        f.write ("%s\n" % options)
+        f.write ("\n")
+
     f.write ("Capabilities\n")
     f.write ("------------\n")
     f.write ("\n")
     f.write ("%s\n" % capable)
     f.write ("\n")
-    f.write ("Supported API Classes\n")
-    f.write ("---------------------\n")
-    f.write ("\nThis adaptor supports the following API classes:\n")
-    f.write ("%s\n" % classes)
-    f.write ("Method implementation details are listed below.\n")
-    f.write ("%s\n" % classes_long)
-    f.write ("\n")
+
+    if not is_context :
+        f.write ("Supported API Classes\n")
+        f.write ("---------------------\n")
+        f.write ("\nThis adaptor supports the following API classes:\n")
+        f.write ("%s\n" % classes)
+        f.write ("Method implementation details are listed below.\n")
+        f.write ("%s\n" % classes_long)
+        f.write ("\n")
 
     f.close ()
 

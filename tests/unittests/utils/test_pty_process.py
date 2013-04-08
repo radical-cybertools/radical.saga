@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import os
 import time
 import signal
@@ -31,7 +36,8 @@ def test_ptyprocess_term () :
     os.kill (pty.child, signal.SIGTERM)
     time.sleep (0.1)
     assert (not pty.alive ())
-    assert (pty.exit_signal == signal.SIGTERM)
+    assert (pty.exit_signal == signal.SIGTERM), "%s == %s" % \
+           (pty.exit_signal ,  signal.SIGTERM)
 
 
 # ------------------------------------------------------------------------------
@@ -42,7 +48,8 @@ def test_ptyprocess_kill () :
     os.kill (pty.child, signal.SIGKILL)
     time.sleep (0.1)
     assert (not pty.alive ())
-    assert (pty.exit_signal == signal.SIGKILL)
+    assert (pty.exit_signal == signal.SIGKILL), "%s == %s" % \
+           (pty.exit_signal ,  signal.SIGKILL)
 
 
 # ------------------------------------------------------------------------------
@@ -64,7 +71,8 @@ def test_ptyprocess_stdout () :
     pty = supp.PTYProcess ("printf \"%s\"" % txt)
     out = pty.read ()
     pty.wait ()
-    assert (str(txt) == str(out))
+    assert (str(txt) == str(out)), "%s == %s" % \
+           (str(txt) ,  str(out))
 
 
 # ------------------------------------------------------------------------------
@@ -76,7 +84,8 @@ def test_ptyprocess_stderr () :
     out = pty.read ()
   # print "--%s--%s--\n" % ( len(txt), txt)
   # print "--%s--%s--\n" % ( len(out), out)
-    assert (str(txt) == str(out))
+    assert (str(txt) == str(out)), "%s == %s" % \
+           (str(txt) ,  str(out))
 
 
 # ------------------------------------------------------------------------------
@@ -90,7 +99,9 @@ def test_ptyprocess_write () :
     out = pty.read ()
   # print "--%s--%s--\n" % ( len(txt), txt)
   # print "--%s--%s--\n" % ( len(out), out)
-    assert (txt == out)
+    assert (txt == out), "%s == %s" % \
+           (txt ,  out)
+
 
 
 # ------------------------------------------------------------------------------
@@ -101,7 +112,8 @@ def test_ptyprocess_find () :
     pty = supp.PTYProcess ("printf \"%s\"" % txt)
     out = pty.find ('2', '3')
   # print out
-    assert (out == (0, '______1_____2'))
+    assert (out == (0, '______1_____2')), "%s == %s" % \
+           (out ,  (0, '______1_____2'))
 
 
 # ------------------------------------------------------------------------------
