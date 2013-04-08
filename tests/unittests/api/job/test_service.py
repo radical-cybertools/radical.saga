@@ -68,7 +68,7 @@ def test_list_jobs():
 # ------------------------------------------------------------------------------
 #
 def test_run_job () :
-    """ Tets to submit a job via run_job, and retrieve id """
+    """ Test to submit a job via run_job, and retrieve id """
     try:
         global js
         tc = sutc.TestConfig ()
