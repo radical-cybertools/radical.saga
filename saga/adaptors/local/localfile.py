@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 """ Local filesystem adaptor implementation """
 
 import os
@@ -377,7 +382,7 @@ class LocalFile (saga.adaptors.cpi.filesystem.File) :
 
         self._init_check ()
 
-        return self
+        return self.get_api ()
 
 
     @ASYNC_CALL

@@ -1,6 +1,8 @@
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2011-2013, The SAGA Project"
+
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 import os
 
@@ -47,12 +49,15 @@ class Url (object):
         """ Create a new Url object from a string or another Url object.
         """
 
+        if type(url_string) == type(None):
+            self._urlobj = urlparse.urlparse("")
         if type(url_string) == str:
             self._urlobj = urlparse.urlparse(url_string)
         elif type(url_string) == Url:
             self._urlobj = urlparse.urlparse(str(url_string))
         else:
-            raise BadParameter("Url expects str or Url type as parameter")
+            raise BadParameter ("Url expects str or Url type as parameter, not %s" \
+                             % type(url_string))
 
     ######################################################################
     ##
