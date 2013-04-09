@@ -793,7 +793,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def _translate_exception (self, e) :
+    def _translate_exception (self, e, msg=None) :
         """
         In many cases, we should be able to roughly infer the exception cause
         from the error message -- this is centrally done in this method.  If
@@ -811,6 +811,9 @@ class PTYShell (object) :
 
         cmsg = e._plain_message
         lmsg = cmsg.lower ()
+
+        if  msg :
+            cmsg = "%s (%s)" % (cmsg, msg)
 
         if 'auth' in lmsg :
             e = saga.AuthorizationFailed (cmsg)
