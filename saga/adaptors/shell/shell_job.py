@@ -295,7 +295,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # When should that be done?
         ret, out, _ = self.shell.run_sync ("QUIT")
 
-        ielf._logger.error ("adaptor dying... %s" % self.njobs)
+        self._logger.error ("adaptor dying... %s" % self.njobs)
         self._logger.trace ()
     
         #     try :
