@@ -1,12 +1,20 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import re
 import os
 import sys
 import pty
+import tty
 import time
+import errno
 import shlex
 import select
 import signal
+import termios
 import threading
 
 import saga.utils.logger
@@ -17,7 +25,7 @@ import saga.exceptions as se
 #
 _CHUNKSIZE = 1024  # default size of each read
 _POLLDELAY = 0.01  # seconds in between read attempts
-_DEBUG_MAX = 60
+_DEBUG_MAX = 600
 
 
 # --------------------------------------------------------------------
@@ -185,16 +193,11 @@ class PTYProcess (object) :
 
         self.logger.debug ("PTYProcess: '%s'" % ' '.join ((self.command)))
 
-        self.parent_in,  self.child_in  = pty.openpty ()
-        self.parent_out, self.child_out = pty.openpty ()
-      # self.parent_err, self.child_err = pty.openpty ()
-
-        self.logger.info ("running %s" % self.command[0])
-        self.logger.info ("running %s" % ' '.join (self.command))
+        self.logger.info ("running: %s" % ' '.join (self.command))
 
         # create the child
         try :
-             self.child =  os.fork ()
+             self.child, self.child_fd = pty.fork ()
         except Exception as e:
             raise se.NoSuccess ("Could not run (%s): %s" \
                              % (' '.join (self.command), e))
@@ -203,57 +206,6 @@ class PTYProcess (object) :
             # this is the child
 
             try :
-                # close parent end of pty pipes
-                os.close (self.parent_in)
-                os.close (self.parent_out)
-              # os.close (self.parent_err)
-
-                # redirect our precious stdio
-                os.dup2 (self.child_in,  sys.stdin.fileno  ())
-                os.dup2 (self.child_out, sys.stdout.fileno ())
-                os.dup2 (self.child_out, sys.stderr.fileno ())
-
-              # # for tty's, reopen child stdio unbuffered (buffsize=0), then 
-              # # redirect our precious stdio
-              # if os.isatty (sys.stdin.fileno ()) :
-              #     unbuf_in  = os.fdopen (sys.stdin.fileno  (), 'r+', 0)
-              #     os.dup2 (self.child_in,  unbuf_in.fileno  ())
-              # else :
-              #     os.dup2 (self.child_in, sys.stdin.fileno ())
-              #
-              # if os.isatty (sys.stdout.fileno ()) :
-              #     unbuf_out = os.fdopen (sys.stdout.fileno (), 'w+', 0)
-              #     os.dup2 (self.child_out, unbuf_out.fileno ())
-              # else :
-              #     os.dup2 (self.child_out, sys.stdout.fileno ())
-              #
-              # if os.isatty (sys.stderr.fileno ()) :
-              #     unbuf_err = os.fdopen (sys.stderr.fileno (), 'w+', 0)
-              #     os.dup2 (self.child_out, unbuf_err.fileno ())
-              #   # os.dup2 (self.child_err, unbuf_err.fileno ())
-              # else :
-              #     os.dup2 (self.child_out, sys.stderr.fileno ())
-
-                # make a process group leader (should close tty tty)
-                os.setsid ()
-
-                # close tty, in case we still own any:
-                try :
-                    os.close (os.open ("/dev/tty", os.O_RDWR | os.O_NOCTTY));
-                except :
-                    # was probably closed earlier, that's all right
-                    pass
-
-                # now acquire pty
-                try :
-                    os.close (os.open (os.ttyname (sys.stdout.fileno ()), os.O_RDWR))
-                except :
-                    # well, this *may* be bad - or may now, depending on the
-                    # type of command ones to run in this shell.  So, we print
-                    # a big fat warning, and continue
-                    self.logger.error ("Unclean PTY shell setup - proceed anyway")
-                    pass
-
                 # all I/O set up, have a pty (*fingers crossed*), lift-off!
                 os.execvpe (self.command[0], self.command, os.environ)
 
@@ -263,10 +215,15 @@ class PTYProcess (object) :
                 sys.exit (-1)
 
         else :
-            # parent
-            os.close (self.child_in)
-            os.close (self.child_out)
-          # os.close (self.child_err)
+            # this is the parent
+            new = termios.tcgetattr (self.child_fd)
+            new[3] = new[3] & ~termios.ECHO
+
+            termios.tcsetattr (self.child_fd, termios.TCSADRAIN, new)
+
+
+            self.parent_in  = self.child_fd
+            self.parent_out = self.child_fd
 
 
         # check if some additional initialization routines as registered
@@ -276,29 +233,57 @@ class PTYProcess (object) :
 
     # --------------------------------------------------------------------
     #
-    def finalize (self) :
+    def finalize (self, wstat=None) :
         """ kill the child, close all I/O channels """
 
         # NOTE: do we need to lock?
 
-        # as long as the chiuld lives, run any higher level shutdown routine.
+        # as long as the child may live, run any higher level shutdown routine.
         if  self.finalize_hook :
             self.finalize_hook ()
 
-        # now we can safely kill the child process, and close all I/O channels
-        try :
-            if  self.child :
-                os.kill (self.child, signal.SIGTERM)
-        except OSError :
-            pass
+        # now we can safely kill the process -- unless some wait did that before
+        if  wstat == None :
 
-        try :
             if  self.child :
-                os.kill (self.child, signal.SIGKILL)
-        except OSError :
-            pass
+                # yes, we have something to kill!
+                try :
+                    os.kill (self.child, signal.SIGKILL)
+                except OSError :
+                    pass
 
+                # hey, kiddo, how did that go?
+                while True :
+                    try :
+                        wpid, wstat = os.waitpid (self.child, 0)
+
+                    except OSError as e :
+
+                        # this should not have failed -- child disappeared?
+                        self.exit_code   = None 
+                        self.exit_signal = None
+                        wstat            = None
+                        break
+
+                    if wpid :
+                        break
+
+        # at this point, we declare the process to be gone for good
         self.child = None
+
+        # lets see if we can perform some post-mortem analysis
+        if  wstat != None :
+
+            if os.WIFEXITED (wstat) :
+                # child died of natural causes - perform autopsy...
+                self.exit_code   = os.WEXITSTATUS (wstat)
+                self.exit_signal = None
+
+            elif os.WIFSIGNALED (wstat) :
+                # murder!! Child got killed by someone!  recover evidence...
+                self.exit_code   = None
+                self.exit_signal = os.WTERMSIG (wstat)
+
 
      ## try : 
      ##     os.close (self.parent_in)  
@@ -326,11 +311,29 @@ class PTYProcess (object) :
 
         with self.gc.active (self) :
 
+            if not self.child:
+                # this was quick ;-)
+                return
+
             # yes, for ever and ever...
             while True :
 
                 # hey, kiddo, whats up?
-                wpid, wstat = os.waitpid (self.child, 0)
+                try :
+                    wpid, wstat = os.waitpid (self.child, 0)
+                except OSError as e :
+
+                    if e.errno == errno.ECHILD :
+
+                        # child disappeared
+                        self.exit_code   = None
+                        self.exit_signal = None
+                        self.finalize ()
+                        return
+
+                    # no idea what happened -- it is likely bad
+                    raise se.NoSuccess ("waitpid failed: %s" % e)
+
 
                 # did we get a note about child termination?
                 if 0 == wpid :
@@ -348,21 +351,14 @@ class PTYProcess (object) :
                     continue
 
 
-                # not stopped, poor thing... - soooo, what happened??
-                if os.WIFEXITED (wstat) :
-                    # child died of natural causes - perform autopsy...
-                    self.exit_code   = os.WEXITSTATUS (wstat)
-                    self.exit_signal = None
+                # not stopped, poor thing... - soooo, what happened??  But hey,
+                # either way, its dead -- make sure it stays dead, to avoid
+                # zombie apocalypse...
+                self.child = None
+                self.finalize (wstat=wstat)
 
-                elif os.WIFSIGNALED (wstat) :
-                    # murder!! Child got killed by someone!  recover evidence...
-                    self.exit_code   = None
-                    self.exit_signal = os.WTERMSIG (wstat)
-
-                # either way, its dead -- make sure it stays dead, to avoid zombie
-                # apocalypse...
-                self.finalize ()
                 return
+
 
     # --------------------------------------------------------------------
     #
@@ -388,38 +384,31 @@ class PTYProcess (object) :
             # do we have a child which we can check?
             if  self.child :
 
-                # hey, kiddo, whats up?
-                wpid, wstat = os.waitpid (self.child, os.WNOHANG)
+                while True :
+                    # hey, kiddo, whats up?
+                    wpid, wstat = os.waitpid (self.child, os.WNOHANG)
 
-                # did we get a note about child termination?
-                if 0 == wpid :
-                    # nope, all is well - carry on
-                    return True
-
-
-                # Yes, we got a note.  
-                # Well, maybe the child fooled us and is just playing dead?
-                if os.WIFSTOPPED   (wstat) or \
-                   os.WIFCONTINUED (wstat)    :
-                    # we don't care if someone stopped/resumed the child -- that is up
-                    # to higher powers.  For our purposes, the child is alive.  Ha!
-                    return True
+                    # did we get a note about child termination?
+                    if 0 == wpid :
+                        # nope, all is well - carry on
+                        return True
 
 
-                # not stopped, poor thing... - soooo, what happened??
-                if os.WIFEXITED (wstat) :
-                    # child died of natural causes - perform autopsy...
-                    self.exit_code   = os.WEXITSTATUS (wstat)
-                    self.exit_signal = None
+                    # Yes, we got a note.  
+                    # Well, maybe the child fooled us and is just playing dead?
+                    if os.WIFSTOPPED   (wstat) or \
+                       os.WIFCONTINUED (wstat)    :
+                        # we don't care if someone stopped/resumed the child -- that is up
+                        # to higher powers.  For our purposes, the child is alive.  Ha!
+                        continue
 
-                elif os.WIFSIGNALED (wstat) :
-                    # murder!! Child got killed by someone!  recover evidence...
-                    self.exit_code   = None
-                    self.exit_signal = os.WTERMSIG (wstat)
+                    break
 
-                # either way, its dead -- make sure it stays dead, to avoid zombie
+                # so its dead -- make sure it stays dead, to avoid zombie
                 # apocalypse...
-                self.finalize ()
+                self.child = None
+                self.finalize (wstat=wstat)
+
 
             # check if we can attempt a post-mortem revival though
             if  not recover :
@@ -506,7 +495,7 @@ class PTYProcess (object) :
 
                 # read until we have enough data, or hit timeout ceiling...
                 while True :
-                
+
                     # first, lets see if we still have data in the cache we can return
                     if len (self.cache) :
 
@@ -695,7 +684,6 @@ class PTYProcess (object) :
             if  issubclass (e.__class__, saga.SagaException) :
                 raise se.NoSuccess ("output parsing failed (%s): %s" % (e._plain_message, data))
             raise se.NoSuccess ("output parsing failed (%s): %s" % (e, data))
-
 
 
     # ----------------------------------------------------------------

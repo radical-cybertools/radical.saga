@@ -1,12 +1,11 @@
-#!/usr/bin/env python
-# encoding: utf-8
+
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 
 """ SGE job adaptor implementation
 """
-
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2013, The SAGA Project"
-__license__   = "MIT"
 
 import saga.utils.which
 import saga.utils.pty_shell
@@ -151,17 +150,7 @@ _PTY_TIMEOUT = 2.0
 #
 _ADAPTOR_NAME          = "saga.adaptor.sgejob"
 _ADAPTOR_SCHEMAS       = ["sge", "sge+ssh", "sge+gsissh"]
-_ADAPTOR_OPTIONS       = [
-     {
-     'category':      'saga.adaptor.sgejob',
-     'name':          'ptydebug',
-     'type':          bool,
-     'default':       False,
-     'valid_options': [True, False],
-     'documentation': """Turns PTYWrapper debugging on or off.""",
-     'env_variable':  "SAGA_PTYDEBUG"
-     }
-]
+_ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -245,7 +234,6 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts = self.get_config()
-        self.ptydebug = self.opts['ptydebug'].get_value()
 
     # ----------------------------------------------------------------
     #
@@ -328,25 +316,15 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                           'qdel':  None,
                           'qconf': None}
 
-        if self._adaptor.ptydebug == False:
-            # create a null logger to silence the PTY wrapper!
-            import logging
-
-            class NullHandler(logging.Handler):
-                def emit(self, record):
-                    pass
-            nh = NullHandler()
-            null_logger = logging.getLogger("PTYShell").addHandler(nh)
-
-            self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-                self.session, null_logger)
-        else:
-            self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
+        self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
         self.shell.set_initialize_hook(self.initialize)
         self.shell.set_finalize_hook(self.finalize)
 
         self.initialize()
+
+        return self.get_api ()
+
 
     # ----------------------------------------------------------------
     #
@@ -392,7 +370,9 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def finalize(self, kill_shell=False):
-        pass
+        if  kill_shell :
+            if  self.shell :
+                self.shell.finalize (True)
 
     # ----------------------------------------------------------------
     #

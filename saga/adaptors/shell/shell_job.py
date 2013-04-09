@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 """ shell based job adaptor implementation """
 
 import saga.utils.which
@@ -21,11 +26,6 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
 # --------------------------------------------------------------------
-# some private defs
-#
-_PTY_TIMEOUT = 2.0
-
-# --------------------------------------------------------------------
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.shell_job"
@@ -44,6 +44,19 @@ _ADAPTOR_OPTIONS       = [
                           concurrent connections is limited to 10, this
                           effectively halfs the number of available job service
                           instances per remote host.''',
+    'env_variable'     : None
+    },
+    { 
+    'category'         : 'saga.adaptor.shell_job',
+    'name'             : 'purge_on_start', 
+    'type'             : bool, 
+    'default'          : True,
+    'valid_options'    : [True, False],
+    'documentation'    : '''Purge job information (state, stdio, ...) for all
+                          jobs which are in final state when starting the job
+                          service instance.  Note that this will purge *all*
+                          suitable jobs, including the ones managed by another,
+                          live job service instance.''',
     'env_variable'     : None
     }
 ]
@@ -217,6 +230,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         self.opts  = self.get_config ()
 
         self.notifications = self.opts['enable_notifications'].get_value ()
+        self.purge_on_start = self.opts['purge_on_start'].get_value ()
 
 
     # ----------------------------------------------------------------
@@ -279,7 +293,9 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # separately? 
         #   cmd_state () { touch $DIR/purgeable; ... }
         # When should that be done?
-        self._logger.error ("adaptor dying... %s" % self.njobs)
+        ret, out, _ = self.shell.run_sync ("QUIT")
+
+        ielf._logger.error ("adaptor dying... %s" % self.njobs)
         self._logger.trace ()
     
         #     try :
@@ -312,6 +328,8 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         self.initialize ()
 
+        return self.get_api ()
+
     # ----------------------------------------------------------------
     #
     def initialize (self) :
@@ -340,10 +358,10 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # TODO: replace some constants in the script with values from config
         # files, such as 'timeout' or 'purge_on_quit' ...
         #
-        src = shell_wrapper._WRAPPER_SCRIPT
+        src = shell_wrapper._WRAPPER_SCRIPT % ({ 'PURGE_ON_START' : str(self._adaptor.purge_on_start) })
         tgt = ".saga/adaptors/shell_job/wrapper.sh"
 
-        self.shell.write_to_file (src, tgt)
+        self.shell.write_to_remote (src, tgt)
 
         # we run the script.  In principle, we should set a new / different
         # prompt -- but, due to some strange and very unlikely coincidence, the

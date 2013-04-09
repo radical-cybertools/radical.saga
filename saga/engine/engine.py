@@ -1,7 +1,8 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ Provides the SAGA runtime. """
 
@@ -492,8 +493,8 @@ class Engine(sconf.Configurable):
                 # instantiate cpi
                 cpi_instance = cpi_class (api_instance, adaptor_instance)
 
-                self._logger.debug("Successfully bound %s.%s to %s" \
-                                 % (adaptor_name, cpi_cname, api_instance))
+              # self._logger.debug("Successfully bound %s.%s to %s" \
+              #                  % (adaptor_name, cpi_cname, api_instance))
                 return cpi_instance
 
 

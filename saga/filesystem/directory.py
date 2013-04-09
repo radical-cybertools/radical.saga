@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import saga.url
 import saga.exceptions
 import saga.namespace.directory
@@ -81,7 +86,7 @@ class Directory (saga.namespace.directory.Directory) :
     #
     # filesystem directory methods
     #
-    def get_size (self, tgt, flags=None, ttype=None) :
+    def get_size (self, tgt=None, flags=None, ttype=None) :
         '''
         :param tgt: path of the file or directory
 
@@ -98,8 +103,8 @@ class Directory (saga.namespace.directory.Directory) :
             size = dir.get_size ('data/data.bin')
             print size
         '''
-        if tgt    :  return self._adaptor.get_size (tgt, ttype=ttype)
-        else      :  return self._nsdirec.get_size (     ttype=ttype)
+        if tgt    :  return self._adaptor.get_size      (tgt, ttype=ttype)
+        else      :  return self._adaptor.get_size_self (     ttype=ttype)
 
 
     def is_file (self, tgt=None, ttype=None) :
@@ -108,9 +113,11 @@ class Directory (saga.namespace.directory.Directory) :
         ttype:    saga.task.type enum
         ret:      bool / saga.Task
         '''
-        if tgt    :  return self._adaptor.is_file (tgt, ttype=ttype)
-        else      :  return self._nsdirec.is_file (     ttype=ttype)
+        if tgt    :  return self._adaptor.is_file      (tgt, ttype=ttype)
+        else      :  return self._adaptor.is_file_self (     ttype=ttype)
 
+
+    size  = property (get_size)  # int
     
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
