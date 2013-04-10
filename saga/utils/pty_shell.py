@@ -239,30 +239,40 @@ class PTYShell (object) :
     def initialize (self) :
         """ initialize the shell connection.  """
 
+        # FIXME: timout should be something like n*latency
+
+        # run a POSIX compatible shell, usually /bin/sh, in interactive mode
+        # also, turn off tty echo
+        command_shell = "/bin/sh -i"
 
         # use custom shell if so requested
         if  'shell' in self.opts and self.opts['shell'] :
-
-            self.logger.info ("running custom shell: %s" % self.opts['shell'])
-            self.pty_shell.write ("%s\n" % self.opts['shell'])
-
-            ret1, out1 = self.pty_shell.find (["^(.*[\$#>%])\s*$"], -1)    # block
-
-            self.pty_shell.write ("echo ---$?---\n")
-            ret2, out2 = self.pty_shell.find (["---\d---"],         -1)    # block
-            ret3, out3 = self.pty_shell.find (["^(.*[\$#>%])\s*$"], -1)    # block
-
-            # check exit val of last command (shell startup or init)
-            check = out2[-4:-3] 
-
-            if  str(check) != str(0) :
-                raise saga.NoSuccess ("cannot initalize shell with %s (%s)" \
-                        % (self.opts['shell'], out1))
+            command_shell = self.opts['shell']
+            self.logger.info ("custom  command shell: %s" % command_shell)
 
 
-        # turn off shell echo, set/register new prompt
+        self.logger.debug    ("running command shell: %s" % command_shell)
+        self.pty_shell.write ("stty -echo ; %s\n"         % command_shell)
+
+        # make sure this worked, and that we find the prompt. We use
+        # a versatile prompt pattern to account for the custom shell case.
+
+        # find initial prompt from login shell
+        ret1, out1 = self.pty_shell.find (["^.*\$\s*$"], 10.0)
+
+        # we need to make sure that the found prompt is really the prompt of
+        # the new shell, so we check $? for successfull startup.
+        self.pty_shell.write ("echo $?\n")
+        ret2, out2 = self.pty_shell.find (["\d+\n"],     10.0)
+        ret3, out3 = self.pty_shell.find (["^.*\$\s*$"], 10.0)
+
+        if  int(out2) != 0 :
+            raise saga.NoSuccess ("cannot initalize shell with %s (%s)" \
+                    % (self.opts['shell'], out1))
+
+
+        # set and register new prompt
         self.run_sync ( "unset PROMPT_COMMAND ; "
-                             + "stty -echo; "
                              + "PS1='PROMPT-$?->'; "
                              + "PS2=''; "
                              + "export PS1 PS2\n", 
