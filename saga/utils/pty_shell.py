@@ -173,12 +173,15 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, url, session, logger=None, init=None) :
+    def __init__ (self, url, session, logger=None, init=None, opts={}) :
 
-        self.url       = url               # describes the shell to run
-        self.logger    = logger            # possibly log to here
-        self.init      = init              # call after reconnect
+        self.url       = url      # describes the shell to run
+        self.logger    = logger   # possibly log to here
+        self.init      = init     # call after reconnect
+        self.opts      = opts     # options...
 
+        self.prompt          = None
+        self.prompt_re       = None
         self.initialize_hook = None
         self.finalize_hook   = None
 
@@ -236,8 +239,26 @@ class PTYShell (object) :
     def initialize (self) :
         """ initialize the shell connection.  """
 
-        self.prompt    = "^(.*[\$#>])\s*$" # greedy, look for line ending with # $ >
-        self.prompt_re = re.compile (self.prompt, re.DOTALL)
+
+        # use custom shell if so requested
+        if  'shell' in self.opts and self.opts['shell'] :
+
+            self.logger.info ("running custom shell: %s" % self.opts['shell'])
+            self.pty_shell.write ("%s\n" % self.opts['shell'])
+
+            ret1, out1 = self.pty_shell.find (["^(.*[\$#>%])\s*$"], -1)    # block
+
+            self.pty_shell.write ("echo ---$?---\n")
+            ret2, out2 = self.pty_shell.find (["---\d---"],         -1)    # block
+            ret3, out3 = self.pty_shell.find (["^(.*[\$#>%])\s*$"], -1)    # block
+
+            # check exit val of last command (shell startup or init)
+            check = out2[-4:-3] 
+
+            if  str(check) != str(0) :
+                raise saga.NoSuccess ("cannot initalize shell with %s (%s)" \
+                        % (self.opts['shell'], out1))
+
 
         # turn off shell echo, set/register new prompt
         self.run_sync ( "unset PROMPT_COMMAND ; "

@@ -9,14 +9,15 @@ import saga
 
 try :
     c = saga.Context ('ssh')
-    c.user_cert = '/home/merzky/.ssh/id_rsa_test'
-    c.user_key  = '/home/merzky/.ssh/id_rsa_test.pub'
-    c.user_pass = 'test_pass'
+    c.user_cert = '/home/merzky/.ssh/id_rsa'
+    c.user_key  = '/home/merzky/.ssh/id_rsa.pub'
+    c.user_id   = 'tester'
+    c.user_pass = 'passpass'
 
     s = saga.Session (default=False)
     s.add_context (c)
 
-    js = saga.job.Service ('ssh://localhost/', session=s)
+    js = saga.job.Service ('ssh://localhost/bin/sh', session=s)
   
     jd = saga.job.Description ()
     jd.executable = '/bin/echo'
