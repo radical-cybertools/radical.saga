@@ -539,25 +539,25 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
     #
     @sus.takes       ('Job',
                       sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns     ((int, st.Task))
+    @sus.returns     ((float, st.Task))
     def _get_created (self, ttype=None) :
-        return self._adaptor.get_created (ttype=ttype)
+        return float (self._adaptor.get_created (ttype=ttype))
 
     # --------------------------------------------------------------------------
     #
     @sus.takes       ('Job',
                       sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns     ((int, st.Task))
+    @sus.returns     ((float, st.Task))
     def _get_started (self, ttype=None) :
-        return self._adaptor.get_started (ttype=ttype)
+        return float (self._adaptor.get_started (ttype=ttype))
 
     # --------------------------------------------------------------------------
     #
     @sus.takes       ('Job',
                       sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns     ((int, st.Task))
+    @sus.returns     ((float, st.Task))
     def _get_finished (self, ttype=None) :
-        return self._adaptor.get_finished (ttype=ttype)
+        return float (self._adaptor.get_finished (ttype=ttype))
 
     # --------------------------------------------------------------------------
     #
