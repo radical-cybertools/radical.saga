@@ -14,6 +14,7 @@ import saga.namespace.directory  as nsdir
 from   saga.filesystem.constants import *
 from   saga.constants            import SYNC, ASYNC, TASK
 
+
 # ------------------------------------------------------------------------------
 #
 class Directory (nsdir.Directory) :
@@ -199,6 +200,7 @@ class Directory (nsdir.Directory) :
 
 
     size  = property (get_size)  # int
+
     
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

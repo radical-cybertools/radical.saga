@@ -48,7 +48,7 @@ class File (nsentry.Entry) :
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         :param url: Url of the (remote) file
-        :type  url: :class:`bliss.saga.Url` 
+        :type  url: :class:`saga.Url` 
 
         flags:     flags enum
         session:   saga.Session

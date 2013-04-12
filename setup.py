@@ -40,7 +40,7 @@ except IOError:
     except OSError:
         pass
 
-scripts = []  # ["bin/bliss-run"]
+scripts = []  # ["bin/saga-run"]
 
 # check python version. we need > 2.5
 if sys.hexversion < 0x02050000:
@@ -57,7 +57,7 @@ class our_install_data(install_data):
 
     def run(self):
         install_data.run(self)
-        # ensure there's a bliss/VERSION file
+        # ensure there's a saga/VERSION file
         fn = os.path.join(self.install_dir, 'saga', 'VERSION')
         open(fn, 'w').write(version)
         self.outfiles.append(fn)

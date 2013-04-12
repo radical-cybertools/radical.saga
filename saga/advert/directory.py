@@ -4,13 +4,13 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.namespace.directory as nsdir
 import saga.utils.signatures    as sus
 import saga.adaptors.base       as sab
 import saga.attributes          as sa
 import saga.session             as ss
 import saga.task                as st
 import saga.url                 as surl
+import saga.namespace.directory as nsdir
 
 from   saga.advert.constants    import *
 from   saga.constants           import SYNC, ASYNC, TASK

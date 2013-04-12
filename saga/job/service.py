@@ -36,7 +36,7 @@ class Service (sb.Base, sasync.Async) :
     :rtype:         :class:`saga.job.Service`
 
     A job.Service represents anything which accepts job creation requests, and
-    which manages thus created :class:`bliss.saga.job.Job` instances.  That can be a local shell, 
+    which manages thus created :class:`saga.job.Job` instances.  That can be a local shell, 
     a remote ssh shell, a cluster queuing system, a IaaS backend -- you name it.
 
     The job.Service is identified by an URL, which usually points to the contact
