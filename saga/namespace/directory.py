@@ -61,7 +61,7 @@ class Directory (entry.Entry) :
                   sus.optional (dict), 
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (sus.nothing)
-    def __init__ (self, url=None, flags=READ, session=None, 
+    def __init__ (self, url=None, flags=None, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         :param url: Url of the (remote) entry system directory.
@@ -102,7 +102,7 @@ class Directory (entry.Entry) :
                   sus.optional (ss.Session),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (st.Task)
-    def create (cls, url=None, flags=READ, session=None, ttype=None) :
+    def create (cls, url=None, flags=None, session=None, ttype=None) :
         '''
         url:       saga.Url
         flags:     saga.namespace.flags enum
@@ -122,7 +122,7 @@ class Directory (entry.Entry) :
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((entry.Entry, st.Task))
-    def open (self, name, flags=READ, ttype=None) :
+    def open (self, name, flags=None, ttype=None) :
         '''
         name:     saga.Url
         flags:    saga.namespace.flags enum
@@ -140,7 +140,7 @@ class Directory (entry.Entry) :
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (('Directory', st.Task))
-    def open_dir (self, path, flags=READ, ttype=None) :
+    def open_dir (self, path, flags=None, ttype=None) :
         '''
         :param path: name/path of the directory to open
         :param flags: directory creation flags
