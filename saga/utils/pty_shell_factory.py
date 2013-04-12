@@ -201,7 +201,7 @@ class PTYShellFactory (object) :
             prompt_patterns = ["[Pp]assword:\s*$",                   # password   prompt
                                "Enter passphrase for key '.*':\s*$", # passphrase prompt
                                "want to continue connecting",        # hostkey confirmation
-                               "^(.*[\$#>])\s*$"]                    # greedy native shell prompt 
+                               "^(.*[\$#%>])\s*$"]                   # greedy native shell prompt 
 
             # find a prompt
             n, match = pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
