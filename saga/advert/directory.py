@@ -4,18 +4,32 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.url
-import saga.exceptions
-import saga.namespace.entry
-import saga.attributes as sa
+import saga.namespace.directory as nsdir
+import saga.utils.signatures    as sus
+import saga.adaptors.base       as sab
+import saga.attributes          as sa
+import saga.session             as ss
+import saga.task                as st
+import saga.url                 as surl
 
-from   saga.advert.constants import *
+from   saga.advert.constants    import *
+from   saga.constants           import SYNC, ASYNC, TASK
 
 
-# keep order of inheritance!  super() below uses MRO
-class Directory (saga.namespace.directory.Directory,
-                 saga.attributes.Attributes) :
+# ------------------------------------------------------------------------------
+#
+class Directory (nsdir.Directory, sa.Attributes) :
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  sus.optional (surl.Url), 
+                  sus.optional (int),
+                  sus.optional (ss.Session), 
+                  sus.optional (sab.Base),
+                  sus.optional (dict),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
     def __init__ (self, url=None, flags=READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
@@ -26,12 +40,11 @@ class Directory (saga.namespace.directory.Directory,
         '''
 
         # param checks
-        url = saga.url.Url (url)
+        url = surl.Url (url)
 
         self._nsdirec = super  (Directory, self)
         self._nsdirec.__init__ (url, flags, session, 
                                 _adaptor, _adaptor_state, _ttype=_ttype)
-
 
         # set attribute interface properties
         self._attributes_allow_private (True)
@@ -53,7 +66,15 @@ class Directory (saga.namespace.directory.Directory,
 
 
 
+    # --------------------------------------------------------------------------
+    #
     @classmethod
+    @sus.takes   ('Directory', 
+                  sus.optional (surl.Url), 
+                  sus.optional (int), 
+                  sus.optional (ss.Session), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (st.Task)
     def create (cls, url=None, flags=READ, session=None, ttype=None) :
         '''
         url:       saga.Url
@@ -67,22 +88,54 @@ class Directory (saga.namespace.directory.Directory,
         return _nsdir.create (url, flags, session, ttype=ttype)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     # attribute methods
     #
-    # NOTE: we do not yet pass ttype, as async calls are not yet supported
+    # NOTE: we do not yet pass ttype, as async calls are not yet supported by
+    # the attribute interface
     #
+    @sus.takes   ('Directory', 
+                  basestring,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.anything, st.Task))
     def _attribute_getter (self, key, ttype=None) :
+
         return self._adaptor.attribute_getter (key)
 
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  basestring,
+                  sus.anything,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def _attribute_setter (self, key, val, ttype=None) :
+
         return self._adaptor.attribute_setter (key, val)
 
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.list_of (sus.anything), st.Task))
     def _attribute_lister (self, ttype=None) :
+
         return self._adaptor.attribute_lister ()
 
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  basestring, 
+                  int, 
+                  callable, 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.anything, st.Task))
     def _attribute_caller (self, key, id, cb, ttype=None) :
+
         return self._adaptor.attribute_caller (key, id, cb)
 
 
@@ -91,7 +144,12 @@ class Directory (saga.namespace.directory.Directory,
     #
     # advert methods
     #
-    def set_ttl (self, tgt, ttl, ttype=None) : 
+    @sus.takes   ('Directory', 
+                  surl.Url, 
+                  float, 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def set_ttl  (self, tgt=None, ttl=-1.0, ttype=None) : 
         """
         tgt :           saga.Url / None
         ttl :           int
@@ -103,7 +161,13 @@ class Directory (saga.namespace.directory.Directory,
         else    :  return self._adaptor.set_ttl_self (     ttl, ttype=ttype)
 
      
-    def get_ttl (self, tgt=None, ttype=None) : 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  sus.optional (surl.Url), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((float, st.Task))
+    def get_ttl  (self, tgt=None, ttype=None) : 
         """
         tgt :           saga.Url / None
         ttype:          saga.task.type enum
@@ -114,8 +178,17 @@ class Directory (saga.namespace.directory.Directory,
         else    :  return self._adaptor.get_ttl_self (     ttype=ttype)
 
 
-    def find (self, name_pattern, attr_pattern=None, obj_type=None,
-              flags=RECURSIVE, ttype=None) : 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  sus.optional (basestring),
+                  sus.optional (basestring),
+                  sus.optional ((basestring, object)),
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.list_of (surl.Url), st.Task))
+    def find     (self, name_pattern, attr_pattern=None, obj_type=None,
+                  flags=RECURSIVE, ttype=None) : 
         """
         name_pattern:   string
         attr_pattern:   string

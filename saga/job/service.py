@@ -4,21 +4,27 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-""" SAGA job service interface
-"""
+""" SAGA job service interface """
 
 
-from saga.base            import Base
-from saga.async           import Async
-from saga.url             import Url
-from saga.job.description import Description
-from saga.exceptions      import BadParameter
-from saga.session         import Session
+import saga.utils.signatures as sus
+import saga.adaptors.base    as sab
+import saga.url              as surl
+import saga.task             as st
+import saga.base             as sb
+import saga.async            as sasync
+import saga.exceptions       as se
+import saga.session          as ss
 
-from saga.constants       import SYNC, ASYNC, TASK, NOTASK # task constants
+import job                   as j
+import description           as descr
+
+from   saga.constants        import SYNC, ASYNC, TASK
 
 
-class Service (Base, Async) :
+# ------------------------------------------------------------------------------
+#
+class Service (sb.Base, sasync.Async) :
     """
     The job.Service represents a resource management backend, and as such allows
     the creation, submission and management of jobs.
@@ -53,7 +59,16 @@ class Service (Base, Async) :
           else                                        : print "job is already final!"
     """
 
-    def __init__ (self, rm=None, session=None,
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Service', 
+                  sus.optional ((basestring, surl.Url)), 
+                  sus.optional (ss.Session), 
+                  sus.optional (sab.Base),
+                  sus.optional (dict),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
+    def __init__ (self, url=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         """
         Create a new job.Service instance.
@@ -65,17 +80,25 @@ class Service (Base, Async) :
 
         # param checks
         if not session :
-            session = Session (default=True)
+            session = ss.Session (default=True)
 
-        url     = Url (rm)
+        url     = surl.Url (rm)
         scheme  = url.scheme.lower ()
 
-        Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
-                       url, session, ttype=_ttype)
+        self._super = super  (Service, self)
+        self._super.__init__ (scheme, _adaptor, _adaptor_state, 
+                              url, session, ttype=_ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
     @classmethod
-    def create (cls, rm=None, session=None, ttype=SYNC) :
+    @sus.takes   ('Service', 
+                  sus.optional (surl.Url), 
+                  sus.optional (ss.Session), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (st.Task)
+    def create   (cls, rm=None, session=None, ttype=SYNC) :
         """ Create a new job.Service instance asynchronously.
 
             :param rm:     resource manager URL
@@ -87,14 +110,20 @@ class Service (Base, Async) :
 
         # param checks
         if not session :
-            session = Session (default=True)
+            session = ss.Session (default=True)
 
-        url     = Url (rm)
+        url     = surl.Url (rm)
         scheme  = url.scheme.lower ()
 
         return cls (url, session, _ttype=ttype)._init_task
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes     ('Service', 
+                    descr.Description, 
+                    sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns   ((j.Job, st.Task))
     def create_job (self, job_desc, ttype=None) :
         """ 
         Create a new job.Job instance from a :class:`~saga.job.Description`. The
@@ -131,14 +160,14 @@ class Service (Base, Async) :
           else                                        : print "oops!"
         """
 
-        jd_copy = Description()
+        jd_copy = descr.Description()
         job_desc._attributes_deep_copy (jd_copy)
 
         # do some sanity checks:
 
         # make sure at least 'executable' is defined
         if jd_copy.executable is None:
-            raise BadParameter("No executable defined")
+            raise se.BadParameter("No executable defined")
 
         # convert environment to string
         if jd_copy.attribute_exists ('Environment') :
@@ -148,7 +177,14 @@ class Service (Base, Async) :
         return self._adaptor.create_job (jd_copy, ttype=ttype)
 
 
-    def run_job (self, cmd, host=None, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Service', 
+                  basestring,
+                  sus.optional (basestring),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((j.Job, st.Task))
+    def run_job  (self, cmd, host=None, ttype=None) :
         """ .. warning:: |not_implemented|
         """
         if  None == host :
@@ -156,7 +192,12 @@ class Service (Base, Async) :
         return self._adaptor.run_job (cmd, host, ttype=ttype)
 
 
-    def list (self, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Service',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.list_of (basestring), st.Task))
+    def list     (self, ttype=None) :
         """ 
         Return a list of the jobs that are managed by this Service 
         instance. 
@@ -194,7 +235,12 @@ class Service (Base, Async) :
     jobs = property (list)    
 
 
-    def get_url (self, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Service',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((surl.Url, st.Task))
+    def get_url  (self, ttype=None) :
         """ Return the URL this Service instance was created with.
 
             .. seealso:: 
@@ -212,7 +258,13 @@ class Service (Base, Async) :
     url = property (get_url) 
 
 
-    def get_job (self, job_id, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Service',
+                  basestring,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((j.Job, st.Task))
+    def get_job  (self, job_id, ttype=None) :
         """ 
         Return the job object for a given job id.
 

@@ -8,9 +8,14 @@ import sys
 import string
 import inspect
 
+import saga.utils.signatures
 import saga.utils.logger
 import saga.engine.engine
+import saga.adaptors.base      as sab
+import saga.utils.signatures   as sus
 
+# ------------------------------------------------------------------------------
+#
 class SimpleBase (object) :
     """ This is a very simple API base class which just initializes
     the self._logger and self._engine members, but does not perform any further
@@ -18,6 +23,10 @@ class SimpleBase (object) :
     which are not backed by multiple adaptors (no session, tasks, etc).
     """
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('SimpleBase')
+    @sus.returns (sus.nothing)
     def __init__  (self) :
 
         self._apitype   = self._get_apitype ()
@@ -27,6 +36,10 @@ class SimpleBase (object) :
       # self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('SimpleBase')
+    @sus.returns (basestring)
     def _get_apitype (self) :
 
         # apitype for saga.job.service.Service should be saga.job.Service --
@@ -50,9 +63,20 @@ class SimpleBase (object) :
         apitype = "%s.%s" % (mname_1, cname) # saga.job.service.Service
         return apitype
 
-
+    
+# ------------------------------------------------------------------------------
+#
 class Base (SimpleBase) :
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Base',
+                  basestring, 
+                  sus.optional (sab.Base), 
+                  sus.optional (dict), 
+                  sus.optional (sus.anything),
+                  sus.optional (sus.anything))
+    @sus.returns (sus.nothing)
     def __init__  (self, schema, adaptor, adaptor_state, *args, **kwargs) :
 
         SimpleBase.__init__ (self)
@@ -72,6 +96,10 @@ class Base (SimpleBase) :
         self._init_task = self._adaptor.init_instance (adaptor_state, *args, **kwargs)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Base')
+    @sus.returns ('saga.Session')
     def get_session (self) :
         """ 
         Returns the session which is managing the object instance.  For objects
@@ -84,6 +112,8 @@ class Base (SimpleBase) :
 
     session = property (get_session)
 
+#
+# ------------------------------------------------------------------------------
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

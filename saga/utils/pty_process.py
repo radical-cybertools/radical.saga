@@ -258,7 +258,6 @@ class PTYProcess (object) :
                         wpid, wstat = os.waitpid (self.child, 0)
 
                     except OSError as e :
-
                         # this should not have failed -- child disappeared?
                         self.exit_code   = None 
                         self.exit_signal = None

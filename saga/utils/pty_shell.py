@@ -793,13 +793,14 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def _translate_exception (self, e) :
+    def _translate_exception (self, e, msg=None) :
         """
         In many cases, we should be able to roughly infer the exception cause
         from the error message -- this is centrally done in this method.  If
         possible, it will return a new exception with a more concise error
         message and appropriate exception type.
         """
+
 
         if  not issubclass (e.__class__, saga.SagaException) :
             # we do not touch non-saga exceptions
@@ -811,6 +812,9 @@ class PTYShell (object) :
 
         cmsg = e._plain_message
         lmsg = cmsg.lower ()
+
+        if  msg :
+            cmsg = "%s: %s" % (msg, cmsg)
 
         if 'auth' in lmsg :
             e = saga.AuthorizationFailed (cmsg)

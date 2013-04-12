@@ -7,7 +7,7 @@ __license__   = "MIT"
 import os
 
 import saga.context
-import saga.adaptors.cpi.base
+import saga.adaptors.base
 import saga.adaptors.cpi.context
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
@@ -71,7 +71,7 @@ _ADAPTOR_INFO          = {
 
 # ------------------------------------------------------------------------------
 # 
-class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -82,7 +82,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     #
     def __init__ (self) :
 
-        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # there are no default myproxy contexts
         self._default_contexts = []

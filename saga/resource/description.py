@@ -1,11 +1,12 @@
 
-import saga.attributes
-import saga.exceptions as se
-import constants       as const
+import saga.utils.signatures as sus
+import saga.attributes       as sa
+import saga.exceptions       as se
+import constants             as const
 
 #-------------------------------------------------------------------------------
 #
-class Description (saga.attributes.Attributes) :
+class Description (sa.Attributes) :
     """ 
     The resource description class. 
 
@@ -23,11 +24,12 @@ class Description (saga.attributes.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    def __init__(self, d=None):
+    @sus.takes   ('Description', 
+                  sus.optional (dict))
+    @sus.returns (sus.nothing)
+    def __init__ (self, d=None):
 
         # set attribute interface properties
-
-        import saga.attributes as sa
 
         self._attributes_extensible  (False)
         self._attributes_camelcasing (True)
@@ -61,11 +63,17 @@ class Description (saga.attributes.Attributes) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Description', 
+                  'Description')
+    @sus.returns ('Description')
     def __deepcopy__ (self, other) :
         return self.clone (other)
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Description', 
+                  sus.optional ('Description'))
+    @sus.returns ('Description')
     def clone (self, other=None) :
         """ 
         deep copy: unlike the default python assignment (copy object reference),
@@ -76,7 +84,7 @@ class Description (saga.attributes.Attributes) :
         # a job description only has attributes - so create a new instance,
         # clone the attribs, and done.
         if not other :
-            other = saga.job.Description ()
+            other = Description ()
 
         return self._attributes_deep_copy (other)
 
@@ -85,6 +93,11 @@ class Description (saga.attributes.Attributes) :
 #
 class ComputeDescription (Description) : 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('ComputeDescription', 
+                  sus.optional (dict))
+    @sus.returns (sus.nothing)
     def __init__ (self, d=None) :
         
         if  d :
@@ -102,6 +115,11 @@ class ComputeDescription (Description) :
 #
 class StorageDescription (Description) :
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('StorageDescription', 
+                  sus.optional (dict))
+    @sus.returns (sus.nothing)
     def __init__ (self, d=None) :
         
         if  d :
@@ -119,6 +137,11 @@ class StorageDescription (Description) :
 #
 class NetworkDescription (Description) :
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('NetworkDescription', 
+                  sus.optional (dict))
+    @sus.returns (sus.nothing)
     def __init__ (self, d=None) :
         
         if  d :
