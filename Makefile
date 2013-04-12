@@ -23,6 +23,9 @@ pylint:
 		) \
 	done
 
+viz:
+	gource -s 0.1 -i 0 --title saga-python --max-files 99999 --max-file-lag -1 --user-friction 0.3 --user-scale 0.5 --camera-mode overview --hide progress,filenames -r 25 -viewport 1024x1024
+
 clean:
 	-rm -rf build/ saga.egg-info/ temp/ MANIFEST dist/ saga_python.egg-info
 	make -C docs clean
