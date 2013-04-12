@@ -222,7 +222,7 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.signal (signum, ttype=ttype)
 
 
-    id          = property (get_d)            # string
+    id          = property (get_id)           # string
     description = property (get_description)  # Description
     stdin       = property (get_stdin)        # os.File
     stdout      = property (get_stdout)       # os.File
@@ -310,7 +310,7 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.cancel (timeout, ttype=ttype)
 
 
-    def wait (self, timeout=none, ttype=None) :
+    def wait (self, timeout=None, ttype=None) :
         '''
         timeout:    float 
         ret:        None
