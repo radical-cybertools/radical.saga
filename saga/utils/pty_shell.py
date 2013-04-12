@@ -243,11 +243,11 @@ class PTYShell (object) :
 
         # run a POSIX compatible shell, usually /bin/sh, in interactive mode
         # also, turn off tty echo
-        command_shell = "/bin/sh -i"
+        command_shell = "exec /bin/sh -i"
 
         # use custom shell if so requested
         if  'shell' in self.opts and self.opts['shell'] :
-            command_shell = self.opts['shell']
+            command_shell = "exec %s" % self.opts['shell']
             self.logger.info ("custom  command shell: %s" % command_shell)
 
 
