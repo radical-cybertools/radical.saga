@@ -130,6 +130,7 @@ setup_args = {
         "saga.adaptors.pbs",
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
+        "saga.adaptors.redis",
         "saga.engine",
         "saga.utils",
         "saga.utils.contrib",
