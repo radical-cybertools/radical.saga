@@ -49,6 +49,8 @@ class Url (object):
         """ Create a new Url object from a string or another Url object.
         """
 
+        if type(url_string) == type(None):
+            self._urlobj = urlparse.urlparse("")
         if type(url_string) == str:
             self._urlobj = urlparse.urlparse(url_string)
         elif type(url_string) == Url:
