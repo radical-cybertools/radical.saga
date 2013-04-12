@@ -4,19 +4,25 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-""" SAGA job interface
-"""
+""" SAGA job interface """
 
+from   saga.constants        import SYNC, ASYNC, TASK
+from   saga.job.constants    import *
 
-from   saga.exceptions    import IncorrectState
-from   saga.attributes    import *
-from   saga.base          import Base
-from   saga.async         import Async
-from   saga.job.constants import *
+import saga.utils.signatures as sus
+import saga.adaptors.base    as sab
+import saga.attributes       as sa
+import saga.exceptions       as se
+import saga.async            as sasync
+import saga.task             as st
+import saga.base             as sb
+import saga.url              as surl
 
+import description           as descr
 
-
-class Job (Base, Attributes, Async) :
+# ------------------------------------------------------------------------------
+#
+class Job (sb.Base, sa.Attributes, sasync.Async) :
     '''Represents a SAGA job as defined in GFD.90
     
     A 'Job' represents a running application instance, which may consist of one
@@ -44,8 +50,15 @@ class Job (Base, Attributes, Async) :
 
     '''
     
-    def __init__ (self, _method_type='run', 
-                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Job',
+                  sus.optional (basestring),
+                  sus.optional (sab.Base),
+                  sus.optional (dict),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
+    def __init__ (self, _method_type='run', _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         url:       saga.Url
         flags:     flags enum
@@ -65,7 +78,7 @@ class Job (Base, Attributes, Async) :
         '''
 
         if not _adaptor :
-            raise IncorrectState ("saga.job.Job constructor is private")
+            raise se.IncorrectState ("saga.job.Job constructor is private")
 
 
         # we need to keep _method_type around, for the task interface (see
@@ -74,11 +87,12 @@ class Job (Base, Attributes, Async) :
 
         # We need to specify a schema for adaptor selection -- and
         # simply choose the first one the adaptor offers.
-        schema = 'fork' # _adaptor.get_schemas()[0]
+        schema = _adaptor.get_schemas()[0]
         if  'job_schema' in _adaptor_state :
             schema = _adaptor_state['job_schema']
 
-        Base.__init__ (self, schema, _adaptor, _adaptor_state, ttype=None)
+        self._base = super  (Job, self)
+        self._base.__init__ (schema, _adaptor, _adaptor_state, ttype=None)
 
 
         # set attribute interface properties
@@ -87,14 +101,14 @@ class Job (Base, Attributes, Async) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface 
-        self._attributes_register   (STATE,            UNKNOWN, ENUM,   SCALAR, READONLY)
-        self._attributes_register   (EXIT_CODE,        None,    INT,    SCALAR, READONLY)
-        self._attributes_register   (CREATED,          None,    INT,    SCALAR, READONLY)
-        self._attributes_register   (STARTED,          None,    INT,    SCALAR, READONLY)
-        self._attributes_register   (FINISHED,         None,    INT,    SCALAR, READONLY)
-        self._attributes_register   (EXECUTION_HOSTS,  None,    STRING, VECTOR, READONLY)
-        self._attributes_register   (ID,               None,    STRING, SCALAR, READONLY)
-        self._attributes_register   (SERVICE_URL,      None,    URL,    SCALAR, READONLY)
+        self._attributes_register   (STATE,            UNKNOWN, sa.ENUM,   sa.SCALAR, sa.READONLY)
+        self._attributes_register   (EXIT_CODE,        None,    sa.INT,    sa.SCALAR, sa.READONLY)
+        self._attributes_register   (CREATED,          None,    sa.INT,    sa.SCALAR, sa.READONLY)
+        self._attributes_register   (STARTED,          None,    sa.INT,    sa.SCALAR, sa.READONLY)
+        self._attributes_register   (FINISHED,         None,    sa.INT,    sa.SCALAR, sa.READONLY)
+        self._attributes_register   (EXECUTION_HOSTS,  None,    sa.STRING, sa.VECTOR, sa.READONLY)
+        self._attributes_register   (ID,               None,    sa.STRING, sa.SCALAR, sa.READONLY)
+        self._attributes_register   (SERVICE_URL,      None,    sa.URL,    sa.SCALAR, sa.READONLY)
 
         self._attributes_set_enums  (STATE, [UNKNOWN, NEW,     PENDING,  RUNNING,
                                              DONE,    FAILED,  CANCELED, SUSPENDED])
@@ -111,7 +125,12 @@ class Job (Base, Attributes, Async) :
  
 
 
-    def get_id (self, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Job',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((basestring, st.Task))
+    def get_id   (self, ttype=None) :
         '''
         ttype:     saga.task.type enum
         ret:       String / saga.Task  
@@ -120,6 +139,11 @@ class Job (Base, Attributes, Async) :
         return id
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes          ('Job',
+                         sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns        ((basestring, st.Task))
     def get_description (self, ttype=None) :
         '''
         ttype:     saga.task.type enum
@@ -156,31 +180,51 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.get_description (ttype=ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes    ('Job',
+                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns  ((file, st.Task))
     def get_stdin (self, ttype=None) :
         '''
         ttype:     saga.task.type enum
-        ret:       os.File / saga.Task
+        ret:       File / saga.Task
         '''
         return self._adaptor.get_stdin (ttype=ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes     ('Job',
+                    sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns   ((file, st.Task))
     def get_stdout (self, ttype=None) :
         '''
         ttype:     saga.task.type enum
-        ret:       os.File / saga.Task
+        ret:       File / saga.Task
         '''
         return self._adaptor.get_stdout (ttype=ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes     ('Job',
+                    sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns   ((file, st.Task))
     def get_stderr (self, ttype=None) :
         '''
         ttype:     saga.task.type enum
-        ret:       os.File / saga.Task
+        ret:       File / saga.Task
         '''
         return self._adaptor.get_stderr (ttype=ttype)
 
 
-    def suspend (self, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Job',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def suspend  (self, ttype=None) :
         '''
         ttype:     saga.task.type enum
         ret:       None / saga.Task
@@ -188,7 +232,12 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.suspend (ttype=ttype)
 
 
-    def resume (self, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Job',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def resume   (self, ttype=None) :
         '''
         ttype:     saga.task.type enum
         ret:       None / saga.Task
@@ -196,6 +245,11 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.resume (ttype=ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes     ('Job',
+                    sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns   ((sus.nothing, st.Task))
     def checkpoint (self, ttype=None) :
         '''
         ttype:     saga.task.type enum
@@ -204,7 +258,13 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.checkpoint (ttype=ttype)
 
 
-    def migrate (self, jd, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Job',
+                  descr.Description,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def migrate  (self, jd, ttype=None) :
         '''
         jd:        saga.job.Description  
         ttype:     saga.task.type enum
@@ -213,7 +273,13 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.migrate (jd, ttype=ttype)
 
 
-    def signal (self, signum, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Job',
+                  int,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def signal   (self, signum, ttype=None) :
         '''
         signum:    int
         ttype:     saga.task.type enum
@@ -224,16 +290,19 @@ class Job (Base, Attributes, Async) :
 
     id          = property (get_id)           # string
     description = property (get_description)  # Description
-    stdin       = property (get_stdin)        # os.File
-    stdout      = property (get_stdout)       # os.File
-    stderr      = property (get_stderr)       # os.File
+    stdin       = property (get_stdin)        # File
+    stdout      = property (get_stdout)       # File
+    stderr      = property (get_stderr)       # File
 
 
     #-----------------------------------------------------------------
     #
     # task methods flattened into job :-/
     #
-    def run (self, ttype=None) :
+    @sus.takes   ('Job',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def run      (self, ttype=None) :
         '''
         ret:        None
         
@@ -270,7 +339,13 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.run (ttype=ttype)
 
 
-    def cancel (self, timeout=None, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Job',
+                  float,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def cancel   (self, timeout=None, ttype=None) :
         '''
         timeout:    float
         ret:        None
@@ -310,7 +385,13 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.cancel (timeout, ttype=ttype)
 
 
-    def wait (self, timeout=None, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Job',
+                  float,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((bool, st.Task))
+    def wait     (self, timeout=None, ttype=None) :
         '''
         timeout:    float 
         ret:        None
@@ -366,6 +447,11 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.wait (timeout, ttype=ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes    ('Job',
+                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns  ((sus.one_of (UNKNOWN, NEW, PENDING, RUNNING, SUSPENDED, DONE, FAILED, CANCELED), st.Task))
     def get_state (self, ttype=None) :
         '''
         ret:        Task/Job state enum
@@ -397,6 +483,11 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.get_state (ttype=ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes     ('Job',
+                    sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns   ((sus.nothing, st.Task))
     def get_result (self, ttype=None) :
         '''
         ret:        <result type>
@@ -405,6 +496,11 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.get_result (ttype=ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes     ('Job',
+                    sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns   ((sb.Base, st.Task))
     def get_object (self, ttype=None) :
         """ :todo: describe me
             :note: this will return the job_service which created the job.
@@ -412,6 +508,11 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.get_object (ttype=ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes     ('Job',
+                    sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns   ((se.SagaException, st.Task))
     def get_exception (self, ttype=None) :
         """ :todo: describe me
 
@@ -422,20 +523,26 @@ class Job (Base, Attributes, Async) :
         return self._adaptor.get_exception (ttype=ttype)
 
 
-    def re_raise (self, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes     ('Job')
+    @sus.returns   (sus.nothing)
+    def re_raise   (self) :
         """ :todo: describe me
 
             :note: if job failed, that will re-raise an exception describing 
                    why, if that exists.  Otherwise, the call does nothing.
-
         """
-        return self._adaptor.re_raise (ttype=ttype)
+        self._adaptor.re_raise ()
 
 
     # ----------------------------------------------------------------
     # 
     # attribute getters
     #
+    @sus.takes         ('Job',
+                        sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns       ((int, st.Task))
     def _get_exit_code (self, ttype=None) :
         ec = self._adaptor.get_exit_code(ttype=ttype)
         if ec in [None, ""]:
@@ -445,18 +552,43 @@ class Job (Base, Attributes, Async) :
             # the adaptor is doing something stupid.
             return int(ec)
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes       ('Job',
+                      sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns     ((float, st.Task))
     def _get_created (self, ttype=None) :
-        return self._adaptor.get_created (ttype=ttype)
+        return float (self._adaptor.get_created (ttype=ttype))
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes       ('Job',
+                      sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns     ((float, st.Task))
     def _get_started (self, ttype=None) :
-        return self._adaptor.get_started (ttype=ttype)
+        return float (self._adaptor.get_started (ttype=ttype))
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes       ('Job',
+                      sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns     ((float, st.Task))
     def _get_finished (self, ttype=None) :
-        return self._adaptor.get_finished (ttype=ttype)
+        return float (self._adaptor.get_finished (ttype=ttype))
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes       ('Job',
+                      sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns     ((sus.list_of (basestring), st.Task))
     def _get_execution_hosts (self, ttype=None) :
         return self._adaptor.get_execution_hosts (ttype=ttype)
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes       ('Job',
+                      sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns     ((surl.Url, st.Task))
     def _get_service_url (self, ttype=None) :
         return self._adaptor.get_service_url (ttype=ttype)
 
@@ -531,36 +663,26 @@ class Job (Base, Attributes, Async) :
     ''')
 
 
+# ------------------------------------------------------------------------------
+#
 # class Self (Job, monitoring.Steerable) :
+#
 class Self (Job) :
 
-    def __init__ (self, session=None, 
-                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Self',
+                  sus.optional (basestring),
+                  sus.optional (sab.Base),
+                  sus.optional (dict),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
+    def __init__ (self, _method_type='run', _adaptor=None, _adaptor_state={}, _ttype=None) : 
 
     
-        # # set attribute interface properties
-        # self._attributes_extensible  (False)
-        # self._attributes_camelcasing (True)
+        self._base = super  (Job, self)
+        self._base.__init__ (_method_type, _adaptor, _adaptor_state, _ttype=_ttype)
 
-        if not session :
-            session = saga.Session (default=True)
-
-        Base.__init__ (self, 'fork', session, ttype=_ttype)
-
-
-    @classmethod
-    def create (cls, session=None, ttype=None) :
-        '''
-        session:   saga.Session
-        ttype:     saga.task.type enum
-        ret:       saga.Task
-        '''
-        if not session :
-            session = saga.Session (default=True)
-
-
-        return cls (session, _ttype=ttype)._init_task
-    
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

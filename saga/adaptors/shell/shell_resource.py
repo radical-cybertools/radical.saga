@@ -87,7 +87,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -99,7 +99,8 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     #
     def __init__ (self) :
 
-        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        self.base = super  (Adaptor, self)
+        self.base.__init__ (_ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # for id parsing
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
@@ -292,10 +293,10 @@ class ShellResourceCompute (saga.adaptors.cpi.resource.Compute) :
             self.manager_url, self.access_url = self._adaptor.parse_id (id)
             self.manager = saga.resource.Manager (self.manager_url)
 
-            if  self.access.scheme in self.manager.list (COMPUTE) :
+            if  self.access_url.scheme in self.manager.list (COMPUTE) :
                 self.rtype = COMPUTE
 
-            elif self.access.scheme in self.manager.list (STORAGE) :
+            elif self.access_url.scheme in self.manager.list (STORAGE) :
                 self.rtype = STORAGE
 
             else :

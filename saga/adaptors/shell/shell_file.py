@@ -4,7 +4,7 @@
 import saga.utils.pty_shell as sups
 import saga.utils.misc      as sumisc
 
-import saga.adaptors.cpi.base
+import saga.adaptors.base
 import saga.adaptors.cpi.filesystem
 
 from   saga.filesystem.constants import *
@@ -147,7 +147,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -159,7 +159,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     #
     def __init__ (self) :
 
-        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config ()
@@ -790,6 +790,14 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         self.shell.set_finalize_hook   (self.finalize)
 
         self.initialize ()
+
+
+        # we create a local shell handle, too, if only to support copy and move
+        # to and from local file systems (mkdir for staging target, remove of move
+        # source).  Not that we do not perform a cd on the local shell -- all
+        # operations are assumed to be performed on absolute paths.
+        self.local = sups.PTYShell ('fork://localhost/', saga.Session(default=True), 
+                                    self._logger)
 
         return self.get_api ()
 

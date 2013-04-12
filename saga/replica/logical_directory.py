@@ -4,17 +4,32 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.url
-import saga.exceptions
-import saga.namespace.directory
-import saga.attributes
+import saga.utils.signatures     as sus
+import saga.adaptors.base        as sab
+import saga.attributes           as sa
+import saga.session              as ss
+import saga.task                 as st
+import saga.url                  as surl
+import saga.namespace.directory  as nsdir
 
-from   saga.replica.constants import *
+from   saga.filesystem.constants import *
+from   saga.constants            import SYNC, ASYNC, TASK
 
-# keep order of inheritance!  super() below uses MRO
-class LogicalDirectory (saga.namespace.directory.Directory, 
-                        saga.attributes.Attributes) :
 
+# ------------------------------------------------------------------------------
+#
+class LogicalDirectory (nsdir.Directory, sa.Attributes) :
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('LogicalDirectory', 
+                  sus.optional (surl.Url), 
+                  sus.optional (int), 
+                  sus.optional (ss.Session),
+                  sus.optional (sab.Base), 
+                  sus.optional (dict), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
     def __init__ (self, url=None, flags=READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
@@ -25,14 +40,22 @@ class LogicalDirectory (saga.namespace.directory.Directory,
         '''
 
         # param checks
-        url = saga.url.Url (url)
+        url = surl.Url (url)
 
         self._nsdirec = super  (LogicalDirectory, self)
         self._nsdirec.__init__ (url, flags, session, 
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
     @classmethod
+    @sus.takes   ('LogicalDirectory', 
+                  sus.optional (surl.Url), 
+                  sus.optional (int), 
+                  sus.optional (ss.Session),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (st.Task)
     def create (cls, url=None, flags=READ, session=None, ttype=None) :
         '''
         url:       saga.Url
@@ -92,6 +115,14 @@ class LogicalDirectory (saga.namespace.directory.Directory,
     #
     # replica methods
     #
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('LogicalDirectory', 
+                  sus.optional (basestring),
+                  sus.optional (basestring),
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.list_of (surl.Url), st.Task))
     def find (self, name_pattern, attr_pattern=None, flags=RECURSIVE, ttype=None) :
         '''
         name_pattern:   string 

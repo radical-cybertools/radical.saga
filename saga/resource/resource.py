@@ -1,18 +1,25 @@
 
-import saga.base
-import saga.async
-import saga.url
-import saga.attributes
-import saga.session
-import saga.exceptions as se
-import saga.constants  as sc
-
-import constants       as const
+import saga.utils.signatures    as sus
+import saga.adaptors.base       as sab
+import saga.async               as async
+import saga.task                as st
+import saga.base                as sb
+import saga.session             as ss
+import saga.exceptions          as se
+import saga.attributes          as sa
+import saga.constants           as sc
+import saga.url                 as surl
+import constants                as const
+import description              as descr
+import resource                 as resrc
+                               
+from   saga.resource.constants  import *
+from   saga.constants           import SYNC, ASYNC, TASK
 
 
 # ------------------------------------------------------------------------------
 #
-class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
+class Resource (sb.Base, sa.Attributes, async.Async) :
     """
     A :class:`Resource` class instance represents a specific slice of resource
     which is, if in `RUNNING` state, under the applications control and ready to
@@ -63,6 +70,13 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Resource', 
+                  sus.optional (basestring), 
+                  sus.optional (ss.Session),
+                  sus.optional (sab.Base), 
+                  sus.optional (dict), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         """
@@ -138,22 +152,28 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
             else :
                 scheme = _adaptor_state['resource_schema']
         else :
-            url    = saga.Url (id)
+            url    = surl.Url (id)
             scheme = url.scheme.lower ()
 
 
         if not session :
 
-            session = saga.session.Session (default=True)
+            session = ss.Session (default=True)
 
-        saga.base.Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
-                                 id, session, ttype=_ttype)
+        self._base = super  (Resource, self)
+        self._base.__init__ (scheme, _adaptor, _adaptor_state, 
+                             id, session, ttype=_ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @classmethod
-    def create (cls, id=None, session=None, ttype=sc.SYNC) :
+    @sus.takes   ('resource', 
+                  sus.optional (basestring), 
+                  sus.optional (ss.Session),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (st.Task)
+    def create   (cls, id=None, session=None, ttype=sc.SYNC) :
         """ 
         This is the asynchronous class constructor, returning
         a :class:`saga:Task` instance.  For details on the accepted parameters,
@@ -165,6 +185,10 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Resource', 
+                  descr.Description,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def reconfig (self, descr, ttype=None) :
         """
         A resource is acquired according to a resource description, i.e. to
@@ -185,6 +209,10 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Resource', 
+                  basestring,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def release (self, ttype=None) :
         """
         The semantics of this method is equivalent to the semantics of the
@@ -196,6 +224,12 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Resource', 
+                  sus.optional (sus.one_of (UNKNOWN, NEW, PENDING, ACTIVE, DONE,
+                                            FAILED, EXPIRED, CANCELED, FINAL)),
+                  sus.optional (float),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def wait (self, state=const.FINAL, timeout=None, ttype=None) :
         """
         :type  state: state enum
@@ -215,12 +249,50 @@ class Resource (saga.base.Base, saga.attributes.Attributes, saga.async.Async) :
 
     # --------------------------------------------------------------------------
     #
-    def get_id           (self, ttype=None) : return self._adaptor.get_id            (ttype=ttype)
-    def get_rtype        (self, ttype=None) : return self._adaptor.get_rtype         (ttype=ttype)
-    def get_state        (self, ttype=None) : return self._adaptor.get_state         (ttype=ttype)
+    @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((basestring, st.Task))
+    def get_id   (self, ttype=None) : return self._adaptor.get_id            (ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes    ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns  ((basestring, st.Task))
+    def get_rtype (self, ttype=None) : return self._adaptor.get_rtype         (ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes    ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns  ((basestring, st.Task))
+    def get_state (self, ttype=None) : return self._adaptor.get_state         (ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((basestring, st.Task))
     def get_state_detail (self, ttype=None) : return self._adaptor.get_state_detail  (ttype=ttype)
-    def get_access       (self, ttype=None) : return self._adaptor.get_access        (ttype=ttype)
-    def get_manager      (self, ttype=None) : return self._adaptor.get_manager       (ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes     ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns   ((basestring, st.Task))
+    def get_access (self, ttype=None) : return self._adaptor.get_access        (ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes      ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns    ((basestring, st.Task))
+    def get_manager (self, ttype=None) : return self._adaptor.get_manager       (ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((basestring, st.Task))
     def get_description  (self, ttype=None) : return self._adaptor.get_description   (ttype=ttype)
 # 
 # ------------------------------------------------------------------------------
@@ -234,9 +306,18 @@ class Compute (Resource) :
     the 'Access' attribute of the compute resource (a URL) can be used to create
     a :class:`saga.job.Service` instance to submit jobs to.
     """
+
+    # --------------------------------------------------------------------------
     # FIXME: should 'ACCESS' be a list of URLs?  A VM could have an ssh *and*
     #        a gram endpoint...
 
+    @sus.takes   ('ComputeResource', 
+                  sus.optional (basestring), 
+                  sus.optional (ss.Session),
+                  sus.optional (sab.Base), 
+                  sus.optional (dict), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         
@@ -258,6 +339,15 @@ class Storage (Resource) :
     space.
     """
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('StorageResource', 
+                  sus.optional (basestring), 
+                  sus.optional (ss.Session),
+                  sus.optional (sab.Base), 
+                  sus.optional (dict), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         
@@ -276,7 +366,15 @@ class Network (Resource) :
     A Network resource is a resource which can connect arbitrary resources.
     """
 
-
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('NetworkResource', 
+                  sus.optional (basestring), 
+                  sus.optional (ss.Session),
+                  sus.optional (sab.Base), 
+                  sus.optional (dict), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         
