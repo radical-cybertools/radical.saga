@@ -7,6 +7,7 @@ __license__   = "MIT"
 import os
 import sys
 import string
+import getpass
 
 import saga.utils.singleton
 import saga.utils.pty_process
@@ -52,9 +53,8 @@ _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 # ssh versions...
 
 # ssh master/slave flag magic # FIXME: make timeouts configurable
-_SSH_CONTROL_PATH   = "~/.saga/adaptors/shell/ssh_%%h_%%p.%s.ctrl" % (os.getpid ())
-_SSH_FLAGS_MASTER   = "-o ControlMaster=yes -o ControlPath=%s" % _SSH_CONTROL_PATH
-_SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%s" % _SSH_CONTROL_PATH
+_SSH_FLAGS_MASTER   = "-o ControlMaster=yes -o ControlPath=%(ctrl)s"
+_SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%(ctrl)s"
 
 # FIXME: right now, we create a shell connection as master --
 # but a master does not actually need a shell, as it is never really
@@ -154,20 +154,20 @@ class PTYShellFactory (object) :
         info = self._create_master_entry (url, session, logger)
 
         # we got master info - register the master, and create the instance!
-        typ_s  = str(info['type'])
-        ctx_s  = str(info['ctx'])
+        type_s = str(info['type'])
+        user_s = str(info['user'])
         host_s = str(info['host_str'])
 
         # Now, if we don't have that master, yet, we need to instantiate it
-        if not host_s in self.registry                : self.registry[host_s] = {} 
-        if not ctx_s  in self.registry[host_s]        : self.registry[host_s][ctx_s] = {}
-        if not typ_s  in self.registry[host_s][ctx_s] : 
+        if not host_s in self.registry                 : self.registry[host_s] = {}
+        if not user_s in self.registry[host_s]         : self.registry[host_s][user_s] = {}
+        if not type_s in self.registry[host_s][user_s] :
 
             # new master: create an instance, and register it
             m_cmd = _SCRIPTS[info['type']]['master'] % info
 
             self.logger.debug ("open master pty for [%s] [%s] %s: %s'" \
-                            % (typ_s, host_s, ctx_s, m_cmd))
+                            % (type_s, host_s, user_s, m_cmd))
 
             info['pty'] = saga.utils.pty_process.PTYProcess (m_cmd, logger=logger)
             if not info['pty'].alive () :
@@ -178,13 +178,13 @@ class PTYShellFactory (object) :
             self._initialize_pty (info['pty'], info['pass'], info['cert_pass'], info['logger'])
 
             # master was created - register it
-            self.registry[host_s][ctx_s][typ_s] = info 
+            self.registry[host_s][user_s][type_s] = info
 
 
         else :
             # we already have a master: make sure it is alive, and restart as
             # needed
-            info = self.registry[host_s][ctx_s][typ_s]
+            info = self.registry[host_s][user_s][type_s]
 
             if  not info['pty'].alive (recover=True) :
                 raise saga.IncorrectState._log (logger, \
@@ -198,7 +198,7 @@ class PTYShellFactory (object) :
     def _initialize_pty (self, pty_shell, shell_pass, cert_pass, logger) :
 
         try :
-            prompt_patterns = ["password:\s*$",                      # password   prompt
+            prompt_patterns = ["[Pp]assword:\s*$",                   # password   prompt
                                "Enter passphrase for key '.*':\s*$", # passphrase prompt
                                "want to continue connecting",        # hostkey confirmation
                                "^(.*[\$#>])\s*$"]                    # greedy native shell prompt 
@@ -367,9 +367,8 @@ class PTYShellFactory (object) :
         info['schema']    = url.schema.lower ()
         info['host_str']  = url.host
         info['logger']    = logger
-        info['ctx']       = []
-        info['pass']      =  ""
-        info['cert_pass'] =  {}
+        info['pass']      = ""
+        info['cert_pass'] = {}
 
         # find out what type of shell we have to deal with
         if  info['schema']   in _SCHEMAS_SSH :
@@ -416,6 +415,11 @@ class PTYShellFactory (object) :
                 raise saga.BadParameter._log (self.logger, \
                         "expect local host for '%s://', not '%s'" % (url.schema, url.host))
 
+            if  'user' in info and info['user'] :
+                pass
+            else :
+                info['user'] = getpass.getuser ()
+
         else :
             import saga.utils.misc as sum
             if not sum.host_is_valid (url.host) :
@@ -430,8 +434,6 @@ class PTYShellFactory (object) :
 
             for context in session.contexts :
 
-                keep_ctx = False
-
                 # ssh can also handle UserPass contexts, and ssh type contexts.
                 # gsissh can handle the same, but also X509 contexts.
 
@@ -440,10 +442,8 @@ class PTYShellFactory (object) :
                         if  context.attribute_exists ("user_id") and context.user_id :
                             user_id = context.user_id.strip ()
                             if user_id :
-                                keep_ctx = True
                                 info['user']  = user_id
                         if  context.attribute_exists ("user_cert") and context.user_cert :
-                            keep_ctx = True
                             info['ssh_args']  += "-i %s " % context.user_cert
                             info['scp_args']  += "-i %s " % context.user_cert
                             info['sftp_args'] += "-i %s " % context.user_cert
@@ -453,43 +453,32 @@ class PTYShellFactory (object) :
                 if  context.type.lower () == "userpass" :
                     if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
                         if  context.attribute_exists ("user_id") and context.user_id :
-                            keep_ctx = True
                             info['user'] = context.user_id
                         if  context.attribute_exists ("user_pass") and context.user_pass :
-                            keep_ctx = True
                             info['pass'] = context.user_pass
 
                 if  context.type.lower () == "x509" :
                     if  info['schema'] in _SCHEMAS_GSI :
-                        # FIXME: also use cert_dir etc.
                         
                         if  context.attribute_exists ("user_proxy")  and  context.user_proxy :
                             info['ssh_env']  += "X509_USER_PROXY='%s' " % context.user_proxy
                             info['scp_env']  += "X509_USER_PROXY='%s' " % context.user_proxy
                             info['sftp_env'] += "X509_USER_PROXY='%s' " % context.user_proxy
-                            keep_ctx = True
 
                         if  context.attribute_exists ("user_cert")  and  context.user_cert :
                             info['ssh_env']  += "X509_USER_CERT='%s' " % context.user_cert
                             info['scp_env']  += "X509_USER_CERT='%s' " % context.user_cert
                             info['sftp_env'] += "X509_USER_CERT='%s' " % context.user_cert
-                            keep_ctx = True
 
                         if  context.attribute_exists ("user_key")  and   context.user_key :
                             info['ssh_env']  += "X509_USER_key='%s' "  % context.user_key
                             info['scp_env']  += "X509_USER_key='%s' "  % context.user_key
                             info['sftp_env'] += "X509_USER_key='%s' "  % context.user_key
-                            keep_ctx = True
 
                         if  context.attribute_exists ("cert_repository") and context.cert_repository :
                             info['ssh_env']  += "X509_CERT_DIR='%s' "  % context.cert_repository
                             info['scp_env']  += "X509_CERT_DIR='%s' "  % context.cert_repository
                             info['sftp_env'] += "X509_CERT_DIR='%s' "  % context.cert_repository
-                            keep_ctx = True
-
-                if  keep_ctx :
-                    # keep contextr for hashing of coneection handles.
-                    info['ctx'].append (context)
 
             if url.port and url.port != -1 :
                 info['ssh_args']  += "-p %d " % int(url.port)
@@ -503,12 +492,15 @@ class PTYShellFactory (object) :
             if url.username   :  info['user'] = url.username
             if url.password   :  info['pass'] = url.password
 
-            if  'user' in info : 
-                if  info['user'] :
-                    info['host_str'] = "%s@%s"  % (info['user'], info['host_str'])
+            if  'user' in info and info['user'] :
+                info['host_str'] = "%s@%s"  % (info['user'], info['host_str'])
+                info['ctrl'] = "~/.saga/adaptors/shell/ssh_%%h_%%p.%s.%s.ctrl" % (os.getpid (), info['user'])
+            else :
+                info['user'] = getpass.getuser ()
+                info['ctrl'] = "~/.saga/adaptors/shell/ssh_%%h_%%p.%s.ctrl" % (os.getpid ())
 
-            info['m_flags']  = _SSH_FLAGS_MASTER
-            info['s_flags']  = _SSH_FLAGS_SLAVE
+            info['m_flags']  = _SSH_FLAGS_MASTER % ({'ctrl' : info['ctrl']})
+            info['s_flags']  = _SSH_FLAGS_SLAVE  % ({'ctrl' : info['ctrl']})
             info['fs_root']  = url
 
             info['fs_root'].path = "/"

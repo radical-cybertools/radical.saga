@@ -102,14 +102,33 @@ class Context (sb.Base, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Context', 
-                  'Session')
-    @sus.returns (sus.nothing)
+    @sus.takes   ('Context')
+    @sus.returns (basestring)
+    def __str__  (self) :
+
+        d = self.as_dict ()
+        s = "{"
+
+        for key in sorted (d.keys ()) :
+            if  key == 'UserPass' :
+                s += "'UserPass' : '%s'" % ('x'*len(d[key]))
+            else :
+                s += "'%s' : '%s'" % (key, d[key])
+            s += ', '
+
+        return "%s}" % s[0:-2]
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes      ('Context', 
+                     'Session')
+    @sus.returns    (sus.nothing)
     def _initialize (self, session) :
         '''
         ret:  None
         '''
-        return self._adaptor._initialize (session)
+        self._adaptor._initialize (session)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

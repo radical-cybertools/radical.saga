@@ -32,7 +32,7 @@ class Description (saga.Attributes) :
         self._attributes_register  (saga.job.NAME                 , None, sa.STRING, sa.SCALAR, sa.WRITEABLE) 
         self._attributes_register  (saga.job.EXECUTABLE           , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.ARGUMENTS            , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
-        self._attributes_register  (saga.job.ENVIRONMENT          , None, sa.ANY,    sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (saga.job.ENVIRONMENT          , None, sa.STRING, sa.DICT,   sa.WRITEABLE)
         self._attributes_register  (saga.job.SPMD_VARIATION       , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.TOTAL_CPU_COUNT      , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.NUMBER_OF_PROCESSES  , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
@@ -58,7 +58,29 @@ class Description (saga.Attributes) :
         # FIXME
       # self._attributes_set_enums (saga.job.SPMD_VARIATION,      ['MPI', 'OpenMP', 'MPICH-G'])
 
-        pass
+        self._env_is_list = False
+
+        self._attributes_set_getter (saga.job.ENVIRONMENT, self._get_env)
+        self._attributes_set_setter (saga.job.ENVIRONMENT, self._set_env)
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _set_env (self, val) :
+        if  isinstance (val, list) :
+            self._env_is_list = True
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _get_env (self) :
+        env = self.get_attribute (saga.job.ENVIRONMENT)
+        if  self._env_is_list :
+            self._env_is_list = False
+            return ["%s=%s" % (key, val) for (key, val) in env.items ()]
+        return env
+
+
 
     # --------------------------------------------------------------------------
     #
