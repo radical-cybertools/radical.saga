@@ -1504,7 +1504,7 @@ class Attributes (_AttributesBase) :
                   basestring, 
                   sus.optional (sus.optional (sus.anything)),
                   sus.optional (sus.one_of (ANY, URL, INT, FLOAT, STRING, BOOL, ENUM, TIME)),
-                  sus.optional (sus.one_of (SCALAR, VECTOR)),
+                  sus.optional (sus.one_of (SCALAR, VECTOR, DICT)),
                   sus.optional (sus.one_of (READONLY, WRITEABLE, ALIAS, FINAL)),
                   sus.optional (sus.one_of (bool, EXTENDED)),
                   sus.optional (sus.one_of (_UP, _DOWN)))
