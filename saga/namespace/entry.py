@@ -51,7 +51,7 @@ class Entry (sb.Base, sasync.Async) :
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         :param url: Url of the (remote) entry
-        :type  url: :class:`bliss.saga.Url` 
+        :type  url: :class:`saga.Url` 
 
         flags:     flags enum
         session:   saga.Session

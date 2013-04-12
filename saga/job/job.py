@@ -641,7 +641,7 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
     #
     ServiceURL = property (doc = '''
     ServiceURL:
-    The URL of the :class:`bliss.saga.job.Service` instance managing this job.
+    The URL of the :class:`saga.job.Service` instance managing this job.
 
     This attribute is represents the URL under where the job management
     service can be contacted which owns the job.  The value is equivalent to

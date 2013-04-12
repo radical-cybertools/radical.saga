@@ -577,10 +577,6 @@ class Attributes (_AttributesBase) :
         # # expected to be costly).  The force flag set to True will request to call 
         # # registered getter hooks even if ttl is not yet expired.
         # 
-        # # NOTE: in Bliss, ttl does not make much sense, as this will only lead to
-        # # valid attribute values if attribute changes are pushed from adaptor to
-        # # API -- Bliss does not do that.
-        # 
         # # For example, job.wait() will update the plugin level state to 'Done',
         # # but the cached job.state attribute will remain 'New' as the plugin does
         # # not push the state change upward
@@ -1616,7 +1612,7 @@ class Attributes (_AttributesBase) :
 
         The first parameter is the old name of the attribute, the second
         parameter is the aliased new name.  Note that the new name needs to be
-        registered before (via :class:`bliss.saga._attributes_register`)::
+        registered before (via :class:`saga._attributes_register`)::
 
             # old code:
             self._attributes_register ('apple', 'Appel', STRING, SCALAR, WRITEABLE)
@@ -2192,7 +2188,7 @@ class Attributes (_AttributesBase) :
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
 
-        See documentation of :class:`bliss.saga._attributes_set_setter ` for details.
+        See documentation of :class:`saga._attributes_set_setter ` for details.
         """
 
         d = self._attributes_t_init ()
@@ -2340,7 +2336,7 @@ class Attributes (_AttributesBase) :
         """
         get_vector_attribute (key)
 
-        See also: :func:`bliss.saga.AttributeInterface.get_attribute` (key).
+        See also: :func:`saga.Attributes.get_attribute` (key).
 
         As python can handle scalar and vector types transparently, this method
         is in fact not very useful.  For that reason, it maps internally to the
@@ -2365,7 +2361,7 @@ class Attributes (_AttributesBase) :
         Removing an attribute is actually different from unsetting it, or from
         setting it to 'None'.  On remove, all traces of the attribute are
         purged, and the key will not be listed on 
-        :func:`bliss.saga.AttributeInterface.list_attributes` () anymore.
+        :func:`saga.Attributes.list_attributes` () anymore.
         """
 
         key    = self._attributes_t_keycheck   (key)
