@@ -205,17 +205,7 @@ _PTY_TIMEOUT = 2.0
 #
 _ADAPTOR_NAME          = "saga.adaptor.condorjob"
 _ADAPTOR_SCHEMAS       = ["condor", "condor+ssh", "condor+gsissh"]
-_ADAPTOR_OPTIONS       = [
-     {
-     'category':      'saga.adaptor.condorjob',
-     'name':          'ptydebug',
-     'type':          bool,
-     'default':       False,
-     'valid_options': [True, False],
-     'documentation': """Turns PTYWrapper debugging on or off.""",
-     'env_variable':  "SAGA_PTYDEBUG"
-     }
-]
+_ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -300,7 +290,6 @@ class Adaptor (saga.adaptors.base.Base):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts = self.get_config()
-        self.ptydebug = self.opts['ptydebug'].get_value()
 
     # ----------------------------------------------------------------
     #
@@ -382,22 +371,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                           'condor_q':       None,
                           'condor_rm':      None}
 
-        if self._adaptor.ptydebug == False:
-            # create a null logger to silence the PTY wrapper!
-            import logging
-
-            class NullHandler(logging.Handler):
-                def emit(self, record):
-                    pass
-            nh = NullHandler()
-            null_logger = logging.getLogger("PTYShell").addHandler(nh)
-
-            self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-                self.session, null_logger)
-        else:
-            self.shell = saga.utils.pty_shell.PTYShell(pty_url,
-                self.session)
-
+        self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
         self.shell.set_initialize_hook(self.initialize)
         self.shell.set_finalize_hook(self.finalize)

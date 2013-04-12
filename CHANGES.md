@@ -1,9 +1,22 @@
-Version 0.9.2 released 2013-
+Version 0.9.3 released 2013-04-08
 ----------------------------------------------------------------------
 
 * Added SFTP adaptor
 * Added tutorial examples
 * Closed issues:
+  - https://github.com/saga-project/saga-python/issues/78
+  - https://github.com/saga-project/saga-python/issues/73
+  - https://github.com/saga-project/saga-python/issues/72
+  - https://github.com/saga-project/saga-python/issues/71
+  - https://github.com/saga-project/saga-python/issues/69
+  - https://github.com/saga-project/saga-python/issues/66
+  - https://github.com/saga-project/saga-python/issues/63
+  - https://github.com/saga-project/saga-python/issues/62
+  - https://github.com/saga-project/saga-python/issues/61
+  - https://github.com/saga-project/saga-python/issues/60
+  - https://github.com/saga-project/saga-python/issues/58
+  - https://github.com/saga-project/saga-python/issues/57
+  - https://github.com/saga-project/saga-python/issues/56
   - https://github.com/saga-project/saga-python/issues/55
   - https://github.com/saga-project/saga-python/issues/22
   - https://github.com/saga-project/saga-python/issues/51
@@ -17,7 +30,12 @@ Version 0.9.2 released 2013-
   - https://github.com/saga-project/saga-python/issues/43
   - https://github.com/saga-project/saga-python/issues/27
 
-Version 0.9.1 released 2013-03-11
+Version 0.9.2 released 2013-03-11
+----------------------------------------------------------------------
+
+* Hotfix release
+
+Version 0.9.1 released 2013-03-03
 ----------------------------------------------------------------------
 
 * Major re-write of engine and adaptor interface
