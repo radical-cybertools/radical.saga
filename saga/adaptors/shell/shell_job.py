@@ -625,8 +625,6 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         jd = saga.job.Description ()
 
-        jd._attributes_dump ()
-
         jd.executable = "/bin/sh"
         jd.arguments  = ["-c", "'%s'" % cmd_quoted]
 
