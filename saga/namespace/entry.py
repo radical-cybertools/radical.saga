@@ -47,7 +47,7 @@ class Entry (sb.Base, sasync.Async) :
                   sus.optional (dict), 
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (sus.nothing)
-    def __init__ (self, url=None, flags=READ, session=None, 
+    def __init__ (self, url=None, flags=None, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         :param url: Url of the (remote) entry
@@ -96,7 +96,7 @@ class Entry (sb.Base, sasync.Async) :
                   sus.optional (ss.Session),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (st.Task)
-    def create   (cls, url=None, flags=READ, session=None, ttype=None) :
+    def create   (cls, url=None, flags=None, session=None, ttype=None) :
         '''
         url:       saga.Url
         flags:     saga.namespace.flags enum
@@ -314,8 +314,8 @@ class Entry (sb.Base, sasync.Async) :
                         # get an tgt-scheme'd adaptor for the new src url, and try copy again
                         adaptor = self._engine.bind_adaptor (self, 'saga.namespace.Entry', tgt_url.scheme, 
                                                              adaptor_instance)
-                        adaptor.init_instance ({}, tmp_url, READ, self._session)
-                        tmp     = Entry (tmp_url, READ, self._session, _adaptor=adaptor_instance)
+                        adaptor.init_instance ({}, tmp_url, None, self._session)
+                        tmp     = Entry (tmp_url, None, self._session, _adaptor=adaptor_instance)
     
                         ret = tmp.copy (tgt_url, flags)
     

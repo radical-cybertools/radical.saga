@@ -68,7 +68,7 @@ class Service (sb.Base, sasync.Async) :
                   sus.optional (dict),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (sus.nothing)
-    def __init__ (self, url=None, session=None,
+    def __init__ (self, rm=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         """
         Create a new job.Service instance.
