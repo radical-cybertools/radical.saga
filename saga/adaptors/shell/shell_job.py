@@ -18,6 +18,7 @@ import re
 import os
 import time
 import threading
+import subprocess
 
 import shell_wrapper
 
@@ -288,34 +289,50 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     #
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (ShellJobService, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (ShellJobService, self)
+        _cpi_base.__init__ (api, adaptor)
 
         self.opts = {}
         self.opts['shell'] = None  # default to login shell
+
+        try :
+            subprocess.Popen(["/usr/bin/touch", "/tmp/pytest.gc"])
+        except Exception as e :
+            print "no touch: %s" % e
 
 
     # ----------------------------------------------------------------
     #
     def __del__ (self) :
 
-        # FIXME: not sure if we should PURGE here -- that removes states which
-        # might not be evaluated, yet.  Should we mark state evaluation
-        # separately? 
-        #   cmd_state () { touch $DIR/purgeable; ... }
-        # When should that be done?
-        ret, out, _ = self.shell.run_sync ("QUIT")
+        try :
+            subprocess.Popen(["/bin/rm", "-f", "/tmp/pytest.gc"])
+        except Exception as e:
+            print "no del: %s" % e
 
-        self._logger.error ("adaptor dying... %s" % self.njobs)
-        self._logger.trace ()
+        print "shell_job.servic.__del__"
+
+        try :
+            # FIXME: not sure if we should PURGE here -- that removes states which
+            # might not be evaluated, yet.  Should we mark state evaluation
+            # separately? 
+            #   cmd_state () { touch $DIR/purgeable; ... }
+            # When should that be done?
+            ret, out, _ = self.shell.run_sync ("QUIT")
+
+            self._logger.error ("adaptor dying... %s" % self.njobs)
+            self._logger.trace ()
     
-        #     try :
-        #       # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
-        #         if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
-        #     except :
-        #         pass
+            #     try :
+            #       # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
+            #         if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
+            #     except :
+            #         pass
 
-        self.finalize (kill_shell=True)
+            self.finalize (kill_shell=True)
+
+        except :
+            pass
     
 
 
@@ -336,9 +353,6 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
                                                     self._logger, opts=self.opts)
-
-        self.shell.set_initialize_hook (self.initialize)
-        self.shell.set_finalize_hook   (self.finalize)
 
         self.initialize ()
 
@@ -988,8 +1002,8 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     #
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (ShellJob, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (ShellJob, self)
+        _cpi_base.__init__ (api, adaptor)
 
 
     # ----------------------------------------------------------------

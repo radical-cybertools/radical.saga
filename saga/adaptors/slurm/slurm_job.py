@@ -243,8 +243,9 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     #
     def __init__ (self, api, adaptor) :
         #saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
-        self._cpi_base = super  (SLURMJobService, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (SLURMJobService, self)
+        _cpi_base.__init__ (api, adaptor)
+
         self._base = base = "$HOME/.saga/adaptors/slurm_job"
 
         self.exit_code_re = re.compile("""(?<=ExitCode=)[0-9]*""")
@@ -836,8 +837,8 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
     #
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (SLURMJob, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (SLURMJob, self)
+        _cpi_base.__init__ (api, adaptor)
 
     # ----------------------------------------------------------------
     #
