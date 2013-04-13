@@ -98,7 +98,15 @@ _ADAPTOR_DOC           = {
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "description"      : """ 
         The Shell job adaptor. This adaptor uses the sh command line tools (sh,
-        ssh, gsissh) to run local and remote jobs.
+        ssh, gsissh) to run local and remote jobs.  The adaptor expects the
+        login shell on the target host to be POSIX compliant.  However, one can
+        also specify a custom shell via the resource manager URL, like::
+
+          js = saga.job.Service ("ssh://remote.host.net/bin/sh")
+
+        Note that custom shells in many cases will find a different environment
+        than the users default login shell!
+
 
         Known Limitations:
         ******************
@@ -229,7 +237,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config ()
 
-        self.notifications = self.opts['enable_notifications'].get_value ()
+        self.notifications  = self.opts['enable_notifications'].get_value ()
         self.purge_on_start = self.opts['purge_on_start'].get_value ()
 
 
@@ -283,6 +291,9 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         self._cpi_base = super  (ShellJobService, self)
         self._cpi_base.__init__ (api, adaptor)
 
+        self.opts = {}
+        self.opts['shell'] = None  # default to login shell
+
 
     # ----------------------------------------------------------------
     #
@@ -295,7 +306,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # When should that be done?
         ret, out, _ = self.shell.run_sync ("QUIT")
 
-        ielf._logger.error ("adaptor dying... %s" % self.njobs)
+        self._logger.error ("adaptor dying... %s" % self.njobs)
         self._logger.trace ()
     
         #     try :
@@ -320,8 +331,11 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         self.session = session
         self.njobs   = 0
 
+        if  self.rm.path and self.rm.path != '/' :
+            self.opts['shell'] = self.rm.path
+
         self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
-                                                    self._logger)
+                                                    self._logger, opts=self.opts)
 
         self.shell.set_initialize_hook (self.initialize)
         self.shell.set_finalize_hook   (self.finalize)
@@ -417,7 +431,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 env += "export %s=%s; "  %  (e, jd.environment[e])
 
         if  jd.attribute_exists (WORKING_DIRECTORY) :
-            cwd = "cd %s && " % jd.working_directory
+            cwd = "mkdir -p %s && cd %s && " % (jd.working_directory, jd.working_directory)
 
         if  jd.attribute_exists (INPUT) :
             io += "<%s " % jd.input

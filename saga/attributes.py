@@ -2304,14 +2304,22 @@ class Attributes (_AttributesBase) :
     ####################################
     def __str__ (self) :
         """ return a string representation of all set attributes """
+
+        s = "%s %s" % (type(self), str(self.as_dict))
+
+        return s
+
+    ####################################
+    def as_dict (self) :
+        """ return a dict representation of all set attributes """
+
         d = {}
 
         for a in self.list_attributes () :
-            d[a] = self.get_attribute (a)
+            d[a] = str(self.get_attribute (a))
 
-        s = "%s %s" % (type(self), str(d))
+        return d
 
-        return s
 
 ################################################################################
 
