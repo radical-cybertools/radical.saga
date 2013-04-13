@@ -182,8 +182,6 @@ class PTYShell (object) :
 
         self.prompt          = None
         self.prompt_re       = None
-        self.initialize_hook = None
-        self.finalize_hook   = None
 
         # we need a local dir for file staging caches.  At this point we use
         # $HOME, but should make this configurable (FIXME)
@@ -207,9 +205,6 @@ class PTYShell (object) :
         self.pty_info   = self.factory.initialize (url, session, self.logger)
         self.pty_shell  = self.factory.run_shell  (self.pty_info)
 
-        self.pty_shell.set_initialize_hook (self.initialize)
-        self.pty_shell.set_finalize_hook   (self.finalize)
-
         self.initialize ()
 
 
@@ -218,20 +213,6 @@ class PTYShell (object) :
     def __del__ (self) :
 
         self.finalize (kill_pty=True)
-
-
-    # ----------------------------------------------------------------------
-    #
-    def set_initialize_hook (self, initialize_hook) :
-
-        self.initialize_hook = initialize_hook
-
-
-    # ----------------------------------------------------------------------
-    #
-    def set_finalize_hook (self, finalize_hook) :
-
-        self.finalize_hook = finalize_hook
 
 
     # ----------------------------------------------------------------
@@ -280,22 +261,10 @@ class PTYShell (object) :
 
         self.logger.debug ("got new shell prompt")
 
-        if  self.initialize_hook :
-            self.initialize_hook ()
-
 
     # ----------------------------------------------------------------
     #
     def finalize (self, kill_pty = False) :
-
-        try :
-            # check if some additional initialization routines as registered
-            if  self.finalize_hook :
-                self.finalize_hook ()
-
-        except Exception as e :
-            pass
-
 
         try :
             if  kill_pty :

@@ -263,8 +263,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def __init__(self, api, adaptor):
 
-        self._cpi_base = super(PBSJobService, self)
-        self._cpi_base.__init__(api, adaptor)
+        _cpi_base = super(PBSJobService, self)
+        _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
 
@@ -818,8 +818,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     def __init__(self, api, adaptor):
 
         # initialize parent class
-        self._cpi_base = super(PBSJob, self)
-        self._cpi_base.__init__(api, adaptor)
+        _cpi_base = super(PBSJob, self)
+        _cpi_base.__init__(api, adaptor)
 
     @SYNC_CALL
     def init_instance(self, job_info):

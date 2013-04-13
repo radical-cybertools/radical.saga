@@ -91,10 +91,7 @@ class PTYShellFactory (object) :
     a host/user/port/context/shell_type hash.
 
     Any ssh master connection in this registry can idle, and may thus shut down
-    after ``ControlPersist`` seconds (see options), or when the PTYProcess level
-    GC collects it whichever comes first. But also, the GC will automatically
-    restart the connection on any invocation of :func:`get()`.  Note that the
-    created clients are also under timeout GC management.
+    after ``ControlPersist`` seconds (see options).
 
     data model::
 

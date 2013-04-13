@@ -185,8 +185,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     #
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (ShellDirectory, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (ShellDirectory, self)
+        _cpi_base.__init__ (api, adaptor)
 
 
     # ----------------------------------------------------------------
@@ -699,8 +699,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     #
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (ShellFile, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (ShellFile, self)
+        _cpi_base.__init__ (api, adaptor)
 
 
     # ----------------------------------------------------------------
