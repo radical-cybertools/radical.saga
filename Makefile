@@ -40,6 +40,10 @@ mark:
 	    rm -rf ~.virtualenv/saga-python/lib/python*/site-packages/saga-1.0-py2.6.egg/  ; \
 	    easy_install . ; \
 
+viz:
+	gource -s 0.3 -i 0 --title saga-python --max-files 99999 --max-file-lag -1 --user-friction 0.3 --user-scale 0.5 --camera-mode overview --hide progress,filenames -r 25 -viewport 1024x1024 --loop
+
+
 # pages: gh-pages
 # 
 # gh-pages:
