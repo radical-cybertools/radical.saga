@@ -21,8 +21,8 @@ class Entry (cpi_base.CPIBase, cpi_async.Async) :
     #
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (Entry, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (Entry, self)
+        _cpi_base.__init__ (api, adaptor)
 
     @SYNC
     def init_instance        (self, url, flags, session)      : pass
