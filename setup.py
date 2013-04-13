@@ -1,9 +1,8 @@
-#!/usr/bin/env python
-# encoding: utf-8
 
-__author__    = "Ole Weidner"
+__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ Setup script. Used by easy_install and pip.
 """
@@ -73,13 +72,13 @@ class our_sdist(sdist):
         open(fn, 'w').write(version)
 
 setup_args = {
-    'name': "saga",
+    'name': "saga-python",
     'version': version,
-    'description': "A native Python implementation of the OGF SAGA standard (GFD.90).",
-    'long_description': "SAGA-Python (a.k.a bliss) is a pragmatic and light-weight implementation of the OGF GFD.90 SAGA standard. SAGA-Python is written 100% in Python and focuses on usability and ease of deployment.",
-    'author': "Ole Christian Weidner, et al.",
+    'description': "A light-weight access layer for distributed computing infrastructure",
+    'long_description': "An implementation of the OGF GFD.90 SAGA standard in Python",
+    'author': "Ole Weidner, et al.",
     'author_email': "ole.weidner@rutgers.edu",
-    'maintainer': "Ole Christian Weidner",
+    'maintainer': "Ole Weidner",
     'maintainer_email': "ole.weidner@rutgers.edu",
     'url': "http://saga-project.github.com/saga-python/",
     'license': "MIT",
@@ -128,14 +127,20 @@ setup_args = {
         "saga.adaptors.ssh",
         "saga.adaptors.irods",
         "saga.adaptors.srm",
+        "saga.adaptors.shell",
+        "saga.adaptors.sge",
+        "saga.adaptors.pbs",
+        "saga.adaptors.condor",
+        "saga.adaptors.slurm",
         "saga.engine",
         "saga.utils",
         "saga.utils.contrib",
-        "saga.utils.cmdlinewrapper",
         "saga.utils.logger",
         "saga.utils.config",
         "saga.utils.job"
     ],
+    'package_data': {'': ['*.sh']},
+    'zip_safe': False,
     'scripts': scripts,
     # mention data_files, even if empty, so install_data is called and
     # VERSION gets copied
@@ -146,16 +151,9 @@ setup_args = {
         }
     }
 
-# set zip_safe to false to force Windows installs to always unpack eggs
-# into directories, which seems to work better --
-# see http://buildbot.net/trac/ticket/907
-if sys.platform == "win32":
-    setup_args['zip_safe'] = False
-
-else:
+if sys.platform != "win32":
     setup_args['install_requires'] = [
         'colorama',
-        'pexpect'
     ]
 
 setup(**setup_args)

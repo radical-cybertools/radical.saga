@@ -1,7 +1,8 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 ''' Provides log handler management for SAGA.
 '''
@@ -72,19 +73,32 @@ class _Logger(Configurable):
     __metaclass__ = Singleton
 
     class _MultiNameFilter(logging.Filter):
-        def __init__(self, names):
-            self._names = names
+        def __init__(self, pos_filters, neg_filters=[]):
+            self._pos_filters = pos_filters
+            self._neg_filters = neg_filters
+
         def filter(self, record):
-            for n in self._names:
-                if n in record.name:
-                    return True
+            print_it = False
+
+            if not len(self._pos_filters) :
+                print_it = True
+            else :
+                for f in self._pos_filters:
+                    if  f in record.name:
+                        print_it = True
+
+            for f in self._neg_filters:
+                if  f in record.name:
+                    print_it = False
+
+            return print_it
 
     def __init__(self):
 
         Configurable.__init__(self, 'saga.engine.logging', _all_logging_options)    
         cfg = self.get_config()
 
-        self._loglevel = cfg['level'].get_value()
+        self._loglevel = str(cfg['level'].get_value())
         self._filters  = cfg['filters'].get_value()
         self._targets  = cfg['targets'].get_value()
         self._handlers = list()
@@ -122,7 +136,16 @@ class _Logger(Configurable):
             handler.setFormatter(DefaultFormatter)
 
             if self._filters != []:
-                handler.addFilter(_MultiNameFilter(self._filters))
+                pos_filters = []
+                neg_filters = []
+
+                for f in self._filters :
+                    if  f and f[0] == '!' :
+                        neg_filters.append (f[1:])
+                    else :
+                        pos_filters.append (f)
+
+                handler.addFilter(self._MultiNameFilter (pos_filters, neg_filters))
 
             self._handlers.append(handler)
 
@@ -137,7 +160,9 @@ class _Logger(Configurable):
 
 
 ################################################################################
-##
+#
+# FIXME: strange pylint error
+#
 def getLogger (name='saga-python'):
     ''' Get a SAGA logger.  For any new name, a new logger instance will be
     created; subsequent calls to this method with the same name argument will

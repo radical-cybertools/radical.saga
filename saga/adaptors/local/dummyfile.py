@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 """ dummy filesystem adaptor implementation """
 
 import os
@@ -17,7 +22,7 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 # adaptor info
 #
 
-_ADAPTOR_NAME          = 'saga.adaptor.dummysystem.local'
+_ADAPTOR_NAME          = 'saga.adaptors.local.dummyfile'
 _ADAPTOR_SCHEMAS       = ['dummy']
 _ADAPTOR_OPTIONS       = [
     { 
@@ -45,8 +50,7 @@ _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
-    'description'      : 'The local filesystem adaptor.',
-    'details'          : """This adaptor interacts with local filesystem, by
+    'description'      : """This adaptor interacts with local filesystem, by
                             using the (POSIX like) os and shutil Python packages.
                             It is named 'dummy', as this adaptor is only used
                             for testing and debugging -- it is *not* good for
@@ -126,7 +130,7 @@ class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
                                                     'url'     : url, 
                                                     'flags'   : flags, 
                                                     'session' : session})
-        t._set_result (saga.dummysystem.Directory (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
+        t._set_result (saga.filesystem.Directory (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -155,8 +159,8 @@ class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         if not os.path.exists (path) :
 
-            if saga.dummysystem.CREATE & flags :
-                if saga.dummysystem.CREATE_PARENTS & flags :
+            if saga.filesystem.CREATE & flags :
+                if saga.filesystem.CREATE_PARENTS & flags :
                     try :
                         os.makedirs (path)
                     except Exception as e :
@@ -190,7 +194,7 @@ class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
         if not url.scheme and not url.host : 
             url = saga.url.Url (str(self._url) + '/' + str(url))
 
-        f = saga.dummysystem.File (url, flags, self._session, _adaptor_name=_ADAPTOR_NAME)
+        f = saga.filesystem.File (url, flags, self._session, _adaptor_name=_ADAPTOR_NAME)
         return f
 
 
@@ -215,7 +219,7 @@ class DummyFile (saga.adaptors.cpi.filesystem.File) :
 
         self._init_check ()
 
-        return self
+        return self.get_api ()
 
 
     @ASYNC_CALL
@@ -229,7 +233,7 @@ class DummyFile (saga.adaptors.cpi.filesystem.File) :
         
         t = saga.task.Task ()
 
-        t._set_result (saga.dummysystem.File (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
+        t._set_result (saga.filesystem.File (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
         t._set_state  (saga.task.DONE)
 
         return t
@@ -299,7 +303,7 @@ class DummyFile (saga.adaptors.cpi.filesystem.File) :
 
         t = saga.task.Task ()
 
-        t._set_state  = saga.task.Done
+        t._set_state  = saga.task.DONE
         t._set_result = self._url
 
         return t

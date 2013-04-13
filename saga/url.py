@@ -1,43 +1,45 @@
 
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2011-2013, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 import os
 
-from saga.exceptions    import BadParameter
-from saga.utils.contrib import urlparse25 as urlparse  # this urlparse needs Python 2.5
+from saga.exceptions import BadParameter
+# this urlparse needs Python 2.5
+from saga.utils.contrib import urlparse25 as urlparse
 
 
 class Url (object):
     """ The SAGA Url class.
-    
+
         URLs are used in several places in the SAGA API: to specify service
-        endpoints for job submission or resource management, for file or 
-        directory locations, etc.  
+        endpoints for job submission or resource management, for file or
+        directory locations, etc.
 
         The URL class is designed to simplify URL management for these
-        purposes -- it allows to manipulate individual URL elements, while 
+        purposes -- it allows to manipulate individual URL elements, while
         ensuring that the resulting URL is well formatted. Example::
 
           # create a URL from a string
           location = saga.Url ("file://localhost/tmp/file.dat")
           d = saga.filesystem.Directory(location)
 
-        A URL consists of the following components (where one ore more can 
+        A URL consists of the following components (where one ore more can
         be 'None')::
 
           <scheme>://<user>:<pass>@<host>:<port>/<path>?<query>#<fragment>
 
-        Each of these components can be accessed via its property or 
+        Each of these components can be accessed via its property or
         alternatively, via getter / setter methods. Example::
 
-          url = saga.Url ("scheme://pass:user@host:123/dir/file?query#fragment")
-  
-          # modify the scheme 
+          url = saga.Url ("scheme://pass:user@host:123/path?query#fragment")
+
+          # modify the scheme
           url.scheme = "anotherscheme"
-       
-          # above is equivalent with  
+
+          # above is equivalent with
           url.set_scheme("anotherscheme")
     """
 
@@ -47,12 +49,15 @@ class Url (object):
         """ Create a new Url object from a string or another Url object.
         """
 
+        if type(url_string) == type(None):
+            self._urlobj = urlparse.urlparse("")
         if type(url_string) == str:
-            self._urlobj = urlparse.urlparse(url_string)    
+            self._urlobj = urlparse.urlparse(url_string)
         elif type(url_string) == Url:
-            self._urlobj = urlparse.urlparse(str(url_string))        
+            self._urlobj = urlparse.urlparse(str(url_string))
         else:
-            raise BadParameter("Url expects str or Url type as parameter")
+            raise BadParameter ("Url expects str or Url type as parameter, not %s" \
+                             % type(url_string))
 
     ######################################################################
     ##
@@ -71,6 +76,14 @@ class Url (object):
 
     ######################################################################
     ##
+    def __deepcopy__(self, obj):
+        """ Deep copy of a Url
+        """
+        new_url = Url(str(self))
+        return new_url
+
+    ######################################################################
+    ##
     def _make_netloc(self, username, password, host, port):
         """ Private helper function to generate netloc string.
         """
@@ -84,15 +97,15 @@ class Url (object):
             netloc += host
         if port is not None:
             netloc += ":%s" % (port)
-        return netloc                
+        return netloc
 
     ######################################################################
     ## Scheme property
     def set_scheme(self, scheme):
         """ Set the 'scheme' component.
         """
-        newurl = urlparse.urlunparse((scheme, 
-                                     self._urlobj.netloc, 
+        newurl = urlparse.urlunparse((scheme,
+                                     self._urlobj.netloc,
                                      self._urlobj.path,
                                      self._urlobj.params,
                                      self._urlobj.query,
@@ -104,8 +117,8 @@ class Url (object):
         """
         return self._urlobj.scheme
 
-    scheme=property(get_scheme, set_scheme)
-    schema=scheme  # alias, as both terms are used...
+    scheme = property(get_scheme, set_scheme)
+    schema = scheme  # alias, as both terms are used...
     """ The scheme component.
     """
 
@@ -114,11 +127,12 @@ class Url (object):
     def set_host(self, host):
         """ Set the 'host' component.
         """
-        netloc = self._make_netloc(self._urlobj.username, self._urlobj.password,
+        netloc = self._make_netloc(self._urlobj.username,
+                                   self._urlobj.password,
                                    host, self._urlobj.port)
 
         newurl = urlparse.urlunparse((self._urlobj.scheme,
-                                     netloc, 
+                                     netloc,
                                      self._urlobj.path,
                                      self._urlobj.params,
                                      self._urlobj.query,
@@ -130,7 +144,7 @@ class Url (object):
         """
         return self._urlobj.hostname
 
-    host=property(get_host, set_host)
+    host = property(get_host, set_host)
     """ The host component.
     """
 
@@ -139,11 +153,12 @@ class Url (object):
     def set_port(self, port):
         """ Set the 'port' component.
         """
-        netloc = self._make_netloc(self._urlobj.username, self._urlobj.password,
+        netloc = self._make_netloc(self._urlobj.username,
+                                   self._urlobj.password,
                                    self._urlobj.hostname, int(port))
 
         newurl = urlparse.urlunparse((self._urlobj.scheme,
-                                     netloc, 
+                                     netloc,
                                      self._urlobj.path,
                                      self._urlobj.params,
                                      self._urlobj.query,
@@ -158,7 +173,7 @@ class Url (object):
         else:
             return None
 
-    port=property(get_port, set_port)
+    port = property(get_port, set_port)
     """ The port component.
     """
 
@@ -171,7 +186,7 @@ class Url (object):
                                    self._urlobj.hostname, self._urlobj.port)
 
         newurl = urlparse.urlunparse((self._urlobj.scheme,
-                                     netloc, 
+                                     netloc,
                                      self._urlobj.path,
                                      self._urlobj.params,
                                      self._urlobj.query,
@@ -183,10 +198,9 @@ class Url (object):
         """
         return self._urlobj.username
 
-    username=property(get_username, set_username)
+    username = property(get_username, set_username)
     """ The username component.
     """
-
 
     ######################################################################
     ## Password property
@@ -197,7 +211,7 @@ class Url (object):
                                    self._urlobj.hostname, self._urlobj.port)
 
         newurl = urlparse.urlunparse((self._urlobj.scheme,
-                                     netloc, 
+                                     netloc,
                                      self._urlobj.path,
                                      self._urlobj.params,
                                      self._urlobj.query,
@@ -209,7 +223,7 @@ class Url (object):
         """
         return self._urlobj.password
 
-    password=property(get_password, set_password)
+    password = property(get_password, set_password)
     """ The password component.
     """
 
@@ -219,7 +233,7 @@ class Url (object):
         """ Set the 'fragment' component.
         """
         newurl = urlparse.urlunparse((self._urlobj.scheme,
-                                     self._urlobj.netloc, 
+                                     self._urlobj.netloc,
                                      self._urlobj.path,
                                      self._urlobj.params,
                                      self._urlobj.query,
@@ -231,7 +245,7 @@ class Url (object):
         """
         return self._urlobj.fragment
 
-    fragment=property(get_fragment, set_fragment)
+    fragment = property(get_fragment, set_fragment)
     """ The fragment component.
     """
 
@@ -241,7 +255,7 @@ class Url (object):
         """ Set the 'path' component.
         """
         newurl = urlparse.urlunparse((self._urlobj.scheme,
-                                     self._urlobj.netloc, 
+                                     self._urlobj.netloc,
                                      path,
                                      self._urlobj.params,
                                      self._urlobj.query,
@@ -253,21 +267,21 @@ class Url (object):
         """
         if '?' in self._urlobj.path:
             (path, query) = self._urlobj.path.split('?')
-            return os.path.normpath (path)
+            return os.path.normpath(path)
         else:
-            return os.path.normpath (self._urlobj.path)
+            return os.path.normpath(self._urlobj.path)
 
-    path=property(get_path, set_path)
+    path = property(get_path, set_path)
     """ The path component.
     """
 
     ######################################################################
     ## Query property
-    def set_query(self, path):
+    def set_query(self, query):
         """ Set the 'query' component.
         """
         newurl = urlparse.urlunparse((self._urlobj.scheme,
-                                     self._urlobj.netloc, 
+                                     self._urlobj.netloc,
                                      self._urlobj.path,
                                      self._urlobj.params,
                                      query,
@@ -284,10 +298,6 @@ class Url (object):
         else:
             return self._urlobj.query
 
-    query=property(get_query, set_query)
+    query = property(get_query, set_query)
     """ The query component.
     """
-
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-

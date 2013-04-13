@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import saga.context
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.context
@@ -24,8 +29,7 @@ _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
-    'description'      : 'The UserPass context adaptor.',
-    'details'          : """This adaptor stores user_id and user_pass tokens, to
+    'description'      : """This adaptor stores user_id and user_pass tokens, to
                             be used for backend connections.""",
     'schemas'          : {'userpass' : 'this adaptor can only store username/password pairs.'},
 }

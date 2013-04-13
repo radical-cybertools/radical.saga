@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import saga.url
 import saga.exceptions
 import saga.namespace.entry
@@ -21,9 +26,9 @@ class LogicalFile (saga.namespace.entry.Entry,
         '''
 
         # param checks
-        url = Url (url)
+        url = saga.url.Url (url)
 
-        self._nsentry = super  (Directory, self)
+        self._nsentry = super  (LogicalFile, self)
         self._nsentry.__init__ (url, flags, session, 
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
@@ -38,11 +43,9 @@ class LogicalFile (saga.namespace.entry.Entry,
         ret:       saga.Task
         '''
 
-        # param checks
-        url     = Url (url)
-        scheme  = url.scheme.lower ()
+        _nsentry = super (LogicalFile, cls)
+        return _nsentry.create (url, flags, session, ttype=ttype)
 
-        return cls (url, flags, session, _ttype=ttype)._init_task
 
 
     # ----------------------------------------------------------------

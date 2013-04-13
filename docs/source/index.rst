@@ -21,9 +21,8 @@ Contents:
    :maxdepth: 2
 
    usage/index.rst
-   library/index.rst
-   examples/index.rst
    tutorial/index.rst
+   library/index.rst
    adaptors/saga.adaptor.index.rst
    developers/index.rst
 

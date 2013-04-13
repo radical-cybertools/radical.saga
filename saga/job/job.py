@@ -1,7 +1,8 @@
 
-__author__    = "Andre Merzky"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ SAGA job interface
 """
@@ -105,6 +106,7 @@ class Job (Base, Attributes, Async) :
         self._attributes_set_getter (STARTED,         self._get_started)
         self._attributes_set_getter (FINISHED,        self._get_finished)
         self._attributes_set_getter (EXECUTION_HOSTS, self._get_execution_hosts)
+        self._attributes_set_getter (SERVICE_URL    , self._get_service_url)
 
  
 
@@ -417,9 +419,17 @@ class Job (Base, Attributes, Async) :
 
 
     # ----------------------------------------------------------------
+    # 
     # attribute getters
+    #
     def _get_exit_code (self, ttype=None) :
-        return self._adaptor.get_exit_code (ttype=ttype)
+        # exit code is always an int. if this 'cast' fails, the adaptor
+        # is doing something stupid
+        ec = self._adaptor.get_exit_code(ttype=ttype)
+        if ec not in [None, ""]:
+            return int(ec)
+        else:
+            return ec
 
     def _get_created (self, ttype=None) :
         return self._adaptor.get_created (ttype=ttype)
@@ -432,6 +442,9 @@ class Job (Base, Attributes, Async) :
 
     def _get_execution_hosts (self, ttype=None) :
         return self._adaptor.get_execution_hosts (ttype=ttype)
+
+    def _get_service_url (self, ttype=None) :
+        return self._adaptor.get_service_url (ttype=ttype)
 
     state     = property (get_state)       # state enum
     result    = property (get_result)      # result type    (None)
@@ -515,6 +528,9 @@ class Self (Job) :
         # self._attributes_extensible  (False)
         # self._attributes_camelcasing (True)
 
+        if not session :
+            session = saga.Session (default=True)
+
         Base.__init__ (self, 'fork', session, ttype=_ttype)
 
 
@@ -525,6 +541,9 @@ class Self (Job) :
         ttype:     saga.task.type enum
         ret:       saga.Task
         '''
+        if not session :
+            session = saga.Session (default=True)
+
 
         return cls (session, _ttype=ttype)._init_task
     

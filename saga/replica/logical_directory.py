@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import saga.url
 import saga.exceptions
 import saga.namespace.directory
@@ -20,9 +25,9 @@ class LogicalDirectory (saga.namespace.directory.Directory,
         '''
 
         # param checks
-        url = Url (url)
+        url = saga.url.Url (url)
 
-        self._nsdirec = super  (Directory, self)
+        self._nsdirec = super  (LogicalDirectory, self)
         self._nsdirec.__init__ (url, flags, session, 
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
@@ -37,11 +42,8 @@ class LogicalDirectory (saga.namespace.directory.Directory,
         ret:       saga.Task
         '''
 
-        # param checks
-        url     = Url (url)
-        scheme  = url.scheme.lower ()
-
-        return cls (url, flags, session, _ttype=ttype)._init_task
+        _nsdir = super (LogicalDirectory, cls)
+        return _nsdir.create (url, flags, session, ttype=ttype)
 
 
     # ----------------------------------------------------------------

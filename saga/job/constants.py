@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 ################################################################################
 #
 # Job States
@@ -43,11 +48,16 @@ SUSPENDED             = 'Suspended'
 ################################################################################
 #
 # JobDescription attributes:
+NAME                  = 'Name'
+""" The name of your job. 
+"""
+
 EXECUTABLE            = 'Executable'
 """ The path to the executable. 
 """
 
-
+""" docstring
+"""
 ARGUMENTS             = 'Arguments'
 """ The arguments for to the executable. 
 """
