@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import threading
 
 import saga.utils.exception
@@ -33,7 +38,7 @@ class Thread (threading.Thread) :
     def Run (self, call, *args, **kwargs) :
 
         t = self (call, *args, **kwargs)
-        t.run ()
+        t.start ()
         return t
 
 
@@ -54,6 +59,12 @@ class Thread (threading.Thread) :
 
         if self.isAlive () :
             self.join ()
+
+
+    def cancel (self) :
+        # FIXME: this is not really implementable generically, so we ignore 
+        # cancel requests for now.
+        pass
 
 
     def get_state (self) :

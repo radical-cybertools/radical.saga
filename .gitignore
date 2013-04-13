@@ -39,3 +39,7 @@ nosetests.xml
 
 # Sublime 
 saga.sublime-workspace
+wiki
+
+# Generated docs
+docs/source/adaptors/saga.adaptor*

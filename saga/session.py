@@ -1,10 +1,8 @@
-__author__    = "Andre Merzky"
+
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-__author__    = "Andre Merzky"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
-__license__   = "MIT"
 
 import saga.utils.singleton
 import saga.utils.logger
@@ -31,13 +29,14 @@ class _DefaultSession (object) :
             self._logger.warn ("no context adaptors found")
             return
 
+        ctx_adaptors = list()
         for schema in   self._engine._adaptor_registry['saga.Context'] :
-            for info in self._engine._adaptor_registry['saga.Context'][schema] :
-                self._logger.debug ("pulling defaults for context adaptors : %s [%s]"
-                               % (info['adaptor_name'], schema))
+            for info in self._engine._adaptor_registry['saga.Context'][schema]:
+                ctx_adaptors.append(info['adaptor_name'])
+                self._contexts += info['adaptor_instance']._get_default_contexts()
 
-                self._contexts += info['adaptor_instance']._get_default_contexts ()
-
+        self._logger.debug ("Adding defaults for context adaptors: %s " \
+                       % ctx_adaptors)
 
 
 class Session (saga.base.SimpleBase) :
@@ -64,7 +63,7 @@ class Session (saga.base.SimpleBase) :
         c = saga.Context()
         c.context_type = 'ssh'
         c.user_cert = '$HOME/.ssh/special_id_rsa'
-        c.user_key = '$HOME/.ssh/special_id_rsa.pub'
+        c.user_key  = '$HOME/.ssh/special_id_rsa.pub'
 
         # add it to a session
         s = saga.Session

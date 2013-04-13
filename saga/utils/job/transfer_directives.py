@@ -1,7 +1,8 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 ''' Provides a parser class for the file transfer specification as it is
     defined in GFD.90, sction 4.1.3.
@@ -104,10 +105,10 @@ class InvalidTransferDirective(ExceptionBase):
 
 def _test_():
     tdp = TransferDirectives(["ab","a>c", "c>>d","f<a","g<<h"])
-    print tdp.in_append
-    print tdp.in_overwrite
-    print tdp.out_append
-    print tdp.out_overwrite
+    print tdp.in_append_dict
+    print tdp.in_overwrite_dict
+    print tdp.out_append_dict
+    print tdp.out_overwrite_dict
 
 
 

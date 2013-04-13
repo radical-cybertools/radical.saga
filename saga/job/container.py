@@ -1,15 +1,14 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-from saga.task    import Container as TaskContainer
-from saga.job.job import Job
+import saga.task as stask
 
 
 # 'forward' declaration of job.Container
-class Container (TaskContainer):
+class Container (stask.Container):
     """ :todo: document me
 
         .. py:attribute:: jobs
@@ -35,7 +34,8 @@ class Container (TaskContainer):
 
     def __init__ (self) :
 
-        TaskContainer.__init__(self)
+        self._task_container = super  (Container, self)
+        self._task_container.__init__ ()
 
         import saga.attributes as sa
 
@@ -51,8 +51,10 @@ class Container (TaskContainer):
         tasks = self.get_tasks ()
         jobs  = []
 
+        import saga.job  as sjob
+
         for task in tasks :
-            if isinstance (task, Job) :
+            if isinstance (task, sjob.job.Job) :
                 jobs.append (task)
 
         return jobs

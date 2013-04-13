@@ -1,7 +1,8 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ Unit tests for saga.utils.exception.py
 """
@@ -15,11 +16,7 @@ def test_ExceptionBase():
         raise ExceptionBase('message')
         assert False
     except ExceptionBase, eb:
-        if str(eb) != 'message':
-            assert False
-        else:
-            assert str(eb) == 'message'
-            assert True
+        assert (str(eb) == 'ExceptionBase: message'), "'%s' != '%s'" % (str(eb), 'message')
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
