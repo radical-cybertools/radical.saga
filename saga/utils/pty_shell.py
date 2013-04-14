@@ -243,23 +243,31 @@ class PTYShell (object) :
 
         # we need to make sure that the found prompt is really the prompt of
         # the new shell, so we check $? for successfull startup.
-        self.pty_shell.write ("echo $?\n")
-        ret2, out2 = self.pty_shell.find (["\d+\n"],     10.0)
-        ret3, out3 = self.pty_shell.find (["^.*\$\s*$"], 10.0)
+        try :
+            self.pty_shell.write ('echo "-SAGA-$?"\n')
+            ret2, out2 = self.pty_shell.find (["-SAGA-"],    10.0)
+            ret3, out3 = self.pty_shell.find (["\d+\n"],     10.0)
+            ret4, out4 = self.pty_shell.find (["^.*\$\s*$"], 10.0)
 
-        if  int(out2) != 0 :
-            raise saga.NoSuccess ("cannot initalize shell with %s (%s)" \
-                    % (self.opts['shell'], out1))
+            if  int(out3[:-1]) != 0 :
+                raise saga.NoSuccess ("cannot initalize shell with %s (%s)" \
+                        % (self.opts['shell'], out1))
 
 
-        # set and register new prompt
-        self.run_sync ( "unset PROMPT_COMMAND ; "
-                             + "PS1='PROMPT-$?->'; "
-                             + "PS2=''; "
-                             + "export PS1 PS2\n", 
-                               new_prompt="PROMPT-(\d+)->$")
+            # set and register new prompt
+            self.run_sync ( "unset PROMPT_COMMAND ; "
+                                 + "PS1='PROMPT-$?->'; "
+                                 + "PS2=''; "
+                                 + "export PS1 PS2\n", 
+                                   new_prompt="PROMPT-(\d+)->$")
 
-        self.logger.debug ("got new shell prompt")
+            self.logger.debug ("got new shell prompt")
+
+        except saga.SagaException as e :
+            raise
+        except Exception as e :
+            raise saga.NoSuccess ("Shell startup on target host failed: %s" % e)
+
 
 
     # ----------------------------------------------------------------
