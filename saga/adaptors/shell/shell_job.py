@@ -306,7 +306,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # When should that be done?
         ret, out, _ = self.shell.run_sync ("QUIT")
 
-        ielf._logger.error ("adaptor dying... %s" % self.njobs)
+        self._logger.error ("adaptor dying... %s" % self.njobs)
         self._logger.trace ()
     
         #     try :
@@ -431,7 +431,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 env += "export %s=%s; "  %  (e, jd.environment[e])
 
         if  jd.attribute_exists (WORKING_DIRECTORY) :
-            cwd = "cd %s && " % jd.working_directory
+            cwd = "mkdir -p %s && cd %s && " % (jd.working_directory, jd.working_directory)
 
         if  jd.attribute_exists (INPUT) :
             io += "<%s " % jd.input
