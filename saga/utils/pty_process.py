@@ -138,9 +138,6 @@ class PTYProcess (object) :
         them (see cat /proc/sys/kernel/pty/max)
         """
     
-        self.logger.error ("pty __del__")
-      # self.logger.trace ()
-    
         try :
             self.finalize ()
         except :
