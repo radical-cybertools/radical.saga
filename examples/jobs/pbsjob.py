@@ -29,17 +29,27 @@ def main():
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
         # and '+ssh' enables PBS remote access via SSH.
-        js = saga.job.Service("pbs+ssh://sierra.futuregrid.org",
+        js = saga.job.Service("pbs+ssh://hotel.futuregrid.org",
                               session=session)
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
-        jd.queue           = 'batch'
-        jd.environment     = {'RUNTIME': '10'}
-        jd.wall_time_limit = 1 # minutes
-        jd.executable      = '/bin/sleep'
-        jd.arguments       = ['$RUNTIME']
+        jd.environment       = {'FILENAME': 'testfile'}
+        jd.wall_time_limit   = 1 # minutes
+        
+        jd.executable        = '/bin/touch'
+        jd.arguments         = ['$FILENAME']
+
+        #jd.total_cpu_count   = 12 # for lonestar this has to be a multiple of 12
+        #jd.spmd_variation    = '12way' # translates to the qsub -pe flag
+
+        jd.queue             = "batch"
+        #jd.project           = "TG-MCB090174"
+
+        jd.working_directory = "$HOME/A/B/C"
+        jd.output            = "examplejob.out"
+        jd.error             = "examplejob.err"
 
         # Create a new job from the job description. The initial state of 
         # the job is 'New'.

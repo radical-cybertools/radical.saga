@@ -135,7 +135,14 @@ def _pbscript_generator(url, logger, jd, ppn, is_cray=False, queue=None):
             pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
                 % (str(int(tbd)), ppn)
 
+    # escape all double quotes and dollarsigns, otherwise 'echo |'
+    # further down won't work
+    # only escape '$' in args and exe. not in the params
+    exec_n_args = exec_n_args.replace('$', '\\$')
+
     pbscript = "\n#!/bin/bash \n%s%s" % (pbs_params, exec_n_args)
+
+    pbscript = pbscript.replace('"', '\\"')
     return pbscript
 
 
@@ -416,22 +423,29 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                                          jd=jd, ppn=self.ppn,
                                          is_cray=self.is_cray, queue=self.queue)
 
-            # escape all double quotes and dollarsigns, otherwise 'echo |' 
-            # further down won't work
-            script = script.replace('"', '\\"')
-            script = script.replace('$', '\\$')
-
             self._logger.debug("Generated PBS script: %s" % script)
         except Exception, ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
-        ret, out, _ = self.shell.run_sync("""echo "%s" | %s""" \
-            % (script, self._commands['qsub']['path']))
+        # try to create the working directory (if defined)
+        # WRANING: this assumes a shared filesystem between login node and
+        #           comnpute nodes.
+        if jd.working_directory is not None:
+            self._logger.info("Creating working directory %s" % jd.working_directory)
+            ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
+            if ret != 0:
+                # something went wrong
+                message = "Couldn't create working directory - %s" % (out)
+                log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+        # run the PBS script
+        cmdline = """echo "%s" | %s""" % (script, self._commands['qsub']['path'])
+        ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
             # something went wrong
-            message = "Error running job via 'qsub': %s. Script was: %s" \
-                % (out, script)
+            message = "Error running job via 'qsub': %s. Commandline was: %s" \
+                % (out, cmdline)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
             # stdout contains the job id
