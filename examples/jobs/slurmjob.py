@@ -21,7 +21,9 @@ def main():
     try:
         # Your ssh identity on the remote machine.
         ctx = saga.Context("ssh")
-        ctx.user_id = getpass.getuser()  # Change if necessary
+
+        # Change e.g., if you have a differnent username on the remote machine
+        #ctx.user_id = getpass.getuser()
 
         session = saga.Session()
         session.add_context(ctx)
@@ -35,11 +37,18 @@ def main():
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
-        jd.environment     = {'RUNTIME': '10'}
-        jd.wall_time_limit = 1 # minutes
-        jd.executable      = '/bin/sleep'
-        jd.queue           = "development"
-        jd.project         = "TG-MCB090174"
+        jd.environment       = {'FILENAME': 'testfile'}
+        jd.wall_time_limit   = 1 # minutes
+        
+        jd.executable        = '/bin/touch'
+        jd.arguments         = ['$FILENAME']
+
+        jd.queue             = "development"
+        jd.project           = "TG-MCB090174"
+
+        jd.working_directory = "$SCRATCH/A/B/C"
+        jd.output            = "examplejob.out"
+        jd.error             = "examplejob.err"
 
         # Create a new job from the job description. The initial state of
         # the job is 'New'.
@@ -66,18 +75,18 @@ def main():
         # method and our job's id. While this doesn't make a lot of sense
         # here,  disconnect / reconnect can become very important for
         # long-running job.
-        sleebjob_clone = js.get_job(sleepjob.id)
+        sleepjob_clone = js.get_job(sleepjob.id)
 
         # wait for our job to complete
         print "\n...waiting for job...\n"
-        sleebjob_clone.wait()
+        sleepjob_clone.wait()
 
-        print "Job State   : %s" % (sleebjob_clone.state)
-        print "Exitcode    : %s" % (sleebjob_clone.exit_code)
-        print "Exec. hosts : %s" % (sleebjob_clone.execution_hosts)
-        print "Create time : %s" % (sleebjob_clone.created)
-        print "Start time  : %s" % (sleebjob_clone.started)
-        print "End time    : %s" % (sleebjob_clone.finished)
+        print "Job State   : %s" % (sleepjob_clone.state)
+        print "Exitcode    : %s" % (sleepjob_clone.exit_code)
+        # print "Exec. hosts : %s" % (sleepjob_clone.execution_hosts) # not impl.
+        # print "Create time : %s" % (sleepjob_clone.created)
+        # print "Start time  : %s" % (sleepjob_clone.started)
+        # print "End time    : %s" % (sleepjob_clone.finished)
 
         return 0
 

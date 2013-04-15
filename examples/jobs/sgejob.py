@@ -21,7 +21,9 @@ def main():
     try:
         # Your ssh identity on the remote machine.
         ctx = saga.Context("ssh")
-        #ctx.user_id = getpass.getuser()  # Change if necessary
+
+        # Change e.g., if you have a differnent username on the remote machine
+        #ctx.user_id = getpass.getuser()
 
         session = saga.Session()
         session.add_context(ctx)
@@ -29,20 +31,27 @@ def main():
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the SGE adaptors
         # and '+ssh' enables SGE remote access via SSH.
-        js = saga.job.Service("sge+ssh://lonestar.tacc.utexas.edu",
+        js = saga.job.Service("sge+ssh://login1.ls4.tacc.utexas.edu",
                               session=session)
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
-        jd.queue           = 'development'
-        jd.project         = 'TG-MCB090174'
-        jd.total_cpu_count = 12 # for lonestar this has to be a multiple of 12
-        jd.spmd_variation  = '12way' # translates to the qsub -pe flag
-        jd.environment     = {'RUNTIME': '10'}
-        jd.wall_time_limit = 1 # minutes
-        jd.executable      = '/bin/sleep'
-        jd.arguments       = ['$RUNTIME']
+        jd.environment       = {'FILENAME': 'testfile'}
+        jd.wall_time_limit   = 1 # minutes
+        
+        jd.executable        = '/bin/touch'
+        jd.arguments         = ['$FILENAME']
+
+        jd.total_cpu_count   = 12 # for lonestar this has to be a multiple of 12
+        jd.spmd_variation    = '12way' # translates to the qsub -pe flag
+
+        jd.queue             = "development"
+        jd.project           = "TG-MCB090174"
+
+        jd.working_directory = "$SCRATCH/A/B/C"
+        jd.output            = "examplejob.out"
+        jd.error             = "examplejob.err"
 
         # Create a new job from the job description. The initial state of 
         # the job is 'New'.
