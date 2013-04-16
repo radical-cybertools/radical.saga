@@ -13,7 +13,6 @@ __license__   = "MIT"
 
 import sys
 import saga
-import getpass
 
 
 def main():
@@ -23,7 +22,7 @@ def main():
         ctx = saga.Context("ssh")
 
         # Change e.g., if you have a differnent username on the remote machine
-        #ctx.user_id = getpass.getuser()
+        #ctx.user_id = "your_ssh_username"
 
         session = saga.Session()
         session.add_context(ctx)
@@ -55,18 +54,18 @@ def main():
 
         # Create a new job from the job description. The initial state of 
         # the job is 'New'.
-        sleepjob = js.create_job(jd)
+        touchjob = js.create_job(jd)
 
         # Check our job's id and state
-        print "Job ID    : %s" % (sleepjob.id)
-        print "Job State : %s" % (sleepjob.state)
+        print "Job ID    : %s" % (touchjob.id)
+        print "Job State : %s" % (touchjob.state)
 
         # Now we can start our job.
         print "\n...starting job...\n"
-        sleepjob.run()
+        touchjob.run()
 
-        print "Job ID    : %s" % (sleepjob.id)
-        print "Job State : %s" % (sleepjob.state)
+        print "Job ID    : %s" % (touchjob.id)
+        print "Job State : %s" % (touchjob.state)
 
         # List all jobs that are known by the adaptor.
         # This should show our job as well.
@@ -78,7 +77,7 @@ def main():
         # method and our job's id. While this doesn't make a lot of sense
         # here,  disconnect / reconnect can become very important for
         # long-running job.
-        sleebjob_clone = js.get_job(sleepjob.id)
+        sleebjob_clone = js.get_job(touchjob.id)
 
         # wait for our job to complete
         print "\n...waiting for job...\n"
