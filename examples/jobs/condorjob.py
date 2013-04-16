@@ -42,11 +42,12 @@ def main():
 
         jd.output          = "saga_condorjob.stdout"
         jd.error           = "saga_condorjob.stderr"
-        jd.candidate_hosts = ["FNAL_FERMIGRID", "cinvestav", "SPRACE",
-                              "NYSGRID_CORNELL_NYS1", "Purdue-Steele",
-                              "MIT_CMS_CE2", "SWT2_CPB", "AGLT2_CE_2",
-                              "UTA_SWT2", "GridUNESP_CENTRAL",
-                              "USCMS-FNAL-WC1-CE3"]
+ 
+ #       jd.candidate_hosts = ["FNAL_FERMIGRID", "cinvestav", "SPRACE",
+ #                             "NYSGRID_CORNELL_NYS1", "Purdue-Steele",
+ #                             "MIT_CMS_CE2", "SWT2_CPB", "AGLT2_CE_2",
+ #                             "UTA_SWT2", "GridUNESP_CENTRAL",
+ #                             "USCMS-FNAL-WC1-CE3"]
 
         # create the job (state: New)
         sleepjob = js.create_job(jd)
