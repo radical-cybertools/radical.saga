@@ -331,7 +331,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         self.session = session
         self.njobs   = 0
 
-        if  self.rm.path and self.rm.path != '/' :
+        if  self.rm.path and self.rm.path != '/' and self.rm.path != '.' :
             self.opts['shell'] = self.rm.path
 
         self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
