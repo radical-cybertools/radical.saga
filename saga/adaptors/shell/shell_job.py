@@ -442,7 +442,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         if  jd.attribute_exists (ERROR) :
             io += "2>%s " % jd.error
 
-        cmd = "( %s%s%s %s) %s" % (env, cwd, exe, arg, io)
+        cmd = "( %s%s( %s %s) %s)" % (env, cwd, exe, arg, io)
 
         return cmd
 
