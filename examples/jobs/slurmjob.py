@@ -13,7 +13,6 @@ __license__   = "MIT"
 
 import sys
 import saga
-import getpass
 
 
 def main():
@@ -21,7 +20,9 @@ def main():
     try:
         # Your ssh identity on the remote machine.
         ctx = saga.Context("ssh")
-        ctx.user_id = getpass.getuser()  # Change if necessary
+
+        # Change e.g., if you have a differnent username on the remote machine
+        #ctx.user_id = "your_ssh_username"
 
         session = saga.Session()
         session.add_context(ctx)
@@ -35,26 +36,33 @@ def main():
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
-        jd.environment     = {'RUNTIME': '10'}
-        jd.wall_time_limit = 1 # minutes
-        jd.executable      = '/bin/sleep'
-        jd.queue           = "development"
-        jd.project         = "TG-MCB090174"
+        jd.environment       = {'FILENAME': 'testfile'}
+        jd.wall_time_limit   = 1 # minutes
+        
+        jd.executable        = '/bin/touch'
+        jd.arguments         = ['$FILENAME']
+
+        jd.queue             = "development"
+        jd.project           = "TG-MCB090174"
+
+        jd.working_directory = "$SCRATCH/A/B/C"
+        jd.output            = "examplejob.out"
+        jd.error             = "examplejob.err"
 
         # Create a new job from the job description. The initial state of
         # the job is 'New'.
-        sleepjob = js.create_job(jd)
+        touchjob = js.create_job(jd)
 
         # Check our job's id and state
-        print "Job ID    : %s" % (sleepjob.id)
-        print "Job State : %s" % (sleepjob.state)
+        print "Job ID    : %s" % (touchjob.id)
+        print "Job State : %s" % (touchjob.state)
 
         # Now we can start our job.
         print "\n...starting job...\n"
-        sleepjob.run()
+        touchjob.run()
 
-        print "Job ID    : %s" % (sleepjob.id)
-        print "Job State : %s" % (sleepjob.state)
+        print "Job ID    : %s" % (touchjob.id)
+        print "Job State : %s" % (touchjob.state)
 
         # List all jobs that are known by the adaptor.
         # This should show our job as well.
@@ -66,18 +74,18 @@ def main():
         # method and our job's id. While this doesn't make a lot of sense
         # here,  disconnect / reconnect can become very important for
         # long-running job.
-        sleebjob_clone = js.get_job(sleepjob.id)
+        touchjob_clone = js.get_job(touchjob.id)
 
         # wait for our job to complete
         print "\n...waiting for job...\n"
-        sleebjob_clone.wait()
+        touchjob_clone.wait()
 
-        print "Job State   : %s" % (sleebjob_clone.state)
-        print "Exitcode    : %s" % (sleebjob_clone.exit_code)
-        print "Exec. hosts : %s" % (sleebjob_clone.execution_hosts)
-        print "Create time : %s" % (sleebjob_clone.created)
-        print "Start time  : %s" % (sleebjob_clone.started)
-        print "End time    : %s" % (sleebjob_clone.finished)
+        print "Job State   : %s" % (touchjob_clone.state)
+        print "Exitcode    : %s" % (touchjob_clone.exit_code)
+        # print "Exec. hosts : %s" % (touchjob_clone.execution_hosts) # not impl.
+        # print "Create time : %s" % (touchjob_clone.created)
+        # print "Start time  : %s" % (touchjob_clone.started)
+        # print "End time    : %s" % (touchjob_clone.finished)
 
         return 0
 

@@ -26,6 +26,12 @@ SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 # --------------------------------------------------------------------
+#
+def log_error_and_raise(message, exception, logger):
+    logger.error(message)
+    raise exception(message)
+
+# --------------------------------------------------------------------
 # some private defs
 #
 _PTY_TIMEOUT = 2.0
@@ -521,8 +527,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # add on our environment variables
         slurm_script += env + "\n"
 
-        # create our commandline
-        slurm_script += exe + arg
+        # create our commandline - escape $ so that environment variables
+        # get interpreted properly
+        exec_n_args = exe + arg
+        exec_n_args = exec_n_args.replace('$', '\\$')
+        slurm_script += exec_n_args
 
         # escape all double quotes, otherwise 'echo |' further down
         # won't work
@@ -539,6 +548,18 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # transfer our script over
         #self.shell.write_to_remote (src = slurm_script,
         #                            tgt = "%s/wrapper.sh" % self._base)
+
+        # try to create the working directory (if defined)
+        # WRANING: this assumes a shared filesystem between login node and
+        #           comnpute nodes.
+        if jd.working_directory is not None:
+            self._logger.info("Creating working directory %s" % jd.working_directory)
+            ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
+            if ret != 0:
+                # something went wrong
+                message = "Couldn't create working directory - %s" % (out)
+                log_error_and_raise(message, saga.NoSuccess, self._logger)
+
 
         ret, out, _ = self.shell.run_sync("""echo "%s" | sbatch""" % slurm_script)
 
