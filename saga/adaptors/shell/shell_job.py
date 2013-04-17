@@ -331,7 +331,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         self.session = session
         self.njobs   = 0
 
-        if  self.rm.path and self.rm.path != '/' :
+        if  self.rm.path and self.rm.path != '/' and self.rm.path != '.' :
             self.opts['shell'] = self.rm.path
 
         self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
@@ -442,7 +442,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         if  jd.attribute_exists (ERROR) :
             io += "2>%s " % jd.error
 
-        cmd = "( %s%s%s %s) %s" % (env, cwd, exe, arg, io)
+        cmd = "( %s%s( %s %s) %s)" % (env, cwd, exe, arg, io)
 
         return cmd
 
