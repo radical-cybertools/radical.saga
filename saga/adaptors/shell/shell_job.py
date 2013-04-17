@@ -100,7 +100,7 @@ _ADAPTOR_DOC           = {
         The Shell job adaptor. This adaptor uses the sh command line tools (sh,
         ssh, gsissh) to run local and remote jobs.  The adaptor expects the
         login shell on the target host to be POSIX compliant.  However, one can
-        also specify a custom shell via the resource manager URL, like::
+        also specify a custom POSIX shell via the resource manager URL, like::
 
           js = saga.job.Service ("ssh://remote.host.net/bin/sh")
 
