@@ -14,8 +14,6 @@ import saga.utils.which
 import saga.utils.pty_shell_factory as supsf
 
 _PTY_TIMEOUT = 2.0
-_SCHEMAS     = ['ssh', 'gsissh', 'fork', 'shell', 'file', 'scp', 'sftp', 'gsiscp', 'gsisftp']
-# FIXME: gsiftp?
 
 # ------------------------------------------------------------------------------
 #
