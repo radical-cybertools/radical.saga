@@ -28,7 +28,7 @@ def main():
         session.add_context(ctx)
 
         # open home directory on a remote machine
-        remote_dir = saga.filesystem.Directory('sftp://india.futuregrid.org/etc/',
+        remote_dir = saga.filesystem.Directory('sftp://hotel.futuregrid.org/opt/',
                                                session=session)
 
         for entry in remote_dir.list():
