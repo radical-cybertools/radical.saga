@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''This examples shows how to use the saga.Filesystem API
-   with the SFTP file adaptor.
+   with the HTTP file adaptor.
 
    If something doesn't work as expected, try to set
    SAGA_VERBOSE=3 in your environment before you run the
@@ -14,28 +14,16 @@ __license__   = "MIT"
 
 import sys
 import saga
-import getpass
 
 
 def main():
 
     try:
-        # Your ssh identity on the remote machine.
-        ctx = saga.Context("ssh")
-        ctx.user_id = getpass.getuser()  # Change if necessary
+        # open file on a remote web server - WARNING: size is ~ 800 MB
+        remote_file = saga.filesystem.File('http://hgdownload.cse.ucsc.edu/goldenPath/hg19/bigZips/hg19.2bit')
 
-        session = saga.Session()
-        session.add_context(ctx)
-
-        # open home directory on a remote machine
-        remote_dir = saga.filesystem.Directory('sftp://hotel.futuregrid.org/opt/',
-                                               session=session)
-
-        for entry in remote_dir.list():
-            if remote_dir.is_dir(entry):
-                print "d %12s %s" % (remote_dir.get_size(entry), entry)
-            else:
-                print "- %12s %s" % (remote_dir.get_size(entry), entry)
+        # copy the remote file to /tmp/ on the local machine
+        remote_file.copy('file://localhost/tmp/', flags=saga.filesystem.OVERWRITE)
         return 0
 
     except saga.SagaException, ex:

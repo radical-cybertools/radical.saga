@@ -30,7 +30,7 @@ def main():
         jd.environment       = {'FILENAME': 'testfile'}
         jd.wall_time_limit   = 1 # minutes
 
-        jd.executable        = '/bin/touch'
+        jd.executable        = '/usr/bin/touch'
         jd.arguments         = ['$FILENAME']
 
         jd.working_directory = "$HOME/A/B/C"
