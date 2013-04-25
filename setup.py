@@ -106,7 +106,7 @@ setup_args = {
         'Operating System :: POSIX :: SCO',
         'Operating System :: POSIX :: SunOS/Solaris',
         'Operating System :: Unix'
-        ],
+    ],
     'packages': [
         "saga",
         "saga.job",
@@ -131,6 +131,7 @@ setup_args = {
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
         "saga.adaptors.redis",
+        "saga.adaptors.http",
         "saga.engine",
         "saga.utils",
         "saga.utils.contrib",
@@ -147,8 +148,8 @@ setup_args = {
     'cmdclass': {
         'install_data': our_install_data,
         'sdist': our_sdist
-        }
     }
+}
 
 if sys.platform != "win32":
     setup_args['install_requires'] = [

@@ -1,3 +1,16 @@
+Version 0.9.4 released 
+----------------------------------------------------------------------
+
+* jd.working_directory now gets created if it doesn't exist
+* Updated example scripts - replaced 'sleep' with 'touch' ;-)
+* Closed issues:
+  - https://github.com/saga-project/saga-python/issues/88
+  - https://github.com/saga-project/saga-python/issues/82
+  - https://github.com/saga-project/saga-python/issues/81
+  - https://github.com/saga-project/saga-python/issues/79
+  - https://github.com/saga-project/saga-python/issues/75
+  - https://github.com/saga-project/saga-python/issues/74
+
 Version 0.9.3 released 2013-04-08
 ----------------------------------------------------------------------
 
