@@ -90,12 +90,17 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
     condor_file += "\n\n##### OPTIONS PASSED VIA JOB DESCRIPTION #####\n##"
     requirements = "requirements = "
 
-    # executable -> executable
-    if jd.executable is not None:
-        condor_file += "\nexecutable = %s" % jd.executable
+    # Condor doesn't expand environment variables in arguments.
+    # To support this functionality, we wrap by calling /bin/env.
+    condor_file += "\nexecutable = /bin/env"
 
     # arguments -> arguments
-    arguments = "arguments = "
+    arguments = 'arguments = \\"/bin/sh -c \''
+
+    # The actual executable becomes the first argument.
+    if jd.executable is not None:
+        arguments += "%s " % jd.executable
+
     if jd.arguments is not None:
 
         for arg in jd.arguments:
@@ -107,8 +112,17 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
 
             # Condor HATES double quotes in the arguments. It'll return
             # some crap like: "Found illegal unescaped double-quote: ...
-            # That's why we esacpe them.
-            arguments += "%s " % (arg.replace('"', '\\"'))
+            # That's why we escape them by repeating.
+            arg = arg.replace('"', '""')
+    
+            # Escape dollars (for environment variables)
+            arg = arg.replace('$', '\\$')
+    
+            arguments += "%s " % arg
+
+    # close the quote opened earlier 
+    arguments += '\'\\"'
+
     condor_file += "\n%s" % arguments
 
     # file_transfer -> transfer_input_files
@@ -426,7 +440,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             option_dict=self.query_options)
         self._logger.debug("Generated Condor script: %s" % script)
 
-        ret, out, _ = self.shell.run_sync("echo \'%s\' | %s -" \
+        ret, out, _ = self.shell.run_sync('echo "%s" | %s -' \
             % (script, self._commands['condor_submit']['path']))
 
         if ret != 0:
