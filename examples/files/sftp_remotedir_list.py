@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 '''This examples shows how to use the saga.Filesystem API
+   with the SFTP file adaptor.
 
-   If something doesn't work as expected, try to set 
+   If something doesn't work as expected, try to set
    SAGA_VERBOSE=3 in your environment before you run the
    script in order to get some debug output.
 
@@ -17,28 +17,36 @@ __license__   = "MIT"
 
 import sys
 import saga
+import getpass
+
 
 def main():
-    
-    try: 
+
+    try:
+        # Your ssh identity on the remote machine.
+        ctx = saga.Context("ssh")
+        ctx.user_id = getpass.getuser()  # Change if necessary
+
+        session = saga.Session()
+        session.add_context(ctx)
+
         # open home directory on a remote machine
-        remote_dir = saga.filesystem.Directory('sftp://india.futuregrid.org/etc/')
-        # Alternatively: 
-        # Use custom session to create Directory object
-        #remote_dir = saga.filesystem.Directory('sftp://queenbee.loni.org/etc/', 
-        #                                  session=session)
+        remote_dir = saga.filesystem.Directory('sftp://hotel.futuregrid.org/opt/',
+                                               session=session)
 
         for entry in remote_dir.list():
             if remote_dir.is_dir(entry):
                 print "d %12s %s" % (remote_dir.get_size(entry), entry)
             else:
                 print "- %12s %s" % (remote_dir.get_size(entry), entry)
-
-
+        return 0
 
     except saga.SagaException, ex:
-        print "An error occured during file operation: %s" % (str(ex))
-        sys.exit(-1)
+        # Catch all saga exceptions
+        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        # Trace back the exception. That can be helpful for debugging.
+        print " \n*** Backtrace:\n %s" % ex.traceback
+        return -1
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -34,7 +34,7 @@ include saga/adaptors/pbs/*.py
 include saga/adaptors/condor/*.py
 include saga/adaptors/slurm/*.py
 include saga/adaptors/redis/*.py
-
+include saga/adaptors/http/*.py
 
 include MANIFEST.in README.md LICENSE.md CHANGES.md
 

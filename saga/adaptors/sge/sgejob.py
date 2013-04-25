@@ -135,9 +135,17 @@ following values: %s" % pe_list)
     #    count = count + 1
     #count = count * int(ppn)
 
+    # escape all double quotes and dollarsigns, otherwise 'echo |'
+    # further down won't work
+    # only escape '$' in args and exe. not in the params
+    exec_n_args = exec_n_args.replace('$', '\\$')
+
+
     sge_params += "#$ -pe %s %s" % (jd.spmd_variation, jd.total_cpu_count)
 
     sgescript = "\n#!/bin/bash \n%s \n%s" % (sge_params, exec_n_args)
+
+    sgescript = sgescript.replace('"', '\\"')
     return sgescript
 
 # --------------------------------------------------------------------
@@ -390,22 +398,29 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                                           jd=jd, pe_list=self.pe_list,
                                           queue=self.queue)
 
-            # escape all double quotes and dollarsigns, otherwise 'echo |' 
-            # further down won't work
-            script = script.replace('"', '\\"')
-            script = script.replace('$', '\\$')
-
             self._logger.debug("Generated SGE script: %s" % script)
         except Exception, ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
-        ret, out, _ = self.shell.run_sync("""echo "%s" | %s""" %
-            (script, self._commands['qsub']['path']))
+        # try to create the working directory (if defined)
+        # WRANING: this assumes a shared filesystem between login node and
+        #           comnpute nodes.
+        if jd.working_directory is not None:
+            self._logger.info("Creating working directory %s" % jd.working_directory)
+            ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
+            if ret != 0:
+                # something went wrong
+                message = "Couldn't create working directory - %s" % (out)
+                log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+        # submit the SGE script
+        cmdline = """echo "%s" | %s""" % (script, self._commands['qsub']['path'])
+        ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
             # something went wrong
-            message = "Error running job via 'qsub': %s. Script was: %s" \
-                % (out, script)
+            message = "Error running job via 'qsub': %s. Commandline was: %s" \
+                % (out, cmdline)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
             # stdout contains the job id:
