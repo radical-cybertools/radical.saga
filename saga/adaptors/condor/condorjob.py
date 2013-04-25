@@ -571,6 +571,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     message = "Error getting job history via 'condor_history': %s" % out
                     log_error_and_raise(message, saga.NoSuccess, self._logger)
 
+                # sometimes we get other crap (like biff)
+                out = out.split('\n')[0] 
+
                 if len(out.split('=')) != 2:
                     message = "No ExitCode found via 'condor_history'"
                     log_error_and_raise(message, saga.NoSuccess, self._logger)
