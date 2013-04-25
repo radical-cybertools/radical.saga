@@ -651,17 +651,22 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         
         # dig out our exitcode
         for line in out.split("\n"):
+            #if we find exitcode text in this line
             if "ExitCode" in line:
+                self._logger.debug("Exitcode found in line: %s" % line)
+
                 # run our regex
-                group = self.exit_code_re.search(line)
+                re_search = self.exit_code_re.search(line)
 
                 # if we have a match, yank out the exitcode
-                if group:
-                    self.exit_code = group(0)
+                if re_search:
+                    self.exit_code = re_search.group()
 
                 # if no match, we have no exitcode
                 else:
                     self.exit_code = None
+                    
+                self._logger.debug("Returning exit code %s" % self.exit_code)
                 
                 # return whatever our exit code is
                 return self.exit_code
