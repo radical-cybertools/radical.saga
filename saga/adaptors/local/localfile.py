@@ -141,8 +141,8 @@ class LocalDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (LocalDirectory, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (LocalDirectory, self)
+        _cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
@@ -363,8 +363,8 @@ class LocalFile (saga.adaptors.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (LocalFile, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (LocalFile, self)
+        _cpi_base.__init__ (api, adaptor)
 
 
     def _dump (self) :

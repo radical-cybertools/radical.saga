@@ -272,8 +272,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
     #
     def __init__(self, api, adaptor):
 
-        self._cpi_base = super(SGEJobService, self)
-        self._cpi_base.__init__(api, adaptor)
+        _cpi_base = super(SGEJobService, self)
+        _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
 
@@ -780,8 +780,8 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     def __init__(self, api, adaptor):
 
         # initialize parent class
-        self._cpi_base = super(SGEJob, self)
-        self._cpi_base.__init__(api, adaptor)
+        _cpi_base = super(SGEJob, self)
+        _cpi_base.__init__(api, adaptor)
 
     @SYNC_CALL
     def init_instance(self, job_info):
