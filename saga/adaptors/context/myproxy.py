@@ -88,8 +88,8 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
 
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (ContextMyProxy, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (ContextMyProxy, self)
+        _cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL

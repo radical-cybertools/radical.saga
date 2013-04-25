@@ -89,7 +89,6 @@ class Service (sb.Base, sasync.Async) :
         self._super.__init__ (scheme, _adaptor, _adaptor_state, 
                               url, session, ttype=_ttype)
 
-
     # --------------------------------------------------------------------------
     #
     @classmethod
