@@ -251,11 +251,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self.exit_code_re = re.compile("""(?<=ExitCode=)[0-9]*""")
         self.scontrol_jobstate_re = re.compile("""(?<=JobState=)[a-zA-Z]*""")
         # TODO make sure this formats properly and works right!
-        self.scontrol_start_time_re = re.compile("""(?<=StartTime=).* """)
-        self.scontrol_end_time_re = re.compile("""(?<=EndTime=).* """)
-        self.scontrol_create_time_re = re.compile("""(?<=SubmitTime=).* """)
-        self.scontrol_exec_hosts_re = re.compile("""(?<=ExcNodeList=).* """)
-        self.scontrol_comp_time_re = re.compile("""(?<=RunTime=).* """)
+        self.scontrol_start_time_re = re.compile("""(?<=StartTime=)[^ ]*""")
+        self.scontrol_end_time_re = re.compile("""(?<=EndTime=)[^ ]*""")
+        self.scontrol_create_time_re = re.compile("""(?<=SubmitTime=)[^ ]*""")
+        self.scontrol_exec_hosts_re = re.compile("""(?<=ExcNodeList=)[^ ]*""")
+        self.scontrol_comp_time_re = re.compile("""(?<=RunTime=)[^ ]*""")
 
         # these are the commands that we need in order to interact with SLURM
         # the adaptor will try to find them when it first opens the shell
@@ -908,48 +908,66 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
 
         # update current info with scontrol
         ret, out, _ = self.js.shell.run_sync('scontrol show job %s' % pid)
+        #self._logger.debug("Updating job status using the following information:\n%s" % out) 
 
         # update the state
         curr_info['state'] = self._job_get_state(job_id)
 
-        # figure out when the job started
+        # figure out when the job was created
         create_time_search = self.js.scontrol_create_time_re.search(out)
         create_time=None
         if create_time_search:
             create_time = create_time_search.group(0)
+
         curr_info['create_time'] = create_time
+
+        self._logger.debug("create_time for job %s detected as %s" % \
+                               (pid, create_time))
+
+        # determine the job's start time
+        start_time_search = self.js.scontrol_start_time_re.search(out)
+        start_time=None
+        if start_time_search:
+            start_time = start_time_search.group(0)
+
+        curr_info['start_time'] = start_time
+
+        self._logger.debug("start_time for job %s detected as %s" % \
+                               (pid, start_time))
 
         # determine the job's end time
         end_time_search = self.js.scontrol_end_time_re.search(out)
         end_time=None
         if end_time_search:
-            end_time = end_time.search.group(0)
-            self._logger.debug("end_time for job %s detected as %s" % \
-                              (pid, end_time))
+            end_time = end_time_search.group(0)
 
-        # determine the job's creation time
-        create_time_search = self.js.scontrol_create_time_re.search(out)
-        create_time=None
-        if create_time_search:
-            create_time = create_time.search.group(0)
-            self._logger.debug("create_time for job %s detected as %s" % \
-                              (pid, create_time))
+        curr_info['end_time'] = end_time
+
+        self._logger.debug("end_time for job %s detected as %s" % \
+                               (pid, end_time))
 
         # determine the job's execution hosts
         exec_hosts_search = self.js.scontrol_exec_hosts_re.search(out)
         exec_hosts=None
         if exec_hosts_search:
-            exec_hosts = exec_hosts.search.group(0)
-            self._logger.debug("exec_hosts for job %s detected as %s" % \
-                              (pid, exec_hosts))
+            exec_hosts = exec_hosts_search.group(0)
 
-        # determine the job's execution hosts
+        curr_info['exec_hosts'] = exec_hosts
+
+        self._logger.debug("exec_hosts for job %s detected as %s" % \
+                               (pid, exec_hosts))
+
+        # determine the job's comp time
         comp_time_search = self.js.scontrol_comp_time_re.search(out)
         comp_time=None
         if comp_time_search:
-            comp_time = comp_time.search.group(0)
-            self._logger.debug("comp_time for job %s detected as %s" % \
-                              (pid, comp_time))
+            comp_time = comp_time_search.group(0)
+
+        curr_info['comp_time'] = comp_time
+
+        self._logger.debug("comp_time for job %s detected as %s" % \
+                               (pid, comp_time))
+
         return curr_info
 
     def _job_get_state (self, job_id) :
@@ -1086,9 +1104,10 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
     def get_created(self) :
         """ Implements saga.adaptors.cpi.job.Job.get_created()
         """     
-        raise saga.NotImplemented._log (self._logger, "get_created not"
-                                        " implemented for SLURM jobs.")
-        return
+        return self._job_get_info(self._id)['create_time']
+        #raise saga.NotImplemented._log (self._logger, "get_created not"
+        #                                " implemented for SLURM jobs.")
+        #return
   
     # ----------------------------------------------------------------
     #
@@ -1096,19 +1115,21 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
     def get_started(self) :
         """ Implements saga.adaptors.cpi.job.Job.get_started()
         """        
-        raise saga.NotImplemented._log (self._logger, "get_started not"
-                                        " implemented for SLURM jobs.")
-        return self._started
+        return self._job_get_info(self._id)['start_time']
+        #raise saga.NotImplemented._log (self._logger, "get_started not"
+        #                                " implemented for SLURM jobs.")
+        #return self._started
   
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def get_finished(self) :
         """ Implements saga.adaptors.cpi.job.Job.get_finished()
-        """        
-        raise saga.NotImplemented._log (self._logger, "get_finished not"
-                                        " implemented for SLURM jobs.")
-        return self._finished
+        """
+        return self._job_get_info(self._id)['end_time']
+        #raise saga.NotImplemented._log (self._logger, "get_finished not"
+        #                                " implemented for SLURM jobs.")
+        #return self._finished
    
     # ----------------------------------------------------------------
     #
@@ -1116,10 +1137,11 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
     def get_execution_hosts(self) :
         """ Implements saga.adaptors.cpi.job.Job.get_execution_hosts()
         """        
-        raise saga.NotImplemented._log (self._logger, "get_execution_hosts not"
-                                        " implemented for SLURM jobs.")
-    
-        return
+
+        return self._job_get_info(self._id)['exec_hosts']
+        #raise saga.NotImplemented._log (self._logger, "get_execution_hosts not"
+        #                                " implemented for SLURM jobs.")
+        #return
   
     # ----------------------------------------------------------------
     #
