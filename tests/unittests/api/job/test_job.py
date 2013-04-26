@@ -203,7 +203,7 @@ if True :
 # ------------------------------------------------------------------------------
 #
 def test_job_suspend_resume():
-    """ Test job.suspend()/resume() - expecting state: SUSPENDED/RUNNIG
+    """ Test job.suspend()/resume() - expecting state: SUSPENDED/RUNNING
     """
     try:
         global js
