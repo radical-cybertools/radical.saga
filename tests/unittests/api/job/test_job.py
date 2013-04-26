@@ -316,8 +316,7 @@ def test_get_exit_code():
         tc = sutc.TestConfig()
 
         jd = saga.job.Description()
-        jd.executable = "/bin/sh"
-        jd.arguments = ["-c \"exit 3\""]
+        jd.executable = "/bin/sleep"
 
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
@@ -327,7 +326,7 @@ def test_get_exit_code():
         j.wait()
 
         ec = j.exit_code
-        assert ec == 3, "%s != 3" % ec
+        assert ec == 1, "%s != 1" % ec
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
