@@ -169,7 +169,7 @@ class HTTPFile (saga.adaptors.cpi.filesystem.File):
     #
     @SYNC_CALL
     def get_url(self):
-        return saga.Url(selfurl)  # deep copy
+        return saga.Url(self.url)  # deep copy
 
     # ----------------------------------------------------------------
     #

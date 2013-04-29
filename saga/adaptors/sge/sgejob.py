@@ -326,8 +326,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
-        self.shell.set_initialize_hook(self.initialize)
-        self.shell.set_finalize_hook(self.finalize)
+      # self.shell.set_initialize_hook(self.initialize)
+      # self.shell.set_finalize_hook(self.finalize)
 
         self.initialize()
 
