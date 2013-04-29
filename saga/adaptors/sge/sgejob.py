@@ -295,6 +295,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         self.pe_list = list()
         self.jobs    = dict()
         self.queue   = None
+        self.shell   = None
 
         rm_scheme = rm_url.scheme
         pty_url   = deepcopy(rm_url)
