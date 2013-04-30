@@ -334,8 +334,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     #
     def __init__(self, api, adaptor):
 
-        self._cpi_base = super(CondorJobService, self)
-        self._cpi_base.__init__(api, adaptor)
+        _cpi_base = super(CondorJobService, self)
+        _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
 
@@ -388,8 +388,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
-        self.shell.set_initialize_hook(self.initialize)
-        self.shell.set_finalize_hook(self.finalize)
+      # self.shell.set_initialize_hook(self.initialize)
+      # self.shell.set_finalize_hook(self.finalize)
 
         self.initialize()
 
@@ -860,8 +860,8 @@ class CondorJob (saga.adaptors.cpi.job.Job):
     def __init__(self, api, adaptor):
 
         # initialize parent class
-        self._cpi_base = super(CondorJob, self)
-        self._cpi_base.__init__(api, adaptor)
+        _cpi_base = super(CondorJob, self)
+        _cpi_base.__init__(api, adaptor)
 
     @SYNC_CALL
     def init_instance(self, job_info):

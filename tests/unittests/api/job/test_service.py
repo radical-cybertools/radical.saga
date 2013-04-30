@@ -114,27 +114,30 @@ def test_get_job () :
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
 
-# # ------------------------------------------------------------------------------
-# #
-# def test_multiple_services () :
-#     """ Test to create multiple job service instances  (this test might take a while) """
-#     try:
-#         for i in range (0, 20) :
-#             tc = sutc.TestConfig ()
-#             js = saga.job.Service(tc.js_url, tc.session)
-#             jd = saga.job.Description ()
-#             jd.executable = '/bin/sleep'
-#             jd.arguments  = ['10']
-#             jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
-#             j = js.create_job(jd)
-#             j.run()
-#             assert (j.state in [saga.job.RUNNING, saga.job.PENDING]), "job submission failed"
-# 
-#     except saga.NotImplemented as ni:
-#             assert tc.notimpl_warn_only, "%s " % ni
-#             if tc.notimpl_warn_only:
-#                 print "%s " % ni
-# 
-#     except saga.SagaException as se:
-#         assert False, "Unexpected exception: %s" % se
+# ------------------------------------------------------------------------------
+#
+def helper_multiple_services (i) :
+    tc = sutc.TestConfig ()
+    js = saga.job.Service(tc.js_url, tc.session)
+    jd = saga.job.Description ()
+    jd.executable = '/bin/sleep'
+    jd.arguments  = ['10']
+    jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+    j = js.create_job(jd)
+    j.run()
+    assert (j.state in [saga.job.RUNNING, saga.job.PENDING]), "job submission failed"
+
+def test_multiple_services () :
+    """ Test to create multiple job service instances  (this test might take a while) """
+    try:
+        for i in range (0, 20) :
+            helper_multiple_services (i)
+
+    except saga.NotImplemented as ni:
+        assert tc.notimpl_warn_only, "%s " % ni
+        if  tc.notimpl_warn_only:
+            print "%s " % ni
+
+    except saga.SagaException as se:
+        assert False, "Unexpected exception: %s" % se
 

@@ -270,8 +270,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def __init__(self, api, adaptor):
 
-        self._cpi_base = super(PBSJobService, self)
-        self._cpi_base.__init__(api, adaptor)
+        _cpi_base = super(PBSJobService, self)
+        _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
 
@@ -279,7 +279,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def __del__(self):
 
-        self.finalize(kill_shell=True)
+        self.finalize (kill_shell=True)
 
     # ----------------------------------------------------------------
     #
@@ -292,6 +292,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self.ppn     = 0
         self.is_cray = False
         self.queue   = None
+        self.shell   = None
         self.jobs    = dict()
 
         rm_scheme = rm_url.scheme
@@ -325,8 +326,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
-        self.shell.set_initialize_hook(self.initialize)
-        self.shell.set_finalize_hook(self.finalize)
+      # self.shell.set_initialize_hook(self.initialize)
+      # self.shell.set_finalize_hook(self.finalize)
 
         self.initialize()
 
@@ -403,6 +404,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def finalize(self, kill_shell=False):
+
         if  kill_shell :
             if  self.shell :
                 self.shell.finalize (True)
@@ -832,8 +834,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     def __init__(self, api, adaptor):
 
         # initialize parent class
-        self._cpi_base = super(PBSJob, self)
-        self._cpi_base.__init__(api, adaptor)
+        _cpi_base = super(PBSJob, self)
+        _cpi_base.__init__(api, adaptor)
 
     @SYNC_CALL
     def init_instance(self, job_info):

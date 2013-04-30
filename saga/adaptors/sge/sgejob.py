@@ -272,8 +272,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
     #
     def __init__(self, api, adaptor):
 
-        self._cpi_base = super(SGEJobService, self)
-        self._cpi_base.__init__(api, adaptor)
+        _cpi_base = super(SGEJobService, self)
+        _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
 
@@ -295,6 +295,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         self.pe_list = list()
         self.jobs    = dict()
         self.queue   = None
+        self.shell   = None
 
         rm_scheme = rm_url.scheme
         pty_url   = deepcopy(rm_url)
@@ -326,8 +327,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
-        self.shell.set_initialize_hook(self.initialize)
-        self.shell.set_finalize_hook(self.finalize)
+      # self.shell.set_initialize_hook(self.initialize)
+      # self.shell.set_finalize_hook(self.finalize)
 
         self.initialize()
 
@@ -780,8 +781,8 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     def __init__(self, api, adaptor):
 
         # initialize parent class
-        self._cpi_base = super(SGEJob, self)
-        self._cpi_base.__init__(api, adaptor)
+        _cpi_base = super(SGEJob, self)
+        _cpi_base.__init__(api, adaptor)
 
     @SYNC_CALL
     def init_instance(self, job_info):

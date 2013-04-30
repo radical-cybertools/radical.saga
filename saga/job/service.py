@@ -73,7 +73,6 @@ class Service (Base, Async) :
         Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
                        url, session, ttype=_ttype)
 
-
     @classmethod
     def create (cls, url=None, session=None, ttype=SYNC) :
         """ Create a new job.Service instance asynchronously.
