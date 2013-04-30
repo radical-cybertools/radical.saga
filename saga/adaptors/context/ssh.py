@@ -159,8 +159,8 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
     #
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (ContextSSH, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (ContextSSH, self)
+        _cpi_base.__init__ (api, adaptor)
 
 
     # --------------------------------------------------------------------------
