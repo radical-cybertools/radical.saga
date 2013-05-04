@@ -285,7 +285,7 @@ class Entry (sb.Base, sasync.Async) :
             #
             # In principle that mechanism can also be used for remote copies, but
             # URL translation is way more fragile in those cases...
-            
+        
             # check recursion guard
             if self._is_recursive :
                 self._logger.debug("fallback recursion detected - abort")
@@ -293,10 +293,12 @@ class Entry (sb.Base, sasync.Async) :
             else :
                 # activate recursion guard
                 self._is_recursive += 1
+
+                engine = saga.engine.Engine ()
     
                 # find applicable adaptors we could fall back to, i.e. which
                 # support the tgt schema
-                adaptor_names = self._engine.find_adaptors ('saga.namespace.Entry', tgt_url.scheme)
+                adaptor_names = engine.find_adaptors ('saga.namespace.Entry', tgt_url.scheme)
     
                 self._logger.debug("try fallback copy to these adaptors: %s" % adaptor_names)
     
@@ -309,10 +311,10 @@ class Entry (sb.Base, sasync.Async) :
                     try :
                         self._logger.info("try fallback copy to %s" % adaptor_name)
     
-                        adaptor_instance = self._engine.get_adaptor (adaptor_name)
+                        adaptor_instance = engine.get_adaptor (adaptor_name)
     
                         # get an tgt-scheme'd adaptor for the new src url, and try copy again
-                        adaptor = self._engine.bind_adaptor (self, 'saga.namespace.Entry', tgt_url.scheme, 
+                        adaptor = engine.bind_adaptor (self, 'saga.namespace.Entry', tgt_url.scheme, 
                                                              adaptor_instance)
                         adaptor.init_instance ({}, tmp_url, None, self._session)
                         tmp     = Entry (tmp_url, None, self._session, _adaptor=adaptor_instance)

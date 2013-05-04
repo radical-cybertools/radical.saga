@@ -251,8 +251,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         self.shell = sups.PTYShell     (self.url, self.session, self._logger)
 
-        self.shell.set_initialize_hook (self.initialize)
-        self.shell.set_finalize_hook   (self.finalize)
+      # self.shell.set_initialize_hook (self.initialize)
+      # self.shell.set_finalize_hook   (self.finalize)
 
         self.initialize ()
 
@@ -786,8 +786,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         # FIXME: get ssh Master connection from _adaptor dict
         self.shell = sups.PTYShell (self.url, self.session, self._logger)
 
-        self.shell.set_initialize_hook (self.initialize)
-        self.shell.set_finalize_hook   (self.finalize)
+      # self.shell.set_initialize_hook (self.initialize)
+      # self.shell.set_finalize_hook   (self.finalize)
 
         self.initialize ()
 

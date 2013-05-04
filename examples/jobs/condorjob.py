@@ -34,10 +34,10 @@ def main():
         # a job that runs for $RUNTIME seconds.
         jd.name            = 'testjob'
         jd.project         = 'TG-MCB090174'
-        jd.environment     = {'RUNTIME': '10'}
+        jd.environment     = {'RUNTIME': '/etc/passwd'}
         jd.wall_time_limit = 2 # minutes
 
-        jd.executable = '/bin/sleep'
+        jd.executable = '/bin/cat'
         jd.arguments = ["$RUNTIME"]
 
         jd.output          = "saga_condorjob.stdout"
