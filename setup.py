@@ -147,7 +147,7 @@ setup_args = {
         "saga.adaptors.pbs",
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
-     #  "saga.adaptors.redis",
+        "saga.adaptors.redis",
         "saga.adaptors.http",
         "saga.engine",
         "saga.utils",
