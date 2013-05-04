@@ -279,7 +279,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def __del__(self):
 
-        self.finalize(kill_shell=True)
+        self.finalize (kill_shell=True)
 
     # ----------------------------------------------------------------
     #
@@ -292,6 +292,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self.ppn     = 0
         self.is_cray = False
         self.queue   = None
+        self.shell   = None
         self.jobs    = dict()
 
         rm_scheme = rm_url.scheme
@@ -325,8 +326,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
-        self.shell.set_initialize_hook(self.initialize)
-        self.shell.set_finalize_hook(self.finalize)
+      # self.shell.set_initialize_hook(self.initialize)
+      # self.shell.set_finalize_hook(self.finalize)
 
         self.initialize()
 
@@ -354,7 +355,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                             self._logger)
                     else:
                         # version is reported as: "version: x.y.z"
-                        version = out.strip().split()[1]
+                        version = out#.strip().split()[1]
 
                         # add path and version to the command dictionary
                         self._commands[cmd] = {"path":    path,
@@ -377,9 +378,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # different queues, number of processes per node, etc.
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
-        ret, out, _ = self.shell.run_sync('%s -a | grep np' % \
+        ret, out, _ = self.shell.run_sync('%s -a | egrep "(np|pcpu)"' % \
             self._commands['pbsnodes']['path'])
         if ret != 0:
+            
+
             message = "Error running pbsnodes: %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
@@ -403,6 +406,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def finalize(self, kill_shell=False):
+
         if  kill_shell :
             if  self.shell :
                 self.shell.finalize (True)
@@ -474,9 +478,14 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the PBS 'qstat' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync("%s -f1 %s | \
+        if 'PBSPro_10' in self._commands['qstat']['version']:
+            qstat_flag = '-f'
+        else:
+            qstat_flag ='-f1'
+
+        ret, out, _ = self.shell.run_sync("%s %s %s | \
             egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|\
-(start_time)|(comp_time)'" % (self._commands['qstat']['path'], pid))
+            (start_time)|(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -544,9 +553,13 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the PBS 'qstat' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync("%s -f1 %s | \
+        if 'PBSPro_10' in self._commands['qstat']['version']:
+            qstat_flag = '-f'
+        else:
+            qstat_flag ='-f1'
+        ret, out, _ = self.shell.run_sync("%s %s %s | \
             egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)\
-|(comp_time)'" % (self._commands['qstat']['path'], pid))
+|(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
             if ("Unknown Job Id" in out):
@@ -968,4 +981,3 @@ class PBSJob (saga.adaptors.cpi.job.Job):
             return None
         else:
             return self.js._job_get_execution_hosts(self._id)
-

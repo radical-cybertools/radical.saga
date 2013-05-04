@@ -24,7 +24,7 @@ class Description (saga.Attributes) :
 
         import saga.attributes as sa
 
-        self._attributes_extensible  (False)
+        self._attributes_extensible  (True)
         self._attributes_camelcasing (True)
 
         # register properties with the attribute interface
