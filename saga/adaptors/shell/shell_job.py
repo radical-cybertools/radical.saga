@@ -310,8 +310,8 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             self._logger.info ("adaptor %s : %s jobs" % (self, self.njobs))
 
             if  self.shell : 
-             #  self.shell.run_sync ("PURGE", iomode=None)
-                self.shell.run_sync ("QUIT" , iomode=None)
+             #  self.shell.run_sync  ("PURGE", iomode=None)
+                self.shell.run_async ("QUIT" , iomode=None)
                 self.finalize (kill_shell=True)
 
         except Exception as e :
