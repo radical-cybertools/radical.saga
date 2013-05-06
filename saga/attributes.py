@@ -3,6 +3,16 @@ __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
+# >>> class MyDict(dict):
+# >>>     def __missing__(self, key):
+#             self[key] = rv = []
+#             return rv
+#    
+# >>> m = MyDict()
+# >>> m["foo"].append(1)
+# >>> m["foo"].append(2)
+# >>> dict(m)
+# {'foo': [1, 2]}
 
 """ Attribute interface """
 
