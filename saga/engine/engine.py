@@ -36,14 +36,6 @@ _config_options = [
 
 ################################################################################
 ##
-def getEngine():
-
-    """ Return a handle to the Engine singleton."""
-    return Engine() 
-
-
-################################################################################
-##
 class Engine(sconf.Configurable): 
     """ Represents the SAGA engine runtime system.
 
