@@ -444,10 +444,10 @@ class PTYShellFactory (object) :
                                 user_id = context.user_id
                                 if user_id :
                                     info['user']  = context.user_id
-                            if  context.attribute_exists ("user_cert") and context.user_cert :
-                                info['ssh_args']  += "-i %s " % context.user_cert
-                                info['scp_args']  += "-i %s " % context.user_cert
-                                info['sftp_args'] += "-i %s " % context.user_cert
+                            if  context.attribute_exists ("user_cert")  and  context.user_cert :
+                                info['ssh_args']  += "-o IdentityFile %s " % context.user_cert
+                                info['scp_args']  += "-o IdentityFile %s " % context.user_cert
+                                info['sftp_args'] += "-o IdentityFile %s " % context.user_cert
 
                                 if  context.attribute_exists ("user_pass") and context.user_pass :
                                     info['cert_pass'][context.user_cert] = context.user_pass
@@ -491,10 +491,10 @@ class PTYShellFactory (object) :
 
             if  'user' in info and info['user'] :
                 info['host_str'] = "%s@%s"  % (info['user'], info['host_str'])
-                info['ctrl'] = "~/.saga/adaptors/shell/ssh_%%h_%%p.%s.%s.ctrl" % (os.getpid (), info['user'])
+                info['ctrl'] = "~/.saga/adaptors/shell/ssh__%%p.%s.%s.ctrl" % (os.getpid (), info['user'])
             else :
                 info['user'] = getpass.getuser ()
-                info['ctrl'] = "~/.saga/adaptors/shell/ssh_%%h_%%p.%s.ctrl" % (os.getpid ())
+                info['ctrl'] = "~/.saga/adaptors/shell/ssh__%%p.%s.ctrl" % (os.getpid ())
 
             info['m_flags']  = _SSH_FLAGS_MASTER % ({'ctrl' : info['ctrl']})
             info['s_flags']  = _SSH_FLAGS_SLAVE  % ({'ctrl' : info['ctrl']})
