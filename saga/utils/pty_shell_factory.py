@@ -445,9 +445,9 @@ class PTYShellFactory (object) :
                                 if user_id :
                                     info['user']  = context.user_id
                             if  context.attribute_exists ("user_cert")  and  context.user_cert :
-                                info['ssh_args']  += "-o IdentityFile %s " % context.user_cert
-                                info['scp_args']  += "-o IdentityFile %s " % context.user_cert
-                                info['sftp_args'] += "-o IdentityFile %s " % context.user_cert
+                                info['ssh_args']  += "-o IdentityFile=%s " % context.user_cert
+                                info['scp_args']  += "-o IdentityFile=%s " % context.user_cert
+                                info['sftp_args'] += "-o IdentityFile=%s " % context.user_cert
 
                                 if  context.attribute_exists ("user_pass") and context.user_pass :
                                     info['cert_pass'][context.user_cert] = context.user_pass
