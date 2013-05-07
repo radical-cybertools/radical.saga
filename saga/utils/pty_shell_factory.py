@@ -6,6 +6,7 @@ __license__   = "MIT"
 
 import os
 import sys
+import pwd
 import string
 import getpass
 
@@ -489,12 +490,16 @@ class PTYShellFactory (object) :
             if url.username   :  info['user'] = url.username
             if url.password   :  info['pass'] = url.password
 
+            ctrl_user = pwd.getpwuid (os.getuid ()).pw_name
+            ctrl_base = "/tmp/saga_ssh_%s" % ctrl_user
+
+
             if  'user' in info and info['user'] :
                 info['host_str'] = "%s@%s"  % (info['user'], info['host_str'])
-                info['ctrl'] = "~/.saga/adaptors/shell/ssh__%%p.%s.%s.ctrl" % (os.getpid (), info['user'])
+                info['ctrl'] = "%s_%%h_%%p.%s.%s.ctrl" % (ctrl_base, os.getpid (), info['user'])
             else :
                 info['user'] = getpass.getuser ()
-                info['ctrl'] = "~/.saga/adaptors/shell/ssh__%%p.%s.ctrl" % (os.getpid ())
+                info['ctrl'] = "%s_%%h_%%p.%s.ctrl" % (ctrl_base, os.getpid ())
 
             info['m_flags']  = _SSH_FLAGS_MASTER % ({'ctrl' : info['ctrl']})
             info['s_flags']  = _SSH_FLAGS_SLAVE  % ({'ctrl' : info['ctrl']})
