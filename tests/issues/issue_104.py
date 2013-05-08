@@ -1,14 +1,16 @@
 import sys
 import saga
 
-REMOTE_HOST = "ssh://gw68.quarry.iu.teragrid.org"
+USER_ID     = "tg803521"
+REMOTE_HOST = "login1.stampede.tacc.utexas.edu"
 
-def main():
+def main () :
     try:
 
-        for i in range(0, 10):
-            print "************************ Job: %d *************************" % i
+        for i in range(0, 100):
+            print "**************************** Job: %d *****************************" % i
             ctx = saga.Context("ssh")
+            ctx.user_id = USER_ID
 
             session = saga.Session()
             session.add_context(ctx)
@@ -16,7 +18,7 @@ def main():
             # Create a job service object that represent a remote pbs cluster.
             # The keyword 'pbs' in the url scheme triggers the PBS adaptors
             # and '+ssh' enables PBS remote access via SSH.
-            js = saga.job.Service(REMOTE_HOST, session=session)
+            js = saga.job.Service("slurm+ssh://%s" % REMOTE_HOST, session=session) 
 
             # describe our job
             jd = saga.job.Description()
@@ -25,13 +27,13 @@ def main():
             # description attributes can be found in the API documentation.
             #jd.environment     = {'MYOUTPUT':'"Hello from SAGA"'}
             #jd.environment     = {'MYOUTPUT':'"Hello from SAGA"'}
-            jd.executable      = '/bin/date'
-            #jd.queue      = 'normal'
-            #jd.project      = 'TG-MCB090174'
-            jd.wall_time_limit      = '10'
+            jd.executable       = '/bin/date'
+            jd.queue            = 'normal'
+            jd.project          = 'TG-MCB090174'
+            jd.wall_time_limit  = '10'
             #jd.arguments       = ['$MYOUTPUT']
-            jd.output          = "/tmp/mysagajob.stdout"
-            jd.error           = "/tmp/mysagajob.stderr"
+            jd.output           = "/tmp/saga_job.%s.stdout" % USER_ID
+            jd.error            = "/tmp/saga_job.%s.stderr" % USER_ID
 
             # Create a new job from the job description. The initial state of
             # the job is 'New'.
@@ -50,6 +52,12 @@ def main():
             print "Job State : %s" % (myjob.state)
 
 
+            for jid in js.jobs :
+                j = js.get_job (jid)
+                print "%s\t " % j.state,
+            print
+    
+    
         return 0
 
     except saga.SagaException, ex:
@@ -62,3 +70,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
