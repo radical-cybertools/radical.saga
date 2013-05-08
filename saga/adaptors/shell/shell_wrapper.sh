@@ -42,13 +42,19 @@ idle_checker () {
   do
     sleep $TIMEOUT
 
+    if test -e "$BASE/quit.$ppid" 
+    then
+      rm   -f  "$BASE/quit.$ppid" 
+      exit 0
+    fi
+
     if test -e "$BASE/idle.$ppid"
     then
       /bin/kill -s ALRM $ppid >/dev/null 2>&1
       exit 0
     fi
 
-    touch   "$BASE/idle.$ppid"
+    touch "$BASE/idle.$ppid"
   done
 }
 
@@ -599,6 +605,8 @@ cmd_quit () {
   then
     printf "IDLE TIMEOUT\n"
     touch "$BASE/timed_out.$$"
+  else
+    touch "$BASE/quit.$$"
   fi
 
   # kill idle checker
