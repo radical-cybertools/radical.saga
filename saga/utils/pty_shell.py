@@ -243,24 +243,38 @@ class PTYShell (object) :
         # we need to make sure that the found prompt is really the prompt of
         # the new shell, so we check $? for successfull startup.
         try :
-            self.pty_shell.write ('echo "-SAGA-$?"\n')
-            ret2, out2 = self.pty_shell.find (["-SAGA-"],   10.0)
-            ret3, out3 = self.pty_shell.find (["\d+\n"],    10.0)
-            ret4, out4 = self.pty_shell.find ([prompt_pat], 10.0)
+            found_prompt = False
 
-            if  int(out3[:-1]) != 0 :
-                raise saga.NoSuccess ("cannot initalize shell with %s (%s)" \
-                        % (self.opts['shell'], out1))
+            while not found_prompt :
+
+                check        = 1
+                found_prompt = True
+
+                try :
+                    self.pty_shell.write ('echo "-SAGA-$?"\n')
+                    ret2, out2 = self.pty_shell.find (["-SAGA-"],   10.0)
+                    ret3, out3 = self.pty_shell.find (["\d+\n"],    10.0)
+                    ret4, out4 = self.pty_shell.find ([prompt_pat], 10.0)
+
+                    check        = int(out3[:-1])
+                    found_prompt = True
+
+                except Exception as e :
+                    self.logger.warn ("repeat prompt detection (%s)" % e)
+
+                if check != 0 :
+                    raise saga.NoSuccess ("cannot initalize shell with %s (%s)" \
+                                       % (self.opts['shell'], out1))
 
 
-            # set and register new prompt
-            self.run_sync ( "unset PROMPT_COMMAND ; "
-                                 + "PS1='PROMPT-$?->'; "
-                                 + "PS2=''; "
-                                 + "export PS1 PS2\n", 
-                                   new_prompt="PROMPT-(\d+)->$")
+                # set and register new prompt
+                self.run_sync ( "unset PROMPT_COMMAND ; "
+                                     + "PS1='PROMPT-$?->'; "
+                                     + "PS2=''; "
+                                     + "export PS1 PS2\n", 
+                                       new_prompt="PROMPT-(\d+)->$")
 
-            self.logger.debug ("got new shell prompt")
+                self.logger.debug ("got new shell prompt")
 
         except saga.SagaException as e :
             raise
