@@ -288,6 +288,14 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         return self.get_api ()
 
+
+    # ----------------------------------------------------------------
+    #
+    def close (self) :
+        if  self.shell :
+            self.shell.finalize (True)
+
+
     # # ----------------------------------------------------------------
     # #
     # def _alive (self) :

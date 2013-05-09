@@ -73,6 +73,9 @@ class Service (Base, Async) :
         Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
                        url, session, ttype=_ttype)
 
+        self.valid = True
+
+
     @classmethod
     def create (cls, url=None, session=None, ttype=SYNC) :
         """ Create a new job.Service instance asynchronously.
@@ -92,6 +95,15 @@ class Service (Base, Async) :
         scheme  = url.scheme.lower ()
 
         return cls (url, session, _ttype=ttype)._init_task
+
+
+    def close (self) :
+
+        if not self.valid :
+            raise IncorrectState ("This instance was already closed.")
+
+        self._adaptor.close ()
+        self.valid = False
 
 
     def create_job (self, job_desc, ttype=None) :
@@ -130,6 +142,9 @@ class Service (Base, Async) :
           else                                        : print "oops!"
         """
 
+        if not self.valid :
+            raise IncorrectState ("This instance was already closed.")
+
         jd_copy = Description()
         job_desc._attributes_deep_copy (jd_copy)
 
@@ -150,6 +165,10 @@ class Service (Base, Async) :
     def run_job (self, cmd, host="", ttype=None) :
         """ .. warning:: |not_implemented|
         """
+
+        if not self.valid :
+            raise IncorrectState ("This instance was already closed.")
+
         return self._adaptor.run_job (cmd, host, ttype=ttype)
 
 
@@ -186,6 +205,10 @@ class Service (Base, Async) :
             else                                        : print "job is already final!"
         """
 
+        if not self.valid :
+            raise IncorrectState ("This instance was already closed.")
+
+
         return self._adaptor.list (ttype=ttype)
 
     jobs = property (list)    
@@ -204,6 +227,10 @@ class Service (Base, Async) :
             :ttype: |param_ttype|
             :rtype: list of :class:`saga.job.Url`
         """
+
+        if not self.valid :
+            raise IncorrectState ("This instance was already closed.")
+
         return self._adaptor.get_url (ttype=ttype)
 
     url = property (get_url) 
@@ -227,6 +254,10 @@ class Service (Base, Async) :
           elif j.get_state() == saga.job.Job.Running  : print "running"
           else                                        : print "job is already final!"
         """
+
+        if not self.valid :
+            raise IncorrectState ("This instance was already closed.")
+
         return self._adaptor.get_job (job_id, ttype=ttype)
 
 
