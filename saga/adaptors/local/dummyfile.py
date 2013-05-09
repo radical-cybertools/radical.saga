@@ -101,8 +101,8 @@ class DummyDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (DummyDirectory, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (DummyDirectory, self)
+        _cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
@@ -206,8 +206,8 @@ class DummyFile (saga.adaptors.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (DummyFile, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (DummyFile, self)
+        _cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
