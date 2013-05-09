@@ -337,6 +337,13 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
+    def close (self) :
+        if  self.shell :
+            self.shell.finalize (True)
+
+
+    # ----------------------------------------------------------------
+    #
     def initialize(self):
         # check if all required sge tools are available
         for cmd in self._commands.keys():
