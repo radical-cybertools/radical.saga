@@ -8,14 +8,13 @@ __license__   = "MIT"
 """
 
 import os, sys
-from   saga.engine.engine import Engine, getEngine
+from   saga.engine.engine import Engine
 
 def test_singleton():
     """ Test that the object behaves like a singleton
     """
     # make sure singleton works
-    assert(getEngine() == getEngine())
-    assert(getEngine() == Engine())
+    assert(Engine() == Engine())
 
     e1 = Engine()
     e2 = Engine()

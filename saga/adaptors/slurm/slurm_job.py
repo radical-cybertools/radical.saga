@@ -52,7 +52,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
-                          saga.job.SPMD_VARIATION,
+                          #saga.job.SPMD_VARIATION, #implement later, somehow
                           saga.job.TOTAL_CPU_COUNT, 
                           saga.job.NUMBER_OF_PROCESSES,
                           saga.job.PROCESSES_PER_HOST,
@@ -66,7 +66,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.CLEANUP,
                           saga.job.JOB_START_TIME,
                           saga.job.WALL_TIME_LIMIT, 
-                          saga.job.TOTAL_PHYSICAL_MEMORY, 
+                          #saga.job.TOTAL_PHYSICAL_MEMORY, 
                           #saga.job.CPU_ARCHITECTURE, 
                           #saga.job.OPERATING_SYSTEM_TYPE, 
                           #saga.job.CANDIDATE_HOSTS,
@@ -478,20 +478,30 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if spmd_variation:
             pass #TODO
 
-        if total_cpu_count:
-            pass
-
-        if number_of_processes:
-            slurm_script += "#SBATCH -n %s\n" % number_of_processes
-        # no processes selected, let's give a default
-        else:
-            self._logger.warning("number_of_processes not specified in submitted "
+        #### HANDLE NUMBER OF CORES
+        # make sure we have something for total_cpu_count
+        if not total_cpu_count:
+            self._logger.warning("total_cpu_count not specified in submitted "
                                  "SLURM job description -- defaulting to 1!")
-            number_of_processes=1
-            slurm_script += "#SBATCH -n %s\n" % number_of_processes
+            total_cpu_count = 1
 
-        if threads_per_process:
-            pass
+        # make sure we have something for number_of_processes
+        if not number_of_processes:
+            self._logger.warning("number_of_processes not specified in submitted "
+                                 "SLURM job description -- defaulting to 1 per total_cpu_count! (%s)" % total_cpu_count)
+
+            number_of_processes = total_cpu_count
+
+        # make sure we aren't given more processes than CPUs
+        if number_of_processes>total_cpu_count:
+            log_error_and_raise("More processes (%s) requested than total number of CPUs! (%s)" % (number_of_processes, total_cpu_count), saga.NoSuccess, self._logger)
+
+        #make sure we aren't doing funky math
+        if total_cpu_count % number_of_processes != 0:
+            log_error_and_raise("total_cpu_count (%s) must be evenly divisible by number_of_processes (%s)" %(total_cpu_count, number_of_processes), saga.NoSuccess, self._logger)
+
+        slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
+        slurm_script += "#SBATCH --cpus-per-task=%s\n" % (total_cpu_count/number_of_processes)
 
         if cwd is not "":
             slurm_script += "#SBATCH -D %s\n" % cwd
@@ -703,6 +713,13 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         ret, out, _ = self.shell.run_sync("scontrol suspend %s" % pid)
         if ret == 0:
             return True
+
+        # check to see if the error was a permission error
+        elif "Access/permission denied" in out:
+            raise saga.PermissionDenied._log(self._logger,
+                                      "Could not suspend job %s because: %s" % (pid, out))
+        
+        # it's some other error
         else:
             raise saga.NoSuccess._log(self._logger,
                                       "Could not suspend job %s because: %s" % (pid, out))
@@ -716,6 +733,13 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         ret, out, _ = self.shell.run_sync("scontrol resume %s" % pid)
         if ret == 0:
             return True
+
+        # check to see if the error was a permission error
+        elif "Access/permission denied" in out:
+            raise saga.PermissionDenied._log(self._logger,
+                                      "Could not suspend job %s because: %s" % (pid, out))
+        
+        # it's some other error
         else:
             raise saga.NoSuccess._log(self._logger,
                                       "Could not resume job %s because: %s" % (pid, out))

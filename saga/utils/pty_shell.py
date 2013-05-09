@@ -237,15 +237,16 @@ class PTYShell (object) :
         # a versatile prompt pattern to account for the custom shell case.
 
         # find initial prompt from login shell
-        ret1, out1 = self.pty_shell.find (["^.*\$\s*$"], 10.0)
+        prompt_pat = "^.*[\$>:#]\s*$"
+        ret1, out1 = self.pty_shell.find ([prompt_pat], 10.0)
 
         # we need to make sure that the found prompt is really the prompt of
         # the new shell, so we check $? for successfull startup.
         try :
             self.pty_shell.write ('echo "-SAGA-$?"\n')
-            ret2, out2 = self.pty_shell.find (["-SAGA-"],    10.0)
-            ret3, out3 = self.pty_shell.find (["\d+\n"],     10.0)
-            ret4, out4 = self.pty_shell.find (["^.*\$\s*$"], 10.0)
+            ret2, out2 = self.pty_shell.find (["-SAGA-"],   10.0)
+            ret3, out3 = self.pty_shell.find (["\d+\n"],    10.0)
+            ret4, out4 = self.pty_shell.find ([prompt_pat], 10.0)
 
             if  int(out3[:-1]) != 0 :
                 raise saga.NoSuccess ("cannot initalize shell with %s (%s)" \
