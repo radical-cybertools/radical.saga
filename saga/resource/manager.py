@@ -37,7 +37,7 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @sus.takes   ('Manager', 
-                  sus.optional (surl.Url), 
+                  sus.optional (basestring, surl.Url), 
                   sus.optional (ss.Session),
                   sus.optional (sab.Base), 
                   sus.optional (dict), 
@@ -165,8 +165,8 @@ class Manager (sb.Base, async.Async) :
     @sus.returns ((resrc.Resource, st.Task))
     def acquire  (self, spec, ttype=None) :
         """
-        :type  descr: :class:`Description`
-        :param descr: specifies the resource to be acquired.
+        :type  spec: :class:`Description`
+        :param spec: specifies the resource to be acquired.
 
         Get a :class:`saga.resource.Resource` handle for the specified
         description.  Depending on the `RTYPE` attribute in the description, the
@@ -185,16 +185,14 @@ class Manager (sb.Base, async.Async) :
 
         else :
 
-            descr = descr.Description (spec)
-
             # make sure at least 'executable' is defined
-            if descr.rtype is None:
+            if spec.rtype is None:
                 raise se.BadParameter ("No resource type defined in resource description")
     
-            descr_copy = descr.Description ()
-            descr._attributes_deep_copy (descr_copy)
+            spec_copy = descr.Description ()
+            spec._attributes_deep_copy (spec_copy)
 
-            return self._adaptor.acquire (descr_copy, ttype=ttype)
+            return self._adaptor.acquire (spec_copy, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
