@@ -34,19 +34,20 @@ def main():
         # a job that runs for $RUNTIME seconds.
         jd.name            = 'testjob'
         jd.project         = 'TG-MCB090174'
-        jd.environment     = {'RUNTIME': '10'}
+        jd.environment     = {'RUNTIME': '/etc/passwd'}
         jd.wall_time_limit = 2 # minutes
 
-        jd.executable = '/bin/sleep'
+        jd.executable = '/bin/cat'
         jd.arguments = ["$RUNTIME"]
 
         jd.output          = "saga_condorjob.stdout"
         jd.error           = "saga_condorjob.stderr"
-        jd.candidate_hosts = ["FNAL_FERMIGRID", "cinvestav", "SPRACE",
-                              "NYSGRID_CORNELL_NYS1", "Purdue-Steele",
-                              "MIT_CMS_CE2", "SWT2_CPB", "AGLT2_CE_2",
-                              "UTA_SWT2", "GridUNESP_CENTRAL",
-                              "USCMS-FNAL-WC1-CE3"]
+ 
+ #       jd.candidate_hosts = ["FNAL_FERMIGRID", "cinvestav", "SPRACE",
+ #                             "NYSGRID_CORNELL_NYS1", "Purdue-Steele",
+ #                             "MIT_CMS_CE2", "SWT2_CPB", "AGLT2_CE_2",
+ #                             "UTA_SWT2", "GridUNESP_CENTRAL",
+ #                             "USCMS-FNAL-WC1-CE3"]
 
         # create the job (state: New)
         sleepjob = js.create_job(jd)

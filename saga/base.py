@@ -19,7 +19,6 @@ class SimpleBase (object) :
     def __init__  (self) :
 
         self._apitype   = self._get_apitype ()
-        self._engine    = saga.engine.engine.Engine ()
         self._logger    = saga.utils.logger.getLogger (self._apitype)
 
         #self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
@@ -54,8 +53,10 @@ class Base (SimpleBase) :
 
         SimpleBase.__init__ (self)
 
+        _engine       = saga.engine.engine.Engine ()
+
         self._adaptor = adaptor
-        self._adaptor = self._engine.bind_adaptor   (self, self._apitype, schema, adaptor)
+        self._adaptor = _engine.bind_adaptor   (self, self._apitype, schema, adaptor)
 
 
         # Sync creation (normal __init__) will simply call the adaptor's
@@ -66,7 +67,17 @@ class Base (SimpleBase) :
         # performs initialization.  We rely on the sync/async method decorators
         # on CPI level to provide the task instance itself, and point the task's
         # workload to the adaptor level init_instance method.
+
         self._init_task = self._adaptor.init_instance (adaptor_state, *args, **kwargs)
+
+        if 'ttype' in kwargs and kwargs['ttype'] :
+            # in this case we in in fact need the init_task later on, to return
+            # on the create() call
+            pass
+        else :
+            # in the sync case, we can get rid of the init_task reference, to
+            # simplify garbage collection
+            self._init_task = None
 
 
     def get_session (self) :

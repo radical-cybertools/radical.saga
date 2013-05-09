@@ -14,8 +14,6 @@ import saga.utils.which
 import saga.utils.pty_shell_factory as supsf
 
 _PTY_TIMEOUT = 2.0
-_SCHEMAS     = ['ssh', 'gsissh', 'fork', 'shell', 'file', 'scp', 'sftp', 'gsiscp', 'gsisftp']
-# FIXME: gsiftp?
 
 # ------------------------------------------------------------------------------
 #
@@ -182,8 +180,6 @@ class PTYShell (object) :
 
         self.prompt          = None
         self.prompt_re       = None
-        self.initialize_hook = None
-        self.finalize_hook   = None
 
         # we need a local dir for file staging caches.  At this point we use
         # $HOME, but should make this configurable (FIXME)
@@ -207,9 +203,6 @@ class PTYShell (object) :
         self.pty_info   = self.factory.initialize (url, session, self.logger)
         self.pty_shell  = self.factory.run_shell  (self.pty_info)
 
-        self.pty_shell.set_initialize_hook (self.initialize)
-        self.pty_shell.set_finalize_hook   (self.finalize)
-
         self.initialize ()
 
 
@@ -218,20 +211,6 @@ class PTYShell (object) :
     def __del__ (self) :
 
         self.finalize (kill_pty=True)
-
-
-    # ----------------------------------------------------------------------
-    #
-    def set_initialize_hook (self, initialize_hook) :
-
-        self.initialize_hook = initialize_hook
-
-
-    # ----------------------------------------------------------------------
-    #
-    def set_finalize_hook (self, finalize_hook) :
-
-        self.finalize_hook = finalize_hook
 
 
     # ----------------------------------------------------------------
@@ -258,44 +237,41 @@ class PTYShell (object) :
         # a versatile prompt pattern to account for the custom shell case.
 
         # find initial prompt from login shell
-        ret1, out1 = self.pty_shell.find (["^.*\$\s*$"], 10.0)
+        prompt_pat = "^.*[\$>:#]\s*$"
+        ret1, out1 = self.pty_shell.find ([prompt_pat], 10.0)
 
         # we need to make sure that the found prompt is really the prompt of
         # the new shell, so we check $? for successfull startup.
-        self.pty_shell.write ("echo $?\n")
-        ret2, out2 = self.pty_shell.find (["\d+\n"],     10.0)
-        ret3, out3 = self.pty_shell.find (["^.*\$\s*$"], 10.0)
+        try :
+            self.pty_shell.write ('echo "-SAGA-$?"\n')
+            ret2, out2 = self.pty_shell.find (["-SAGA-"],   10.0)
+            ret3, out3 = self.pty_shell.find (["\d+\n"],    10.0)
+            ret4, out4 = self.pty_shell.find ([prompt_pat], 10.0)
 
-        if  int(out2) != 0 :
-            raise saga.NoSuccess ("cannot initalize shell with %s (%s)" \
-                    % (self.opts['shell'], out1))
+            if  int(out3[:-1]) != 0 :
+                raise saga.NoSuccess ("cannot initalize shell with %s (%s)" \
+                        % (self.opts['shell'], out1))
 
 
-        # set and register new prompt
-        self.run_sync ( "unset PROMPT_COMMAND ; "
-                             + "PS1='PROMPT-$?->'; "
-                             + "PS2=''; "
-                             + "export PS1 PS2\n", 
-                               new_prompt="PROMPT-(\d+)->$")
+            # set and register new prompt
+            self.run_sync ( "unset PROMPT_COMMAND ; "
+                                 + "PS1='PROMPT-$?->'; "
+                                 + "PS2=''; "
+                                 + "export PS1 PS2\n", 
+                                   new_prompt="PROMPT-(\d+)->$")
 
-        self.logger.debug ("got new shell prompt")
+            self.logger.debug ("got new shell prompt")
 
-        if  self.initialize_hook :
-            self.initialize_hook ()
+        except saga.SagaException as e :
+            raise
+        except Exception as e :
+            raise saga.NoSuccess ("Shell startup on target host failed: %s" % e)
+
 
 
     # ----------------------------------------------------------------
     #
     def finalize (self, kill_pty = False) :
-
-        try :
-            # check if some additional initialization routines as registered
-            if  self.finalize_hook :
-                self.finalize_hook ()
-
-        except Exception as e :
-            pass
-
 
         try :
             if  kill_pty :
@@ -824,7 +800,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def _translate_exception (self, e) :
+    def _translate_exception (self, e, msg=None) :
         """
         In many cases, we should be able to roughly infer the exception cause
         from the error message -- this is centrally done in this method.  If
@@ -842,6 +818,9 @@ class PTYShell (object) :
 
         cmsg = e._plain_message
         lmsg = cmsg.lower ()
+
+        if  msg :
+            cmsg = "%s (%s)" % (cmsg, msg)
 
         if 'auth' in lmsg :
             e = saga.AuthorizationFailed (cmsg)
