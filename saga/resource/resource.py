@@ -311,15 +311,21 @@ class Compute (Resource) :
     # FIXME: should 'ACCESS' be a list of URLs?  A VM could have an ssh *and*
     #        a gram endpoint...
 
-    @sus.takes   ('ComputeResource', 
-                  sus.optional (basestring), 
-                  sus.optional (ss.Session),
-                  sus.optional (sab.Base), 
-                  sus.optional (dict), 
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (sus.nothing)
+    # @sus.takes   ('ComputeResource', 
+    #               sus.optional (basestring), 
+    #               sus.optional (ss.Session),
+    #               sus.optional (sab.Base), 
+    #               sus.optional (dict), 
+    #               sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    # @sus.returns (sus.nothing)
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
+
+        print id
+        print session
+        print _adaptor
+        print _adaptor_state
+        print _ttype
         
         self._resrc = super  (Compute, self)
         self._resrc.__init__ (id, session, _adaptor, _adaptor_state, _ttype)

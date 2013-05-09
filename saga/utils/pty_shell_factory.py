@@ -453,8 +453,6 @@ class PTYShellFactory (object) :
                                 if  context.attribute_exists ("user_pass") and context.user_pass :
                                     info['cert_pass'][context.user_cert] = context.user_pass
 
-                            info['ctx'].append (context)
-
                 if  context.type.lower () == "userpass" :
                     if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
                         if  context.attribute_exists ("user_id") and context.user_id :

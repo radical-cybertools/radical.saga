@@ -2,7 +2,7 @@
 import saga
 
 cd = saga.resource.ComputeDescription ()
-rm = saga.resource.Manager ("shell://localhost")
+rm = saga.resource.Manager ("ec2://localhost")
 cr = rm.acquire (cd)
 print cr.access
 js = saga.job.Service (cr.access)
