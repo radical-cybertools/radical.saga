@@ -33,5 +33,6 @@ adaptor_registry = [
                     "saga.adaptors.sge.sgejob",
                     "saga.adaptors.pbs.pbsjob",
                     "saga.adaptors.condor.condorjob",
-                    "saga.adaptors.slurm.slurm_job"
+                    "saga.adaptors.slurm.slurm_job",
+                    "saga.adaptors.http.http_file"
                    ]

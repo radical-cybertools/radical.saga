@@ -135,7 +135,14 @@ def _pbscript_generator(url, logger, jd, ppn, is_cray=False, queue=None):
             pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
                 % (str(int(tbd)), ppn)
 
+    # escape all double quotes and dollarsigns, otherwise 'echo |'
+    # further down won't work
+    # only escape '$' in args and exe. not in the params
+    exec_n_args = exec_n_args.replace('$', '\\$')
+
     pbscript = "\n#!/bin/bash \n%s%s" % (pbs_params, exec_n_args)
+
+    pbscript = pbscript.replace('"', '\\"')
     return pbscript
 
 
@@ -263,8 +270,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def __init__(self, api, adaptor):
 
-        self._cpi_base = super(PBSJobService, self)
-        self._cpi_base.__init__(api, adaptor)
+        _cpi_base = super(PBSJobService, self)
+        _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
 
@@ -272,7 +279,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def __del__(self):
 
-        self.finalize(kill_shell=True)
+        self.finalize (kill_shell=True)
 
     # ----------------------------------------------------------------
     #
@@ -285,6 +292,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self.ppn     = 0
         self.is_cray = False
         self.queue   = None
+        self.shell   = None
         self.jobs    = dict()
 
         rm_scheme = rm_url.scheme
@@ -318,8 +326,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
-        self.shell.set_initialize_hook(self.initialize)
-        self.shell.set_finalize_hook(self.finalize)
+      # self.shell.set_initialize_hook(self.initialize)
+      # self.shell.set_finalize_hook(self.finalize)
 
         self.initialize()
 
@@ -347,7 +355,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                             self._logger)
                     else:
                         # version is reported as: "version: x.y.z"
-                        version = out.strip().split()[1]
+                        version = out#.strip().split()[1]
 
                         # add path and version to the command dictionary
                         self._commands[cmd] = {"path":    path,
@@ -370,9 +378,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # different queues, number of processes per node, etc.
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
-        ret, out, _ = self.shell.run_sync('%s -a | grep np' % \
+        ret, out, _ = self.shell.run_sync('%s -a | egrep "(np|pcpu)"' % \
             self._commands['pbsnodes']['path'])
         if ret != 0:
+            
+
             message = "Error running pbsnodes: %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
@@ -396,6 +406,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def finalize(self, kill_shell=False):
+
         if  kill_shell :
             if  self.shell :
                 self.shell.finalize (True)
@@ -416,22 +427,29 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                                          jd=jd, ppn=self.ppn,
                                          is_cray=self.is_cray, queue=self.queue)
 
-            # escape all double quotes and dollarsigns, otherwise 'echo |' 
-            # further down won't work
-            script = script.replace('"', '\\"')
-            script = script.replace('$', '\\$')
-
             self._logger.debug("Generated PBS script: %s" % script)
         except Exception, ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
-        ret, out, _ = self.shell.run_sync("""echo "%s" | %s""" \
-            % (script, self._commands['qsub']['path']))
+        # try to create the working directory (if defined)
+        # WRANING: this assumes a shared filesystem between login node and
+        #           comnpute nodes.
+        if jd.working_directory is not None:
+            self._logger.info("Creating working directory %s" % jd.working_directory)
+            ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
+            if ret != 0:
+                # something went wrong
+                message = "Couldn't create working directory - %s" % (out)
+                log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+        # run the PBS script
+        cmdline = """echo "%s" | %s""" % (script, self._commands['qsub']['path'])
+        ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
             # something went wrong
-            message = "Error running job via 'qsub': %s. Script was: %s" \
-                % (out, script)
+            message = "Error running job via 'qsub': %s. Commandline was: %s" \
+                % (out, cmdline)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
             # stdout contains the job id
@@ -460,9 +478,14 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the PBS 'qstat' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync("%s -f1 %s | \
+        if 'PBSPro_10' in self._commands['qstat']['version']:
+            qstat_flag = '-f'
+        else:
+            qstat_flag ='-f1'
+
+        ret, out, _ = self.shell.run_sync("%s %s %s | \
             egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|\
-(start_time)|(comp_time)'" % (self._commands['qstat']['path'], pid))
+            (start_time)|(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -530,9 +553,13 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the PBS 'qstat' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync("%s -f1 %s | \
+        if 'PBSPro_10' in self._commands['qstat']['version']:
+            qstat_flag = '-f'
+        else:
+            qstat_flag ='-f1'
+        ret, out, _ = self.shell.run_sync("%s %s %s | \
             egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)\
-|(comp_time)'" % (self._commands['qstat']['path'], pid))
+|(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
             if ("Unknown Job Id" in out):
@@ -818,8 +845,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     def __init__(self, api, adaptor):
 
         # initialize parent class
-        self._cpi_base = super(PBSJob, self)
-        self._cpi_base.__init__(api, adaptor)
+        _cpi_base = super(PBSJob, self)
+        _cpi_base.__init__(api, adaptor)
 
     @SYNC_CALL
     def init_instance(self, job_info):
@@ -954,4 +981,3 @@ class PBSJob (saga.adaptors.cpi.job.Job):
             return None
         else:
             return self.js._job_get_execution_hosts(self._id)
-
