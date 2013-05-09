@@ -487,7 +487,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             pass #TODO
 
         #### HANDLE NUMBER OF CORES
-        
         # make sure we have something for total_cpu_count
         if not total_cpu_count:
             self._logger.warning("total_cpu_count not specified in submitted "
@@ -722,6 +721,13 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         ret, out, _ = self.shell.run_sync("scontrol suspend %s" % pid)
         if ret == 0:
             return True
+
+        # check to see if the error was a permission error
+        elif "Access/permission denied" in out:
+            raise saga.PermissionDenied._log(self._logger,
+                                      "Could not suspend job %s because: %s" % (pid, out))
+        
+        # it's some other error
         else:
             raise saga.NoSuccess._log(self._logger,
                                       "Could not suspend job %s because: %s" % (pid, out))
@@ -735,6 +741,13 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         ret, out, _ = self.shell.run_sync("scontrol resume %s" % pid)
         if ret == 0:
             return True
+
+        # check to see if the error was a permission error
+        elif "Access/permission denied" in out:
+            raise saga.PermissionDenied._log(self._logger,
+                                      "Could not suspend job %s because: %s" % (pid, out))
+        
+        # it's some other error
         else:
             raise saga.NoSuccess._log(self._logger,
                                       "Could not resume job %s because: %s" % (pid, out))
