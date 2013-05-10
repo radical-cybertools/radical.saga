@@ -246,8 +246,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         _cpi_base = super  (SLURMJobService, self)
         _cpi_base.__init__ (api, adaptor)
 
-        self._base = base = "$HOME/.saga/adaptors/slurm_job"
-
         self.exit_code_re = re.compile("""(?<=ExitCode=)[0-9]*""")
         self.scontrol_jobstate_re = re.compile("""(?<=JobState=)[a-zA-Z]*""")
         # TODO make sure this formats properly and works right!
@@ -362,12 +360,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                           "configured properly? " % (cmd, self.rm, out)
                 raise saga.NoSuccess._log (self._logger, message)
                 
-        # prepare our remote working directory for wrappers/etc
-        ret, out, _ = self.shell.run_sync ("mkdir -p %s" % self._base)
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" \
-                                      % (ret, out))
-
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
         
         self.rm.detected_username = self.rm.username
@@ -555,10 +547,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         self._logger.debug("SLURM script generated:\n%s" % slurm_script)
         self._logger.debug("Transferring SLURM script to remote host")
-
-        # transfer our script over
-        #self.shell.write_to_remote (src = slurm_script,
-        #                            tgt = "%s/wrapper.sh" % self._base)
 
         # try to create the working directory (if defined)
         # WRANING: this assumes a shared filesystem between login node and
