@@ -7,7 +7,7 @@ REMOTE_HOST = "login1.stampede.tacc.utexas.edu"
 def main () :
     try:
 
-        for i in range(0, 100):
+        for i in range(0, 1000):
             print "**************************** Job: %d *****************************" % i
             ctx = saga.Context("ssh")
             ctx.user_id = USER_ID

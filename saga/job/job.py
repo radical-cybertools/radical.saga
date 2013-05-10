@@ -129,7 +129,7 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
     #
     @sus.takes   ('Job',
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((basestring, st.Task))
+    @sus.returns ((sus.nothing, basestring, st.Task))
     def get_id   (self, ttype=None) :
         '''
         ttype:     saga.task.type enum
