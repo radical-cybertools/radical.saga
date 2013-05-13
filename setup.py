@@ -10,7 +10,7 @@ __license__   = "MIT"
 import os
 import sys
 
-from distutils.core import setup, Command
+from distutils.core import setup
 from distutils.command.install_data import install_data
 from distutils.command.sdist import sdist
 
@@ -30,7 +30,7 @@ except IOError:
 
     try:
         p = Popen(['git', 'describe', '--tags', '--always'],
-                  stdout=PIPE, stderr=STDOUT)
+            stdout=PIPE, stderr=STDOUT)
         out = p.communicate()[0]
 
         if (not p.returncode) and out:
@@ -42,6 +42,7 @@ except IOError:
 
 scripts = []  # ["bin/bliss-run"]
 
+
 # check python version. we need > 2.5
 if sys.hexversion < 0x02050000:
     raise RuntimeError("SAGA requires Python 2.5 or higher")
@@ -49,9 +50,10 @@ if sys.hexversion < 0x02050000:
 
 class our_install_data(install_data):
 
-    def finalize_options(self):
+    def finalize_options(self): 
         self.set_undefined_options('install',
-                                   ('install_lib', 'install_dir'))
+            ('install_lib', 'install_dir'),
+        )
         install_data.finalize_options(self)
 
     def run(self):
@@ -69,24 +71,6 @@ class our_sdist(sdist):
         # ensure there's a air/VERSION file
         fn = os.path.join(base_dir, 'saga', 'VERSION')
         open(fn, 'w').write(version)
-
-
-class our_test(Command):
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        import sys
-        import subprocess
-        errno = subprocess.call([sys.executable, 'tests/run_tests.py',
-                                '--config=tests/configs/basetests.cfg'])
-        raise SystemExit(errno)
-        setup_args
 
 setup_args = {
     'name': "saga-python",
@@ -123,7 +107,7 @@ setup_args = {
         'Operating System :: POSIX :: SCO',
         'Operating System :: POSIX :: SunOS/Solaris',
         'Operating System :: Unix'
-    ],
+        ],
     'packages': [
         "saga",
         "saga.job",
@@ -145,7 +129,6 @@ setup_args = {
         "saga.adaptors.pbs",
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
-        "saga.adaptors.http",
         "saga.engine",
         "saga.utils",
         "saga.utils.contrib",
@@ -161,10 +144,9 @@ setup_args = {
     'data_files': [("saga", [])],
     'cmdclass': {
         'install_data': our_install_data,
-        'sdist': our_sdist,
-        'test': our_test
+        'sdist': our_sdist
+        }
     }
-}
 
 if sys.platform != "win32":
     setup_args['install_requires'] = [
@@ -172,3 +154,4 @@ if sys.platform != "win32":
     ]
 
 setup(**setup_args)
+

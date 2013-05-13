@@ -12,7 +12,7 @@ from saga.base            import Base
 from saga.async           import Async
 from saga.url             import Url
 from saga.job.description import Description
-from saga.exceptions      import BadParameter
+from saga.exceptions      import *
 from saga.session         import Session
 
 from saga.constants       import SYNC, ASYNC, TASK, NOTASK # task constants
