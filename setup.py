@@ -10,7 +10,7 @@ __license__   = "MIT"
 import os
 import sys
 
-from distutils.core import setup, Command
+from setuptools import setup, Command
 from distutils.command.install_data import install_data
 from distutils.command.sdist import sdist
 
@@ -164,8 +164,8 @@ setup_args = {
         'sdist': our_sdist,
         'test': our_test
     },
-    'install_requires': ['colorama'],
-    'test_requires': ['nose']
+    'install_requires': ['setuptools', 'colorama'],
+    'tests_require': ['setuptools', 'nose']
 }
 
 setup(**setup_args)
