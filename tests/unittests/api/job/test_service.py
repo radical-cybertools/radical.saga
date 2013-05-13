@@ -16,6 +16,47 @@ js = None
 
 # ------------------------------------------------------------------------------
 #
+def test_close():
+    """ Test job service close()
+    """
+    try:
+        tc = sutc.TestConfig()
+        js = saga.job.Service(tc.js_url, tc.session)
+        js.close()
+        js.get_url()
+        assert False, "Subsequent calls should fail after close()"
+
+
+    except saga.NotImplemented as ni:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
+                print "%s " % ni
+    except saga.SagaException as se:
+        assert True
+
+
+# ------------------------------------------------------------------------------
+#
+def test_open_close():
+    """ Test job service create / close() in a big loop
+    """
+    try:
+        tc = sutc.TestConfig()
+
+        for i in range(0, 100):
+            js = saga.job.Service(tc.js_url, tc.session)
+            js.close()
+
+    except saga.NotImplemented as ni:
+            assert tc.notimpl_warn_only, "%s " % ni
+            if tc.notimpl_warn_only:
+                print "%s " % ni
+    except saga.SagaException as se:
+        assert False, "Unexpected exception: %s" % se
+
+
+# ------------------------------------------------------------------------------
+#
 def test_get_url():
     """ Test job service url/get_url()
     """
