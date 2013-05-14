@@ -127,6 +127,7 @@ def launch_tests(options, testdir):
 # entry point
 if __name__ == "__main__":
 
+    parser = OptionParser()
     parser.add_option("--notimpl-warn-only",
                   action="store_true", dest="notimpl_warn_only", default=False,
                   help="if set, warn on NotImplemented exceptions. If set to \
