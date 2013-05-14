@@ -86,7 +86,7 @@ class our_test(Command):
         errno = subprocess.call([sys.executable, 'tests/run_tests.py',
                                 '--config=tests/configs/basetests.cfg'])
         raise SystemExit(errno)
-        setup_args
+
 
 setup_args = {
     'name': "saga-python",
