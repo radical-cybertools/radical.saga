@@ -109,9 +109,11 @@ def launch_tests(options, testdir):
             # and run tests
             print "______________________________________________________________________"
             print "%s : %s" % (os.path.basename (sfg_name), test_suite)
-            results.append(nose.core.run(config=config))
+            rc = nose.core.run(config=config)
+            results.append(rc)
+            print "RC: %s" % rc
             print "______________________________________________________________________"
-            
+
         # if we get a 'false' results it means that something went wrong. in
         # that case we return a non-zero exit code
 
