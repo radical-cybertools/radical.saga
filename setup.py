@@ -83,8 +83,9 @@ class our_test(Command):
     def run(self):
         import sys
         import subprocess
-        errno = subprocess.call([sys.executable, 'tests/run_tests.py',
-                                '--config=tests/configs/basetests.cfg'])
+        testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
+        errno = subprocess.call([sys.executable, '%s/run_tests.py' % testdir,
+                                '--config=%s/configs/basetests.cfg' % testdir])
         raise SystemExit(errno)
 
 
