@@ -1,5 +1,8 @@
 include *.py
 
+#include all tests
+recursive-include tests *
+
 include saga/*.py
 
 include saga/job/*.py
