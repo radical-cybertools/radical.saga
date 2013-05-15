@@ -17,7 +17,8 @@ try:
     print "______________________________________________________________________"
 
 except Exception, e:
-    sys.path.insert(0, os.path.abspath('.'))
+    srcdir = "%s/../" % os.path.dirname(os.path.realpath(__file__))
+    sys.path.insert(0, os.path.abspath(srcdir))
     import saga
     print "______________________________________________________________________"
     print "Using saga-python from: %s" % str(saga)
