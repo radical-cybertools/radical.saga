@@ -5,6 +5,22 @@
 # thought.
 
 
+
+
+
+# --------------------------------------------------------------------
+#
+# Fucking /bin/kill by Ubuntu sometimes understands --, sometimes does not :-P
+# We need to check the version, and assume that prior to 3.3.0 it is not
+# understood
+KILL_DASHES="--"
+KILL_VERSION=`/bin/kill --version 2>&1 | tr -d -c '[:digit:]'`
+if test 330 -gt "$KILL_VERSION"
+then
+  KILL_DASHES=""
+fi
+
+
 # --------------------------------------------------------------------
 #
 # ERROR and RETVAL are used for return state from function calls
@@ -514,10 +530,10 @@ cmd_cancel () {
   fi
 
   # now kill the job process group, and to be sure also the job shell
-  /bin/kill -TERM -$mpid # this is the important one...
-  /bin/kill -KILL -$mpid 2>/dev/null
-  /bin/kill -TERM  $rpid 2>/dev/null
-  /bin/kill -KILL  $rpid 2>/dev/null
+  /bin/kill -TERM $KILL_DASHES -$mpid # this is the important one...
+  /bin/kill -KILL $KILL_DASHES -$mpid 2>/dev/null
+  /bin/kill -TERM               $rpid 2>/dev/null
+  /bin/kill -KILL               $rpid 2>/dev/null
 
   # FIXME: how can we check for success?  ps?
   printf "CANCELED \n" >> "$DIR/state"
