@@ -194,7 +194,7 @@ _ADAPTOR_DOC = {
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":  """
 The PBS adaptor allows to run and manage jobs on `PBS <http://www.pbsworks.com/>`_
-and `TORQUE <http://www.adaptivecomputing.com/products/open-source/torque>`_ 
+and `TORQUE <http://www.adaptivecomputing.com/products/open-source/torque>`_
 controlled HPC clusters.
 """,
     "example": "examples/jobs/pbsjob.py",
@@ -389,7 +389,6 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         ret, out, _ = self.shell.run_sync('%s -a | egrep "(np|pcpu)"' % \
             self._commands['pbsnodes']['path'])
         if ret != 0:
-            
 
             message = "Error running pbsnodes: %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
@@ -460,8 +459,19 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 % (out, cmdline)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
-            # stdout contains the job id
-            job_id = "[%s]-[%s]" % (self.rm, out.strip().split('.')[0])
+            # parse the job id. qsub usually returns just the job id, but
+            # sometimes there are a couple of lines of warnings before.
+            # if that's the case, we log those as 'warnings'
+            lines = out.split('\n')
+            if len(lines) > 1:
+                self._logger.warning('qsub: %s' % ''.join(lines[:-2]))
+                # remove empty lines:
+                for line in lines:
+                    if line == '':
+                        lines.remove(line)
+
+            # we asssume job id is in the last line
+            job_id = "[%s]-[%s]" % (self.rm, lines[-1].strip().split('.')[0])
             self._logger.info("Submitted PBS job with id: %s" % job_id)
 
             # add job to internal list of known jobs.
