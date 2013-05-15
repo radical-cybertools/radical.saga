@@ -10,7 +10,7 @@ __license__   = "MIT"
 import os
 import sys
 
-from distutils.core import setup, Command
+from setuptools import setup, Command
 from distutils.command.install_data import install_data
 from distutils.command.sdist import sdist
 
@@ -86,7 +86,7 @@ class our_test(Command):
         errno = subprocess.call([sys.executable, 'tests/run_tests.py',
                                 '--config=tests/configs/basetests.cfg'])
         raise SystemExit(errno)
-        setup_args
+
 
 setup_args = {
     'name': "saga-python",
@@ -166,12 +166,9 @@ setup_args = {
         'install_data': our_install_data,
         'sdist': our_sdist,
         'test': our_test
-    }
+    },
+    'install_requires': ['setuptools', 'colorama'],
+    'tests_require': ['setuptools', 'nose']
 }
-
-if sys.platform != "win32":
-    setup_args['install_requires'] = [
-        'colorama',
-    ]
 
 setup(**setup_args)

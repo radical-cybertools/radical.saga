@@ -7,7 +7,7 @@ REMOTE_HOST = "login1.stampede.tacc.utexas.edu"
 def main () :
     try:
 
-        for i in range(0, 100):
+        for i in range(0, 1000):
             print "**************************** Job: %d *****************************" % i
             ctx = saga.Context("ssh")
             ctx.user_id = USER_ID
@@ -31,6 +31,8 @@ def main () :
             jd.queue            = 'normal'
             jd.project          = 'TG-MCB090174'
             jd.wall_time_limit  = '10'
+            jd.total_cpu_count  = 1
+            jd.number_of_processes = 1
             #jd.arguments       = ['$MYOUTPUT']
             jd.output           = "/tmp/saga_job.%s.stdout" % USER_ID
             jd.error            = "/tmp/saga_job.%s.stderr" % USER_ID
@@ -56,6 +58,8 @@ def main () :
                 j = js.get_job (jid)
                 print "%s\t " % j.state,
             print
+
+            js.close ()
     
     
         return 0
