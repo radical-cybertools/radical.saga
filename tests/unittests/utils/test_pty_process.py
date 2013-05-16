@@ -120,8 +120,6 @@ def test_ptyprocess_find () :
 #
 def test_ptyprocess_restart () :
     """ Test pty_process restart"""
-    pass 
-
     pty = supp.PTYProcess ("cat")
     assert (pty.alive ())
 
