@@ -84,12 +84,6 @@ _ADAPTOR_INFO          = {
 # The adaptor class
 
 class Adaptor (saga.adaptors.base.Base):
-    """ 
-    This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
-    SAGA engine), and which registers the CPI implementation classes which
-    provide the adaptor's functionality.
-    """
-
 
     # ----------------------------------------------------------------
     #
@@ -107,7 +101,8 @@ class Adaptor (saga.adaptors.base.Base):
     def sanity_check (self) :
 
         try :
-            import libcloud
+            import libcloud.compute.types      as lcct
+            import libcloud.compute.providers  as lccp
 
         except Exception as e :
             self._logger.warning ("Could not load libcloud module, "
@@ -152,35 +147,55 @@ class LibcloudResourceManager (saga.adaptors.cpi.resource.Manager) :
 
         self.url     = saga.Url (url)  # deep copy
         self.session = session
+
+        # get the libclound modules.  Note that the non-empty fromlist forces
+        # Python to include the actually specified module, not only the top
+        # level libcloud.  Oh Python...
+        #
+        # FIXME: can be cached in the adaptor, not sure if Python cares...
+        self.lcct = __import__ ('libcloud.compute.types',     fromlist=[''])
+        self.lccp = __import__ ('libcloud.compute.providers', fromlist=[''])
+
+        print self.lccp
+
+        # internale (cached) registry of available resources
         self.access  = {}
         self.access[COMPUTE] = []
         self.access[STORAGE] = []
         self.access[ANY]     = []
 
-        # check for compute entry points
-        for schema in ['fork', 'ssh', 'gsissh'] :
-            tmp_url = saga.Url (self.url)  # deep copy
-            tmp_url.schema = schema
+        self.backend = None
+        self.driver  = None
+        self.conn    = None
 
-            shell = saga.utils.pty_shell.PTYShell (tmp_url, self.session, self._logger)
+        if  self.url.schema == 'ec2' :
+            if  self.url.host and \
+                self.url.host != 'aws.amaon.com' :
+                raise saga.BadParameter ("only amazon/EC2 supported (not %s)" \
+                                      % self.url)
 
-            if  shell.alive () :
-                self.access[COMPUTE].append (tmp_url)
-                self.access[ANY]    .append (tmp_url)
-                shell.finalize (True)
+            self.backend = 'amazon.ec2'
+
+            # FIXME: support proper contexts, and also default EC2 env vars
+            self.ec2_id  = os.environ['EC2_ID']
+            self.ec2_key = os.environ['EC2_KEY']
+            
+            # FIXME: translate exceptions, in particular connectivity and auth
+            # exceptions.
+            self.driver = self.lccp.get_driver (self.lcct.Provider.EC2)
+            self.conn   = self.driver (self.ec2_id, self.ec2_key)
+            print (self.conn)
+
+            # FIXME: we could pre-fetch existing resources right now...
+            
+            # FIXME: we definitely should pre-fetch templates, and actually
+            # cache those in the adaptor (we assume that list to be stable over
+            # application lifetime).
 
 
-        # check for storage entry points
-        for schema in ['file', 'sftp', 'gsisftp'] :
-            tmp_url = saga.Url (self.url)  # deep copy
-            tmp_url.schema = schema
-
-            shell = saga.utils.pty_shell.PTYShell (tmp_url, self.session, self._logger)
-
-            if  shell.alive () :
-                self.access[STORAGE].append (tmp_url)
-                self.access[ANY]    .append (tmp_url)
-                shell.finalize (True)
+        else :
+            raise saga.BadParameter ( "only EC2 is supported (not %s)" \
+                                  % self.url)
 
 
     # ----------------------------------------------------------------
@@ -188,13 +203,14 @@ class LibcloudResourceManager (saga.adaptors.cpi.resource.Manager) :
     @SYNC_CALL
     def acquire (self, rd) :
 
-        if  not rd :
-            raise saga.BadParameter._log (self._logger, "acquire needs a resource description")
+        if  not self.conn :
+            raise saga.IncorrectState ("not connected to backend")
 
-        if  rd.rtype != COMPUTE and \
-            rd.rtype != STORAGE     :
-            raise saga.BadParameter._log (self._logger, "can only acquire compute and storage resources.")
+        if  rd.rtype != COMPUTE :
+            raise saga.BadParameter ("can only acquire compute resources.")
 
+       
+        resource_info = None
 
         # check that only supported attributes are provided
         for attribute in rd.list_attributes():
@@ -202,29 +218,39 @@ class LibcloudResourceManager (saga.adaptors.cpi.resource.Manager) :
                 msg = "'resource.Description.%s' is not supported by this adaptor" % attribute
                 raise saga.BadParameter._log (self._logger, msg)
 
-        if  rd.access :
-            access_url = saga.Url (rd.access) 
-            if  not access_url in self.access[rd.rtype] :
-                msg = "access '%s' is not supported by this backend" % rd.access
-                raise saga.BadParameter._log (self._logger, msg)
 
-        if  not len (self.access[rd.rtype]) :
-            raise saga.BadParameter._log (self._logger, "resource type is not supported by this backend")
+        if  self.backend == 'amazon.ec2' :
+            # for amazon EC2, we only support template defined instances
+            if  not rd.template :
+                raise saga.BadParameter ("no 'template' attribute in resource description")
+            
+            # we also need an OS image
+            if  not rd.image :
+                raise saga.BadParameter ("no 'image' attribute in resource description")
 
-        
-        # this dict is passed on to the job adaptor class -- use it to pass any
-        # state information you need there.
-        adaptor_state = { "resource_access_url"     : self.access[rd.rtype][0], 
-                          "resource_type"           : rd.rtype, 
-                          "resource_manager"        : self.get_api (), 
-                          "resource_manager_url"    : self.url, 
-                          "resource_schema"         : self.url.schema }
+            # and we don't support any other attribute right now
+            if  rd.dynamic      or rd.start        or \
+                rd.end          or rd.duration     or \
+                rd.machine_os   or rd.machine_arch or \
+                rd.size         or rd.memory       or \
+                rd.access       :
+                raise saga.BadParameter ("amazon.ec2 resource descriptions only"
+                                         "support 'template' and 'image' attributes")
 
-        if rd.rtype == COMPUTE :
-            return saga.resource.Compute (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
+            resource      = self.conn.create_node (image=rd.image, size=rd.template)
+            resource_info = { "resource_manager"        : self.get_api (), 
+                              "resource_manager_url"    : self.url       , 
+                              "resource_type"           : rd.rtype       ,
+                              "resource"                : resource       ,
+                              "connection"              : self.conn      ,
+                              "backend"                 : self.backend   }
 
-        if rd.rtype == STORAGE :
-            return saga.resource.Storage (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
+        if  resource_info :
+            if  rd.rtype == COMPUTE :
+                return saga.resource.Compute (_adaptor       = self._adaptor, 
+                                              _adaptor_state = resource_info)
+
+        raise saga.NoSuccess ("Could not acquire requested resource")
 
 
     # ----------------------------------------------------------------
@@ -239,6 +265,7 @@ class LibcloudResourceManager (saga.adaptors.cpi.resource.Manager) :
     @SYNC_CALL
     def list (self, rtype):
 
+        # FIXME
         return self.access[rtype]
    
    
@@ -247,6 +274,7 @@ class LibcloudResourceManager (saga.adaptors.cpi.resource.Manager) :
     @SYNC_CALL
     def release (self, id):
 
+        # FIXME
         return # hahaha
 
    
@@ -255,6 +283,7 @@ class LibcloudResourceManager (saga.adaptors.cpi.resource.Manager) :
     @SYNC_CALL
     def list_templates (self, rtype) :
 
+        # FIXME
         return [] # no templates
 
    
@@ -263,6 +292,7 @@ class LibcloudResourceManager (saga.adaptors.cpi.resource.Manager) :
     @SYNC_CALL
     def get_template (self, name) :
 
+        # FIXME
         raise saga.BadParameter ("unknown template %s" % name)
 
 
@@ -277,11 +307,11 @@ class LibcloudResourceCompute (saga.adaptors.cpi.resource.Compute) :
         self._cpi_base = super  (LibcloudResourceCompute, self)
         self._cpi_base.__init__ (api, adaptor)
 
-        self.state       = ACTIVE
+        self.state       = NEW
+        self.rid         = None
         self.rtype       = None
         self.manager     = None
         self.manager_url = None
-        self.access_url  = None
 
 
     # ----------------------------------------------------------------
@@ -291,14 +321,12 @@ class LibcloudResourceCompute (saga.adaptors.cpi.resource.Compute) :
 
         # eval id if given
         if  id :
-            self.manager_url, self.access_url = self._adaptor.parse_id (id)
+            # FIXME
+            self.manager_url, self.rid = self._adaptor.parse_id (id)
             self.manager = saga.resource.Manager (self.manager_url)
 
-            if  self.access_url.scheme in self.manager.list (COMPUTE) :
+            if  self.rid in self.manager.list (COMPUTE) :
                 self.rtype = COMPUTE
-
-            elif self.access_url.scheme in self.manager.list (STORAGE) :
-                self.rtype = STORAGE
 
             else :
                 raise saga.BadParameter ("Cannot handle resource type for %s", id)
@@ -306,24 +334,59 @@ class LibcloudResourceCompute (saga.adaptors.cpi.resource.Compute) :
         # no id -- grab info from adaptor_info
         elif adaptor_info :
 
-            if  not 'resource_access_url'  in adaptor_info or \
+            if  not 'backend'              in adaptor_info or \
+                not 'resource'             in adaptor_info or \
                 not 'resource_type'        in adaptor_info or \
+                not 'connection'           in adaptor_info or \
                 not 'resource_manager'     in adaptor_info or \
                 not 'resource_manager_url' in adaptor_info    :
-                raise saga.BadParameter ("Cannot acquiure resource, insufficient information")
+                raise saga.BadParameter ("Cannot acquire resource, insufficient information")
 
-            self.access_url  = adaptor_info['resource_access_url']
+            self.backend     = adaptor_info['backend']
+            self.conn        = adaptor_info['connection']
             self.rtype       = adaptor_info['resource_type']
+            self.resource    = adaptor_info['resource']
             self.manager     = adaptor_info['resource_manager']
             self.manager_url = adaptor_info['resource_manager_url']
+        
+            self.rid    = self.resource['instanceId']
+            self.access = "ssh://%s/" % self.resource ['dns_name']
+            self.id     = "[%s]-[%s]" % (self.manager_url, self.rid)
 
-            self.id = "[%s]-[%s]" % (self.manager_url, self.access_url)
+            if  self.backend != 'amazon.ec2' :
+                raise saga.BadParameter ("not support for %s" % self.backend)
+
+
+            # FIXME: we don't actually need new state, it should be fresh at
+            # this point...
+            self._refresh_state ()
+
+
 
         else :
             raise saga.BadParameter ("Cannot acquire resource, no contact information")
 
 
         return self.get_api ()
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _refresh_state (self) :
+
+        node = self.conn.list_nodes (ids=[self.rid])
+
+        self.detail = self.resource ['status']
+
+        # FIXME: move state translation to adaptor
+        # pending | running | shutting-down | terminated | stopping | stopped
+        if   self.detail == 'pending'       : self.state = PENDING
+        elif self.detail == 'running'       : self.state = ACTIVE
+        elif self.detail == 'shutting-down' : self.state = EXPIRED
+        elif self.detail == 'stopping'      : self.state = CANCELED
+        elif self.detail == 'stopped'       : self.state = DONE
+        elif self.detail == 'terminated'    : self.state = DONE 
+        else                                : self.state = UNKNOWN
 
 
     # --------------------------------------------------------------------------
@@ -338,10 +401,10 @@ class LibcloudResourceCompute (saga.adaptors.cpi.resource.Compute) :
     def get_state        (self) : return self.state
 
     @SYNC_CALL
-    def get_state_detail (self) : return None
+    def get_state_detail (self) : return self.detail
 
     @SYNC_CALL
-    def get_access       (self) : return self.access_url
+    def get_access       (self) : return self.access
 
     @SYNC_CALL
     def get_manager      (self) : return self.manager
@@ -361,7 +424,8 @@ class LibcloudResourceCompute (saga.adaptors.cpi.resource.Compute) :
     @SYNC_CALL
     def release (self):
 
-        return # hahahah
+        return self.manager.release (self.id)
+
 
     # ----------------------------------------------------------------
     #
@@ -369,18 +433,24 @@ class LibcloudResourceCompute (saga.adaptors.cpi.resource.Compute) :
     def wait (self, state, timeout) : 
         # trick is, we *never* change state...
 
-        if  state == self.state :
-            return
+        import time
+        start = time.time ()
 
-        if  timeout >= 0 :
-            time.sleep (timeout)
-            return
+        while not ( self.state | state ) :
 
-        if  timeout < 0 :
-            while True :
-                time.sleep (10)
-        
-        # we never get here...
+            if timeout > 0 :
+                now = time.time ()
+
+                if  (now - start > timeout) :
+                    break
+
+            elif timeout == 0 :
+                break
+
+            self._refresh_state ()
+
+        return
+    
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
