@@ -302,7 +302,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((descr.Description, st.Task))
+    @sus.returns ((sus.nothing, descr.Description, st.Task))
     def get_description  (self, ttype=None) : return self._adaptor.get_description   (ttype=ttype)
 # 
 # ------------------------------------------------------------------------------

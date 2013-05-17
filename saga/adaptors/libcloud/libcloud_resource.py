@@ -130,7 +130,7 @@ class Adaptor (saga.adaptors.base.Base):
         if  not match or len (match.groups()) != 2 :
             raise saga.BadParameter ("Cannot parse resource id '%s'" % id)
 
-        return (saga.Url (match.group(1)), saga.Url (match.group (2)))
+        return (saga.Url (match.group(1)), str (match.group (2)))
 
 
 
@@ -229,6 +229,135 @@ class LibcloudResourceManager (saga.adaptors.cpi.resource.Manager) :
 
                 self.images_dict   [image.id] = image
                 self.images.append (image.id)
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def acquire (self, rd) :
+
+        if  not self.conn :
+            raise saga.IncorrectState ("not connected to backend")
+
+        if  rd.rtype != COMPUTE :
+            raise saga.BadParameter ("can only acquire compute resources.")
+
+       
+        resource_info = None
+
+        # check that only supported attributes are provided
+        for attribute in rd.list_attributes():
+            if attribute not in _ADAPTOR_CAPABILITIES["rdes_attributes"]:
+                msg = "'resource.Description.%s' is not supported by this adaptor" % attribute
+                raise saga.BadParameter._log (self._logger, msg)
+
+
+        if  self.backend == 'amazon.ec2' :
+            # for amazon EC2, we only support template defined instances
+            if  not rd.template :
+                raise saga.BadParameter ("no 'template' attribute in resource description")
+            
+            # we also need an OS image
+            if  not rd.image :
+                raise saga.BadParameter ("no 'image' attribute in resource description")
+
+            # and we don't support any other attribute right now
+            if  rd.dynamic      or rd.start        or \
+                rd.end          or rd.duration     or \
+                rd.machine_os   or rd.machine_arch or \
+                rd.access       or rd.memory       :
+                raise saga.BadParameter ("amazon.ec2 resource descriptions only "
+                                         "supports 'template' and 'image' attributes")
+
+            if True :
+          # try :
+                
+
+                # make sure template and image are valid, and get handles
+                if  not rd.template in self.templates_dict : 
+                    self._refresh_templates (rd.template)
+
+                if  not rd.image in self.images_dict : 
+                    self._refresh_images (rd.image)
+
+
+                # FIXME: interpret / verify size
+
+                # it should be safe to create the VM instance now
+                node = self.conn.create_node (name  = 'saga.resource.Compute',
+                                              size  = self.templates_dict[rd.template], 
+                                              image = self.images_dict[rd.image])
+
+                resource_info = { 'backend'                 : self.backend   ,
+                                  'resource'                : node           ,
+                                  'resource_type'           : rd.rtype       ,
+                                  'resource_description'    : rd             ,
+                                  'resource_manager'        : self.get_api (), 
+                                  'resource_manager_url'    : self.url       , 
+                                  'resource_schema'         : self.url.schema, 
+                                  'connection'              : self.conn      }
+
+          # except Exception as e :
+          #     # FIXME: translate errors more sensibly
+          #     raise saga.NoSuccess ("Failed with %s" % e)
+
+        if  resource_info :
+            if  rd.rtype == COMPUTE :
+                return saga.resource.Compute (_adaptor       = self._adaptor, 
+                                              _adaptor_state = resource_info)
+
+        raise saga.NoSuccess ("Could not acquire requested resource")
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def acquire_by_id (self, rid) :
+
+        if  not self.conn :
+            raise saga.IncorrectState ("not connected to backend")
+
+        resource_info = None
+
+        if  self.backend == 'amazon.ec2' :
+
+            if True :
+          # try :
+                
+                manager_url, rid_s = self._adaptor.parse_id (str(rid))
+                print manager_url
+                print rid
+
+                # FIXME: interpret / verify size
+                nodes  = self.conn.list_nodes (ex_node_ids=[rid_s])
+
+                print nodes
+
+                if  len (nodes) < 1 :
+                    raise saga.BadParameter ("Cannot find resource '%s'" % rid_s)
+                if  len (nodes) > 1 :
+                    raise saga.BadParameter ("Cannot identify resource '%s'" % rid_s)
+
+                node = nodes[0]
+
+                resource_info = { 'backend'                 : self.backend   ,
+                                  'resource'                : node           ,
+                                  'resource_type'           : COMPUTE        ,
+                                  'resource_description'    : None           ,
+                                  'resource_manager'        : self.get_api (), 
+                                  'resource_manager_url'    : self.url       , 
+                                  'resource_schema'         : self.url.schema, 
+                                  'connection'              : self.conn      }
+
+          # except Exception as e :
+          #     # FIXME: translate errors more sensibly
+          #     raise saga.NoSuccess ("Failed with %s" % e)
+
+        if  resource_info :
+            return saga.resource.Compute (_adaptor       = self._adaptor, 
+                                          _adaptor_state = resource_info)
+
+        raise saga.NoSuccess ("Could not acquire requested resource")
 
 
     # ----------------------------------------------------------------
