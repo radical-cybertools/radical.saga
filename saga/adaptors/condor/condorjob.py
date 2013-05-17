@@ -262,9 +262,9 @@ The (HT)Condor(-G) adaptor allows to run and manage jobs on a
 `Condor <http://research.cs.wisc.edu/htcondor/>`_ gateway.
 """,
     "example": "examples/jobs/condorjob.py",
-    "schemas": {"condor":        "connect to a local gateway",
-                "condor+ssh":    "conenct to a remote gateway via SSH",
-                "condor+gsissh": "connect to a remote gateway via GSISSH"}
+    "schemas": {"condor :ref:`security_contexts`":        "connect to a local gateway",
+                "condor+ssh :ref:`security_contexts`":    "conenct to a remote gateway via SSH",
+                "condor+gsissh ": "connect to a remote gateway via GSISSH"}
 }
 
 # --------------------------------------------------------------------

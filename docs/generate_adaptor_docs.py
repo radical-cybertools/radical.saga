@@ -222,14 +222,14 @@ for a in saga.engine.registry.adaptor_registry :
                     capable += "  - %s\n" % key
             elif type(capab) == dict :
             
-                capable += "%s %s\n"       % ('='*25, '='*60)
-                capable += "%25s %s\n"     % ('Attribute', 'Description')
-                capable += "%s %s\n"       % ('='*25, '='*60)
+                capable += "%s %s\n"       % ('='*60, '='*60)
+                capable += "%60s %s\n"     % ('Attribute', 'Description')
+                capable += "%s %s\n"       % ('='*60, '='*60)
                 for key in capab :
                     val = capab[key]
                   # capable += "  - *%s*: %s\n" % (key,val)
-                    capable += "%25s %s\n" % (key, val)
-                capable += "%s %s\n"       % ('='*25, '='*60)
+                    capable += "%60s %s\n" % (':ref:`security_contexts` : ' + key, val)
+                capable += "%s %s\n"       % ('='*60, '='*60)
 
             capable += "\n"
 
