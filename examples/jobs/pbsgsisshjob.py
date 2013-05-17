@@ -19,7 +19,11 @@ def main():
 
     try:
         # Your ssh identity on the remote machine.
-        ctx = saga.Context("ssh")
+        ctx = saga.Context("MyProxy")
+
+        ctx.server    = "myproxy.teragrid.org"
+        ctx.user_id   = "weidner"
+        ctx.user_pass = "XXXXXXX"
 
         # Change e.g., if you have a differnent username on the remote machine
         #ctx.user_id = "your_ssh_username"

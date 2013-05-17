@@ -1,8 +1,8 @@
 import sys
 import saga
 
-USER_ID     = "tg803521"
-REMOTE_HOST = "login1.stampede.tacc.utexas.edu"
+USER_ID     = "oweidner"
+REMOTE_HOST = "gw68.quarry.iu.teragrid.org"
 
 def main () :
     try:
@@ -18,7 +18,7 @@ def main () :
             # Create a job service object that represent a remote pbs cluster.
             # The keyword 'pbs' in the url scheme triggers the PBS adaptors
             # and '+ssh' enables PBS remote access via SSH.
-            js = saga.job.Service("slurm+ssh://%s" % REMOTE_HOST, session=session) 
+            js = saga.job.Service("ssh://%s" % REMOTE_HOST, session=session) 
 
             # describe our job
             jd = saga.job.Description()
@@ -32,7 +32,7 @@ def main () :
             jd.project          = 'TG-MCB090174'
             jd.wall_time_limit  = '10'
             jd.total_cpu_count  = 1
-            jd.number_of_processes = 1
+            #jd.number_of_processes = 1
             #jd.arguments       = ['$MYOUTPUT']
             jd.output           = "/tmp/saga_job.%s.stdout" % USER_ID
             jd.error            = "/tmp/saga_job.%s.stderr" % USER_ID
