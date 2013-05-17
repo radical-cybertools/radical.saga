@@ -27,9 +27,10 @@ The MyProxy context fetches a delegated X.509 proxy via (Globus) myproxy.
 
 The following context attributes are supported:
 
-.. data::  saga.context.TYPE
+.. data::  Contex()
 
-    The type for this context has to be set to MyProxy.
+    The type for this context has to be set to "MyProxy" in the constructor, 
+    i.e., ``saga.Context("MyProxy")``.
 
 .. data::  saga.context.SERVER
 
@@ -53,9 +54,8 @@ The following context attributes are supported:
 
 Example::
 
-    c = saga.Context
+    c = saga.Context("MyProxy")
 
-    c.type      = "MyProxy"
     c.server    = "myproxy.teragrid.org"
     c.user_id   = "johndoe"
     c.user_pass = "XXXXXXX"

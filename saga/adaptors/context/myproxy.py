@@ -149,8 +149,6 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
         expected_result  = "A credential has been received for user %s in %s.\n" \
                          %  (api.user_id, proxy_location)
 
-        print cmd
-
         process          = subprocess.Popen (cmd, shell=True,
                                              stdout=subprocess.PIPE,
                                              stderr=subprocess.PIPE)
