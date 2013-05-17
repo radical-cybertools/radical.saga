@@ -127,8 +127,12 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
                 port = "7512"
             if server    : cmd += " --pshost %s"          %  server
             if port      : cmd += " --psport %s"          %  port
-        if api.user_id   : cmd += " --username %s"        %  api.user_id
-        if api.life_time : cmd += " --proxy_lifetime %s"  %  api.life_time
+
+        if  api.user_id : 
+            cmd += " --username %s"        %  api.user_id
+        
+        if  api.life_time and api.life_time > 0 : 
+            cmd += " --proxy_lifetime %s"  %  api.life_time
 
         # store the proxy in a private location
         proxy_store    = "%s/.saga/proxies/"   %  os.environ['HOME']
@@ -144,6 +148,8 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
 
         expected_result  = "A credential has been received for user %s in %s.\n" \
                          %  (api.user_id, proxy_location)
+
+        print cmd
 
         process          = subprocess.Popen (cmd, shell=True,
                                              stdout=subprocess.PIPE,
