@@ -63,13 +63,13 @@
           <div class="body">
             
   <div class="section" id="security-contexts">
-<h1>4. Security Contexts<a class="headerlink" href="#security-contexts" title="Permalink to this headline">¶</a></h1>
+<span id="id1"></span><h1>4. Security Contexts<a class="headerlink" href="#security-contexts" title="Permalink to this headline">¶</a></h1>
 <div class="admonition-todo admonition" id="index-0">
 <p class="first admonition-title">Todo</p>
 <p class="last">Intro to SAGA Contexts handling.</p>
 </div>
 <div class="section" id="module-saga.context">
-<span id="context-saga-context"></span><h2>4.1. Context &#8211; <a class="reference internal" href="#module-saga.context" title="saga.context"><tt class="xref py py-mod docutils literal"><span class="pre">saga.context</span></tt></a><a class="headerlink" href="#module-saga.context" title="Permalink to this headline">¶</a></h2>
+<span id="context-class-saga-context"></span><h2>4.1. Context Class &#8211; <a class="reference internal" href="#module-saga.context" title="saga.context"><tt class="xref py py-mod docutils literal"><span class="pre">saga.context</span></tt></a><a class="headerlink" href="#module-saga.context" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="saga.context.Context">
 <em class="property">class </em><tt class="descclassname">saga.context.</tt><tt class="descname">Context</tt><big>(</big><em>type</em>, <em>_adaptor=None</em>, <em>_adaptor_state={}</em><big>)</big><a class="reference internal" href="../_modules/saga/context.html#Context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.context.Context" title="Permalink to this definition">¶</a></dt>
@@ -87,18 +87,17 @@ be necessary to explicitly point to them - then use a L{Session} with
 context instances to do so.</p>
 <p>The usage example for contexts is below:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># define an ssh context</span>
-<span class="n">c</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
-<span class="n">c</span><span class="o">.</span><span class="n">context_type</span> <span class="o">=</span> <span class="s">&#39;ssh&#39;</span>
-<span class="n">c</span><span class="o">.</span><span class="n">user_cert</span> <span class="o">=</span> <span class="s">&#39;$HOME/.ssh/special_id_rsa&#39;</span>
-<span class="n">c</span><span class="o">.</span><span class="n">user_key</span>  <span class="o">=</span> <span class="s">&#39;$HOME/.ssh/special_id_rsa.pub&#39;</span>
+<span class="n">ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&quot;SSH&quot;</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">user_cert</span> <span class="o">=</span> <span class="s">&#39;$HOME/.ssh/special_id_rsa&#39;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">user_key</span>  <span class="o">=</span> <span class="s">&#39;$HOME/.ssh/special_id_rsa.pub&#39;</span>
 
 <span class="c"># add the context to a session</span>
-<span class="n">s</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
-<span class="n">s</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+<span class="n">session</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
 
 <span class="c"># create a job service in this session -- that job service can now</span>
 <span class="c"># *only* use that ssh context. </span>
-<span class="n">j</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&#39;ssh://remote.host.net/&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+<span class="n">j</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&#39;ssh://remote.host.net/&#39;</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The L{Session} argument to the L{job.Service} constructor is fully optional
@@ -113,6 +112,186 @@ analyzing your application.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="userpass-context">
+<h2>4.2. UserPass Context<a class="headerlink" href="#userpass-context" title="Permalink to this headline">¶</a></h2>
+<p>This context stores a user id and password, to be used for backend connections.
+This context can be used for SSH connections if it is preferred over
+public-/private-key authentication.</p>
+<p>The following context attributes are supported:</p>
+<dl class="data">
+<dt id="saga.context.Contex">
+<tt class="descclassname">saga.context.</tt><tt class="descname">Contex</tt><big>(</big><em>&quot;UserPass&quot;</em><big>)</big><a class="headerlink" href="#saga.context.Contex" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type for this context has to be set to &#8220;UserPass&#8221; in the constructor,
+i.e., <tt class="docutils literal"><span class="pre">saga.Context(&quot;ssh&quot;)</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.context.saga.context.USER_ID">
+<tt class="descclassname">saga.context.</tt><tt class="descname">USER_ID</tt><a class="headerlink" href="#saga.context.saga.context.USER_ID" title="Permalink to this definition">¶</a></dt>
+<dd><p>The username on the target resource.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.context.saga.context.USER_PASS">
+<tt class="descclassname">saga.context.</tt><tt class="descname">USER_PASS</tt><a class="headerlink" href="#saga.context.saga.context.USER_PASS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The pass-phrase to use.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">NEVER put plain-text passwords into your source file. It is a huge security risk! Reading passwords from the command line, and environment variable or a configuration file instead would be a much better option.</p>
+</div>
+</dd></dl>
+
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&quot;UserPass&quot;</span><span class="p">)</span>
+
+<span class="n">ctx</span><span class="o">.</span><span class="n">user_id</span>   <span class="o">=</span> <span class="s">&quot;johndoe&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">user_pass</span> <span class="o">=</span> <span class="s">&quot;XXXXXXX&quot;</span>  <span class="c"># BAD BAD BAD - don&#39;t do this in a real app.</span>
+
+<span class="n">session</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+<span class="n">session</span><span class="o">.</span><span class="n">add_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+
+<span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;ssh://machine_y.futuregrid.org&quot;</span><span class="p">,</span>
+                      <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="ssh-context">
+<h2>4.3. SSH Context<a class="headerlink" href="#ssh-context" title="Permalink to this headline">¶</a></h2>
+<p>This SSH :context points to a ssh public/private key-pair and user id to
+be used for any ssh-based backend connections, e.g., <tt class="docutils literal"><span class="pre">ssh://</span></tt>, <tt class="docutils literal"><span class="pre">pbs+ssh://</span></tt> and so on.</p>
+<p>The following context attributes are supported:</p>
+<dl class="data">
+<dt>
+<tt class="descclassname">saga.context.</tt><tt class="descname">Contex</tt><big>(</big><em>&quot;SSH&quot;</em><big>)</big></dt>
+<dd><p>The type for this context has to be set to &#8220;SSH&#8221; in the constructor,
+i.e., <tt class="docutils literal"><span class="pre">saga.Context(&quot;SSH&quot;)</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">saga.context.</tt><tt class="descname">USER_ID</tt></dt>
+<dd><p>The username on the target resource.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.context.saga.context.USER_KEY">
+<tt class="descclassname">saga.context.</tt><tt class="descname">USER_KEY</tt><a class="headerlink" href="#saga.context.saga.context.USER_KEY" title="Permalink to this definition">¶</a></dt>
+<dd><p>The public ssh key file to use for the connection. This attribute is useful
+if an SSH key-pair other than the default one (in $HOME/.ssh/) is required to establish a connection.</p>
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">saga.context.</tt><tt class="descname">USER_PASS</tt></dt>
+<dd><p>The pass-phrase to use to decrypt a password-protected key.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">NEVER put plain-text passwords into your source file. It is a huge security risk! Reading passwords from the command line, and environment variable or a configuration file instead would be a much better option.</p>
+</div>
+</dd></dl>
+
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&quot;SSH&quot;</span><span class="p">)</span>
+
+<span class="n">ctx</span><span class="o">.</span><span class="n">user_id</span>  <span class="o">=</span> <span class="s">&quot;johndoe&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">user_key</span> <span class="o">=</span> <span class="s">&quot;/home/johndoe/.ssh/key_for_machine_x&quot;</span>
+
+<span class="n">session</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+<span class="n">session</span><span class="o">.</span><span class="n">add_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+
+<span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;ssh://machine_x.futuregrid.org&quot;</span><span class="p">,</span>
+                      <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="x-509-context">
+<h2>4.4. X.509 Context<a class="headerlink" href="#x-509-context" title="Permalink to this headline">¶</a></h2>
+<p>The X.509 context points to an existing, local X509 proxy.</p>
+<p>The following context attributes are supported:</p>
+<dl class="data">
+<dt>
+<tt class="descclassname">saga.context.</tt><tt class="descname">Contex</tt><big>(</big><em>&quot;X509&quot;</em><big>)</big></dt>
+<dd><p>The type for this context has to be set to &#8220;X509&#8221; in the constructor,
+i.e., <tt class="docutils literal"><span class="pre">saga.Context(&quot;X509&quot;)</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.context.saga.context.USER_PROXY">
+<tt class="descclassname">saga.context.</tt><tt class="descname">USER_PROXY</tt><a class="headerlink" href="#saga.context.saga.context.USER_PROXY" title="Permalink to this definition">¶</a></dt>
+<dd><p>The X509 user proxy file to use for the connection. This attribute is useful
+if a proxy file other than the default one (in /tmp/x509_u&lt;uid&gt;) is required to establish a connection.</p>
+</dd></dl>
+
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&quot;X509&quot;</span><span class="p">)</span>
+
+<span class="n">ctx</span><span class="o">.</span><span class="n">user_proxy</span> <span class="o">=</span> <span class="s">&quot;/tmp/x509_u123_for_machine_y&quot;</span>
+
+<span class="n">session</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+<span class="n">session</span><span class="o">.</span><span class="n">add_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+
+<span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;gsissh://machine_y.futuregrid.org&quot;</span><span class="p">,</span>
+                      <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="myproxy-context">
+<h2>4.5. MyProxy Context<a class="headerlink" href="#myproxy-context" title="Permalink to this headline">¶</a></h2>
+<p>The MyProxy context fetches a delegated X.509 proxy from a (Globus) myproxy server.</p>
+<p>The following context attributes are supported:</p>
+<dl class="data">
+<dt>
+<tt class="descclassname">saga.context.</tt><tt class="descname">Contex</tt><big>(</big><em>&quot;MyProxy&quot;</em><big>)</big></dt>
+<dd><p>The type for this context has to be set to &#8220;MyProxy&#8221; in the constructor,
+i.e., <tt class="docutils literal"><span class="pre">saga.Context(&quot;MyProxy&quot;)</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.context.saga.context.SERVER">
+<tt class="descclassname">saga.context.</tt><tt class="descname">SERVER</tt><a class="headerlink" href="#saga.context.saga.context.SERVER" title="Permalink to this definition">¶</a></dt>
+<dd><p>The hostname of the myproxy server.
+This is equivalent to <tt class="docutils literal"><span class="pre">myproxy-logon</span> <span class="pre">--pshost</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">saga.context.</tt><tt class="descname">USER_ID</tt></dt>
+<dd><p>The username for the delegated proxy.
+This is equivalent to <tt class="docutils literal"><span class="pre">myproxy-logon</span> <span class="pre">--username</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saga.context.saga.context.LIFE_TIME">
+<tt class="descclassname">saga.context.</tt><tt class="descname">LIFE_TIME</tt><a class="headerlink" href="#saga.context.saga.context.LIFE_TIME" title="Permalink to this definition">¶</a></dt>
+<dd><p>The lifetime of the delegated proxy.
+This is equivalent to <tt class="docutils literal"><span class="pre">myproxy-logon</span> <span class="pre">--proxy_lifetime</span></tt> (default is 12h).</p>
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">saga.context.</tt><tt class="descname">USER_PASS</tt></dt>
+<dd><p>The password for the delegated proxy.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">NEVER put plain-text passwords into your source file. It is a huge security risk! Reading passwords from the command line, and environment variable or a configuration file instead would be a much better option.</p>
+</div>
+</dd></dl>
+
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">c</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&quot;MyProxy&quot;</span><span class="p">)</span>
+
+<span class="n">c</span><span class="o">.</span><span class="n">server</span>    <span class="o">=</span> <span class="s">&quot;myproxy.teragrid.org&quot;</span>
+<span class="n">c</span><span class="o">.</span><span class="n">user_id</span>   <span class="o">=</span> <span class="s">&quot;johndoe&quot;</span>
+<span class="n">c</span><span class="o">.</span><span class="n">user_pass</span> <span class="o">=</span> <span class="s">&quot;XXXXXXX&quot;</span>  <span class="c"># BAD BAD BAD - don&#39;t do this in a real app.</span>
+
+<span class="n">session</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+<span class="n">session</span><span class="o">.</span><span class="n">add_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+
+<span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;pbs+gsissh://gsissh.kraken.nics.xsede.org&quot;</span><span class="p">,</span>
+                       <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
 </div>
 
 
@@ -124,7 +303,11 @@ analyzing your application.</p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">4. Security Contexts</a><ul>
-<li><a class="reference internal" href="#module-saga.context">4.1. Context &#8211; <tt class="docutils literal"><span class="pre">saga.context</span></tt></a></li>
+<li><a class="reference internal" href="#module-saga.context">4.1. Context Class &#8211; <tt class="docutils literal"><span class="pre">saga.context</span></tt></a></li>
+<li><a class="reference internal" href="#userpass-context">4.2. UserPass Context</a></li>
+<li><a class="reference internal" href="#ssh-context">4.3. SSH Context</a></li>
+<li><a class="reference internal" href="#x-509-context">4.4. X.509 Context</a></li>
+<li><a class="reference internal" href="#myproxy-context">4.5. MyProxy Context</a></li>
 </ul>
 </li>
 </ul>

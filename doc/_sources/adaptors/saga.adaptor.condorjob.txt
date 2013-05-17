@@ -19,9 +19,9 @@ This adaptor is triggered by the following URL schemes:
 ======================== ============================================================
 schema                   description                                                 
 ======================== ============================================================
-**condor://**            connect to a local gateway                                  
-**condor+ssh://**        conenct to a remote gateway via SSH                         
-**condor+gsissh://**     connect to a remote gateway via GSISSH                      
+**condor+gsissh ://**    connect to a remote gateway via GSISSH                      
+**condor :ref:`security_contexts`://** connect to a local gateway                                  
+**condor+ssh :ref:`security_contexts`://** conenct to a remote gateway via SSH                         
 ======================== ============================================================
 
 
@@ -69,13 +69,13 @@ Supported Job Attributes
 Supported Context Types
 ***********************
 
-========================= ============================================================
-                Attribute Description
-========================= ============================================================
-                     x509 GSISSH X509 proxy context
-                 userpass username/password pair (ssh)
-                      ssh SSH public/private keypair
-========================= ============================================================
+============================================================ ============================================================
+                                                   Attribute Description
+============================================================ ============================================================
+                             :ref:`security_contexts` : x509 GSISSH X509 proxy context
+                         :ref:`security_contexts` : userpass username/password pair (ssh)
+                              :ref:`security_contexts` : ssh SSH public/private keypair
+============================================================ ============================================================
 
 Supported Job Description Attributes
 ************************************
