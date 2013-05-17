@@ -178,7 +178,7 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @sus.takes   ('Manager', 
-                  descr.Description,
+                  (basestring, surl.Url, descr.Description),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((resrc.Resource, st.Task))
     def acquire  (self, spec, ttype=None) :
@@ -194,8 +194,8 @@ class Manager (sb.Base, async.Async) :
         state.
         """
 
-        if  type(spec) == type(surl.Url) or \
-            type(spec) == type(basestring)      :
+        if  isinstance (spec, surl.Url) or \
+            isinstance (spec, basestring)  :
 
             id = surl.Url (spec)
             
