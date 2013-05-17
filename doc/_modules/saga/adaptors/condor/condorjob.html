@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.condor.condorjob &mdash; SAGA 0.9.3 documentation</title>
+    <title>saga.adaptors.condor.condorjob &mdash; SAGA 0.9.4- documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.9.3',
+        VERSION:     '0.9.4-',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.3 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.9.4- documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -147,12 +147,17 @@
     <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n\n</span><span class="s">##### OPTIONS PASSED VIA JOB DESCRIPTION #####</span><span class="se">\n</span><span class="s">##&quot;</span>
     <span class="n">requirements</span> <span class="o">=</span> <span class="s">&quot;requirements = &quot;</span>
 
-    <span class="c"># executable -&gt; executable</span>
-    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">executable = </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>
+    <span class="c"># Condor doesn&#39;t expand environment variables in arguments.</span>
+    <span class="c"># To support this functionality, we wrap by calling /bin/env.</span>
+    <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">executable = /bin/env&quot;</span>
 
     <span class="c"># arguments -&gt; arguments</span>
-    <span class="n">arguments</span> <span class="o">=</span> <span class="s">&quot;arguments = &quot;</span>
+    <span class="n">arguments</span> <span class="o">=</span> <span class="s">&#39;arguments = </span><span class="se">\\</span><span class="s">&quot;/bin/sh -c </span><span class="se">\&#39;</span><span class="s">&#39;</span>
+
+    <span class="c"># The actual executable becomes the first argument.</span>
+    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">arguments</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>
+
     <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
 
         <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>
@@ -164,8 +169,17 @@
 
             <span class="c"># Condor HATES double quotes in the arguments. It&#39;ll return</span>
             <span class="c"># some crap like: &quot;Found illegal unescaped double-quote: ...</span>
-            <span class="c"># That&#39;s why we esacpe them.</span>
-            <span class="n">arguments</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">&quot;&#39;</span><span class="p">))</span>
+            <span class="c"># That&#39;s why we escape them by repeating.</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="p">,</span> <span class="s">&#39;&quot;&quot;&#39;</span><span class="p">)</span>
+    
+            <span class="c"># Escape dollars (for environment variables)</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;$&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">$&#39;</span><span class="p">)</span>
+    
+            <span class="n">arguments</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">arg</span>
+
+    <span class="c"># close the quote opened earlier </span>
+    <span class="n">arguments</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\&#39;\\</span><span class="s">&quot;&#39;</span>
+
     <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">arguments</span>
 
     <span class="c"># file_transfer -&gt; transfer_input_files</span>
@@ -377,8 +391,8 @@
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">):</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">CondorJobService</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+        <span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">CondorJobService</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span> <span class="o">=</span> <span class="n">adaptor</span>
 
@@ -426,16 +440,25 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;condor_version&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
                           <span class="s">&#39;condor_submit&#39;</span><span class="p">:</span>  <span class="bp">None</span><span class="p">,</span>
                           <span class="s">&#39;condor_q&#39;</span><span class="p">:</span>       <span class="bp">None</span><span class="p">,</span>
+                          <span class="s">&#39;condor_history&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
                           <span class="s">&#39;condor_rm&#39;</span><span class="p">:</span>      <span class="bp">None</span><span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span><span class="p">(</span><span class="n">pty_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">set_initialize_hook</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">set_finalize_hook</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">)</span>
+      <span class="c"># self.shell.set_initialize_hook(self.initialize)</span>
+      <span class="c"># self.shell.set_finalize_hook(self.finalize)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">close</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="CondorJobService.close"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.close">[docs]</a>        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -483,7 +506,7 @@
             <span class="n">option_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">query_options</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Generated Condor script: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">script</span><span class="p">)</span>
 
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;echo </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s"> | </span><span class="si">%s</span><span class="s"> -&quot;</span> \
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&#39;echo &quot;</span><span class="si">%s</span><span class="s">&quot; | </span><span class="si">%s</span><span class="s"> -&#39;</span> \
             <span class="o">%</span> <span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;condor_submit&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">]))</span>
 
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
@@ -602,11 +625,36 @@
                 <span class="c"># that case, the job is gone now, which can either mean DONE,</span>
                 <span class="c"># or FAILED. the only thing we can do is set it to &#39;DONE&#39;</span>
             <span class="k">if</span> <span class="n">prev_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span><span class="p">]:</span>
-                <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span>
+
+                <span class="c"># run the Condor &#39;condor_history&#39; command to get info about </span>
+                <span class="c"># finished jobs</span>
+                <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> -long </span><span class="si">%s</span><span class="s"> | </span><span class="se">\</span>
+<span class="s">                    egrep &#39;(ExitCode)&#39;&quot;</span> \
+                    <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;condor_history&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="n">pid</span><span class="p">))</span>
+                
+                <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error getting job history via &#39;condor_history&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
+                    <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+
+                <span class="c"># sometimes we get other crap (like biff)</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> 
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;No ExitCode found via &#39;condor_history&#39;&quot;</span>
+                    <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+
+                <span class="n">_</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">)</span>
+                <span class="n">retcode</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                    
+                <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">retcode</span>
+
+                <span class="k">if</span> <span class="n">retcode</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span>
+
                 <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Previously running job has </span><span class="se">\</span>
-<span class="s">disappeared. This probably means that the backend doesn&#39;t store any information </span><span class="se">\</span>
-<span class="s">about finished jobs. Setting state to &#39;DONE&#39;.&quot;</span><span class="p">)</span>
+
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
             <span class="c">#else:</span>
@@ -877,8 +925,8 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">):</span>
 
         <span class="c"># initialize parent class</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">CondorJob</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+        <span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">CondorJob</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
     <span class="nd">@SYNC_CALL</span>
     <span class="k">def</span> <span class="nf">init_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_info</span><span class="p">):</span>
@@ -1046,7 +1094,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>

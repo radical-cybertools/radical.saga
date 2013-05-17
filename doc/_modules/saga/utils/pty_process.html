@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.utils.pty_process &mdash; SAGA 0.9.3 documentation</title>
+    <title>saga.utils.pty_process &mdash; SAGA 0.9.4- documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '0.9.3',
+        VERSION:     '0.9.4-',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.3 documentation" href="../../../index.html" />
+    <link rel="top" title="SAGA 0.9.4- documentation" href="../../../index.html" />
     <link rel="up" title="saga" href="../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -75,7 +75,6 @@
 <span class="kn">import</span> <span class="nn">threading</span>
 
 <span class="kn">import</span> <span class="nn">saga.utils.logger</span>
-<span class="kn">import</span> <span class="nn">saga.utils.timeout_gc</span>
 <span class="kn">import</span> <span class="nn">saga.exceptions</span> <span class="kn">as</span> <span class="nn">se</span>
 
 <span class="c"># --------------------------------------------------------------------</span>
@@ -135,25 +134,6 @@
 <span class="sd">        # something bad happened</span>
 <span class="sd">        print pty.autopsy ()</span>
 
-
-<span class="sd">    The managed child process is under control of a Timeout Garbage Collector</span>
-<span class="sd">    (:class:`saga.utils.timeout_gc.TimeoutGC`), which will terminate the child</span>
-<span class="sd">    after some inactivity period.  The child will be automatically restarted on</span>
-<span class="sd">    the next activity attempts.  To support orderly process bootstrapping, users</span>
-<span class="sd">    of the :class:`PTYProcess` class should register hooks for process</span>
-<span class="sd">    initialization and finalization (:func:`set_initialize_hook` and</span>
-<span class="sd">    :func:`set_finalize_hook`).  The finalization hook may operate on a dead</span>
-<span class="sd">    child process, and should be written in a way that this does not lead to an</span>
-<span class="sd">    error (which would abort the restart attempt).</span>
-
-<span class="sd">    If the child process dies on its own, or is terminated by a third party, the</span>
-<span class="sd">    class will also attempt to restart the child.  In order to not interfere</span>
-<span class="sd">    with the process state at unexpected points, this will only happen during</span>
-<span class="sd">    explicit :func:`alive` checks, if the `recover` parameter is set to `True`</span>
-<span class="sd">    (`False` by default).  This restart mechanism will be used up to</span>
-<span class="sd">    `recover_max` times in a row, any successful activity will reset the recover</span>
-<span class="sd">    counter though.  The recover process will invoke both the finalization and</span>
-<span class="sd">    initialization hooks.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -194,18 +174,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>        <span class="o">=</span> <span class="bp">None</span>  <span class="c"># child died with code (may be revived)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span>      <span class="o">=</span> <span class="bp">None</span>  <span class="c"># child kill by signal (may be revived)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span>  <span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span>    <span class="o">=</span> <span class="bp">None</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">recover_max</span>      <span class="o">=</span> <span class="mi">3</span>  <span class="c"># TODO: make configure option.  This does not</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">recover_attempts</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># apply for recovers triggered by gc_timeout!</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">getLogger</span> <span class="p">(</span><span class="s">&#39;PTYProcess&#39;</span><span class="p">)</span>
-
-        <span class="c"># register this process instance for timeout garbage collection</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gc</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">timeout_gc</span><span class="o">.</span><span class="n">TimeoutGC</span> <span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">register</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">)</span>
 
 
         <span class="k">try</span> <span class="p">:</span>
@@ -222,11 +195,7 @@
 <span class="sd">        them (see cat /proc/sys/kernel/pty/max)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
     
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span> <span class="p">(</span><span class="s">&quot;pty __del__&quot;</span><span class="p">)</span>
-      <span class="c"># self.logger.trace ()</span>
-    
         <span class="k">try</span> <span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">unregister</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">()</span>
         <span class="k">except</span> <span class="p">:</span>
             <span class="k">pass</span>
@@ -234,17 +203,7 @@
 
     <span class="c"># ----------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">set_initialize_hook</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initialize_hook</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="PTYProcess.set_initialize_hook"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.set_initialize_hook">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="o">=</span> <span class="n">initialize_hook</span>
-
-    <span class="c"># ----------------------------------------------------------------------</span>
-    <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">set_finalize_hook</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">finalize_hook</span><span class="p">)</span> <span class="p">:</span></div>
-<div class="viewcode-block" id="PTYProcess.set_finalize_hook"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.set_finalize_hook">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span> <span class="o">=</span> <span class="n">finalize_hook</span>
-
-    <span class="c"># ----------------------------------------------------------------------</span>
-    <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">initialize</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+    <span class="k">def</span> <span class="nf">initialize</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="PTYProcess.initialize"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.initialize">[docs]</a>
         <span class="c"># NOTE: do we need to lock?</span>
 
@@ -283,21 +242,12 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">parent_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">child_fd</span>
 
 
-        <span class="c"># check if some additional initialization routines as registered</span>
-        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="p">()</span>
-
-
     <span class="c"># --------------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">finalize</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wstat</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span></div>
 <div class="viewcode-block" id="PTYProcess.finalize"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_process.PTYProcess.finalize">[docs]</a>        <span class="sd">&quot;&quot;&quot; kill the child, close all I/O channels &quot;&quot;&quot;</span>
 
         <span class="c"># NOTE: do we need to lock?</span>
-
-        <span class="c"># as long as the child may live, run any higher level shutdown routine.</span>
-        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span> <span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span> <span class="p">()</span>
 
         <span class="c"># now we can safely kill the process -- unless some wait did that before</span>
         <span class="k">if</span>  <span class="n">wstat</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
@@ -366,55 +316,53 @@
 <span class="sd">        killed</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">:</span>
+            <span class="c"># this was quick ;-)</span>
+            <span class="k">return</span>
 
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">:</span>
-                <span class="c"># this was quick ;-)</span>
-                <span class="k">return</span>
+        <span class="c"># yes, for ever and ever...</span>
+        <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
 
-            <span class="c"># yes, for ever and ever...</span>
-            <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
+            <span class="c"># hey, kiddo, whats up?</span>
+            <span class="k">try</span> <span class="p">:</span>
+                <span class="n">wpid</span><span class="p">,</span> <span class="n">wstat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">waitpid</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
 
-                <span class="c"># hey, kiddo, whats up?</span>
-                <span class="k">try</span> <span class="p">:</span>
-                    <span class="n">wpid</span><span class="p">,</span> <span class="n">wstat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">waitpid</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span> <span class="o">==</span> <span class="n">errno</span><span class="o">.</span><span class="n">ECHILD</span> <span class="p">:</span>
 
-                    <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span> <span class="o">==</span> <span class="n">errno</span><span class="o">.</span><span class="n">ECHILD</span> <span class="p">:</span>
+                    <span class="c"># child disappeared</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="bp">None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="bp">None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">()</span>
+                    <span class="k">return</span>
 
-                        <span class="c"># child disappeared</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="bp">None</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="bp">None</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">()</span>
-                        <span class="k">return</span>
-
-                    <span class="c"># no idea what happened -- it is likely bad</span>
-                    <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;waitpid failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+                <span class="c"># no idea what happened -- it is likely bad</span>
+                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;waitpid failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
 
 
-                <span class="c"># did we get a note about child termination?</span>
-                <span class="k">if</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">wpid</span> <span class="p">:</span>
+            <span class="c"># did we get a note about child termination?</span>
+            <span class="k">if</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">wpid</span> <span class="p">:</span>
 
-                    <span class="c"># nope, all is well - carry on</span>
-                    <span class="k">continue</span>
-
-
-                <span class="c"># Yes, we got a note.  </span>
-                <span class="c"># Well, maybe the child fooled us and is just playing dead?</span>
-                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFSTOPPED</span>   <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="ow">or</span> \
-                   <span class="n">os</span><span class="o">.</span><span class="n">WIFCONTINUED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>    <span class="p">:</span>
-                    <span class="c"># we don&#39;t care if someone stopped/resumed the child -- that is up</span>
-                    <span class="c"># to higher powers.  For our purposes, the child is alive.  Ha!</span>
-                    <span class="k">continue</span>
+                <span class="c"># nope, all is well - carry on</span>
+                <span class="k">continue</span>
 
 
-                <span class="c"># not stopped, poor thing... - soooo, what happened??  But hey,</span>
-                <span class="c"># either way, its dead -- make sure it stays dead, to avoid</span>
-                <span class="c"># zombie apocalypse...</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span> <span class="bp">None</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">wstat</span><span class="o">=</span><span class="n">wstat</span><span class="p">)</span>
+            <span class="c"># Yes, we got a note.  </span>
+            <span class="c"># Well, maybe the child fooled us and is just playing dead?</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFSTOPPED</span>   <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="ow">or</span> \
+               <span class="n">os</span><span class="o">.</span><span class="n">WIFCONTINUED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>    <span class="p">:</span>
+                <span class="c"># we don&#39;t care if someone stopped/resumed the child -- that is up</span>
+                <span class="c"># to higher powers.  For our purposes, the child is alive.  Ha!</span>
+                <span class="k">continue</span>
 
-                <span class="k">return</span>
+
+            <span class="c"># not stopped, poor thing... - soooo, what happened??  But hey,</span>
+            <span class="c"># either way, its dead -- make sure it stays dead, to avoid</span>
+            <span class="c"># zombie apocalypse...</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">wstat</span><span class="o">=</span><span class="n">wstat</span><span class="p">)</span>
+
+            <span class="k">return</span>
 
 
     <span class="c"># --------------------------------------------------------------------</span>
@@ -436,58 +384,56 @@
 <span class="sd">        consumers themselves.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="c"># do we have a child which we can check?</span>
+        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="p">:</span>
 
-            <span class="c"># do we have a child which we can check?</span>
-            <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
+                <span class="c"># hey, kiddo, whats up?</span>
+                <span class="n">wpid</span><span class="p">,</span> <span class="n">wstat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">waitpid</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">WNOHANG</span><span class="p">)</span>
 
-                <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
-                    <span class="c"># hey, kiddo, whats up?</span>
-                    <span class="n">wpid</span><span class="p">,</span> <span class="n">wstat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">waitpid</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">WNOHANG</span><span class="p">)</span>
-
-                    <span class="c"># did we get a note about child termination?</span>
-                    <span class="k">if</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">wpid</span> <span class="p">:</span>
-                        <span class="c"># nope, all is well - carry on</span>
-                        <span class="k">return</span> <span class="bp">True</span>
+                <span class="c"># did we get a note about child termination?</span>
+                <span class="k">if</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">wpid</span> <span class="p">:</span>
+                    <span class="c"># nope, all is well - carry on</span>
+                    <span class="k">return</span> <span class="bp">True</span>
 
 
-                    <span class="c"># Yes, we got a note.  </span>
-                    <span class="c"># Well, maybe the child fooled us and is just playing dead?</span>
-                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFSTOPPED</span>   <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="ow">or</span> \
-                       <span class="n">os</span><span class="o">.</span><span class="n">WIFCONTINUED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>    <span class="p">:</span>
-                        <span class="c"># we don&#39;t care if someone stopped/resumed the child -- that is up</span>
-                        <span class="c"># to higher powers.  For our purposes, the child is alive.  Ha!</span>
-                        <span class="k">continue</span>
+                <span class="c"># Yes, we got a note.  </span>
+                <span class="c"># Well, maybe the child fooled us and is just playing dead?</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFSTOPPED</span>   <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="ow">or</span> \
+                   <span class="n">os</span><span class="o">.</span><span class="n">WIFCONTINUED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>    <span class="p">:</span>
+                    <span class="c"># we don&#39;t care if someone stopped/resumed the child -- that is up</span>
+                    <span class="c"># to higher powers.  For our purposes, the child is alive.  Ha!</span>
+                    <span class="k">continue</span>
 
-                    <span class="k">break</span>
+                <span class="k">break</span>
 
-                <span class="c"># so its dead -- make sure it stays dead, to avoid zombie</span>
-                <span class="c"># apocalypse...</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span> <span class="bp">None</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">wstat</span><span class="o">=</span><span class="n">wstat</span><span class="p">)</span>
+            <span class="c"># so its dead -- make sure it stays dead, to avoid zombie</span>
+            <span class="c"># apocalypse...</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">wstat</span><span class="o">=</span><span class="n">wstat</span><span class="p">)</span>
 
 
-            <span class="c"># check if we can attempt a post-mortem revival though</span>
-            <span class="k">if</span>  <span class="ow">not</span> <span class="n">recover</span> <span class="p">:</span>
-                <span class="c"># nope, we are on holy ground - revival not allowed.</span>
-                <span class="k">return</span> <span class="bp">False</span>
+        <span class="c"># check if we can attempt a post-mortem revival though</span>
+        <span class="k">if</span>  <span class="ow">not</span> <span class="n">recover</span> <span class="p">:</span>
+            <span class="c"># nope, we are on holy ground - revival not allowed.</span>
+            <span class="k">return</span> <span class="bp">False</span>
 
-            <span class="c"># we are allowed to revive!  So can we try one more time...  pleeeease??</span>
-            <span class="c"># (for cats, allow up to 9 attempts; for Buddhists, always allow to</span>
-            <span class="c"># reincarnate, etc.)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">recover_attempts</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recover_max</span> <span class="p">:</span>
-                <span class="c"># nope, its gone for good - just report the sad news</span>
-                <span class="k">return</span> <span class="bp">False</span>
+        <span class="c"># we are allowed to revive!  So can we try one more time...  pleeeease??</span>
+        <span class="c"># (for cats, allow up to 9 attempts; for Buddhists, always allow to</span>
+        <span class="c"># reincarnate, etc.)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">recover_attempts</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recover_max</span> <span class="p">:</span>
+            <span class="c"># nope, its gone for good - just report the sad news</span>
+            <span class="k">return</span> <span class="bp">False</span>
 
-            <span class="c"># MEDIIIIC!!!!</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">recover_attempts</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span> <span class="p">()</span>
+        <span class="c"># MEDIIIIC!!!!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recover_attempts</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span> <span class="p">()</span>
 
-            <span class="c"># well, now we don&#39;t trust the child anymore, of course!  So we check</span>
-            <span class="c"># again.  Yes, this is recursive -- but note that recover_attempts get</span>
-            <span class="c"># incremented on every iteration, and this will eventually lead to</span>
-            <span class="c"># call termination (tm).</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="c"># well, now we don&#39;t trust the child anymore, of course!  So we check</span>
+        <span class="c"># again.  Yes, this is recursive -- but note that recover_attempts get</span>
+        <span class="c"># incremented on every iteration, and this will eventually lead to</span>
+        <span class="c"># call termination (tm).</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
 
 
@@ -498,18 +444,16 @@
 <span class="sd">        return diagnostics information string for dead child processes</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="p">:</span>
+            <span class="c"># Boooh!</span>
+            <span class="k">return</span> <span class="s">&quot;false alarm, process </span><span class="si">%s</span><span class="s"> is alive!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">child</span>
 
-            <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="p">:</span>
-                <span class="c"># Boooh!</span>
-                <span class="k">return</span> <span class="s">&quot;false alarm, process </span><span class="si">%s</span><span class="s"> is alive!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">child</span>
+        <span class="n">ret</span>  <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">+=</span> <span class="s">&quot;  exit code  : </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>
+        <span class="n">ret</span> <span class="o">+=</span> <span class="s">&quot;  exit signal: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span>
+        <span class="n">ret</span> <span class="o">+=</span> <span class="s">&quot;  last output: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:]</span> <span class="c"># FIXME: smarter selection</span>
 
-            <span class="n">ret</span>  <span class="o">=</span> <span class="s">&quot;&quot;</span>
-            <span class="n">ret</span> <span class="o">+=</span> <span class="s">&quot;  exit code  : </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>
-            <span class="n">ret</span> <span class="o">+=</span> <span class="s">&quot;  exit signal: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span>
-            <span class="n">ret</span> <span class="o">+=</span> <span class="s">&quot;  last output: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:]</span> <span class="c"># FIXME: smarter selection</span>
-
-            <span class="k">return</span> <span class="n">ret</span>
+        <span class="k">return</span> <span class="n">ret</span>
 
 
     <span class="c"># --------------------------------------------------------------------</span>
@@ -536,118 +480,117 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">found_eof</span> <span class="o">=</span> <span class="bp">False</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;process I/O failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:])</span>
-                <span class="k">else</span> <span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;process I/O failed&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;process I/O failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:])</span>
+            <span class="k">else</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;process I/O failed&quot;</span><span class="p">)</span>
 
-            <span class="k">try</span><span class="p">:</span>
-                <span class="c"># start the timeout timer right now.  Note that even if timeout is</span>
-                <span class="c"># short, and child.poll is slow, we will nevertheless attempt at least</span>
-                <span class="c"># one read...</span>
-                <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c"># start the timeout timer right now.  Note that even if timeout is</span>
+            <span class="c"># short, and child.poll is slow, we will nevertheless attempt at least</span>
+            <span class="c"># one read...</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
 
-                <span class="c"># read until we have enough data, or hit timeout ceiling...</span>
-                <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
+            <span class="c"># read until we have enough data, or hit timeout ceiling...</span>
+            <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
 
-                    <span class="c"># first, lets see if we still have data in the cache we can return</span>
+                <span class="c"># first, lets see if we still have data in the cache we can return</span>
+                <span class="k">if</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">size</span> <span class="p">:</span>
+                        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                        <span class="k">return</span> <span class="n">ret</span>
+
+                    <span class="c"># we don&#39;t even need all of the cache</span>
+                    <span class="k">elif</span> <span class="n">size</span> <span class="o">&lt;=</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
+                        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
+                        <span class="k">return</span> <span class="n">ret</span>
+
+                <span class="c"># otherwise we need to read some more data, right?</span>
+                <span class="c"># idle wait &#39;til the next data chunk arrives, or &#39;til _POLLDELAY</span>
+                <span class="n">rlist</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_out</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="n">_POLLDELAY</span><span class="p">)</span>
+
+                <span class="c"># got some data? </span>
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">rlist</span><span class="p">:</span>
+                    <span class="c"># read whatever we still need</span>
+
+                    <span class="n">readsize</span> <span class="o">=</span> <span class="n">_CHUNKSIZE</span>
+                    <span class="k">if</span> <span class="n">size</span><span class="p">:</span> 
+                        <span class="n">readsize</span> <span class="o">=</span> <span class="n">size</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
+
+                    <span class="n">buf</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">read</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">_CHUNKSIZE</span><span class="p">)</span>
+
+                    <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s">&#39;darwin&#39;</span> <span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : MacOS EOF&quot;</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">()</span>
+                        <span class="n">found_eof</span> <span class="o">=</span> <span class="bp">True</span>
+                        <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;unexpected EOF (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                         <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:])</span>
+
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">+=</span> <span class="n">buf</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+                    <span class="n">log</span>         <span class="o">=</span> <span class="n">buf</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+                    <span class="n">log</span>         <span class="o">=</span> <span class="n">log</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">n&#39;</span><span class="p">)</span>
+                  <span class="c"># print &quot;buf: --%s--&quot; % buf</span>
+                  <span class="c"># print &quot;log: --%s--&quot; % log</span>
+                    <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_DEBUG_MAX</span> <span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s"> ... </span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                        <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">),</span> <span class="n">log</span><span class="p">[:</span><span class="mi">30</span><span class="p">],</span> <span class="n">log</span><span class="p">[</span><span class="o">-</span><span class="mi">30</span><span class="p">:]))</span>
+                    <span class="k">else</span> <span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                        <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">),</span> <span class="n">log</span><span class="p">))</span>
+
+
+                <span class="c"># lets see if we still got any data in the cache we can return</span>
+                <span class="k">if</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">size</span> <span class="p">:</span>
+                        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                        <span class="k">return</span> <span class="n">ret</span>
+
+                    <span class="c"># we don&#39;t even need all of the cache</span>
+                    <span class="k">elif</span> <span class="n">size</span> <span class="o">&lt;=</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
+                        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
+                        <span class="k">return</span> <span class="n">ret</span>
+
+                <span class="c"># at this point, we do not have sufficient data -- only</span>
+                <span class="c"># return on timeout</span>
+
+                <span class="k">if</span>  <span class="n">timeout</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span> 
+                    <span class="c"># only return if we have data</span>
                     <span class="k">if</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
-
-                        <span class="k">if</span> <span class="ow">not</span> <span class="n">size</span> <span class="p">:</span>
-                            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-                            <span class="k">return</span> <span class="n">ret</span>
-
-                        <span class="c"># we don&#39;t even need all of the cache</span>
-                        <span class="k">elif</span> <span class="n">size</span> <span class="o">&lt;=</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
-                            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
-                            <span class="k">return</span> <span class="n">ret</span>
-
-                    <span class="c"># otherwise we need to read some more data, right?</span>
-                    <span class="c"># idle wait &#39;til the next data chunk arrives, or &#39;til _POLLDELAY</span>
-                    <span class="n">rlist</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_out</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="n">_POLLDELAY</span><span class="p">)</span>
-
-                    <span class="c"># got some data? </span>
-                    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">rlist</span><span class="p">:</span>
-                        <span class="c"># read whatever we still need</span>
-
-                        <span class="n">readsize</span> <span class="o">=</span> <span class="n">_CHUNKSIZE</span>
-                        <span class="k">if</span> <span class="n">size</span><span class="p">:</span> 
-                            <span class="n">readsize</span> <span class="o">=</span> <span class="n">size</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
-
-                        <span class="n">buf</span>  <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">read</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">_CHUNKSIZE</span><span class="p">)</span>
-
-                        <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s">&#39;darwin&#39;</span> <span class="p">:</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : MacOS EOF&quot;</span><span class="p">)</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">()</span>
-                            <span class="n">found_eof</span> <span class="o">=</span> <span class="bp">True</span>
-                            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;unexpected EOF (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                             <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:])</span>
-
-
-                        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">+=</span> <span class="n">buf</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
-                        <span class="n">log</span>         <span class="o">=</span> <span class="n">buf</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
-                        <span class="n">log</span>         <span class="o">=</span> <span class="n">log</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">n&#39;</span><span class="p">)</span>
-                      <span class="c"># print &quot;buf: --%s--&quot; % buf</span>
-                      <span class="c"># print &quot;log: --%s--&quot; % log</span>
-                        <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_DEBUG_MAX</span> <span class="p">:</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s"> ... </span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                            <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">),</span> <span class="n">log</span><span class="p">[:</span><span class="mi">30</span><span class="p">],</span> <span class="n">log</span><span class="p">[</span><span class="o">-</span><span class="mi">30</span><span class="p">:]))</span>
-                        <span class="k">else</span> <span class="p">:</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                            <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">),</span> <span class="n">log</span><span class="p">))</span>
-
-
-                    <span class="c"># lets see if we still got any data in the cache we can return</span>
-                    <span class="k">if</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
-
-                        <span class="k">if</span> <span class="ow">not</span> <span class="n">size</span> <span class="p">:</span>
-                            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-                            <span class="k">return</span> <span class="n">ret</span>
-
-                        <span class="c"># we don&#39;t even need all of the cache</span>
-                        <span class="k">elif</span> <span class="n">size</span> <span class="o">&lt;=</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
-                            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
-                            <span class="k">return</span> <span class="n">ret</span>
-
-                    <span class="c"># at this point, we do not have sufficient data -- only</span>
-                    <span class="c"># return on timeout</span>
-
-                    <span class="k">if</span>  <span class="n">timeout</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span> 
-                        <span class="c"># only return if we have data</span>
-                        <span class="k">if</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
-                            <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-                            <span class="k">return</span> <span class="n">ret</span>
-
-                    <span class="k">elif</span> <span class="n">timeout</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">:</span>
-                        <span class="c"># return of we have data or not</span>
                         <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
                         <span class="k">return</span> <span class="n">ret</span>
 
-                    <span class="k">else</span> <span class="p">:</span> <span class="c"># timeout &gt; 0</span>
-                        <span class="c"># return if timeout is reached</span>
-                        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
-                        <span class="k">if</span> <span class="p">(</span><span class="n">now</span><span class="o">-</span><span class="n">start</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">timeout</span> <span class="p">:</span>
-                            <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-                            <span class="k">return</span> <span class="n">ret</span>
+                <span class="k">elif</span> <span class="n">timeout</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">:</span>
+                    <span class="c"># return of we have data or not</span>
+                    <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                    <span class="k">return</span> <span class="n">ret</span>
+
+                <span class="k">else</span> <span class="p">:</span> <span class="c"># timeout &gt; 0</span>
+                    <span class="c"># return if timeout is reached</span>
+                    <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">now</span><span class="o">-</span><span class="n">start</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">timeout</span> <span class="p">:</span>
+                        <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                        <span class="k">return</span> <span class="n">ret</span>
 
 
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
 
-                <span class="k">if</span> <span class="n">found_eof</span> <span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">e</span>
+            <span class="k">if</span> <span class="n">found_eof</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">e</span>
 
-                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;read from process failed &#39;</span><span class="si">%s</span><span class="s">&#39; : (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                 <span class="o">%</span> <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:]))</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;read from process failed &#39;</span><span class="si">%s</span><span class="s">&#39; : (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                             <span class="o">%</span> <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:]))</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -752,43 +695,41 @@
 <span class="sd">        child&#39;s stdin pipe, until it succeeds to write all data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">active</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="p">:</span>
-                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;cannot write to dead process (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                 <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;cannot write to dead process (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                             <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:])</span>
 
-            <span class="k">try</span> <span class="p">:</span>
+        <span class="k">try</span> <span class="p">:</span>
 
-                <span class="n">log</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">n&#39;</span><span class="p">)</span>
-                <span class="n">log</span> <span class="o">=</span>  <span class="n">log</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
-                <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_DEBUG_MAX</span> <span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s"> ... </span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                    <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">log</span><span class="p">[:</span><span class="mi">30</span><span class="p">],</span> <span class="n">log</span><span class="p">[</span><span class="o">-</span><span class="mi">30</span><span class="p">:]))</span>
-                <span class="k">else</span> <span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                    <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">log</span><span class="p">))</span>
+            <span class="n">log</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">n&#39;</span><span class="p">)</span>
+            <span class="n">log</span> <span class="o">=</span>  <span class="n">log</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+            <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_DEBUG_MAX</span> <span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s"> ... </span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">log</span><span class="p">[:</span><span class="mi">30</span><span class="p">],</span> <span class="n">log</span><span class="p">[</span><span class="o">-</span><span class="mi">30</span><span class="p">:]))</span>
+            <span class="k">else</span> <span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">log</span><span class="p">))</span>
 
-                <span class="c"># attempt to write forever -- until we succeeed</span>
-                <span class="k">while</span> <span class="n">data</span> <span class="p">:</span>
+            <span class="c"># attempt to write forever -- until we succeeed</span>
+            <span class="k">while</span> <span class="n">data</span> <span class="p">:</span>
 
-                    <span class="c"># check if the pty pipe is ready for data</span>
-                    <span class="n">_</span><span class="p">,</span> <span class="n">wlist</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span> <span class="p">([],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_in</span><span class="p">],</span> <span class="p">[],</span> <span class="n">_POLLDELAY</span><span class="p">)</span>
+                <span class="c"># check if the pty pipe is ready for data</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">wlist</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span> <span class="p">([],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_in</span><span class="p">],</span> <span class="p">[],</span> <span class="n">_POLLDELAY</span><span class="p">)</span>
 
-                    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">wlist</span> <span class="p">:</span>
-                        
-                        <span class="c"># write will report the number of written bytes</span>
-                        <span class="n">size</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">wlist</span> <span class="p">:</span>
+                    
+                    <span class="c"># write will report the number of written bytes</span>
+                    <span class="n">size</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 
-                        <span class="c"># otherwise, truncate by written data, and try again</span>
-                        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
+                    <span class="c"># otherwise, truncate by written data, and try again</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
 
-                        <span class="k">if</span> <span class="n">data</span> <span class="p">:</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="n">size</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">data</span> <span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="n">size</span><span class="p">)</span>
 
 
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
-                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;write to process failed (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;write to process failed (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
 
 
 <span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
@@ -825,7 +766,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../saga.html" >saga</a> &raquo;</li> 
       </ul>

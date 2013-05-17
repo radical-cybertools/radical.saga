@@ -1,15 +1,11 @@
 
-###################
-saga.adaptor.pbsjob
-###################
+######################
+saga.adaptor.http_file
+######################
 
 Description
 -----------
-
-The PBS adaptor allows to run and manage jobs on `PBS <http://www.pbsworks.com/>`_
-and `TORQUE <http://www.adaptivecomputing.com/products/open-source/torque>`_
-controlled HPC clusters.
-
+TODO
 
 
 Supported Schemas
@@ -20,9 +16,8 @@ This adaptor is triggered by the following URL schemes:
 ======================== ============================================================
 schema                   description                                                 
 ======================== ============================================================
-**pbs://**               connect to a local cluster                                  
-**pbs+ssh://**           conenct to a remote cluster via SSH                         
-**pbs+gsissh://**        connect to a remote cluster via GSISSH                      
+**http://**              use the http protocol to access a remote file               
+**https://**             use the https protocol to access a remote file              
 ======================== ============================================================
 
 
@@ -30,7 +25,7 @@ schema                   description
 Example
 -------
 
-.. literalinclude:: ../../../examples/jobs/pbsjob.py
+.. literalinclude:: ../../../NO EXAMPLE AVAILABLE
 
 
 Configuration Options
@@ -42,7 +37,7 @@ Configuration options can be used to control the adaptor's runt    ime behavior.
 enabled
 *******
 
-enable / disable saga.adaptor.pbsjob adaptor
+enable / disable saga.adaptor.http_file adaptor
 
   - **type** : <type 'bool'>
   - **default** : True
@@ -56,16 +51,6 @@ Capabilities
 Supported Monitorable Metrics
 *****************************
 
-  - State
-
-Supported Job Attributes
-************************
-
-  - ExitCode
-  - ExecutionHosts
-  - Created
-  - Started
-  - Finished
 
 Supported Context Types
 ***********************
@@ -73,26 +58,8 @@ Supported Context Types
 ========================= ============================================================
                 Attribute Description
 ========================= ============================================================
-                     x509 GSISSH X509 proxy context
-                 userpass username/password pair (ssh)
-                      ssh SSH public/private keypair
+                 userpass username/password pair for ssh
 ========================= ============================================================
-
-Supported Job Description Attributes
-************************************
-
-  - Name
-  - Executable
-  - Arguments
-  - Environment
-  - Input
-  - Output
-  - Error
-  - Queue
-  - Project
-  - WallTimeLimit
-  - WorkingDirectory
-  - TotalCPUCount
 
 
 
@@ -100,22 +67,22 @@ Supported API Classes
 ---------------------
 
 This adaptor supports the following API classes:
-  - :class:`saga.job.Service`
-  - :class:`saga.job.Job`
+  - :class:`saga.namespace.Entry`
+  - :class:`saga.filesystem.File`
 
 Method implementation details are listed below.
 
-saga.job.Service
-****************
+saga.namespace.Entry
+********************
 
-.. autoclass:: saga.adaptors.pbs.pbsjob.PBSJobService
+.. autoclass:: saga.adaptors.http.http_file.HTTPFile
    :members:
 
 
-saga.job.Job
-************
+saga.filesystem.File
+********************
 
-.. autoclass:: saga.adaptors.pbs.pbsjob.PBSJob
+.. autoclass:: saga.adaptors.http.http_file.HTTPFile
    :members:
 
 

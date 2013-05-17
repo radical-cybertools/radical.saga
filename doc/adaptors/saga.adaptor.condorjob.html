@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>9. saga.adaptor.condorjob &mdash; SAGA 0.9.3 documentation</title>
+    <title>9. saga.adaptor.condorjob &mdash; SAGA 0.9.4- documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.3',
+        VERSION:     '0.9.4-',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.3 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.4- documentation" href="../index.html" />
     <link rel="up" title="4. Adaptors" href="saga.adaptor.index.html" />
     <link rel="next" title="10. saga.adaptor.slurm_job" href="saga.adaptor.slurm_job.html" />
     <link rel="prev" title="8. saga.adaptor.pbsjob" href="saga.adaptor.pbsjob.html" /> 
@@ -52,7 +52,7 @@
         <li class="right" >
           <a href="saga.adaptor.pbsjob.html" title="8. saga.adaptor.pbsjob"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" accesskey="U">4. Adaptors</a> &raquo;</li> 
       </ul>
     </div>  
@@ -132,19 +132,20 @@
         <span class="c"># a job that runs for $RUNTIME seconds.</span>
         <span class="n">jd</span><span class="o">.</span><span class="n">name</span>            <span class="o">=</span> <span class="s">&#39;testjob&#39;</span>
         <span class="n">jd</span><span class="o">.</span><span class="n">project</span>         <span class="o">=</span> <span class="s">&#39;TG-MCB090174&#39;</span>
-        <span class="n">jd</span><span class="o">.</span><span class="n">environment</span>     <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RUNTIME&#39;</span><span class="p">:</span> <span class="s">&#39;10&#39;</span><span class="p">}</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">environment</span>     <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RUNTIME&#39;</span><span class="p">:</span> <span class="s">&#39;/etc/passwd&#39;</span><span class="p">}</span>
         <span class="n">jd</span><span class="o">.</span><span class="n">wall_time_limit</span> <span class="o">=</span> <span class="mi">2</span> <span class="c"># minutes</span>
 
-        <span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/sleep&#39;</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/cat&#39;</span>
         <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;$RUNTIME&quot;</span><span class="p">]</span>
 
         <span class="n">jd</span><span class="o">.</span><span class="n">output</span>          <span class="o">=</span> <span class="s">&quot;saga_condorjob.stdout&quot;</span>
         <span class="n">jd</span><span class="o">.</span><span class="n">error</span>           <span class="o">=</span> <span class="s">&quot;saga_condorjob.stderr&quot;</span>
-        <span class="n">jd</span><span class="o">.</span><span class="n">candidate_hosts</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;FNAL_FERMIGRID&quot;</span><span class="p">,</span> <span class="s">&quot;cinvestav&quot;</span><span class="p">,</span> <span class="s">&quot;SPRACE&quot;</span><span class="p">,</span>
-                              <span class="s">&quot;NYSGRID_CORNELL_NYS1&quot;</span><span class="p">,</span> <span class="s">&quot;Purdue-Steele&quot;</span><span class="p">,</span>
-                              <span class="s">&quot;MIT_CMS_CE2&quot;</span><span class="p">,</span> <span class="s">&quot;SWT2_CPB&quot;</span><span class="p">,</span> <span class="s">&quot;AGLT2_CE_2&quot;</span><span class="p">,</span>
-                              <span class="s">&quot;UTA_SWT2&quot;</span><span class="p">,</span> <span class="s">&quot;GridUNESP_CENTRAL&quot;</span><span class="p">,</span>
-                              <span class="s">&quot;USCMS-FNAL-WC1-CE3&quot;</span><span class="p">]</span>
+ 
+ <span class="c">#       jd.candidate_hosts = [&quot;FNAL_FERMIGRID&quot;, &quot;cinvestav&quot;, &quot;SPRACE&quot;,</span>
+ <span class="c">#                             &quot;NYSGRID_CORNELL_NYS1&quot;, &quot;Purdue-Steele&quot;,</span>
+ <span class="c">#                             &quot;MIT_CMS_CE2&quot;, &quot;SWT2_CPB&quot;, &quot;AGLT2_CE_2&quot;,</span>
+ <span class="c">#                             &quot;UTA_SWT2&quot;, &quot;GridUNESP_CENTRAL&quot;,</span>
+ <span class="c">#                             &quot;USCMS-FNAL-WC1-CE3&quot;]</span>
 
         <span class="c"># create the job (state: New)</span>
         <span class="n">sleepjob</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
@@ -297,6 +298,11 @@
 <dl class="method">
 <dt id="saga.adaptors.condor.condorjob.CondorJobService.init_instance">
 <tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/condor/condorjob.html#CondorJobService.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.condor.condorjob.CondorJobService.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.condor.condorjob.CondorJobService.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/condor/condorjob.html#CondorJobService.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.condor.condorjob.CondorJobService.close" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -480,7 +486,7 @@
         <li class="right" >
           <a href="saga.adaptor.pbsjob.html" title="8. saga.adaptor.pbsjob"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" >4. Adaptors</a> &raquo;</li> 
       </ul>
     </div>

@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.utils.pty_shell &mdash; SAGA 0.9.3 documentation</title>
+    <title>saga.utils.pty_shell &mdash; SAGA 0.9.4- documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '0.9.3',
+        VERSION:     '0.9.4-',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.3 documentation" href="../../../index.html" />
+    <link rel="top" title="SAGA 0.9.4- documentation" href="../../../index.html" />
     <link rel="up" title="saga" href="../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -71,8 +71,6 @@
 <span class="kn">import</span> <span class="nn">saga.utils.pty_shell_factory</span> <span class="kn">as</span> <span class="nn">supsf</span>
 
 <span class="n">_PTY_TIMEOUT</span> <span class="o">=</span> <span class="mf">2.0</span>
-<span class="n">_SCHEMAS</span>     <span class="o">=</span> <span class="p">[</span><span class="s">&#39;ssh&#39;</span><span class="p">,</span> <span class="s">&#39;gsissh&#39;</span><span class="p">,</span> <span class="s">&#39;fork&#39;</span><span class="p">,</span> <span class="s">&#39;shell&#39;</span><span class="p">,</span> <span class="s">&#39;file&#39;</span><span class="p">,</span> <span class="s">&#39;scp&#39;</span><span class="p">,</span> <span class="s">&#39;sftp&#39;</span><span class="p">,</span> <span class="s">&#39;gsiscp&#39;</span><span class="p">,</span> <span class="s">&#39;gsisftp&#39;</span><span class="p">]</span>
-<span class="c"># FIXME: gsiftp?</span>
 
 <span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
@@ -230,14 +228,15 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="p">{})</span> <span class="p">:</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">url</span>       <span class="o">=</span> <span class="n">url</span>               <span class="c"># describes the shell to run</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span>    <span class="o">=</span> <span class="n">logger</span>            <span class="c"># possibly log to here</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">init</span>      <span class="o">=</span> <span class="n">init</span>              <span class="c"># call after reconnect</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">url</span>       <span class="o">=</span> <span class="n">url</span>      <span class="c"># describes the shell to run</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span>    <span class="o">=</span> <span class="n">logger</span>   <span class="c"># possibly log to here</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init</span>      <span class="o">=</span> <span class="n">init</span>     <span class="c"># call after reconnect</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opts</span>      <span class="o">=</span> <span class="n">opts</span>     <span class="c"># options...</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span>   <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span>          <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prompt_re</span>       <span class="o">=</span> <span class="bp">None</span>
 
         <span class="c"># we need a local dir for file staging caches.  At this point we use</span>
         <span class="c"># $HOME, but should make this configurable (FIXME)</span>
@@ -261,9 +260,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">initialize</span> <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">run_shell</span>  <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pty_info</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">set_initialize_hook</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">set_finalize_hook</span>   <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span> <span class="p">()</span>
 
 
@@ -274,55 +270,80 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">kill_pty</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
 
-    <span class="c"># ----------------------------------------------------------------------</span>
-    <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">set_initialize_hook</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initialize_hook</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="PTYShell.set_initialize_hook"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.set_initialize_hook">[docs]</a>
-        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="o">=</span> <span class="n">initialize_hook</span>
-
-
-    <span class="c"># ----------------------------------------------------------------------</span>
-    <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">set_finalize_hook</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">finalize_hook</span><span class="p">)</span> <span class="p">:</span></div>
-<div class="viewcode-block" id="PTYShell.set_finalize_hook"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.set_finalize_hook">[docs]</a>
-        <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span> <span class="o">=</span> <span class="n">finalize_hook</span>
-
-
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">initialize</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+    <span class="k">def</span> <span class="nf">initialize</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="PTYShell.initialize"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.initialize">[docs]</a>        <span class="sd">&quot;&quot;&quot; initialize the shell connection.  &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span>    <span class="o">=</span> <span class="s">&quot;^(.*[\$#&gt;])\s*$&quot;</span> <span class="c"># greedy, look for line ending with # $ &gt;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">prompt_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span>
+        <span class="c"># FIXME: timout should be something like n*latency</span>
 
-        <span class="c"># turn off shell echo, set/register new prompt</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span> <span class="s">&quot;unset PROMPT_COMMAND ; &quot;</span>
-                             <span class="o">+</span> <span class="s">&quot;stty -echo; &quot;</span>
-                             <span class="o">+</span> <span class="s">&quot;PS1=&#39;PROMPT-$?-&gt;&#39;; &quot;</span>
-                             <span class="o">+</span> <span class="s">&quot;PS2=&#39;&#39;; &quot;</span>
-                             <span class="o">+</span> <span class="s">&quot;export PS1 PS2</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> 
-                               <span class="n">new_prompt</span><span class="o">=</span><span class="s">&quot;PROMPT-(\d+)-&gt;$&quot;</span><span class="p">)</span>
+        <span class="c"># run a POSIX compatible shell, usually /bin/sh, in interactive mode</span>
+        <span class="c"># also, turn off tty echo</span>
+        <span class="n">command_shell</span> <span class="o">=</span> <span class="s">&quot;exec /bin/sh -i&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got new shell prompt&quot;</span><span class="p">)</span>
+        <span class="c"># use custom shell if so requested</span>
+        <span class="k">if</span>  <span class="s">&#39;shell&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="p">[</span><span class="s">&#39;shell&#39;</span><span class="p">]</span> <span class="p">:</span>
+            <span class="n">command_shell</span> <span class="o">=</span> <span class="s">&quot;exec </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="p">[</span><span class="s">&#39;shell&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;custom  command shell: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">command_shell</span><span class="p">)</span>
 
-        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">initialize_hook</span> <span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span>    <span class="p">(</span><span class="s">&quot;running command shell: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">command_shell</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;stty -echo ; </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span>         <span class="o">%</span> <span class="n">command_shell</span><span class="p">)</span>
+
+        <span class="c"># make sure this worked, and that we find the prompt. We use</span>
+        <span class="c"># a versatile prompt pattern to account for the custom shell case.</span>
+
+        <span class="c"># find initial prompt from login shell</span>
+        <span class="n">prompt_pat</span> <span class="o">=</span> <span class="s">&quot;^.*[\$&gt;:#]\s*$&quot;</span>
+        <span class="n">ret1</span><span class="p">,</span> <span class="n">out1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="n">prompt_pat</span><span class="p">],</span> <span class="mf">10.0</span><span class="p">)</span>
+
+        <span class="c"># we need to make sure that the found prompt is really the prompt of</span>
+        <span class="c"># the new shell, so we check $? for successfull startup.</span>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="n">found_prompt</span> <span class="o">=</span> <span class="bp">False</span>
+
+            <span class="k">while</span> <span class="ow">not</span> <span class="n">found_prompt</span> <span class="p">:</span>
+
+                <span class="n">check</span>        <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">found_prompt</span> <span class="o">=</span> <span class="bp">True</span>
+
+                <span class="k">try</span> <span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&#39;echo &quot;-SAGA-$?&quot;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+                    <span class="n">ret2</span><span class="p">,</span> <span class="n">out2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&quot;-SAGA-&quot;</span><span class="p">],</span>   <span class="mf">10.0</span><span class="p">)</span>
+                    <span class="n">ret3</span><span class="p">,</span> <span class="n">out3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&quot;\d+</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">],</span>    <span class="mf">10.0</span><span class="p">)</span>
+                    <span class="n">ret4</span><span class="p">,</span> <span class="n">out4</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="n">prompt_pat</span><span class="p">],</span> <span class="mf">10.0</span><span class="p">)</span>
+
+                    <span class="n">check</span>        <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">out3</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">found_prompt</span> <span class="o">=</span> <span class="bp">True</span>
+
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warn</span> <span class="p">(</span><span class="s">&quot;repeat prompt detection (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">check</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;cannot initalize shell with </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                       <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="p">[</span><span class="s">&#39;shell&#39;</span><span class="p">],</span> <span class="n">out1</span><span class="p">))</span>
+
+
+                <span class="c"># set and register new prompt</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span> <span class="s">&quot;unset PROMPT_COMMAND ; &quot;</span>
+                                     <span class="o">+</span> <span class="s">&quot;PS1=&#39;PROMPT-$?-&gt;&#39;; &quot;</span>
+                                     <span class="o">+</span> <span class="s">&quot;PS2=&#39;&#39;; &quot;</span>
+                                     <span class="o">+</span> <span class="s">&quot;export PS1 PS2</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> 
+                                       <span class="n">new_prompt</span><span class="o">=</span><span class="s">&quot;PROMPT-(\d+)-&gt;$&quot;</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got new shell prompt&quot;</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">SagaException</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Shell startup on target host failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+
 
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">finalize</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kill_pty</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span> <span class="p">:</span></div>
 <div class="viewcode-block" id="PTYShell.finalize"><a class="viewcode-back" href="../../../developers/adaptorwriting.html#saga.utils.pty_shell.PTYShell.finalize">[docs]</a>
-        <span class="k">try</span> <span class="p">:</span>
-            <span class="c"># check if some additional initialization routines as registered</span>
-            <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span> <span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">finalize_hook</span> <span class="p">()</span>
-
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
-            <span class="k">pass</span>
-
-
         <span class="k">try</span> <span class="p">:</span>
             <span class="k">if</span>  <span class="n">kill_pty</span> <span class="p">:</span>
                 <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span> <span class="p">:</span>
@@ -850,7 +871,7 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_translate_exception</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">:</span></div>
+    <span class="k">def</span> <span class="nf">_translate_exception</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span></div>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        In many cases, we should be able to roughly infer the exception cause</span>
 <span class="sd">        from the error message -- this is centrally done in this method.  If</span>
@@ -868,6 +889,9 @@
 
         <span class="n">cmsg</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">_plain_message</span>
         <span class="n">lmsg</span> <span class="o">=</span> <span class="n">cmsg</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span>
+
+        <span class="k">if</span>  <span class="n">msg</span> <span class="p">:</span>
+            <span class="n">cmsg</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cmsg</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="s">&#39;auth&#39;</span> <span class="ow">in</span> <span class="n">lmsg</span> <span class="p">:</span>
             <span class="n">e</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">AuthorizationFailed</span> <span class="p">(</span><span class="n">cmsg</span><span class="p">)</span>
@@ -925,7 +949,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../saga.html" >saga</a> &raquo;</li> 
       </ul>

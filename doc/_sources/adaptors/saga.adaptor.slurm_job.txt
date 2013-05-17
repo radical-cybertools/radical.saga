@@ -162,7 +162,6 @@ Supported Job Description Attributes
   - Executable
   - Arguments
   - Environment
-  - SPMDVariation
   - TotalCPUCount
   - NumberOfProcesses
   - ProcessesPerHost
@@ -175,7 +174,6 @@ Supported Job Description Attributes
   - Cleanup
   - JobStartTime
   - WallTimeLimit
-  - TotalPhysicalMemory
   - Queue
   - Project
   - JobContact

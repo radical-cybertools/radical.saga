@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>1. Working with Jobs &mdash; SAGA 0.9.3 documentation</title>
+    <title>1. Working with Jobs &mdash; SAGA 0.9.4- documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.3',
+        VERSION:     '0.9.4-',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.3 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.4- documentation" href="../../index.html" />
     <link rel="up" title="3. Library Reference" href="../index.html" />
     <link rel="next" title="2. Working with Files and Directories" href="../filesystem/index.html" />
     <link rel="prev" title="3. Library Reference" href="../index.html" /> 
@@ -52,7 +52,7 @@
         <li class="right" >
           <a href="../index.html" title="3. Library Reference"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">3. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -193,6 +193,11 @@ endpoint for that service.</p>
 </tbody>
 </table>
 </dd></dl>
+
+<dl class="method">
+<dt id="saga.job.Service.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.job.Service.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Service.create_job">
@@ -1088,16 +1093,16 @@ job will be moved to &#8216;Failed&#8217;.</p>
 <span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
 <span class="n">j</span>  <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
 
-<span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">New</span> <span class="p">:</span> 
+<span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NEW</span> <span class="p">:</span> 
     <span class="k">print</span> <span class="s">&quot;new&quot;</span>
 <span class="k">else</span> <span class="p">:</span> 
     <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
 
 <span class="n">j</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
-<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span> <span class="p">:</span>
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
-<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span> <span class="p">:</span>
+<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">RUNNING</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;running&quot;</span>
 <span class="k">else</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
@@ -1117,23 +1122,23 @@ ret:        None</p>
 <span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
 <span class="n">j</span>  <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
 
-<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">New</span> <span class="p">:</span>
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NEW</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;new&quot;</span>
 <span class="k">else</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
 
 <span class="n">j</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
-<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span>  <span class="p">:</span>
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
-<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span> <span class="p">:</span>
+<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">RUNNING</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;running&quot;</span>
 <span class="k">else</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
 
 <span class="n">j</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
 
-<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Canceled</span> <span class="p">:</span>
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;canceled&quot;</span>
 <span class="k">else</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
@@ -1162,25 +1167,25 @@ state.  The default timeout value is &#8216;-1.0&#8217; (blocking).</p>
 <span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
 <span class="n">j</span>  <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
 
-<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">New</span> <span class="p">:</span>
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NEW</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;new&quot;</span>
 <span class="k">else</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
 
 <span class="n">j</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
-<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span> <span class="p">:</span>
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
-<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span> <span class="p">:</span>
+<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">RUNNING</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;running&quot;</span>
 <span class="k">else</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
 
 <span class="n">j</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
 
-<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Done</span> <span class="p">:</span>
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;done&quot;</span>
-<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Failed</span> <span class="p">:</span>
+<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;failed&quot;</span>
 <span class="k">else</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
@@ -1199,16 +1204,16 @@ state.  The default timeout value is &#8216;-1.0&#8217; (blocking).</p>
 <span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
 <span class="n">j</span>  <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
 
-<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">New</span> <span class="p">:</span> 
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NEW</span> <span class="p">:</span> 
     <span class="k">print</span> <span class="s">&quot;new&quot;</span>
 <span class="k">else</span> <span class="p">:</span> 
     <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
 
 <span class="n">j</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
-<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span> <span class="p">:</span> 
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span> <span class="p">:</span> 
     <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
-<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span> <span class="p">:</span> 
+<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">RUNNING</span> <span class="p">:</span> 
     <span class="k">print</span> <span class="s">&quot;running&quot;</span>
 <span class="k">else</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
@@ -1265,16 +1270,16 @@ why, if that exists.  Otherwise, the call does nothing.</td>
 <span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/date&#39;</span>
 <span class="n">j</span>  <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
 
-<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">New</span> <span class="p">:</span> 
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NEW</span> <span class="p">:</span> 
     <span class="k">print</span> <span class="s">&quot;new&quot;</span>
 <span class="k">else</span> <span class="p">:</span> 
     <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
 
 <span class="n">j</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
-<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Pending</span> <span class="p">:</span> 
+<span class="k">if</span>   <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span> <span class="p">:</span> 
     <span class="k">print</span> <span class="s">&quot;pending&quot;</span>
-<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Running</span> <span class="p">:</span> 
+<span class="k">elif</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">RUNNING</span> <span class="p">:</span> 
     <span class="k">print</span> <span class="s">&quot;running&quot;</span>
 <span class="k">else</span> <span class="p">:</span>
     <span class="k">print</span> <span class="s">&quot;oops!&quot;</span>
@@ -1336,7 +1341,7 @@ state - for all other job states, this attribute value is undefined.</p>
 <span class="n">j</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 <span class="n">j</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
 
-<span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">Failed</span> <span class="p">:</span>
+<span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span> <span class="p">:</span>
   <span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">exitcode</span> <span class="o">==</span> <span class="s">&quot;42&quot;</span> <span class="p">:</span>
       <span class="k">print</span> <span class="s">&quot;Ah, galaxy bypass error!&quot;</span>
   <span class="k">else</span> <span class="p">:</span>
@@ -1719,7 +1724,7 @@ from the container.</p>
         <li class="right" >
           <a href="../index.html" title="3. Library Reference"
              >previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="../index.html" >3. Library Reference</a> &raquo;</li> 
       </ul>
     </div>

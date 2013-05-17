@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.shell.shell_file &mdash; SAGA 0.9.3 documentation</title>
+    <title>saga.adaptors.shell.shell_file &mdash; SAGA 0.9.4- documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.9.3',
+        VERSION:     '0.9.4-',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.3 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.9.4- documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -242,8 +242,8 @@
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span>  <span class="p">(</span><span class="n">ShellDirectory</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+        <span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span>  <span class="p">(</span><span class="n">ShellDirectory</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -308,8 +308,8 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">sups</span><span class="o">.</span><span class="n">PTYShell</span>     <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">set_initialize_hook</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">set_finalize_hook</span>   <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">)</span>
+      <span class="c"># self.shell.set_initialize_hook (self.initialize)</span>
+      <span class="c"># self.shell.set_finalize_hook   (self.finalize)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span> <span class="p">()</span>
 
@@ -756,8 +756,8 @@
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span> <span class="p">:</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span>  <span class="p">(</span><span class="n">ShellFile</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+        <span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span>  <span class="p">(</span><span class="n">ShellFile</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -843,10 +843,17 @@
         <span class="c"># FIXME: get ssh Master connection from _adaptor dict</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">sups</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">set_initialize_hook</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">set_finalize_hook</span>   <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">)</span>
+      <span class="c"># self.shell.set_initialize_hook (self.initialize)</span>
+      <span class="c"># self.shell.set_finalize_hook   (self.finalize)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span> <span class="p">()</span>
+
+        <span class="c"># we create a local shell handle, too, if only to support copy and move</span>
+        <span class="c"># to and from local file systems (mkdir for staging target, remove of move</span>
+        <span class="c"># source).  Not that we do not perform a cd on the local shell -- all</span>
+        <span class="c"># operations are assumed to be performed on absolute paths.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local</span> <span class="o">=</span> <span class="n">sups</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="s">&#39;fork://localhost/&#39;</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span> 
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
@@ -1175,7 +1182,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>

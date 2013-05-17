@@ -18,5 +18,6 @@ Adaptors
    saga.adaptor.pbsjob
    saga.adaptor.condorjob
    saga.adaptor.slurm_job
+   saga.adaptor.http_file
 
 

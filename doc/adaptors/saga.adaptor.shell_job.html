@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>6. saga.adaptor.shell_job &mdash; SAGA 0.9.3 documentation</title>
+    <title>6. saga.adaptor.shell_job &mdash; SAGA 0.9.4- documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.3',
+        VERSION:     '0.9.4-',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.3 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.4- documentation" href="../index.html" />
     <link rel="up" title="4. Adaptors" href="saga.adaptor.index.html" />
     <link rel="next" title="7. saga.adaptor.sgejob" href="saga.adaptor.sgejob.html" />
     <link rel="prev" title="5. saga.adaptor.shell_file" href="saga.adaptor.shell_file.html" /> 
@@ -52,7 +52,7 @@
         <li class="right" >
           <a href="saga.adaptor.shell_file.html" title="5. saga.adaptor.shell_file"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" accesskey="U">4. Adaptors</a> &raquo;</li> 
       </ul>
     </div>  
@@ -67,7 +67,14 @@
 <div class="section" id="description">
 <h2>6.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>The Shell job adaptor. This adaptor uses the sh command line tools (sh,
-ssh, gsissh) to run local and remote jobs.</p>
+ssh, gsissh) to run local and remote jobs.  The adaptor expects the
+login shell on the target host to be POSIX compliant.  However, one can
+also specify a custom POSIX shell via the resource manager URL, like:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span> <span class="p">(</span><span class="s">&quot;ssh://remote.host.net/bin/sh&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that custom shells in many cases will find a different environment
+than the users default login shell!</p>
 <div class="section" id="known-limitations">
 <h3>6.1.1. Known Limitations:<a class="headerlink" href="#known-limitations" title="Permalink to this headline">¶</a></h3>
 <blockquote>
@@ -201,25 +208,31 @@ use should work as expected though.</p>
 
         <span class="c"># Next, we describe the job we want to run. A complete set of job</span>
         <span class="c"># description attributes can be found in the API documentation.</span>
-        <span class="n">jd</span><span class="o">.</span><span class="n">environment</span>     <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RUNTIME&#39;</span><span class="p">:</span> <span class="s">&#39;10&#39;</span><span class="p">}</span>
-        <span class="n">jd</span><span class="o">.</span><span class="n">wall_time_limit</span> <span class="o">=</span> <span class="mi">1</span> <span class="c"># minutes</span>
-        <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>      <span class="o">=</span> <span class="s">&#39;/bin/sleep&#39;</span>
-        <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&#39;$RUNTIME&#39;</span><span class="p">]</span>
+        <span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">environment</span>       <span class="o">=</span> <span class="p">{</span><span class="s">&#39;FILENAME&#39;</span><span class="p">:</span> <span class="s">&#39;testfile&#39;</span><span class="p">}</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">wall_time_limit</span>   <span class="o">=</span> <span class="mi">1</span> <span class="c"># minutes</span>
+
+        <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>        <span class="o">=</span> <span class="s">&#39;/usr/bin/touch&#39;</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span>         <span class="o">=</span> <span class="p">[</span><span class="s">&#39;$FILENAME&#39;</span><span class="p">]</span>
+
+        <span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span> <span class="o">=</span> <span class="s">&quot;$HOME/A/B/C&quot;</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">output</span>            <span class="o">=</span> <span class="s">&quot;examplejob.out&quot;</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">error</span>             <span class="o">=</span> <span class="s">&quot;examplejob.err&quot;</span>
 
         <span class="c"># Create a new job from the job description. The initial state of</span>
         <span class="c"># the job is &#39;New&#39;.</span>
-        <span class="n">sleepjob</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+        <span class="n">touchjob</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
 
         <span class="c"># Check our job&#39;s id and state</span>
-        <span class="k">print</span> <span class="s">&quot;Job ID    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Job State : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Job ID    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Job State : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
 
         <span class="c"># Now we can start our job.</span>
         <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">...starting job...</span><span class="se">\n</span><span class="s">&quot;</span>
-        <span class="n">sleepjob</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+        <span class="n">touchjob</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
-        <span class="k">print</span> <span class="s">&quot;Job ID    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Job State : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Job ID    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Job State : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
 
         <span class="c"># List all jobs that are known by the adaptor.</span>
         <span class="c"># This should show our job as well.</span>
@@ -231,18 +244,18 @@ use should work as expected though.</p>
         <span class="c"># method and our job&#39;s id. While this doesn&#39;t make a lot of sense</span>
         <span class="c"># here,  disconnect / reconnect can become very important for</span>
         <span class="c"># long-running job.</span>
-        <span class="n">sleebjob_clone</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">get_job</span><span class="p">(</span><span class="n">sleepjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="n">touchjob_clone</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">get_job</span><span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
 
         <span class="c"># wait for our job to complete</span>
         <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">...waiting for job...</span><span class="se">\n</span><span class="s">&quot;</span>
-        <span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+        <span class="n">touchjob_clone</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
 
-        <span class="k">print</span> <span class="s">&quot;Job State   : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Exitcode    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">exit_code</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Exec. hosts : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">execution_hosts</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Create time : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">created</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Start time  : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">started</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;End time    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">finished</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Job State   : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob_clone</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Exitcode    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob_clone</span><span class="o">.</span><span class="n">exit_code</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Exec. hosts : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob_clone</span><span class="o">.</span><span class="n">execution_hosts</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Create time : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob_clone</span><span class="o">.</span><span class="n">created</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Start time  : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob_clone</span><span class="o">.</span><span class="n">started</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;End time    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob_clone</span><span class="o">.</span><span class="n">finished</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="mi">0</span>
 
@@ -399,6 +412,11 @@ live job service instance.</p>
 <dl class="method">
 <dt id="saga.adaptors.shell.shell_job.ShellJobService.init_instance">
 <tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_job.ShellJobService.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService.close" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -632,7 +650,7 @@ live job service instance.</p>
         <li class="right" >
           <a href="saga.adaptor.shell_file.html" title="5. saga.adaptor.shell_file"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" >4. Adaptors</a> &raquo;</li> 
       </ul>
     </div>

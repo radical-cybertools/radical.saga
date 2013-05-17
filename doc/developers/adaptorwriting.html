@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>1. Writing SAGA-Python Adaptors &mdash; SAGA 0.9.3 documentation</title>
+    <title>1. Writing SAGA-Python Adaptors &mdash; SAGA 0.9.4- documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.3',
+        VERSION:     '0.9.4-',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.3 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.4- documentation" href="../index.html" />
     <link rel="up" title="5. Developer Documentation" href="index.html" />
     <link rel="next" title="2. Timout Garbage Collection" href="timeout_gc.html" />
     <link rel="prev" title="5. Developer Documentation" href="index.html" /> 
@@ -52,7 +52,7 @@
         <li class="right" >
           <a href="index.html" title="5. Developer Documentation"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">5. Developer Documentation</a> &raquo;</li> 
       </ul>
     </div>  
@@ -616,7 +616,7 @@ those interactions, and at the same time be more performant than, for example,
 pexpect.</p>
 <dl class="class">
 <dt id="saga.utils.pty_shell.PTYShell">
-<em class="property">class </em><tt class="descclassname">saga.utils.pty_shell.</tt><tt class="descname">PTYShell</tt><big>(</big><em>url</em>, <em>session</em>, <em>logger=None</em>, <em>init=None</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.utils.pty_shell.</tt><tt class="descname">PTYShell</tt><big>(</big><em>url</em>, <em>session</em>, <em>logger=None</em>, <em>init=None</em>, <em>opts={}</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
 <p>This class wraps a shell process and runs it as a <tt class="xref py py-class docutils literal"><span class="pre">PTYProcess</span></tt>.  The
 user of this class can start that shell, and run arbitrary commands on it.</p>
@@ -718,16 +718,6 @@ than <em>PIPE_BUF</em> bytes on the remote system (usually at least 1024, on Lin
 usually 4096), or to lock the pipe on larger writes.</p>
 <p>For timeout and restart semantics, please see the documentation to the
 underlying <a class="reference internal" href="#saga.utils.pty_process.PTYProcess" title="saga.utils.pty_process.PTYProcess"><tt class="xref py py-class docutils literal"><span class="pre">saga.utils.pty_process.PTYProcess</span></tt></a> class.</p>
-<dl class="method">
-<dt id="saga.utils.pty_shell.PTYShell.set_initialize_hook">
-<tt class="descname">set_initialize_hook</tt><big>(</big><em>initialize_hook</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.set_initialize_hook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.set_initialize_hook" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="saga.utils.pty_shell.PTYShell.set_finalize_hook">
-<tt class="descname">set_finalize_hook</tt><big>(</big><em>finalize_hook</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.set_finalize_hook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.set_finalize_hook" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="method">
 <dt id="saga.utils.pty_shell.PTYShell.initialize">
 <tt class="descname">initialize</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_shell.html#PTYShell.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_shell.PTYShell.initialize" title="Permalink to this definition">¶</a></dt>
@@ -1042,33 +1032,6 @@ while True :
 # something bad happened
 print pty.autopsy ()</pre>
 </div>
-<p>The managed child process is under control of a Timeout Garbage Collector
-(<a class="reference internal" href="timeout_gc.html#saga.utils.timeout_gc.TimeoutGC" title="saga.utils.timeout_gc.TimeoutGC"><tt class="xref py py-class docutils literal"><span class="pre">saga.utils.timeout_gc.TimeoutGC</span></tt></a>), which will terminate the child
-after some inactivity period.  The child will be automatically restarted on
-the next activity attempts.  To support orderly process bootstrapping, users
-of the <tt class="xref py py-class docutils literal"><span class="pre">PTYProcess</span></tt> class should register hooks for process
-initialization and finalization (<tt class="xref py py-func docutils literal"><span class="pre">set_initialize_hook()</span></tt> and
-<tt class="xref py py-func docutils literal"><span class="pre">set_finalize_hook()</span></tt>).  The finalization hook may operate on a dead
-child process, and should be written in a way that this does not lead to an
-error (which would abort the restart attempt).</p>
-<p>If the child process dies on its own, or is terminated by a third party, the
-class will also attempt to restart the child.  In order to not interfere
-with the process state at unexpected points, this will only happen during
-explicit <tt class="xref py py-func docutils literal"><span class="pre">alive()</span></tt> checks, if the <cite>recover</cite> parameter is set to <cite>True</cite>
-(<cite>False</cite> by default).  This restart mechanism will be used up to
-<cite>recover_max</cite> times in a row, any successful activity will reset the recover
-counter though.  The recover process will invoke both the finalization and
-initialization hooks.</p>
-<dl class="method">
-<dt id="saga.utils.pty_process.PTYProcess.set_initialize_hook">
-<tt class="descname">set_initialize_hook</tt><big>(</big><em>initialize_hook</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_process.html#PTYProcess.set_initialize_hook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.set_initialize_hook" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="saga.utils.pty_process.PTYProcess.set_finalize_hook">
-<tt class="descname">set_finalize_hook</tt><big>(</big><em>finalize_hook</em><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_process.html#PTYProcess.set_finalize_hook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.set_finalize_hook" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="method">
 <dt id="saga.utils.pty_process.PTYProcess.initialize">
 <tt class="descname">initialize</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/utils/pty_process.html#PTYProcess.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.utils.pty_process.PTYProcess.initialize" title="Permalink to this definition">¶</a></dt>
@@ -1227,7 +1190,7 @@ child&#8217;s stdin pipe, until it succeeds to write all data.</p>
         <li class="right" >
           <a href="index.html" title="5. Developer Documentation"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="index.html" >5. Developer Documentation</a> &raquo;</li> 
       </ul>
     </div>

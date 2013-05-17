@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.pbs.pbsjob &mdash; SAGA 0.9.3 documentation</title>
+    <title>saga.adaptors.pbs.pbsjob &mdash; SAGA 0.9.4- documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.9.3',
+        VERSION:     '0.9.4-',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.3 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.9.4- documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -192,7 +192,14 @@
             <span class="n">pbs_params</span> <span class="o">+=</span> <span class="s">&quot;#PBS -l nodes=</span><span class="si">%s</span><span class="s">:ppn=</span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> \
                 <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">tbd</span><span class="p">)),</span> <span class="n">ppn</span><span class="p">)</span>
 
+    <span class="c"># escape all double quotes and dollarsigns, otherwise &#39;echo |&#39;</span>
+    <span class="c"># further down won&#39;t work</span>
+    <span class="c"># only escape &#39;$&#39; in args and exe. not in the params</span>
+    <span class="n">exec_n_args</span> <span class="o">=</span> <span class="n">exec_n_args</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;$&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">$&#39;</span><span class="p">)</span>
+
     <span class="n">pbscript</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">#!/bin/bash </span><span class="se">\n</span><span class="si">%s%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pbs_params</span><span class="p">,</span> <span class="n">exec_n_args</span><span class="p">)</span>
+
+    <span class="n">pbscript</span> <span class="o">=</span> <span class="n">pbscript</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">&quot;&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">pbscript</span>
 
 
@@ -244,7 +251,7 @@
     <span class="s">&quot;capabilities&quot;</span><span class="p">:</span>  <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
     <span class="s">&quot;description&quot;</span><span class="p">:</span>  <span class="s">&quot;&quot;&quot;</span>
 <span class="s">The PBS adaptor allows to run and manage jobs on `PBS &lt;http://www.pbsworks.com/&gt;`_</span>
-<span class="s">and `TORQUE &lt;http://www.adaptivecomputing.com/products/open-source/torque&gt;`_ </span>
+<span class="s">and `TORQUE &lt;http://www.adaptivecomputing.com/products/open-source/torque&gt;`_</span>
 <span class="s">controlled HPC clusters.</span>
 <span class="s">&quot;&quot;&quot;</span><span class="p">,</span>
     <span class="s">&quot;example&quot;</span><span class="p">:</span> <span class="s">&quot;examples/jobs/pbsjob.py&quot;</span><span class="p">,</span>
@@ -320,8 +327,8 @@
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">):</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">PBSJobService</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+        <span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">PBSJobService</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span> <span class="o">=</span> <span class="n">adaptor</span>
 
@@ -329,7 +336,7 @@
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">(</span><span class="n">kill_shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">kill_shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -342,6 +349,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ppn</span>     <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_cray</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">queue</span>   <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span>   <span class="o">=</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span>    <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 
         <span class="n">rm_scheme</span> <span class="o">=</span> <span class="n">rm_url</span><span class="o">.</span><span class="n">scheme</span>
@@ -375,12 +383,20 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span><span class="p">(</span><span class="n">pty_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">set_initialize_hook</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">set_finalize_hook</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">)</span>
+      <span class="c"># self.shell.set_initialize_hook(self.initialize)</span>
+      <span class="c"># self.shell.set_finalize_hook(self.finalize)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">close</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="PBSJobService.close"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.pbsjob.html#saga.adaptors.pbs.pbsjob.PBSJobService.close">[docs]</a>        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -404,7 +420,7 @@
                             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="c"># version is reported as: &quot;version: x.y.z&quot;</span>
-                        <span class="n">version</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">version</span> <span class="o">=</span> <span class="n">out</span><span class="c">#.strip().split()[1]</span>
 
                         <span class="c"># add path and version to the command dictionary</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="n">cmd</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;path&quot;</span><span class="p">:</span>    <span class="n">path</span><span class="p">,</span>
@@ -427,9 +443,10 @@
         <span class="c"># different queues, number of processes per node, etc.</span>
         <span class="c"># TODO: this is quite a hack. however, it *seems* to work quite</span>
         <span class="c">#       well in practice.</span>
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> -a | grep np&#39;</span> <span class="o">%</span> \
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> -a | egrep &quot;(np|pcpu)&quot;&#39;</span> <span class="o">%</span> \
             <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;pbsnodes&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+
             <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error running pbsnodes: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -453,7 +470,8 @@
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kill_shell</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span></div>
-<div class="viewcode-block" id="PBSJobService.finalize"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.pbsjob.html#saga.adaptors.pbs.pbsjob.PBSJobService.finalize">[docs]</a>        <span class="k">if</span>  <span class="n">kill_shell</span> <span class="p">:</span>
+<div class="viewcode-block" id="PBSJobService.finalize"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.pbsjob.html#saga.adaptors.pbs.pbsjob.PBSJobService.finalize">[docs]</a>
+        <span class="k">if</span>  <span class="n">kill_shell</span> <span class="p">:</span>
             <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="bp">True</span><span class="p">)</span>
 
@@ -473,26 +491,44 @@
                                          <span class="n">jd</span><span class="o">=</span><span class="n">jd</span><span class="p">,</span> <span class="n">ppn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ppn</span><span class="p">,</span>
                                          <span class="n">is_cray</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">is_cray</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span>
 
-            <span class="c"># escape all double quotes and dollarsigns, otherwise &#39;echo |&#39; </span>
-            <span class="c"># further down won&#39;t work</span>
-            <span class="n">script</span> <span class="o">=</span> <span class="n">script</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">&quot;&#39;</span><span class="p">)</span>
-            <span class="n">script</span> <span class="o">=</span> <span class="n">script</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;$&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">$&#39;</span><span class="p">)</span>
-
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Generated PBS script: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">script</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">),</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
 
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;&quot;&quot;echo &quot;</span><span class="si">%s</span><span class="s">&quot; | </span><span class="si">%s</span><span class="s">&quot;&quot;&quot;</span> \
-            <span class="o">%</span> <span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qsub&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">]))</span>
+        <span class="c"># try to create the working directory (if defined)</span>
+        <span class="c"># WRANING: this assumes a shared filesystem between login node and</span>
+        <span class="c">#           comnpute nodes.</span>
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Creating working directory </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span><span class="p">)</span>
+            <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;mkdir -p </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c"># something went wrong</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Couldn&#39;t create working directory - </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">out</span><span class="p">)</span>
+                <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+
+        <span class="c"># run the PBS script</span>
+        <span class="n">cmdline</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;echo &quot;</span><span class="si">%s</span><span class="s">&quot; | </span><span class="si">%s</span><span class="s">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qsub&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">])</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="n">cmdline</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c"># something went wrong</span>
-            <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error running job via &#39;qsub&#39;: </span><span class="si">%s</span><span class="s">. Script was: </span><span class="si">%s</span><span class="s">&quot;</span> \
-                <span class="o">%</span> <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">script</span><span class="p">)</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error running job via &#39;qsub&#39;: </span><span class="si">%s</span><span class="s">. Commandline was: </span><span class="si">%s</span><span class="s">&quot;</span> \
+                <span class="o">%</span> <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">cmdline</span><span class="p">)</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c"># stdout contains the job id</span>
-            <span class="n">job_id</span> <span class="o">=</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">]-[</span><span class="si">%s</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="c"># parse the job id. qsub usually returns just the job id, but</span>
+            <span class="c"># sometimes there are a couple of lines of warnings before.</span>
+            <span class="c"># if that&#39;s the case, we log those as &#39;warnings&#39;</span>
+            <span class="n">lines</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;qsub: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]))</span>
+                <span class="c"># remove empty lines:</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+                        <span class="n">lines</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+            <span class="c"># we asssume job id is in the last line</span>
+            <span class="n">job_id</span> <span class="o">=</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">]-[</span><span class="si">%s</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">lines</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Submitted PBS job with id: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job_id</span><span class="p">)</span>
 
             <span class="c"># add job to internal list of known jobs.</span>
@@ -517,9 +553,14 @@
         <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
 
         <span class="c"># run the PBS &#39;qstat&#39; command to get some infos about our job</span>
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> -f1 </span><span class="si">%s</span><span class="s"> | </span><span class="se">\</span>
+        <span class="k">if</span> <span class="s">&#39;PBSPro_10&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qstat&#39;</span><span class="p">][</span><span class="s">&#39;version&#39;</span><span class="p">]:</span>
+            <span class="n">qstat_flag</span> <span class="o">=</span> <span class="s">&#39;-f&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">qstat_flag</span> <span class="o">=</span><span class="s">&#39;-f1&#39;</span>
+
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> | </span><span class="se">\</span>
 <span class="s">            egrep &#39;(job_state)|(exec_host)|(exit_status)|(ctime)|</span><span class="se">\</span>
-<span class="s">(start_time)|(comp_time)&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qstat&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="n">pid</span><span class="p">))</span>
+<span class="s">            (start_time)|(comp_time)&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qstat&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="n">qstat_flag</span><span class="p">,</span> <span class="n">pid</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Couldn&#39;t reconnect to job &#39;</span><span class="si">%s</span><span class="s">&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job_id</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
@@ -587,9 +628,13 @@
         <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
 
         <span class="c"># run the PBS &#39;qstat&#39; command to get some infos about our job</span>
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> -f1 </span><span class="si">%s</span><span class="s"> | </span><span class="se">\</span>
+        <span class="k">if</span> <span class="s">&#39;PBSPro_10&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qstat&#39;</span><span class="p">][</span><span class="s">&#39;version&#39;</span><span class="p">]:</span>
+            <span class="n">qstat_flag</span> <span class="o">=</span> <span class="s">&#39;-f&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">qstat_flag</span> <span class="o">=</span><span class="s">&#39;-f1&#39;</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> | </span><span class="se">\</span>
 <span class="s">            egrep &#39;(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)</span><span class="se">\</span>
-<span class="s">|(comp_time)&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qstat&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="n">pid</span><span class="p">))</span>
+<span class="s">|(comp_time)&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qstat&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="n">qstat_flag</span><span class="p">,</span> <span class="n">pid</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">if</span> <span class="p">(</span><span class="s">&quot;Unknown Job Id&quot;</span> <span class="ow">in</span> <span class="n">out</span><span class="p">):</span>
@@ -875,8 +920,8 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">):</span>
 
         <span class="c"># initialize parent class</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">PBSJob</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+        <span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">PBSJob</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
     <span class="nd">@SYNC_CALL</span>
     <span class="k">def</span> <span class="nf">init_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_info</span><span class="p">):</span>
@@ -1044,7 +1089,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.3 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>
