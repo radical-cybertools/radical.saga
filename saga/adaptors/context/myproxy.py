@@ -120,7 +120,11 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
             cmd = "myproxy-logon --stdin_pass"
 
         if api.server :
-            (server, port) = api.server.split (':', 2)
+            if ':' in api.server:
+                (server, port) = api.server.split (':', 2)
+            else:
+                server = api.server
+                port = "7512"
             if server    : cmd += " --pshost %s"          %  server
             if port      : cmd += " --psport %s"          %  port
         if api.user_id   : cmd += " --username %s"        %  api.user_id

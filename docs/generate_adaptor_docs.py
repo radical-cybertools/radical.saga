@@ -254,10 +254,10 @@ for a in saga.engine.registry.adaptor_registry :
           # classes_long += "   :undoc-members:\n"
             classes_long += "\n"
 
-      # if is_context :
-      #     # do not auto-document context adaptors -- those are done manually
-      #     print "skip   %s (context)" % fn
-      #     continue
+    if is_context :
+        # do not auto-document context adaptors -- those are done manually
+        print "skip   %s (context)" % fn
+        continue
 
 
 
