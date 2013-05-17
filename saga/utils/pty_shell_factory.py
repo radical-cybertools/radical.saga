@@ -473,9 +473,9 @@ class PTYShellFactory (object) :
                         # FIXME: also use cert_dir etc.
 
                         if  context.attribute_exists ("user_proxy") and context.user_proxy :
-                            info['ssh_env']  += "X509_PROXY='%s' " % context.user_proxy
-                            info['scp_env']  += "X509_PROXY='%s' " % context.user_proxy
-                            info['sftp_env'] += "X509_PROXY='%s' " % context.user_proxy
+                            info['ssh_env']  += "X509_USER_PROXY='%s' " % context.user_proxy
+                            info['scp_env']  += "X509_USER_PROXY='%s' " % context.user_proxy
+                            info['sftp_env'] += "X509_USER_PROXY='%s' " % context.user_proxy
                             info['ctx'].append (context)
 
             if url.port and url.port != -1 :
