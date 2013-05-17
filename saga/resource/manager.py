@@ -160,6 +160,24 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @sus.takes   ('Manager', 
+                  sus.optional (sus.one_of (COMPUTE, STORAGE, NETWORK)),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.list_of (basestring), st.Task))
+    def list_images (self, rtype=None, ttype=None) :
+        """
+        :type  rtype: None or enum (COMPUTE | STORAGE | NETWORK)
+        :param rtype: specifies a filter of resource types to list.
+
+        List image names available for the specified resource type(s).
+        Returns a list of strings.
+        """
+
+        return self._adaptor.list_images (rtype, ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    # 
+    @sus.takes   ('Manager', 
                   descr.Description,
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((resrc.Resource, st.Task))

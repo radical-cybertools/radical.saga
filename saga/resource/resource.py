@@ -250,35 +250,45 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((basestring, st.Task))
+    @sus.returns ((sus.nothing, basestring, st.Task))
     def get_id   (self, ttype=None) : return self._adaptor.get_id            (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @sus.takes    ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns  ((basestring, st.Task))
+    @sus.returns  ((sus.one_of (const.COMPUTE, 
+                                const.STORAGE, 
+                                const.NETWORK), st.Task))
     def get_rtype (self, ttype=None) : return self._adaptor.get_rtype         (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @sus.takes    ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns  ((basestring, st.Task))
+    @sus.returns  ((sus.one_of (const.UNKNOWN ,
+                                const.NEW     ,
+                                const.PENDING ,
+                                const.ACTIVE  ,
+                                const.CANCELED,
+                                const.EXPIRED ,
+                                const.DONE    ,
+                                const.FAILED  ,
+                                const.FINAL   ), st.Task))
     def get_state (self, ttype=None) : return self._adaptor.get_state         (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((basestring, st.Task))
+    @sus.returns ((sus.nothing, basestring, st.Task))
     def get_state_detail (self, ttype=None) : return self._adaptor.get_state_detail  (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @sus.takes     ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns   ((basestring, st.Task))
+    @sus.returns   ((sus.nothing, basestring, st.Task))
     def get_access (self, ttype=None) : return self._adaptor.get_access        (ttype=ttype)
 
 
@@ -292,7 +302,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((basestring, st.Task))
+    @sus.returns ((descr.Description, st.Task))
     def get_description  (self, ttype=None) : return self._adaptor.get_description   (ttype=ttype)
 # 
 # ------------------------------------------------------------------------------
