@@ -44,7 +44,8 @@ PURGE_ON_START="%(PURGE_ON_START)s"
 # idle_checker is running in the background, and will terminate the wrapper
 # shell if it is idle for longer than TIMEOUT seconds
 #
-trap idle_handler ALRM
+# trap idle_handler ALRM
+trap '' ALRM
 
 idle_handler (){
   cmd_quit TIMEOUT
