@@ -20,7 +20,7 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 # the adaptor info
 #
 _ADAPTOR_NAME          = "saga.adaptor.libcloud_resource"
-_ADAPTOR_SCHEMAS       = ["ec2"]
+_ADAPTOR_SCHEMAS       = ["ec2", "ec2_keypair"]
 _ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
@@ -45,9 +45,10 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.resource.ACCESS       ],    
     "metrics"          : [saga.resource.STATE, 
                           saga.resource.STATE_DETAIL],
-    "contexts"         : {"ssh"      : "public/private keypair",
-                          "x509"     : "X509 proxy",
-                          "userpass" : "username/password pair"}
+    "contexts"         : {"ssh"         : "public/private keypair",
+                          "x509"        : "X509 proxy",
+                          "ec2_keypair" : "ec2 keypair for node access",
+                          "userpass"    : "username/password pair"}
 }
 
 # --------------------------------------------------------------------
@@ -59,10 +60,12 @@ _ADAPTOR_DOC           = {
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "description"      : """ 
         The LibCloud resource adaptor. This adaptor interacts with a variety of
-        IaaS backends via the Apache LibCloud.
+        IaaS backends via the Apache LibCloud.  It also provides EC2 related
+        context types.
         """,
-    "example": "examples/jobs/localresource.py",
-    "schemas"          : {"ec2"  : "Amacon EC2"}
+    "example": "examples/jobs/resource_ec2.py",
+    "schemas"          : {"ec2"         : "Amacon EC2 key/secret",
+                          "ec2_keypair" : "Amacon EC2 keypair name"}
 }
 
 # --------------------------------------------------------------------
@@ -73,6 +76,14 @@ _ADAPTOR_INFO          = {
     "version"          : "v0.1",
     "schemas"          : _ADAPTOR_SCHEMAS,
     "cpis"             : [
+        { 
+        "type"         : "saga.Context",
+        "class"        : "LibcloudEC2Context"
+        }, 
+        { 
+        "type"         : "saga.Context",
+        "class"        : "LibcloudEC2Keypair"
+        }, 
         { 
         "type"         : "saga.resource.Manager",
         "class"        : "LibcloudResourceManager"
@@ -88,6 +99,9 @@ _ADAPTOR_INFO          = {
 # The adaptor class
 
 class Adaptor (saga.adaptors.base.Base):
+    """
+    use 'export LIBCLOUD_DEBUG=/dev/stderr' for debugging
+    """
 
     # ----------------------------------------------------------------
     #
@@ -121,6 +135,15 @@ class Adaptor (saga.adaptors.base.Base):
 
     # ----------------------------------------------------------------
     #
+    def _get_default_contexts (self) :
+
+        # no default keypair in ec2
+        # FIXME: pick up a default context from the EC2 default env vars
+        return []
+
+
+    # ----------------------------------------------------------------
+    #
     def parse_id (self, id) :
         # split the id '[manager-url]-[resource-url]' in its parts, and return them.
 
@@ -132,6 +155,59 @@ class Adaptor (saga.adaptors.base.Base):
 
         return (saga.Url (match.group(1)), str (match.group (2)))
 
+
+
+###############################################################################
+#
+class LibcloudEC2Keypair (saga.adaptors.cpi.context.Context) :
+
+    """ 
+    For a given ec2 keypair name, we should fetch the respective key footprint
+    with conn.ex_describe_keypairs('self.api.target'), then sift through all
+    public ssh keys we can find, and see if one matches that footprint.  If one
+    does, we should add that respective ssh key to the session, so that it can
+    be used for host access authentication.
+
+    Alas, the ex_describe_keypairs call is faulty and does not return
+    footprints, and so we have no chance really to find the respective ssh key.
+    We thus need to rely on the user to add the respective ssh key to the
+    session on her own.  
+
+    I have filed a bugreport with libcloud[1], lets see what happens.  At this
+    point, this context adaptor does basically nothing than hosting the EC2
+    keypair for session authentication.  
+
+    [1] https://issues.apache.org/jira/browse/LIBCLOUD-326
+    """
+
+
+    # ----------------------------------------------------------------
+    #
+    def __init__ (self, api, adaptor) :
+
+        _cpi_base = super  (LibcloudEC2Keypair, self)
+        _cpi_base.__init__ (api, adaptor)
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def init_instance (self, adaptor_state, type) :
+        
+        if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
+            raise saga.exceptions.BadParameter \
+                    ("the UserPass context adaptor only handles UserPass contexts - duh!")
+
+        self._type = type
+
+        return self
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def _initialize (self, session) :
+        pass
 
 
 
@@ -159,8 +235,6 @@ class LibcloudResourceManager (saga.adaptors.cpi.resource.Manager) :
         self.url     = saga.Url (url)  # deep copy
         self.session = session
 
-        print self.lccp
-
         # internale (cached) registry of available resources
         self.templates       = []
         self.templates_dict  = {}
@@ -177,7 +251,7 @@ class LibcloudResourceManager (saga.adaptors.cpi.resource.Manager) :
 
         if  self.url.schema == 'ec2' :
             if  self.url.host and \
-                self.url.host != 'aws.amaon.com' :
+                self.url.host != 'aws.amazon.com' :
                 raise saga.BadParameter ("only amazon/EC2 supported (not %s)" \
                                       % self.url)
 
@@ -242,6 +316,15 @@ class LibcloudResourceManager (saga.adaptors.cpi.resource.Manager) :
         if  rd.rtype != COMPUTE :
             raise saga.BadParameter ("can only acquire compute resources.")
 
+
+        # check if a any 'ec2_keypair' context is known.  If so, use its
+        # 'keypair'
+        # attribute as keypair name for node creation
+        token = ''
+        for context in self.session.contexts  :
+            if  context.type == 'ec2_keypair' :
+                token = context.token
+                self._logger.info ("using '%s' as ec2 keypair" % token)
        
         resource_info = None
 
@@ -286,7 +369,8 @@ class LibcloudResourceManager (saga.adaptors.cpi.resource.Manager) :
                 # it should be safe to create the VM instance now
                 node = self.conn.create_node (name  = 'saga.resource.Compute',
                                               size  = self.templates_dict[rd.template], 
-                                              image = self.images_dict[rd.image])
+                                              image = self.images_dict[rd.image], 
+                                              ex_keyname = token)
 
                 resource_info = { 'backend'                 : self.backend   ,
                                   'resource'                : node           ,
@@ -356,84 +440,6 @@ class LibcloudResourceManager (saga.adaptors.cpi.resource.Manager) :
         if  resource_info :
             return saga.resource.Compute (_adaptor       = self._adaptor, 
                                           _adaptor_state = resource_info)
-
-        raise saga.NoSuccess ("Could not acquire requested resource")
-
-
-    # ----------------------------------------------------------------
-    #
-    @SYNC_CALL
-    def acquire (self, rd) :
-
-        if  not self.conn :
-            raise saga.IncorrectState ("not connected to backend")
-
-        if  rd.rtype != COMPUTE :
-            raise saga.BadParameter ("can only acquire compute resources.")
-
-       
-        resource_info = None
-
-        # check that only supported attributes are provided
-        for attribute in rd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITIES["rdes_attributes"]:
-                msg = "'resource.Description.%s' is not supported by this adaptor" % attribute
-                raise saga.BadParameter._log (self._logger, msg)
-
-
-        if  self.backend == 'amazon.ec2' :
-            # for amazon EC2, we only support template defined instances
-            if  not rd.template :
-                raise saga.BadParameter ("no 'template' attribute in resource description")
-            
-            # we also need an OS image
-            if  not rd.image :
-                raise saga.BadParameter ("no 'image' attribute in resource description")
-
-            # and we don't support any other attribute right now
-            if  rd.dynamic      or rd.start        or \
-                rd.end          or rd.duration     or \
-                rd.machine_os   or rd.machine_arch or \
-                rd.access       or rd.memory       :
-                raise saga.BadParameter ("amazon.ec2 resource descriptions only "
-                                         "supports 'template' and 'image' attributes")
-
-            if True :
-          # try :
-                
-
-                # make sure template and image are valid, and get handles
-                if  not rd.template in self.templates_dict : 
-                    self._refresh_templates (rd.template)
-
-                if  not rd.image in self.images_dict : 
-                    self._refresh_images (rd.image)
-
-
-                # FIXME: interpret / verify size
-
-                # it should be safe to create the VM instance now
-                node = self.conn.create_node (name  = 'saga.resource.Compute',
-                                              size  = self.templates_dict[rd.template], 
-                                              image = self.images_dict[rd.image])
-
-                resource_info = { 'backend'                 : self.backend   ,
-                                  'resource'                : node           ,
-                                  'resource_type'           : rd.rtype       ,
-                                  'resource_description'    : rd             ,
-                                  'resource_manager'        : self.get_api (), 
-                                  'resource_manager_url'    : self.url       , 
-                                  'resource_schema'         : self.url.schema, 
-                                  'connection'              : self.conn      }
-
-          # except Exception as e :
-          #     # FIXME: translate errors more sensibly
-          #     raise saga.NoSuccess ("Failed with %s" % e)
-
-        if  resource_info :
-            if  rd.rtype == COMPUTE :
-                return saga.resource.Compute (_adaptor       = self._adaptor, 
-                                              _adaptor_state = resource_info)
 
         raise saga.NoSuccess ("Could not acquire requested resource")
 

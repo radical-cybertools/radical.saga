@@ -1,6 +1,7 @@
 
 
 import os
+import sys
 from   pprint import pprint
 
 import libcloud.compute.types      as lcct
@@ -12,6 +13,13 @@ ec2_key = os.environ['EC2_KEY']
 Driver = lccp.get_driver (lcct.Provider.EC2)
 conn   = Driver (ec2_id, ec2_key)
 pprint (conn)
+
+keypairs = conn.ex_describe_all_keypairs ()
+for kp in keypairs :
+  keypair = conn.ex_describe_keypairs (kp)
+  pprint (keypair)
+
+sys.exit (0)
 
 nodes  = conn.list_nodes ()
 pprint (nodes)
