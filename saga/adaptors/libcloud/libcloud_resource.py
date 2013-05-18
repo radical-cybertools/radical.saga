@@ -162,22 +162,61 @@ class Adaptor (saga.adaptors.base.Base):
 class LibcloudEC2Keypair (saga.adaptors.cpi.context.Context) :
 
     """ 
-    For a given ec2 keypair name, we should fetch the respective key footprint
-    with conn.ex_describe_keypairs('self.api.target'), then sift through all
+    This context points to an EC2 keypair which is used to contextualize VM
+    instances.
+
+    The context can be used in two ways, depending on the specified keys:
+
+    *Version 1:* reference an existing (uploaded) keypair:
+      - `Token`  : name of keypair to be used  (required)
+      - `UserID` : username on VM instance     (optional, default 'root')
+      - `Server` : authentication server host  (optional, default for Amazon)
+
+    A 'DoesNotExist' exception will be raised if the referenced keypair does not
+    exist, and the context will not be added to the session.  An attempt to
+    connect to a VM with an invalid keypair (i.e.  a keypair not registered upon
+    VM creation), or with an invalid user id, will result in an
+    'AuthorizationDenied' exception.
+
+
+    *Version 2:* create (upload) a new keypair, and the use it
+      - `Token`  : name of keypair to create   (required)
+      - `UserKey`: public  ssh key             (required)
+      - `UserID` : username on VM instance     (optional, default 'root') 
+      - `Server` : authentication server host  (optional, default for Amazon)
+
+    When used in this version, the adaptor will attempt to create an EC2 keypair
+    with the given name (`Token`), by uploading the public ssh key.  On success,
+    the `UserKey` attribute will then be removed from the context, to avoid
+    repeated uploads on re-use, and the context will behave as in Version 1.  If
+    a keypair with the given name already exists, an 'AlreadyExists' exception
+    is raised.  All other errors with result in a `NoSuccess` exception.  If any
+    error occurs, the context will not be added to the session.
+
+
+    Known Limitations
+    =================
+
+    1) For a given EC2 keypair name, we should fetch the respective key footprint
+    with `conn.ex_describe_keypairs('self.api.target')`, then sift through all
     public ssh keys we can find, and see if one matches that footprint.  If one
     does, we should add that respective ssh key to the session, so that it can
     be used for host access authentication.
 
-    Alas, the ex_describe_keypairs call is faulty and does not return
+    Alas, the `ex_describe_keypairs()` call is faulty and does not return
     footprints, and so we have no chance really to find the respective ssh key.
     We thus need to rely on the user to add the respective ssh key to the
     session on her own.  
 
-    I have filed a bugreport with libcloud[1], lets see what happens.  At this
+    I have filed a bug report with libcloud[1], lets see what happens.  At this
     point, this context adaptor does basically nothing than hosting the EC2
     keypair for session authentication.  
 
-    [1] https://issues.apache.org/jira/browse/LIBCLOUD-326
+    [1] `https://issues.apache.org/jira/browse/LIBCLOUD-326`
+
+
+    2) The `Server` attribute is ignored at this point, only Amazon's AWS
+    service is supported.
     """
 
 

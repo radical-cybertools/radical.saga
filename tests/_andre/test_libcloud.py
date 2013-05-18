@@ -19,8 +19,6 @@ for kp in keypairs :
   keypair = conn.ex_describe_keypairs (kp)
   pprint (keypair)
 
-sys.exit (0)
-
 nodes  = conn.list_nodes ()
 pprint (nodes)
 
