@@ -148,7 +148,7 @@ setup_args = {
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
      #  "saga.adaptors.redis",
-        "saga.adaptors.libcloud",
+        "saga.adaptors.aws",
         "saga.adaptors.http",
         "saga.engine",
         "saga.utils",
