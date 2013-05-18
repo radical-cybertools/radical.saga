@@ -1,10 +1,18 @@
 
 import saga
 
-rid = None
-rid = '[ec2://aws.amaon.com/]-[i-4643f22a]'
 
-rm = saga.resource.Manager ("ec2://aws.amaon.com/")
+rid = None
+rid = '[ec2://aws.amaon.com/]-[i-e239458c]'
+
+c = saga.Context ('ec2_keypair')
+c.token = 'futuregrid'
+
+s = saga.Session ()
+s.contexts.append (c)
+
+rm = saga.resource.Manager ("ec2://aws.amaon.com/", session=s)
+cr = None
 
 if  not rid :
 
@@ -32,6 +40,11 @@ else :
     print cr.access
     print cr.description
 
+
+if cr and cr.state == saga.resource.ACTIVE :
+
+    js = saga.job.Service (cr.access)
+    js.run_job ('hostname')
 
 
     

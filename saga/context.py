@@ -11,8 +11,8 @@ import saga.attributes       as sa
 import saga.base             as sb
 
 from   saga.constants import TYPE,       SERVER,    USER_CERT,   CERT_REPOSITORY
-from   saga.constants import USER_PROXY, USER_KEY,  USER_ID,     USER_PASS, USER_VO
-from   saga.constants import LIFE_TIME,  REMOTE_ID, REMOTE_HOST, REMOTE_PORT 
+from   saga.constants import USER_PROXY, USER_KEY,  USER_ID,     USER_PASS,   USER_VO
+from   saga.constants import LIFE_TIME,  REMOTE_ID, REMOTE_HOST, REMOTE_PORT, TOKEN
 
 # ------------------------------------------------------------------------------
 #
@@ -88,6 +88,7 @@ class Context (sb.Base, sa.Attributes) :
         # register properties with the attribute interface
         self._attributes_register  (TYPE,            None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (SERVER,          None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (TOKEN,           None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (CERT_REPOSITORY, None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (USER_PROXY,      None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (USER_CERT,       None, sa.STRING, sa.SCALAR, sa.WRITEABLE)

@@ -45,6 +45,7 @@ STATES = "States"
 #
 TYPE            = "Type"
 SERVER          = "Server"
+TOKEN           = "Token"
 CERT_REPOSITORY = "CertRepository"
 USER_PROXY      = "UserProxy"
 USER_CERT       = "UserCert"
