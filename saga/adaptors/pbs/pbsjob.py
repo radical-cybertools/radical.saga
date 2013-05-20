@@ -632,7 +632,7 @@ about finished jobs. Setting state to 'DONE'.")
 
     # ----------------------------------------------------------------
     #
-    def _job_get_state(self, job_id):
+    def _job_get_state(self, job_id, job_obj):
         """ get the job's state
         """
         # check if we have already reach a terminal state
@@ -645,7 +645,9 @@ about finished jobs. Setting state to 'DONE'.")
         if (self.jobs[job_id]['gone'] is not True):
             self.jobs[job_id] = self._job_get_info(job_id=job_id)
 
-        return self.jobs[job_id]['state']
+        s = self.jobs[job_id]['state']
+        job_obj._api()._attributes_i_set('state', s, job_obj._api()._UP, True)
+        return s
 
     # ----------------------------------------------------------------
     #
@@ -726,7 +728,7 @@ about finished jobs. Setting state to 'DONE'.")
 
     # ----------------------------------------------------------------
     #
-    def _job_wait(self, job_id, timeout):
+    def _job_wait(self, job_id, job_obj, timeout):
         """ wait for the job to finish or fail
         """
 
@@ -735,7 +737,7 @@ about finished jobs. Setting state to 'DONE'.")
         rm, pid    = self._adaptor.parse_id(job_id)
 
         while True:
-            state = self._job_get_state(job_id=job_id)
+            state = self._job_get_state(job_id=job_id, job_obj=job_obj)
 
             if state == saga.job.DONE or \
                state == saga.job.FAILED or \
@@ -900,8 +902,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
             # jobs that are not started are always in 'NEW' state
             return saga.job.NEW
         else:
-            return self.js._job_get_state(self._id)
-
+            return self.js._job_get_state(job_id=self._id, job_obj=self)
+            
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -912,7 +914,7 @@ class PBSJob (saga.adaptors.cpi.job.Job):
             log_error_and_raise("Can't wait for job that hasn't been started",
                 saga.IncorrectState, self._logger)
         else:
-            self.js._job_wait(self._id, timeout)
+            self.js._job_wait(job_id=self._id, job_obj=self, timeout=timeout)
 
     # ----------------------------------------------------------------
     #

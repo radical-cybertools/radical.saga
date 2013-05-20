@@ -15,6 +15,15 @@ import sys
 import saga
 
 
+# ----------------------------------------------------------------------------
+# Example callback
+def my_cb(a, b, c):
+    print " ----- callback: [%s, %s, %s]" % (a, b, c)
+    return True
+
+
+# ----------------------------------------------------------------------------
+#
 def main():
 
     try:
@@ -38,7 +47,7 @@ def main():
         jd = saga.job.Description()
         jd.environment       = {'FILENAME': 'testfile'}
         jd.wall_time_limit   = 1 # minutes
-        
+
         jd.executable        = '/bin/touch'
         jd.arguments         = ['$FILENAME']
 
@@ -55,6 +64,10 @@ def main():
         # Create a new job from the job description. The initial state of 
         # the job is 'New'.
         touchjob = js.create_job(jd)
+
+        # register a callback
+        #cb = MyCallback()
+        touchjob.add_callback(saga.STATE, my_cb)
 
         # Check our job's id and state
         print "Job ID    : %s" % (touchjob.id)
