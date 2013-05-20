@@ -117,7 +117,7 @@ class Callback () :
       job = js.create_job(jd)
 
       cb = MyCallback()
-      job.add_callback('state', cb)
+      job.add_callback(saga.STATE, cb)
       job.run()
 
 
