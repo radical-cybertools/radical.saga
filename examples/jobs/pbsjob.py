@@ -94,7 +94,7 @@ def main():
 
         # wait for our job to complete
         print "\n...waiting for job...\n"
-        touchjob_clone.wait()
+        touchjob.wait()
 
         print "Job State   : %s" % (touchjob_clone.state)
         print "Exitcode    : %s" % (touchjob_clone.exit_code)
