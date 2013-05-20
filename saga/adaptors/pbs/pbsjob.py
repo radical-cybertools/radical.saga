@@ -90,8 +90,14 @@ def _pbscript_generator(url, logger, jd, ppn, is_cray=False, queue=None):
             variable_list += "%s=%s," % (key, jd.environment[key])
         pbs_params += "#PBS -v %s \n" % variable_list
 
+# apparently this doesn't work with older PBS installations
+#    if jd.working_directory is not None:
+#        pbs_params += "#PBS -d %s \n" % jd.working_directory
+
+    # a workaround is to do an explicit 'cd'
     if jd.working_directory is not None:
-        pbs_params += "#PBS -d %s \n" % jd.working_directory
+        exec_n_args = 'cd '+jd.working_directory+' && '+exec_n_args
+
     if jd.output is not None:
         pbs_params += "#PBS -o %s \n" % jd.output
     if jd.error is not None:
