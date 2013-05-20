@@ -1,6 +1,9 @@
 
 import os
+import sys
 import saga
+
+from pudb import set_interrupt_handler; set_interrupt_handler()
 
 
 rid = None
@@ -11,8 +14,9 @@ c1.user_id  = os.environ['EC2_ID']
 c1.user_key = os.environ['EC2_KEY']
 
 c2 = saga.Context ('ec2_keypair')
-c2.token   = 'futuregrid'
-c2.user_id = 'root'
+c2.token    = 'futuregrid'
+c2.user_key = '/home/merzky/.ssh/id_rsa_futuregrid.pub'
+c2.user_id  = 'root'
 
 # the above ec2_keypair context should spawn an ssh context, alas this is not
 # possible with the present libcloud (see comments in adaptor).  We thus add
@@ -28,8 +32,11 @@ s.contexts.append (c1)
 s.contexts.append (c2)
 s.contexts.append (c3)
 
+sys.exit (0)
+
 rm = saga.resource.Manager ("ec2://aws.amazon.com/", session=s)
 cr = None
+
 
 if  not rid :
 

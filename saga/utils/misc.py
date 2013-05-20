@@ -193,5 +193,21 @@ def url_is_compatible (url_1, url_2) :
     return True
 
 
+# --------------------------------------------------------------------
+#
+def normalize_version (v) :
+    """
+    For a given version string (numeric only!), return an ordered tuple of
+    integers, removing trailing zeros.  That tuple can then be used for
+    comparison.
+    """
+    # parts = [int (x) for x in v.split (".")]
+    # while parts[-1] == 0:
+    #     parts.pop ()
+    # return parts
+
+    return tuple (v.split ("."))
+
+
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

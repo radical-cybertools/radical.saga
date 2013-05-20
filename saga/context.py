@@ -126,7 +126,7 @@ class Context (sb.Base, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @sus.takes      ('Context', 
-                     'Session')
+                     ('Session', '_DefaultSession'))
     @sus.returns    (sus.nothing)
     def _initialize (self, session) :
         '''
