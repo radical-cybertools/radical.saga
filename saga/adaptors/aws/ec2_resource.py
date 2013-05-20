@@ -117,11 +117,34 @@ class Adaptor (saga.adaptors.base.Base):
     def sanity_check (self) :
 
         try :
+            import saga.utils.misc as sutm
+
             # get the libclound modules.  Note that the non-empty fromlist
             # forces Python to include the actually specified module, not only
             # the top level libcloud.  Oh Python...
+            self.lc   = __import__ ('libcloud',                   fromlist=[''])
             self.lcct = __import__ ('libcloud.compute.types',     fromlist=[''])
             self.lccp = __import__ ('libcloud.compute.providers', fromlist=[''])
+
+            # we only tested against libcloud 0.12.4, so we require that version
+            # for now, at least
+            if  sutm.normalize_version (self.lc.__version__) < \
+                sutm.normalize_version ('0.12.4')       :
+                raise saga.NoSuccess ("Libcloud version newer than 0.12.4 required")
+
+
+            # 0.12.4 does not support keypair footprint inspection, so we cannot
+            # create ssh keys from keypair names.  We check for that feature
+            # here, and issue a warning otherwise
+            # for now, at least
+            if  sutm.normalize_version (self.lc.__version__) < \
+                sutm.normalize_version ('0.12.5')       :
+                self._logger.warning ("Libcloud version does not allow keypair "
+                                      "inspection -- cannot associate ssh keys "
+                                      "with ec2 keypairs")
+                self.lc_has_footprint = False
+            else :
+                self.lc_has_footprint = True
 
 
         except Exception as e :
@@ -225,15 +248,19 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
         _cpi_base = super  (EC2Keypair, self)
         _cpi_base.__init__ (api, adaptor)
 
+        self.lcct = self._adaptor.lcct
+        self.lccp = self._adaptor.lccp
+
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def init_instance (self, adaptor_state, type) :
         
-        if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
+        if  not type.lower () == 'ec2'         and \
+            not type.lower () == 'ec2_keypair' :
             raise saga.exceptions.BadParameter \
-                    ("the UserPass context adaptor only handles UserPass contexts - duh!")
+                  ("ec2 adaptor only handles 'ec2' and 'ec2_keypair' contexts")
 
         self._type = type
 
@@ -244,7 +271,99 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
     #
     @SYNC_CALL
     def _initialize (self, session) :
-        pass
+
+        if  self._type == 'ec2' :
+            # nothing to do for simple ec2 id/secret containers
+            # FIXME: we could in principle validate validity...
+            return 
+
+        # we have an ec2_keypair context.  We need to find an ec2  context in
+        # the session though which we can use to talk to the backend
+        self.ec2_id  = None
+        self.ec2_key = None
+
+        for ctx in session.contexts :
+            if  ctx.type == 'ec2' :
+                self.ec2_id  = ctx.user_id
+                self.ec2_key = ctx.user_key
+
+        if  not self.ec2_id or not self.ec2_key :
+            raise saga.exceptions.AuthenticationFailed \
+                  ("cannot initialize 'ec2_keypair' withough ec2 context")
+
+    
+        print self._api ()
+        if  not self._api ().token :
+            raise saga.exceptions.BadParameter \
+                  ("'ec2_keypair' context must speciy keypair name as 'Token'")
+
+        # valid context, connect to backend  
+        # FIXME: use 'Server' if defined
+        driver = self.lccp.get_driver (self.lcct.Provider.EC2)
+        conn   = driver (self.ec2_id, self.ec2_key)
+
+        # check if given keypair exists.  We only can do that by inspecting it,
+        # and capturing an eventual exception.
+        keypair = None
+        token   = self._api ().token
+        key     = self._api ().user_key
+        create  = False
+
+        try:
+            keypair = conn.ex_describe_keypairs (token)
+
+        except Exception as e :
+
+            e_str = str(e)
+
+            if e_str.startswith ("InvalidKeyPair.NotFound") :
+
+                if  not key :
+                    raise saga.exceptions.BadParameter \
+                          ("'ec2_keypair' not found: %s" % e)
+
+                # keypair not found, but we have a key, so we can register it!
+                create = True
+
+            else :
+                raise saga.exceptions.BadParameter \
+                      ("'ec2_keypair' not found: %s" % e)
+
+
+        if  create and key :
+
+            self._logger.info ("import new keypair %s : %s" % (token, key))
+
+            try :
+                keypair = conn.ex_import_keypair (token, key)
+
+            except Exception as e :
+                raise saga.exceptions.BadParameter \
+                      ("'ec2_keypair' not found: %s" % e)
+
+            # import worked -- we don't need to import again, so unset the
+            # user_key attribute
+            self._api ().user_key = None
+
+
+        elif create and not key : 
+            self._logger.warning ("ignore 'UserKey' attribute for existing 'ec2_keypair'")
+
+
+        # *Version 1:* reference an existing (uploaded) keypair:
+        #   - `Token`  : name of keypair to be used  (required)
+        #   - `UserID` : username on VM instance     (optional, default 'root')
+        #   - `Server` : authentication server host  (optional, default for Amazon)
+
+        # *Version 2:* create (upload) a new keypair, and the use it
+        #   - `Token`  : name of keypair to create   (required)
+        #   - `UserKey`: public  ssh key             (required)
+        #   - `UserID` : username on VM instance     (optional, default 'root') 
+        #   - `Server` : authentication server host  (optional, default for Amazon)
+        #
+        
+
+
 
 
 
