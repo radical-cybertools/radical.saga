@@ -39,7 +39,7 @@ class Context (saga.base.Base, saga.Attributes) :
 
         # add the context to a session
         session = saga.Session()
-        session.session.add_context(ctx)
+        session.add_context(ctx)
 
         # create a job service in this session -- that job service can now
         # *only* use that ssh context. 
