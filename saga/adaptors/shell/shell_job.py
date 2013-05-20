@@ -1073,6 +1073,8 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
         self._state = self._adaptor.string_to_state (stats['state'])
 
+        self._api ()._attributes_i_set ('state', self._state, self._api ()._UP)
+        
         return self._state
 
 
