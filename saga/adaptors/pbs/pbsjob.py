@@ -9,6 +9,7 @@ __license__   = "MIT"
 
 import saga.utils.which
 import saga.utils.pty_shell
+import saga.utils.exception
 
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
@@ -17,16 +18,51 @@ from saga.job.constants import *
 
 import re
 import time
+import threading
 from copy import deepcopy
 from cgi import parse_qs
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
+SYNC_WAIT_UPDATE_INTERVAL = 2 # seconds
+MONITOR_UPDATE_INTERVAL = 4 # seconds
+
+
+# --------------------------------------------------------------------
+#
+class _job_state_monitor(threading.Thread):
+    """ thread that periodically monitors job states
+    """
+    def __init__(self, job_service):
+
+        self.logger = job_service._logger
+        self.js = job_service
+
+        super(_job_state_monitor, self).__init__()
+        self.setDaemon(True)
+
+    def run(self):
+        try:
+            while True:
+                self.logger.debug("Job monitoring thread happily churning along for %s" % self.js)
+
+                # do bulk updates here! we don't want to pull information
+                # job by job. that would be too inefficient!
+
+                time.sleep(MONITOR_UPDATE_INTERVAL)
+
+        except Exception as e:
+            self.logger.critical("Job monitoring thread crashed - disabling callback handling: %s") % str(e)
+            self.logger.debug(saga.utils.exception.get_traceback(0))
+            return
+
 
 # --------------------------------------------------------------------
 #
 def log_error_and_raise(message, exception, logger):
+    """ loggs an 'error' message and subsequently throws an exception
+    """
     logger.error(message)
     raise exception(message)
 
@@ -300,6 +336,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self.queue   = None
         self.shell   = None
         self.jobs    = dict()
+
+        # the monitoring thread - one per service instance
+        self.mt = _job_state_monitor(job_service=self)
+        self.mt.start()
 
         rm_scheme = rm_url.scheme
         pty_url   = deepcopy(rm_url)
@@ -733,7 +773,6 @@ about finished jobs. Setting state to 'DONE'.")
     def _job_wait(self, job_id, job_obj, timeout):
         """ wait for the job to finish or fail
         """
-
         time_start = time.time()
         time_now   = time_start
         rm, pid    = self._adaptor.parse_id(job_id)
@@ -746,7 +785,7 @@ about finished jobs. Setting state to 'DONE'.")
                state == saga.job.CANCELED:
                     return True
             # avoid busy poll
-            time.sleep(0.5)
+            time.sleep(SYNC_WAIT_UPDATE_INTERVAL)
 
             # check if we hit timeout
             if timeout >= 0:
@@ -898,7 +937,7 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_state(self):
-        """ mplements saga.adaptors.cpi.job.Job.get_state()
+        """ implements saga.adaptors.cpi.job.Job.get_state()
         """
         if self._started is False:
             # jobs that are not started are always in 'NEW' state
