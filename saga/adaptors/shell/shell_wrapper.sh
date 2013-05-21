@@ -324,7 +324,7 @@ cmd_run_process () {
   # lifetime will not be bound to the manager script lifetime.  Also, it runs in
   # an interactive shell, i.e. in a new process group, so that we can signal the
   # monitor and the actual job processes all at once (think suspend, cancel).
-  ( sh -i -c "sh $BASE/monitor.sh  $SAGA_PID \"$DIR\" & exit" )
+  ( sh -i -c "sh $BASE/monitor.sh  $SAGA_PID \"$DIR\" 2>&1 > \"$DIR/monitor.log\" & exit" )
 
   read RPID MPID < "$DIR/fifo"
   rm -rf $DIR/fifo
