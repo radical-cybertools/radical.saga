@@ -99,7 +99,7 @@ verify_dir () {
 # ensure that given job id has valid pid file
 verify_pid () {
   verify_dir $1
-  if ! test -r "$DIR/rpid";   then ERROR="pid $1 has no process id"; return 1; fi
+  if ! test -r "$DIR/rpid";  then ERROR="pid $1 has no process id"; return 1; fi
 }
 
 
@@ -115,7 +115,7 @@ verify_state () {
 # ensure that given job id has valid stdin file
 verify_in () {
   verify_dir $1
-  if ! test -r "$DIR/in"; then ERROR="pid $1 has no stdin"; return 1; fi
+  if ! test -r "$DIR/in";    then ERROR="pid $1 has no stdin"; return 1; fi
 }
 
 
@@ -123,7 +123,7 @@ verify_in () {
 # ensure that given job id has valid stdou file
 verify_out () {
   verify_dir $1
-  if ! test -r "$DIR/out"; then ERROR="pid $1 has no stdout"; return 1; fi
+  if ! test -r "$DIR/out";   then ERROR="pid $1 has no stdout"; return 1; fi
 }
 
 
@@ -131,7 +131,7 @@ verify_out () {
 # ensure that given job id has valid stderr file
 verify_err () {
   verify_dir $1
-  if ! test -r "$DIR/err"; then ERROR="stderr $1 has no sterr"; return 1; fi
+  if ! test -r "$DIR/err";   then ERROR="stderr $1 has no sterr"; return 1; fi
 }
 
 
