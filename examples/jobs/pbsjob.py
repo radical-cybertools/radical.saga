@@ -16,9 +16,11 @@ import saga
 
 
 # ----------------------------------------------------------------------------
-# Example callback
-def my_cb(a, b, c):
-    print " ----- callback: [%s, %s, %s]" % (a, b, c)
+# This is an example for a callback function. Callback functions can be
+# registered with a saga.Job object and get 'fired' asynchronously on
+# certain conditions.
+def job_state_change_cb(src_obj, fire_on, value):
+    print " ----- callback: [%s, %s, %s]" % (src_obj, fire_on, value)
     return True
 
 
@@ -61,13 +63,12 @@ def main():
         jd.output            = "examplejob.out"
         jd.error             = "examplejob.err"
 
-        # Create a new job from the job description. The initial state of 
+        # Create a new job from the job description. The initial state of
         # the job is 'New'.
         touchjob = js.create_job(jd)
 
-        # register a callback
-        #cb = MyCallback()
-        touchjob.add_callback(saga.STATE, my_cb)
+        # Register our callback. We want it to 'fire' on job state change
+        touchjob.add_callback(saga.STATE, job_state_change_cb)
 
         # Check our job's id and state
         print "Job ID    : %s" % (touchjob.id)
