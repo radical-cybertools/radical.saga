@@ -15,6 +15,14 @@ import sys
 import saga
 
 
+class MyCallback (saga.Callback):
+
+    def __init__(self, msg):
+        self._msg = msg
+
+    def cb(self, obj, key, val) :
+        print " %s\n %s (%s) : %s"  %  self._msg, obj, key, val
+
 def main():
 
     try:

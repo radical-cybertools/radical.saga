@@ -482,7 +482,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
             # add job to internal list of known jobs.
             self.jobs[job_id] = {
-                'state':        saga.job.PENDING,
+                'state':        saga.job.NEW,
                 'exec_hosts':   None,
                 'returncode':   None,
                 'create_time':  None,
@@ -643,11 +643,13 @@ about finished jobs. Setting state to 'DONE'.")
 
         # check if we can / should update
         if (self.jobs[job_id]['gone'] is not True):
-            self.jobs[job_id] = self._job_get_info(job_id=job_id)
+            job_info = self._job_get_info(job_id=job_id)
 
-        s = self.jobs[job_id]['state']
-        job_obj._api()._attributes_i_set('state', s, job_obj._api()._UP, True)
-        return s
+            if job_info['state'] != self.jobs[job_id]['state']:
+                self.jobs[job_id] = job_info
+                job_obj._api()._attributes_i_set('state', self.jobs[job_id]['state'], job_obj._api()._UP, True)
+
+        return self.jobs[job_id]['state']
 
     # ----------------------------------------------------------------
     #
@@ -900,6 +902,8 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         """
         if self._started is False:
             # jobs that are not started are always in 'NEW' state
+            self._api()._attributes_i_set('state', saga.job.NEW, self._api()._UP, True)
+
             return saga.job.NEW
         else:
             return self.js._job_get_state(job_id=self._id, job_obj=self)
