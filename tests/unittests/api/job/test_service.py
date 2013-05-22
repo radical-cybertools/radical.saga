@@ -13,7 +13,9 @@ import saga.utils.test_config as sutc
 def _silent_cancel(job_obj):
     # try to cancel job but silently ignore all errors
     try:
+        print "silent cancel for  %s (%s)" % (job_obj.id, job_obj.state)
         job_obj.cancel()
+        print "silent cancel done %s (%s)" % (job_obj.id, job_obj.state)
     except Exception:
         pass
 
@@ -153,10 +155,13 @@ def test_run_job():
 def test_get_job():
     """ Test to submit a job, and retrieve it by id """
     try:
+        print "test get job 0"
         tc = sutc.TestConfig()
+        print "test get job 1"
         js = saga.job.Service(tc.js_url, tc.session)
 
         # create job service and job
+        print "test get job 2"
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
@@ -164,11 +169,16 @@ def test_get_job():
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
+        print "test get job 3 %s" % jd
+        jd._attributes_dump ()
         j = js.create_job(jd)
 
         # run job - now it has an id, and js must be able to retrieve it by id
+        print "test get job 3"
         j.run()
+        print "test get job 4 %s" % j.id
         j_clone = js.get_job(j.id)
+        print "test get job 5 %s" % j_clone.id
         assert j.id in j_clone.id
 
     except saga.NotImplemented as ni:
@@ -217,7 +227,9 @@ def test_multiple_services():
     try:
         tc = sutc.TestConfig()
         for i in range(0, 20):
+            print " ------------------------ %s" % i
             helper_multiple_services(i)
+            print " ------------------------ %s ok" % i
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
