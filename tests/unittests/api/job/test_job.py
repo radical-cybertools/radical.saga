@@ -101,18 +101,25 @@ def test_job_run():
     """ Test job.run() - expecting state: RUNNING/PENDING
     """
     try:
+        print "test job.run 0"
         tc = sutc.TestConfig()
+        print "test job.run 1"
         js = saga.job.Service(tc.js_url, tc.session)
+        print "test job.run 2"
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+        jd._attributes_dump ()
+        print "test job.run 3"
 
         j1 = js.create_job(jd)
+        print "test job.run 4 %s (%s) [%s]" % (j1.id, j1.state, time.time())
 
         j1.run()
+        print "test job.run 5 %s (%s) [%s]" % (j1.id, j1.state, time.time())
 
         assert (j1.state in [saga.job.RUNNING, saga.job.PENDING])
 
@@ -123,8 +130,10 @@ def test_job_run():
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
+        print "test job.run finally"
         _silent_cancel(j1)
         _silent_close_js(js)
+        print "test job.run finally done"
 
 
 # ------------------------------------------------------------------------------
