@@ -26,6 +26,7 @@ def _silent_close_js(js_obj):
     # try to cancel job but silently ignore all errors
     try:
         js_obj.close()
+        js_obj.close()
     except Exception:
         pass
 
@@ -141,9 +142,9 @@ def test_run_job():
 
         # create job service and job
         j = js.run_job("/bin/sleep 10")
-        print "test js.run_job 3 %s (%s)" (j.id, j.state)
+        print "test js.run_job 3 %s (%s)" % (j.id, j.state)
         assert j.id
-        print "test js.run_job 4 %s (%s)" (j.id, j.state)
+        print "test js.run_job 4 %s (%s)" % (j.id, j.state)
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
@@ -153,8 +154,9 @@ def test_run_job():
         assert False, "Unexpected exception: %s" % se
     finally:
         print "test js.run_job finally"
-        _silent_close_js(js)
+      # from pudb import set_trace; set_trace()
         _silent_cancel(j)
+        _silent_close_js(js)
         print "test js.run_job finally done"
 
 
