@@ -154,7 +154,6 @@ def test_run_job():
     finally:
         print "test js.run_job finally"
         _silent_close_js(js)
-        _silent_cancel(j)
         print "test js.run_job finally done"
 
 

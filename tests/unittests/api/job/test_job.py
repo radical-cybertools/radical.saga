@@ -121,7 +121,7 @@ def test_job_run():
         j.run()
         print "test job.run 5 %s (%s) [%s]" % (j.id, j.state, time.time())
 
-        assert (j.state in [saga.job.RUNNING, saga.job.PENDING])
+        assert (j.state in [saga.job.RUNNING, saga.job.PENDING]), "j.state: %s" % j.state
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
@@ -203,9 +203,9 @@ if True :
         j = js.create_job(jd)
 
         j.run()
-        assert (j.state in [saga.job.RUNNING, saga.job.PENDING])
+        assert (j.state in [saga.job.RUNNING, saga.job.PENDING]), 'j.state: %s' % j.state
         j.wait()
-        assert (j.state == saga.job.DONE), "%s == %s" % (j.state, saga.job.DONE)
+        assert (j.state == saga.job.DONE), "j.state: %s " % j.state
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
