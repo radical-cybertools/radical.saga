@@ -353,7 +353,9 @@ def test_get_id():
     """ Test job.get_id() / job.id
     """
     try:
+        print "test job.get_id 0"
         tc = sutc.TestConfig()
+        print "test job.get_id 1"
         js = saga.job.Service(tc.js_url, tc.session)
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
@@ -361,9 +363,14 @@ def test_get_id():
 
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+        jd._attributes_dump ()
+        print "test job.get_id 3"
 
         j = js.create_job(jd)
+        print "test job.get_id 4 %s (%s) [%s]" % (j1.id, j1.state, time.time())
         j.run()
+        print "test job.get_id 5 %s (%s) [%s]" % (j1.id, j1.state, time.time())
+        print "test job.get_id 6 %s (%s) [%s]" % (j1.get_id(), j1.state, time.time())
 
         assert j.id is not None
         assert j.id == j.get_id()
@@ -375,5 +382,8 @@ def test_get_id():
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
+        print "test job.get_id finally"
         _silent_cancel(j)
         _silent_close_js(js)
+        print "test job.get_id finally done"
+
