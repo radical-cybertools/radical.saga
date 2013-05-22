@@ -13,10 +13,9 @@ def my_cb (a, b, c) :
 
 try :
     c = saga.Context ('ssh')
-    c.user_cert = '/home/merzky/.ssh/id_rsa'
-    c.user_key  = '/home/merzky/.ssh/id_rsa.pub'
+    c.user_key  = '/home/merzky/.ssh/id_rsa_test'
     c.user_id   = 'tester'
-    c.user_pass = 'passpass'
+    c.user_pass = 'testtest'
 
     s = saga.Session (default=False)
     s.add_context (c)
