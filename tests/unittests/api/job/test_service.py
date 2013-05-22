@@ -185,17 +185,29 @@ def test_get_job():
 # ------------------------------------------------------------------------------
 #
 def helper_multiple_services(i):
+    print "helper multiple services 0"
     tc = sutc.TestConfig()
+    print "helper multiple services 1"
     js = saga.job.Service(tc.js_url, tc.session)
+    print "helper multiple services 2"
     jd = saga.job.Description()
+    print "helper multiple services 3"
     jd.executable = '/bin/sleep'
+    print "helper multiple services 4"
     jd.arguments = ['10']
+    print "helper multiple services 5"
     jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+    print "helper multiple services 6"
     j = js.create_job(jd)
+    print "helper multiple services 7"
     j.run()
+    print "helper multiple services 8"
     assert (j.state in [saga.job.RUNNING, saga.job.PENDING]), "job submission failed"
+    print "helper multiple services 9"
     _silent_cancel(j)
+    print "helper multiple services 10"
     _silent_close_js(js)
+    print "helper multiple services 11"
 
 
 # ------------------------------------------------------------------------------
