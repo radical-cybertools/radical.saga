@@ -162,7 +162,7 @@ def test_job_wait():
         j.run()
         print "test job.wait 4 %s (%s) [%s]" % (j.id, j.state, time.time())
         j.wait()
-        print "test job.wait 5 %s (%s) [%s]" % (j.id, j.state, time.time)
+        print "test job.wait 5 %s (%s) [%s]" % (j.id, j.state, time.time())
         assert j.state == saga.job.DONE, "%s != %s" % (j.state, saga.job.DONE)
         print "test job.wait 6 %s (%s)" % (j.id, j.state)
 
@@ -367,10 +367,10 @@ def test_get_id():
         print "test job.get_id 3"
 
         j = js.create_job(jd)
-        print "test job.get_id 4 %s (%s) [%s]" % (j.id, j.state, time.time())
+        print "test job.get_id 4 %s (%s)" % (j.id, j.state)
         j.run()
-        print "test job.get_id 5 %s (%s) [%s]" % (j.id, j.state, time.time())
-        print "test job.get_id 6 %s (%s) [%s]" % (j.get_id(), j.state, time.time())
+        print "test job.get_id 5 %s (%s)" % (j.id, j.state)
+        print "test job.get_id 6 %s (%s)" % (j.get_id(), j.state)
 
         assert j.id is not None
         assert j.id == j.get_id()
