@@ -1,10 +1,18 @@
-#!/bin/sh
+#!/bin/bash
 
 # this script uses only POSIX shell functionality, and does not rely on bash or
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
 # thought.
 
+touch /tmp/log
+chmod 0666 /tmp/log
 
+# Call Stack -- this will only work in bash!
+call_stack_to_log () {
+  echo $BASH_SOURCE >> /tmp/log
+  echo $BASH_LINENO >> /tmp/log
+  echo $FUNCNAME    >> /tmp/log
+}
 
 
 
@@ -107,6 +115,10 @@ verify_pid () {
 # ensure that given job id has valid state file
 verify_state () {
   verify_dir $1
+  echo "verifying $1" >> /tmp/log
+  ls -la $DIR/        >> /tmp/log
+  call_stack_to_log test
+  if ! test -r "$DIR/state"; then echo ' -------------------' >> /tmp/log; fi
   if ! test -r "$DIR/state"; then ERROR="pid $1 has no state"; return 1; fi
 }
 
@@ -376,7 +388,7 @@ cmd_state () {
 #
 cmd_stats () {
   # stats are only defined for jobs in some state
-  # verify_state $1 || return
+  verify_state $1 || return
 
   DIR="$BASE/$1"
   STATE=`grep -e ' $' "$DIR/state" | tail -n 1 | tr -d ' '`
