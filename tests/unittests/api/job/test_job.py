@@ -81,9 +81,9 @@ def test_job_service_create():
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
-        j1 = js.create_job(jd)
-        assert j1.state == j1.get_state()
-        assert j1.state == saga.job.NEW
+        j = js.create_job(jd)
+        assert j.state == j.get_state()
+        assert j.state == saga.job.NEW
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
@@ -115,13 +115,13 @@ def test_job_run():
         jd._attributes_dump ()
         print "test job.run 3"
 
-        j1 = js.create_job(jd)
-        print "test job.run 4 %s (%s) [%s]" % (j1.id, j1.state, time.time())
+        j = js.create_job(jd)
+        print "test job.run 4 %s (%s) [%s]" % (j.id, j.state, time.time())
 
-        j1.run()
-        print "test job.run 5 %s (%s) [%s]" % (j1.id, j1.state, time.time())
+        j.run()
+        print "test job.run 5 %s (%s) [%s]" % (j.id, j.state, time.time())
 
-        assert (j1.state in [saga.job.RUNNING, saga.job.PENDING])
+        assert (j.state in [saga.job.RUNNING, saga.job.PENDING])
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
@@ -131,7 +131,7 @@ def test_job_run():
         assert False, "Unexpected exception: %s" % se
     finally:
         print "test job.run finally"
-        _silent_cancel(j1)
+        _silent_cancel(j)
         _silent_close_js(js)
         print "test job.run finally done"
 
@@ -156,15 +156,15 @@ def test_job_wait():
         jd._attributes_dump ()
         print "test job.wait 3"
 
-        j1 = js.create_job(jd)
-        print "test job.wait 3 %s" % j1.id
+        j = js.create_job(jd)
+        print "test job.wait 3 %s" % j.id
 
-        j1.run()
-        print "test job.wait 4 %s (%s) [%s]" % (j1.id, j1.state, time.time())
-        j1.wait()
-        print "test job.wait 5 %s (%s) [%s]" % (j1.id, j1.state, time.time)
-        assert j1.state == saga.job.DONE, "%s != %s" % (j1.state, saga.job.DONE)
-        print "test job.wait 6 %s (%s)" % (j1.id, j1.state)
+        j.run()
+        print "test job.wait 4 %s (%s) [%s]" % (j.id, j.state, time.time())
+        j.wait()
+        print "test job.wait 5 %s (%s) [%s]" % (j.id, j.state, time.time)
+        assert j.state == saga.job.DONE, "%s != %s" % (j.state, saga.job.DONE)
+        print "test job.wait 6 %s (%s)" % (j.id, j.state)
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
@@ -174,7 +174,7 @@ def test_job_wait():
         assert False, "Unexpected exception: %s" % se
     finally:
         print "test job.wait finally"
-        _silent_cancel(j1)
+        _silent_cancel(j)
         _silent_close_js(js)
         print "test job.wait finally done"
 
@@ -200,12 +200,12 @@ if True :
 
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
-        j1 = js.create_job(jd)
+        j = js.create_job(jd)
 
-        j1.run()
-        assert (j1.state in [saga.job.RUNNING, saga.job.PENDING])
-        j1.wait()
-        assert (j1.state == saga.job.DONE), "%s == %s" % (j1.state, saga.job.DONE)
+        j.run()
+        assert (j.state in [saga.job.RUNNING, saga.job.PENDING])
+        j.wait()
+        assert (j.state == saga.job.DONE), "%s == %s" % (j.state, saga.job.DONE)
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
@@ -214,7 +214,7 @@ if True :
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
-        _silent_cancel(j1)
+        _silent_cancel(j)
         _silent_close_js(js)
 
 
@@ -233,16 +233,16 @@ def test_job_suspend_resume():
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
-        j1 = js.create_job(jd)
-        j1.run()
+        j = js.create_job(jd)
+        j.run()
 
-        j1.suspend()
-        assert j1.state == saga.job.SUSPENDED
-        assert j1.state == j1.get_state()
+        j.suspend()
+        assert j.state == saga.job.SUSPENDED
+        assert j.state == j.get_state()
 
-        j1.resume()
-        assert j1.state == saga.job.RUNNING
-        assert j1.state == j1.get_state()
+        j.resume()
+        assert j.state == saga.job.RUNNING
+        assert j.state == j.get_state()
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
@@ -251,7 +251,7 @@ def test_job_suspend_resume():
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
-        _silent_cancel(j1)
+        _silent_cancel(j)
         _silent_close_js(js)
 
 
@@ -270,11 +270,11 @@ def test_job_cancel():
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
 
-        j1 = js.create_job(jd)
+        j = js.create_job(jd)
 
-        j1.run()
-        j1.cancel()
-        assert j1.state == saga.job.CANCELED
+        j.run()
+        j.cancel()
+        assert j.state == saga.job.CANCELED
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
@@ -367,10 +367,10 @@ def test_get_id():
         print "test job.get_id 3"
 
         j = js.create_job(jd)
-        print "test job.get_id 4 %s (%s) [%s]" % (j1.id, j1.state, time.time())
+        print "test job.get_id 4 %s (%s) [%s]" % (j.id, j.state, time.time())
         j.run()
-        print "test job.get_id 5 %s (%s) [%s]" % (j1.id, j1.state, time.time())
-        print "test job.get_id 6 %s (%s) [%s]" % (j1.get_id(), j1.state, time.time())
+        print "test job.get_id 5 %s (%s) [%s]" % (j.id, j.state, time.time())
+        print "test job.get_id 6 %s (%s) [%s]" % (j.get_id(), j.state, time.time())
 
         assert j.id is not None
         assert j.id == j.get_id()
