@@ -14,7 +14,9 @@ from copy import deepcopy
 def _silent_cancel(job_obj):
     # try to cancel job but silently ignore all errors
     try:
+        print "Silent cancel for  %s (%s)" % (job_obj.id, job_obj.state)
         job_obj.cancel()
+        print "Silent cancel done %s (%s)" % (job_obj.id, job_obj.state)
     except Exception:
         pass
 
@@ -130,20 +132,29 @@ def test_job_wait():
     """ Test job.wait() - expecting state: DONE (this test might take a while)
     """
     try:
+        print "test job.wait 0"
         tc = sutc.TestConfig()
+        print "test job.wait 1"
         js = saga.job.Service(tc.js_url, tc.session)
+        print "test job.wait 2"
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+        jd._attributes_dump ()
+        print "test job.wait 3"
 
         j1 = js.create_job(jd)
+        print "test job.wait 3 %s" % j1.id
 
         j1.run()
+        print "test job.wait 4 %s (%s) [%s]" % (j1.id, j1.state, time.time())
         j1.wait()
+        print "test job.wait 5 %s (%s) [%s]" % (j1.id, j1.state, time.time)
         assert j1.state == saga.job.DONE, "%s != %s" % (j1.state, saga.job.DONE)
+        print "test job.wait 6 %s (%s)" % (j1.id, j1.state)
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
@@ -152,8 +163,10 @@ def test_job_wait():
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
+        print "test job.wait finally"
         _silent_cancel(j1)
         _silent_close_js(js)
+        print "test job.wait finally done"
 
 
 # ------------------------------------------------------------------------------
