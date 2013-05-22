@@ -37,7 +37,7 @@ _ADAPTOR_DOC           = {
     
 This SSH :class:`saga.Context` adaptor points to a private ssh key and user_id
 to be used for ssh based backend connections.  For example, an ssh context can
-be use to start jobs (:class:`saga.job.Job`) via ssh, to copy files
+be used to start jobs (:class:`saga.job.Job`) via ssh, to copy files
 (:class:`saga.filesystem.File`) via sftp, etc.
 
 Not all supported attributes have to be defined when using an ssh context
@@ -186,6 +186,14 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
             _key  = _api.get_attribute    (saga.context.USER_KEY )
         if          _api.attribute_exists (saga.context.USER_PASS) :
             _pass = _api.get_attribute    (saga.context.USER_PASS)
+
+        # for backward compatibility, we interpret cert as key, overwriting the
+        # previous key (which in former times was the public ssh key which we
+        # don't care about)
+        if          _api.attribute_exists (saga.context.USER_CERT) :
+            _key  = _api.get_attribute    (saga.context.USER_CERT)
+            _api.set_attribute (saga.context.USER_KEY, _key)
+            self._logger.warning ("using context.user_cert as context.user_key (%s)" % _key)
 
 
         if  not _key :
