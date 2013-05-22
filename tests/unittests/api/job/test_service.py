@@ -133,12 +133,17 @@ def test_list_jobs():
 def test_run_job():
     """ Test to submit a job via run_job, and retrieve id """
     try:
+        print "test js.run_job 0"
         tc = sutc.TestConfig()
+        print "test js.run_job 1"
         js = saga.job.Service(tc.js_url, tc.session)
+        print "test js.run_job 2"
 
         # create job service and job
         j = js.run_job("/bin/sleep 10")
+        print "test js.run_job 3 %s (%s)" (j.id, j.state)
         assert j.id
+        print "test js.run_job 4 %s (%s)" (j.id, j.state)
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
@@ -147,7 +152,10 @@ def test_run_job():
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
+        print "test js.run_job finally"
         _silent_close_js(js)
+        _silent_cancel(j)
+        print "test js.run_job finally done"
 
 
 # ------------------------------------------------------------------------------
