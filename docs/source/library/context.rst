@@ -84,8 +84,9 @@ The following context attributes are supported:
 
     ctx = saga.Context("SSH")
 
-    ctx.user_id  = "johndoe"
-    ctx.user_key = "/home/johndoe/.ssh/key_for_machine_x"
+    ctx.user_id   = "johndoe"
+    ctx.user_key  = "/home/johndoe/.ssh/key_for_machine_x"
+    ctx.user_pass = "XXXX"  # password to decrypt 'user_key' (if required)
 
     session = saga.Session()
     session.add_context(ctx)

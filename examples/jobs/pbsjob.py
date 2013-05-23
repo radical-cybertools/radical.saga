@@ -20,7 +20,7 @@ import saga
 # registered with a saga.Job object and get 'fired' asynchronously on
 # certain conditions.
 def job_state_change_cb(src_obj, fire_on, value):
-    print " ----- callback: [%s, %s, %s]" % (src_obj, fire_on, value)
+    print "Callback    : job state changed to '%s'\n" % value
     return True
 
 
@@ -71,15 +71,14 @@ def main():
         touchjob.add_callback(saga.STATE, job_state_change_cb)
 
         # Check our job's id and state
-        print "Job ID    : %s" % (touchjob.id)
-        print "Job State : %s" % (touchjob.state)
+        print "Job ID      : %s" % (touchjob.id)
+        print "Job State   : %s" % (touchjob.state)
 
         # Now we can start our job.
         print "\n...starting job...\n"
         touchjob.run()
 
-        print "Job ID    : %s" % (touchjob.id)
-        print "Job State : %s" % (touchjob.state)
+        print "Job ID      : %s" % (touchjob.id)
 
         # List all jobs that are known by the adaptor.
         # This should show our job as well.
