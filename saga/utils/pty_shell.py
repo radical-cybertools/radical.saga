@@ -562,6 +562,7 @@ class PTYShell (object) :
             if  iomode == None :
                 redir  =  ""
 
+            print 'run_sync: %s%s'   % (command, redir)
             self.logger.debug    ('run_sync: %s%s'   % (command, redir))
             self.pty_shell.write (          "%s%s\n" % (command, redir))
 
@@ -571,6 +572,7 @@ class PTYShell (object) :
             if  new_prompt :
                 prompt = new_prompt
 
+            print 'run_sync: wait for prompt (%s)' % (prompt)
             # command has been started - now find prompt again.  
             _, match = self.pty_shell.find ([prompt], timeout=-1.0)  # blocks
 
@@ -580,6 +582,7 @@ class PTYShell (object) :
                 raise saga.IncorrectState ("run_sync failed, no prompt (%s)" % command)
 
 
+            print 'run_sync: eval     prompt (%s)' % (match)
             ret, txt = self._eval_prompt (match, new_prompt)
 
             stdout = None
@@ -619,6 +622,7 @@ class PTYShell (object) :
             if  iomode == None :
                 stdout =  txt
 
+            print 'run_sync: done (%s) (%s) (%s)' % (ret, stdout, stderr)
             return (ret, stdout, stderr)
 
         except Exception as e :

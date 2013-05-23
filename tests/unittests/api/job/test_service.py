@@ -214,6 +214,7 @@ def helper_multiple_services(i):
     print "helper multiple services 5"
     jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
     print "helper multiple services 6"
+    jd._attributes_dump ()
     j = js.create_job(jd)
     print "helper multiple services 7"
     j.run()
