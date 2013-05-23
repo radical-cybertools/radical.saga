@@ -57,9 +57,9 @@ class Manager (cpi_base.CPIBase, cpi_async.Async) :
     def acquire_async              (self, descr,     ttype)    : pass
 
     @SYNC
-    def release                    (self, id,        ttype)    : pass
+    def destroy                    (self, id,        ttype)    : pass
     @ASYNC                                           
-    def release_async              (self, id,        ttype)    : pass
+    def destroy_async              (self, id,        ttype)    : pass
 
 
 

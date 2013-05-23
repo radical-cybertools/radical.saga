@@ -219,7 +219,7 @@ class Manager (sb.Base, async.Async) :
                   basestring,
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
-    def release  (self, id, ttype=None) :
+    def destroy  (self, id, ttype=None) :
         """
         :type  id   : string
         :param id   : identifies the resource to be released.
@@ -228,7 +228,7 @@ class Manager (sb.Base, async.Async) :
         `CANCELED` state.  
         """
 
-        return self._adaptor.release (id, ttype=ttype)
+        return self._adaptor.destroy (id, ttype=ttype)
 
   # FIXME: add 
   # templates = property (list_templates, get_template)  # dict {string : Description}
@@ -247,14 +247,14 @@ class Manager (sb.Base, async.Async) :
     def wait     (self, id, timeout=-1.0, ttype=None) :
         """
         :type  id   : string
-        :param id   : identifies the resource to be released.
+        :param id   : identifies the resource to be waited for.
 
         This call will block for at more 'timeout' seconds, or until the
         specified resource has entered the specified stat, whatever occurs
         first. If the timeout is smaller 0, the call can block forever.
         """
 
-        return self._adaptor.release (id, ttype=ttype)
+        return self._adaptor.wait (id, timeout, ttype=ttype)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

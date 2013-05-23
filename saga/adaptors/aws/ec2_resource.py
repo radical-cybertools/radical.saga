@@ -233,11 +233,28 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
     point, this context adaptor does basically nothing than hosting the EC2
     keypair for session authentication.  
 
+    Update: It turns out that EC2 uses a non-standard and (worse) non-specified
+    way to compute the fingerprints, and we can't use those to select local
+    keys.  There apparently exists a feature-request to AWS to switch to normal
+    ssl MD5 digests [2], but it is unclear if and when that happens.  That
+    severely impacts our ability to choose a suitable ssh key for VM access, and
+    we must rely on the user to provide a suitable one, either in the
+    ec2_keypair context, or in a separate ssh context.
+
+
     [1] `https://issues.apache.org/jira/browse/LIBCLOUD-326`
+    [2] `https://forums.aws.amazon.com/message.jspa?messageID=386571`
 
 
-    2) The `Server` attribute is ignored at this point, only Amazon's AWS
-    service is supported.
+    2) The `Server` attribute is ignored at this point, only the default AWS
+    service endpoint is supported (the default defined by libcloud).
+
+    3) EC2 reports the VM instance to be 'Running' when it starts booting -- at
+    that point the ssh login is not yet functional, and job service instance
+    creation will thus fail.  I don't see a simple way to inspect the internal
+    state (apart from trial/error which is not implemented), so the application
+    needs to cater for that, for example by re-trying to connect.
+
     """
 
 
@@ -619,10 +636,10 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def release (self, id):
+    def destroy (self, id):
 
-        # FIXME
-        return # hahaha
+        node = self.aquire (id)
+        self.conn.destroy_node (node)
 
    
     # ----------------------------------------------------------------
@@ -631,7 +648,7 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
     def list_templates (self, rtype) :
 
         # we support only compute templates right now
-        if  rtype and not rtype | COMPUTE :
+        if  rtype and not (rtype & COMPUTE) :
             return []
 
         if not len (self.templates) :
@@ -655,7 +672,7 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
     def list_images (self, rtype) :
 
         # we support only compute images right now
-        if  rtype and not rtype | COMPUTE :
+        if  rtype and not (rtype & COMPUTE) :
             return []
 
         if not len (self.images) :
@@ -739,7 +756,7 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
 
 
             # FIXME: we don't actually need new state, it should be fresh at
-            # this point...
+            # this point, right?!
             self._refresh_state ()
 
 
@@ -755,30 +772,43 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
     #
     def _refresh_state (self) :
 
-        # NOTE: ex_node_ids is only supported by ec2
-        nodes = self.conn.list_nodes (ex_node_ids=[self.rid])
+        if  self.state == EXPIRED :
+            # no need to update, state is final
+            return
 
-        if  not len (nodes) :
-            raise saga.IncorrectState ("resource '%s' disappeared")
+        try :
+            # NOTE: ex_node_ids is only supported by ec2
+            nodes = self.conn.list_nodes (ex_node_ids=[self.rid])
 
-        if  len (nodes) != 1 :
-            self._log.warning ("Could not uniquely identify instance for '%s'" % self.rid)
+            if  not len (nodes) :
+                raise saga.IncorrectState ("resource '%s' disappeared")
 
-        self.resource = nodes[0]
+            if  len (nodes) != 1 :
+                self._log.warning ("Could not uniquely identify instance for '%s'" % self.rid)
 
-        # FIXME: move state translation to adaptor
-        if   self.resource.state == self.lcct.NodeState.RUNNING    : self.state = ACTIVE
-        elif self.resource.state == self.lcct.NodeState.REBOOTING  : self.state = PENDING
-        elif self.resource.state == self.lcct.NodeState.TERMINATED : self.state = EXPIRED
-        elif self.resource.state == self.lcct.NodeState.PENDING    : self.state = PENDING
-        elif self.resource.state == self.lcct.NodeState.UNKNOWN    : self.state = UNKNOWN
-        else                                                       : self.state = UNKNOWN
+            self.resource = nodes[0]
 
-        if  'status' in self.resource.extra :
-            self.detail = self.resource.extra['status']
+            # FIXME: move state translation to adaptor
+            if   self.resource.state == self.lcct.NodeState.RUNNING    : self.state = ACTIVE
+            elif self.resource.state == self.lcct.NodeState.REBOOTING  : self.state = PENDING
+            elif self.resource.state == self.lcct.NodeState.TERMINATED : self.state = EXPIRED
+            elif self.resource.state == self.lcct.NodeState.PENDING    : self.state = PENDING
+            elif self.resource.state == self.lcct.NodeState.UNKNOWN    : self.state = UNKNOWN
+            else                                                       : self.state = UNKNOWN
 
-        if  len (self.resource.public_ips) :
-            self.access = "ssh://%s/" % self.resource.public_ips[0]
+            if  'status' in self.resource.extra :
+                self.detail = self.resource.extra['status']
+
+        except Exception as e :
+            self._logger.error ("Could not obtain resource state (%s): %s" \
+                             % (self.id, e))
+            self.state  =  UNKNOWN
+
+        if  self.state  == EXPIRED :
+            self.access == None
+        else :
+            if  len (self.resource.public_ips) :
+                self.access = "ssh://%s/" % self.resource.public_ips[0]
 
 
     # --------------------------------------------------------------------------
@@ -850,21 +880,30 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def release (self):
+    def destroy (self):
 
-        return self.manager.release (self.id)
+        return self.conn.destroy_node (self.resource)
 
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def wait (self, state, timeout) : 
-        # trick is, we *never* change state...
 
         import time
         start = time.time ()
 
-        while not ( self.state | state ) :
+        while not self.state :
+            self._refresh_state ()
+
+        if  self.state == EXPIRED and \
+            not  state  & EXPIRED :      
+                raise saga.IncorrectState ("resource is in final state (%s): %s" \
+                                        % (self.detail, self.id))
+
+        while not ( self.state & state ) :
+
+            self._logger.info ("wait   for resource state %s: %s" % (state, self.state))
 
             if timeout > 0 :
                 now = time.time ()
@@ -876,6 +915,8 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
                 break
 
             self._refresh_state ()
+
+        self._logger.info ("waited for resource state %s: %s" % (state, self.state))
 
         return
     

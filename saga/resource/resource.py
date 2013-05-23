@@ -60,7 +60,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     active at some point, and usage requests can already be submitted -- those
     usage requests will not be executed until the resources enters the `ACTIVE`
     state.  The resource can be release from application control in three
-    different ways: they can be actively be released by the application, and
+    different ways: they can be actively be destroyed by the application, and
     will then enter the `CANCELED` state; they can internally cease to function
     and become unable to serve usage requests, represented by a `FAILED` state,
     and the resource manager can retract control from the application because
@@ -213,13 +213,13 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
                   basestring,
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
-    def release (self, ttype=None) :
+    def destroy  (self, ttype=None) :
         """
         The semantics of this method is equivalent to the semantics of the
-        :func:`release` call on the :class:`saga.resource.Manager` class.
+        :func:`destroy` call on the :class:`saga.resource.Manager` class.
         """
 
-        return self._adaptor.release (ttype=ttype)
+        return self._adaptor.destroy (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
