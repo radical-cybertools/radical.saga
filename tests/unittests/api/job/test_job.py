@@ -15,9 +15,7 @@ from copy import deepcopy
 def _silent_cancel(job_obj):
     # try to cancel job but silently ignore all errors
     try:
-        print "Silent cancel for  %s (%s)" % (job_obj.id, job_obj.state)
         job_obj.cancel()
-        print "Silent cancel done %s (%s)" % (job_obj.id, job_obj.state)
     except Exception:
         pass
 
@@ -101,25 +99,18 @@ def test_job_run():
     """ Test job.run() - expecting state: RUNNING/PENDING
     """
     try:
-        print "test job.run 0"
         tc = sutc.TestConfig()
-        print "test job.run 1"
         js = saga.job.Service(tc.js_url, tc.session)
-        print "test job.run 2"
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
-        jd._attributes_dump ()
-        print "test job.run 3"
 
         j = js.create_job(jd)
-        print "test job.run 4 %s (%s) [%s]" % (j.id, j.state, time.time())
 
         j.run()
-        print "test job.run 5 %s (%s) [%s]" % (j.id, j.state, time.time())
 
         assert (j.state in [saga.job.RUNNING, saga.job.PENDING]), "j.state: %s" % j.state
 
@@ -130,10 +121,8 @@ def test_job_run():
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
-        print "test job.run finally"
         _silent_cancel(j)
         _silent_close_js(js)
-        print "test job.run finally done"
 
 
 # ------------------------------------------------------------------------------
@@ -142,29 +131,20 @@ def test_job_wait():
     """ Test job.wait() - expecting state: DONE (this test might take a while)
     """
     try:
-        print "test job.wait 0"
         tc = sutc.TestConfig()
-        print "test job.wait 1"
         js = saga.job.Service(tc.js_url, tc.session)
-        print "test job.wait 2"
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
-        jd._attributes_dump ()
-        print "test job.wait 3"
 
         j = js.create_job(jd)
-        print "test job.wait 3 %s" % j.id
 
         j.run()
-        print "test job.wait 4 %s (%s) [%s]" % (j.id, j.state, time.time())
         j.wait()
-        print "test job.wait 5 %s (%s) [%s]" % (j.id, j.state, time.time())
         assert j.state == saga.job.DONE, "%s != %s" % (j.state, saga.job.DONE)
-        print "test job.wait 6 %s (%s)" % (j.id, j.state)
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
@@ -173,10 +153,8 @@ def test_job_wait():
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
-        print "test job.wait finally"
         _silent_cancel(j)
         _silent_close_js(js)
-        print "test job.wait finally done"
 
 
 # ------------------------------------------------------------------------------
@@ -353,9 +331,7 @@ def test_get_id():
     """ Test job.get_id() / job.id
     """
     try:
-        print "test job.get_id 0"
         tc = sutc.TestConfig()
-        print "test job.get_id 1"
         js = saga.job.Service(tc.js_url, tc.session)
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
@@ -363,14 +339,9 @@ def test_get_id():
 
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
-        jd._attributes_dump ()
-        print "test job.get_id 3"
 
         j = js.create_job(jd)
-        print "test job.get_id 4 %s (%s)" % (j.id, j.state)
         j.run()
-        print "test job.get_id 5 %s (%s)" % (j.id, j.state)
-        print "test job.get_id 6 %s (%s)" % (j.get_id(), j.state)
 
         assert j.id is not None
         assert j.id == j.get_id()
@@ -382,8 +353,6 @@ def test_get_id():
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
-        print "test job.get_id finally"
         _silent_cancel(j)
         _silent_close_js(js)
-        print "test job.get_id finally done"
 

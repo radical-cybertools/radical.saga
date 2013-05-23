@@ -472,7 +472,6 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         run_cmd = run_cmd.replace ("\\", "\\\\\\\\") # hello MacOS
 
-        print "_job_run 1 %s" % run_cmd
         ret, out, _ = self.shell.run_sync (run_cmd)
         if  ret != 0 :
             raise saga.NoSuccess ("failed to run Job '%s': (%s)(%s)" % (cmd, ret, out))
