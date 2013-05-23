@@ -15,14 +15,17 @@ import sys
 import saga
 
 
-class MyCallback (saga.Callback):
+# ----------------------------------------------------------------------------
+# This is an example for a callback function. Callback functions can be
+# registered with a saga.Job object and get 'fired' asynchronously on
+# certain conditions.
+def job_state_change_cb(src_obj, fire_on, value):
+    print "Callback    : job state changed to '%s'\n" % value
+    return True
 
-    def __init__(self, msg):
-        self._msg = msg
 
-    def cb(self, obj, key, val) :
-        print " %s\n %s (%s) : %s"  %  self._msg, obj, key, val
-
+# ----------------------------------------------------------------------------
+#
 def main():
 
     try:
@@ -68,16 +71,18 @@ def main():
         # the job is 'New'.
         touchjob = js.create_job(jd)
 
+        # Register our callback. We want it to 'fire' on job state change
+        touchjob.add_callback(saga.STATE, job_state_change_cb)
+
         # Check our job's id and state
-        print "Job ID    : %s" % (touchjob.id)
-        print "Job State : %s" % (touchjob.state)
+        print "Job ID      : %s" % (touchjob.id)
+        print "Job State   : %s" % (touchjob.state)
 
         # Now we can start our job.
         print "\n...starting job...\n"
         touchjob.run()
 
-        print "Job ID    : %s" % (touchjob.id)
-        print "Job State : %s" % (touchjob.state)
+        print "Job ID      : %s" % (touchjob.id)
 
         # List all jobs that are known by the adaptor.
         # This should show our job as well.
@@ -85,22 +90,16 @@ def main():
         for job in js.list():
             print " * %s" % job
 
-        # Now we disconnect and reconnect to our job by using the get_job()
-        # method and our job's id. While this doesn't make a lot of sense
-        # here,  disconnect / reconnect can become very important for
-        # long-running job.
-        touchjob_clone = js.get_job(touchjob.id)
-
         # wait for our job to complete
         print "\n...waiting for job...\n"
-        touchjob_clone.wait()
+        touchjob.wait()
 
-        print "Job State   : %s" % (touchjob_clone.state)
-        print "Exitcode    : %s" % (touchjob_clone.exit_code)
-        print "Exec. hosts : %s" % (touchjob_clone.execution_hosts)
-        print "Create time : %s" % (touchjob_clone.created)
-        print "Start time  : %s" % (touchjob_clone.started)
-        print "End time    : %s" % (touchjob_clone.finished)
+        print "Job State   : %s" % (touchjob.state)
+        print "Exitcode    : %s" % (touchjob.exit_code)
+        print "Exec. hosts : %s" % (touchjob.execution_hosts)
+        print "Create time : %s" % (touchjob.created)
+        print "Start time  : %s" % (touchjob.started)
+        print "End time    : %s" % (touchjob.finished)
 
         return 0
 
