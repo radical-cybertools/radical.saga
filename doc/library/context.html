@@ -93,7 +93,7 @@ context instances to do so.</p>
 
 <span class="c"># add the context to a session</span>
 <span class="n">session</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
-<span class="n">session</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+<span class="n">session</span><span class="o">.</span><span class="n">add_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
 
 <span class="c"># create a job service in this session -- that job service can now</span>
 <span class="c"># *only* use that ssh context. </span>
@@ -193,8 +193,9 @@ if an SSH key-pair other than the default one (in $HOME/.ssh/) is required to es
 <p><strong>Example</strong>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&quot;SSH&quot;</span><span class="p">)</span>
 
-<span class="n">ctx</span><span class="o">.</span><span class="n">user_id</span>  <span class="o">=</span> <span class="s">&quot;johndoe&quot;</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">user_key</span> <span class="o">=</span> <span class="s">&quot;/home/johndoe/.ssh/key_for_machine_x&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">user_id</span>   <span class="o">=</span> <span class="s">&quot;johndoe&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">user_key</span>  <span class="o">=</span> <span class="s">&quot;/home/johndoe/.ssh/key_for_machine_x&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">user_pass</span> <span class="o">=</span> <span class="s">&quot;XXXX&quot;</span>  <span class="c"># password to decrypt &#39;user_key&#39; (if required)</span>
 
 <span class="n">session</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
 <span class="n">session</span><span class="o">.</span><span class="n">add_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>

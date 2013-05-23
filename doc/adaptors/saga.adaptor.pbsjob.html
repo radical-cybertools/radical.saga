@@ -114,6 +114,17 @@ controlled HPC clusters.</p>
 <span class="kn">import</span> <span class="nn">saga</span>
 
 
+<span class="c"># ----------------------------------------------------------------------------</span>
+<span class="c"># This is an example for a callback function. Callback functions can be</span>
+<span class="c"># registered with a saga.Job object and get &#39;fired&#39; asynchronously on</span>
+<span class="c"># certain conditions.</span>
+<span class="k">def</span> <span class="nf">job_state_change_cb</span><span class="p">(</span><span class="n">src_obj</span><span class="p">,</span> <span class="n">fire_on</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">&quot;Callback    : job state changed to &#39;</span><span class="si">%s</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">value</span>
+    <span class="k">return</span> <span class="bp">True</span>
+
+
+<span class="c"># ----------------------------------------------------------------------------</span>
+<span class="c">#</span>
 <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
 
     <span class="k">try</span><span class="p">:</span>
@@ -137,7 +148,7 @@ controlled HPC clusters.</p>
         <span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
         <span class="n">jd</span><span class="o">.</span><span class="n">environment</span>       <span class="o">=</span> <span class="p">{</span><span class="s">&#39;FILENAME&#39;</span><span class="p">:</span> <span class="s">&#39;testfile&#39;</span><span class="p">}</span>
         <span class="n">jd</span><span class="o">.</span><span class="n">wall_time_limit</span>   <span class="o">=</span> <span class="mi">1</span> <span class="c"># minutes</span>
-        
+
         <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>        <span class="o">=</span> <span class="s">&#39;/bin/touch&#39;</span>
         <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span>         <span class="o">=</span> <span class="p">[</span><span class="s">&#39;$FILENAME&#39;</span><span class="p">]</span>
 
@@ -151,20 +162,22 @@ controlled HPC clusters.</p>
         <span class="n">jd</span><span class="o">.</span><span class="n">output</span>            <span class="o">=</span> <span class="s">&quot;examplejob.out&quot;</span>
         <span class="n">jd</span><span class="o">.</span><span class="n">error</span>             <span class="o">=</span> <span class="s">&quot;examplejob.err&quot;</span>
 
-        <span class="c"># Create a new job from the job description. The initial state of </span>
+        <span class="c"># Create a new job from the job description. The initial state of</span>
         <span class="c"># the job is &#39;New&#39;.</span>
         <span class="n">touchjob</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
 
+        <span class="c"># Register our callback. We want it to &#39;fire&#39; on job state change</span>
+        <span class="n">touchjob</span><span class="o">.</span><span class="n">add_callback</span><span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">STATE</span><span class="p">,</span> <span class="n">job_state_change_cb</span><span class="p">)</span>
+
         <span class="c"># Check our job&#39;s id and state</span>
-        <span class="k">print</span> <span class="s">&quot;Job ID    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Job State : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Job ID      : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Job State   : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
 
         <span class="c"># Now we can start our job.</span>
         <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">...starting job...</span><span class="se">\n</span><span class="s">&quot;</span>
         <span class="n">touchjob</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
-        <span class="k">print</span> <span class="s">&quot;Job ID    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Job State : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Job ID      : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
 
         <span class="c"># List all jobs that are known by the adaptor.</span>
         <span class="c"># This should show our job as well.</span>
@@ -172,22 +185,16 @@ controlled HPC clusters.</p>
         <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">js</span><span class="o">.</span><span class="n">list</span><span class="p">():</span>
             <span class="k">print</span> <span class="s">&quot; * </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job</span>
 
-        <span class="c"># Now we disconnect and reconnect to our job by using the get_job()</span>
-        <span class="c"># method and our job&#39;s id. While this doesn&#39;t make a lot of sense</span>
-        <span class="c"># here,  disconnect / reconnect can become very important for</span>
-        <span class="c"># long-running job.</span>
-        <span class="n">touchjob_clone</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">get_job</span><span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-
         <span class="c"># wait for our job to complete</span>
         <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">...waiting for job...</span><span class="se">\n</span><span class="s">&quot;</span>
-        <span class="n">touchjob_clone</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+        <span class="n">touchjob</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
 
-        <span class="k">print</span> <span class="s">&quot;Job State   : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob_clone</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Exitcode    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob_clone</span><span class="o">.</span><span class="n">exit_code</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Exec. hosts : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob_clone</span><span class="o">.</span><span class="n">execution_hosts</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Create time : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob_clone</span><span class="o">.</span><span class="n">created</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Start time  : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob_clone</span><span class="o">.</span><span class="n">started</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;End time    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob_clone</span><span class="o">.</span><span class="n">finished</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Job State   : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Exitcode    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">exit_code</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Exec. hosts : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">execution_hosts</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Create time : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">created</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Start time  : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">started</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;End time    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">finished</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="mi">0</span>
 

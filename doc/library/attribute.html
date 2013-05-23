@@ -94,27 +94,27 @@ attribute.</p>
 to monitor the attribute for the next subsequent state change.  On returning
 &#8216;False&#8217; (or nothing), the callback will not be called again.</p>
 <p>To register a callback on a object instance, use:</p>
-<div class="highlight-python"><pre>class MyCallback (saga.Callback) :
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyCallback</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">Callback</span><span class="p">):</span>
 
-  def __init__ (self, msg) :
-    self._msg = msg
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
 
-  def cb (self, obj, key, val) :
-    print " %s\n %s (%s) : %s"  %  self._msg, obj, key, val
+    <span class="k">def</span> <span class="nf">cb</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot; </span><span class="si">%s</span><span class="se">\n</span><span class="s"> </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">) : </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="bp">self</span><span class="o">.</span><span class="n">_msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span>
 
+<span class="n">jd</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span> <span class="p">()</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&quot;/bin/date&quot;</span>
 
-  def main () :
+<span class="n">js</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span> <span class="p">(</span><span class="s">&quot;fork://localhost/&quot;</span><span class="p">)</span>
+<span class="n">job</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
 
-  jd  = saga.job.description ()
-  js  = saga.job.service ("fork://localhost/")
-  job = js.create_job (jd)
-
-  cb = MyCallback ("Hello Pilot, how is your state?")
-  job.add_callback ('state', cb)
-  job.run ()</pre>
+<span class="n">cb</span> <span class="o">=</span> <span class="n">MyCallback</span><span class="p">()</span>
+<span class="n">job</span><span class="o">.</span><span class="n">add_callback</span><span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">STATE</span><span class="p">,</span> <span class="n">cb</span><span class="p">)</span>
+<span class="n">job</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
 </div>
-<p>See documentation of the <tt class="xref py py-class docutils literal"><span class="pre">saga.Attributes</span></tt> interface for further details and
-examples.</p>
+<p>See documentation of the <tt class="xref py py-class docutils literal"><span class="pre">saga.Attribute</span></tt> interface for further 
+details and examples.</p>
 <dl class="method">
 <dt id="saga.attributes.Callback.cb">
 <tt class="descname">cb</tt><big>(</big><em>obj</em>, <em>key</em>, <em>val</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Callback.cb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Callback.cb" title="Permalink to this definition">¶</a></dt>
@@ -159,7 +159,7 @@ attributes into vector attributes and back.</p>
 on changes to specific attribute values.</p>
 <p>Example use case:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c">###########################################</span>
-<span class="k">class</span> <span class="nc">Transliterator</span> <span class="p">(</span> <span class="n">pilot</span><span class="o">.</span><span class="n">Attributes</span> <span class="p">)</span> <span class="p">:</span>
+<span class="k">class</span> <span class="nc">Transliterator</span> <span class="p">(</span> <span class="n">saga</span><span class="o">.</span><span class="n">Attribute</span> <span class="p">)</span> <span class="p">:</span>
     
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="p">:</span>
         <span class="c"># setting attribs to non-extensible will cause the cal to init below to</span>
@@ -310,7 +310,7 @@ set_attribute method.</p>
 <dl class="method">
 <dt id="saga.attributes.Attributes.get_vector_attribute">
 <tt class="descname">get_vector_attribute</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.get_vector_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.get_vector_attribute" title="Permalink to this definition">¶</a></dt>
-<dd><p>See also: <tt class="xref py py-func docutils literal"><span class="pre">bliss.saga.AttributeInterface.get_attribute()</span></tt> (key).</p>
+<dd><p>See also: <tt class="xref py py-func docutils literal"><span class="pre">saga.AttributeInterface.get_attribute()</span></tt> (key).</p>
 <p>As python can handle scalar and vector types transparently, this method
 is in fact not very useful.  For that reason, it maps internally to the
 get_attribute method.</p>
@@ -322,7 +322,7 @@ get_attribute method.</p>
 <dd><p>Removing an attribute is actually different from unsetting it, or from
 setting it to &#8216;None&#8217;.  On remove, all traces of the attribute are
 purged, and the key will not be listed on 
-<tt class="xref py py-func docutils literal"><span class="pre">bliss.saga.AttributeInterface.list_attributes()</span></tt> () anymore.</p>
+<tt class="xref py py-func docutils literal"><span class="pre">saga.AttributeInterface.list_attributes()</span></tt> () anymore.</p>
 </dd></dl>
 
 <dl class="method">
