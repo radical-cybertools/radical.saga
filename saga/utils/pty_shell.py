@@ -622,7 +622,7 @@ class PTYShell (object) :
             if  iomode == None :
                 stdout =  txt
 
-            print 'run_sync: done (%s) (%s) (%s)' % (ret, stdout, stderr)
+            print 'run_sync: done [command] (%s) (%s) (%s)' % (ret, stdout, stderr)
             return (ret, stdout, stderr)
 
         except Exception as e :
