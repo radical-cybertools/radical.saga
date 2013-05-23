@@ -7,7 +7,7 @@ from pudb import set_interrupt_handler; set_interrupt_handler()
 
 
 rid = None
-rid = '[ec2://aws.amaon.com/]-[i-7498d41f]'
+rid = '[ec2://aws.amaon.com/]-[i-7904fb11]'
 
 c1 = saga.Context ('ec2')
 c1.user_id  = os.environ['EC2_ID']
@@ -31,8 +31,6 @@ s = saga.Session ()
 s.contexts.append (c1)
 s.contexts.append (c2)
 s.contexts.append (c3)
-
-sys.exit (0)
 
 rm = saga.resource.Manager ("ec2://aws.amazon.com/", session=s)
 cr = None
@@ -65,9 +63,15 @@ else :
     print cr.description
 
 
-print cr.state
-if cr and cr.state == saga.resource.ACTIVE :
+if cr :
 
+    print cr.state
+    cr.wait (saga.resource.ACTIVE)
+    print cr.state
+
+    # the session now contains the ssh context to access the VM instance -- that
+    # context was created from the ec2_keypair context which was earlier used
+    # for VM contextualization
     js = saga.job.Service (cr.access, session=s)
     j = js.run_job ('sleep 10')
     print j.state 
