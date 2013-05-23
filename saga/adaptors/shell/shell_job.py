@@ -474,16 +474,16 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         ret, out, _ = self.shell.run_sync (run_cmd)
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to run job '%s': (%s)(%s)" % (cmd, ret, out))
+            raise saga.NoSuccess ("failed to run Job '%s': (%s)(%s)" % (cmd, ret, out))
 
         lines = filter (None, out.split ("\n"))
         self._logger.debug (lines)
 
         if  len (lines) < 2 :
-            raise saga.NoSuccess ("failed to run job (%s)" % lines)
+            raise saga.NoSuccess ("Failed to run job (%s)" % lines)
 
         if lines[-2] != "OK" :
-            raise saga.NoSuccess ("failed to run job (%s)" % lines)
+            raise saga.NoSuccess ("Failed to run Job (%s)" % lines)
 
         # FIXME: verify format of returned pid (\d+)!
         pid    = lines[-1].strip ()
