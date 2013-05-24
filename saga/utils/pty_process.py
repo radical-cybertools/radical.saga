@@ -180,7 +180,6 @@ class PTYProcess (object) :
 
             # termios.tcsetattr (self.child_fd, termios.TCSADRAIN, new)
 
-            self.logger.error ("got new child_fd [%d]" % self.child_fd)
 
             self.parent_in  = self.child_fd
             self.parent_out = self.child_fd
@@ -216,7 +215,7 @@ class PTYProcess (object) :
                         wstat            = None
                         break
 
-                    if wpid :
+                    if  wpid :
                         break
 
         # at this point, we declare the process to be gone for good
@@ -225,7 +224,7 @@ class PTYProcess (object) :
         # lets see if we can perform some post-mortem analysis
         if  wstat != None :
 
-            if os.WIFEXITED (wstat) :
+            if  os.WIFEXITED (wstat) :
                 # child died of natural causes - perform autopsy...
                 self.exit_code   = os.WEXITSTATUS (wstat)
                 self.exit_signal = None
@@ -237,25 +236,18 @@ class PTYProcess (object) :
 
 
         try : 
-            if self.parent_out :
-                self.logger.error ("close parent_out [%d] [%s]" % (self.parent_out, self))
-                os.write (self.parent_out, "QUIT\n")
-                os.close (self.parent_out)   # FIXME: re-enable
+            if  self.parent_out :
+                os.close (self.parent_out)
                 self.parent_out = None
-            else : 
-                self.logger.error ("destroy parent_out [%d] [%s]" % (self.parent_out, self))
         except OSError :
             pass
 
-        try : 
-            if self.parent_in :
-                self.logger.error ("close parent_in  [%d] [%s]" % (self.parent_in, self))
-                os.close (self.parent_in)    # FIXME: re-enable
-                self.parent_in = None
-            else : 
-                self.logger.error ("destroy parent_in [%d] [%s]" % (self.parent_out, self))
-        except OSError :
-            pass
+      # try : 
+      #     if  self.parent_in :
+      #         os.close (self.parent_in)
+      #         self.parent_in = None
+      # except OSError :
+      #     pass
 
       # try : 
       #     os.close (self.parent_err) 
@@ -659,10 +651,10 @@ class PTYProcess (object) :
             log = data.replace ('\n', '\\n')
             log =  log.replace ('\r', '')
             if  len(log) > _DEBUG_MAX :
-                self.logger.warn  ("write: [%5d] [%5d] (%s ... %s)" \
+                self.logger.debug ("write: [%5d] [%5d] (%s ... %s)" \
                                 % (self.parent_in, len(data), log[:30], log[-30:]))
             else :
-                self.logger.warn  ("write: [%5d] [%5d] (%s)" \
+                self.logger.debug ("write: [%5d] [%5d] (%s)" \
                                 % (self.parent_in, len(data), log))
 
             # attempt to write forever -- until we succeeed
