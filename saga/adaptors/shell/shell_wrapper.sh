@@ -688,8 +688,11 @@ cmd_quit () {
 #
 listen() {
 
-  # we need our home base...
+  # we need our home base cleaned
   test -d "$BASE" || mkdir -p  "$BASE"  || exit 1
+  touch "$BASE/bulk.$$"
+  rm -f "$BASE/bulk.$$"
+  touch "$BASE/bulk.$$"
 
   # make sure we get killed when idle
   # idle_checker $$ 1>/dev/null 2>/dev/null 3</dev/null &
@@ -840,7 +843,7 @@ stty -echonl 2> /dev/null
 
 if test "$PURGE_ON_START" = "True"
 then
-  cmd_purge &
+  cmd_purge
 fi
 
 create_monitor
