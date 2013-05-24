@@ -47,29 +47,21 @@ def main () :
             for i in range (0, 20) :
                 j = js.create_job(jd)
 
-                # Check our job's id and state
-                print "Job ID    : %s" % (j.id)
-                print "Job State : %s" % (j.state)
-
-                print "\n...starting job...\n"
-
                 # Now we can start our job.
                 j.run()
                 jobs.append (j)
 
+                print "Job %3d   : %s [%s]" % (i, j.id, j.state)
+
 
             for j in jobs :
-
-                print "Job ID    : %s" % (j.id)
-                print "Job State : %s" % (j.state)
 
                 j.cancel ()
 
 
             for jid in js.jobs :
                 j = js.get_job (jid)
-                print "%s\t " % j.state,
-            print
+                print "Job       : %s [%s]" % (j.id, j.state)
 
             js.close ()
     
