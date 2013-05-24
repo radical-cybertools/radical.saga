@@ -326,10 +326,6 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     def init_instance (self, adaptor_state, rm_url, session) :
         """ Service instance constructor """
 
-        print ""
-        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        print ""
-
         self.rm      = rm_url
         self.session = session
         self.njobs   = 0
@@ -407,10 +403,6 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             raise saga.NoSuccess ("host setup failed (%s): (%s)" % (ret, out))
 
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out.strip ()))
-
-        # #112
-        self._logger.error ("STARTUP")
-        self.shell.run_async ("STARTUP")
 
 
     # ----------------------------------------------------------------
@@ -490,8 +482,8 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         if  len (lines) < 2 :
             raise saga.NoSuccess ("Failed to run job (%s)" % lines)
         
-        for i in range (0, len(lines)) :
-            print "%d: %s" % (i, lines[i])
+      # for i in range (0, len(lines)) :
+      #     print "%d: %s" % (i, lines[i])
 
         if lines[-2] != "OK" :
             raise saga.NoSuccess ("Failed to run Job (%s)" % lines)
