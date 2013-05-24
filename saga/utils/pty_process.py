@@ -156,7 +156,7 @@ class PTYProcess (object) :
 
         # create the child
         try :
-             self.child, self.child_fd = pty.fork ()
+            self.child, self.child_fd = pty.fork ()
         except Exception as e:
             raise se.NoSuccess ("Could not run (%s): %s" \
                              % (' '.join (self.command), e))
@@ -175,11 +175,12 @@ class PTYProcess (object) :
 
         else :
             # this is the parent
-            new = termios.tcgetattr (self.child_fd)
-            new[3] = new[3] & ~termios.ECHO
+            # new = termios.tcgetattr (self.child_fd)
+            # new[3] = new[3] & ~termios.ECHO
 
-            termios.tcsetattr (self.child_fd, termios.TCSADRAIN, new)
+            # termios.tcsetattr (self.child_fd, termios.TCSADRAIN, new)
 
+            self.logger.error ("got new child_fd [%d]" % self.child_fd)
 
             self.parent_in  = self.child_fd
             self.parent_out = self.child_fd
@@ -235,15 +236,26 @@ class PTYProcess (object) :
                 self.exit_signal = os.WTERMSIG (wstat)
 
 
-     ## try : 
-     ##     os.close (self.parent_in)  
-     ## except OSError :
-     ##     pass
+        try : 
+            if self.parent_out :
+                self.logger.error ("close parent_out [%d] [%s]" % (self.parent_out, self))
+                os.write (self.parent_out, "QUIT\n")
+                os.close (self.parent_out)   # FIXME: re-enable
+                self.parent_out = None
+            else : 
+                self.logger.error ("destroy parent_out [%d] [%s]" % (self.parent_out, self))
+        except OSError :
+            pass
 
-     ## try : 
-     ##     os.close (self.parent_out) 
-     ## except OSError :
-     ##     pass
+        try : 
+            if self.parent_in :
+                self.logger.error ("close parent_in  [%d] [%s]" % (self.parent_in, self))
+                os.close (self.parent_in)    # FIXME: re-enable
+                self.parent_in = None
+            else : 
+                self.logger.error ("destroy parent_in [%d] [%s]" % (self.parent_out, self))
+        except OSError :
+            pass
 
       # try : 
       #     os.close (self.parent_err) 
@@ -481,11 +493,11 @@ class PTYProcess (object) :
                   # print "buf: --%s--" % buf
                   # print "log: --%s--" % log
                     if  len(log) > _DEBUG_MAX :
-                        self.logger.debug ("read : [%5d] (%s ... %s)" \
-                                        % (len(log), log[:30], log[-30:]))
+                        self.logger.debug ("read : [%5d] [%5d] (%s ... %s)" \
+                                        % (f, len(log), log[:30], log[-30:]))
                     else :
-                        self.logger.debug ("read : [%5d] (%s)" \
-                                        % (len(log), log))
+                        self.logger.debug ("read : [%5d] [%5d] (%s)" \
+                                        % (f, len(log), log))
 
 
                 # lets see if we still got any data in the cache we can return
@@ -647,11 +659,11 @@ class PTYProcess (object) :
             log = data.replace ('\n', '\\n')
             log =  log.replace ('\r', '')
             if  len(log) > _DEBUG_MAX :
-                self.logger.debug ("write: [%5d] (%s ... %s)" \
-                                % (len(data), log[:30], log[-30:]))
+                self.logger.warn  ("write: [%5d] [%5d] (%s ... %s)" \
+                                % (self.parent_in, len(data), log[:30], log[-30:]))
             else :
-                self.logger.debug ("write: [%5d] (%s)" \
-                                % (len(data), log))
+                self.logger.warn  ("write: [%5d] [%5d] (%s)" \
+                                % (self.parent_in, len(data), log))
 
             # attempt to write forever -- until we succeeed
             while data :
@@ -668,7 +680,7 @@ class PTYProcess (object) :
                     data = data[size:]
 
                     if data :
-                        self.logger.info ("write: [%5d]" % size)
+                        self.logger.info ("write: [%5d] [%5d]" % (f, size))
 
 
         except Exception as e :

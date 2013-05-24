@@ -7,15 +7,6 @@
 touch /tmp/log
 chmod 0666 /tmp/log
 
-# Call Stack -- this will only work in bash!
-call_stack_to_log () {
-  echo $BASH_SOURCE >> /tmp/log
-  echo $BASH_LINENO >> /tmp/log
-  echo $FUNCNAME    >> /tmp/log
-}
-
-
-
 # --------------------------------------------------------------------
 #
 # Fucking /bin/kill by Ubuntu sometimes understands --, sometimes does not :-P
@@ -52,10 +43,18 @@ PURGE_ON_START="%(PURGE_ON_START)s"
 # idle_checker is running in the background, and will terminate the wrapper
 # shell if it is idle for longer than TIMEOUT seconds
 #
+trap cleanup_handler QUIT TERM EXIT
 # trap idle_handler ALRM
 trap '' ALRM
 
+cleanup_handler (){
+  echo "cleanup handling $$"  >> /tmp/log
+  cmd_quit
+  echo "cleanup handling $$ ok"  >> /tmp/log
+}
+
 idle_handler (){
+  echo "idle handling $$"  >> /tmp/log
   cmd_quit TIMEOUT
 }
 
@@ -116,9 +115,6 @@ verify_pid () {
 verify_state () {
   verify_dir $1
   echo "verifying $1" >> /tmp/log
-  ls -la $DIR/        >> /tmp/log
-  call_stack_to_log test
-  if ! test -r "$DIR/state"; then echo ' -------------------' >> /tmp/log; fi
   if ! test -r "$DIR/state"; then ERROR="pid $1 has no state"; return 1; fi
 }
 
@@ -178,9 +174,14 @@ create_monitor () {
   RPID=\$!
   MPID=\$\$
 
+  printf "\$RPID\\n" >  "\$DIR/rpid"  # real job id
+  printf "\$MPID\\n" >  "\$DIR/mpid"  # monitor pid
+  
+
   # we don't care when the wrapper sees these, echo can hang forever as far as
   # we care...
-  ( printf "\$RPID \$MPID\\n" > "\$DIR/fifo" & )
+  echo "mon: created RPID / MPID" >> /tmp/log
+  ( printf "OK\\n" > "\$DIR/fifo" & )
   
 
   while true
@@ -266,17 +267,25 @@ cmd_run () {
   #
   # do a double fork to avoid zombies (need to do a wait in this process)
 
+
+  echo " ------------ " >> /tmp/log
+  echo " run1 1 $$ : $@  " >> /tmp/log
+
   cmd_run2 "$@" &
+
+  echo " run1 2 $$ " >> /tmp/log
 
   SAGA_PID=$!      # this is the (SAGA-level) job id!
   wait $SAGA_PID   # this will return very quickly -- look at cmd_run2... ;-)
 
+  echo " run1 3 $$ " >> /tmp/log
   if test "$SAGA_PID" = '0'  
   then
     # some error occured, assume RETVAL is set
     ERROR="NOK"
     return
   fi
+  echo " run1 4 $$ " >> /tmp/log
 
   # success
   RETVAL=$SAGA_PID 
@@ -285,11 +294,15 @@ cmd_run () {
   # startup)
   DIR="$BASE/$SAGA_PID"
 
+  echo " run1 5 $$ " >> /tmp/log
   while true
   do
     grep "RUNNING" "$DIR/state" && break
     sleep 0  # sleep 0 will wait for just some millisecs
+    echo " run1 6 $$ " >> /tmp/log
   done
+  echo " run1 7 $$ " >> /tmp/log
+  echo " ============ " >> /tmp/log
 }
 
 
@@ -301,7 +314,9 @@ cmd_run2 () {
   # NOTE: we could, in principle, separate SUBMIT from RUN -- in this case, move
   # the job into NEW state.
 
-  set +x # turn off debug tracing -- stdout interleaving will mess with parsing.
+  # turn off debug tracing -- stdout interleaving will mess with parsing.
+  set +x 
+  echo " run2 1 $$ : $@  " >> /tmp/log
 
   SAGA_PID=`sh -c 'printf "$PPID"'`
   DIR="$BASE/$SAGA_PID"
@@ -309,12 +324,17 @@ cmd_run2 () {
   timestamp
   START=$TIMESTAMP
 
+  echo " run2 2 $$ " >> /tmp/log
   test -d "$DIR"            && rm    -rf "$DIR"     # re-use old pid if needed
   test -d "$DIR"            || mkdir -p  "$DIR"  || (RETVAL="cannot use job id"; return 0)
   printf "START : $START\n"  > "$DIR/stats"
   printf "NEW \n"           >> "$DIR/state"
 
+  echo " run2 3 $$ " >> /tmp/log
   cmd_run_process "$SAGA_PID" "$@" &
+  DAEMON_PID=$!      # this is the (SAGA-level) job id!
+  wait $DAEMON_PID   # this will return very quickly -- look at cmd_run2... ;-)
+  echo " run2 4 $$ " >> /tmp/log
   return $!
 }
 
@@ -322,13 +342,16 @@ cmd_run2 () {
 cmd_run_process () {
   # this command runs the job.  PPID will point to the id of the spawning
   # script, which, coincidentally, we designated as job ID -- nice:
+  echo " run3 1 $$ : $@  " >> /tmp/log
   SAGA_PID=$1
   shift
 
   DIR="$BASE/$SAGA_PID"
 
+  echo " run3 2 $$ " >> /tmp/log
   mkfifo "$DIR/fifo"           # to communicate with the monitor
   printf "$*\n" >  "$DIR/cmd"  # job to run by the monitor
+  echo " run3 3 $$ " >> /tmp/log
 
   # start the monitor script, which makes sure
   # that the job state is properly watched and captured.
@@ -338,12 +361,12 @@ cmd_run_process () {
   # monitor and the actual job processes all at once (think suspend, cancel).
   ( sh -i -c "sh $BASE/monitor.sh  $SAGA_PID \"$DIR\" 2>&1 > \"$DIR/monitor.log\" & exit" )
 
-  read RPID MPID < "$DIR/fifo"
+  echo " run3 4 $$ " >> /tmp/log
+  read TEST < "$DIR/fifo"
   rm -rf $DIR/fifo
 
-  printf "$RPID\n" >  "$DIR/rpid"  # real job id
-  printf "$MPID\n" >  "$DIR/mpid"  # monitor pid
-  
+  echo " run3 5 $$ [$TEST]" >> /tmp/log
+  ls -a "$DIR" >> /tmp/log
   exit
 }
 
@@ -634,6 +657,8 @@ cmd_purge () {
 #
 cmd_quit () {
 
+  echo "quitting $$ $@" >> /tmp/log
+
   if test "$1" = "TIMEOUT"
   then
     printf "IDLE TIMEOUT\n"
@@ -646,8 +671,8 @@ cmd_quit () {
   /bin/kill $1 >/dev/null 2>&1
   rm -f "$BASE/idle.$$"
 
-  # clean bulk file
-  rm -rf bulk.$$
+  # clean bulk file and other temp files
+  rm -f bulk.$$
 
   # restore shell echo
   stty echo    >/dev/null 2>&1
@@ -672,11 +697,25 @@ listen() {
 
   # report our own pid
   if ! test -z $1; then
-    printf "PID: $1\n"
+    printf "PID: $$\n" # FIXME: this should be $1
   fi
 
   # prompt for commands...
   printf "PROMPT-0->\n"
+
+  # wait for the startup signal, to sync IO channels.  
+  # Don't ask for detail, but see #112.
+  echo " start $$ " >> /tmp/log
+  while read -r STARTUP
+  do
+    echo " start $$ $STARTUP " >> /tmp/log
+    case $STARTUP in
+      STARTUP) break    ;;
+      *      ) continue ;;
+    esac
+  done
+  echo " start $$ $STARTUP OK" >> /tmp/log
+    
 
   # and read those from stdin
   OLDIFS=$IFS
@@ -713,6 +752,8 @@ listen() {
       ERROR="OK"
       RETVAL=""
 
+      echo " cmd $$ $CMD $ARGS" >> /tmp/log
+
       # simply invoke the right function for each command, or complain if command
       # is not known
       case $CMD in
@@ -741,6 +782,10 @@ listen() {
 
       EXITVAL=$?
 
+      echo " cmd $$ exitval; $EXITVAL" >> /tmp/log
+      echo " cmd $$ ret val; $RETVAL"  >> /tmp/log
+      echo " cmd $$ err val; $ERROR"   >> /tmp/log
+
       # the called function will report state and results in 'ERROR' and 'RETVAL'
       if test "$ERROR" = "OK"; then
         printf "OK\n"
@@ -762,6 +807,11 @@ listen() {
       # well done - prompt for next command (even in bulk mode, for easier
       # parsing and EXITVAL communication)
       printf "PROMPT-$EXITVAL->\n"
+
+      echo " cmd $$ ------------------------------------------------------"   >> /tmp/log
+      echo " "   >> /tmp/log
+      echo " "   >> /tmp/log
+      echo " "   >> /tmp/log
 
     # closing thye read loop for the bulk data file
     done < "$BASE/bulk.$$"
