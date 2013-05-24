@@ -175,10 +175,10 @@ class PTYProcess (object) :
 
         else :
             # this is the parent
-            # new = termios.tcgetattr (self.child_fd)
-            # new[3] = new[3] & ~termios.ECHO
+            new = termios.tcgetattr (self.child_fd)
+            new[3] = new[3] & ~termios.ECHO
 
-            # termios.tcsetattr (self.child_fd, termios.TCSADRAIN, new)
+            termios.tcsetattr (self.child_fd, termios.TCSANOW, new)
 
 
             self.parent_in  = self.child_fd
