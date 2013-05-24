@@ -22,7 +22,7 @@ def main () :
             # Create a job service object that represent a remote pbs cluster.
             # The keyword 'pbs' in the url scheme triggers the PBS adaptors
             # and '+ssh' enables PBS remote access via SSH.
-            js = saga.job.Service("ssh://%s" % REMOTE_HOST, session=session) 
+            js = saga.job.Service("fork://%s" % REMOTE_HOST, session=session) 
 
             # describe our job
             jd = saga.job.Description()
