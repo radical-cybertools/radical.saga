@@ -1,7 +1,11 @@
+
+import os
 import sys
 import saga
 
-USER_ID     = "oweidner"
+from pudb import set_interrupt_handler; set_interrupt_handler()
+
+USER_ID     = "merzky"
 REMOTE_HOST = "gw68.quarry.iu.teragrid.org"
 
 def main () :
@@ -27,31 +31,39 @@ def main () :
             # description attributes can be found in the API documentation.
             #jd.environment     = {'MYOUTPUT':'"Hello from SAGA"'}
             #jd.environment     = {'MYOUTPUT':'"Hello from SAGA"'}
-            jd.executable       = '/bin/date'
+            jd.executable       = '/bin/sleep'
             jd.queue            = 'normal'
             jd.project          = 'TG-MCB090174'
             jd.wall_time_limit  = '10'
             jd.total_cpu_count  = 1
             #jd.number_of_processes = 1
-            #jd.arguments       = ['$MYOUTPUT']
+            jd.arguments        = ['10']
             jd.output           = "/tmp/saga_job.%s.stdout" % USER_ID
             jd.error            = "/tmp/saga_job.%s.stderr" % USER_ID
 
             # Create a new job from the job description. The initial state of
             # the job is 'New'.
-            myjob = js.create_job(jd)
+            jobs = []
+            for i in range (0, 20) :
+                j = js.create_job(jd)
 
-            # Check our job's id and state
-            print "Job ID    : %s" % (myjob.id)
-            print "Job State : %s" % (myjob.state)
+                # Check our job's id and state
+                print "Job ID    : %s" % (j.id)
+                print "Job State : %s" % (j.state)
 
-            print "\n...starting job...\n"
+                print "\n...starting job...\n"
 
-            # Now we can start our job.
-            myjob.run()
+                # Now we can start our job.
+                j.run()
+                jobs.append (j)
 
-            print "Job ID    : %s" % (myjob.id)
-            print "Job State : %s" % (myjob.state)
+
+            for j in jobs :
+
+                print "Job ID    : %s" % (j.id)
+                print "Job State : %s" % (j.state)
+
+                j.cancel ()
 
 
             for jid in js.jobs :
