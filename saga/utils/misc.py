@@ -300,7 +300,7 @@ def benchmark_eval () :
     tab = ""
     num = ""
 
-    out += "Results:\n"
+    out += "Results :\n"
 
     vn    = len (_benchmark['times']) - 1
     vsum  = sum (_benchmark['times'][1:])
