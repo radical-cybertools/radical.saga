@@ -4,9 +4,18 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 import re
+import sys
+import math
+import time
+
 import saga
 
 """ Provides an assortment of utilities """
+
+_benchmark_times  = []
+_benchmark_start  = 0.0
+_benchmark_idx    = 0
+_benchmark_notes  = []
 
 # --------------------------------------------------------------------
 #
@@ -191,6 +200,109 @@ def url_is_compatible (url_1, url_2) :
     # no differences detected (ignored fragments and query though)
     return True
 
+
+# --------------------------------------------------------------------
+#
+def benchmark_start (notes=['benchmark']) :
+
+    global _benchmark_notes
+    global _benchmark_start
+    global _benchmark_times
+    global _benchmark_idx
+
+    _benchmark_notes = notes
+    _benchmark_start = time.time()
+    _benchmark_times = []
+    _benchmark_idx   = 0
+
+    print "\nBenchmark: %s" % ", ".join (notes)
+
+
+# --------------------------------------------------------------------
+#
+def benchmark_tic () :
+
+    global _benchmark_notes
+    global _benchmark_start
+    global _benchmark_times
+    global _benchmark_idx
+
+    now = time.time ()
+
+    _benchmark_times.append (now - _benchmark_start)
+    _benchmark_start = now
+
+    if   not ( (_benchmark_idx)        ) : sys.stdout.write ('*')
+    elif not ( (_benchmark_idx) % 1000 ) : sys.stdout.write ('\n#')
+    elif not ( (_benchmark_idx) %  100 ) : sys.stdout.write ('\n|')
+    elif not ( (_benchmark_idx) %   10 ) : sys.stdout.write (':')
+    else                                 : sys.stdout.write ('.')
+
+    sys.stdout.flush ()
+
+    _benchmark_idx += 1
+
+# --------------------------------------------------------------------
+#
+def benchmark_eval () :
+
+    global _benchmark_notes
+    global _benchmark_start
+    global _benchmark_times
+    global _benchmark_idx
+
+
+    if  len(_benchmark_times) <= 4 :
+
+        raise Exception ("min 4 timing values required for benchmark evaluation")
+
+
+    out = "\n"
+    top = ""
+    tab = ""
+
+    out += "Benchmark results:\n"
+
+    for note in _benchmark_notes :
+        out += "  - %s\n" % note
+
+    vn    = len (_benchmark_times) - 1
+    vsum  = sum (_benchmark_times[1:])
+    vmin  = min (_benchmark_times[1:])
+    vmax  = max (_benchmark_times[1:])
+    vmean = sum (_benchmark_times[1:]) / vn
+    vsdev = math.sqrt (sum ((x - vmean) ** 2 for x in _benchmark_times[1:]) / vn)
+    vrate = vn / vsum
+
+    out += "  n     : %5.0d\n" % vn
+    out += "  init  : %8.2fs\n" % _benchmark_times[0]
+    out += "  1     : %8.2fs\n" % _benchmark_times[1]
+    out += "  2     : %8.2fs\n" % _benchmark_times[2]
+    out += "  3     : %8.2fs\n" % _benchmark_times[3]
+    out += "  sum   : %8.2fs\n" % vsum
+    out += "  min   : %8.2fs\n" % vmin
+    out += "  max   : %8.2fs\n" % vmax
+    out += "  mean  : %9.3fs\n" % vmean
+    out += "  sdev  : %9.3fs\n" % vsdev
+    out += "  rate  : %9.3fs\n" % vrate
+
+    top = "%8s  %7s  %7s  %7s  %7s  " \
+          "%7s  %7s  %7s  %8s %8s  %8s  %s" \
+        % ('n', 'init', 'time.1', 'time.2', 'time.3', \
+           'sum', 'min',  'max', 'mean', 'std-dev', 'rate', 'notes')
+
+    tab = "%8d  %7.2f  %7.2f  %7.2f  %7.2f  " \
+          "%7.2f  %7.2f  %7.2f  %8.3f %8.3f %8.3f  '%s'" \
+        % (vn, _benchmark_times[0], _benchmark_times[1], _benchmark_times[2], _benchmark_times[3], \
+           vsum,   vmin,  vmax, vmean, vsdev, vrate, ",".join (_benchmark_notes))
+
+    print out
+    print top
+    print tab
+    print
+
+#
+# --------------------------------------------------------------------
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
