@@ -263,10 +263,7 @@ def benchmark_eval () :
     top = ""
     tab = ""
 
-    out += "Benchmark results:\n"
-
-    for note in _benchmark_notes :
-        out += "  - %s\n" % note
+    out += "Results:\n"
 
     vn    = len (_benchmark_times) - 1
     vsum  = sum (_benchmark_times[1:])
@@ -286,7 +283,7 @@ def benchmark_eval () :
     out += "  max   : %8.2fs\n" % vmax
     out += "  mean  : %9.3fs\n" % vmean
     out += "  sdev  : %9.3fs\n" % vsdev
-    out += "  rate  : %9.3fs\n" % vrate
+    out += "  rate  : %9.3f/s\n" % vrate
 
     top = "%8s  %7s  %7s  %7s  %7s  " \
           "%7s  %7s  %7s  %8s %8s  %8s  %s" \
