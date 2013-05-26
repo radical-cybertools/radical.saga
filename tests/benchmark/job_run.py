@@ -7,6 +7,7 @@ import saga.utils.misc as sumisc
 
 USER_ID  = "merzky"
 HOST     = "ssh://gw68.quarry.iu.teragrid.org"
+HOST     = "fork://localhost"
 HOST     = "ssh://repex1.tacc.utexas.edu"
 HOST     = "ssh://boskop"
 
@@ -17,9 +18,10 @@ TIME     =    1
 
 try:
 
-    sumisc.benchmark_start (['job.Job run', HOST])
+    sumisc.benchmark_start (HOST, 'job.Job run')
 
     for i in range (0, N_JS):
+
         ctx = saga.Context("ssh")
         ctx.user_id = USER_ID
 

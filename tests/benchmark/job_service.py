@@ -17,7 +17,7 @@ TIME     =   1
 
 try:
 
-    sumisc.benchmark_start (['job.Service startup', HOST])
+    sumisc.benchmark_start (HOST, 'job.Service startup')
 
     for i in range (-1, N_JS):
         ctx = saga.Context("ssh")
