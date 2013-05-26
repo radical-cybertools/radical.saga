@@ -4,6 +4,7 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 import re
+import os
 import sys
 import math
 import time
@@ -16,6 +17,7 @@ _benchmark_times  = []
 _benchmark_start  = 0.0
 _benchmark_idx    = 0
 _benchmark_notes  = []
+
 
 # --------------------------------------------------------------------
 #
@@ -297,8 +299,20 @@ def benchmark_eval () :
            vsum,   vmin,  vmax, vmean, vsdev, vrate, ",".join (_benchmark_notes))
 
     print out
-    print top
-    print tab
+
+    create_top = True
+    try :
+        statinfo = os.stat ('benchmark.dat')
+        if statinfo.st_size > 0 :
+            create_top = False
+    except Exception :
+        pass
+
+    f = open ("benchmark.dat", "a+")
+
+    if  create_top :
+        f.write ("%s\n" % top)
+    f.write ("%s\n" % tab)
     print
 
 #
