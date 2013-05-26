@@ -2,6 +2,7 @@
 import os
 import sys
 import saga
+import pprint
 
 from pudb import set_interrupt_handler; set_interrupt_handler()
 
@@ -22,15 +23,17 @@ c2.user_id  = 'root'
 # possible with the present libcloud (see comments in adaptor).  We thus add
 # that ssh context manually
 
-c3 = saga.Context ('ssh')
-c3.user_id   = 'root'
-c3.user_cert = '/home/merzky/.ssh/id_rsa_futuregrid'
+# c3 = saga.Context ('ssh')
+# c3.user_id   = 'root'
+# c3.user_cert = '/home/merzky/.ssh/id_rsa_futuregrid'
 
 
-s = saga.Session ()
+s = saga.Session (False)
 s.contexts.append (c1)
 s.contexts.append (c2)
-s.contexts.append (c3)
+#s.contexts.append (c3)
+
+pprint.pprint (s.contexts)
 
 rm = saga.resource.Manager ("ec2://aws.amazon.com/", session=s)
 cr = None
