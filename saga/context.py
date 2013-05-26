@@ -125,6 +125,15 @@ class Context (sb.Base, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Context')
+    @sus.returns (basestring)
+    def __repr__ (self) :
+
+        return str(self)
+
+
+    # --------------------------------------------------------------------------
+    #
     @sus.takes      ('Context', 
                      ('Session', '_DefaultSession'))
     @sus.returns    (sus.nothing)
