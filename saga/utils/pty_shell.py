@@ -854,6 +854,9 @@ class PTYShell (object) :
         elif 'pty allocation' in lmsg :
             e = saga.NoSuccess ("Insufficient system resources: %s" % cmsg)
 
+        elif 'Connection to master closed' in lmsg :
+            e = saga.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
+
         # print e.traceback
         return e
 
