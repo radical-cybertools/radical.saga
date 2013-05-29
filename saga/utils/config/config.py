@@ -257,6 +257,7 @@ class Configuration(object):
             else:
                 return True
 
+
     def get_option(self, category_name, option_name):
         if category_name not in self._master_config:
             raise CategoryNotFound(category_name)
@@ -265,6 +266,25 @@ class Configuration(object):
                 raise OptionNotFound(category_name, option_name)
             else:
                 return self._master_config[category_name][option_name]
+
+
+    def as_dict (self, cn = None) :
+
+        ret = {}
+
+        if  cn : 
+            for on in self._master_config[cn] :
+                ret[on] = self.get_option (cn, on).get_value ()
+
+        else :
+            for cn in self._master_config :
+                ret[cn] = {}
+  
+                for on in self._master_config[cn] :
+                    ret[cn][on] = self.get_option (cn, on).get_value ()
+
+        return ret
+
 
 
 ################################################################################

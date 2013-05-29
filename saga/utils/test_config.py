@@ -16,16 +16,12 @@ import saga
 # ------------------------------------------------------------------------------
 #
 def add_tc_params_to_jd(tc, jd):
-    if tc.job_walltime_limit != "":
-        jd.wall_time_limit = tc.job_walltime_limit
-    if tc.job_project != "":
-        jd.project = tc.job_project
-    if tc.job_queue != "":
-        jd.queue = tc.job_queue
-    if tc.job_total_cpu_count != "":
-        jd.total_cpu_count = tc.job_total_cpu_count
-    if tc.job_spmd_variation != "":
-        jd.spmd_variation = tc.job_spmd_variation
+
+    if tc.job_walltime_limit  : jd.wall_time_limit = tc.job_walltime_limit
+    if tc.job_project         : jd.project         = tc.job_project
+    if tc.job_queue           : jd.queue           = tc.job_queue
+    if tc.job_total_cpu_count : jd.total_cpu_count = tc.job_total_cpu_count
+    if tc.job_spmd_variation  : jd.spmd_variation  = tc.job_spmd_variation
 
     return jd
 
@@ -176,6 +172,9 @@ class TestConfig (sconf.Configurable):
         # Initialize the logging
         self._logger = slog.getLogger ('saga.tests')
 
+        self._test_cfg_d  = {}
+        self._bench_cfg_d = {}
+
 
     #-----------------------------------------------------------------
     # 
@@ -188,8 +187,13 @@ class TestConfig (sconf.Configurable):
         # need to make a deep copy here -- otherwise later tests which
         # re-trigger the read of the saga configuration will mess with our
         # config...
-        self._cfg = copy.deepcopy (self._global_cfg.get_category ('saga.tests'))
+        self._tcfg = copy.deepcopy (self._global_cfg.get_category ('saga.tests'))
 
+        if  self._global_cfg.has_category ('saga.benchmark') :
+            self._bench_cfg_d = self._global_cfg.as_dict ('saga.benchmark')
+
+        if  self._global_cfg.has_category ('saga.tests') :
+            self._test_cfg_d = self._global_cfg.as_dict ('saga.tests')
 
 
     #-----------------------------------------------------------------
@@ -197,7 +201,13 @@ class TestConfig (sconf.Configurable):
     @property
     def test_suites (self):
         
-        return self._cfg['test_suites'].get_value ()
+        return self._tcfg['test_suites'].get_value ()
+
+
+    #-----------------------------------------------------------------
+    # 
+    def get_test_config      (self): return self._test_cfg_d
+    def get_benchmark_config (self): return self._bench_cfg_d
 
 
     #-----------------------------------------------------------------
@@ -205,7 +215,7 @@ class TestConfig (sconf.Configurable):
     @property
     def context (self):
         
-        cfg          = self._cfg
+        cfg          = self._tcfg
         c_type       = cfg['context_type'].get_value ()
         c_user_id    = cfg['context_user_id'].get_value ()
         c_user_pass  = cfg['context_user_pass'].get_value ()
@@ -251,7 +261,7 @@ class TestConfig (sconf.Configurable):
     @property
     def js_url (self):
 
-        return self._cfg['job_service_url'].get_value ()
+        return self._tcfg['job_service_url'].get_value ()
 
 
     #-----------------------------------------------------------------
@@ -259,7 +269,7 @@ class TestConfig (sconf.Configurable):
     @property
     def job_walltime_limit (self):
 
-        return self._cfg['job_walltime_limit'].get_value ()
+        return self._tcfg['job_walltime_limit'].get_value ()
 
 
     #-----------------------------------------------------------------
@@ -267,7 +277,7 @@ class TestConfig (sconf.Configurable):
     @property
     def job_project (self):
 
-        return self._cfg['job_project'].get_value ()
+        return self._tcfg['job_project'].get_value ()
 
 
     #-----------------------------------------------------------------
@@ -275,7 +285,7 @@ class TestConfig (sconf.Configurable):
     @property
     def job_queue (self):
 
-        return self._cfg['job_queue'].get_value ()
+        return self._tcfg['job_queue'].get_value ()
 
 
     #-----------------------------------------------------------------
@@ -283,7 +293,7 @@ class TestConfig (sconf.Configurable):
     @property
     def job_total_cpu_count (self):
 
-        return self._cfg['job_total_cpu_count'].get_value ()
+        return self._tcfg['job_total_cpu_count'].get_value ()
 
 
     #-----------------------------------------------------------------
@@ -291,7 +301,7 @@ class TestConfig (sconf.Configurable):
     @property
     def job_spmd_variation (self):
 
-        return self._cfg['job_spmd_variation'].get_value ()
+        return self._tcfg['job_spmd_variation'].get_value ()
 
 
     #-----------------------------------------------------------------
@@ -299,7 +309,7 @@ class TestConfig (sconf.Configurable):
     @property
     def filesystem_url (self):
 
-        return self._cfg['filesystem_url'].get_value ()
+        return self._tcfg['filesystem_url'].get_value ()
 
 
     #-----------------------------------------------------------------
@@ -307,7 +317,7 @@ class TestConfig (sconf.Configurable):
     @property
     def replica_url (self):
 
-        return self._cfg['job_replica_url'].get_value ()
+        return self._tcfg['job_replica_url'].get_value ()
 
 
     #-----------------------------------------------------------------
@@ -315,4 +325,4 @@ class TestConfig (sconf.Configurable):
     @property
     def advert_url (self):
 
-        return self._cfg['job_advert_url'].get_value ()
+        return self._tcfg['job_advert_url'].get_value ()
