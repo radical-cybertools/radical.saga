@@ -34,12 +34,16 @@ class Thread (threading.Thread) :
         self.daemon     = True
 
 
-    @classmethod
     def Run (self, call, *args, **kwargs) :
 
         t = self (call, *args, **kwargs)
         t.start ()
         return t
+
+
+    @property 
+    def tid (self) :
+        return self.tid
 
 
     def run (self) :

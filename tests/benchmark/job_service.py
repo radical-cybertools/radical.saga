@@ -5,17 +5,29 @@ import saga
 
 import saga.utils.misc as sumisc
 
-USER_ID  = "merzky"
-HOST     = "ssh://gw68.quarry.iu.teragrid.org"
-HOST     = "ssh://repex1.tacc.utexas.edu"
-HOST     = "ssh://boskop"
-
-N_JS     =  20   # we iterate one more than that, to separate startup timing
-N_J      =   0 
-TIME     =   1
-
-
 try:
+
+    # get test backend and benchmark configurations
+    (test_cfg, bench_cfg, session) = sumisc.benchmark_init ()
+
+    if  not 'job_service_url' in test_cfg :
+        sumisc.benchmark_eval ('no job service URL configured')
+
+    if  not 'n_js' in bench_cfg :
+        sumisc.benchmark_eval ('no job service count configured')
+
+    if  not 'n_j' in bench_cfg :
+        sumisc.benchmark_eval ('no job count configured')
+
+    if  not 'n_j' in bench_cfg :
+        TIME = 10
+    else :
+        TIME = int(bench_cfg['sleep'])
+
+    N_JS = int(bench_cfg['n_js'])
+    N_J  = int(bench_cfg['n_j'])
+    HOST = test_cfg['job_service_url']
+
 
     sumisc.benchmark_start (HOST, 'job.Service startup')
 
