@@ -347,7 +347,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """
         self.rm      = rm_url
         self.session = session
-        self.ppn     = 0
+        self.ppn     = 1
         self.is_cray = False
         self.queue   = None
         self.shell   = None
