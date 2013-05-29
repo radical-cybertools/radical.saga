@@ -107,7 +107,7 @@ def _pbs_to_saga_jobstate(pbsjs):
 
 # --------------------------------------------------------------------
 #
-def _pbscript_generator(url, logger, jd, ppn, is_cray=False, queue=None):
+def _pbscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, pbs_version):
     """ generates a PBS script from a SAGA job description
     """
     pbs_params = str()
@@ -167,13 +167,17 @@ def _pbscript_generator(url, logger, jd, ppn, is_cray=False, queue=None):
     if jd.job_contact is not None:
         pbs_params += "#PBS -m abe \n"
 
-    # TORQUE on a cray requires different -l size.. arguments than regular
-    # HPC clusters:
     if is_cray is True:
-        # Special case for TORQUE on Cray XT5s
-        logger.info("Using Cray XT specific '#PBS - size=xx' flags.")
-        if jd.total_cpu_count is not None:
-            pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
+        # Special cases for PBS/TORQUE on Cray. Different PBSes,
+        # different flags. A complete nightmare...
+        if 'PBSPro_10' in pbs_version:
+            logger.info("Using Cray specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
+            if jd.total_cpu_count is not None:
+                pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
+        else:
+            logger.info("Using Cray XT specific '#PBS -l size=xx' flags (TORQUE).")
+            if jd.total_cpu_count is not None:
+                pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
     else:
         # Default case, i.e, standard HPC cluster (non-Cray XT)
         if jd.total_cpu_count is None:
@@ -492,7 +496,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             # create a PBS job script from SAGA job description
             script = _pbscript_generator(url=self.rm, logger=self._logger,
                                          jd=jd, ppn=self.ppn,
-                                         is_cray=self.is_cray, queue=self.queue)
+                                         is_cray=self.is_cray, queue=self.queue,
+                                         pbs_version=self._commands['qstat']['version'])
 
             self._logger.debug("Generated PBS script: %s" % script)
         except Exception, ex:
