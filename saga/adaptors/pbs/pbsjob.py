@@ -107,7 +107,7 @@ def _pbs_to_saga_jobstate(pbsjs):
 
 # --------------------------------------------------------------------
 #
-def _pbscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, pbs_version):
+def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=None, ):
     """ generates a PBS script from a SAGA job description
     """
     pbs_params = str()
@@ -167,6 +167,10 @@ def _pbscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, pbs_ver
     if jd.job_contact is not None:
         pbs_params += "#PBS -m abe \n"
 
+    # if total_cpu_count is not defined, we assume 1
+    if jd.total_cpu_count is None:
+        jd.total_cpu_count = 1
+
     if is_cray is True:
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
         # different flags. A complete nightmare...
@@ -179,10 +183,7 @@ def _pbscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, pbs_ver
             if jd.total_cpu_count is not None:
                 pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
     else:
-        # Default case, i.e, standard HPC cluster (non-Cray XT)
-        if jd.total_cpu_count is None:
-            jd.total_cpu_count = 1
-
+        # Default case, i.e, standard HPC cluster (non-Cray)
         tcc = int(jd.total_cpu_count)
         tbd = float(tcc) / float(ppn)
         if float(tbd) > int(tbd):
@@ -496,8 +497,9 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             # create a PBS job script from SAGA job description
             script = _pbscript_generator(url=self.rm, logger=self._logger,
                                          jd=jd, ppn=self.ppn,
+                                         pbs_version=self._commands['qstat']['version'],
                                          is_cray=self.is_cray, queue=self.queue,
-                                         pbs_version=self._commands['qstat']['version'])
+                                         )
 
             self._logger.debug("Generated PBS script: %s" % script)
         except Exception, ex:
@@ -528,7 +530,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             # sometimes there are a couple of lines of warnings before.
             # if that's the case, we log those as 'warnings'
             lines = out.split('\n')
-            lines = filter(lambda lines: lines != '', lines)  # remove empty 
+            lines = filter(lambda lines: lines != '', lines)  # remove empty
 
             if len(lines) > 1:
                 self._logger.warning('qsub: %s' % ''.join(lines[:-2]))
@@ -540,7 +542,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             # update job dictionary
             self.jobs[job_obj]['job_id'] = job_id
             self.jobs[job_obj]['submitted'] = job_id
-            
+
             # set status to 'pending' and manually trigger callback
             self.jobs[job_obj]['state'] = saga.job.PENDING
             job_obj._api()._attributes_i_set('state', self.jobs[job_obj]['state'], job_obj._api()._UP, True)
