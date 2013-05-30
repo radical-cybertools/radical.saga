@@ -93,7 +93,6 @@ def cleanup (text) :
 # --------------------------------------------------------------------
 #
 idx = "%s/%s.rst" % (DOCROOT, 'saga.adaptor.index')
-
 i   = open (idx, 'w')
 
 i.write (".. _chapter_adaptors:\n")
@@ -255,10 +254,11 @@ for a in saga.engine.registry.adaptor_registry :
           # classes_long += "   :undoc-members:\n"
             classes_long += "\n"
 
-    if is_context:
+    if is_context :
         # do not auto-document context adaptors -- those are done manually
         print "skip   %s (context)" % fn
         continue
+
 
 
     f = open (fn, 'w')
