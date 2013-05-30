@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.attributes &mdash; SAGA 0.9.4- documentation</title>
+    <title>saga.attributes &mdash; SAGA 0.9.4 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.4-',
+        VERSION:     '0.9.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.4- documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.4 documentation" href="../../index.html" />
     <link rel="up" title="saga" href="../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.4 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -159,28 +159,27 @@
 
 <span class="sd">    To register a callback on a object instance, use::</span>
 
-<span class="sd">      class MyCallback (saga.Callback) :</span>
+<span class="sd">      class MyCallback (saga.Callback):</span>
 
-<span class="sd">        def __init__ (self, msg) :</span>
-<span class="sd">          self._msg = msg</span>
+<span class="sd">          def __init__ (self):</span>
+<span class="sd">              pass</span>
 
-<span class="sd">        def cb (self, obj, key, val) :</span>
-<span class="sd">          print &quot; %s\\n %s (%s) : %s&quot;  %  self._msg, obj, key, val</span>
+<span class="sd">          def cb (self, obj, key, val) :</span>
+<span class="sd">              print &quot; %s\\n %s (%s) : %s&quot;  %  self._msg, obj, key, val</span>
+
+<span class="sd">      jd  = saga.job.Description ()</span>
+<span class="sd">      jd.executable = &quot;/bin/date&quot;</span>
+
+<span class="sd">      js  = saga.job.Service (&quot;fork://localhost/&quot;)</span>
+<span class="sd">      job = js.create_job(jd)</span>
+
+<span class="sd">      cb = MyCallback()</span>
+<span class="sd">      job.add_callback(saga.STATE, cb)</span>
+<span class="sd">      job.run()</span>
 
 
-<span class="sd">        def main () :</span>
-
-<span class="sd">        jd  = saga.job.description ()</span>
-<span class="sd">        js  = saga.job.service (&quot;fork://localhost/&quot;)</span>
-<span class="sd">        job = js.create_job (jd)</span>
-
-<span class="sd">        cb = MyCallback (&quot;Hello Pilot, how is your state?&quot;)</span>
-<span class="sd">        job.add_callback (&#39;state&#39;, cb)</span>
-<span class="sd">        job.run ()</span>
-
-
-<span class="sd">    See documentation of the :class:`saga.Attributes` interface for further details and</span>
-<span class="sd">    examples.</span>
+<span class="sd">    See documentation of the :class:`saga.Attribute` interface for further </span>
+<span class="sd">    details and examples.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__call__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="p">:</span>
@@ -247,7 +246,7 @@
 
 
 <span class="sd">        ###########################################</span>
-<span class="sd">        class Transliterator ( pilot.Attributes ) :</span>
+<span class="sd">        class Transliterator ( saga.Attribute ) :</span>
 <span class="sd">            </span>
 <span class="sd">            def __init__ (self, *args, **kwargs) :</span>
 <span class="sd">                # setting attribs to non-extensible will cause the cal to init below to</span>
@@ -616,9 +615,9 @@
         <span class="c"># # expected to be costly).  The force flag set to True will request to call </span>
         <span class="c"># # registered getter hooks even if ttl is not yet expired.</span>
         <span class="c"># </span>
-        <span class="c"># # NOTE: in Bliss, ttl does not make much sense, as this will only lead to</span>
+        <span class="c"># # NOTE: in SAGA, ttl does not make much sense, as this will only lead to</span>
         <span class="c"># # valid attribute values if attribute changes are pushed from adaptor to</span>
-        <span class="c"># # API -- Bliss does not do that.</span>
+        <span class="c"># # API -- SAGA-Python does not do that.</span>
         <span class="c"># </span>
         <span class="c"># # For example, job.wait() will update the plugin level state to &#39;Done&#39;,</span>
         <span class="c"># # but the cached job.state attribute will remain &#39;New&#39; as the plugin does</span>
@@ -1553,7 +1552,7 @@
 
 <span class="sd">        The first parameter is the old name of the attribute, the second</span>
 <span class="sd">        parameter is the aliased new name.  Note that the new name needs to be</span>
-<span class="sd">        registered before (via :class:`bliss.saga._attributes_register`)::</span>
+<span class="sd">        registered before (via :class:`saga._attributes_register`)::</span>
 
 <span class="sd">            # old code:</span>
 <span class="sd">            self._attributes_register (&#39;apple&#39;, &#39;Appel&#39;, STRING, SCALAR, WRITEABLE)</span>
@@ -2044,7 +2043,7 @@
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
 <span class="sd">        safely be called from within derived classes.</span>
 
-<span class="sd">        See documentation of :class:`bliss.saga._attributes_set_setter ` for details.</span>
+<span class="sd">        See documentation of :class:`saga._attributes_set_setter ` for details.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_init</span> <span class="p">()</span>
@@ -2162,7 +2161,7 @@
 <div class="viewcode-block" id="Attributes.get_vector_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.get_vector_attribute">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        get_vector_attribute (key)</span>
 
-<span class="sd">        See also: :func:`bliss.saga.AttributeInterface.get_attribute` (key).</span>
+<span class="sd">        See also: :func:`saga.AttributeInterface.get_attribute` (key).</span>
 
 <span class="sd">        As python can handle scalar and vector types transparently, this method</span>
 <span class="sd">        is in fact not very useful.  For that reason, it maps internally to the</span>
@@ -2182,7 +2181,7 @@
 <span class="sd">        Removing an attribute is actually different from unsetting it, or from</span>
 <span class="sd">        setting it to &#39;None&#39;.  On remove, all traces of the attribute are</span>
 <span class="sd">        purged, and the key will not be listed on </span>
-<span class="sd">        :func:`bliss.saga.AttributeInterface.list_attributes` () anymore.</span>
+<span class="sd">        :func:`saga.AttributeInterface.list_attributes` () anymore.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">key</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_keycheck</span>   <span class="p">(</span><span class="n">key</span><span class="p">)</span>
@@ -2428,7 +2427,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.4 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" >saga</a> &raquo;</li> 
       </ul>

@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.utils.pty_process &mdash; SAGA 0.9.4- documentation</title>
+    <title>saga.utils.pty_process &mdash; SAGA 0.9.4 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '0.9.4-',
+        VERSION:     '0.9.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.4- documentation" href="../../../index.html" />
+    <link rel="top" title="SAGA 0.9.4 documentation" href="../../../index.html" />
     <link rel="up" title="saga" href="../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">SAGA 0.9.4 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -213,7 +213,7 @@
 
         <span class="c"># create the child</span>
         <span class="k">try</span> <span class="p">:</span>
-             <span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">child_fd</span> <span class="o">=</span> <span class="n">pty</span><span class="o">.</span><span class="n">fork</span> <span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">child_fd</span> <span class="o">=</span> <span class="n">pty</span><span class="o">.</span><span class="n">fork</span> <span class="p">()</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not run (</span><span class="si">%s</span><span class="s">): </span><span class="si">%s</span><span class="s">&quot;</span> \
                              <span class="o">%</span> <span class="p">(</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">),</span> <span class="n">e</span><span class="p">))</span>
@@ -235,7 +235,7 @@
             <span class="n">new</span> <span class="o">=</span> <span class="n">termios</span><span class="o">.</span><span class="n">tcgetattr</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_fd</span><span class="p">)</span>
             <span class="n">new</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">new</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">termios</span><span class="o">.</span><span class="n">ECHO</span>
 
-            <span class="n">termios</span><span class="o">.</span><span class="n">tcsetattr</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_fd</span><span class="p">,</span> <span class="n">termios</span><span class="o">.</span><span class="n">TCSADRAIN</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
+            <span class="n">termios</span><span class="o">.</span><span class="n">tcsetattr</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child_fd</span><span class="p">,</span> <span class="n">termios</span><span class="o">.</span><span class="n">TCSANOW</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
 
 
             <span class="bp">self</span><span class="o">.</span><span class="n">parent_in</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">child_fd</span>
@@ -272,7 +272,7 @@
                         <span class="n">wstat</span>            <span class="o">=</span> <span class="bp">None</span>
                         <span class="k">break</span>
 
-                    <span class="k">if</span> <span class="n">wpid</span> <span class="p">:</span>
+                    <span class="k">if</span>  <span class="n">wpid</span> <span class="p">:</span>
                         <span class="k">break</span>
 
         <span class="c"># at this point, we declare the process to be gone for good</span>
@@ -281,7 +281,7 @@
         <span class="c"># lets see if we can perform some post-mortem analysis</span>
         <span class="k">if</span>  <span class="n">wstat</span> <span class="o">!=</span> <span class="bp">None</span> <span class="p">:</span>
 
-            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFEXITED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="n">os</span><span class="o">.</span><span class="n">WIFEXITED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="p">:</span>
                 <span class="c"># child died of natural causes - perform autopsy...</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>   <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">WEXITSTATUS</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="bp">None</span>
@@ -292,15 +292,19 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">exit_signal</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">WTERMSIG</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>
 
 
-     <span class="c">## try : </span>
-     <span class="c">##     os.close (self.parent_in)  </span>
-     <span class="c">## except OSError :</span>
-     <span class="c">##     pass</span>
+        <span class="k">try</span> <span class="p">:</span> 
+            <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">parent_out</span> <span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">close</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_out</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parent_out</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="p">:</span>
+            <span class="k">pass</span>
 
-     <span class="c">## try : </span>
-     <span class="c">##     os.close (self.parent_out) </span>
-     <span class="c">## except OSError :</span>
-     <span class="c">##     pass</span>
+      <span class="c"># try : </span>
+      <span class="c">#     if  self.parent_in :</span>
+      <span class="c">#         os.close (self.parent_in)</span>
+      <span class="c">#         self.parent_in = None</span>
+      <span class="c"># except OSError :</span>
+      <span class="c">#     pass</span>
 
       <span class="c"># try : </span>
       <span class="c">#     os.close (self.parent_err) </span>
@@ -538,11 +542,11 @@
                   <span class="c"># print &quot;buf: --%s--&quot; % buf</span>
                   <span class="c"># print &quot;log: --%s--&quot; % log</span>
                     <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_DEBUG_MAX</span> <span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s"> ... </span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                        <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">),</span> <span class="n">log</span><span class="p">[:</span><span class="mi">30</span><span class="p">],</span> <span class="n">log</span><span class="p">[</span><span class="o">-</span><span class="mi">30</span><span class="p">:]))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : [</span><span class="si">%5d</span><span class="s">] [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s"> ... </span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                        <span class="o">%</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">),</span> <span class="n">log</span><span class="p">[:</span><span class="mi">30</span><span class="p">],</span> <span class="n">log</span><span class="p">[</span><span class="o">-</span><span class="mi">30</span><span class="p">:]))</span>
                     <span class="k">else</span> <span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                        <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">),</span> <span class="n">log</span><span class="p">))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : [</span><span class="si">%5d</span><span class="s">] [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                        <span class="o">%</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">),</span> <span class="n">log</span><span class="p">))</span>
 
 
                 <span class="c"># lets see if we still got any data in the cache we can return</span>
@@ -704,11 +708,11 @@
             <span class="n">log</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">n&#39;</span><span class="p">)</span>
             <span class="n">log</span> <span class="o">=</span>  <span class="n">log</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
             <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_DEBUG_MAX</span> <span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s"> ... </span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">log</span><span class="p">[:</span><span class="mi">30</span><span class="p">],</span> <span class="n">log</span><span class="p">[</span><span class="o">-</span><span class="mi">30</span><span class="p">:]))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">] [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s"> ... </span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_in</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">log</span><span class="p">[:</span><span class="mi">30</span><span class="p">],</span> <span class="n">log</span><span class="p">[</span><span class="o">-</span><span class="mi">30</span><span class="p">:]))</span>
             <span class="k">else</span> <span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">log</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">] [</span><span class="si">%5d</span><span class="s">] (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_in</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">log</span><span class="p">))</span>
 
             <span class="c"># attempt to write forever -- until we succeeed</span>
             <span class="k">while</span> <span class="n">data</span> <span class="p">:</span>
@@ -725,7 +729,7 @@
                     <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
 
                     <span class="k">if</span> <span class="n">data</span> <span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="n">size</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;write: [</span><span class="si">%5d</span><span class="s">] [</span><span class="si">%5d</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">size</span><span class="p">))</span>
 
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
@@ -766,7 +770,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">SAGA 0.9.4 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../saga.html" >saga</a> &raquo;</li> 
       </ul>

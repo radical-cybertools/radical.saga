@@ -86,7 +86,7 @@
         <a href="./extend.html" >Extend</a>
       </li-->
       <li>
-        Version 0.9.3
+        Version 0.9.4
       </li>
     </ul>
   </div>
@@ -124,6 +124,9 @@
         <br />
         <br />
         <h2>About</h2>
+
+        <p class="marketing-byline">A Simple API for Grid and Distributed Applications.</p>
+
             <p> 
             SAGA (<em>Simple API for Grid Applications</em>) defines a high-level access 
               mechanisms for distributed infrastructure components like 
@@ -187,7 +190,7 @@ Last but not least, SAGA has brought music to many ears in the <a href="http://m
       <div class="span6" id="supportedmw">
         <h2>Supported Middleware</h2>
 
-        <p class="marketing-byline">Extensibility through adaptors.</p>
+        <p class="marketing-byline">Extensible Connectivity Through Adaptors.</p>
 
         <p>Saga-python supports a wide range of distributed computing middleware 
           and systems via a flexible <em>adaptor</em> architecture.</p>
@@ -201,6 +204,7 @@ Last but not least, SAGA has brought music to many ears in the <a href="http://m
           <li><a href="doc/adaptors/saga.adaptor.sgejob.html">Sun Grid Engine</a></li>
           <li><a href="doc/adaptors/saga.adaptor.slurm_job.html">SLURM</a></li>
           <li><a href="doc/adaptors/saga.adaptor.shell_file.html">SFTP/GSIFTP</a></li>
+          <li><a href="doc/adaptors/saga.adaptor.http_file.html">HTTP/HTTPS</a></li>
 
         </ul>
 
@@ -210,9 +214,8 @@ Last but not least, SAGA has brought music to many ears in the <a href="http://m
           <p>Besides mapping the heterogeneous backend interfaces to the SAGA
           API, the majority of adaptors also provide transparent remote access 
           to otherwise exclusively local services (like most HPC queuing systems) 
-          by tunneling interface calls through either SSH or GSISSH.</p>
-
-          <p>A list of available adaptors and their description can be found 
+          by tunneling interface calls through either SSH or GSISSH.
+          A list of available adaptors and their description can be found 
           in the <a href="doc/adaptors/saga.adaptor.index.html">manual</a>.
         </p>
       </div>
@@ -248,7 +251,7 @@ $ easy_install saga-python</pre>
     respective <a href="doc/library/job/index.html">manual section</a>.</p>
 
     <p>If you don't have access to a PBS cluster, you can try a different 
-      adaptor by changing the url scheme in <b>line 9</b>. For example, you can
+      adaptor by changing the url scheme in <b>line 18</b>. For example, you can
       use <code>slurm[+ssh]://...</code> to access a SLURM-based cluster, or 
       <code>condor[+ssh]://...</code> to access a Condor(-G) gateway. A
       full list of available adaptors and their URL scheme can be found 

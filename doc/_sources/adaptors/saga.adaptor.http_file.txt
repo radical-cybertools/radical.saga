@@ -5,7 +5,7 @@ saga.adaptor.http_file
 
 Description
 -----------
-TODO
+The HTTP file adpator allows file transfer (copy) from remote resources to the local machine via the HTTP/HTTPS protocol, similar to cURL.
 
 
 Supported Schemas
@@ -25,7 +25,7 @@ schema                   description
 Example
 -------
 
-.. literalinclude:: ../../../NO EXAMPLE AVAILABLE
+.. literalinclude:: ../../../examples/files/http_file_copy.py
 
 
 Configuration Options

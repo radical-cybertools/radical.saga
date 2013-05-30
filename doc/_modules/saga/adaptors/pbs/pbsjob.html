@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.pbs.pbsjob &mdash; SAGA 0.9.4- documentation</title>
+    <title>saga.adaptors.pbs.pbsjob &mdash; SAGA 0.9.4 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.9.4-',
+        VERSION:     '0.9.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.4- documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.9.4 documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.4 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -66,6 +66,7 @@
 
 <span class="kn">import</span> <span class="nn">saga.utils.which</span>
 <span class="kn">import</span> <span class="nn">saga.utils.pty_shell</span>
+<span class="kn">import</span> <span class="nn">saga.utils.exception</span>
 
 <span class="kn">import</span> <span class="nn">saga.adaptors.cpi.base</span>
 <span class="kn">import</span> <span class="nn">saga.adaptors.cpi.job</span>
@@ -74,16 +75,62 @@
 
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">threading</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span> <span class="nn">cgi</span> <span class="kn">import</span> <span class="n">parse_qs</span>
 
 <span class="n">SYNC_CALL</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">decorators</span><span class="o">.</span><span class="n">SYNC_CALL</span>
 <span class="n">ASYNC_CALL</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">decorators</span><span class="o">.</span><span class="n">ASYNC_CALL</span>
 
+<span class="n">SYNC_WAIT_UPDATE_INTERVAL</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c"># seconds</span>
+<span class="n">MONITOR_UPDATE_INTERVAL</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c"># seconds</span>
+
+
+<span class="c"># --------------------------------------------------------------------</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">_job_state_monitor</span><span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; thread that periodically monitors job states</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_service</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">job_service</span><span class="o">.</span><span class="n">_logger</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">js</span> <span class="o">=</span> <span class="n">job_service</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">_job_state_monitor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setDaemon</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="c"># do bulk updates here! we don&#39;t want to pull information</span>
+                <span class="c"># job by job. that would be too inefficient!</span>
+                <span class="n">jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">jobs</span>
+                <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">jobs</span><span class="p">:</span>
+                    <span class="c"># if the job hasn&#39;t been started, we can&#39;t update its</span>
+                    <span class="c"># state. we can tell if a job has been started if it</span>
+                    <span class="c"># has a job id</span>
+                    <span class="k">if</span> <span class="n">jobs</span><span class="p">[</span><span class="n">job</span><span class="p">][</span><span class="s">&#39;job_id&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="n">job_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_info</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Job monitoring thread updating Job </span><span class="si">%s</span><span class="s"> (state: </span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]))</span>
+
+                        <span class="k">if</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">jobs</span><span class="p">[</span><span class="n">job</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">]:</span>
+                            <span class="c"># fire job state callback if &#39;state&#39; has changed</span>
+                            <span class="n">job</span><span class="o">.</span><span class="n">_api</span><span class="p">()</span><span class="o">.</span><span class="n">_attributes_i_set</span><span class="p">(</span><span class="s">&#39;state&#39;</span><span class="p">,</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">],</span> <span class="n">job</span><span class="o">.</span><span class="n">_api</span><span class="p">()</span><span class="o">.</span><span class="n">_UP</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+
+                        <span class="c"># update job info</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job</span><span class="p">]</span> <span class="o">=</span> <span class="n">job_info</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">MONITOR_UPDATE_INTERVAL</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s">&quot;Job monitoring thread crashed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+
 
 <span class="c"># --------------------------------------------------------------------</span>
 <span class="c">#</span>
 <span class="k">def</span> <span class="nf">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">exception</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; loggs an &#39;error&#39; message and subsequently throws an exception</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
     <span class="k">raise</span> <span class="n">exception</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
 
@@ -117,7 +164,7 @@
 
 <span class="c"># --------------------------------------------------------------------</span>
 <span class="c">#</span>
-<span class="k">def</span> <span class="nf">_pbscript_generator</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">jd</span><span class="p">,</span> <span class="n">ppn</span><span class="p">,</span> <span class="n">is_cray</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_pbscript_generator</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">jd</span><span class="p">,</span> <span class="n">ppn</span><span class="p">,</span> <span class="n">pbs_version</span><span class="p">,</span> <span class="n">is_cray</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; generates a PBS script from a SAGA job description</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">pbs_params</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
@@ -147,8 +194,14 @@
             <span class="n">variable_list</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">=</span><span class="si">%s</span><span class="s">,&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">environment</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
         <span class="n">pbs_params</span> <span class="o">+=</span> <span class="s">&quot;#PBS -v </span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">variable_list</span>
 
+<span class="c"># apparently this doesn&#39;t work with older PBS installations</span>
+<span class="c">#    if jd.working_directory is not None:</span>
+<span class="c">#        pbs_params += &quot;#PBS -d %s \n&quot; % jd.working_directory</span>
+
+    <span class="c"># a workaround is to do an explicit &#39;cd&#39;</span>
     <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">pbs_params</span> <span class="o">+=</span> <span class="s">&quot;#PBS -d </span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span>
+        <span class="n">exec_n_args</span> <span class="o">=</span> <span class="s">&#39;cd &#39;</span><span class="o">+</span><span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span><span class="o">+</span><span class="s">&#39; &amp;&amp; &#39;</span><span class="o">+</span><span class="n">exec_n_args</span>
+
     <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">output</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">pbs_params</span> <span class="o">+=</span> <span class="s">&quot;#PBS -o </span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">output</span>
     <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
@@ -171,18 +224,23 @@
     <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">job_contact</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">pbs_params</span> <span class="o">+=</span> <span class="s">&quot;#PBS -m abe </span><span class="se">\n</span><span class="s">&quot;</span>
 
-    <span class="c"># TORQUE on a cray requires different -l size.. arguments than regular</span>
-    <span class="c"># HPC clusters:</span>
-    <span class="k">if</span> <span class="n">is_cray</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
-        <span class="c"># Special case for TORQUE on Cray XT5s</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Using Cray XT specific &#39;#PBS - size=xx&#39; flags.&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">pbs_params</span> <span class="o">+=</span> <span class="s">&quot;#PBS -l size=</span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c"># Default case, i.e, standard HPC cluster (non-Cray XT)</span>
-        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c"># if total_cpu_count is not defined, we assume 1</span>
+    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="o">=</span> <span class="mi">1</span>
 
+    <span class="k">if</span> <span class="n">is_cray</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="c"># Special cases for PBS/TORQUE on Cray. Different PBSes,</span>
+        <span class="c"># different flags. A complete nightmare...</span>
+        <span class="k">if</span> <span class="s">&#39;PBSPro_10&#39;</span> <span class="ow">in</span> <span class="n">pbs_version</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Using Cray specific &#39;#PBS -l mppwidth=xx&#39; flags (PBSPro_10).&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">pbs_params</span> <span class="o">+=</span> <span class="s">&quot;#PBS -l mppwidth=</span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Using Cray XT specific &#39;#PBS -l size=xx&#39; flags (TORQUE).&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">pbs_params</span> <span class="o">+=</span> <span class="s">&quot;#PBS -l size=</span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c"># Default case, i.e, standard HPC cluster (non-Cray)</span>
         <span class="n">tcc</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span><span class="p">)</span>
         <span class="n">tbd</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tcc</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">ppn</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">tbd</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">tbd</span><span class="p">):</span>
@@ -346,11 +404,15 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rm</span>      <span class="o">=</span> <span class="n">rm_url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ppn</span>     <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ppn</span>     <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_cray</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">queue</span>   <span class="o">=</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shell</span>   <span class="o">=</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span>    <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="c"># the monitoring thread - one per service instance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mt</span> <span class="o">=</span> <span class="n">_job_state_monitor</span><span class="p">(</span><span class="n">job_service</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mt</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
         <span class="n">rm_scheme</span> <span class="o">=</span> <span class="n">rm_url</span><span class="o">.</span><span class="n">scheme</span>
         <span class="n">pty_url</span>   <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">rm_url</span><span class="p">)</span>
@@ -477,19 +539,24 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_job_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jd</span><span class="p">):</span></div>
+    <span class="k">def</span> <span class="nf">_job_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_obj</span><span class="p">):</span></div>
         <span class="sd">&quot;&quot;&quot; runs a job via qsub</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># get the job description</span>
+        <span class="n">jd</span> <span class="o">=</span> <span class="n">job_obj</span><span class="o">.</span><span class="n">jd</span>
+
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">queue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Job service was instantiated explicitly with </span><span class="se">\</span>
 <span class="s">&#39;queue=</span><span class="si">%s</span><span class="s">&#39;, but job description tries to a differnt queue: &#39;</span><span class="si">%s</span><span class="s">&#39;. Using &#39;</span><span class="si">%s</span><span class="s">&#39;.&quot;</span> <span class="o">%</span>
-                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">))</span>
+                                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">))</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="c"># create a PBS job script from SAGA job description</span>
             <span class="n">script</span> <span class="o">=</span> <span class="n">_pbscript_generator</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span>
                                          <span class="n">jd</span><span class="o">=</span><span class="n">jd</span><span class="p">,</span> <span class="n">ppn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ppn</span><span class="p">,</span>
-                                         <span class="n">is_cray</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">is_cray</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span>
+                                         <span class="n">pbs_version</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qstat&#39;</span><span class="p">][</span><span class="s">&#39;version&#39;</span><span class="p">],</span>
+                                         <span class="n">is_cray</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">is_cray</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span>
+                                         <span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Generated PBS script: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">script</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
@@ -520,28 +587,25 @@
             <span class="c"># sometimes there are a couple of lines of warnings before.</span>
             <span class="c"># if that&#39;s the case, we log those as &#39;warnings&#39;</span>
             <span class="n">lines</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="n">lines</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">lines</span><span class="p">:</span> <span class="n">lines</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>  <span class="c"># remove empty</span>
+
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;qsub: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]))</span>
-                <span class="c"># remove empty lines:</span>
-                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
-                        <span class="n">lines</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
 
             <span class="c"># we asssume job id is in the last line</span>
             <span class="n">job_id</span> <span class="o">=</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">]-[</span><span class="si">%s</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">lines</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Submitted PBS job with id: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job_id</span><span class="p">)</span>
 
-            <span class="c"># add job to internal list of known jobs.</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s">&#39;state&#39;</span><span class="p">:</span>        <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span><span class="p">,</span>
-                <span class="s">&#39;exec_hosts&#39;</span><span class="p">:</span>   <span class="bp">None</span><span class="p">,</span>
-                <span class="s">&#39;returncode&#39;</span><span class="p">:</span>   <span class="bp">None</span><span class="p">,</span>
-                <span class="s">&#39;create_time&#39;</span><span class="p">:</span>  <span class="bp">None</span><span class="p">,</span>
-                <span class="s">&#39;start_time&#39;</span><span class="p">:</span>   <span class="bp">None</span><span class="p">,</span>
-                <span class="s">&#39;end_time&#39;</span><span class="p">:</span>     <span class="bp">None</span><span class="p">,</span>
-                <span class="s">&#39;gone&#39;</span><span class="p">:</span>         <span class="bp">False</span>
-            <span class="p">}</span>
+            <span class="c"># update job dictionary</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_obj</span><span class="p">][</span><span class="s">&#39;job_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">job_id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_obj</span><span class="p">][</span><span class="s">&#39;submitted&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">job_id</span>
 
+            <span class="c"># set status to &#39;pending&#39; and manually trigger callback</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_obj</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span>
+            <span class="n">job_obj</span><span class="o">.</span><span class="n">_api</span><span class="p">()</span><span class="o">.</span><span class="n">_attributes_i_set</span><span class="p">(</span><span class="s">&#39;state&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_obj</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">],</span> <span class="n">job_obj</span><span class="o">.</span><span class="n">_api</span><span class="p">()</span><span class="o">.</span><span class="n">_UP</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+
+
+            <span class="c"># return the job id</span>
             <span class="k">return</span> <span class="n">job_id</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -602,30 +666,29 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_job_get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_job_get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_obj</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; get job attributes via qstat</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c"># if we don&#39;t have the job in our dictionary, we don&#39;t want it</span>
-        <span class="k">if</span> <span class="n">job_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">:</span>
-            <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Unkown job ID: </span><span class="si">%s</span><span class="s">. Can&#39;t update state.&quot;</span> <span class="o">%</span> <span class="n">job_id</span>
+        <span class="k">if</span> <span class="n">job_obj</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Unkown job object: </span><span class="si">%s</span><span class="s">. Can&#39;t update state.&quot;</span> <span class="o">%</span> <span class="n">job_obj</span><span class="o">.</span><span class="n">_id</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
 
         <span class="c"># prev. info contains the info collect when _job_get_info</span>
         <span class="c"># was called the last time</span>
-        <span class="n">prev_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span>
+        <span class="n">prev_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_obj</span><span class="p">]</span>
 
         <span class="c"># if the &#39;gone&#39; flag is set, there&#39;s no need to query the job</span>
         <span class="c"># state again. it&#39;s gone forever</span>
         <span class="k">if</span> <span class="n">prev_info</span><span class="p">[</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Job information is not available anymore.&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">prev_info</span>
 
         <span class="c"># curr. info will contain the new job info collect. it starts off</span>
         <span class="c"># as a copy of prev_info</span>
         <span class="n">curr_info</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">prev_info</span><span class="p">)</span>
 
-        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span><span class="p">(</span><span class="n">job_obj</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
 
         <span class="c"># run the PBS &#39;qstat&#39; command to get some infos about our job</span>
         <span class="k">if</span> <span class="s">&#39;PBSPro_10&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qstat&#39;</span><span class="p">][</span><span class="s">&#39;version&#39;</span><span class="p">]:</span>
@@ -641,14 +704,15 @@
                 <span class="c"># Let&#39;s see if the previous job state was runnig or pending. in</span>
                 <span class="c"># that case, the job is gone now, which can either mean DONE,</span>
                 <span class="c"># or FAILED. the only thing we can do is set it to &#39;DONE&#39;</span>
+                <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="c"># we can also set the end time</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Previously running job has disappeared. This probably means that the backend doesn&#39;t store informations about finished jobs. Setting state to &#39;DONE&#39;.&quot;</span><span class="p">)</span>
+
+
                 <span class="k">if</span> <span class="n">prev_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span><span class="p">]:</span>
                     <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span>
-                    <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Previously running job has </span><span class="se">\</span>
-<span class="s">disappeared. This probably means that the backend doesn&#39;t store informations </span><span class="se">\</span>
-<span class="s">about finished jobs. Setting state to &#39;DONE&#39;.&quot;</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c"># something went wrong</span>
                 <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error retrieving job info via &#39;qstat&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
@@ -683,87 +747,52 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_job_get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_job_get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_obj</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; get the job&#39;s state</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># check if we have already reach a terminal state</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span> \
-        <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span> \
-        <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">]</span>
-
-        <span class="c"># check if we can / should update</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">True</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_info</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="n">job_id</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_obj</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">]</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_job_get_exit_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_job_get_exit_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_obj</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; get the job&#39;s exit code</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># check if we can / should update</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">True</span><span class="p">)</span> \
-        <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_info</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="n">job_id</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_obj</span><span class="p">][</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_job_get_execution_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_job_get_execution_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_obj</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; get the job&#39;s exit code</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># check if we can / should update</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">True</span><span class="p">)</span> \
-        <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;exec_hosts&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_info</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="n">job_id</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;exec_hosts&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_obj</span><span class="p">][</span><span class="s">&#39;exec_hosts&#39;</span><span class="p">]</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_job_get_create_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_job_get_create_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_obj</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; get the job&#39;s creation time</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># check if we can / should update</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">True</span><span class="p">)</span> \
-        <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;create_time&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_info</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="n">job_id</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;create_time&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_obj</span><span class="p">][</span><span class="s">&#39;create_time&#39;</span><span class="p">]</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_job_get_start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_job_get_start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_obj</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; get the job&#39;s start time</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># check if we can / should update</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">True</span><span class="p">)</span> \
-        <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_info</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="n">job_id</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_obj</span><span class="p">][</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_job_get_end_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_job_get_end_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_obj</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; get the job&#39;s end time</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># check if we can / should update</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">True</span><span class="p">)</span> \
-        <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;end_time&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_info</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="n">job_id</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;end_time&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_obj</span><span class="p">][</span><span class="s">&#39;end_time&#39;</span><span class="p">]</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_job_cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_job_cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_obj</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; cancel the job via &#39;qdel&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span><span class="p">(</span><span class="n">job_obj</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
 
         <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> \
             <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qdel&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="n">pid</span><span class="p">))</span>
@@ -772,28 +801,29 @@
             <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error canceling job via &#39;qdel&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
 
-        <span class="c"># assume the job was succesfully canceld</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span>
+        <span class="c"># assume the job was succesfully canceled</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_obj</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">_job_wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_job_wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_obj</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; wait for the job to finish or fail</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="n">time_now</span>   <span class="o">=</span> <span class="n">time_start</span>
-        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+        <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span><span class="p">(</span><span class="n">job_obj</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
 
         <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
-            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_state</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="n">job_id</span><span class="p">)</span>
+            <span class="c">#state = self._job_get_state(job_id=job_id, job_obj=job_obj)</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_obj</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">]</span>  <span class="c"># this gets updated in the bg.</span>
 
             <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span> <span class="ow">or</span> \
                <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span> <span class="ow">or</span> \
                <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span><span class="p">:</span>
                     <span class="k">return</span> <span class="bp">True</span>
+
             <span class="c"># avoid busy poll</span>
-            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">SYNC_WAIT_UPDATE_INTERVAL</span><span class="p">)</span>
 
             <span class="c"># check if we hit timeout</span>
             <span class="k">if</span> <span class="n">timeout</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
@@ -822,8 +852,24 @@
                          <span class="s">&quot;reconnect&quot;</span><span class="p">:</span>       <span class="bp">False</span>
                          <span class="p">}</span>
 
-        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">(</span><span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">,</span>
-                            <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
+        <span class="c"># create a new job object</span>
+        <span class="n">job_obj</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">(</span><span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">,</span>
+                               <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
+
+        <span class="c"># add job to internal list of known jobs.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_obj</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&#39;state&#39;</span><span class="p">:</span>        <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NEW</span><span class="p">,</span>
+            <span class="s">&#39;job_id&#39;</span><span class="p">:</span>       <span class="bp">None</span><span class="p">,</span>
+            <span class="s">&#39;exec_hosts&#39;</span><span class="p">:</span>   <span class="bp">None</span><span class="p">,</span>
+            <span class="s">&#39;returncode&#39;</span><span class="p">:</span>   <span class="bp">None</span><span class="p">,</span>
+            <span class="s">&#39;create_time&#39;</span><span class="p">:</span>  <span class="bp">None</span><span class="p">,</span>
+            <span class="s">&#39;start_time&#39;</span><span class="p">:</span>   <span class="bp">None</span><span class="p">,</span>
+            <span class="s">&#39;end_time&#39;</span><span class="p">:</span>     <span class="bp">None</span><span class="p">,</span>
+            <span class="s">&#39;gone&#39;</span><span class="p">:</span>         <span class="bp">False</span><span class="p">,</span>
+            <span class="s">&#39;submitted&#39;</span><span class="p">:</span>    <span class="bp">False</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">job_obj</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -832,9 +878,8 @@
 <div class="viewcode-block" id="PBSJobService.get_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.pbsjob.html#saga.adaptors.pbs.pbsjob.PBSJobService.get_job">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_job()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c"># try to get some information about this job and throw it into</span>
-        <span class="c"># our job dictionary.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">jobid</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_job</span><span class="p">(</span><span class="n">jobid</span><span class="p">)</span>
+        <span class="c"># try to get some information about this job</span>
+        <span class="n">job_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_job</span><span class="p">(</span><span class="n">jobid</span><span class="p">)</span>
 
         <span class="c"># this dict is passed on to the job adaptor class -- use it to pass any</span>
         <span class="c"># state information you need there.</span>
@@ -846,8 +891,12 @@
                          <span class="s">&quot;reconnect_jobid&quot;</span><span class="p">:</span> <span class="n">jobid</span>
                          <span class="p">}</span>
 
-        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">(</span><span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">,</span>
-                            <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
+        <span class="n">job</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">(</span><span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">,</span>
+                           <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
+
+        <span class="c"># throw it into our job dictionary.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">]</span> <span class="o">=</span> <span class="n">job_info</span>
+        <span class="k">return</span> <span class="n">job</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -923,6 +972,9 @@
         <span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">PBSJob</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
         <span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">_get_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
     <span class="nd">@SYNC_CALL</span>
     <span class="k">def</span> <span class="nf">init_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_info</span><span class="p">):</span>
 <div class="viewcode-block" id="PBSJob.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.pbsjob.html#saga.adaptors.pbs.pbsjob.PBSJob.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.init_instance()</span>
@@ -945,14 +997,10 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="PBSJob.get_state"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.pbsjob.html#saga.adaptors.pbs.pbsjob.PBSJob.get_state">[docs]</a>        <span class="sd">&quot;&quot;&quot; mplements saga.adaptors.cpi.job.Job.get_state()</span>
+<div class="viewcode-block" id="PBSJob.get_state"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.pbsjob.html#saga.adaptors.pbs.pbsjob.PBSJob.get_state">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_state()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
-            <span class="c"># jobs that are not started are always in &#39;NEW&#39; state</span>
-            <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NEW</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
-
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_state</span><span class="p">(</span><span class="n">job_obj</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+            
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
@@ -963,7 +1011,7 @@
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="s">&quot;Can&#39;t wait for job that hasn&#39;t been started&quot;</span><span class="p">,</span>
                 <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_wait</span><span class="p">(</span><span class="n">job_obj</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -975,7 +1023,7 @@
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="s">&quot;Can&#39;t wait for job that hasn&#39;t been started&quot;</span><span class="p">,</span>
                 <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_cancel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -983,7 +1031,7 @@
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <div class="viewcode-block" id="PBSJob.run"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.pbsjob.html#saga.adaptors.pbs.pbsjob.PBSJob.run">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.run()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="bp">True</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -1011,7 +1059,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_exit_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_exit_code</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -1022,7 +1070,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_create_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_create_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -1033,7 +1081,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_start_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -1044,7 +1092,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_end_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_end_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -1055,7 +1103,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_execution_hosts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_execution_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 </pre></div></div></div>
 
           </div>
@@ -1089,7 +1137,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.4- documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.4 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>
