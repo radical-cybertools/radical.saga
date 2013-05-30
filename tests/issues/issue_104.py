@@ -6,7 +6,8 @@ import saga
 from pudb import set_interrupt_handler; set_interrupt_handler()
 
 USER_ID     = "merzky"
-REMOTE_HOST = "gw68.quarry.iu.teragrid.org"
+REMOTE_HOST = "ssh://gw68.quarry.iu.teragrid.org"
+REMOTE_HOST = "fork://localhost"
 
 def main () :
     try:
@@ -22,7 +23,7 @@ def main () :
             # Create a job service object that represent a remote pbs cluster.
             # The keyword 'pbs' in the url scheme triggers the PBS adaptors
             # and '+ssh' enables PBS remote access via SSH.
-            js = saga.job.Service("fork://%s" % REMOTE_HOST, session=session) 
+            js = saga.job.Service("%s" % REMOTE_HOST, session=session) 
 
             # describe our job
             jd = saga.job.Description()
@@ -57,13 +58,10 @@ def main () :
             for j in jobs :
 
                 j.cancel ()
-
-
-            for jid in js.jobs :
-                j = js.get_job (jid)
                 print "Job       : %s [%s]" % (j.id, j.state)
 
-            js.close ()
+
+          # js.close ()
     
     
         return 0
