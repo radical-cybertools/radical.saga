@@ -82,8 +82,8 @@ class ContextUserPass (saga.adaptors.cpi.context.Context) :
 
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (ContextUserPass, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (ContextUserPass, self)
+        _cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL

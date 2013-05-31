@@ -3,6 +3,16 @@ __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
+# >>> class MyDict(dict):
+# >>>     def __missing__(self, key):
+#             self[key] = rv = []
+#             return rv
+#    
+# >>> m = MyDict()
+# >>> m["foo"].append(1)
+# >>> m["foo"].append(2)
+# >>> dict(m)
+# {'foo': [1, 2]}
 
 """ Attribute interface """
 
@@ -92,28 +102,27 @@ class Callback () :
 
     To register a callback on a object instance, use::
 
-      class MyCallback (saga.Callback) :
+      class MyCallback (saga.Callback):
 
-        def __init__ (self, msg) :
-          self._msg = msg
+          def __init__ (self):
+              pass
 
-        def cb (self, obj, key, val) :
-          print " %s\\n %s (%s) : %s"  %  self._msg, obj, key, val
+          def cb (self, obj, key, val) :
+              print " %s\\n %s (%s) : %s"  %  self._msg, obj, key, val
+
+      jd  = saga.job.Description ()
+      jd.executable = "/bin/date"
+
+      js  = saga.job.Service ("fork://localhost/")
+      job = js.create_job(jd)
+
+      cb = MyCallback()
+      job.add_callback(saga.STATE, cb)
+      job.run()
 
 
-        def main () :
-
-        jd  = saga.job.description ()
-        js  = saga.job.service ("fork://localhost/")
-        job = js.create_job (jd)
-
-        cb = MyCallback ("Hello Pilot, how is your state?")
-        job.add_callback ('state', cb)
-        job.run ()
-
-
-    See documentation of the :class:`saga.Attributes` interface for further details and
-    examples.
+    See documentation of the :class:`saga.Attribute` interface for further 
+    details and examples.
     """
 
     def __call__ (self, obj, key, val) :
@@ -180,7 +189,7 @@ class Attributes (_AttributesBase) :
 
 
         ###########################################
-        class Transliterator ( pilot.Attributes ) :
+        class Transliterator ( saga.Attribute ) :
             
             def __init__ (self, *args, **kwargs) :
                 # setting attribs to non-extensible will cause the cal to init below to
@@ -549,9 +558,9 @@ class Attributes (_AttributesBase) :
         # # expected to be costly).  The force flag set to True will request to call 
         # # registered getter hooks even if ttl is not yet expired.
         # 
-        # # NOTE: in Bliss, ttl does not make much sense, as this will only lead to
+        # # NOTE: in SAGA, ttl does not make much sense, as this will only lead to
         # # valid attribute values if attribute changes are pushed from adaptor to
-        # # API -- Bliss does not do that.
+        # # API -- SAGA-Python does not do that.
         # 
         # # For example, job.wait() will update the plugin level state to 'Done',
         # # but the cached job.state attribute will remain 'New' as the plugin does
@@ -1486,7 +1495,7 @@ class Attributes (_AttributesBase) :
 
         The first parameter is the old name of the attribute, the second
         parameter is the aliased new name.  Note that the new name needs to be
-        registered before (via :class:`bliss.saga._attributes_register`)::
+        registered before (via :class:`saga._attributes_register`)::
 
             # old code:
             self._attributes_register ('apple', 'Appel', STRING, SCALAR, WRITEABLE)
@@ -1977,7 +1986,7 @@ class Attributes (_AttributesBase) :
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
 
-        See documentation of :class:`bliss.saga._attributes_set_setter ` for details.
+        See documentation of :class:`saga._attributes_set_setter ` for details.
         """
 
         d = self._attributes_t_init ()
@@ -2095,7 +2104,7 @@ class Attributes (_AttributesBase) :
         """
         get_vector_attribute (key)
 
-        See also: :func:`bliss.saga.AttributeInterface.get_attribute` (key).
+        See also: :func:`saga.AttributeInterface.get_attribute` (key).
 
         As python can handle scalar and vector types transparently, this method
         is in fact not very useful.  For that reason, it maps internally to the
@@ -2115,7 +2124,7 @@ class Attributes (_AttributesBase) :
         Removing an attribute is actually different from unsetting it, or from
         setting it to 'None'.  On remove, all traces of the attribute are
         purged, and the key will not be listed on 
-        :func:`bliss.saga.AttributeInterface.list_attributes` () anymore.
+        :func:`saga.AttributeInterface.list_attributes` () anymore.
         """
 
         key    = self._attributes_t_keycheck   (key)

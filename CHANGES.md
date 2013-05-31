@@ -1,3 +1,16 @@
+
+
+Version 0.9.4 released 2013-06-01
+----------------------------------------------------------------------
+
+* jd.working_directory now gets created if it doesn't exist
+* Support for older Cray systems running PBS Pro 10
+* Job state callback support for the PBS adaptor - others to follow 
+* A simple HTTP protocol file adaptor
+* Fixed some issues with user-pass and X.509 security contexts
+* Over 40 bugfixes and improvements: 
+  - https://github.com/saga-project/saga-python/issues?milestone=2&page=1&state=closed
+
 Version 0.9.3 released 2013-04-08
 ----------------------------------------------------------------------
 

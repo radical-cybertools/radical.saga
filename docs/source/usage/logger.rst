@@ -114,5 +114,4 @@ Those instances can then be further customized as needed::
 .. automodule:: saga.utils.logger
    :members:
 
-oops
 

@@ -4,9 +4,17 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 import re
+import os
+import sys
+import math
+import time
+
 import saga
 
 """ Provides an assortment of utilities """
+
+_benchmark = {}
+
 
 # --------------------------------------------------------------------
 #
@@ -191,6 +199,182 @@ def url_is_compatible (url_1, url_2) :
     # no differences detected (ignored fragments and query though)
     return True
 
+
+# --------------------------------------------------------------------
+#
+def benchmark_start (url, name='benchmark') :
+
+    global _benchmark
+
+    print "\nBenchmark : %s : %s" % (url, name)
+
+    _url = saga.Url (url)
+
+    _benchmark['url']   = _url 
+    _benchmark['name']  = name
+    _benchmark['start'] = time.time()
+    _benchmark['times'] = []
+    _benchmark['idx']   = 0
+
+    if _url.host : host = _url.host
+    else         : host = 'localhost'
+
+    if _url.port : port = _url.port
+    else         : port = 22  #  FIXME: we should guess by protocol 
+
+    ping_start = time.time ()
+
+    try :
+        sys.stdout.write ('Latency   : ')
+        sys.stdout.flush ()
+
+        import socket
+
+        s = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
+        s.connect ((host, port))
+
+    except Exception as e :
+        _benchmark['ping']  = -1.0
+        sys.stdout.write ("no ping on %s:%s [%s]\n" % (host, port, e))
+
+    else :
+        _benchmark['ping']  = time.time () - ping_start
+        sys.stdout.write ("%.5fs\n" % _benchmark['ping'])
+
+    sys.stdout.flush ()
+
+
+
+# --------------------------------------------------------------------
+#
+def benchmark_tic () :
+
+    global _benchmark
+
+    now   = time.time ()
+    timer = now - _benchmark['start']
+
+    _benchmark['times'].append (timer)
+    _benchmark['start'] = now
+
+    if len(_benchmark['times'][1:]) :
+        vmean = sum (_benchmark['times'][1:]) / len(_benchmark['times'][1:])
+    else :
+        vmean = timer
+
+    if   timer  <  0.75 * vmean : marker = '.'
+    if   timer  <  0.90 * vmean : marker = ','
+    elif timer  <  0.99 * vmean : marker = ':'
+    elif timer  <  1.01 * vmean : marker = '*'
+    elif timer  <  1.10 * vmean : marker = ';'
+    elif timer  <  1.25 * vmean : marker = '-'
+    else                        : marker = '='
+
+
+
+    if       not ( (_benchmark['idx'] - 1)        ) : sys.stdout.write ('\n* ')
+    else :
+        if   not ( (_benchmark['idx'] - 1) % 1000 ) : sys.stdout.write ('\n\n# ')
+        elif not ( (_benchmark['idx'] - 1) %  100 ) : sys.stdout.write ('\n| ')
+        elif not ( (_benchmark['idx'] - 1) %   10 ) : sys.stdout.write (' ')
+
+    if           ( (_benchmark['idx']    )        ) : sys.stdout.write (marker)
+    
+    sys.stdout.flush ()
+
+    _benchmark['idx'] += 1
+
+# --------------------------------------------------------------------
+#
+def benchmark_eval () :
+
+    global _benchmark
+
+    if  len(_benchmark['times']) <= 4 :
+
+        raise Exception ("min 4 timing values required for benchmark evaluation")
+
+
+    out = "\n"
+    top = ""
+    tab = ""
+    num = ""
+
+    out += "Results :\n"
+
+    vn    = len (_benchmark['times']) - 1
+    vsum  = sum (_benchmark['times'][1:])
+    vmin  = min (_benchmark['times'][1:])
+    vmax  = max (_benchmark['times'][1:])
+    vmean = sum (_benchmark['times'][1:]) / vn
+    vsdev = math.sqrt (sum ((x - vmean) ** 2 for x in _benchmark['times'][1:]) / vn)
+    vrate = vn / vsum
+
+    out += "  url   : %s\n"                              % (_benchmark['url']            )
+    out += "  ping  : %8.5fs          n     : %9d\n"     % (_benchmark['ping']    , vn   )
+    out += "  init  : %8.2fs          min   : %8.2fs\n"  % (_benchmark['times'][0], vmin )
+    out += "  1     : %8.2fs          max   : %8.2fs\n"  % (_benchmark['times'][1], vmax )
+    out += "  2     : %8.2fs          mean  : %8.2fs\n"  % (_benchmark['times'][2], vmean)
+    out += "  3     : %8.2fs          sdev  : %8.2fs\n"  % (_benchmark['times'][3], vsdev)
+    out += "  sum   : %8.2fs          rate  : %8.2f/s\n" % (vsum,                   vrate)
+
+    num = "# %5s  %7s  %7s  %7s  %7s  %7s" \
+          "  %7s  %7s  %7s  %8s  %8s  %9s   %-18s   %s" \
+        % (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+    top = "# %5s  %7s  %7s  %7s  %7s  %7s" \
+          "  %7s  %7s  %7s  %8s  %8s  %9s   %-18s   %s" \
+        % ('ping', 'n', 'init', 'time.1', 'time.2', 'time.3', \
+           'sum', 'min',  'max', 'mean', 'std-dev', 'rate', 'name', 'url')
+
+    tab = "%7.5f  " \
+          "%7d  "   \
+          "%7.2f  " \
+          "%7.2f  " \
+          "%7.2f  " \
+          "%7.2f  " \
+          "%7.2f  " \
+          "%7.2f  " \
+          "%7.2f  " \
+          "%8.3f  " \
+          "%8.3f  " \
+          "%9.3f  " \
+          "%-20s  " \
+          "%s"      \
+        % (_benchmark['ping'], 
+           vn, 
+           _benchmark['times'][0],      
+           _benchmark['times'][1], 
+           _benchmark['times'][2], 
+           _benchmark['times'][3],
+           vsum,   
+           vmin,  
+           vmax, 
+           vmean, 
+           vsdev, 
+           vrate, 
+           "'%s'" % _benchmark['name'],   # I am sorry, sooo sorry...  
+           _benchmark['url'])
+
+    print
+    print out
+
+    create_top = True
+    try :
+        statinfo = os.stat ('benchmark.dat')
+        if statinfo.st_size > 0 :
+            create_top = False
+    except Exception :
+        pass
+
+    f = open ("benchmark.dat", "a+")
+
+    if  create_top :
+        f.write ("%s\n" % num)
+        f.write ("%s\n" % top)
+    f.write ("%s\n" % tab)
+
+#
+# --------------------------------------------------------------------
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

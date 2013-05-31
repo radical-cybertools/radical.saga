@@ -18,6 +18,7 @@ import re
 import os
 import time
 import threading
+import subprocess
 
 import shell_wrapper
 
@@ -98,7 +99,15 @@ _ADAPTOR_DOC           = {
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "description"      : """ 
         The Shell job adaptor. This adaptor uses the sh command line tools (sh,
-        ssh, gsissh) to run local and remote jobs.
+        ssh, gsissh) to run local and remote jobs.  The adaptor expects the
+        login shell on the target host to be POSIX compliant.  However, one can
+        also specify a custom POSIX shell via the resource manager URL, like::
+
+          js = saga.job.Service ("ssh://remote.host.net/bin/sh")
+
+        Note that custom shells in many cases will find a different environment
+        than the users default login shell!
+
 
         Known Limitations:
         ******************
@@ -229,7 +238,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config ()
 
-        self.notifications = self.opts['enable_notifications'].get_value ()
+        self.notifications  = self.opts['enable_notifications'].get_value ()
         self.purge_on_start = self.opts['purge_on_start'].get_value ()
 
 
@@ -280,34 +289,35 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     #
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (ShellJobService, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (ShellJobService, self)
+        _cpi_base.__init__ (api, adaptor)
+
+        self.opts = {}
+        self.opts['shell'] = None  # default to login shell
 
 
     # ----------------------------------------------------------------
     #
     def __del__ (self) :
 
-        # FIXME: not sure if we should PURGE here -- that removes states which
-        # might not be evaluated, yet.  Should we mark state evaluation
-        # separately? 
-        #   cmd_state () { touch $DIR/purgeable; ... }
-        # When should that be done?
-        ret, out, _ = self.shell.run_sync ("QUIT")
+        try :
+            # FIXME: not sure if we should PURGE here -- that removes states which
+            # might not be evaluated, yet.  Should we mark state evaluation
+            # separately? 
+            #   cmd_state () { touch $DIR/purgeable; ... }
+            # When should that be done?
 
-        ielf._logger.error ("adaptor dying... %s" % self.njobs)
-        self._logger.trace ()
+            self._logger.info ("adaptor %s : %s jobs" % (self, self.njobs))
+
+            if  self.shell : 
+             #  self.shell.run_sync  ("PURGE", iomode=None)
+                self.shell.run_async ("QUIT" , iomode=None)
+                self.finalize (kill_shell=True)
+
+        except Exception as e :
+          # print str(e)
+            pass
     
-        #     try :
-        #       # if self.shell : self.shell.run_sync ("PURGE", iomode=None)
-        #         if self.shell : self.shell.run_sync ("QUIT" , iomode=None)
-        #     except :
-        #         pass
-
-        self.finalize (kill_shell=True)
-    
-
-
 
 
     # ----------------------------------------------------------------
@@ -320,15 +330,23 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         self.session = session
         self.njobs   = 0
 
-        self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
-                                                    self._logger)
+        if  self.rm.path and self.rm.path != '/' and self.rm.path != '.' :
+            self.opts['shell'] = self.rm.path
 
-        self.shell.set_initialize_hook (self.initialize)
-        self.shell.set_finalize_hook   (self.finalize)
+        self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
+                                                    self._logger, opts=self.opts)
 
         self.initialize ()
 
         return self.get_api ()
+
+
+    # ----------------------------------------------------------------
+    #
+    def close (self) :
+        if  self.shell :
+            self.shell.finalize (True)
+
 
     # ----------------------------------------------------------------
     #
@@ -393,6 +411,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         if  kill_shell :
             if  self.shell :
+                self.shell.run_async ("QUIT")
                 self.shell.finalize (True)
 
 
@@ -417,7 +436,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 env += "export %s=%s; "  %  (e, jd.environment[e])
 
         if  jd.attribute_exists (WORKING_DIRECTORY) :
-            cwd = "cd %s && " % jd.working_directory
+            cwd = "mkdir -p %s && cd %s && " % (jd.working_directory, jd.working_directory)
 
         if  jd.attribute_exists (INPUT) :
             io += "<%s " % jd.input
@@ -428,7 +447,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         if  jd.attribute_exists (ERROR) :
             io += "2>%s " % jd.error
 
-        cmd = "( %s%s%s %s) %s" % (env, cwd, exe, arg, io)
+        cmd = "( %s%s( %s %s) %s)" % (env, cwd, exe, arg, io)
 
         return cmd
 
@@ -456,16 +475,19 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         ret, out, _ = self.shell.run_sync (run_cmd)
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to run job '%s': (%s)(%s)" % (cmd, ret, out))
+            raise saga.NoSuccess ("failed to run Job '%s': (%s)(%s)" % (cmd, ret, out))
 
         lines = filter (None, out.split ("\n"))
         self._logger.debug (lines)
 
         if  len (lines) < 2 :
-            raise saga.NoSuccess ("failed to run job (%s)" % lines)
+            raise saga.NoSuccess ("Failed to run job (%s)" % lines)
+        
+      # for i in range (0, len(lines)) :
+      #     print "%d: %s" % (i, lines[i])
 
         if lines[-2] != "OK" :
-            raise saga.NoSuccess ("failed to run job (%s)" % lines)
+            raise saga.NoSuccess ("Failed to run Job (%s)" % lines)
 
         # FIXME: verify format of returned pid (\d+)!
         pid    = lines[-1].strip ()
@@ -974,8 +996,8 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     #
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (ShellJob, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (ShellJob, self)
+        _cpi_base.__init__ (api, adaptor)
 
 
     # ----------------------------------------------------------------
@@ -1055,6 +1077,8 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
         self._state = self._adaptor.string_to_state (stats['state'])
 
+        self._api ()._attributes_i_set ('state', self._state, self._api ()._UP)
+        
         return self._state
 
 

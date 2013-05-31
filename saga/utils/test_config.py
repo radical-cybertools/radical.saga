@@ -238,8 +238,9 @@ class TestConfig (sconf.Configurable):
         c = self.context
 
         if c :
+            s.add_context (c)
             try :
-                s.add_context (c)
+                pass
             except saga.exceptions.BadParameter as e :
                 print "ERROR: could not use invalid context"
 

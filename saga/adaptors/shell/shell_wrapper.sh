@@ -1,8 +1,23 @@
-#!/bin/sh
+#!/bin/bash
 
 # this script uses only POSIX shell functionality, and does not rely on bash or
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
 # thought.
+
+# touch /tmp/log
+# chmod 0666 /tmp/log
+
+# --------------------------------------------------------------------
+#
+# Fucking /bin/kill by Ubuntu sometimes understands --, sometimes does not :-P
+# We need to check the version, and assume that prior to 3.3.0 it is not
+# understood
+KILL_DASHES="--"
+KILL_VERSION=`/bin/kill --version 2>&1 | tr -d -c '[:digit:]'`
+if test 330 -gt "$KILL_VERSION"
+then
+  KILL_DASHES=""
+fi
 
 
 # --------------------------------------------------------------------
@@ -28,9 +43,18 @@ PURGE_ON_START="%(PURGE_ON_START)s"
 # idle_checker is running in the background, and will terminate the wrapper
 # shell if it is idle for longer than TIMEOUT seconds
 #
-trap idle_handler ALRM
+trap cleanup_handler QUIT TERM EXIT
+# trap idle_handler ALRM
+trap '' ALRM
+
+cleanup_handler (){
+  # echo "cleanup handling $$"  >> /tmp/log
+  cmd_quit $IDLE
+  # echo "cleanup handling $$ ok"  >> /tmp/log
+}
 
 idle_handler (){
+  # echo "idle handling $$"  >> /tmp/log
   cmd_quit TIMEOUT
 }
 
@@ -42,13 +66,20 @@ idle_checker () {
   do
     sleep $TIMEOUT
 
-    if test -e "$BASE/idle.$ppid"
+    if test -e "$BASE/quit.$ppid" 
     then
-      /bin/kill -s ALRM $ppid >/dev/null 2>&1
+      rm   -f  "$BASE/quit.$ppid" 
       exit 0
     fi
 
-    touch   "$BASE/idle.$ppid"
+    if test -e "$BASE/idle.$ppid"
+    then
+      /bin/kill -s ALRM $ppid >/dev/null 2>&1
+      rm   -f  "$BASE/idle.$ppid" 
+      exit 0
+    fi
+
+    touch "$BASE/idle.$ppid"
   done
 }
 
@@ -76,7 +107,7 @@ verify_dir () {
 # ensure that given job id has valid pid file
 verify_pid () {
   verify_dir $1
-  if ! test -r "$DIR/rpid";   then ERROR="pid $1 has no process id"; return 1; fi
+  if ! test -r "$DIR/rpid";  then ERROR="pid $1 has no process id"; return 1; fi
 }
 
 
@@ -84,6 +115,7 @@ verify_pid () {
 # ensure that given job id has valid state file
 verify_state () {
   verify_dir $1
+  # echo "verifying $1" >> /tmp/log
   if ! test -r "$DIR/state"; then ERROR="pid $1 has no state"; return 1; fi
 }
 
@@ -92,7 +124,7 @@ verify_state () {
 # ensure that given job id has valid stdin file
 verify_in () {
   verify_dir $1
-  if ! test -r "$DIR/in"; then ERROR="pid $1 has no stdin"; return 1; fi
+  if ! test -r "$DIR/in";    then ERROR="pid $1 has no stdin"; return 1; fi
 }
 
 
@@ -100,7 +132,7 @@ verify_in () {
 # ensure that given job id has valid stdou file
 verify_out () {
   verify_dir $1
-  if ! test -r "$DIR/out"; then ERROR="pid $1 has no stdout"; return 1; fi
+  if ! test -r "$DIR/out";   then ERROR="pid $1 has no stdout"; return 1; fi
 }
 
 
@@ -108,7 +140,7 @@ verify_out () {
 # ensure that given job id has valid stderr file
 verify_err () {
   verify_dir $1
-  if ! test -r "$DIR/err"; then ERROR="stderr $1 has no sterr"; return 1; fi
+  if ! test -r "$DIR/err";   then ERROR="stderr $1 has no sterr"; return 1; fi
 }
 
 
@@ -143,9 +175,14 @@ create_monitor () {
   RPID=\$!
   MPID=\$\$
 
+  printf "\$RPID\\n" >  "\$DIR/rpid"  # real job id
+  printf "\$MPID\\n" >  "\$DIR/mpid"  # monitor pid
+  
+
   # we don't care when the wrapper sees these, echo can hang forever as far as
   # we care...
-  ( printf "\$RPID \$MPID\\n" > "\$DIR/fifo" & )
+  # echo "mon: created RPID / MPID" >> /tmp/log
+  ( printf "OK\\n" > "\$DIR/fifo" & )
   
 
   while true
@@ -231,17 +268,25 @@ cmd_run () {
   #
   # do a double fork to avoid zombies (need to do a wait in this process)
 
+
+  # echo " ------------ " >> /tmp/log
+  # echo " run1 1 $$ : $@  " >> /tmp/log
+
   cmd_run2 "$@" &
+
+  # echo " run1 2 $$ " >> /tmp/log
 
   SAGA_PID=$!      # this is the (SAGA-level) job id!
   wait $SAGA_PID   # this will return very quickly -- look at cmd_run2... ;-)
 
+  # echo " run1 3 $$ " >> /tmp/log
   if test "$SAGA_PID" = '0'  
   then
     # some error occured, assume RETVAL is set
     ERROR="NOK"
     return
   fi
+  # echo " run1 4 $$ " >> /tmp/log
 
   # success
   RETVAL=$SAGA_PID 
@@ -250,11 +295,15 @@ cmd_run () {
   # startup)
   DIR="$BASE/$SAGA_PID"
 
+  # echo " run1 5 $$ " >> /tmp/log
   while true
   do
     grep "RUNNING" "$DIR/state" && break
     sleep 0  # sleep 0 will wait for just some millisecs
+    # echo " run1 6 $$ " >> /tmp/log
   done
+  # echo " run1 7 $$ " >> /tmp/log
+  # echo " ============ " >> /tmp/log
 }
 
 
@@ -266,7 +315,9 @@ cmd_run2 () {
   # NOTE: we could, in principle, separate SUBMIT from RUN -- in this case, move
   # the job into NEW state.
 
-  set +x # turn off debug tracing -- stdout interleaving will mess with parsing.
+  # turn off debug tracing -- stdout interleaving will mess with parsing.
+  set +x 
+  # echo " run2 1 $$ : $@  " >> /tmp/log
 
   SAGA_PID=`sh -c 'printf "$PPID"'`
   DIR="$BASE/$SAGA_PID"
@@ -274,12 +325,17 @@ cmd_run2 () {
   timestamp
   START=$TIMESTAMP
 
+  # echo " run2 2 $$ " >> /tmp/log
   test -d "$DIR"            && rm    -rf "$DIR"     # re-use old pid if needed
   test -d "$DIR"            || mkdir -p  "$DIR"  || (RETVAL="cannot use job id"; return 0)
   printf "START : $START\n"  > "$DIR/stats"
   printf "NEW \n"           >> "$DIR/state"
 
+  # echo " run2 3 $$ " >> /tmp/log
   cmd_run_process "$SAGA_PID" "$@" &
+  DAEMON_PID=$!      # this is the (SAGA-level) job id!
+  wait $DAEMON_PID   # this will return very quickly -- look at cmd_run2... ;-)
+  # echo " run2 4 $$ " >> /tmp/log
   return $!
 }
 
@@ -287,13 +343,16 @@ cmd_run2 () {
 cmd_run_process () {
   # this command runs the job.  PPID will point to the id of the spawning
   # script, which, coincidentally, we designated as job ID -- nice:
+  # echo " run3 1 $$ : $@  " >> /tmp/log
   SAGA_PID=$1
   shift
 
   DIR="$BASE/$SAGA_PID"
 
+  # echo " run3 2 $$ " >> /tmp/log
   mkfifo "$DIR/fifo"           # to communicate with the monitor
   printf "$*\n" >  "$DIR/cmd"  # job to run by the monitor
+  # echo " run3 3 $$ " >> /tmp/log
 
   # start the monitor script, which makes sure
   # that the job state is properly watched and captured.
@@ -301,14 +360,14 @@ cmd_run_process () {
   # lifetime will not be bound to the manager script lifetime.  Also, it runs in
   # an interactive shell, i.e. in a new process group, so that we can signal the
   # monitor and the actual job processes all at once (think suspend, cancel).
-  ( sh -i -c "sh $BASE/monitor.sh  $SAGA_PID \"$DIR\" & exit" )
+  ( sh -i -c "sh $BASE/monitor.sh  $SAGA_PID \"$DIR\" 2>&1 > \"$DIR/monitor.log\" & exit" )
 
-  read RPID MPID < "$DIR/fifo"
+  # echo " run3 4 $$ " >> /tmp/log
+  read TEST < "$DIR/fifo"
   rm -rf $DIR/fifo
 
-  printf "$RPID\n" >  "$DIR/rpid"  # real job id
-  printf "$MPID\n" >  "$DIR/mpid"  # monitor pid
-  
+  # echo " run3 5 $$ [$TEST]" >> /tmp/log
+  # ls -a "$DIR" >> /tmp/log
   exit
 }
 
@@ -340,6 +399,10 @@ cmd_state () {
 
   DIR="$BASE/$1"
   RETVAL=`grep -e ' $' "$DIR/state" | tail -n 1 | tr -d ' '`
+  if test "$RETVAL" = ""
+  then
+    RETVAL=UNKNOWN
+  fi
 }
 
 
@@ -376,7 +439,7 @@ cmd_wait () {
       NEW       )        ;;
       RUNNING   )        ;;
       SUSPENDED )        ;;
-      UNKNOWN   )        ;;
+      UNKNOWN   )        ;;   # FIXME: should be an error?
       *         ) ERROR="NOK - invalid state '$RETVAL'"; return ;;  
     esac
 
@@ -429,7 +492,7 @@ cmd_suspend () {
   fi
 
   touch "$DIR/suspended"
-  RETVAL=`kill -STOP $rpid 2>&1`
+  RETVAL=`/bin/kill -STOP $rpid 2>&1`
   ECODE=$?
 
   if test "$ECODE" = "0"
@@ -464,7 +527,7 @@ cmd_resume () {
   fi
 
   touch   "$DIR/resumed"
-  RETVAL=`kill -CONT $rpid 2>&1`
+  RETVAL=`/bin/kill -CONT $rpid 2>&1`
   ECODE=$?
 
   if test "$ECODE" = "0"
@@ -508,10 +571,10 @@ cmd_cancel () {
   fi
 
   # now kill the job process group, and to be sure also the job shell
-  /bin/kill -TERM -- -$mpid # this is the important one...
-  /bin/kill -KILL -- -$mpid 2>/dev/null
-  /bin/kill -TERM     $rpid 2>/dev/null
-  /bin/kill -KILL     $rpid 2>/dev/null
+  /bin/kill -TERM $KILL_DASHES -$mpid # this is the important one...
+  /bin/kill -KILL $KILL_DASHES -$mpid 2>/dev/null
+  /bin/kill -TERM               $rpid 2>/dev/null
+  /bin/kill -KILL               $rpid 2>/dev/null
 
   # FIXME: how can we check for success?  ps?
   printf "CANCELED \n" >> "$DIR/state"
@@ -595,18 +658,22 @@ cmd_purge () {
 #
 cmd_quit () {
 
+  # echo "quitting $$ $@" >> /tmp/log
+
   if test "$1" = "TIMEOUT"
   then
     printf "IDLE TIMEOUT\n"
     touch "$BASE/timed_out.$$"
+  else
+    touch "$BASE/quit.$$"
   fi
 
   # kill idle checker
   /bin/kill $1 >/dev/null 2>&1
   rm -f "$BASE/idle.$$"
 
-  # clean bulk file
-  rm -rf bulk.$$
+  # clean bulk file and other temp files
+  rm -f bulk.$$
 
   # restore shell echo
   stty echo    >/dev/null 2>&1
@@ -622,8 +689,11 @@ cmd_quit () {
 #
 listen() {
 
-  # we need our home base...
+  # we need our home base cleaned
   test -d "$BASE" || mkdir -p  "$BASE"  || exit 1
+  touch "$BASE/bulk.$$"
+  rm -f "$BASE/bulk.$$"
+  touch "$BASE/bulk.$$"
 
   # make sure we get killed when idle
   idle_checker $$ 1>/dev/null 2>/dev/null 3</dev/null &
@@ -631,7 +701,7 @@ listen() {
 
   # report our own pid
   if ! test -z $1; then
-    printf "PID: $1\n"
+    printf "PID: $$\n" # FIXME: this should be $1
   fi
 
   # prompt for commands...
@@ -672,6 +742,8 @@ listen() {
       ERROR="OK"
       RETVAL=""
 
+      # echo " cmd $$ $CMD $ARGS" >> /tmp/log
+
       # simply invoke the right function for each command, or complain if command
       # is not known
       case $CMD in
@@ -700,6 +772,10 @@ listen() {
 
       EXITVAL=$?
 
+      # echo " cmd $$ exitval; $EXITVAL" >> /tmp/log
+      # echo " cmd $$ ret val; $RETVAL"  >> /tmp/log
+      # echo " cmd $$ err val; $ERROR"   >> /tmp/log
+
       # the called function will report state and results in 'ERROR' and 'RETVAL'
       if test "$ERROR" = "OK"; then
         printf "OK\n"
@@ -721,6 +797,11 @@ listen() {
       # well done - prompt for next command (even in bulk mode, for easier
       # parsing and EXITVAL communication)
       printf "PROMPT-$EXITVAL->\n"
+
+      # echo " cmd $$ ------------------------------------------------------"   >> /tmp/log
+      # echo " "   >> /tmp/log
+      # echo " "   >> /tmp/log
+      # echo " "   >> /tmp/log
 
     # closing thye read loop for the bulk data file
     done < "$BASE/bulk.$$"
@@ -749,7 +830,7 @@ stty -echonl 2> /dev/null
 
 if test "$PURGE_ON_START" = "True"
 then
-  cmd_purge &
+  cmd_purge
 fi
 
 create_monitor
