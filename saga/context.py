@@ -33,18 +33,17 @@ class Context (saga.base.Base, saga.Attributes) :
     The usage example for contexts is below::
 
         # define an ssh context
-        c = saga.Context()
-        c.context_type = 'ssh'
-        c.user_cert = '$HOME/.ssh/special_id_rsa'
-        c.user_key  = '$HOME/.ssh/special_id_rsa.pub'
+        ctx = saga.Context("SSH")
+        ctx.user_cert = '$HOME/.ssh/special_id_rsa'
+        ctx.user_key  = '$HOME/.ssh/special_id_rsa.pub'
 
         # add the context to a session
-        s = saga.Session()
-        s.contexts.append(c)
+        session = saga.Session()
+        session.add_context(ctx)
 
         # create a job service in this session -- that job service can now
         # *only* use that ssh context. 
-        j = saga.job.Service('ssh://remote.host.net/', s)
+        j = saga.job.Service('ssh://remote.host.net/', session=session)
 
 
     The L{Session} argument to the L{job.Service} constructor is fully optional

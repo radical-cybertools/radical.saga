@@ -10,6 +10,20 @@ import sys
 import glob
 import nose
 
+try:
+    import saga
+    print "______________________________________________________________________"
+    print "Using saga-python from: %s" % str(saga)
+    print "______________________________________________________________________"
+
+except Exception, e:
+    srcdir = "%s/../" % os.path.dirname(os.path.realpath(__file__))
+    sys.path.insert(0, os.path.abspath(srcdir))
+    import saga
+    print "______________________________________________________________________"
+    print "Using saga-python from: %s" % str(saga)
+    print "______________________________________________________________________"
+
 import saga.utils.test_config as sutc
 from optparse import OptionParser
 
@@ -94,6 +108,8 @@ def launch_tests(options, testdir):
         # (i.e. with the correct configfile)
         tc.read_config(sfg_name)
 
+        results = list()
+
         # run all test suites from the config
         for test_suite in tc.test_suites:
 
@@ -107,8 +123,19 @@ def launch_tests(options, testdir):
             # and run tests
             print "______________________________________________________________________"
             print "%s : %s" % (os.path.basename (sfg_name), test_suite)
-            result = nose.core.run(config=config)
+            rc = nose.core.run(config=config)
+            results.append(rc)
+            print "RC: %s" % rc
             print "______________________________________________________________________"
+
+        # if we get a 'false' results it means that something went wrong. in
+        # that case we return a non-zero exit code
+
+        if False in results:
+            return -1
+        else:
+            return 0
+
 
 #-----------------------------------------------------------------------------
 # entry point

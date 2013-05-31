@@ -18,7 +18,6 @@ import termios
 import threading
 
 import saga.utils.logger
-import saga.utils.timeout_gc
 import saga.exceptions as se
 
 # --------------------------------------------------------------------
@@ -78,25 +77,6 @@ class PTYProcess (object) :
         # something bad happened
         print pty.autopsy ()
 
-
-    The managed child process is under control of a Timeout Garbage Collector
-    (:class:`saga.utils.timeout_gc.TimeoutGC`), which will terminate the child
-    after some inactivity period.  The child will be automatically restarted on
-    the next activity attempts.  To support orderly process bootstrapping, users
-    of the :class:`PTYProcess` class should register hooks for process
-    initialization and finalization (:func:`set_initialize_hook` and
-    :func:`set_finalize_hook`).  The finalization hook may operate on a dead
-    child process, and should be written in a way that this does not lead to an
-    error (which would abort the restart attempt).
-
-    If the child process dies on its own, or is terminated by a third party, the
-    class will also attempt to restart the child.  In order to not interfere
-    with the process state at unexpected points, this will only happen during
-    explicit :func:`alive` checks, if the `recover` parameter is set to `True`
-    (`False` by default).  This restart mechanism will be used up to
-    `recover_max` times in a row, any successful activity will reset the recover
-    counter though.  The recover process will invoke both the finalization and
-    initialization hooks.
     """
 
     # ----------------------------------------------------------------
@@ -137,18 +117,11 @@ class PTYProcess (object) :
         self.exit_code        = None  # child died with code (may be revived)
         self.exit_signal      = None  # child kill by signal (may be revived)
 
-        self.initialize_hook  = None
-        self.finalize_hook    = None
-
         self.recover_max      = 3  # TODO: make configure option.  This does not
         self.recover_attempts = 0  # apply for recovers triggered by gc_timeout!
 
         if not self.logger :
             self.logger = saga.utils.logger.getLogger ('PTYProcess')
-
-        # register this process instance for timeout garbage collection
-        self.gc = saga.utils.timeout_gc.TimeoutGC ()
-        self.gc.register (self, self.initialize, self.finalize)
 
 
         try :
@@ -165,25 +138,11 @@ class PTYProcess (object) :
         them (see cat /proc/sys/kernel/pty/max)
         """
     
-        self.logger.error ("pty __del__")
-      # self.logger.trace ()
-    
         try :
-            self.gc.unregister (self)
             self.finalize ()
         except :
             pass
     
-
-    # ----------------------------------------------------------------------
-    #
-    def set_initialize_hook (self, initialize_hook) :
-        self.initialize_hook = initialize_hook
-
-    # ----------------------------------------------------------------------
-    #
-    def set_finalize_hook (self, finalize_hook) :
-        self.finalize_hook = finalize_hook
 
     # ----------------------------------------------------------------------
     #
@@ -197,7 +156,7 @@ class PTYProcess (object) :
 
         # create the child
         try :
-             self.child, self.child_fd = pty.fork ()
+            self.child, self.child_fd = pty.fork ()
         except Exception as e:
             raise se.NoSuccess ("Could not run (%s): %s" \
                              % (' '.join (self.command), e))
@@ -219,16 +178,11 @@ class PTYProcess (object) :
             new = termios.tcgetattr (self.child_fd)
             new[3] = new[3] & ~termios.ECHO
 
-            termios.tcsetattr (self.child_fd, termios.TCSADRAIN, new)
+            termios.tcsetattr (self.child_fd, termios.TCSANOW, new)
 
 
             self.parent_in  = self.child_fd
             self.parent_out = self.child_fd
-
-
-        # check if some additional initialization routines as registered
-        if  self.initialize_hook :
-            self.initialize_hook ()
 
 
     # --------------------------------------------------------------------
@@ -237,10 +191,6 @@ class PTYProcess (object) :
         """ kill the child, close all I/O channels """
 
         # NOTE: do we need to lock?
-
-        # as long as the child may live, run any higher level shutdown routine.
-        if  self.finalize_hook :
-            self.finalize_hook ()
 
         # now we can safely kill the process -- unless some wait did that before
         if  wstat == None :
@@ -265,7 +215,7 @@ class PTYProcess (object) :
                         wstat            = None
                         break
 
-                    if wpid :
+                    if  wpid :
                         break
 
         # at this point, we declare the process to be gone for good
@@ -274,7 +224,7 @@ class PTYProcess (object) :
         # lets see if we can perform some post-mortem analysis
         if  wstat != None :
 
-            if os.WIFEXITED (wstat) :
+            if  os.WIFEXITED (wstat) :
                 # child died of natural causes - perform autopsy...
                 self.exit_code   = os.WEXITSTATUS (wstat)
                 self.exit_signal = None
@@ -285,15 +235,19 @@ class PTYProcess (object) :
                 self.exit_signal = os.WTERMSIG (wstat)
 
 
-     ## try : 
-     ##     os.close (self.parent_in)  
-     ## except OSError :
-     ##     pass
+        try : 
+            if  self.parent_out :
+                os.close (self.parent_out)
+                self.parent_out = None
+        except OSError :
+            pass
 
-     ## try : 
-     ##     os.close (self.parent_out) 
-     ## except OSError :
-     ##     pass
+      # try : 
+      #     if  self.parent_in :
+      #         os.close (self.parent_in)
+      #         self.parent_in = None
+      # except OSError :
+      #     pass
 
       # try : 
       #     os.close (self.parent_err) 
@@ -309,55 +263,53 @@ class PTYProcess (object) :
         killed
         """
 
-        with self.gc.active (self) :
+        if not self.child:
+            # this was quick ;-)
+            return
 
-            if not self.child:
-                # this was quick ;-)
-                return
+        # yes, for ever and ever...
+        while True :
 
-            # yes, for ever and ever...
-            while True :
+            # hey, kiddo, whats up?
+            try :
+                wpid, wstat = os.waitpid (self.child, 0)
+            except OSError as e :
 
-                # hey, kiddo, whats up?
-                try :
-                    wpid, wstat = os.waitpid (self.child, 0)
-                except OSError as e :
+                if e.errno == errno.ECHILD :
 
-                    if e.errno == errno.ECHILD :
+                    # child disappeared
+                    self.exit_code   = None
+                    self.exit_signal = None
+                    self.finalize ()
+                    return
 
-                        # child disappeared
-                        self.exit_code   = None
-                        self.exit_signal = None
-                        self.finalize ()
-                        return
-
-                    # no idea what happened -- it is likely bad
-                    raise se.NoSuccess ("waitpid failed: %s" % e)
+                # no idea what happened -- it is likely bad
+                raise se.NoSuccess ("waitpid failed: %s" % e)
 
 
-                # did we get a note about child termination?
-                if 0 == wpid :
+            # did we get a note about child termination?
+            if 0 == wpid :
 
-                    # nope, all is well - carry on
-                    continue
-
-
-                # Yes, we got a note.  
-                # Well, maybe the child fooled us and is just playing dead?
-                if os.WIFSTOPPED   (wstat) or \
-                   os.WIFCONTINUED (wstat)    :
-                    # we don't care if someone stopped/resumed the child -- that is up
-                    # to higher powers.  For our purposes, the child is alive.  Ha!
-                    continue
+                # nope, all is well - carry on
+                continue
 
 
-                # not stopped, poor thing... - soooo, what happened??  But hey,
-                # either way, its dead -- make sure it stays dead, to avoid
-                # zombie apocalypse...
-                self.child = None
-                self.finalize (wstat=wstat)
+            # Yes, we got a note.  
+            # Well, maybe the child fooled us and is just playing dead?
+            if os.WIFSTOPPED   (wstat) or \
+               os.WIFCONTINUED (wstat)    :
+                # we don't care if someone stopped/resumed the child -- that is up
+                # to higher powers.  For our purposes, the child is alive.  Ha!
+                continue
 
-                return
+
+            # not stopped, poor thing... - soooo, what happened??  But hey,
+            # either way, its dead -- make sure it stays dead, to avoid
+            # zombie apocalypse...
+            self.child = None
+            self.finalize (wstat=wstat)
+
+            return
 
 
     # --------------------------------------------------------------------
@@ -379,58 +331,56 @@ class PTYProcess (object) :
         consumers themselves.
         """
 
-        with self.gc.active (self) :
+        # do we have a child which we can check?
+        if  self.child :
 
-            # do we have a child which we can check?
-            if  self.child :
+            while True :
+                # hey, kiddo, whats up?
+                wpid, wstat = os.waitpid (self.child, os.WNOHANG)
 
-                while True :
-                    # hey, kiddo, whats up?
-                    wpid, wstat = os.waitpid (self.child, os.WNOHANG)
-
-                    # did we get a note about child termination?
-                    if 0 == wpid :
-                        # nope, all is well - carry on
-                        return True
+                # did we get a note about child termination?
+                if 0 == wpid :
+                    # nope, all is well - carry on
+                    return True
 
 
-                    # Yes, we got a note.  
-                    # Well, maybe the child fooled us and is just playing dead?
-                    if os.WIFSTOPPED   (wstat) or \
-                       os.WIFCONTINUED (wstat)    :
-                        # we don't care if someone stopped/resumed the child -- that is up
-                        # to higher powers.  For our purposes, the child is alive.  Ha!
-                        continue
+                # Yes, we got a note.  
+                # Well, maybe the child fooled us and is just playing dead?
+                if os.WIFSTOPPED   (wstat) or \
+                   os.WIFCONTINUED (wstat)    :
+                    # we don't care if someone stopped/resumed the child -- that is up
+                    # to higher powers.  For our purposes, the child is alive.  Ha!
+                    continue
 
-                    break
+                break
 
-                # so its dead -- make sure it stays dead, to avoid zombie
-                # apocalypse...
-                self.child = None
-                self.finalize (wstat=wstat)
+            # so its dead -- make sure it stays dead, to avoid zombie
+            # apocalypse...
+            self.child = None
+            self.finalize (wstat=wstat)
 
 
-            # check if we can attempt a post-mortem revival though
-            if  not recover :
-                # nope, we are on holy ground - revival not allowed.
-                return False
+        # check if we can attempt a post-mortem revival though
+        if  not recover :
+            # nope, we are on holy ground - revival not allowed.
+            return False
 
-            # we are allowed to revive!  So can we try one more time...  pleeeease??
-            # (for cats, allow up to 9 attempts; for Buddhists, always allow to
-            # reincarnate, etc.)
-            if self.recover_attempts >= self.recover_max :
-                # nope, its gone for good - just report the sad news
-                return False
+        # we are allowed to revive!  So can we try one more time...  pleeeease??
+        # (for cats, allow up to 9 attempts; for Buddhists, always allow to
+        # reincarnate, etc.)
+        if self.recover_attempts >= self.recover_max :
+            # nope, its gone for good - just report the sad news
+            return False
 
-            # MEDIIIIC!!!!
-            self.recover_attempts += 1
-            self.initialize ()
+        # MEDIIIIC!!!!
+        self.recover_attempts += 1
+        self.initialize ()
 
-            # well, now we don't trust the child anymore, of course!  So we check
-            # again.  Yes, this is recursive -- but note that recover_attempts get
-            # incremented on every iteration, and this will eventually lead to
-            # call termination (tm).
-            return self.alive (recover=True)
+        # well, now we don't trust the child anymore, of course!  So we check
+        # again.  Yes, this is recursive -- but note that recover_attempts get
+        # incremented on every iteration, and this will eventually lead to
+        # call termination (tm).
+        return self.alive (recover=True)
 
 
 
@@ -441,18 +391,16 @@ class PTYProcess (object) :
         return diagnostics information string for dead child processes
         """
 
-        with self.gc.active (self) :
+        if  self.child :
+            # Boooh!
+            return "false alarm, process %s is alive!" % self.child
 
-            if  self.child :
-                # Boooh!
-                return "false alarm, process %s is alive!" % self.child
+        ret  = ""
+        ret += "  exit code  : %s\n" % self.exit_code
+        ret += "  exit signal: %s\n" % self.exit_signal
+        ret += "  last output: %s\n" % self.cache[-256:] # FIXME: smarter selection
 
-            ret  = ""
-            ret += "  exit code  : %s\n" % self.exit_code
-            ret += "  exit signal: %s\n" % self.exit_signal
-            ret += "  last output: %s\n" % self.cache[-256:] # FIXME: smarter selection
-
-            return ret
+        return ret
 
 
     # --------------------------------------------------------------------
@@ -479,118 +427,117 @@ class PTYProcess (object) :
         """
 
         found_eof = False
-        with self.gc.active (self) :
 
-            if not self.alive (recover=False) :
-                if self.cache :
-                    raise se.NoSuccess ("process I/O failed: %s" % self.cache[-256:])
-                else :
-                    raise se.NoSuccess ("process I/O failed")
+        if not self.alive (recover=False) :
+            if self.cache :
+                raise se.NoSuccess ("process I/O failed: %s" % self.cache[-256:])
+            else :
+                raise se.NoSuccess ("process I/O failed")
 
-            try:
-                # start the timeout timer right now.  Note that even if timeout is
-                # short, and child.poll is slow, we will nevertheless attempt at least
-                # one read...
-                start = time.time ()
+        try:
+            # start the timeout timer right now.  Note that even if timeout is
+            # short, and child.poll is slow, we will nevertheless attempt at least
+            # one read...
+            start = time.time ()
 
-                # read until we have enough data, or hit timeout ceiling...
-                while True :
+            # read until we have enough data, or hit timeout ceiling...
+            while True :
 
-                    # first, lets see if we still have data in the cache we can return
+                # first, lets see if we still have data in the cache we can return
+                if len (self.cache) :
+
+                    if not size :
+                        ret = self.cache
+                        self.cache = ""
+                        return ret
+
+                    # we don't even need all of the cache
+                    elif size <= len (self.cache) :
+                        ret = self.cache[:size]
+                        self.cache = self.cache[size:]
+                        return ret
+
+                # otherwise we need to read some more data, right?
+                # idle wait 'til the next data chunk arrives, or 'til _POLLDELAY
+                rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
+
+                # got some data? 
+                for f in rlist:
+                    # read whatever we still need
+
+                    readsize = _CHUNKSIZE
+                    if size: 
+                        readsize = size-len(ret)
+
+                    buf  = os.read (f, _CHUNKSIZE)
+
+                    if  len(buf) == 0 and sys.platform == 'darwin' :
+                        self.logger.debug ("read : MacOS EOF")
+                        self.finalize ()
+                        found_eof = True
+                        raise se.NoSuccess ("unexpected EOF (%s)" \
+                                         % self.cache[-256:])
+
+
+                    self.cache += buf.replace ('\r', '')
+                    log         = buf.replace ('\r', '')
+                    log         = log.replace ('\n', '\\n')
+                  # print "buf: --%s--" % buf
+                  # print "log: --%s--" % log
+                    if  len(log) > _DEBUG_MAX :
+                        self.logger.debug ("read : [%5d] [%5d] (%s ... %s)" \
+                                        % (f, len(log), log[:30], log[-30:]))
+                    else :
+                        self.logger.debug ("read : [%5d] [%5d] (%s)" \
+                                        % (f, len(log), log))
+
+
+                # lets see if we still got any data in the cache we can return
+                if len (self.cache) :
+
+                    if not size :
+                        ret = self.cache
+                        self.cache = ""
+                        return ret
+
+                    # we don't even need all of the cache
+                    elif size <= len (self.cache) :
+                        ret = self.cache[:size]
+                        self.cache = self.cache[size:]
+                        return ret
+
+                # at this point, we do not have sufficient data -- only
+                # return on timeout
+
+                if  timeout == 0 : 
+                    # only return if we have data
                     if len (self.cache) :
-
-                        if not size :
-                            ret = self.cache
-                            self.cache = ""
-                            return ret
-
-                        # we don't even need all of the cache
-                        elif size <= len (self.cache) :
-                            ret = self.cache[:size]
-                            self.cache = self.cache[size:]
-                            return ret
-
-                    # otherwise we need to read some more data, right?
-                    # idle wait 'til the next data chunk arrives, or 'til _POLLDELAY
-                    rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
-
-                    # got some data? 
-                    for f in rlist:
-                        # read whatever we still need
-
-                        readsize = _CHUNKSIZE
-                        if size: 
-                            readsize = size-len(ret)
-
-                        buf  = os.read (f, _CHUNKSIZE)
-
-                        if  len(buf) == 0 and sys.platform == 'darwin' :
-                            self.logger.debug ("read : MacOS EOF")
-                            self.finalize ()
-                            found_eof = True
-                            raise se.NoSuccess ("unexpected EOF (%s)" \
-                                             % self.cache[-256:])
-
-
-                        self.cache += buf.replace ('\r', '')
-                        log         = buf.replace ('\r', '')
-                        log         = log.replace ('\n', '\\n')
-                      # print "buf: --%s--" % buf
-                      # print "log: --%s--" % log
-                        if  len(log) > _DEBUG_MAX :
-                            self.logger.debug ("read : [%5d] (%s ... %s)" \
-                                            % (len(log), log[:30], log[-30:]))
-                        else :
-                            self.logger.debug ("read : [%5d] (%s)" \
-                                            % (len(log), log))
-
-
-                    # lets see if we still got any data in the cache we can return
-                    if len (self.cache) :
-
-                        if not size :
-                            ret = self.cache
-                            self.cache = ""
-                            return ret
-
-                        # we don't even need all of the cache
-                        elif size <= len (self.cache) :
-                            ret = self.cache[:size]
-                            self.cache = self.cache[size:]
-                            return ret
-
-                    # at this point, we do not have sufficient data -- only
-                    # return on timeout
-
-                    if  timeout == 0 : 
-                        # only return if we have data
-                        if len (self.cache) :
-                            ret        = self.cache
-                            self.cache = ""
-                            return ret
-
-                    elif timeout < 0 :
-                        # return of we have data or not
                         ret        = self.cache
                         self.cache = ""
                         return ret
 
-                    else : # timeout > 0
-                        # return if timeout is reached
-                        now = time.time ()
-                        if (now-start) > timeout :
-                            ret        = self.cache
-                            self.cache = ""
-                            return ret
+                elif timeout < 0 :
+                    # return of we have data or not
+                    ret        = self.cache
+                    self.cache = ""
+                    return ret
+
+                else : # timeout > 0
+                    # return if timeout is reached
+                    now = time.time ()
+                    if (now-start) > timeout :
+                        ret        = self.cache
+                        self.cache = ""
+                        return ret
 
 
-            except Exception as e :
+        except Exception as e :
 
-                if found_eof :
-                    raise e
+            if found_eof :
+                raise e
 
-                raise se.NoSuccess ("read from process failed '%s' : (%s)" \
-                                 % (e, self.cache[-256:]))
+            raise se.NoSuccess ("read from process failed '%s' : (%s)" \
+                             % (e, self.cache[-256:]))
 
 
     # ----------------------------------------------------------------
@@ -694,43 +641,41 @@ class PTYProcess (object) :
         child's stdin pipe, until it succeeds to write all data.
         """
 
-        with self.gc.active (self) :
-        
-            if not self.alive (recover=False) :
-                raise se.NoSuccess ("cannot write to dead process (%s)" \
-                                 % self.cache[-256:])
+        if not self.alive (recover=False) :
+            raise se.NoSuccess ("cannot write to dead process (%s)" \
+                             % self.cache[-256:])
 
-            try :
+        try :
 
-                log = data.replace ('\n', '\\n')
-                log =  log.replace ('\r', '')
-                if  len(log) > _DEBUG_MAX :
-                    self.logger.debug ("write: [%5d] (%s ... %s)" \
-                                    % (len(data), log[:30], log[-30:]))
-                else :
-                    self.logger.debug ("write: [%5d] (%s)" \
-                                    % (len(data), log))
+            log = data.replace ('\n', '\\n')
+            log =  log.replace ('\r', '')
+            if  len(log) > _DEBUG_MAX :
+                self.logger.debug ("write: [%5d] [%5d] (%s ... %s)" \
+                                % (self.parent_in, len(data), log[:30], log[-30:]))
+            else :
+                self.logger.debug ("write: [%5d] [%5d] (%s)" \
+                                % (self.parent_in, len(data), log))
 
-                # attempt to write forever -- until we succeeed
-                while data :
+            # attempt to write forever -- until we succeeed
+            while data :
 
-                    # check if the pty pipe is ready for data
-                    _, wlist, _ = select.select ([], [self.parent_in], [], _POLLDELAY)
+                # check if the pty pipe is ready for data
+                _, wlist, _ = select.select ([], [self.parent_in], [], _POLLDELAY)
 
-                    for f in wlist :
-                        
-                        # write will report the number of written bytes
-                        size = os.write (f, data)
+                for f in wlist :
+                    
+                    # write will report the number of written bytes
+                    size = os.write (f, data)
 
-                        # otherwise, truncate by written data, and try again
-                        data = data[size:]
+                    # otherwise, truncate by written data, and try again
+                    data = data[size:]
 
-                        if data :
-                            self.logger.info ("write: [%5d]" % size)
+                    if data :
+                        self.logger.info ("write: [%5d] [%5d]" % (f, size))
 
 
-            except Exception as e :
-                raise se.NoSuccess ("write to process failed (%s)" % e)
+        except Exception as e :
+            raise se.NoSuccess ("write to process failed (%s)" % e)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

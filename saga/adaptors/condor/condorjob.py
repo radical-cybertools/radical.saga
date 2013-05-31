@@ -90,12 +90,17 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
     condor_file += "\n\n##### OPTIONS PASSED VIA JOB DESCRIPTION #####\n##"
     requirements = "requirements = "
 
-    # executable -> executable
-    if jd.executable is not None:
-        condor_file += "\nexecutable = %s" % jd.executable
+    # Condor doesn't expand environment variables in arguments.
+    # To support this functionality, we wrap by calling /bin/env.
+    condor_file += "\nexecutable = /bin/env"
 
     # arguments -> arguments
-    arguments = "arguments = "
+    arguments = 'arguments = \\"/bin/sh -c \''
+
+    # The actual executable becomes the first argument.
+    if jd.executable is not None:
+        arguments += "%s " % jd.executable
+
     if jd.arguments is not None:
 
         for arg in jd.arguments:
@@ -107,8 +112,17 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
 
             # Condor HATES double quotes in the arguments. It'll return
             # some crap like: "Found illegal unescaped double-quote: ...
-            # That's why we esacpe them.
-            arguments += "%s " % (arg.replace('"', '\\"'))
+            # That's why we escape them by repeating.
+            arg = arg.replace('"', '""')
+    
+            # Escape dollars (for environment variables)
+            arg = arg.replace('$', '\\$')
+    
+            arguments += "%s " % arg
+
+    # close the quote opened earlier 
+    arguments += '\'\\"'
+
     condor_file += "\n%s" % arguments
 
     # file_transfer -> transfer_input_files
@@ -248,9 +262,9 @@ The (HT)Condor(-G) adaptor allows to run and manage jobs on a
 `Condor <http://research.cs.wisc.edu/htcondor/>`_ gateway.
 """,
     "example": "examples/jobs/condorjob.py",
-    "schemas": {"condor":        "connect to a local gateway",
-                "condor+ssh":    "conenct to a remote gateway via SSH",
-                "condor+gsissh": "connect to a remote gateway via GSISSH"}
+    "schemas": {"condor :ref:`security_contexts`":        "connect to a local gateway",
+                "condor+ssh :ref:`security_contexts`":    "conenct to a remote gateway via SSH",
+                "condor+gsissh ": "connect to a remote gateway via GSISSH"}
 }
 
 # --------------------------------------------------------------------
@@ -320,8 +334,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     #
     def __init__(self, api, adaptor):
 
-        self._cpi_base = super(CondorJobService, self)
-        self._cpi_base.__init__(api, adaptor)
+        _cpi_base = super(CondorJobService, self)
+        _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
 
@@ -369,16 +383,25 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         self._commands = {'condor_version': None,
                           'condor_submit':  None,
                           'condor_q':       None,
+                          'condor_history': None,
                           'condor_rm':      None}
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
-        self.shell.set_initialize_hook(self.initialize)
-        self.shell.set_finalize_hook(self.finalize)
+      # self.shell.set_initialize_hook(self.initialize)
+      # self.shell.set_finalize_hook(self.finalize)
 
         self.initialize()
 
         return self.get_api ()
+
+
+    # ----------------------------------------------------------------
+    #
+    def close (self) :
+        if  self.shell :
+            self.shell.finalize (True)
+
 
     # ----------------------------------------------------------------
     #
@@ -426,7 +449,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             option_dict=self.query_options)
         self._logger.debug("Generated Condor script: %s" % script)
 
-        ret, out, _ = self.shell.run_sync("echo \'%s\' | %s -" \
+        ret, out, _ = self.shell.run_sync('echo "%s" | %s -' \
             % (script, self._commands['condor_submit']['path']))
 
         if ret != 0:
@@ -545,11 +568,36 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 # that case, the job is gone now, which can either mean DONE,
                 # or FAILED. the only thing we can do is set it to 'DONE'
             if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                curr_info['state'] = saga.job.DONE
+
+                # run the Condor 'condor_history' command to get info about 
+                # finished jobs
+                ret, out, _ = self.shell.run_sync("%s -long %s | \
+                    egrep '(ExitCode)'" \
+                    % (self._commands['condor_history']['path'], pid))
+                
+                if ret != 0:
+                    message = "Error getting job history via 'condor_history': %s" % out
+                    log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+                # sometimes we get other crap (like biff)
+                out = out.split('\n')[0] 
+
+                if len(out.split('=')) != 2:
+                    message = "No ExitCode found via 'condor_history'"
+                    log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+                _, val = out.split('=')
+                retcode = int(val.strip())
+                    
+                curr_info['returncode'] = retcode
+
+                if retcode == 0:
+                    curr_info['state'] = saga.job.DONE
+                else:
+                    curr_info['state'] = saga.job.FAILED
+
                 curr_info['gone'] = True
-                self._logger.warning("Previously running job has \
-disappeared. This probably means that the backend doesn't store any information \
-about finished jobs. Setting state to 'DONE'.")
+
             else:
                 curr_info['gone'] = True
             #else:
@@ -820,8 +868,8 @@ class CondorJob (saga.adaptors.cpi.job.Job):
     def __init__(self, api, adaptor):
 
         # initialize parent class
-        self._cpi_base = super(CondorJob, self)
-        self._cpi_base.__init__(api, adaptor)
+        _cpi_base = super(CondorJob, self)
+        _cpi_base.__init__(api, adaptor)
 
     @SYNC_CALL
     def init_instance(self, job_info):

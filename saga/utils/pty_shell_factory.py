@@ -6,6 +6,7 @@ __license__   = "MIT"
 
 import os
 import sys
+import pwd
 import string
 import getpass
 
@@ -42,7 +43,7 @@ _PTY_TIMEOUT = 2.0
 # these arrays help to map requested client schemas to master schemas
 _SCHEMAS_SH  = ['sh', 'fork', 'local', 'file']
 _SCHEMAS_SSH = ['ssh', 'scp', 'sftp']
-_SCHEMAS_GSI = ['gsissh', 'gsiscp', 'gsisftp']   # 'gsiftp'?
+_SCHEMAS_GSI = ['gsissh', 'gsiscp', 'gsisftp', 'gsiftp']
 
 _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 
@@ -91,10 +92,7 @@ class PTYShellFactory (object) :
     a host/user/port/context/shell_type hash.
 
     Any ssh master connection in this registry can idle, and may thus shut down
-    after ``ControlPersist`` seconds (see options), or when the PTYProcess level
-    GC collects it whichever comes first. But also, the GC will automatically
-    restart the connection on any invocation of :func:`get()`.  Note that the
-    created clients are also under timeout GC management.
+    after ``ControlPersist`` seconds (see options).
 
     data model::
 
@@ -175,7 +173,7 @@ class PTYShellFactory (object) :
             	  "Shell not connected to %s" % info['host_str'])
 
             # authorization, prompt setup, etc
-            self._initialize_pty (info['pty'], info['pass'], info['cert_pass'], info['logger'])
+            self._initialize_pty (info['pty'], info['pass'], info['key_pass'], info['logger'])
 
             # master was created - register it
             self.registry[host_s][user_s][type_s] = info
@@ -195,13 +193,13 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def _initialize_pty (self, pty_shell, shell_pass, cert_pass, logger) :
+    def _initialize_pty (self, pty_shell, shell_pass, key_pass, logger) :
 
         try :
             prompt_patterns = ["[Pp]assword:\s*$",                   # password   prompt
                                "Enter passphrase for key '.*':\s*$", # passphrase prompt
                                "want to continue connecting",        # hostkey confirmation
-                               "^(.*[\$#>])\s*$"]                    # greedy native shell prompt 
+                               "^(.*[\$#%>])\s*$"]                   # greedy native shell prompt 
 
             # find a prompt
             n, match = pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
@@ -239,15 +237,15 @@ class PTYShellFactory (object) :
                     end   = string.find (match, "'", start+1)
 
                     if start == -1 or end == -1 :
-                        raise saga.AuthenticationFailed ("could not extract cert name (%s)" % match)
+                        raise saga.AuthenticationFailed ("could not extract key name (%s)" % match)
 
-                    cert = match[start+1:end]
+                    key = match[start+1:end]
 
-                    if  not cert in cert_pass    :
-                        raise saga.AuthenticationFailed ("prompted for unknown certificate password (%s)" \
-                                                      % cert)
+                    if  not key in key_pass    :
+                        raise saga.AuthenticationFailed ("prompted for unknown key password (%s)" \
+                                                      % key)
 
-                    pty_shell.write ("%s\n" % cert_pass[cert])
+                    pty_shell.write ("%s\n" % key_pass[key])
                     n, match = pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
 
 
@@ -286,7 +284,7 @@ class PTYShellFactory (object) :
         # authorization, prompt setup, etc
         self._initialize_pty (sh_slave, 
                               info['pass'], 
-                              info['cert_pass'], 
+                              info['key_pass'], 
                               info['logger'])
 
         return sh_slave
@@ -312,7 +310,7 @@ class PTYShellFactory (object) :
 
         self._initialize_pty (cp_slave, 
                               info['pass'], 
-                              info['cert_pass'], 
+                              info['key_pass'], 
                               info['logger'])
 
         cp_slave.write ("%s\n" % s_in)
@@ -344,7 +342,7 @@ class PTYShellFactory (object) :
 
         self._initialize_pty (cp_slave, 
                               info['pass'], 
-                              info['cert_pass'], 
+                              info['key_pass'], 
                               info['logger'])
 
         cp_slave.write ("%s\n" % s_in)
@@ -369,7 +367,7 @@ class PTYShellFactory (object) :
         info['logger']    = logger
         info['ctx']       = []
         info['pass']      = ""
-        info['cert_pass'] = {}
+        info['key_pass']  = {}
 
         # find out what type of shell we have to deal with
         if  info['schema']   in _SCHEMAS_SSH :
@@ -441,19 +439,19 @@ class PTYShellFactory (object) :
                 if  context.type.lower () == "ssh" :
                     if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
                         if  context.attribute_exists ("user_id")  or \
-                            context.attribute_exists ("user_cert") :
+                            context.attribute_exists ("user_key") :
 
                             if  context.attribute_exists ("user_id") and context.user_id :
                                 user_id = context.user_id
                                 if user_id :
                                     info['user']  = context.user_id
-                            if  context.attribute_exists ("user_cert") and context.user_cert :
-                                info['ssh_args']  += "-i %s " % context.user_cert
-                                info['scp_args']  += "-i %s " % context.user_cert
-                                info['sftp_args'] += "-i %s " % context.user_cert
+                            if  context.attribute_exists ("user_key")  and  context.user_key  :
+                                info['ssh_args']  += "-o IdentityFile=%s " % context.user_key 
+                                info['scp_args']  += "-o IdentityFile=%s " % context.user_key 
+                                info['sftp_args'] += "-o IdentityFile=%s " % context.user_key 
 
                                 if  context.attribute_exists ("user_pass") and context.user_pass :
-                                    info['cert_pass'][context.user_cert] = context.user_pass
+                                    info['key_pass'][context.user_key] = context.user_pass
 
                             info['ctx'].append (context)
 
@@ -475,9 +473,9 @@ class PTYShellFactory (object) :
                         # FIXME: also use cert_dir etc.
 
                         if  context.attribute_exists ("user_proxy") and context.user_proxy :
-                            info['ssh_env']  += "X509_PROXY='%s' " % context.user_proxy
-                            info['scp_env']  += "X509_PROXY='%s' " % context.user_proxy
-                            info['sftp_env'] += "X509_PROXY='%s' " % context.user_proxy
+                            info['ssh_env']  += "X509_USER_PROXY='%s' " % context.user_proxy
+                            info['scp_env']  += "X509_USER_PROXY='%s' " % context.user_proxy
+                            info['sftp_env'] += "X509_USER_PROXY='%s' " % context.user_proxy
                             info['ctx'].append (context)
 
             if url.port and url.port != -1 :
@@ -492,12 +490,16 @@ class PTYShellFactory (object) :
             if url.username   :  info['user'] = url.username
             if url.password   :  info['pass'] = url.password
 
+            ctrl_user = pwd.getpwuid (os.getuid ()).pw_name
+            ctrl_base = "/tmp/saga_ssh_%s" % ctrl_user
+
+
             if  'user' in info and info['user'] :
                 info['host_str'] = "%s@%s"  % (info['user'], info['host_str'])
-                info['ctrl'] = "~/.saga/adaptors/shell/ssh_%%h_%%p.%s.%s.ctrl" % (os.getpid (), info['user'])
+                info['ctrl'] = "%s_%%h_%%p.%s.%s.ctrl" % (ctrl_base, os.getpid (), info['user'])
             else :
                 info['user'] = getpass.getuser ()
-                info['ctrl'] = "~/.saga/adaptors/shell/ssh_%%h_%%p.%s.ctrl" % (os.getpid ())
+                info['ctrl'] = "%s_%%h_%%p.%s.ctrl" % (ctrl_base, os.getpid ())
 
             info['m_flags']  = _SSH_FLAGS_MASTER % ({'ctrl' : info['ctrl']})
             info['s_flags']  = _SSH_FLAGS_SLAVE  % ({'ctrl' : info['ctrl']})
@@ -549,6 +551,9 @@ class PTYShellFactory (object) :
 
         elif 'pty allocation' in lmsg :
             e = saga.NoSuccess ("Insufficient system resources: %s" % cmsg)
+
+        elif 'Connection to master closed' in lmsg :
+            e = saga.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
 
         # print e.traceback
         return e

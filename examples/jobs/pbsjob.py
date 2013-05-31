@@ -13,15 +13,27 @@ __license__   = "MIT"
 
 import sys
 import saga
-import getpass
 
 
+# ----------------------------------------------------------------------------
+# This is an example for a callback function. Callback functions can be
+# registered with a saga.Job object and get 'fired' asynchronously on
+# certain conditions.
+def job_state_change_cb(src_obj, fire_on, value):
+    print "Callback    : job state changed to '%s'\n" % value
+    return True
+
+
+# ----------------------------------------------------------------------------
+#
 def main():
 
     try:
         # Your ssh identity on the remote machine.
         ctx = saga.Context("ssh")
-        ctx.user_id = getpass.getuser()  # Change if necessary
+
+        # Change e.g., if you have a differnent username on the remote machine
+        #ctx.user_id = "your_ssh_username"
 
         session = saga.Session()
         session.add_context(ctx)
@@ -29,32 +41,44 @@ def main():
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
         # and '+ssh' enables PBS remote access via SSH.
-        js = saga.job.Service("pbs+ssh://sierra.futuregrid.org",
+        js = saga.job.Service("pbs+ssh://hotel.futuregrid.org",
                               session=session)
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
-        jd.queue           = 'batch'
-        jd.environment     = {'RUNTIME': '10'}
-        jd.wall_time_limit = 1 # minutes
-        jd.executable      = '/bin/sleep'
-        jd.arguments       = ['$RUNTIME']
+        jd.environment       = {'FILENAME': 'testfile'}
+        jd.wall_time_limit   = 1 # minutes
 
-        # Create a new job from the job description. The initial state of 
+        jd.executable        = '/bin/touch'
+        jd.arguments         = ['$FILENAME']
+
+        #jd.total_cpu_count   = 12 # for lonestar this has to be a multiple of 12
+        #jd.spmd_variation    = '12way' # translates to the qsub -pe flag
+
+        jd.queue             = "batch"
+        #jd.project           = "TG-MCB090174"
+
+        jd.working_directory = "$HOME/A/B/C"
+        jd.output            = "examplejob.out"
+        jd.error             = "examplejob.err"
+
+        # Create a new job from the job description. The initial state of
         # the job is 'New'.
-        sleepjob = js.create_job(jd)
+        touchjob = js.create_job(jd)
+
+        # Register our callback. We want it to 'fire' on job state change
+        touchjob.add_callback(saga.STATE, job_state_change_cb)
 
         # Check our job's id and state
-        print "Job ID    : %s" % (sleepjob.id)
-        print "Job State : %s" % (sleepjob.state)
+        print "Job ID      : %s" % (touchjob.id)
+        print "Job State   : %s" % (touchjob.state)
 
         # Now we can start our job.
         print "\n...starting job...\n"
-        sleepjob.run()
+        touchjob.run()
 
-        print "Job ID    : %s" % (sleepjob.id)
-        print "Job State : %s" % (sleepjob.state)
+        print "Job ID      : %s" % (touchjob.id)
 
         # List all jobs that are known by the adaptor.
         # This should show our job as well.
@@ -62,22 +86,16 @@ def main():
         for job in js.list():
             print " * %s" % job
 
-        # Now we disconnect and reconnect to our job by using the get_job()
-        # method and our job's id. While this doesn't make a lot of sense
-        # here,  disconnect / reconnect can become very important for
-        # long-running job.
-        sleebjob_clone = js.get_job(sleepjob.id)
-
         # wait for our job to complete
         print "\n...waiting for job...\n"
-        sleebjob_clone.wait()
+        touchjob.wait()
 
-        print "Job State   : %s" % (sleebjob_clone.state)
-        print "Exitcode    : %s" % (sleebjob_clone.exit_code)
-        print "Exec. hosts : %s" % (sleebjob_clone.execution_hosts)
-        print "Create time : %s" % (sleebjob_clone.created)
-        print "Start time  : %s" % (sleebjob_clone.started)
-        print "End time    : %s" % (sleebjob_clone.finished)
+        print "Job State   : %s" % (touchjob.state)
+        print "Exitcode    : %s" % (touchjob.exit_code)
+        print "Exec. hosts : %s" % (touchjob.execution_hosts)
+        print "Create time : %s" % (touchjob.created)
+        print "Start time  : %s" % (touchjob.started)
+        print "End time    : %s" % (touchjob.finished)
 
         return 0
 
