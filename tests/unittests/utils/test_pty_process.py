@@ -69,7 +69,7 @@ def test_ptyprocess_stdout () :
     """ Test pty_process printing stdout messages"""
     txt = "______1______2_____3_____\n"
     pty = supp.PTYProcess ("printf \"%s\"" % txt)
-    out = pty.read ()
+    out = pty.read (size=len(txt), timeout=1.0)
     pty.wait ()
     assert (str(txt) == str(out)), "'%s' == '%s'" % \
            (str(txt) ,  str(out))
@@ -81,7 +81,7 @@ def test_ptyprocess_stderr () :
     """ Test pty_process printing stderr messages"""
     txt = "______1______2_____3_____\n"
     pty = supp.PTYProcess ("sh -c 'printf \"%s\" 1>&2'" % txt)
-    out = pty.read ()
+    out = pty.read (size=len(txt), timeout=1.0)
   # print "--%s--%s--\n" % ( len(txt), txt)
   # print "--%s--%s--\n" % ( len(out), out)
     assert (str(txt) == str(out)), "'%s' == '%s'" % \
@@ -96,7 +96,7 @@ def test_ptyprocess_write () :
     txt = "______1______2_____3_____\n"
     pty = supp.PTYProcess ("cat")
     pty.write (txt)
-    out = pty.read ()
+    out = pty.read (size=len(txt), timeout=1.0)
   # print "--%s--%s--\n" % ( len(txt), txt)
   # print "--%s--%s--\n" % ( len(out), out)
     assert (txt == out), "'%s' == '%s'" % \
