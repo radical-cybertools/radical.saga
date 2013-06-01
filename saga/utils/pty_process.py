@@ -439,6 +439,7 @@ class PTYProcess (object) :
             # short, and child.poll is slow, we will nevertheless attempt at least
             # one read...
             start = time.time ()
+            ret   = ""
 
             # read until we have enough data, or hit timeout ceiling...
             while True :
