@@ -25,8 +25,7 @@ _ADAPTOR_OPTIONS       = []
 _ADAPTOR_CAPABILITIES  = {
      'ctx_attributes'   : {saga.context.TYPE      : "This MUST be set to ssh",
                            saga.context.USER_ID   : "user name on target machine",
-                           saga.context.USER_KEY  : "maps to the public ssh key",
-                           saga.context.USER_CERT : "maps to the public ssh key",
+                           saga.context.USER_KEY  : "maps to the private ssh key",
                            saga.context.USER_PASS : "passphrase for encryped keys"}
 }
 
@@ -36,24 +35,19 @@ _ADAPTOR_DOC           = {
     'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : """ 
     
-This SSH :class:`saga.Context` adaptor points to a ssh public/private keypair
-and user_id to be used for ssh based backend connections.  For example, an ssh
-context can be use to start jobs (:class:`saga.job.Job`) via ssh, to copy files
+This SSH :class:`saga.Context` adaptor points to a private ssh key and user_id
+to be used for ssh based backend connections.  For example, an ssh context can
+be used to start jobs (:class:`saga.job.Job`) via ssh, to copy files
 (:class:`saga.filesystem.File`) via sftp, etc.
 
 Not all supported attributes have to be defined when using an ssh context
 adaptor -- unspecified attributes will have sensible default values.  For
-example, if a private key is defined as ``c.user_cert``, then the corresponding
-public key (``c.user_key``) will be automatically derived by adding ``'.pub'``.
-The ``c.user_id`` will default to the local user id, and the default passphrase
-in ``c.user_pass`` will be empty.
-
+example, the ``c.user_id`` will default to the local user id, and the default
+passphrase in ``c.user_pass`` will be empty.
 
     """,
 
-
-
-    'schemas'          : {'ssh' : 'ssh private/public and userid information.'},
+    'schemas'          : {'ssh' : 'ssh key and userid information.'},
     'example'          : "examples/context/context_ssh.py"
 }
 
@@ -102,46 +96,45 @@ class Adaptor (saga.adaptors.base.Base):
         if not self._have_defaults :
  
             import glob
-            candidate_certs = glob.glob ("%s/.ssh/*" % os.environ['HOME'])
+            candidate_keys = glob.glob ("%s/.ssh/*" % os.environ['HOME'])
 
-            for cert in candidate_certs :
-                key  = "%s.pub" % cert
+            for key in candidate_keys :
+                pub  = "%s.pub" % key
             
-                if  not os.path.exists (key)  or \
-                    not os.path.isfile (key)  or \
-                    not os.path.exists (cert) or \
-                    not os.path.isfile (cert)    :
-                  # self._logger.info ("incomplete SSH  context for cert  at %s" %  cert)
+                if  not os.path.exists (pub)  or \
+                    not os.path.isfile (pub)  or \
+                    not os.path.exists (key)  or \
+                    not os.path.isfile (key)     :
+                    self._logger.info ("incomplete SSH  context for key at %s" %  key)
                     continue
 
 
                 try :
-                    fh_key  = open (key )
-                    fh_cert = open (cert)
+                    fh_pub = open (pub)
+                    fh_key = open (key)
 
                 except Exception as e:
-                    self._logger.info ("unreadable SSH  context for cert  at %s" %  cert)
+                    self._logger.info ("unreadable SSH  context for key at %s" %  key)
                     continue
 
 
-                fh_key.close  ()
-                fh_cert.close ()
+                fh_pub.close ()
+                fh_key.close ()
 
                 import subprocess
                 
-                if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % cert]) :
+                if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % key]) :
                     # needs passphrase.  Great, but won't work for
                     # default contexts
-                    self._logger.info ("ignore  SSH  context for cert  at %s (needs pass)" %  cert)
+                    self._logger.info ("ignore  SSH  context for key at %s (needs pass)" %  key)
                     continue
 
                 c = saga.Context ('ssh')
                 c.user_key  = key
-                c.user_cert = cert
 
                 self._default_contexts.append (c)
 
-                self._logger.info ("default SSH  context for cert  at %s" %  cert)
+                self._logger.info ("default SSH  context for key at %s" %  key)
 
             self._have_defaults = True
 
@@ -186,59 +179,56 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
         _api  = self.get_api ()
 
         _key  = None
-        _cert = None
         _pass = None
 
         
         if          _api.attribute_exists (saga.context.USER_KEY ) :
             _key  = _api.get_attribute    (saga.context.USER_KEY )
-        if          _api.attribute_exists (saga.context.USER_CERT) :
-            _cert = _api.get_attribute    (saga.context.USER_CERT)
         if          _api.attribute_exists (saga.context.USER_PASS) :
             _pass = _api.get_attribute    (saga.context.USER_PASS)
 
+        # for backward compatibility, we interpret cert as key, overwriting the
+        # previous key (which in former times was the public ssh key which we
+        # don't care about)
+        if          _api.attribute_exists (saga.context.USER_CERT) :
+            _key  = _api.get_attribute    (saga.context.USER_CERT)
+            _api.set_attribute (saga.context.USER_KEY, _key)
+            self._logger.warning ("using context.user_cert as context.user_key (%s)" % _key)
 
-        if  not _cert :
+
+        if  not _key :
             # nothing to do, really
             return
 
-        if  not _key :
-            _key = "%s.pub" % _cert
-            _api.set_attribute (saga.context.USER_KEY, _key)
-
 
         if  not os.path.exists (_key ) or \
-            not os.path.isfile (_key ) or \
-            not os.path.exists (_cert) or \
-            not os.path.isfile (_cert)    :
+            not os.path.isfile (_key )    :
 
-            raise saga.exceptions.BadParameter ("ssh keys inaccessible: %s / %s" % (_cert, _key))
+            raise saga.exceptions.BadParameter ("ssh key inaccessible: %s" % (_key))
 
 
         try :
             fh_key  = open (_key )
-            fh_cert = open (_cert)
 
         except Exception as e:
-            raise saga.exceptions.PermissionDenied ("ssh keys '%s / %s' not readable: %s"
-                                                 % (_cert, _key, e))
+            raise saga.exceptions.PermissionDenied ("ssh key '%s' not readable: %s"
+                                                 % (_key, e))
         else :
             fh_key .close ()
-            fh_cert.close ()
 
 
         import subprocess
-        if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % _cert]) :
+        if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % _key]) :
             if  not _pass :
-                raise saga.exceptions.PermissionDenied ("ssh key '%s' is encrypted, need password" % (_cert))
+                raise saga.exceptions.PermissionDenied ("ssh key '%s' is encrypted, need password" % (_key))
 
 
         if  subprocess.call (["sh", "-c", "ssh-keygen -y -f %s -P %s > /dev/null"
-                          % (_cert, _pass)]) :
-            raise saga.exceptions.PermissionDenied ("ssh key '%s' is encrypted, incorrect password" % (_cert))
+                          % (_key, _pass)]) :
+            raise saga.exceptions.PermissionDenied ("ssh key '%s' is encrypted, incorrect password" % (_key))
 
 
-        self._logger.info ("init SSH context for cert  at %s" %  _cert)
+        self._logger.info ("init SSH context for key  at %s" %  _key)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

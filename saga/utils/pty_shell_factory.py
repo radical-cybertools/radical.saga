@@ -173,7 +173,7 @@ class PTYShellFactory (object) :
             	  "Shell not connected to %s" % info['host_str'])
 
             # authorization, prompt setup, etc
-            self._initialize_pty (info['pty'], info['pass'], info['cert_pass'], info['logger'])
+            self._initialize_pty (info['pty'], info['pass'], info['key_pass'], info['logger'])
 
             # master was created - register it
             self.registry[host_s][user_s][type_s] = info
@@ -193,7 +193,7 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def _initialize_pty (self, pty_shell, shell_pass, cert_pass, logger) :
+    def _initialize_pty (self, pty_shell, shell_pass, key_pass, logger) :
 
         try :
             prompt_patterns = ["[Pp]assword:\s*$",                   # password   prompt
@@ -237,15 +237,15 @@ class PTYShellFactory (object) :
                     end   = string.find (match, "'", start+1)
 
                     if start == -1 or end == -1 :
-                        raise saga.AuthenticationFailed ("could not extract cert name (%s)" % match)
+                        raise saga.AuthenticationFailed ("could not extract key name (%s)" % match)
 
-                    cert = match[start+1:end]
+                    key = match[start+1:end]
 
-                    if  not cert in cert_pass    :
-                        raise saga.AuthenticationFailed ("prompted for unknown certificate password (%s)" \
-                                                      % cert)
+                    if  not key in key_pass    :
+                        raise saga.AuthenticationFailed ("prompted for unknown key password (%s)" \
+                                                      % key)
 
-                    pty_shell.write ("%s\n" % cert_pass[cert])
+                    pty_shell.write ("%s\n" % key_pass[key])
                     n, match = pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
 
 
@@ -284,7 +284,7 @@ class PTYShellFactory (object) :
         # authorization, prompt setup, etc
         self._initialize_pty (sh_slave, 
                               info['pass'], 
-                              info['cert_pass'], 
+                              info['key_pass'], 
                               info['logger'])
 
         return sh_slave
@@ -310,7 +310,7 @@ class PTYShellFactory (object) :
 
         self._initialize_pty (cp_slave, 
                               info['pass'], 
-                              info['cert_pass'], 
+                              info['key_pass'], 
                               info['logger'])
 
         cp_slave.write ("%s\n" % s_in)
@@ -342,7 +342,7 @@ class PTYShellFactory (object) :
 
         self._initialize_pty (cp_slave, 
                               info['pass'], 
-                              info['cert_pass'], 
+                              info['key_pass'], 
                               info['logger'])
 
         cp_slave.write ("%s\n" % s_in)
@@ -366,7 +366,7 @@ class PTYShellFactory (object) :
         info['host_str']  = url.host
         info['logger']    = logger
         info['pass']      = ""
-        info['cert_pass'] = {}
+        info['key_pass']  = {}
 
         # find out what type of shell we have to deal with
         if  info['schema']   in _SCHEMAS_SSH :
@@ -439,19 +439,19 @@ class PTYShellFactory (object) :
                     if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
 
                         if  context.attribute_exists ("user_id")  or \
-                            context.attribute_exists ("user_cert") :
+                            context.attribute_exists ("user_key") :
 
                             if  context.attribute_exists ("user_id") and context.user_id :
                                 user_id = context.user_id
                                 if user_id :
                                     info['user']  = context.user_id
-                            if  context.attribute_exists ("user_cert")  and  context.user_cert :
-                                info['ssh_args']  += "-o IdentityFile=%s " % context.user_cert
-                                info['scp_args']  += "-o IdentityFile=%s " % context.user_cert
-                                info['sftp_args'] += "-o IdentityFile=%s " % context.user_cert
+                            if  context.attribute_exists ("user_key")  and  context.user_key  :
+                                info['ssh_args']  += "-o IdentityFile=%s " % context.user_key 
+                                info['scp_args']  += "-o IdentityFile=%s " % context.user_key 
+                                info['sftp_args'] += "-o IdentityFile=%s " % context.user_key 
 
                                 if  context.attribute_exists ("user_pass") and context.user_pass :
-                                    info['cert_pass'][context.user_cert] = context.user_pass
+                                    info['key_pass'][context.user_key] = context.user_pass
 
                 if  context.type.lower () == "userpass" :
                     if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
@@ -556,6 +556,9 @@ class PTYShellFactory (object) :
 
         elif 'pty allocation' in lmsg :
             e = saga.NoSuccess ("Insufficient system resources: %s" % cmsg)
+
+        elif 'Connection to master closed' in lmsg :
+            e = saga.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
 
         # print e.traceback
         return e

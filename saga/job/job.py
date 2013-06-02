@@ -321,16 +321,16 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
           jd.executable = '/bin/date'
           j  = js.create_job(jd)
 
-          if j.get_state() == saga.job.Job.New : 
+          if j.get_state() == saga.job.NEW : 
               print "new"
           else : 
               print "oops!"
 
           j.run()
 
-          if   j.get_state() == saga.job.Job.Pending :
+          if   j.get_state() == saga.job.PENDING :
               print "pending"
-          elif j.get_state() == saga.job.Job.Running :
+          elif j.get_state() == saga.job.RUNNING :
               print "running"
           else :
               print "oops!"
@@ -360,23 +360,23 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
           jd.executable = '/bin/date'
           j  = js.create_job(jd)
 
-          if   j.get_state() == saga.job.Job.New :
+          if   j.get_state() == saga.job.NEW :
               print "new"
           else :
               print "oops!"
 
           j.run()
 
-          if   j.get_state() == saga.job.Job.Pending  :
+          if   j.get_state() == saga.job.PENDING :
               print "pending"
-          elif j.get_state() == saga.job.Job.Running :
+          elif j.get_state() == saga.job.RUNNING :
               print "running"
           else :
               print "oops!"
 
           j.cancel()
 
-          if   j.get_state() == saga.job.Job.Canceled :
+          if   j.get_state() == saga.job.CANCELED :
               print "canceled"
           else :
               print "oops!"
@@ -417,25 +417,25 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
           jd.executable = '/bin/date'
           j  = js.create_job(jd)
 
-          if   j.get_state() == saga.job.Job.New :
+          if   j.get_state() == saga.job.NEW :
               print "new"
           else :
               print "oops!"
 
           j.run()
 
-          if   j.get_state() == saga.job.Job.Pending :
+          if   j.get_state() == saga.job.PENDING :
               print "pending"
-          elif j.get_state() == saga.job.Job.Running :
+          elif j.get_state() == saga.job.RUNNING :
               print "running"
           else :
               print "oops!"
 
           j.wait(-1.0)
 
-          if   j.get_state() == saga.job.Job.Done :
+          if   j.get_state() == saga.job.DONE :
               print "done"
-          elif j.get_state() == saga.job.Job.Failed :
+          elif j.get_state() == saga.job.FAILED :
               print "failed"
           else :
               print "oops!"
@@ -465,16 +465,16 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
           jd.executable = '/bin/date'
           j  = js.create_job(jd)
     
-          if   j.get_state() == saga.job.Job.New : 
+          if   j.get_state() == saga.job.NEW : 
               print "new"
           else : 
               print "oops!"
     
           j.run()
     
-          if   j.get_state() == saga.job.Job.Pending : 
+          if   j.get_state() == saga.job.PENDING : 
               print "pending"
-          elif j.get_state() == saga.job.Job.Running : 
+          elif j.get_state() == saga.job.RUNNING : 
               print "running"
           else :
               print "oops!"
@@ -618,7 +618,7 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
       j.run()
       j.wait()
 
-      if j.get_state() == saga.job.Job.Failed :
+      if j.get_state() == saga.job.FAILED :
         if j.exitcode == "42" :
             print "Ah, galaxy bypass error!"
         else :

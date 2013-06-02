@@ -18,7 +18,7 @@ Contents:
 
 .. toctree::
    :numbered:
-   :maxdepth: 2
+   :maxdepth: 3
 
    usage/index.rst
    tutorial/index.rst

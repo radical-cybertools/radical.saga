@@ -24,6 +24,7 @@ def _silent_close_js(js_obj):
     # try to cancel job but silently ignore all errors
     try:
         js_obj.close()
+        js_obj.close()
     except Exception:
         pass
 
@@ -129,7 +130,7 @@ def test_list_jobs():
 # ------------------------------------------------------------------------------
 #
 def test_run_job():
-    """ Test to submit a job via run_job, and retrieve id """
+    """ Test to submit a job via run_job, and retrieve id"""
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
