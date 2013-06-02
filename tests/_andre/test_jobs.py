@@ -7,12 +7,15 @@ __license__   = "MIT"
 import time
 import saga
 
+def my_cb (a, b, c) :
+    print " ----- callback: [%s, %s, %s]" % (a, b, c)
+    return True
+
 try :
     c = saga.Context ('ssh')
-    c.user_cert = '/home/merzky/.ssh/id_rsa'
-    c.user_key  = '/home/merzky/.ssh/id_rsa.pub'
+    c.user_key  = '/home/merzky/.ssh/id_rsa_test'
     c.user_id   = 'tester'
-    c.user_pass = 'passpass'
+    c.user_pass = 'testtest'
 
     s = saga.Session (default=False)
     s.add_context (c)
@@ -26,8 +29,10 @@ try :
     jd.error      = "/tmp/err"
   
     j = js.create_job (jd)
+    j.add_callback ('State', my_cb)
     print j.created
     j.run ()
+
     print j.started
     print "state: %s" % j.state
     time.sleep (1)

@@ -156,7 +156,7 @@ class PTYProcess (object) :
 
         # create the child
         try :
-             self.child, self.child_fd = pty.fork ()
+            self.child, self.child_fd = pty.fork ()
         except Exception as e:
             raise se.NoSuccess ("Could not run (%s): %s" \
                              % (' '.join (self.command), e))
@@ -178,7 +178,7 @@ class PTYProcess (object) :
             new = termios.tcgetattr (self.child_fd)
             new[3] = new[3] & ~termios.ECHO
 
-            termios.tcsetattr (self.child_fd, termios.TCSADRAIN, new)
+            termios.tcsetattr (self.child_fd, termios.TCSANOW, new)
 
 
             self.parent_in  = self.child_fd
@@ -214,7 +214,7 @@ class PTYProcess (object) :
                         wstat            = None
                         break
 
-                    if wpid :
+                    if  wpid :
                         break
 
         # at this point, we declare the process to be gone for good
@@ -223,7 +223,7 @@ class PTYProcess (object) :
         # lets see if we can perform some post-mortem analysis
         if  wstat != None :
 
-            if os.WIFEXITED (wstat) :
+            if  os.WIFEXITED (wstat) :
                 # child died of natural causes - perform autopsy...
                 self.exit_code   = os.WEXITSTATUS (wstat)
                 self.exit_signal = None
@@ -234,15 +234,19 @@ class PTYProcess (object) :
                 self.exit_signal = os.WTERMSIG (wstat)
 
 
-     ## try : 
-     ##     os.close (self.parent_in)  
-     ## except OSError :
-     ##     pass
+        try : 
+            if  self.parent_out :
+                os.close (self.parent_out)
+                self.parent_out = None
+        except OSError :
+            pass
 
-     ## try : 
-     ##     os.close (self.parent_out) 
-     ## except OSError :
-     ##     pass
+      # try : 
+      #     if  self.parent_in :
+      #         os.close (self.parent_in)
+      #         self.parent_in = None
+      # except OSError :
+      #     pass
 
       # try : 
       #     os.close (self.parent_err) 
@@ -434,6 +438,7 @@ class PTYProcess (object) :
             # short, and child.poll is slow, we will nevertheless attempt at least
             # one read...
             start = time.time ()
+            ret   = ""
 
             # read until we have enough data, or hit timeout ceiling...
             while True :
@@ -480,11 +485,11 @@ class PTYProcess (object) :
                   # print "buf: --%s--" % buf
                   # print "log: --%s--" % log
                     if  len(log) > _DEBUG_MAX :
-                        self.logger.debug ("read : [%5d] (%s ... %s)" \
-                                        % (len(log), log[:30], log[-30:]))
+                        self.logger.debug ("read : [%5d] [%5d] (%s ... %s)" \
+                                        % (f, len(log), log[:30], log[-30:]))
                     else :
-                        self.logger.debug ("read : [%5d] (%s)" \
-                                        % (len(log), log))
+                        self.logger.debug ("read : [%5d] [%5d] (%s)" \
+                                        % (f, len(log), log))
 
 
                 # lets see if we still got any data in the cache we can return
@@ -626,7 +631,6 @@ class PTYProcess (object) :
             if  issubclass (e.__class__, saga.SagaException) :
                 raise se.NoSuccess ("output parsing failed (%s): %s" % (e._plain_message, data))
             raise se.NoSuccess ("output parsing failed (%s): %s" % (e, data))
- 
 
 
     # ----------------------------------------------------------------
@@ -646,11 +650,11 @@ class PTYProcess (object) :
             log = data.replace ('\n', '\\n')
             log =  log.replace ('\r', '')
             if  len(log) > _DEBUG_MAX :
-                self.logger.debug ("write: [%5d] (%s ... %s)" \
-                                % (len(data), log[:30], log[-30:]))
+                self.logger.debug ("write: [%5d] [%5d] (%s ... %s)" \
+                                % (self.parent_in, len(data), log[:30], log[-30:]))
             else :
-                self.logger.debug ("write: [%5d] (%s)" \
-                                % (len(data), log))
+                self.logger.debug ("write: [%5d] [%5d] (%s)" \
+                                % (self.parent_in, len(data), log))
 
             # attempt to write forever -- until we succeeed
             while data :
@@ -667,7 +671,7 @@ class PTYProcess (object) :
                     data = data[size:]
 
                     if data :
-                        self.logger.info ("write: [%5d]" % size)
+                        self.logger.info ("write: [%5d] [%5d]" % (f, size))
 
 
         except Exception as e :
