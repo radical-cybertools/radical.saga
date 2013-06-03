@@ -52,7 +52,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
-                          #saga.job.SPMD_VARIATION, #implement later, somehow
+                          saga.job.SPMD_VARIATION, #implement later, somehow
                           saga.job.TOTAL_CPU_COUNT, 
                           saga.job.NUMBER_OF_PROCESSES,
                           saga.job.PROCESSES_PER_HOST,
@@ -66,7 +66,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.CLEANUP,
                           saga.job.JOB_START_TIME,
                           saga.job.WALL_TIME_LIMIT, 
-                          #saga.job.TOTAL_PHYSICAL_MEMORY, 
+                          saga.job.TOTAL_PHYSICAL_MEMORY, 
                           #saga.job.CPU_ARCHITECTURE, 
                           #saga.job.OPERATING_SYSTEM_TYPE, 
                           #saga.job.CANDIDATE_HOSTS,
