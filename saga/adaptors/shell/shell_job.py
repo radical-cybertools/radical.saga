@@ -532,7 +532,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 continue
 
             key, val = line.split (":", 2)
-            ret[key.strip ().lower ()] = val.strip()
+            ret[key.strip ().lower ()] = val.strip ()
 
         return ret
 
@@ -662,10 +662,11 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
         # check that only supported attributes are provided
-        for attribute in jd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITIES["jdes_attributes"]:
+        for attribute in jd.list_attributes () :
+            if  attribute not in _ADAPTOR_CAPABILITIES["jdes_attributes"]:
                 msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
-                raise saga.BadParameter._log (self._logger, msg)
+                self._logger.error (msg)
+                # raise saga.BadParameter._log (self._logger, msg)
 
         
         # this dict is passed on to the job adaptor class -- use it to pass any
