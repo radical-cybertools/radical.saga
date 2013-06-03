@@ -238,6 +238,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.STARTED,
                           saga.job.FINISHED],
     "metrics":           [saga.job.STATE],
+    "callbacks":         [saga.job.STATE],
     "contexts":          {"ssh": "SSH public/private keypair",
                           "x509": "GSISSH X509 proxy context",
                           "userpass": "username/password pair (ssh)"}
