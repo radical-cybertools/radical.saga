@@ -148,7 +148,41 @@ class Service (Base, Async) :
         jd_copy = Description()
         job_desc._attributes_deep_copy (jd_copy)
 
-        # do some sanity checks:
+        # do some sanity checks: if the adaptor has specified a set of supported
+        # job description attributes, we scan the given description for any
+        # mismatches, and complain then.
+        adaptor_info = self._adaptor._adaptor.get_info ()
+
+        if  'capabilities'    in adaptor_info             and \
+            'jdes_attributes' in adaptor_info['capabilities'] :
+
+            # this is the list of key supported by the adaptor.  These
+            # attributes may be set to non-default values
+            supported_keys = adaptor_info['capabilities']['jdes_attributes']
+
+            # use an empty job description to compare default values
+            jd_default = saga.job.Description ()
+
+            for key in jd_copy.list_attributes () :
+
+                val     = jd_copy   .get_attribute (key)
+                default = jd_default.get_attribute (key)
+
+                # we count empty strings as none, for string type parameters
+                if  isinstance (val, basestring) :
+                    if  not val :
+                        val = None
+
+                # supported keys are also valid, as are keys with default or
+                # None values
+                if  not (key in supported_keys or \
+                         val == default        or \
+                         val == None           )  :
+
+                    msg = "'JobDescription.%s' is not supported by adaptor %s" \
+                        % (key, adaptor_info['name'])
+                    raise saga.BadParameter._log (self._logger, msg)
+
 
         # make sure at least 'executable' is defined
         if jd_copy.executable is None:

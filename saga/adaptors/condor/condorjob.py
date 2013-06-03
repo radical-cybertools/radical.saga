@@ -752,13 +752,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     def create_job(self, jd):
         """ implements saga.adaptors.cpi.job.Service.get_url()
         """
-        # check that only supported attributes are provided
-        for attribute in jd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITIES["jdes_attributes"]:
-                message = "'jd.%s' is not supported by this adaptor" \
-                    % attribute
-                log_error_and_raise(message, saga.BadParameter, self._logger)
-
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         adaptor_state = {"job_service":     self,

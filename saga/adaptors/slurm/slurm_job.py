@@ -747,12 +747,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     def create_job (self, jd) :
         """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
-        # check that only supported attributes are provided
-        for attribute in jd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITIES["jdes_attributes"]:
-                msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
-                raise saga.BadParameter._log (self._logger, msg)
-        
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         adaptor_state = { "job_service"     : self, 
