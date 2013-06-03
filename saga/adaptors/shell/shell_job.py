@@ -70,11 +70,6 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
                           saga.job.WORKING_DIRECTORY,
-                          saga.job.PROJECT,         # FIXME
-                          saga.job.QUEUE,           # FIXME
-                          saga.job.SPMD_VARIATION,  # FIXME
-                          saga.job.TOTAL_CPU_COUNT, # FIXME
-                          saga.job.WALL_TIME_LIMIT, # FIXME
                           saga.job.INPUT,
                           saga.job.OUTPUT,
                           saga.job.ERROR],
@@ -206,6 +201,7 @@ _ADAPTOR_INFO          = {
     "name"             : _ADAPTOR_NAME,
     "version"          : "v0.1",
     "schemas"          : _ADAPTOR_SCHEMAS,
+    "capabilities"     : _ADAPTOR_CAPABILITIES,
     "cpis"             : [
         { 
         "type"         : "saga.job.Service",
@@ -661,13 +657,6 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     def create_job (self, jd) :
         """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
-        # check that only supported attributes are provided
-        for attribute in jd.list_attributes () :
-            if  attribute not in _ADAPTOR_CAPABILITIES["jdes_attributes"]:
-                msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
-                self._logger.error (msg)
-                # raise saga.BadParameter._log (self._logger, msg)
-
         
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.

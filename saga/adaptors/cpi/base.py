@@ -100,6 +100,10 @@ class AdaptorBase (saga_config.Configurable) :
         return self._schemas
 
 
+    def get_info (self) :
+        return self._info
+
+
 # ------------------------------------
 # CPI base class
 #
