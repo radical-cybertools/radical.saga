@@ -62,6 +62,7 @@ def main():
         jd.working_directory = "$HOME/A/B/C"
         jd.output            = "examplejob.out"
         jd.error             = "examplejob.err"
+        jd.spmd_variation    = 's'
 
         # Create a new job from the job description. The initial state of
         # the job is 'New'.
