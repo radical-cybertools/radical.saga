@@ -1,4 +1,9 @@
 
+Version 0.9.5 released 2013-06-03
+----------------------------------------------------------------------
+
+* Hotfix release: critical SLURM adaptor fixes
+  - https://github.com/saga-project/saga-python/issues/139
 
 Version 0.9.4 released 2013-06-01
 ----------------------------------------------------------------------
