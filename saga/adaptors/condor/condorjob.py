@@ -271,17 +271,18 @@ The (HT)Condor(-G) adaptor allows to run and manage jobs on a
 # the adaptor info is used to register the adaptor with SAGA
 #
 _ADAPTOR_INFO = {
-    "name":    _ADAPTOR_NAME,
-    "version": "v0.1",
-    "schemas": _ADAPTOR_SCHEMAS,
+    "name"             :    _ADAPTOR_NAME,
+    "version"          : "v0.1",
+    "schemas"          : _ADAPTOR_SCHEMAS,
+    "capabilities"     : _ADAPTOR_CAPABILITIES,
     "cpis": [
         {
-        "type": "saga.job.Service",
-        "class": "CondorJobService"
+        "type"         : "saga.job.Service",
+        "class"        : "CondorJobService"
         },
         {
-        "type": "saga.job.Job",
-        "class": "CondorJob"
+        "type"         : "saga.job.Job",
+        "class"        : "CondorJob"
         }
     ]
 }
