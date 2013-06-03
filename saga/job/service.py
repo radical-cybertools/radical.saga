@@ -179,8 +179,8 @@ class Service (Base, Async) :
                          val == default        or \
                          val == None           )  :
 
-                    msg = "'JobDescription.%s' is not supported by adaptor %s" \
-                        % (key, adaptor_info['name'])
+                    msg = "'JobDescription.%s' (%s) is not supported by adaptor %s" \
+                        % (key, val, adaptor_info['name'])
                     raise saga.BadParameter._log (self._logger, msg)
 
 
