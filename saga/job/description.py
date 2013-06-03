@@ -53,7 +53,7 @@ class Description (saga.Attributes) :
 
 
         # FIXME
-        self._attributes_register  (saga.job.SPMD_VARIATION       , 'single', sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (saga.job.SPMD_VARIATION       , 'Single', sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
       # self._attributes_set_enums (saga.job.SPMD_VARIATION,      ['MPI', 'OpenMP', 'MPICH-G'])
 
         self._env_is_list = False
