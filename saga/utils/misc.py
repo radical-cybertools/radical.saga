@@ -194,6 +194,8 @@ def benchmark_init (name, func_pre, func_core, func_post) :
     
     _benchmark = {}
 
+    s = saga.Session (default=True)
+
     # check if a config file was specified via '-c' command line option, and
     # read it, return the dict
 
