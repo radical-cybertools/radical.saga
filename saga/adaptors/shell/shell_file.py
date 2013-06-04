@@ -563,6 +563,36 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
+    def make_dir (self, tgt_in, flags):
+
+        self._is_valid ()
+
+        cwdurl = saga.Url (self.url) # deep copy
+        tgturl = saga.Url (tgt_in)   # deep copy
+
+        tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
+
+        if  flags & saga.filesystem.EXCLUSIVE : 
+            # FIXME: this creates a race condition between testing for exclusive
+            # mkdir and creating the dir.
+            ret, out, _ = self.shell.run_sync ("test -d %s " % tgt_abs.path)
+
+            if  ret != 0 :
+                raise saga.AlreadyExists ("make_dir target (%s) exists (%s)" \
+                    % tgt_in, out)
+
+
+        options = ""
+
+        if  flags & saga.filesystem.CREATE_PARENTS : 
+            options += "-p"
+
+        self.shell.run_sync ("mkdir %s %s" % (options, tgt_abs.path))
+
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
     def get_size_self (self) :
 
         self._is_valid ()
