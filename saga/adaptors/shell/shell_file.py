@@ -29,7 +29,7 @@ _PTY_TIMEOUT = 2.0
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.shell_file"
-_ADAPTOR_SCHEMAS       = ["file", "local", "sftp", "gsiftp"]
+_ADAPTOR_SCHEMAS       = ["file", "local", "sftp", "gsiftp", "ssh", "gsissh"]
 _ADAPTOR_OPTIONS       = [
     { 
     'category'         : 'saga.adaptor.shell_file',
@@ -113,7 +113,9 @@ _ADAPTOR_DOC           = {
         """,
     "schemas"          : {"file"   :"use /bin/sh to access local filesystems", 
                           "local"  :"alias for file://", 
+                          "ssh"    :"use sftp to access remote filesystems", 
                           "sftp"   :"use sftp to access remote filesystems", 
+                          "gsissh" :"use gsiftp to access remote filesystems",
                           "gsiftp" :"use gsiftp to access remote filesystems"}
 }
 
@@ -557,6 +559,36 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         else :
             raise saga.BadParameter ("remove of %s is not supported" % tgt)
    
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def make_dir (self, tgt_in, flags):
+
+        self._is_valid ()
+
+        cwdurl = saga.Url (self.url) # deep copy
+        tgturl = saga.Url (tgt_in)   # deep copy
+
+        tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
+
+        if  flags & saga.filesystem.EXCLUSIVE : 
+            # FIXME: this creates a race condition between testing for exclusive
+            # mkdir and creating the dir.
+            ret, out, _ = self.shell.run_sync ("test -d %s " % tgt_abs.path)
+
+            if  ret != 0 :
+                raise saga.AlreadyExists ("make_dir target (%s) exists (%s)" \
+                    % tgt_in, out)
+
+
+        options = ""
+
+        if  flags & saga.filesystem.CREATE_PARENTS : 
+            options += "-p"
+
+        self.shell.run_sync ("mkdir %s %s" % (options, tgt_abs.path))
+
    
     # ----------------------------------------------------------------
     #

@@ -103,28 +103,27 @@ class Callback () :
 
     To register a callback on a object instance, use::
 
-      class MyCallback (saga.Callback) :
+      class MyCallback (saga.Callback):
 
-        def __init__ (self, msg) :
-          self._msg = msg
+          def __init__ (self):
+              pass
 
-        def cb (self, obj, key, val) :
-          print " %s\\n %s (%s) : %s"  %  self._msg, obj, key, val
+          def cb (self, obj, key, val) :
+              print " %s\\n %s (%s) : %s"  %  self._msg, obj, key, val
+
+      jd  = saga.job.Description ()
+      jd.executable = "/bin/date"
+
+      js  = saga.job.Service ("fork://localhost/")
+      job = js.create_job(jd)
+
+      cb = MyCallback()
+      job.add_callback(saga.STATE, cb)
+      job.run()
 
 
-        def main () :
-
-        jd  = saga.job.description ()
-        js  = saga.job.service ("fork://localhost/")
-        job = js.create_job (jd)
-
-        cb = MyCallback ("Hello Pilot, how is your state?")
-        job.add_callback ('state', cb)
-        job.run ()
-
-
-    See documentation of the :class:`saga.Attributes` interface for further details and
-    examples.
+    See documentation of the :class:`saga.Attribute` interface for further 
+    details and examples.
     """
 
     def __call__ (self, obj, key, val) :

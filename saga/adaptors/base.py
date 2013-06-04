@@ -97,5 +97,12 @@ class Base (suc.Configurable) :
         return self._schemas
 
 
+    # --------------------------------------------------------------------------
+    #
+    def get_info (self) :
+        return self._info
+
+
+
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

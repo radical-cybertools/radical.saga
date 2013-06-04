@@ -1,24 +1,36 @@
 
 __author__    = "Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
 
-""" This examples shows how to run a job on the local machine
-    using the 'local' job adaptor.
+""" Test for https://github.com/saga-project/saga-python/issues/133
 """
 
+import os
 import sys
 import saga
 
+print os.environ['PS1']
+
+
+ORIG_PS1 = os.environ['PS1']
+os.environ['PS1']='\[\033[1;37m\][\[\033[1;32m\]\u\[\033[0m\]@\h\[\033[0m\] \[\033[33;1m\]\w\[\033[36m\]$(__git_ps1 " %s")\[\033[1;37m\]]\[\033[0m\] '
+
+print os.environ['PS1']
 
 def main():
 
     try:
+
+        # set PS1
+
+
+
         # Create a job service object that represent the local machine.
         # The keyword 'fork' in the url scheme triggers the 'shell' adaptor.
         # The adaptor also support ssh:// and gsissh://
-        js = saga.job.Service("ssh://localhost")
+        js = saga.job.Service("fork://localhost")
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
@@ -28,6 +40,7 @@ def main():
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
         jd.environment       = {'FILENAME': 'testfile'}
+        jd.wall_time_limit   = 1 # minutes
 
         jd.executable        = '/usr/bin/touch'
         jd.arguments         = ['$FILENAME']
@@ -82,6 +95,10 @@ def main():
         # Trace back the exception. That can be helpful for debugging.
         print " \n*** Backtrace:\n %s" % ex.traceback
         return -1
+
+    finally:
+        os.environ['PS1'] = ORIG_PS1
+
 
 if __name__ == "__main__":
     sys.exit(main())
