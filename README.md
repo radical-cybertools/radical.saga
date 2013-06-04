@@ -3,6 +3,10 @@ saga-python
 
 A light-weight access layer for distributed computing infrastructure.
 
+Website
+-------
+
+http://saga-project.github.io/saga-python/
 
 Unit Tests
 ----------
