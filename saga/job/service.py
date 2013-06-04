@@ -127,7 +127,7 @@ class Service (sb.Base, sasync.Async) :
     def close (self) :
 
         if not self.valid :
-            raise IncorrectState ("This instance was already closed.")
+            raise se.IncorrectState ("This instance was already closed.")
 
         self._adaptor.close ()
         self.valid = False
@@ -177,7 +177,7 @@ class Service (sb.Base, sasync.Async) :
 
 
         if not self.valid :
-            raise IncorrectState ("This instance was already closed.")
+            raise se.IncorrectState ("This instance was already closed.")
 
         jd_copy = descr.Description()
         job_desc._attributes_deep_copy (jd_copy)
@@ -208,7 +208,7 @@ class Service (sb.Base, sasync.Async) :
         """
 
         if not self.valid :
-            raise IncorrectState ("This instance was already closed.")
+            raise se.IncorrectState ("This instance was already closed.")
 
         if  None == host :
             host = "" # FIXME
@@ -255,7 +255,7 @@ class Service (sb.Base, sasync.Async) :
         """
 
         if not self.valid :
-            raise IncorrectState ("This instance was already closed.")
+            raise se.IncorrectState ("This instance was already closed.")
 
 
         return self._adaptor.list (ttype=ttype)
@@ -283,7 +283,7 @@ class Service (sb.Base, sasync.Async) :
         """
 
         if not self.valid :
-            raise IncorrectState ("This instance was already closed.")
+            raise se.IncorrectState ("This instance was already closed.")
 
         return self._adaptor.get_url (ttype=ttype)
 
@@ -316,7 +316,7 @@ class Service (sb.Base, sasync.Async) :
         """
 
         if not self.valid :
-            raise IncorrectState ("This instance was already closed.")
+            raise se.IncorrectState ("This instance was already closed.")
 
         return self._adaptor.get_job (job_id, ttype=ttype)
 
