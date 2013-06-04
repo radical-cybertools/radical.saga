@@ -1588,10 +1588,9 @@ class Attributes (_AttributesBase) :
                         return True
 
                 # Houston, we got a problem...
-                return """
-                incorrect value (%s) for Enum typed attribute (%s).
-                Allowed values: %s
-                """  %  (str(val), key, str(vals))
+                msg = "incorrect value (%s) for Enum typed attribute (%s)." \
+                      "Allowed values: %s"  %  (str(val), key, str(vals))
+                raise se.BadParameter (msg)
 
             self._attributes_add_check (key, _enum_check, flow=flow)
 
@@ -2624,6 +2623,7 @@ class Attributes (_AttributesBase) :
 
         return s
 
+
     ####################################
     def as_dict (self) :
         """ return a dict representation of all set attributes """
@@ -2631,7 +2631,7 @@ class Attributes (_AttributesBase) :
         d = {}
 
         for a in self.list_attributes () :
-            d[a] = str(self.get_attribute (a))
+            d[a] = self.get_attribute (a)
 
         return d
 

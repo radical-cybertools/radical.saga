@@ -351,7 +351,7 @@ cmd_run_process () {
 
   # echo " run3 2 $$ " >> /tmp/log
   mkfifo "$DIR/fifo"           # to communicate with the monitor
-  printf "$*\n" >  "$DIR/cmd"  # job to run by the monitor
+  echo   "$*" >  "$DIR/cmd"    # job to run by the monitor
   # echo " run3 3 $$ " >> /tmp/log
 
   # start the monitor script, which makes sure
@@ -363,7 +363,7 @@ cmd_run_process () {
   ( sh -i -c "sh $BASE/monitor.sh  $SAGA_PID \"$DIR\" 2>&1 > \"$DIR/monitor.log\" & exit" )
 
   # echo " run3 4 $$ " >> /tmp/log
-  read TEST < "$DIR/fifo"
+  read -r TEST < "$DIR/fifo"
   rm -rf $DIR/fifo
 
   # echo " run3 5 $$ [$TEST]" >> /tmp/log
@@ -722,7 +722,7 @@ listen() {
       BULK_RUN ) IN_BULK=""
                  printf "BULK_EVAL\n"  >> "$BASE/bulk.$$"
                  ;;
-      *        ) printf "$CMD $ARGS\n" >> "$BASE/bulk.$$"
+      *        ) echo   "$CMD $ARGS\n" >> "$BASE/bulk.$$"
                  ;;
     esac
 

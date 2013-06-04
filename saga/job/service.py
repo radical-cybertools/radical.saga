@@ -219,7 +219,7 @@ class Service (sb.Base, sasync.Async) :
 
                     msg = "'JobDescription.%s' (%s) is not supported by adaptor %s" \
                         % (key, val, adaptor_info['name'])
-                    raise saga.BadParameter._log (self._logger, msg)
+                    raise se.BadParameter._log (self._logger, msg)
 
 
         # make sure at least 'executable' is defined
