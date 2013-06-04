@@ -1050,7 +1050,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     def get_state (self):
         """ Implements saga.adaptors.cpi.job.Job.get_state() """
 
-        # may not yet have backend representation, state is probably 'NEW'
+        # may not yet have backend representation, state is 'NEW'
         if self._id == None :
             return self._state
 
@@ -1066,7 +1066,8 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         if 'stop'  in stats : self._finished = stats['stop']
         
         if  not 'state' in stats :
-            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % id)
+            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" \
+                               % (self._id, stats))
 
         self._state = self._adaptor.string_to_state (stats['state'])
 

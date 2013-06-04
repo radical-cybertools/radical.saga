@@ -36,9 +36,9 @@ class Resource (cpi_base.CPIBase, cpi_async.Async) :
     def reconfig_async     (self, descr,          ttype) : pass
                            
     @SYNC                  
-    def release            (self,                 ttype) : pass
+    def destroy            (self,                 ttype) : pass
     @ASYNC                                                     
-    def release_async      (self,                 ttype) : pass
+    def destroy_async      (self,                 ttype) : pass
                            
     @SYNC                  
     def wait               (self, state, timeout, ttype) : pass
