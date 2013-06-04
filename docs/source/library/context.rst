@@ -43,7 +43,7 @@ The following context attributes are supported:
     ctx = saga.Context("UserPass")
 
     ctx.user_id   = "johndoe"
-    ctx.user_pass = "XXXXXXX"  # BAD BAD BAD - don't do this in a real app. 
+    ctx.user_pass = os.environ['MY_USER_PASS']
 
     session = saga.Session()
     session.add_context(ctx)
@@ -167,7 +167,7 @@ The following context attributes are supported:
 
     c.server    = "myproxy.teragrid.org"
     c.user_id   = "johndoe"
-    c.user_pass = "XXXXXXX"  # BAD BAD BAD - don't do this in a real app. 
+    c.user_pass = os.environ['MY_USER_PASS']
 
     session = saga.Session()
     session.add_context(ctx)
