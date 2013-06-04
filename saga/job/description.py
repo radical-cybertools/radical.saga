@@ -85,7 +85,7 @@ class Description (saga.Attributes) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Description',
-                  dict)
+                  ('Description', dict))
     @sus.returns ('Description')
     def __deepcopy__ (self, memo) :
         other = saga.job.Description ()
