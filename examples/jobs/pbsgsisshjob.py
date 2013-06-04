@@ -1,11 +1,11 @@
 
 __author__    = "Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
 
 """ This examples shows how to run a job on a remote PBS/TORQUE cluster
-    using the 'PBS' job adaptor.
+    using the 'PBS' job adaptor via GSISSH.
 
     More information about the saga-python job API can be found at:
     http://saga-project.github.com/saga-python/doc/library/job/index.html
@@ -30,7 +30,11 @@ def main():
 
     try:
         # Your ssh identity on the remote machine.
-        ctx = saga.Context("ssh")
+        ctx = saga.Context("MyProxy")
+
+        ctx.server    = "myproxy.teragrid.org"
+        ctx.user_id   = "weidner"
+        ctx.user_pass = "XXXXXXX"
 
         # Change e.g., if you have a differnent username on the remote machine
         #ctx.user_id = "your_ssh_username"
@@ -41,7 +45,7 @@ def main():
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
         # and '+ssh' enables PBS remote access via SSH.
-        js = saga.job.Service("pbs+ssh://hotel.futuregrid.org",
+        js = saga.job.Service("pbs+gsissh://gsissh.kraken.nics.xsede.org",
                               session=session)
 
         # Next, we describe the job we want to run. A complete set of job
@@ -49,12 +53,11 @@ def main():
         jd = saga.job.Description()
         jd.environment       = {'FILENAME': 'testfile'}
         jd.wall_time_limit   = 1 # minutes
-
+        
         jd.executable        = '/bin/touch'
         jd.arguments         = ['$FILENAME']
 
-        #jd.total_cpu_count   = 12 # for lonestar this has to be a multiple of 12
-        #jd.spmd_variation    = '12way' # translates to the qsub -pe flag
+        jd.total_cpu_count   = 12 # for kraken this has to be a multiple of 12
 
         jd.queue             = "batch"
         #jd.project           = "TG-MCB090174"
@@ -63,7 +66,7 @@ def main():
         jd.output            = "examplejob.out"
         jd.error             = "examplejob.err"
 
-        # Create a new job from the job description. The initial state of
+        # Create a new job from the job description. The initial state of 
         # the job is 'New'.
         touchjob = js.create_job(jd)
 

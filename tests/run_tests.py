@@ -10,6 +10,20 @@ import sys
 import glob
 import nose
 
+try:
+    import saga
+    print "______________________________________________________________________"
+    print "Using saga-python from: %s" % str(saga)
+    print "______________________________________________________________________"
+
+except Exception, e:
+    srcdir = "%s/../" % os.path.dirname(os.path.realpath(__file__))
+    sys.path.insert(0, os.path.abspath(srcdir))
+    import saga
+    print "______________________________________________________________________"
+    print "Using saga-python from: %s" % str(saga)
+    print "______________________________________________________________________"
+
 import saga.utils.test_config as sutc
 from optparse import OptionParser
 
