@@ -238,6 +238,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.WORKING_DIRECTORY,
                           saga.job.CANDIDATE_HOSTS,
                           saga.job.TOTAL_CPU_COUNT,
+                          saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
                           saga.job.FILE_TRANSFER],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -271,17 +272,18 @@ The (HT)Condor(-G) adaptor allows to run and manage jobs on a
 # the adaptor info is used to register the adaptor with SAGA
 #
 _ADAPTOR_INFO = {
-    "name":    _ADAPTOR_NAME,
-    "version": "v0.1",
-    "schemas": _ADAPTOR_SCHEMAS,
+    "name"             :    _ADAPTOR_NAME,
+    "version"          : "v0.1",
+    "schemas"          : _ADAPTOR_SCHEMAS,
+    "capabilities"     : _ADAPTOR_CAPABILITIES,
     "cpis": [
         {
-        "type": "saga.job.Service",
-        "class": "CondorJobService"
+        "type"         : "saga.job.Service",
+        "class"        : "CondorJobService"
         },
         {
-        "type": "saga.job.Job",
-        "class": "CondorJob"
+        "type"         : "saga.job.Job",
+        "class"        : "CondorJob"
         }
     ]
 }
@@ -752,13 +754,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     def create_job(self, jd):
         """ implements saga.adaptors.cpi.job.Service.get_url()
         """
-        # check that only supported attributes are provided
-        for attribute in jd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITIES["jdes_attributes"]:
-                message = "'jd.%s' is not supported by this adaptor" \
-                    % attribute
-                log_error_and_raise(message, saga.BadParameter, self._logger)
-
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         adaptor_state = {"job_service":     self,

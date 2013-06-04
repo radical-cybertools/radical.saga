@@ -231,6 +231,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.PROJECT,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
+                          saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
                           saga.job.TOTAL_CPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -266,9 +267,10 @@ controlled HPC clusters.
 # the adaptor info is used to register the adaptor with SAGA
 #
 _ADAPTOR_INFO = {
-    "name":    _ADAPTOR_NAME,
-    "version": "v0.1",
-    "schemas": _ADAPTOR_SCHEMAS,
+    "name"        :    _ADAPTOR_NAME,
+    "version"     : "v0.1",
+    "schemas"     : _ADAPTOR_SCHEMAS,
+    "capabilities":  _ADAPTOR_CAPABILITIES,
     "cpis": [
         {
         "type": "saga.job.Service",
@@ -781,13 +783,6 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     def create_job(self, jd):
         """ implements saga.adaptors.cpi.job.Service.get_url()
         """
-        # check that only supported attributes are provided
-        for attribute in jd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITIES["jdes_attributes"]:
-                message = "'jd.%s' is not supported by this adaptor" \
-                    % attribute
-                log_error_and_raise(message, saga.BadParameter, self._logger)
-
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         adaptor_state = {"job_service":     self,
