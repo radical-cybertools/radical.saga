@@ -233,6 +233,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Entry',
+                  (surl.Url, basestring),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def copy     (self, tgt, flags=0, ttype=None) :
@@ -343,6 +344,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Entry',
+                  (surl.Url, basestring),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def link     (self, tgt, flags=0, ttype=None) :
@@ -359,6 +361,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Entry',
+                  (surl.Url, basestring),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def move     (self, tgt, flags=0, ttype=None) :
