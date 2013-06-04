@@ -18,18 +18,18 @@ try :
     c.user_pass = 'testtest'
 
     s = saga.Session (default=False)
-  # s.add_context (c)
+    s.add_context (c)
 
     js = saga.job.Service ('ssh://localhost/bin/sh', session=s)
   
     jd = saga.job.Description ()
     jd.executable = '/bin/echo'
-    jd.arguments  = ['hello world; date ; sleep 3']
+    jd.arguments  = ['hello world; date xxx; sleep 3']
     jd.output     = "/tmp/out"
     jd.error      = "/tmp/err"
   
     j = js.create_job (jd)
- #  j.add_callback ('State', my_cb)
+    j.add_callback ('State', my_cb)
     print j.created
     j.run ()
 
