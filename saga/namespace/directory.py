@@ -166,7 +166,7 @@ class Directory (entry.Entry) :
     # namespace directory methods
     #
     @sus.takes   ('Directory', 
-                  surl.Url, 
+                  (surl.Url, basestring), 
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
@@ -188,7 +188,7 @@ class Directory (entry.Entry) :
             dir = saga.namespace.Directory("sftp://localhost/tmp/")
             dir.make_dir ('data/')
         '''
-        return self._adaptor.make_dir (tgt, flags, ttype=ttype)
+        return self._adaptor.make_dir (surl.Url (tgt), flags, ttype=ttype)
   
     
     # --------------------------------------------------------------------------
