@@ -91,9 +91,9 @@ class Url (object):
     #
     ##
     @sus.takes   ('Url', 
-                  'Url')
+                  dict)
     @sus.returns ('Url')
-    def __deepcopy__(self, obj):
+    def __deepcopy__(self, memo):
         """ Deep copy of a Url
         """
         new_url = Url(str(self))
