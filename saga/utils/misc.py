@@ -9,12 +9,14 @@ import os
 import sys
 import math
 import time
+import socket
+import threading
 
 import saga
+import saga.utils.threads     as suth
+import saga.utils.test_config as sutc
 
 """ Provides an assortment of utilities """
-
-_benchmark = {}
 
 
 # --------------------------------------------------------------------
@@ -23,8 +25,6 @@ def host_is_local (host) :
     """ Returns True if the given host is the localhost
     """
     
-    import socket
-
     if  not host                   or \
         host == 'localhost'        or \
         host == socket.gethostname () :
@@ -48,8 +48,6 @@ def host_is_valid (host) :
     if  host_is_local (host) :
         return True
     
-    import socket
-
     try :
         ip   = socket.gethostbyname (host)
         name = socket.gethostbyaddr (ip)
@@ -64,8 +62,7 @@ def url_is_local (arg) :
     """ Returns True if the given url points to localhost
     """
     
-    import saga.url
-    u = saga.url.Url (arg)
+    u = saga.Url (arg)
 
     return host_is_local (u.host)
 
@@ -77,8 +74,6 @@ def url_is_relative (url_1) :
     """ an URL is considered relative if it only contains a path element, and
     that path element does not start with '/'.
     """
-
-    import saga.url
 
     u1 = saga.Url (url_1)
 
@@ -98,8 +93,6 @@ def url_get_dirname (url_1) :
     paths.
     """
 
-    import saga.url
-
     u1 = saga.Url (url_1)
     p1 = u1.path
 
@@ -114,8 +107,6 @@ def url_get_filename (url_1) :
     everything up to the last '/' as directory.  That also holds for relative
     paths.
     """
-
-    import saga.url
 
     u1 = saga.Url (url_1)
     p1 = u1.path
@@ -136,8 +127,6 @@ def url_make_absolute (url_1, url_2) :
     interpreted as relative to url_2.path, and is made absolute.
     protocol/port/user etc.
     """
-
-    import saga.url
 
     if not url_is_compatible (url_1, url_2) :
         raise saga.BadParameter ("Cannot interpret url %s in the context of url %s" \
@@ -168,8 +157,6 @@ def url_is_compatible (url_1, url_2) :
     considered compatible with any other URL.
     """
     
-    import saga.url
-
     u1 = saga.Url (url_1)
     u2 = saga.Url (url_2)
 
@@ -219,16 +206,149 @@ def normalize_version (v) :
 
 # --------------------------------------------------------------------
 #
-def benchmark_start (url, name='benchmark') :
+def benchmark_init (name, func_pre, func_core, func_post) :
 
-    global _benchmark
+    
+    _benchmark = {}
 
-    print "\nBenchmark : %s : %s" % (url, name)
+    s = saga.Session (default=True)
 
-    _url = saga.Url (url)
+    # check if a config file was specified via '-c' command line option, and
+    # read it, return the dict
 
+    config_name = None
+
+    for i, arg in enumerate (sys.argv[1:]) :
+        if  arg == '-c' and len (sys.argv) > i+2 :
+            config_name = sys.argv[i+2]
+
+
+    if  not config_name :
+        sumisc.benchmark_eval ('no configuration specified (-c <conf>')
+
+    tc   = sutc.TestConfig ()
+    tc.read_config (config_name)
+
+    test_cfg  = tc.get_test_config ()
+    bench_cfg = tc.get_benchmark_config ()
+    session   = tc.session
+
+
+    if  not 'concurrency' in bench_cfg : 
+        sumisc.benchmark_eval ('no concurrency configured')
+
+    if  not 'iterations'  in bench_cfg : 
+        sumisc.benchmark_eval ('no iterations configured')
+
+
+    _benchmark['url']       = bench_cfg['url']
+
+    _benchmark['session']   = session
+    _benchmark['test_cfg']  = test_cfg
+    _benchmark['bench_cfg'] = bench_cfg
+
+    _benchmark['bench_cfg']['pre']   = func_pre
+    _benchmark['bench_cfg']['core']  = func_core
+    _benchmark['bench_cfg']['post']  = func_post
+    _benchmark['bench_cfg']['name']  = name
+    _benchmark['bench_cfg']['cname'] = config_name
+
+    benchmark_run  (_benchmark)
+    benchmark_eval (_benchmark)
+
+# ------------------------------------------------------------------------------
+#
+def benchmark_thread (tid, _benchmark) :
+
+    try :
+        t_cfg    = _benchmark['test_cfg']
+        b_cfg    = _benchmark['bench_cfg']
+        session  = _benchmark['session']
+
+        pre      = b_cfg['pre']
+        core     = b_cfg['core']
+        post     = b_cfg['post']
+
+        pre_ret  = pre (t_cfg, b_cfg, session)
+
+        _benchmark['events'][tid]['event_1'].set  ()  # signal we are done        
+        _benchmark['events'][tid]['event_2'].wait ()  # wait 'til others are done 
+
+        iterations = int(b_cfg['iterations']) / int(b_cfg['concurrency'])
+
+        for i in range (0, iterations) :
+            core_ret = core (pre_ret)
+            benchmark_tic (_benchmark)
+
+        _benchmark['events'][tid]['event_3'].set ()  # signal we are done        
+
+        post_ret = post (core_ret)
+
+
+    except Exception as e :
+        print e
+
+
+# ------------------------------------------------------------------------------
+#
+def benchmark_run (_benchmark) :
+    """
+    - create 'concurrency' number of threads
+    - per thread call pre()
+    - sync threads, start timer
+    - per thread call core() 'iteration' number of times', tic()
+    - stop timer
+    - per thread, call post, close threads
+    - eval once
+    """
+
+    cfg         = _benchmark['bench_cfg']
+    threads     = []
+    concurrency = int(_benchmark['bench_cfg']['concurrency'])
+
+    benchmark_start (_benchmark)
+
+    _benchmark['events']    = {}
+    for tid in range (0, concurrency) :
+
+        _benchmark['events'][tid] = {}
+        _benchmark['events'][tid]['event_1'] = threading.Event ()
+        _benchmark['events'][tid]['event_2'] = threading.Event ()
+        _benchmark['events'][tid]['event_3'] = threading.Event ()
+
+        t = suth.Thread (benchmark_thread, tid, _benchmark)
+        threads.append (t)
+        t.start ()
+
+    # wait for all threads to start up and initialize
+    for tid in range (0, concurrency) :
+        _benchmark['events'][tid]['event_1'].wait ()
+
+    benchmark_tic (_benchmark)
+
+    # start workload in all threads
+    for tid in range (0, concurrency) :
+        _benchmark['events'][tid]['event_2'].set ()
+
+    # wait for all threads to start up and initialize
+    for tid in range (0, concurrency) :
+        _benchmark['events'][tid]['event_3'].wait ()
+
+
+
+# --------------------------------------------------------------------
+#
+def benchmark_start (_benchmark) :
+
+    cfg = _benchmark['bench_cfg']
+
+    print "\nBenchmark : %s : %s" % (cfg['name'], cfg['url'])
+
+    _url = saga.Url (cfg['url'])
+    lock = threading.Lock ()
+
+    _benchmark['lock']  = lock
     _benchmark['url']   = _url 
-    _benchmark['name']  = name
     _benchmark['start'] = time.time()
     _benchmark['times'] = []
     _benchmark['idx']   = 0
@@ -244,8 +364,6 @@ def benchmark_start (url, name='benchmark') :
     try :
         sys.stdout.write ('Latency   : ')
         sys.stdout.flush ()
-
-        import socket
 
         s = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
         s.connect ((host, port))
@@ -264,53 +382,55 @@ def benchmark_start (url, name='benchmark') :
 
 # --------------------------------------------------------------------
 #
-def benchmark_tic () :
+def benchmark_tic (_benchmark) :
 
-    global _benchmark
+    with _benchmark['lock'] :
 
-    now   = time.time ()
-    timer = now - _benchmark['start']
+        now   = time.time ()
+        timer = now - _benchmark['start']
 
-    _benchmark['times'].append (timer)
-    _benchmark['start'] = now
+        _benchmark['times'].append (timer)
+        _benchmark['start'] = now
 
-    if len(_benchmark['times'][1:]) :
-        vmean = sum (_benchmark['times'][1:]) / len(_benchmark['times'][1:])
-    else :
-        vmean = timer
+        if len(_benchmark['times'][1:]) :
+            vmean = sum (_benchmark['times'][1:]) / len(_benchmark['times'][1:])
+        else :
+            vmean = timer
 
-    if   timer  <  0.75 * vmean : marker = '.'
-    if   timer  <  0.90 * vmean : marker = ','
-    elif timer  <  0.99 * vmean : marker = ':'
-    elif timer  <  1.01 * vmean : marker = '*'
-    elif timer  <  1.10 * vmean : marker = ';'
-    elif timer  <  1.25 * vmean : marker = '-'
-    else                        : marker = '='
+        if   timer  <  0.75 * vmean : marker = '-'
+        if   timer  <  0.90 * vmean : marker = '_'
+        elif timer  <  0.95 * vmean : marker = '.'
+        elif timer  <  1.05 * vmean : marker = '*'
+        elif timer  <  1.10 * vmean : marker = ':'
+        elif timer  <  1.25 * vmean : marker = '='
+        else                        : marker = '+'
 
 
+        if       not ( (_benchmark['idx'] - 1)        ) : sys.stdout.write ('\n* ')
+        else :
+            if   not ( (_benchmark['idx'] - 1) % 1000 ) : sys.stdout.write ('\n\n# ')
+            elif not ( (_benchmark['idx'] - 1) %  100 ) : sys.stdout.write ('\n| ')
+            elif not ( (_benchmark['idx'] - 1) %   10 ) : sys.stdout.write (' ')
 
-    if       not ( (_benchmark['idx'] - 1)        ) : sys.stdout.write ('\n* ')
-    else :
-        if   not ( (_benchmark['idx'] - 1) % 1000 ) : sys.stdout.write ('\n\n# ')
-        elif not ( (_benchmark['idx'] - 1) %  100 ) : sys.stdout.write ('\n| ')
-        elif not ( (_benchmark['idx'] - 1) %   10 ) : sys.stdout.write (' ')
+        if           ( (_benchmark['idx']    )        ) : sys.stdout.write (marker)
+        
+        sys.stdout.flush ()
 
-    if           ( (_benchmark['idx']    )        ) : sys.stdout.write (marker)
-    
-    sys.stdout.flush ()
-
-    _benchmark['idx'] += 1
+        _benchmark['idx'] += 1
 
 # --------------------------------------------------------------------
 #
-def benchmark_eval () :
+def benchmark_eval (_benchmark, error=None) :
 
-    global _benchmark
+    if  error :
+        print "\nBenchmark error: %s\n" % error
+        sys.exit (-1)
+
 
     if  len(_benchmark['times']) <= 4 :
-
         raise Exception ("min 4 timing values required for benchmark evaluation")
 
+    concurrency = int(_benchmark['bench_cfg']['concurrency'])
 
     out = "\n"
     top = ""
@@ -327,23 +447,25 @@ def benchmark_eval () :
     vsdev = math.sqrt (sum ((x - vmean) ** 2 for x in _benchmark['times'][1:]) / vn)
     vrate = vn / vsum
 
-    out += "  url   : %s\n"                              % (_benchmark['url']            )
-    out += "  ping  : %8.5fs          n     : %9d\n"     % (_benchmark['ping']    , vn   )
-    out += "  init  : %8.2fs          min   : %8.2fs\n"  % (_benchmark['times'][0], vmin )
-    out += "  1     : %8.2fs          max   : %8.2fs\n"  % (_benchmark['times'][1], vmax )
-    out += "  2     : %8.2fs          mean  : %8.2fs\n"  % (_benchmark['times'][2], vmean)
-    out += "  3     : %8.2fs          sdev  : %8.2fs\n"  % (_benchmark['times'][3], vsdev)
-    out += "  sum   : %8.2fs          rate  : %8.2f/s\n" % (vsum,                   vrate)
+    out += "  url     : %s\n"                                % (_benchmark['url']            )
+    out += "  ping    : %8.5fs\n"                            % (_benchmark['ping']           )
+    out += "  n       : %9d          total   : %8.2fs\n"     % (vn, vsum                     )
+    out += "  threads : %9d          min     : %8.2fs\n"     % (concurrency           , vmin )
+    out += "  init    : %8.2fs          max     : %8.2fs\n"  % (_benchmark['times'][0], vmax )
+    out += "  1       : %8.2fs          mean    : %8.2fs\n"  % (_benchmark['times'][1], vmean)
+    out += "  2       : %8.2fs          sdev    : %8.2fs\n"  % (_benchmark['times'][2], vsdev)
+    out += "  3       : %8.2fs          rate    : %8.2f/s\n" % (_benchmark['times'][3], vrate)
 
-    num = "# %5s  %7s  %7s  %7s  %7s  %7s" \
+    num = "# %5s  %7s  %7s  %7s  %7s  %7s  %7s" \
           "  %7s  %7s  %7s  %8s  %8s  %9s   %-18s   %s" \
-        % (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
-    top = "# %5s  %7s  %7s  %7s  %7s  %7s" \
+        % (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+    top = "# %5s  %7s  %7s  %7s  %7s  %7s  %7s" \
           "  %7s  %7s  %7s  %8s  %8s  %9s   %-18s   %s" \
-        % ('ping', 'n', 'init', 'time.1', 'time.2', 'time.3', \
+        % ('ping', 'n', 'threads', 'init', 'time.1', 'time.2', 'time.3', \
            'sum', 'min',  'max', 'mean', 'std-dev', 'rate', 'name', 'url')
 
     tab = "%7.5f  " \
+          "%7d  "   \
           "%7d  "   \
           "%7.2f  " \
           "%7.2f  " \
@@ -359,6 +481,7 @@ def benchmark_eval () :
           "%s"      \
         % (_benchmark['ping'], 
            vn, 
+           concurrency, 
            _benchmark['times'][0],      
            _benchmark['times'][1], 
            _benchmark['times'][2], 
@@ -369,7 +492,7 @@ def benchmark_eval () :
            vmean, 
            vsdev, 
            vrate, 
-           "'%s'" % _benchmark['name'],   # I am sorry, sooo sorry...  
+           "'%s'" % _benchmark['bench_cfg']['name'],   # I am sorry, sooo sorry...  
            _benchmark['url'])
 
     print
