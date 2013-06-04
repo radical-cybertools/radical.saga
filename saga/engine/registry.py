@@ -30,5 +30,6 @@ adaptor_registry = [
                     "saga.adaptors.pbs.pbsjob",
                     "saga.adaptors.condor.condorjob",
                     "saga.adaptors.slurm.slurm_job",
-                    "saga.adaptors.http.http_file"
+                    "saga.adaptors.http.http_file",
+                    "saga.adaptors.aws.ec2_resource"
                    ]
