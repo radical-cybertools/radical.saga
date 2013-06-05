@@ -331,12 +331,6 @@ class Compute (Resource) :
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
 
-        print id
-        print session
-        print _adaptor
-        print _adaptor_state
-        print _ttype
-        
         self._resrc = super  (Compute, self)
         self._resrc.__init__ (id, session, _adaptor, _adaptor_state, _ttype)
 
