@@ -7,6 +7,78 @@ import pprint
 
 from pudb import set_interrupt_handler; set_interrupt_handler()
 
+"""
+This is an SAGA example which shows how to access EC2 resources via the SAGA
+Resource package.  The code expects the environment variables EC2_ID and EC2_KEY
+to contain the respective authentication tokens required for EC2 access.  Before
+running, please also inspect the comments for the EC2 keypair setup (search for
+keypair).
+
+This program has two modes of operation:
+
+  starting VMs on EC2:
+
+    Usage:  python ec2.py -s
+    Output: available compute templates
+            ['Micro Instance', 'Small Instance', 'Medium Instance', 'Large
+              Instance', 'Extra Large Instance', 'High-Memory Extra Large
+              Instance', 'High-Memory Double Extra Large Instance',
+              'High-Memory Quadruple Extra Large Instance', 'Extra Large
+              Instance', 'Double Extra Large Instance', 'High-CPU Medium
+              Instance', 'High-CPU Extra Large Instance', 'Cluster Compute
+              Quadruple Extra Large Instance', 'Cluster Compute Eight Extra
+              Large Instance', 'Cluster GPU Quadruple Extra Large Instance',
+              'High Memory Cluster Eight Extra Large', 'High Storage Eight
+              Extra Large Instance']
+            
+            Created VM
+              id           : [ec2://aws.amazon.com/]-[i-376de158]
+              state        : PENDING (pending)
+              access       : None
+            
+            Connecting to VM [ec2://aws.amazon.com/]-[i-376de158]
+              state        : PENDING (pending)
+              state        : ACTIVE (running)
+            Running job
+              job state    : Running
+              job state    : Done
+
+
+  Destroying VMs on EC2:
+
+    Usage:  python ec2.py -d <vm_id> [...]
+    Output: reconnecting to id [ec2://aws.amazon.com/]-[i-376de158]
+              id           : [ec2://aws.amazon.com/]-[i-376de158]
+              state        : ACTIVE (running)
+              access       : ssh://50.19.8.253/
+            
+            reconnecting to id [ec2://aws.amazon.com/]-[i-721ac919]
+              id           : [ec2://aws.amazon.com/]-[i-721ac919]
+              state        : ACTIVE (running)
+              access       : ssh://50.16.125.173/
+            
+            Connecting to VM [ec2://aws.amazon.com/]-[i-376de158]
+              state        : ACTIVE (running)
+              state        : ACTIVE (running)
+            Running job
+              job state    : Running
+              job state    : Done
+            
+            Connecting to VM [ec2://aws.amazon.com/]-[i-721ac919]
+              state        : ACTIVE (running)
+              state        : ACTIVE (running)
+            Running job
+              job state    : Running
+              job state    : Done
+            
+            shutting down [ec2://aws.amazon.com/]-[i-376de158] (ACTIVE)
+              state        : EXPIRED (destroyed by user)
+            
+            shutting down [ec2://aws.amazon.com/]-[i-721ac919] (ACTIVE)
+              state        : EXPIRED (destroyed by user)
+"""
+
+
 # ------------------------------------------------------------------------------
 #
 # defines
@@ -97,15 +169,18 @@ def main () :
     c1.user_key = os.environ['EC2_KEY']
 
     # in order to access a created VM, we additionally need to point to the ssh
-    # key which is used for EC2 VM contextualization, i.e. as ec2_keypair.
+    # key which is used for EC2 VM contextualization, i.e. as EC2 'keypair'.
+    # If the keypair is not yet registered on EC2, it will be registered by SAGA
+    # -- but then a user_key *must* be specified.
     c2 = saga.Context ('ec2_keypair')
-    c2.token    = 'futuregrid'
+    c2.token    = 'futuregrid'  # keypair name
     c2.user_key = '/home/merzky/.ssh/id_rsa_futuregrid.pub'
-    c2.user_id  = 'root'  # the user id on the target VM
+    c2.user_id  = 'root'        # the user id on the target VM
 
-    # NOTE: the above ec2_keypair context should spawn an ssh context, alas this
-    # is not possible with the present libcloud (for details, see comments in
-    # ec2 adaptor).  We thus add that ssh context manually
+    # NOTE: the above ec2_keypair context should spawn an ssh context for
+    # accessing the respective VMs.  Alas this is not possible inm the general
+    # case with the present libcloud (for details, see comments in ec2 adaptor).
+    # We thus add that ssh context manually
     c3 = saga.Context ('ssh')
     c3.user_id   = 'root'
     c3.user_cert = '/home/merzky/.ssh/id_rsa_futuregrid'
