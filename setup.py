@@ -149,7 +149,6 @@ setup_args = {
         "saga.adaptors.pbs",
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
-     #  "saga.adaptors.redis",
         "saga.adaptors.aws",
         "saga.adaptors.http",
         "saga.engine",
@@ -170,7 +169,7 @@ setup_args = {
         'sdist': our_sdist,
         'test': our_test
     },
-    'install_requires': ['setuptools', 'colorama'],
+    'install_requires': ['setuptools', 'colorama', 'apache-libcloud'],
     'tests_require': ['setuptools', 'nose']
 }
 
