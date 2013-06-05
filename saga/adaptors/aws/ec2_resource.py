@@ -168,7 +168,6 @@ class Adaptor (saga.adaptors.base.Base):
     def parse_id (self, id) :
         # split the id '[manager-url]-[resource-url]' in its parts, and return them.
 
-        print id
         match = self.id_re.match (id)
 
         if  not match or len (match.groups()) != 2 :
@@ -308,8 +307,6 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
             raise saga.exceptions.AuthenticationFailed \
                   ("cannot initialize 'ec2_keypair' withough ec2 context")
 
-    
-        print self._api ()
         if  not self._api ().token :
             raise saga.exceptions.BadParameter \
                   ("'ec2_keypair' context must speciy keypair name as 'Token'")
@@ -438,7 +435,6 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
             # exceptions.
             self.driver = self.lccp.get_driver (self.lcct.Provider.EC2)
             self.conn   = self.driver (self.ec2_id, self.ec2_key)
-            print (self.conn)
 
             self.templates = []
             self.images    = []
@@ -582,13 +578,9 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
           # try :
                 
                 manager_url, rid_s = self._adaptor.parse_id (str(rid))
-                print manager_url
-                print rid
 
                 # FIXME: interpret / verify size
                 nodes  = self.conn.list_nodes (ex_node_ids=[rid_s])
-
-                print nodes
 
                 if  len (nodes) < 1 :
                     raise saga.BadParameter ("Cannot find resource '%s'" % rid_s)
@@ -697,6 +689,7 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
         self.lccp = self._adaptor.lccp
 
         self.state       = NEW
+        self.detail      = None
         self.rid         = None
         self.rtype       = None
         self.manager     = None
@@ -740,13 +733,6 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
             self.manager_url = adaptor_info['resource_manager_url']
             self.conn        = adaptor_info['connection']
 
-            print " --------------------- "
-            print type (self.resource)
-            print self.resource
-
-            import pprint
-            pprint.pprint (self.resource.__dict__)
-        
             self.rid    = self.resource.id
             self.id     = "[%s]-[%s]" % (self.manager_url, self.rid)
             self.access = None
@@ -788,6 +774,9 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
 
             self.resource = nodes[0]
 
+            if  'status' in self.resource.extra :
+                self.detail = self.resource.extra['status']
+
             # FIXME: move state translation to adaptor
             if   self.resource.state == self.lcct.NodeState.RUNNING    : self.state = ACTIVE
             elif self.resource.state == self.lcct.NodeState.REBOOTING  : self.state = PENDING
@@ -796,8 +785,8 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
             elif self.resource.state == self.lcct.NodeState.UNKNOWN    : self.state = UNKNOWN
             else                                                       : self.state = UNKNOWN
 
-            if  'status' in self.resource.extra :
-                self.detail = self.resource.extra['status']
+            if  self.state == UNKNOWN and self.detail == 'shutting-down' :
+                self.state =  EXPIRED
 
         except Exception as e :
             self._logger.error ("Could not obtain resource state (%s): %s" \
@@ -882,7 +871,7 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
     @SYNC_CALL
     def destroy (self):
 
-        return self.conn.destroy_node (self.resource)
+        self.conn.destroy_node (self.resource)
 
 
     # ----------------------------------------------------------------
