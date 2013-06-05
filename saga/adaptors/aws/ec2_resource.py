@@ -631,7 +631,7 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
     def destroy (self, id):
 
         node = self.aquire (id)
-        self.conn.destroy_node (node)
+        node.destroy ()
 
    
     # ----------------------------------------------------------------
@@ -872,6 +872,8 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
     def destroy (self):
 
         self.conn.destroy_node (self.resource)
+        self.state  = EXPIRED
+        self.detail = 'destroyed by user'
 
 
     # ----------------------------------------------------------------
