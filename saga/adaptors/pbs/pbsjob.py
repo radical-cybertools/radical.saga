@@ -38,13 +38,20 @@ class _job_state_monitor(threading.Thread):
 
         self.logger = job_service._logger
         self.js = job_service
+        self._stop = threading.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
 
+    def stop(self):
+        self._stop.set()
+
+    def stopped(self):
+        return self._stop.isSet()
+
     def run(self):
         try:
-            while True:
+            while self.stopped() is False:
                 # do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
                 jobs = self.js.jobs
@@ -58,7 +65,10 @@ class _job_state_monitor(threading.Thread):
 
                         if job_info['state'] != jobs[job]['state']:
                             # fire job state callback if 'state' has changed
-                            job._api()._attributes_i_set('state', job_info['state'], job._api()._UP, True)
+                            if job._api() is not None:
+                                job._api()._attributes_i_set('state', job_info['state'], job._api()._UP, True)
+                            else:
+                                self.logger.warning("api() object is 'None' for job object %s - can't fire callback." % str(job))
 
                         # update job info
                         self.js.jobs[job] = job_info
@@ -395,15 +405,23 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
       # self.shell.set_finalize_hook(self.finalize)
 
         self.initialize()
-
-        return self.get_api ()
-
+        return self.get_api()
 
     # ----------------------------------------------------------------
     #
-    def close (self) :
-        if  self.shell :
-            self.shell.finalize (True)
+    def __del__(self):
+        self.close()
+
+    # ----------------------------------------------------------------
+    #
+    def close(self):
+
+        self.mt.stop()
+        self.mt.join(10)  # don't block forever on join()
+        self._logger.info("Job monitoring thread stopped.")
+
+        if self.shell:
+            self.shell.finalize(True)
 
 
     # ----------------------------------------------------------------

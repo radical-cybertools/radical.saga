@@ -57,7 +57,7 @@ def test_open_close():
     try:
         tc = sutc.TestConfig()
 
-        for i in range(0, 100):
+        for i in range(0, 10):
             js = saga.job.Service(tc.js_url, tc.session)
             js.close()
 
@@ -193,7 +193,9 @@ def helper_multiple_services(i):
     jd.arguments = ['10']
     jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
     j = js.create_job(jd)
+    print ".... pre-run"
     j.run()
+    print ".... post-run"
     assert (j.state in [saga.job.RUNNING, saga.job.PENDING]), "job submission failed"
     _silent_cancel(j)
     _silent_close_js(js)
@@ -201,11 +203,14 @@ def helper_multiple_services(i):
 
 # ------------------------------------------------------------------------------
 #
+NUM_SERVICES = 2
+
 def test_multiple_services():
     """ Test to create multiple job service instances  (this test might take a while) """
     try:
         tc = sutc.TestConfig()
-        for i in range(0, 20):
+        for i in range(0, NUM_SERVICES):
+            print "CREATE ANOTHER INSTANCE"
             helper_multiple_services(i)
 
     except saga.NotImplemented as ni:
