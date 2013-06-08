@@ -13,14 +13,14 @@
  */
 
 /* RTD colors
- * light blue: #EDE4D8
+ * light blue: #C5D2DD
  * medium blue: rgba(255, 255, 255, 0.5)
- * dark blue: rgba(160, 109, 52, 1.0)
+ * dark blue: #293947
  * dark grey: 
  *
  * medium blue hover: rgba(255, 255, 255, 0.25);
  * green highlight: #8ecc4c
- * light blue (project bar): #EDE4D8
+ * light blue (project bar): #C5D2DD
  */
 
 @import url("basic.css");
@@ -28,9 +28,13 @@
 /* PAGE LAYOUT -------------------------------------------------------------- */
 
 body {
-    font: 100%/1.5 "ff-meta-web-pro-1","ff-meta-web-pro-2",Arial,"Helvetica Neue",sans-serif; 
+    /*font: 100%/1.5 "ff-meta-web-pro-1","ff-meta-web-pro-2",Arial,"Helvetica Neue",sans-serif; */
+    
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
     text-align: center;
-    color: black;
+    color: #5A5A5B;
     background-color: rgba(27, 27, 27, 1.0);
     padding: 0;
     margin: 0;
@@ -38,7 +42,7 @@ body {
 
 div.document {
     text-align: left;
-    background-color: #EDE4D8;
+    background-color: #C5D2DD;
 }
 
 div.bodywrapper {
@@ -69,7 +73,7 @@ div.related {
 div.documentwrapper {
     float: left;
     width: 100%;
-    background-color: #EDE4D8;
+    background-color: #C5D2DD;
 }
 
 
@@ -78,27 +82,33 @@ div.documentwrapper {
 h1 {
     margin: 0;
     padding: 0.7em 0 0.3em 0;
-    font-size: 1.5em;
     line-height: 1.15;
-    color: #1f3744;
+
+    font-weight: 200;
+
+    color: #5a5a5a;
     clear: both;
 }
 
 h2 {
     margin: 2em 0 0.2em 0;
     font-size: 1.35em;
+
+    font-weight: 400;
+
     padding: 0;
-    color: #335C72;
+    color: #5a5a5a;
 }
 
 h3 {
     margin: 1em 0 -0.3em 0;
     font-size: 1.2em;
-    color: #638fa6;
+    color: #5a5a5a;
 }
 
 div.body h1 a, div.body h2 a, div.body h3 a, div.body h4 a, div.body h5 a, div.body h6 a {
-    color: black;
+    color: #333333;
+
 }
 
 h1 a.anchor, h2 a.anchor, h3 a.anchor, h4 a.anchor, h5 a.anchor, h6 a.anchor {
@@ -124,9 +134,9 @@ h5 a.anchor:hover, h6 a.anchor:hover {
 
 /* Normal links get a pseudo-underline */
 a {
-    color: #335C72;
+    color: #0088cc;
     text-decoration: none;
-    border-bottom: 1px solid #99AEB9;
+    border-bottom: 1px solid #0088cc;
 }
 
 /* Links in sidebar, TOC, index trees and tables have no underline */
@@ -187,7 +197,7 @@ div.related ul li {
     padding: 0.65em 0;
     float: left;
     display: block;
-    color: rgba(212, 195, 172, 0.5); /* For the >> separators */
+    color: rgba(238, 238, 238, 0.5); /* For the >> separators */
     font-size: 0.8em;
 }
 
@@ -204,7 +214,7 @@ div.related ul li a {
     font-weight: bold;
     margin: 6px 0 6px 4px;
     line-height: 1.75em;
-    color: rgba(212, 195, 172, 1.0);
+    color: rgba(238, 238, 238, 1.0);
     text-shadow: 0 1px rgba(0, 0, 0, 0.5);
     padding: 0.4em 0.8em;
     border: none;
@@ -252,7 +262,7 @@ div.sphinxsidebar {
     width: 14em;
     font-size: 1em;
     text-align: left;
-    background-color: #EDE4D8;
+    background-color: #C5D2DD;
 }
 
 div.sphinxsidebar img {
@@ -263,7 +273,7 @@ div.sphinxsidebar h3, div.sphinxsidebar h4 {
     margin: 1.2em 0 0.3em 0;
     font-size: 1em;
     padding: 0;
-    color: #222222;
+    color: #293947;
     font-family: "ff-meta-web-pro-1", "ff-meta-web-pro-2", "Arial", "Helvetica Neue", sans-serif;
 }
 
@@ -276,7 +286,7 @@ div.sphinxsidebar p {
     margin-top: 0;
     padding-left: 0;
     line-height: 130%;
-    background-color: #EDE4D8;
+    background-color: #C5D2DD;
 }
 
 /* No bullets for nested lists, but a little extra indentation */
@@ -313,7 +323,7 @@ div.sphinxsidebar p.topless:hover {
 #searchbox {
     margin-top: 2em;
     margin-bottom: 1em;
-    background: #DAC6AF;
+    background: #6588A5;
     padding: 0.5em;
     border-radius: 6px;
     -moz-border-radius: 6px;
@@ -348,7 +358,7 @@ input[type="submit"] {
     margin: 0 0 0 -1px; /* -1px prevents a double-border with textbox */
     height: 22px;
     color: #444444;
-    background-color: #EDE4D8;
+    background-color: #C5D2DD;
     padding: 1px 4px;
     font-weight: bold;
     border-top-right-radius: 3px;
@@ -366,15 +376,15 @@ input[type="submit"]:hover {
 div.sphinxsidebar p.searchtip {
     clear: both;
     padding: 0.5em 0 0 0;
-    background: #DAC6AF;
-    color: #666666;
+    background: #6588A5;
+    color: #EEEEEE;
     font-size: 0.9em;
 }
 
 /* Sidebar links are unusual */
 div.sphinxsidebar li a,
 div.sphinxsidebar p a {
-    background: #EDE4D8; /* In case links overlap main content */
+    background: #C5D2DD; /* In case links overlap main content */
     border-radius: 3px;
     -moz-border-radius: 3px;
     -webkit-border-radius: 3px;
@@ -577,7 +587,7 @@ span.highlight {
 
 div.footer {
     background-color: rgba(27, 27, 27, 1.0);
-    color: rgba(212, 195, 172, 1.0);
+    color: rgba(238, 238, 238, 1.0);
     padding: 0 2em 2em 2em;
     clear: both;
     font-size: 0.8em;
@@ -634,7 +644,7 @@ p {
 
     div.related ul li {
         clear: both;
-        color: rgba(160, 109, 52, 1.0);
+        color: #293947;
         padding: 0.2em 0;
     }
 
@@ -646,7 +656,7 @@ p {
     }
 
     div.related ul li a {
-        color: rgba(160, 109, 52, 1.0);
+        color: #293947;
         padding-right: 0;
     }
 

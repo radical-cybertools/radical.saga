@@ -92,6 +92,8 @@ Supported Job Description Attributes
   - Project
   - WallTimeLimit
   - WorkingDirectory
+  - WallTimeLimit
+  - SPMDVariation
   - TotalCPUCount
 
 

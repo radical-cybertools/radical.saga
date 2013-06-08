@@ -208,14 +208,12 @@ Supported Job Description Attributes
   - Arguments
   - Environment
   - WorkingDirectory
-  - Project
-  - Queue
-  - SPMDVariation
-  - TotalCPUCount
-  - WallTimeLimit
   - Input
   - Output
   - Error
+  - WallTimeLimit
+  - TotalCPUCount
+  - SPMDVariation
 
 
 

@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.slurm.slurm_job &mdash; SAGA 0.9.4 documentation</title>
+    <title>saga.adaptors.slurm.slurm_job &mdash; SAGA 0.9.6 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.9.4',
+        VERSION:     '0.9.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.4 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.9.6 documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.4 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -109,7 +109,7 @@
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXECUTABLE</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">ARGUMENTS</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">ENVIRONMENT</span><span class="p">,</span>
-                          <span class="c">#saga.job.SPMD_VARIATION, #implement later, somehow</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">SPMD_VARIATION</span><span class="p">,</span> <span class="c">#implement later, somehow</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">TOTAL_CPU_COUNT</span><span class="p">,</span> 
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">NUMBER_OF_PROCESSES</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PROCESSES_PER_HOST</span><span class="p">,</span>
@@ -123,7 +123,7 @@
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CLEANUP</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">JOB_START_TIME</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">WALL_TIME_LIMIT</span><span class="p">,</span> 
-                          <span class="c">#saga.job.TOTAL_PHYSICAL_MEMORY, </span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">TOTAL_PHYSICAL_MEMORY</span><span class="p">,</span> 
                           <span class="c">#saga.job.CPU_ARCHITECTURE, </span>
                           <span class="c">#saga.job.OPERATING_SYSTEM_TYPE, </span>
                           <span class="c">#saga.job.CANDIDATE_HOSTS,</span>
@@ -243,6 +243,7 @@
     <span class="s">&quot;name&quot;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
     <span class="s">&quot;version&quot;</span>          <span class="p">:</span> <span class="s">&quot;v0.2&quot;</span><span class="p">,</span>
     <span class="s">&quot;schemas&quot;</span>          <span class="p">:</span> <span class="n">_ADAPTOR_SCHEMAS</span><span class="p">,</span>
+    <span class="s">&quot;capabilities&quot;</span>     <span class="p">:</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
     <span class="s">&quot;cpis&quot;</span>             <span class="p">:</span> <span class="p">[</span>
         <span class="p">{</span> 
         <span class="s">&quot;type&quot;</span>         <span class="p">:</span> <span class="s">&quot;saga.job.Service&quot;</span><span class="p">,</span>
@@ -804,12 +805,6 @@
     <span class="k">def</span> <span class="nf">create_job</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jd</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="SLURMJobService.create_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.slurm_job.html#saga.adaptors.slurm.slurm_job.SLURMJobService.create_job">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_url()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># check that only supported attributes are provided</span>
-        <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">list_attributes</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">attribute</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">[</span><span class="s">&quot;jdes_attributes&quot;</span><span class="p">]:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;&#39;JobDescription.</span><span class="si">%s</span><span class="s">&#39; is not supported by this adaptor&quot;</span> <span class="o">%</span> <span class="n">attribute</span>
-                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
-        
         <span class="c"># this dict is passed on to the job adaptor class -- use it to pass any</span>
         <span class="c"># state information you need there.</span>
         <span class="n">adaptor_state</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&quot;job_service&quot;</span>     <span class="p">:</span> <span class="bp">self</span><span class="p">,</span> 
@@ -1271,7 +1266,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.4 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>

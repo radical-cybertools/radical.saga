@@ -93,6 +93,7 @@ Supported Job Description Attributes
   - WorkingDirectory
   - CandidateHosts
   - TotalCPUCount
+  - SPMDVariation
   - FileTransfer
 
 
