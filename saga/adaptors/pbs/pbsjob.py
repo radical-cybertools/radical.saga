@@ -46,6 +46,7 @@ class _job_state_monitor(threading.Thread):
     def stop(self):
         self._stop.set()
 
+
     def stopped(self):
         return self._stop.isSet()
 
@@ -55,23 +56,32 @@ class _job_state_monitor(threading.Thread):
                 # do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
                 jobs = self.js.jobs
-                for job in jobs:
+                job_keys = jobs.keys()
+
+                for job in job_keys:
                     # if the job hasn't been started, we can't update its
                     # state. we can tell if a job has been started if it
                     # has a job id
                     if jobs[job]['job_id'] is not None:
-                        job_info = self.js._job_get_info(job)
-                        self.logger.info("Job monitoring thread updating Job %s (state: %s)" % (job, job_info['state']))
+                        # we only need to monitor jobs that are not in a
+                        # terminal state, so we can skip the ones that are 
+                        # either done, failed or canceled
+                        state = jobs[job]['state']
+                        if (state != saga.job.DONE) and (state != saga.job.FAILED) and (state != saga.job.CANCELED):
 
-                        if job_info['state'] != jobs[job]['state']:
-                            # fire job state callback if 'state' has changed
-                            if job._api() is not None:
-                                job._api()._attributes_i_set('state', job_info['state'], job._api()._UP, True)
-                            else:
-                                self.logger.warning("api() object is 'None' for job object %s - can't fire callback." % str(job))
+                            job_info = self.js._job_get_info(job)
+                            self.logger.info("Job monitoring thread updating Job %s (state: %s)" % (job, job_info['state']))
 
-                        # update job info
-                        self.js.jobs[job] = job_info
+                            if job_info['state'] != jobs[job]['state']:
+                                # fire job state callback if 'state' has changed
+                                if job._api() is not None:
+                                    job._api()._attributes_i_set('state', job_info['state'], job._api()._UP, True)
+                                else:
+                                    self.logger.warning("api() object is 'None' for job object %s - can't fire callback." % str(job))
+
+                            # update job info
+                            self.js.jobs[job] = job_info
+
                 time.sleep(MONITOR_UPDATE_INTERVAL)
 
         except Exception as e:
@@ -557,6 +567,9 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 self._logger.warning('qsub: %s' % ''.join(lines[:-2]))
 
             # we asssume job id is in the last line
+            #print cmdline
+            #print out
+
             job_id = "[%s]-[%s]" % (self.rm, lines[-1].strip().split('.')[0])
             self._logger.info("Submitted PBS job with id: %s" % job_id)
 
