@@ -17,8 +17,8 @@ import signal
 import termios
 import threading
 
-import saga.utils.logger
-import saga.exceptions as se
+import saga.utils.logger as sul
+import saga.exceptions   as se
 
 # --------------------------------------------------------------------
 #
@@ -96,6 +96,11 @@ class PTYProcess (object) :
         :param logger:  logger stream to send status messages to.
         """
 
+        self.logger = logger
+        if  not  self.logger : self.logger = sul.getLogger ('PTYProcess') 
+        self.logger.debug ("PTYProcess init %s" % self)
+
+
         if isinstance (command, basestring) :
             command = shlex.split (command)
 
@@ -108,7 +113,6 @@ class PTYProcess (object) :
         self.rlock   = threading.RLock ()
 
         self.command = command # list of strings too run()
-        self.logger  = logger
 
 
         self.cache   = ""      # data cache
@@ -120,9 +124,6 @@ class PTYProcess (object) :
 
         self.recover_max      = 3  # TODO: make configure option.  This does not
         self.recover_attempts = 0  # apply for recovers triggered by gc_timeout!
-
-        if not self.logger :
-            self.logger = saga.utils.logger.getLogger ('PTYProcess')
 
 
         try :
@@ -139,6 +140,7 @@ class PTYProcess (object) :
         them (see cat /proc/sys/kernel/pty/max)
         """
 
+        self.logger.debug ("PTYProcess del  %s" % self)
         with self.rlock :
     
             try :
