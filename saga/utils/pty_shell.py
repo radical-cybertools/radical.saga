@@ -237,7 +237,7 @@ class PTYShell (object) :
         # a versatile prompt pattern to account for the custom shell case.
 
         # find initial prompt from login shell
-        prompt_pat = "^.*[\$>:#]\s*$"
+        prompt_pat = "^.*[\$>%:#]\s*$"
         ret1, out1 = self.pty_shell.find ([prompt_pat], 10.0)
 
         # we need to make sure that the found prompt is really the prompt of
