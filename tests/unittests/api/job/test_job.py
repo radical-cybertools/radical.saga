@@ -285,7 +285,6 @@ def test_job_run_many():
 
         for i in range(0, NUM_JOBS):
             j = js.create_job(jd)
-            print "NEW JOB >.........."
             jobs.append(j)
 
         # start all jobs
