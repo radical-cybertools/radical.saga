@@ -9,8 +9,7 @@ import os
 import sys
 import errno
 
-import saga.utils.logger
-import saga.utils.which
+import saga.utils.logger            as sul
 import saga.utils.pty_shell_factory as supsf
 
 _PTY_TIMEOUT = 2.0
@@ -173,8 +172,11 @@ class PTYShell (object) :
     #
     def __init__ (self, url, session, logger=None, init=None, opts={}) :
 
+        self.logger = logger
+        if  not  self.logger : self.logger = sul.getLogger ('PTYShell') 
+        self.logger.debug ("PTYShell init %s" % self)
+
         self.url       = url      # describes the shell to run
-        self.logger    = logger   # possibly log to here
         self.init      = init     # call after reconnect
         self.opts      = opts     # options...
 
@@ -196,10 +198,6 @@ class PTYShell (object) :
                 raise saga.NoSuccess ("could not create staging dir: %s" % e)
 
         
-        # need a new logger?
-        if not self.logger :
-            self.logger = saga.utils.logger.getLogger ('PTYShell')
-
         self.factory    = supsf.PTYShellFactory   ()
         self.pty_info   = self.factory.initialize (url, session, self.logger)
         self.pty_shell  = self.factory.run_shell  (self.pty_info)
@@ -211,6 +209,7 @@ class PTYShell (object) :
     #
     def __del__ (self) :
 
+        self.logger.debug ("PTYShell del  %s" % self)
         self.finalize (kill_pty=True)
 
 

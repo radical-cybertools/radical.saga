@@ -130,11 +130,11 @@ class PTYShellFactory (object) :
     #
     def __init__ (self) :
 
-
         self.logger   = saga.utils.logger.getLogger ('PTYShellFactory')
         self.registry = {}
         self.rlock    = threading.RLock ()
 
+        self.logger.debug ("PTYShellFactory init %s" % self)
 
     # --------------------------------------------------------------------------
     #
