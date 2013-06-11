@@ -14,6 +14,7 @@ import saga
 """ Provides an assortment of utilities """
 
 _benchmark = {}
+_latencies = {}
 
 
 # --------------------------------------------------------------------
@@ -55,6 +56,57 @@ def host_is_valid (host) :
         return True
     except :
         return False
+
+
+# --------------------------------------------------------------------
+#
+def get_host_latency (host_url) :
+    """ 
+    This call measures the base tcp latency for a connection to the target
+    host.  Note that port 22 is used for connection tests, unless the URL
+    explicitly specifies a different port.  If the used port is blocked, the
+    returned latency can be wrong by orders of magnitude.
+    """
+
+    try :
+
+        global _latencies
+
+        if  host_url in _latencies :
+            return _latencies[host_url]
+
+        u = saga.Url (host_url)
+
+        if u.host : host = u.host
+        else      : host = 'localhost'
+        if u.port : port = u.port
+        else      : port = 22  #  FIXME: we should guess by protocol 
+
+        import socket
+        import time
+
+        # ensure host is valid
+        ip   = socket.gethostbyname (host)
+        name = socket.gethostbyaddr (ip)
+
+        start = time.time ()
+
+        s = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
+        s.connect  ((host, port))
+        s.shutdown (socket.SHUT_RDWR)
+
+        stop = time.time ()
+
+        latency = stop - start
+
+        _latencies[host_url] = latency
+
+        return latency
+
+    except :
+
+        return None
+
 
 
 # --------------------------------------------------------------------
@@ -231,7 +283,8 @@ def benchmark_start (url, name='benchmark') :
         import socket
 
         s = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
-        s.connect ((host, port))
+        s.connect  ((host, port))
+        s.shutdown (socket.SHUT_RDWR)
 
     except Exception as e :
         _benchmark['ping']  = -1.0

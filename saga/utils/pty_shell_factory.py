@@ -16,10 +16,6 @@ import saga.utils.pty_process
 
 # ------------------------------------------------------------------------------
 #
-_PTY_TIMEOUT = 2.0
-
-# ------------------------------------------------------------------------------
-#
 # ssh options:
 #   -e none         : no escape character
 #   -M              : master mode for connection sharing
@@ -177,7 +173,7 @@ class PTYShellFactory (object) :
                 	  "Shell not connected to %s" % info['host_str'])
 
                 # authorization, prompt setup, etc
-                self._initialize_pty (info['pty'], info['pass'], info['key_pass'], info['logger'])
+                self._initialize_pty (info['pty'], info)
 
                 # master was created - register it
                 self.registry[host_s][user_s][type_s] = info
@@ -197,47 +193,73 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def _initialize_pty (self, pty_shell, shell_pass, key_pass, logger) :
+    def _initialize_pty (self, pty_shell, info) :
 
         with self.rlock :
+
+            shell_pass = info['pass']
+            key_pass   = info['key_pass']
+            logger     = info['logger']
+            latency    = info['latency']
+
+            pty_shell.latency = latency
+
+            # if we did not see a decent prompt within 'delay' time, something
+            # went wrong.  Try to prompt a prompt (duh!)  Delay should be
+            # minimum 0.1 second (to avoid flooding of local shells), and at
+            # maximum 1 second (to keep startup time reasonable)
+            # most one second.  We try to get within that range with 10*latency.
+            delay = min (1.0, max (0.1, 50 * latency))
 
             try :
                 prompt_patterns = ["[Pp]assword:\s*$",                   # password   prompt
                                    "Enter passphrase for key '.*':\s*$", # passphrase prompt
                                    "want to continue connecting",        # hostkey confirmation
+                                   ".*HELLO_\\d+_SAGA(.*)$",             # prompt detection helper
                                    "^(.*[\$#%>])\s*$"]                   # greedy native shell prompt 
 
                 # find a prompt
-                n, match = pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
+                n, match = pty_shell.find (prompt_patterns, delay)
 
-                # this loop will run until we finally find the shell prompt.  At
-                # that point, we'll try to set a different prompt, and when we found
-                # that, too, we exit the loop and are be ready to running shell
+                # this loop will run until we finally find the shell prompt, or
+                # if we think we have tried enough and give up.  On success
+                # we'll try to set a different prompt, and when we found that,
+                # too, we exit the loop and are be ready to running shell
                 # commands.
+                retries = 0
                 while True :
 
                     # --------------------------------------------------------------
                     if n == None :
 
-                        # we found none of the prompts, yet -- try again 
+                        # we found none of the prompts, yet, and need to try
+                        # again.  But to avoid hanging on invalid prompts, we
+                        # print 'HELLO_SAGA', and search for that one, too
+
+                        if retries > 50 :
+                            raise saga.NoSuccess ("Could not detect shell prompt (timeout)")
+
+                        retries += 1
+                        pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+
                         # FIXME:  consider timeout
-                        n, match = pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
+                        n, match = pty_shell.find (prompt_patterns, delay)
 
 
                     # --------------------------------------------------------------
-                    if n == 0 :
-                        logger.debug ("got password prompt")
+                    elif n == 0 :
+                        logger.info ("got password prompt")
                         if  not shell_pass :
                             raise saga.AuthenticationFailed ("prompted for unknown password (%s)" \
                                                           % match)
 
                         pty_shell.write ("%s\n" % shell_pass)
-                        n, match = pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
+                        n, match = pty_shell.find (prompt_patterns, delay)
 
 
                     # --------------------------------------------------------------
-                    if n == 1 :
-                        logger.debug ("got passphrase prompt: %s" % match)
+                    elif n == 1 :
+                        logger.info ("got passphrase prompt: %s" % match)
 
                         start = string.find (match, "'", 0)
                         end   = string.find (match, "'", start+1)
@@ -252,22 +274,33 @@ class PTYShellFactory (object) :
                                                           % key)
 
                         pty_shell.write ("%s\n" % key_pass[key])
-                        n, match = pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
+                        n, match = pty_shell.find (prompt_patterns, delay)
 
 
                     # --------------------------------------------------------------
                     elif n == 2 :
-                        logger.debug ("got hostkey prompt")
+                        logger.info ("got hostkey prompt")
                         pty_shell.write ("yes\n")
-                        n, match = pty_shell.find (prompt_patterns, _PTY_TIMEOUT)
+                        n, match = pty_shell.find (prompt_patterns, delay)
 
 
                     # --------------------------------------------------------------
                     elif n == 3 :
-                        logger.debug ("got initial shell prompt")
+                        logger.info ("got shell prompt trigger (%s) (%s)" %  (n, match))
+
+                        # one of the trigger commands got through -- we are
+                        # happy to declare success, ignore any further output,
+                        # and set a 'real' prompt.
+                        break
+
+
+                    # --------------------------------------------------------------
+                    elif n == 4 :
+                        logger.info ("got initial shell prompt (%s) (%s)" %  (n, match))
 
                         # we are done waiting for a prompt
                         break
+                
                 
             except Exception as e :
                 raise self._translate_exception (e)
@@ -288,10 +321,7 @@ class PTYShellFactory (object) :
         sh_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
 
         # authorization, prompt setup, etc
-        self._initialize_pty (sh_slave, 
-                              info['pass'], 
-                              info['key_pass'], 
-                              info['logger'])
+        self._initialize_pty (sh_slave, info)
 
         return sh_slave
 
@@ -314,10 +344,7 @@ class PTYShellFactory (object) :
 
         cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
 
-        self._initialize_pty (cp_slave, 
-                              info['pass'], 
-                              info['key_pass'], 
-                              info['logger'])
+        self._initialize_pty (cp_slave, info)
 
         cp_slave.write ("%s\n" % s_in)
         cp_slave.wait  ()
@@ -346,10 +373,7 @@ class PTYShellFactory (object) :
 
         cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
 
-        self._initialize_pty (cp_slave, 
-                              info['pass'], 
-                              info['key_pass'], 
-                              info['logger'])
+        self._initialize_pty (cp_slave, info)
 
         cp_slave.write ("%s\n" % s_in)
         cp_slave.wait  ()
@@ -416,9 +440,15 @@ class PTYShellFactory (object) :
             # interactive login shell, so that it interprets the users startup
             # files, and reacts on commands.
 
+            import saga.utils.misc as sumisc
+            info['latency'] = sumisc.get_host_latency (url)
+
+            if None == info['latency'] :
+                raise saga.BadParameter._log (self.logger, "Could not resolve host '%s'" % (url))
+
             if  info['type'] == "sh" :
-                import saga.utils.misc as sum
-                if not sum.host_is_local (url.host) :
+
+                if not sumisc.host_is_local (url.host) :
                     raise saga.BadParameter._log (self.logger, \
                             "expect local host for '%s://', not '%s'" % (url.schema, url.host))
 
@@ -428,10 +458,6 @@ class PTYShellFactory (object) :
                     info['user'] = getpass.getuser ()
 
             else :
-                import saga.utils.misc as sum
-                if not sum.host_is_valid (url.host) :
-                    raise saga.BadParameter._log (self.logger, "Could not resolve host '%s'" % (url))
-
                 info['ssh_env']   =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
                 info['scp_env']   =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
                 info['sftp_env']  =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
