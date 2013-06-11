@@ -1,6 +1,6 @@
 
-Part 3: Remote Job Submission
-*****************************
+Remote Job Submission
+*********************
 
 Next, we take the previous example and modify it, so that our job is executed on
 a remote machine instead of localhost. This examples shows one of the
@@ -98,6 +98,9 @@ The output should look something like this:
 
     Job State : Done
     Exitcode  : 0
+
+
+Values marked as 'None' could not be fetched from the backend, at that point.
 
 
 Check the Output

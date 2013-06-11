@@ -5,7 +5,6 @@ Adaptors
 ********
 
 .. toctree::
-   :numbered:
    :maxdepth: 1
 
    saga.adaptor.myproxy

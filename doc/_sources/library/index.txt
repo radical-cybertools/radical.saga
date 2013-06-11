@@ -8,7 +8,6 @@ Library Reference
 Intro library reference... 
 
 .. toctree::
-   :numbered:
 
    job/index.rst
    filesystem/index.rst

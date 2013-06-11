@@ -1,6 +1,6 @@
 
-Part 4: Adding File Transfer
-****************************
+Adding File Transfer
+********************
 
 In this fourth part of the tutorial, we again build on the previous example and
 some code that copies our job's output file back to the local machine. This is

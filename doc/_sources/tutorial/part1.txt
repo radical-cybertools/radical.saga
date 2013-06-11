@@ -1,6 +1,6 @@
 
-Part 1: Introduction
-********************
+Introduction
+************
 
 The SAGA Python module provides an object-oriented programming interface for job
 submission and management, resource allocation, file handling and coordination

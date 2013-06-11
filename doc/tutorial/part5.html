@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>5. Part 5: A More Complex Example: Mandelbrot &mdash; SAGA 0.9.6 documentation</title>
+    <title>2.5. A More Complex Example: Mandelbrot &mdash; SAGA 0.9.6 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -34,7 +34,7 @@
     <link rel="top" title="SAGA 0.9.6 documentation" href="../index.html" />
     <link rel="up" title="2. Tutorial" href="index.html" />
     <link rel="next" title="3. Library Reference" href="../library/index.html" />
-    <link rel="prev" title="4. Part 4: Adding File Transfer" href="part4.html" /> 
+    <link rel="prev" title="2.4. Adding File Transfer" href="part4.html" /> 
   </head>
   <body>
     <div class="related">
@@ -50,7 +50,7 @@
           <a href="../library/index.html" title="3. Library Reference"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="part4.html" title="4. Part 4: Adding File Transfer"
+          <a href="part4.html" title="2.4. Adding File Transfer"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">2. Tutorial</a> &raquo;</li> 
@@ -62,11 +62,11 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="part-5-a-more-complex-example-mandelbrot">
-<h1>5. Part 5: A More Complex Example: Mandelbrot<a class="headerlink" href="#part-5-a-more-complex-example-mandelbrot" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="a-more-complex-example-mandelbrot">
+<h1>2.5. A More Complex Example: Mandelbrot<a class="headerlink" href="#a-more-complex-example-mandelbrot" title="Permalink to this headline">¶</a></h1>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">If you want to run the Mandelbrot example on OSG with Condor, please refer to the OSG-specific instructions: <a class="reference internal" href="part5_osg.html#tutorial-mandelbrot-osg"><em>Part 5: A More Complex Example: Mandelbrot (OSG VERSION)</em></a>.</p>
+<p class="last">If you want to run the Mandelbrot example on OSG with Condor, please refer to the OSG-specific instructions: <a class="reference internal" href="part5_osg.html#tutorial-mandelbrot-osg"><em>A More Complex Example: Mandelbrot (OSG VERSION)</em></a>.</p>
 </div>
 <p>In this example, we split up the calculation of a Mandelbrot set into several
 tiles, submit a job for each tile using the SAGA Job API, retrieve the tiles
@@ -74,7 +74,7 @@ using the SAGA File API and stitch together the final image from the individual
 tiles. This example shows how SAGA can be used to create more complex
 application workflows that involve multiple aspects of the API.</p>
 <div class="section" id="hands-on-distributed-mandelbrot-fractals">
-<h2>5.1. Hands-On: Distributed Mandelbrot Fractals<a class="headerlink" href="#hands-on-distributed-mandelbrot-fractals" title="Permalink to this headline">¶</a></h2>
+<h2>2.5.1. Hands-On: Distributed Mandelbrot Fractals<a class="headerlink" href="#hands-on-distributed-mandelbrot-fractals" title="Permalink to this headline">¶</a></h2>
 <p>In order for this example to work, we need to install an additional Python
 module, the Python Image Library (PIL). This is done via pip:</p>
 <div class="highlight-bash"><div class="highlight"><pre>pip install PIL
@@ -101,23 +101,29 @@ favorite editor and paste the following content:</p>
 <span class="kn">import</span> <span class="nn">saga</span>
 <span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
 
-<span class="n">REMOTE_HOST</span> <span class="o">=</span> <span class="s">&quot;india.futuregrid.org&quot;</span>
-<span class="n">REMOTE_JOB_ENDPOINT</span> <span class="o">=</span> <span class="s">&quot;pbs+ssh://&quot;</span> <span class="o">+</span> <span class="n">REMOTE_HOST</span> 
-<span class="n">REMOTE_FILE_ENDPOINT</span> <span class="o">=</span> <span class="s">&quot;sftp://&quot;</span> <span class="o">+</span> <span class="n">REMOTE_HOST</span>
+<span class="c">#-----------------------------------------------------------------------------</span>
+<span class="c">#</span>
+<span class="n">REMOTE_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span> <span class="c"># try this with different hosts</span>
+<span class="n">REMOTE_DIR</span> <span class="o">=</span> <span class="s">&quot;/tmp/&quot;</span>      <span class="c"># change this to your home directory</span>
+
+<span class="n">REMOTE_JOB_ENDPOINT</span> <span class="o">=</span> <span class="s">&quot;ssh://&quot;</span> <span class="o">+</span> <span class="n">REMOTE_HOST</span>
+<span class="n">REMOTE_FILE_ENDPOINT</span> <span class="o">=</span> <span class="s">&quot;sftp://&quot;</span> <span class="o">+</span> <span class="n">REMOTE_HOST</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="n">REMOTE_DIR</span>
 
 <span class="c"># the dimension (in pixel) of the whole fractal</span>
-<span class="n">imgx</span> <span class="o">=</span> <span class="mi">2048</span> 
+<span class="n">imgx</span> <span class="o">=</span> <span class="mi">2048</span>
 <span class="n">imgy</span> <span class="o">=</span> <span class="mi">2048</span>
 
 <span class="c"># the number of tiles in X and Y direction</span>
 <span class="n">tilesx</span> <span class="o">=</span> <span class="mi">2</span>
 <span class="n">tilesy</span> <span class="o">=</span> <span class="mi">2</span>
 
+<span class="c">#-----------------------------------------------------------------------------</span>
+<span class="c">#</span>
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c"># Your ssh identity on the remote machine</span>
         <span class="n">ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&quot;ssh&quot;</span><span class="p">)</span>
-        <span class="n">ctx</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="s">&quot;oweidner&quot;</span>
+        <span class="c">#ctx.user_id = &quot;&quot;</span>
 
         <span class="n">session</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
         <span class="n">session</span><span class="o">.</span><span class="n">add_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
@@ -126,7 +132,7 @@ favorite editor and paste the following content:</p>
         <span class="n">jobs</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="c"># create a working directory in /scratch</span>
-        <span class="n">dirname</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">/mbrot/&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">REMOTE_FILE_ENDPOINT</span><span class="p">,</span> <span class="s">&#39;/N/u/oweidner/&#39;</span><span class="p">)</span>
+        <span class="n">dirname</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">/mbrot/&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">REMOTE_FILE_ENDPOINT</span><span class="p">)</span>
         <span class="n">workdir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE</span><span class="p">,</span>
                                             <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
 
@@ -153,7 +159,7 @@ favorite editor and paste the following content:</p>
                 <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span>   <span class="o">=</span> <span class="mi">1</span>
                 <span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span> <span class="o">=</span> <span class="n">workdir</span><span class="o">.</span><span class="n">get_url</span><span class="p">()</span><span class="o">.</span><span class="n">path</span>
                 <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>        <span class="o">=</span> <span class="s">&#39;sh&#39;</span>
-                <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span>         <span class="o">=</span> <span class="p">[</span><span class="s">&#39;mandelbrot.sh&#39;</span><span class="p">,</span> <span class="n">imgx</span><span class="p">,</span> <span class="n">imgy</span><span class="p">,</span> 
+                <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span>         <span class="o">=</span> <span class="p">[</span><span class="s">&#39;mandelbrot.sh&#39;</span><span class="p">,</span> <span class="n">imgx</span><span class="p">,</span> <span class="n">imgy</span><span class="p">,</span>
                                         <span class="p">(</span><span class="n">imgx</span><span class="o">/</span><span class="n">tilesx</span><span class="o">*</span><span class="n">x</span><span class="p">),</span> <span class="p">(</span><span class="n">imgx</span><span class="o">/</span><span class="n">tilesx</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">)),</span>
                                         <span class="p">(</span><span class="n">imgy</span><span class="o">/</span><span class="n">tilesy</span><span class="o">*</span><span class="n">y</span><span class="p">),</span> <span class="p">(</span><span class="n">imgy</span><span class="o">/</span><span class="n">tilesy</span><span class="o">*</span><span class="p">(</span><span class="n">y</span><span class="o">+</span><span class="mi">1</span><span class="p">)),</span>
                                         <span class="n">outputfile</span><span class="p">]</span>
@@ -171,6 +177,7 @@ favorite editor and paste the following content:</p>
                 <span class="k">print</span> <span class="s">&#39; * Job </span><span class="si">%s</span><span class="s"> status: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">jobstate</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">jobstate</span> <span class="ow">in</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span><span class="p">]:</span>
                     <span class="n">jobs</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s">&quot;&quot;</span>
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
 
         <span class="c"># copy image tiles back to our &#39;local&#39; directory</span>
@@ -218,15 +225,15 @@ favorite editor and paste the following content:</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">5. Part 5: A More Complex Example: Mandelbrot</a><ul>
-<li><a class="reference internal" href="#hands-on-distributed-mandelbrot-fractals">5.1. Hands-On: Distributed Mandelbrot Fractals</a></li>
+<li><a class="reference internal" href="#">2.5. A More Complex Example: Mandelbrot</a><ul>
+<li><a class="reference internal" href="#hands-on-distributed-mandelbrot-fractals">2.5.1. Hands-On: Distributed Mandelbrot Fractals</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="part4.html"
-                        title="previous chapter">4. Part 4: Adding File Transfer</a></p>
+                        title="previous chapter">2.4. Adding File Transfer</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="../library/index.html"
                         title="next chapter">3. Library Reference</a></p>
@@ -265,7 +272,7 @@ favorite editor and paste the following content:</p>
           <a href="../library/index.html" title="3. Library Reference"
              >next</a> |</li>
         <li class="right" >
-          <a href="part4.html" title="4. Part 4: Adding File Transfer"
+          <a href="part4.html" title="2.4. Adding File Transfer"
              >previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
           <li><a href="index.html" >2. Tutorial</a> &raquo;</li> 

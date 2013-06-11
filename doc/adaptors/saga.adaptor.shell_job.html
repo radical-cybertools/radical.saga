@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>2. saga.adaptor.shell_job &mdash; SAGA 0.9.6 documentation</title>
+    <title>4.2. saga.adaptor.shell_job &mdash; SAGA 0.9.6 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -33,8 +33,8 @@
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <link rel="top" title="SAGA 0.9.6 documentation" href="../index.html" />
     <link rel="up" title="4. Adaptors" href="saga.adaptor.index.html" />
-    <link rel="next" title="3. saga.adaptor.sgejob" href="saga.adaptor.sgejob.html" />
-    <link rel="prev" title="1. saga.adaptor.shell_file" href="saga.adaptor.shell_file.html" /> 
+    <link rel="next" title="4.3. saga.adaptor.sgejob" href="saga.adaptor.sgejob.html" />
+    <link rel="prev" title="4.1. saga.adaptor.shell_file" href="saga.adaptor.shell_file.html" /> 
   </head>
   <body>
     <div class="related">
@@ -47,10 +47,10 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.sgejob.html" title="3. saga.adaptor.sgejob"
+          <a href="saga.adaptor.sgejob.html" title="4.3. saga.adaptor.sgejob"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.shell_file.html" title="1. saga.adaptor.shell_file"
+          <a href="saga.adaptor.shell_file.html" title="4.1. saga.adaptor.shell_file"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" accesskey="U">4. Adaptors</a> &raquo;</li> 
@@ -63,9 +63,9 @@
           <div class="body">
             
   <div class="section" id="saga-adaptor-shell-job">
-<h1>2. saga.adaptor.shell_job<a class="headerlink" href="#saga-adaptor-shell-job" title="Permalink to this headline">¶</a></h1>
+<h1>4.2. saga.adaptor.shell_job<a class="headerlink" href="#saga-adaptor-shell-job" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
-<h2>2.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<h2>4.2.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>The Shell job adaptor. This adaptor uses the sh command line tools (sh,
 ssh, gsissh) to run local and remote jobs.  The adaptor expects the
 login shell on the target host to be POSIX compliant.  However, one can
@@ -76,7 +76,7 @@ also specify a custom POSIX shell via the resource manager URL, like:</p>
 <p>Note that custom shells in many cases will find a different environment
 than the users default login shell!</p>
 <div class="section" id="known-limitations">
-<h3>2.1.1. Known Limitations:<a class="headerlink" href="#known-limitations" title="Permalink to this headline">¶</a></h3>
+<h3>4.2.1.1. Known Limitations:<a class="headerlink" href="#known-limitations" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul>
 <li><p class="first">number of system pty&#8217;s are limited:  each job.service object bound
@@ -151,7 +151,7 @@ use should work as expected though.</p>
 </div>
 </div>
 <div class="section" id="supported-schemas">
-<h2>2.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<h2>4.2.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
 <p>This adaptor is triggered by the following URL schemes:</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -180,7 +180,7 @@ use should work as expected though.</p>
 </table>
 </div>
 <div class="section" id="example">
-<h2>2.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<h2>4.2.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Ole Weidner&quot;</span>
 <span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
@@ -271,12 +271,12 @@ use should work as expected though.</p>
 </div>
 </div>
 <div class="section" id="configuration-options">
-<h2>2.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<h2>4.2.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
 <p>Configuration options can be used to control the adaptor&#8217;s runt    ime behavior. Most adaptors don&#8217;t need any configuration options to b    e set in order to work. They are mostly for controlling experimental feat    ures and properties of the adaptors.</p>
 <blockquote>
 <div></div></blockquote>
 <div class="section" id="enabled">
-<h3>2.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<h3>4.2.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
 <p>enable / disable saga.adaptor.shell_job adaptor</p>
 <blockquote>
 <div><ul class="simple">
@@ -288,7 +288,7 @@ use should work as expected though.</p>
 </div></blockquote>
 </div>
 <div class="section" id="enable-notifications">
-<h3>2.4.2. enable_notifications<a class="headerlink" href="#enable-notifications" title="Permalink to this headline">¶</a></h3>
+<h3>4.2.4.2. enable_notifications<a class="headerlink" href="#enable-notifications" title="Permalink to this headline">¶</a></h3>
 <p>Enable support for job state notifications.  Note that
 enabling this option will create a local thread, a remote
 shell process, and an additional network connection.
@@ -306,7 +306,7 @@ instances per remote host.</p>
 </div></blockquote>
 </div>
 <div class="section" id="purge-on-start">
-<h3>2.4.3. purge_on_start<a class="headerlink" href="#purge-on-start" title="Permalink to this headline">¶</a></h3>
+<h3>4.2.4.3. purge_on_start<a class="headerlink" href="#purge-on-start" title="Permalink to this headline">¶</a></h3>
 <p>Purge job information (state, stdio, ...) for all
 jobs which are in final state when starting the job
 service instance.  Note that this will purge <em>all</em>
@@ -323,9 +323,9 @@ live job service instance.</p>
 </div>
 </div>
 <div class="section" id="capabilities">
-<h2>2.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<h2>4.2.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="supported-monitorable-metrics">
-<h3>2.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
+<h3>4.2.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>State</li>
@@ -334,7 +334,7 @@ live job service instance.</p>
 </div></blockquote>
 </div>
 <div class="section" id="supported-job-attributes">
-<h3>2.5.2. Supported Job Attributes<a class="headerlink" href="#supported-job-attributes" title="Permalink to this headline">¶</a></h3>
+<h3>4.2.5.2. Supported Job Attributes<a class="headerlink" href="#supported-job-attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>ExitCode</li>
@@ -346,7 +346,7 @@ live job service instance.</p>
 </div></blockquote>
 </div>
 <div class="section" id="supported-context-types">
-<h3>2.5.3. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
+<h3>4.2.5.3. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="50%" />
@@ -371,7 +371,7 @@ live job service instance.</p>
 </table>
 </div>
 <div class="section" id="supported-job-description-attributes">
-<h3>2.5.4. Supported Job Description Attributes<a class="headerlink" href="#supported-job-description-attributes" title="Permalink to this headline">¶</a></h3>
+<h3>4.2.5.4. Supported Job Description Attributes<a class="headerlink" href="#supported-job-description-attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>Executable</li>
@@ -389,7 +389,7 @@ live job service instance.</p>
 </div>
 </div>
 <div class="section" id="supported-api-classes">
-<h2>2.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<h2>4.2.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt>This adaptor supports the following API classes:</dt>
 <dd><ul class="first last simple">
@@ -400,7 +400,7 @@ live job service instance.</p>
 </dl>
 <p>Method implementation details are listed below.</p>
 <div class="section" id="saga-job-service">
-<h3>2.6.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
+<h3>4.2.6.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.shell.shell_job.ShellJobService">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.shell.shell_job.</tt><tt class="descname">ShellJobService</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJobService"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJobService" title="Permalink to this definition">¶</a></dt>
@@ -475,7 +475,7 @@ live job service instance.</p>
 
 </div>
 <div class="section" id="saga-job-job">
-<h3>2.6.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
+<h3>4.2.6.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.shell.shell_job.ShellJob">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.shell.shell_job.</tt><tt class="descname">ShellJob</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_job.html#ShellJob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_job.ShellJob" title="Permalink to this definition">¶</a></dt>
@@ -575,29 +575,29 @@ live job service instance.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">2. saga.adaptor.shell_job</a><ul>
-<li><a class="reference internal" href="#description">2.1. Description</a><ul>
-<li><a class="reference internal" href="#known-limitations">2.1.1. Known Limitations:</a></li>
+<li><a class="reference internal" href="#">4.2. saga.adaptor.shell_job</a><ul>
+<li><a class="reference internal" href="#description">4.2.1. Description</a><ul>
+<li><a class="reference internal" href="#known-limitations">4.2.1.1. Known Limitations:</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#supported-schemas">2.2. Supported Schemas</a></li>
-<li><a class="reference internal" href="#example">2.3. Example</a></li>
-<li><a class="reference internal" href="#configuration-options">2.4. Configuration Options</a><ul>
-<li><a class="reference internal" href="#enabled">2.4.1. enabled</a></li>
-<li><a class="reference internal" href="#enable-notifications">2.4.2. enable_notifications</a></li>
-<li><a class="reference internal" href="#purge-on-start">2.4.3. purge_on_start</a></li>
+<li><a class="reference internal" href="#supported-schemas">4.2.2. Supported Schemas</a></li>
+<li><a class="reference internal" href="#example">4.2.3. Example</a></li>
+<li><a class="reference internal" href="#configuration-options">4.2.4. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">4.2.4.1. enabled</a></li>
+<li><a class="reference internal" href="#enable-notifications">4.2.4.2. enable_notifications</a></li>
+<li><a class="reference internal" href="#purge-on-start">4.2.4.3. purge_on_start</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#capabilities">2.5. Capabilities</a><ul>
-<li><a class="reference internal" href="#supported-monitorable-metrics">2.5.1. Supported Monitorable Metrics</a></li>
-<li><a class="reference internal" href="#supported-job-attributes">2.5.2. Supported Job Attributes</a></li>
-<li><a class="reference internal" href="#supported-context-types">2.5.3. Supported Context Types</a></li>
-<li><a class="reference internal" href="#supported-job-description-attributes">2.5.4. Supported Job Description Attributes</a></li>
+<li><a class="reference internal" href="#capabilities">4.2.5. Capabilities</a><ul>
+<li><a class="reference internal" href="#supported-monitorable-metrics">4.2.5.1. Supported Monitorable Metrics</a></li>
+<li><a class="reference internal" href="#supported-job-attributes">4.2.5.2. Supported Job Attributes</a></li>
+<li><a class="reference internal" href="#supported-context-types">4.2.5.3. Supported Context Types</a></li>
+<li><a class="reference internal" href="#supported-job-description-attributes">4.2.5.4. Supported Job Description Attributes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#supported-api-classes">2.6. Supported API Classes</a><ul>
-<li><a class="reference internal" href="#saga-job-service">2.6.1. saga.job.Service</a></li>
-<li><a class="reference internal" href="#saga-job-job">2.6.2. saga.job.Job</a></li>
+<li><a class="reference internal" href="#supported-api-classes">4.2.6. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-job-service">4.2.6.1. saga.job.Service</a></li>
+<li><a class="reference internal" href="#saga-job-job">4.2.6.2. saga.job.Job</a></li>
 </ul>
 </li>
 </ul>
@@ -606,10 +606,10 @@ live job service instance.</p>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="saga.adaptor.shell_file.html"
-                        title="previous chapter">1. saga.adaptor.shell_file</a></p>
+                        title="previous chapter">4.1. saga.adaptor.shell_file</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="saga.adaptor.sgejob.html"
-                        title="next chapter">3. saga.adaptor.sgejob</a></p>
+                        title="next chapter">4.3. saga.adaptor.sgejob</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/adaptors/saga.adaptor.shell_job.txt"
@@ -642,10 +642,10 @@ live job service instance.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.sgejob.html" title="3. saga.adaptor.sgejob"
+          <a href="saga.adaptor.sgejob.html" title="4.3. saga.adaptor.sgejob"
              >next</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.shell_file.html" title="1. saga.adaptor.shell_file"
+          <a href="saga.adaptor.shell_file.html" title="4.1. saga.adaptor.shell_file"
              >previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" >4. Adaptors</a> &raquo;</li> 

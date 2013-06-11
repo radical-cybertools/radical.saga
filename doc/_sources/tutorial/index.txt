@@ -27,7 +27,6 @@ operations (sftp).
 **Contents:**
 
 .. toctree::
-   :numbered:
    :maxdepth: 1
 
    part1

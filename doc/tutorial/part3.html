@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>3. Part 3: Remote Job Submission &mdash; SAGA 0.9.6 documentation</title>
+    <title>2.3. Remote Job Submission &mdash; SAGA 0.9.6 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -33,8 +33,8 @@
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <link rel="top" title="SAGA 0.9.6 documentation" href="../index.html" />
     <link rel="up" title="2. Tutorial" href="index.html" />
-    <link rel="next" title="4. Part 4: Adding File Transfer" href="part4.html" />
-    <link rel="prev" title="2. Part 2: Local Job Submission" href="part2.html" /> 
+    <link rel="next" title="2.4. Adding File Transfer" href="part4.html" />
+    <link rel="prev" title="2.2. Local Job Submission" href="part2.html" /> 
   </head>
   <body>
     <div class="related">
@@ -47,10 +47,10 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="part4.html" title="4. Part 4: Adding File Transfer"
+          <a href="part4.html" title="2.4. Adding File Transfer"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="part2.html" title="2. Part 2: Local Job Submission"
+          <a href="part2.html" title="2.2. Local Job Submission"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">2. Tutorial</a> &raquo;</li> 
@@ -62,8 +62,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="part-3-remote-job-submission">
-<h1>3. Part 3: Remote Job Submission<a class="headerlink" href="#part-3-remote-job-submission" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="remote-job-submission">
+<h1>2.3. Remote Job Submission<a class="headerlink" href="#remote-job-submission" title="Permalink to this headline">¶</a></h1>
 <p>Next, we take the previous example and modify it, so that our job is executed on
 a remote machine instead of localhost. This examples shows one of the
 most important capabilities of SAGA: abstracting system heterogeneity. We can
@@ -71,7 +71,7 @@ use the same code we have used to run a job via &#8216;fork&#8217; with minimal
 modifications to run a job on a different resource, e.g., via &#8216;ssh&#8217; on another
 remote system or via &#8216;pbs&#8217; or &#8216;sge&#8217; on a remote cluster.</p>
 <div class="section" id="prerequisites">
-<h2>3.1. Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<h2>2.3.1. Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
 <p>This example assumes that you have SSH access to a remote resource, either a single host or an HPC cluster.</p>
 <p>The example also assumes that you have a working public/private SSH key-pair and
 that you can log-in to your remote resource of choice using those keys, i.e.,
@@ -81,7 +81,7 @@ you are not sure how this works, you might want to read about
 first.</p>
 </div>
 <div class="section" id="hands-on-remote-job-submission">
-<h2>3.2. Hands-On: Remote Job Submission<a class="headerlink" href="#hands-on-remote-job-submission" title="Permalink to this headline">¶</a></h2>
+<h2>2.3.2. Hands-On: Remote Job Submission<a class="headerlink" href="#hands-on-remote-job-submission" title="Permalink to this headline">¶</a></h2>
 <p>Copy the code from the previous example to a new file saga_example_remote.py.
 Add a <tt class="docutils literal"><span class="pre">saga.Context</span></tt> and <tt class="docutils literal"><span class="pre">saga.Session</span></tt> right before the <tt class="docutils literal"><span class="pre">job.Service</span></tt>
 object initialization. Sessions and Contexts describe your SSH identity on the
@@ -122,7 +122,7 @@ be credited:</p>
 </pre></div>
 </div>
 <div class="section" id="run-the-code">
-<h3>3.2.1. Run the Code<a class="headerlink" href="#run-the-code" title="Permalink to this headline">¶</a></h3>
+<h3>2.3.2.1. Run the Code<a class="headerlink" href="#run-the-code" title="Permalink to this headline">¶</a></h3>
 <p>Save the file and execute it (<strong>make sure your virtualenv is activated</strong>):</p>
 <div class="highlight-bash"><div class="highlight"><pre>python saga_example_remote.py
 </pre></div>
@@ -142,9 +142,10 @@ Job State : Done
 Exitcode  : 0
 </pre></div>
 </div>
+<p>Values marked as &#8216;None&#8217; could not be fetched from the backend, at that point.</p>
 </div>
 <div class="section" id="check-the-output">
-<h3>3.2.2. Check the Output<a class="headerlink" href="#check-the-output" title="Permalink to this headline">¶</a></h3>
+<h3>2.3.2.2. Check the Output<a class="headerlink" href="#check-the-output" title="Permalink to this headline">¶</a></h3>
 <p>As opposed to the previous &#8220;local&#8221; example, you won&#8217;t find a <tt class="docutils literal"><span class="pre">mysagajob.stdout</span></tt>
 file in your working directory. This is because the file has been created on the
 remote host were your job was executed. In order to check the content, you would
@@ -153,7 +154,7 @@ example.</p>
 </div>
 </div>
 <div class="section" id="discussion">
-<h2>3.3. Discussion<a class="headerlink" href="#discussion" title="Permalink to this headline">¶</a></h2>
+<h2>2.3.3. Discussion<a class="headerlink" href="#discussion" title="Permalink to this headline">¶</a></h2>
 <p>Besides changing the <tt class="docutils literal"><span class="pre">job.Service</span></tt> URL to trigger a different middleware
 plug-in, we have introduced another new aspect in this tutorial example:
 Contexts. Contexts are used to define security / log-in contexts for SAGA
@@ -191,24 +192,24 @@ in the Library Reference section of this manual.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">3. Part 3: Remote Job Submission</a><ul>
-<li><a class="reference internal" href="#prerequisites">3.1. Prerequisites</a></li>
-<li><a class="reference internal" href="#hands-on-remote-job-submission">3.2. Hands-On: Remote Job Submission</a><ul>
-<li><a class="reference internal" href="#run-the-code">3.2.1. Run the Code</a></li>
-<li><a class="reference internal" href="#check-the-output">3.2.2. Check the Output</a></li>
+<li><a class="reference internal" href="#">2.3. Remote Job Submission</a><ul>
+<li><a class="reference internal" href="#prerequisites">2.3.1. Prerequisites</a></li>
+<li><a class="reference internal" href="#hands-on-remote-job-submission">2.3.2. Hands-On: Remote Job Submission</a><ul>
+<li><a class="reference internal" href="#run-the-code">2.3.2.1. Run the Code</a></li>
+<li><a class="reference internal" href="#check-the-output">2.3.2.2. Check the Output</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#discussion">3.3. Discussion</a></li>
+<li><a class="reference internal" href="#discussion">2.3.3. Discussion</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="part2.html"
-                        title="previous chapter">2. Part 2: Local Job Submission</a></p>
+                        title="previous chapter">2.2. Local Job Submission</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="part4.html"
-                        title="next chapter">4. Part 4: Adding File Transfer</a></p>
+                        title="next chapter">2.4. Adding File Transfer</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/tutorial/part3.txt"
@@ -241,10 +242,10 @@ in the Library Reference section of this manual.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="part4.html" title="4. Part 4: Adding File Transfer"
+          <a href="part4.html" title="2.4. Adding File Transfer"
              >next</a> |</li>
         <li class="right" >
-          <a href="part2.html" title="2. Part 2: Local Job Submission"
+          <a href="part2.html" title="2.2. Local Job Submission"
              >previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
           <li><a href="index.html" >2. Tutorial</a> &raquo;</li> 

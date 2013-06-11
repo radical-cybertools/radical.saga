@@ -1,6 +1,6 @@
 
-Part 5: A More Complex Example: Mandelbrot
-******************************************
+A More Complex Example: Mandelbrot
+**********************************
 
 .. warning:: If you want to run the Mandelbrot example on OSG with Condor, please refer to the OSG-specific instructions: :ref:`tutorial_mandelbrot_osg`.
 
