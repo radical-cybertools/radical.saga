@@ -119,6 +119,9 @@ class _Logger(Configurable):
                 elif self._loglevel.lower() == 'critical':  self._loglevel = logging.CRITICAL
                 else: raise saga.exceptions.NoSuccess('%s is not a valid value for SAGA_VERBOSE.' % self._loglevel)
 
+        # temporarily force debvug level logging
+        self._loglevel = logging.DEBUG
+
         # create the handlers (target + formatter + filter)
         for target in self._targets:
 
