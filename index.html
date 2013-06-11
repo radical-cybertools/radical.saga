@@ -253,22 +253,23 @@ $ easy_install saga-python</pre>
 
     <p>If you don't have access to a PBS cluster, you can try a different 
       adaptor by changing the url scheme in <b>line 18</b>. For example, you can
-      use <code>slurm[+ssh]://...</code> to access a SLURM-based cluster, or 
-      <code>condor[+ssh]://...</code> to access a Condor(-G) gateway. A
-      full list of available adaptors and their URL scheme can be found 
+      use <code>slurm[+ssh]://...</code> to access a SLURM cluster, <code>sge[+ssh]://...</code>
+      to access an SGE cluster, <code>condor[+ssh]://...</code> to access a Condor(-G) gateway
+      or just <code>ssh://...</code> to access a remote host (e.g., a cloud VM) via SSH. 
+      A full list of available adaptors and their URL scheme can be found 
       in the <a href="doc/adaptors/saga.adaptor.index.html">manual</a>.</p>
 
     <pre class="prettyprint languague-python">
 import sys
 import saga
 
-REMOTE_HOST = "alamo.futuregrid.org"
+REMOTE_HOST = "your.pbs.cluster.address"
 
 def main():
     try:
         # Your ssh identity on the remote machine
         ctx = saga.Context("ssh")
-        ctx.user_id = "oweidner"
+        ctx.user_id = "your_username"
 
         session = saga.Session()
         session.add_context(ctx)
