@@ -394,7 +394,7 @@ class PTYShell (object) :
             while True :
 
                 try :
-                    self.pty_shell.write ("\n")
+                  # self.pty_shell.write ("\n")
                   # self.logger.error  ("sent prompt trigger")
 
                     # make sure we have a non-zero waiting delay (default to
