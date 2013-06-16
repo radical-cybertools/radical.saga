@@ -788,7 +788,8 @@ stty -echonl 2> /dev/null
 
 if test "$PURGE_ON_START" = "True"
 then
-  cmd_purge
+  # cmd_purge
+  true
 fi
 
 create_monitor
