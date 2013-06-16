@@ -309,7 +309,7 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
         if  not self._api ().token :
             raise saga.exceptions.BadParameter \
-                  ("'ec2_keypair' context must speciy keypair name as 'Token'")
+                  ("'ec2_keypair' context must specify keypair name as 'Token'")
 
         # valid context, connect to backend  
         # FIXME: use 'Server' if defined
