@@ -6,19 +6,19 @@ __license__   = "MIT"
 # FIXME: OS enums, ARCH enums
 
 # resource type enum
-COMPUTE      =  'Compute'     """ resource accepting jobs """
-STORAGE      =  'Storage'     """ storage resource (duh) """
-NETWORK      =  'Network'     """ connects compute and storage resources """
+COMPUTE      =  1;            """ resource accepting jobs """
+STORAGE      =  2;            """ storage resource (duh) """
+NETWORK      =  4;            """ connects compute and storage resources """
 
 # resource state enum """
-UNKNOWN      =  'Unknown'     """ wut? """
-NEW          =  'New'         """ requsted, not accepting jobs, yet;
+UNKNOWN      =  None;         """ wut? """
+NEW          =  1;            """ requsted, not accepting jobs, yet;
                                   initial state """
 PENDING      =  2;            """ accepting jobs, will become active eventually """
 ACTIVE       =  4;            """ accepting jobs, jobs can run """
 CANCELED     =  8;            """ released by user; final state """
 EXPIRED      = 16;            """ released by system; final state """
-DONE         = EXPIRED
+DONE         = EXPIRED;       """ alias """
 FAILED       = 32;            """ released unexpectedly by system or internally;
                                   final state """
 FINAL        = CANCELED | DONE | FAILED
@@ -57,7 +57,6 @@ MEMORY       = 'Memory';      """ int, identifying memory size in MegaByte """
 ACCESS       = 'Access';      """ string, identifying the hostname/ip, mount
                                   point or provisioning URL to access the
                                   resource """
-
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
