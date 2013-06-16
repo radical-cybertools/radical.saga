@@ -324,7 +324,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def find (self, patterns) :
+    def find (self, patterns, timeout=-1) :
         """
         Note that this method blocks until pattern is found in the shell I/O.
         """
@@ -332,7 +332,7 @@ class PTYShell (object) :
         with self.pty_shell.rlock :
 
             try :
-                return self.pty_shell.find (patterns, timeout=-1)
+                return self.pty_shell.find (patterns, timeout=timeout)
 
             except Exception as e :
                 raise self._translate_exception (e)
@@ -394,7 +394,7 @@ class PTYShell (object) :
             while True :
 
                 try :
-                    self.pty_shell.write ("\n")
+                  # self.pty_shell.write ("\n")
                   # self.logger.error  ("sent prompt trigger")
 
                     # make sure we have a non-zero waiting delay (default to
