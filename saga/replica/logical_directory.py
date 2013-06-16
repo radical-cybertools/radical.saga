@@ -23,7 +23,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('LogicalDirectory', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session),
                   sus.optional (sab.Base), 
@@ -51,7 +51,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     #
     @classmethod
     @sus.takes   ('LogicalDirectory', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))

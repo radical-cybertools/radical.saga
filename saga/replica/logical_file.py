@@ -23,7 +23,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('LogicalFile', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session),
                   sus.optional (sab.Base), 
@@ -51,7 +51,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     #
     @classmethod
     @sus.takes   ('LogicalFile', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
@@ -88,7 +88,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # replica methods
     #
     @sus.takes   ('LogicalFile', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def add_location (self, name, ttype=None) :
@@ -103,7 +103,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('LogicalFile', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def remove_location (self, name, ttype=None) :
@@ -118,8 +118,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('LogicalFile', 
-                  sus.optional (surl.Url), 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def update_location (self, old, new, ttype=None) :
@@ -148,7 +148,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('LogicalFile', 
-                  surl.Url, 
+                  (surl.Url, basestring), 
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
@@ -166,8 +166,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # non-GFD.90
     #
     @sus.takes   ('LogicalFile', 
-                  surl.Url, 
-                  sus.optional (surl.Url),
+                  (surl.Url, basestring), 
+                  sus.optional ((surl.Url, basestring)),
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
@@ -186,8 +186,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # non-GFD.90
     #
     @sus.takes   ('LogicalFile', 
-                  surl.Url, 
-                  sus.optional (surl.Url),
+                  (surl.Url, basestring), 
+                  sus.optional ((surl.Url, basestring)),
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
