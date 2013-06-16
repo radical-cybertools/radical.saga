@@ -394,14 +394,20 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # Well, actually, we do not use exec, as that does not give us good
         # feedback on failures (the shell just quits) -- so we replace it with
         # this poor-man's version...
-        ret, out, _ = self.shell.run_sync ("/bin/sh -c '/bin/sh %s/wrapper.sh $$ && kill -9 $PPID' || false" \
-                                        % (base))
+        self.shell.run_async ("/bin/sh -c '/bin/sh %s/wrapper.sh $$ && kill -9 $PPID' || false" \
+                           % (base))
 
-        # either way, we somehow ran the script, and just need to check if it
-        # came up all right...
+        # shell_wrapper.sh will report its own PID -- we use that to sync prompt
+        # detection, too.  Wait for 1sec max.
+        pid_match = self.shell.find (['PID: \d+'], 1.0)
+        if  pid_match[0] != 0 :
+            raise saga.NoSuccess ("host bootstrap failed (%s)" % (pid_match))
+
+        # now we can be sure to expect the valid prompt instance
+        ret, out = self.shell.find_prompt ()
         if  ret != 0 :
-            raise saga.NoSuccess ("host setup failed (%s): (%s)" % (ret, out))
-
+            raise saga.NoSuccess ("failed to run bootstrap: (%s)(%s)" % (ret, out))
+        
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out.strip ()))
 
 
