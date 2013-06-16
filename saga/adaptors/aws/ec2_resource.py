@@ -76,10 +76,6 @@ _ADAPTOR_INFO          = {
     "cpis"             : [
         { 
         "type"         : "saga.Context",
-        "class"        : "EC2Context"
-        }, 
-        { 
-        "type"         : "saga.Context",
         "class"        : "EC2Keypair"
         }, 
         { 
