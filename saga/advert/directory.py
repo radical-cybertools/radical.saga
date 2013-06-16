@@ -23,7 +23,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int),
                   sus.optional (ss.Session), 
                   sus.optional (sab.Base),
@@ -70,7 +70,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     #
     @classmethod
     @sus.takes   ('Directory', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session), 
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
@@ -145,7 +145,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     # advert methods
     #
     @sus.takes   ('Directory', 
-                  surl.Url, 
+                  (surl.Url, basestring), 
                   float, 
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
@@ -164,7 +164,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((float, st.Task))
     def get_ttl  (self, tgt=None, ttype=None) : 

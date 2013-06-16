@@ -96,7 +96,7 @@ class Service (sb.Base, sasync.Async) :
     #
     @classmethod
     @sus.takes   ('Service', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (ss.Session), 
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (st.Task)

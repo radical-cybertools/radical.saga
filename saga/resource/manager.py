@@ -67,7 +67,7 @@ class Manager (sb.Base, async.Async) :
     #
     @classmethod
     @sus.takes   ('Manager', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (ss.Session),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (st.Task)

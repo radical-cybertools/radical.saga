@@ -37,7 +37,7 @@ class File (nsentry.Entry) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('File', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session),
                   sus.optional (sab.Base), 
@@ -80,7 +80,7 @@ class File (nsentry.Entry) :
     #
     @classmethod
     @sus.takes   ('File', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
