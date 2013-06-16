@@ -14,12 +14,12 @@ NETWORK      =  'Network'     """ connects compute and storage resources """
 UNKNOWN      =  'Unknown'     """ wut? """
 NEW          =  'New'         """ requsted, not accepting jobs, yet;
                                   initial state """
-PENDING      =  'Pending'     """ accepting jobs, will become active eventually """
-ACTIVE       =  'Active'      """ accepting jobs, jobs can run """
-CANCELED     =  'Canceled'    """ released by user; final state """
-EXPIRED      =  'Expired'     """ released by system; final state """
-DONE         =  EXPIRED        """ alias """
-FAILED       =  'Failed'      """ released unexpectedly by system or internally;
+PENDING      =  2;            """ accepting jobs, will become active eventually """
+ACTIVE       =  4;            """ accepting jobs, jobs can run """
+CANCELED     =  8;            """ released by user; final state """
+EXPIRED      = 16;            """ released by system; final state """
+DONE         = EXPIRED
+FAILED       = 32;            """ released unexpectedly by system or internally;
                                   final state """
 FINAL        = CANCELED | DONE | FAILED
 
