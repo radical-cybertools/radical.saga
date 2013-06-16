@@ -1,4 +1,8 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 import saga.utils.signatures as sus
 import saga.attributes       as sa
 import saga.exceptions       as se

@@ -1,23 +1,27 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 # FIXME: OS enums, ARCH enums
 
 # resource type enum
-COMPUTE      =  1;            """ resource accepting jobs """
-STORAGE      =  2;            """ storage resource (duh) """
-NETWORK      =  4;            """ connects compute and storage resources """
+COMPUTE      =  'Compute'     """ resource accepting jobs """
+STORAGE      =  'Storage'     """ storage resource (duh) """
+NETWORK      =  'Network'     """ connects compute and storage resources """
 
 # resource state enum """
-UNKNOWN      =  None;         """ wut? """
-NEW          =  1;            """ requsted, not accepting jobs, yet;
+UNKNOWN      =  'Unknown'     """ wut? """
+NEW          =  'New'         """ requsted, not accepting jobs, yet;
                                   initial state """
-PENDING      =  2;            """ accepting jobs, will become active eventually """
-ACTIVE       =  4;            """ accepting jobs, jobs can run """
-CANCELED     =  8;            """ released by user; final state """
-EXPIRED      = 16;            """ released by system; final state """
-DONE         = EXPIRED;       """ alias """
-FAILED       = 32;            """ released unexpectedly by system or internally;
+PENDING      =  'Pending'     """ accepting jobs, will become active eventually """
+ACTIVE       =  'Active'      """ accepting jobs, jobs can run """
+CANCELED     =  'Canceled'    """ released by user; final state """
+EXPIRED      =  'Expired'     """ released by system; final state """
+DONE         =  EXPIRED        """ alias """
+FAILED       =  'Failed'      """ released unexpectedly by system or internally;
                                   final state """
-FINAL        = CANCELED | DONE   | FAILED
+FINAL        = CANCELED | DONE | FAILED
 
 # resource attributes """
 ID           = 'Id';          """ url identifying a resource instance """

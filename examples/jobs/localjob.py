@@ -23,10 +23,6 @@ def main():
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
-
-        # Next, we describe the job we want to run. A complete set of job
-        # description attributes can be found in the API documentation.
-        jd = saga.job.Description()
         jd.environment       = {'FILENAME': 'testfile'}
 
         jd.executable        = '/usr/bin/touch'
