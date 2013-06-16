@@ -3,13 +3,13 @@ import os
 import sys
 import saga
 import time
-import pprint
 
-from pudb import set_interrupt_handler; set_interrupt_handler()
+import libcloud.security
+libcloud.security.VERIFY_SSL_CERT = False
 
 """
-This is an SAGA example which shows how to access EC2 resources via the SAGA
-Resource package.  The code expects the environment variables EC2_ID and EC2_KEY
+This is an example which shows how to access Amazon EC2 clouds via the SAGA
+resource package. The code expects the environment variables EC2_ID and EC2_KEY
 to contain the respective authentication tokens required for EC2 access.  Before
 running, please also inspect the comments for the EC2 keypair setup (search for
 keypair).
@@ -174,7 +174,7 @@ def main () :
     # -- but then a user_key *must* be specified.
     c2 = saga.Context ('ec2_keypair')
     c2.token    = 'futuregrid'  # keypair name
-    c2.user_key = '/home/merzky/.ssh/id_rsa_futuregrid.pub'
+    c2.user_key = '/Users/oweidner/.ssh/rsa_ec2.pub'
     c2.user_id  = 'root'        # the user id on the target VM
 
     # NOTE: the above ec2_keypair context should spawn an ssh context for
@@ -183,7 +183,7 @@ def main () :
     # We thus add that ssh context manually
     c3 = saga.Context ('ssh')
     c3.user_id   = 'root'
-    c3.user_cert = '/home/merzky/.ssh/id_rsa_futuregrid'
+    c3.user_cert = '/Users/oweidner/.ssh/rsa_ec2.pub'
 
 
     # we create a session for all SAGA interactions, and attach the respective
