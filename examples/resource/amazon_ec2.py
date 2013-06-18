@@ -28,19 +28,19 @@ def main():
 
     # In order to connect to EC2, we need an EC2 ID and KEY. We read those
     # from the environment.
-    ec2_ctx = saga.Context('ec2')
+    ec2_ctx = saga.Context('EC2')
     ec2_ctx.user_id = os.environ['EC2_ID']
     ec2_ctx.user_key = os.environ['EC2_KEY']
 
     # The SSH keypair we want to use the access the EC2 VM. If the keypair is
     # not yet registered on EC2 saga will register it automatically.
-    ec2keypair_ctx = saga.Context('ec2_keypair')
+    ec2keypair_ctx = saga.Context('EC2_KEYPAIR')
     ec2keypair_ctx.token = 'TODO'  # keypair name
     ec2keypair_ctx.user_key = os.environ['EC2_SSH_KEYPAIR']
     ec2keypair_ctx.user_id = 'root'  # the user id on the target VM
 
     # TODO
-    ssh_ctx = saga.Context('ssh')
+    ssh_ctx = saga.Context('SSH')
     ssh_ctx.user_id = 'root'
     ssh_ctx.user_key = os.environ['EC2_SSH_KEYPAIR']
 

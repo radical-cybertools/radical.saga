@@ -1,10 +1,9 @@
 
-Version 0.9.6 released 2013-06-06
+Version 0.9.6 released 2013-06-17
 ----------------------------------------------------------------------
 
 * Hotfix release: critical PBS/TORQUE adaptor fixes
   - https://github.com/saga-project/saga-python/issues?&milestone=6&page=1&state=closed
-
 
 Version 0.9.5 released 2013-06-06
 ----------------------------------------------------------------------
