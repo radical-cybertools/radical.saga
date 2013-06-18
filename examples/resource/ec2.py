@@ -18,7 +18,7 @@ This program has two modes of operation:
 
   starting VMs on EC2:
 
-    Usage:  python ec2.py -s
+    Usage:  python ec2.py -c / -u <id> / -d <id> 
     Output: available compute templates
             ['Micro Instance', 'Small Instance', 'Medium Instance', 'Large
               Instance', 'Extra Large Instance', 'High-Memory Extra Large
@@ -83,9 +83,9 @@ This program has two modes of operation:
 #
 # defines
 #
-START = 'start'
-RUN   = 'run'
-STOP  = 'stop'
+CREATE  = 'create'
+USE     = 'use'
+DESTROY = 'destroy'
 
 
 # ------------------------------------------------------------------------------
@@ -100,8 +100,8 @@ def usage (msg = None) :
     print """
     Usage:
 
-        %s -s             :  start a new VM
-        %s -r <id> [...]  :  run something on a VMs
+        %s -c             :  create a new VM
+        %s -u <id> [...]  :  use VMS: run a job
         %s -d <id> [...]  :  destroy specified VMs
 
     """
@@ -128,15 +128,16 @@ def state2str (state) :
 def main () :
     """
     scan argv
-    if  -s in argv:
+    if  -c in argv:
         create VM instance
-        run job on VM
         exit
-    if  -r in argv
+
+    if  -u in argv
         for each vm_id in argv
             connect to vm with id vm_id
             run job
         exit
+
     if  -d in argv
         for each vm_id in argv
             destroy vm instance
@@ -147,23 +148,23 @@ def main () :
     vm_ids = []
     args   = sys.argv[1:]
 
-    if  '-s' in args :
-        mode = START
-        args.remove ('-s')
+    if  '-c' in args :
+        mode = CREATE
+        args.remove ('-c')
         if  len (args) > 0 :
-            usage ("no additional args allowed on '-s'")
+            usage ("no additional args allowed on '-c'")
 
 
-    if  '-r' in args :
-        mode = RUN
-        args.remove ('-r')
+    if  '-u' in args :
+        mode = USE
+        args.remove ('-u')
         if  len (args) == 0 :
-            usage ("additional args required on '-r'")
+            usage ("additional args required on '-u'")
         # we may have VM IDs to connect to
         vm_ids = args
 
     if  '-d' in args :
-        mode = STOP
+        mode = DESTROY
         args.remove ('-d')
         if  len (args) == 0 :
             usage ("additional args required on '-d'")
@@ -202,7 +203,7 @@ def main () :
     crs = [] # list of compute resources
 
 
-    if  mode == START :
+    if  mode == CREATE :
 
         # we want to start a VM -- list the available VM templates
         print "\navailable compute templates"
@@ -233,7 +234,7 @@ def main () :
         crs.append (cr)
 
 
-    elif mode == RUN :
+    elif mode == USE :
 
         # we want to reconnect to running VMs, specified by their IDs
         for vm_id in vm_ids :
@@ -295,7 +296,7 @@ def main () :
 
 
 
-    else :  # mode == STOP
+    else :  # mode == DESTROY
 
         # we want to reconnect to running VMs, specified by their IDs
         for vm_id in vm_ids :
