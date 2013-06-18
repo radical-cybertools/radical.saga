@@ -142,6 +142,9 @@ class Adaptor (saga.adaptors.base.Base):
             else :
                 self.lc_has_footprint = True
 
+            # avoid the CA validation warning
+            self.lc.security.VERIFY_SSL_CERT = True
+
 
         except Exception as e :
             self._logger.warning ("Could not load libcloud module, "
