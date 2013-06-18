@@ -530,7 +530,6 @@ class Attributes (_AttributesBase) :
                 d['attributes'][key]['recursion'] = True
                 all_setter (key, val)
             except Exception as e :
-                print "setter exception: " + str(e)
                 # ignoring failures from setter
                 pass
             except Exception as e :
@@ -1837,6 +1836,8 @@ class Attributes (_AttributesBase) :
         are also deep copies of the respective attributes.  In accordance with
         GFD.90, the deep copy will ignore callbacks.  It will copy checks
         though, as the assumption is that value constraints stay valid.
+
+        Note that we don't copy private keys.
         """
 
         
@@ -1844,6 +1845,7 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init ()
 
         other_d = {}
+        orig_d  = other._attributes_t_init ()
 
         # for some reason, deep copy won't work on the 'attributes' dict, so we
         # do it manually.  Use the list copy c'tor to copy list elements.
@@ -1879,6 +1881,11 @@ class Attributes (_AttributesBase) :
             other_d['attributes'][key]['getter']       =       d['attributes'][key]['getter']
             other_d['attributes'][key]['last']         =       d['attributes'][key]['last']
             other_d['attributes'][key]['ttl']          =       d['attributes'][key]['ttl']
+
+            if d['attributes'][key]['private' ] :
+                # don't copy private keys
+                other_d['attributes'][key] = orig_d['attributes'][key]
+                continue
 
             if d['attributes'][key]['value' ] == None :
                 other_d['attributes'][key]['value'] = None
