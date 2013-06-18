@@ -197,13 +197,6 @@ def main () :
     s.contexts.append (c1)
     s.contexts.append (c2)
 
-    import pprint
-    print "\nContexts: "
-    print s
-    print '----------------'
-    sys.exit (0)
-
-
     # in this session, connect to the EC2 resource manager
     rm  = saga.resource.Manager ("ec2://aws.amazon.com/", session=s)
     crs = [] # list of compute resources
