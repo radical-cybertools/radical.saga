@@ -304,7 +304,7 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
         # nothing to do for simple ec2 id/secret containers
         # FIXME: we could in principle validate validity...
-        if  self._type == 'ec2' :
+        if  self._type.lower () == 'ec2' :
             return 
 
 
@@ -314,7 +314,7 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
         self.ec2_key = None
 
         for ctx in session.contexts :
-            if  ctx.type == 'ec2' :
+            if  ctx.type.lower () == 'ec2' :
                 self.ec2_id  = ctx.user_id
                 self.ec2_key = ctx.user_key
                 break # only need one of those...
@@ -440,7 +440,7 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
         self.driver  = None
         self.conn    = None
 
-        if  self.url.schema == 'ec2' :
+        if  self.url.schema.lower () == 'ec2' :
             if  self.url.host and \
                 self.url.host != 'aws.amazon.com' :
                 raise saga.BadParameter ("only amazon/EC2 supported (not %s)" \
@@ -512,7 +512,7 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
         # attribute as keypair name for node creation
         token = ''
         for context in self.session.contexts  :
-            if  context.type == 'ec2_keypair' :
+            if  context.type.lower () == 'ec2_keypair' :
                 token = context.token
                 self._logger.info ("using '%s' as ec2 keypair" % token)
        
@@ -525,7 +525,7 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
                 raise saga.BadParameter._log (self._logger, msg)
 
 
-        if  self.backend == 'amazon.ec2' :
+        if  self.backend.lower () == 'amazon.ec2' :
             # for amazon EC2, we only support template defined instances
             if  not rd.template :
                 raise saga.BadParameter ("no 'template' attribute in resource description")
