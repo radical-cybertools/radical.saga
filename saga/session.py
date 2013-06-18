@@ -43,15 +43,23 @@ class _ContextList (list) :
         if  not isinstance (ctx, saga.Context) :
             raise TypeError, "appended item is not a saga.Context instance"
 
-        # create a deep copy of the context
+        # create a deep copy of the context (this keeps _adaptor etc)
         ctx_clone = saga.Context  (ctx.type)
         ctx._attributes_deep_copy (ctx_clone)
 
-        # initialize the cloned context before adding
+        # from pudb import set_trace; set_trace()
+
+        # try to initialize that context, i.e. evaluate its attributes and
+        # infer additional runtime information as needed
         self.session._logger.debug ("adding  context : %s" \
                                  % (ctx_clone))
-        ctx_clone._initialize (self.session)
+        try :
+            ctx_clone._initialize (self.session)
+        except saga.exceptions.SagaException as e :
+            msg = "Cannot add context, initialization failed (%s)"  %  str(e)
+            raise saga.exceptions.BadParameter (msg)
 
+        # context initialized ok, add it to the list of known contexts
         super (_ContextList, self).append (ctx_clone)
 
 
@@ -86,6 +94,8 @@ class _DefaultSession (object) :
             for info in _engine._adaptor_registry['saga.Context'][schema] :
 
                 default_ctxs = info['adaptor_instance']._get_default_contexts()
+                # FIXME:
+                default_ctxs = []
                 for default_ctx in default_ctxs :
 
                     self.contexts.append (default_ctx)
@@ -190,18 +200,7 @@ class Session (saga.base.SimpleBase) :
         It is encouraged to use the L{contexts} property instead. 
         """
 
-        if ctx not in self.contexts :
-
-            # try to initialize that context, i.e. evaluate its attributes and
-            # infer additional runtime information as needed
-            try :
-                ctx._initialize (self)
-            except saga.exceptions.SagaException as e :
-                msg = "Cannot add context, initialization failed (%s)"  %  str(e)
-                raise saga.exceptions.BadParameter (msg)
-
-            # context initialized ok, add it to the session
-            self.contexts.append (ctx)
+        return self.contexts.append (ctx)
 
 
     # ----------------------------------------------------------------
