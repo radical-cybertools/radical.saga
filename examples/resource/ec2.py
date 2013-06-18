@@ -197,6 +197,9 @@ def main () :
     s.contexts.append (c1)
     s.contexts.append (c2)
 
+    print s
+    sys.exit ()
+
     # in this session, connect to the EC2 resource manager
     rm  = saga.resource.Manager ("ec2://aws.amazon.com/", session=s)
     crs = [] # list of compute resources

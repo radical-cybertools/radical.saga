@@ -180,7 +180,7 @@ class Session (saga.base.SimpleBase) :
     #
     @sus.takes   ('Session')
     @sus.returns (basestring)
-    def __str__(self):
+    def __str__  (self):
         """String represenation."""
 
         return "Registered contexts: %s" % (str(self.contexts))
@@ -188,9 +188,9 @@ class Session (saga.base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Session', 
-                  saga.context.Context)
-    @sus.returns (sus.nothing)
+    @sus.takes      ('Session', 
+                     saga.context.Context)
+    @sus.returns    (sus.nothing)
     def add_context (self, ctx) :
         """
         ctx:     saga.Context
