@@ -247,7 +247,7 @@ class PTYShell (object) :
                 self.run_async  ("unset PROMPT_COMMAND ; "
                                      + "PS1='PROMPT-$?->'; "
                                      + "PS2=''; "
-                                     + "export PS1 PS2\n")
+                                     + "export PS1 PS2 2>&1 >/dev/null; true\n")
                 self.set_prompt (new_prompt="PROMPT-(\d+)->$")
 
                 self.logger.debug ("got new shell prompt")
