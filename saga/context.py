@@ -113,7 +113,7 @@ class Context (sb.Base, sa.Attributes) :
         s = "{"
 
         for key in sorted (d.keys ()) :
-            if  key == 'UserPass' :
+            if  key == 'UserPass' and d[key] :
                 s += "'UserPass' : '%s'" % ('x'*len(d[key]))
             else :
                 s += "'%s' : '%s'" % (key, d[key])

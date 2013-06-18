@@ -259,7 +259,7 @@ class PTYShellFactory (object) :
 
                     # --------------------------------------------------------------
                     elif n == 1 :
-                        logger.info ("got passphrase prompt: %s" % match)
+                        logger.info ("got passphrase prompt : %s" % match)
 
                         start = string.find (match, "'", 0)
                         end   = string.find (match, "'", start+1)

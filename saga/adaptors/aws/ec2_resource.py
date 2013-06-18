@@ -197,7 +197,7 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
     *Version 2:* create (upload) a new keypair, and the use it
       - `Token`  : name of keypair to create   (required)
-      - `UserKey`: public  ssh key             (required)
+      - `UserKey`: private or public  ssh key  (required)
       - `UserID` : username on VM instance     (optional, default 'root') 
       - `Server` : authentication server host  (optional, default for Amazon)
 
@@ -208,6 +208,11 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
     a keypair with the given name already exists, an 'AlreadyExists' exception
     is raised.  All other errors with result in a `NoSuccess` exception.  If any
     error occurs, the context will not be added to the session.
+
+    The `UserKey` attribute can point to either the public or private key of the
+    ssh keypair -- the SAGA-Python implementation will internally complete the
+    repsective other key (public key file names are expected to be derived from
+    the private key, by appending the suffix `.pub`).
 
 
     Known Limitations
@@ -284,10 +289,24 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
     @SYNC_CALL
     def _initialize (self, session) :
 
+        # for backward compatibility, we allow to specify user_cert instead of
+        # user_key
+        if  self._api ().user_cert :
+            self._logger.error ('reset usercert')
+            self._api ().user_key  = self._api ().user_cert
+            self._api ().user_cert = None
+
+        # convert public key into private key
+        if  self._api ().user_key.endswith ('.pub') :
+            self._logger.error ('privatize pub key')
+            self._api ().user_key = self._api ().user_key[:-4]
+
+
+        # nothing to do for simple ec2 id/secret containers
+        # FIXME: we could in principle validate validity...
         if  self._type == 'ec2' :
-            # nothing to do for simple ec2 id/secret containers
-            # FIXME: we could in principle validate validity...
             return 
+
 
         # we have an ec2_keypair context.  We need to find an ec2  context in
         # the session though which we can use to talk to the backend
@@ -298,14 +317,15 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
             if  ctx.type == 'ec2' :
                 self.ec2_id  = ctx.user_id
                 self.ec2_key = ctx.user_key
+                break # only need one of those...
 
         if  not self.ec2_id or not self.ec2_key :
             raise saga.exceptions.AuthenticationFailed \
-                  ("cannot initialize 'ec2_keypair' withough ec2 context")
+                  ("no ec2 context -- cannot initialize ec2_keypair")
 
         if  not self._api ().token :
             raise saga.exceptions.BadParameter \
-                  ("'ec2_keypair' context must specify keypair name as 'Token'")
+                  ("`ec2_keypair` context must specify keypair name as `token`")
 
         # valid context, connect to backend  
         # FIXME: use 'Server' if defined
@@ -316,10 +336,14 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
         # and capturing an eventual exception.
         keypair = None
         token   = self._api ().token
+        ssh_id  = self._api ().user_id
         key     = self._api ().user_key
-        create  = False
+        keypass = self._api ().user_pass
 
+        # With theese information, attempt to verify or upload the keypair.
+        upload  = False
         try:
+            # try to find it
             keypair = conn.ex_describe_keypairs (token)
 
         except Exception as e :
@@ -333,14 +357,15 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
                           ("'ec2_keypair' not found: %s" % e)
 
                 # keypair not found, but we have a key, so we can register it!
-                create = True
+                upload = True
 
             else :
                 raise saga.exceptions.BadParameter \
-                      ("'ec2_keypair' not found: %s" % e)
+                      ("'ec2_keypair' invalid: %s" % e)
 
 
-        if  create and key :
+        # upload keypair if we did not find it, and have something to upload.
+        if  upload and key :
 
             self._logger.info ("import new keypair %s : %s" % (token, key))
 
@@ -349,32 +374,32 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
             except Exception as e :
                 raise saga.exceptions.BadParameter \
-                      ("'ec2_keypair' not found: %s" % e)
+                      ("'ec2_keypair' not imported: %s" % e)
 
             # import worked -- we don't need to import again, so unset the
             # user_key attribute
             self._api ().user_key = None
 
 
-        elif create and not key : 
-            self._logger.warning ("ignore 'UserKey' attribute for existing 'ec2_keypair'")
+        # did not find it, and have nothing to upload?!
+        elif upload and not key :
+            self._logger.error ("no 'UserKey' for ec2_keypair '%s'" % token)
+
+        # keypair found all right
+        else :
+            self._logger.info ("validated ec2_keypair '%s'" % token)
 
 
-        # *Version 1:* reference an existing (uploaded) keypair:
-        #   - `Token`  : name of keypair to be used  (required)
-        #   - `UserID` : username on VM instance     (optional, default 'root')
-        #   - `Server` : authentication server host  (optional, default for Amazon)
+        # we add the thusly derived ssh context to the session which originally
+        # contained our ec2_keypair context This will also verify and initialize
+        # the ssh key.  We do that even for failed uploads, in the hope that
+        # some out-of-band setup kicks in.
+        ssh_context           = saga.Context ('ssh')
+        ssh_context.user_key  = key
+        ssh_context.user_pass = keypass
+        ssh_context.user_id   = ssh_id
 
-        # *Version 2:* create (upload) a new keypair, and the use it
-        #   - `Token`  : name of keypair to create   (required)
-        #   - `UserKey`: public  ssh key             (required)
-        #   - `UserID` : username on VM instance     (optional, default 'root') 
-        #   - `Server` : authentication server host  (optional, default for Amazon)
-        #
-        
-
-
-
+        session.add_context (ssh_context)
 
 
 ###############################################################################
@@ -699,7 +724,6 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
 
         # eval id if given
         if  id :
-            # FIXME
             self.manager_url, self.rid = self._adaptor.parse_id (id)
             self.manager = saga.resource.Manager (self.manager_url)
 
