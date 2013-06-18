@@ -77,6 +77,10 @@ def main():
         print "  state  : %s (%s)" % (cr.state, cr.state_detail)
         print "  access : %s" % cr.access
 
+        # give the VM some time to start up comlpetely, otherwise the subsequent
+        # job submission might end up failing...
+        time.sleep(20)
+
         ######################################################################
         ##  STEP 2: Run a Job on the VM                                     ##
         ######################################################################
