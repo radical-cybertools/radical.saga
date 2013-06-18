@@ -19,6 +19,7 @@ __license__   = "MIT"
 import os
 import sys
 import saga
+import time
 
 import libcloud.security
 libcloud.security.VERIFY_SSL_CERT = False
