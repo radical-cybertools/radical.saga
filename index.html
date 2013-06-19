@@ -86,7 +86,7 @@
         <a href="./extend.html" >Extend</a>
       </li-->
       <li>
-        Version 0.9.6
+        Version 0.9.7
       </li>
     </ul>
   </div>
@@ -194,22 +194,32 @@ Last but not least, SAGA has brought music to many ears in the <a href="http://m
         <p class="marketing-byline">Extensible Connectivity Through Adaptors.</p>
 
         <p>Saga-python supports a wide range of distributed computing middleware 
-          and systems via a flexible <em>adaptor</em> architecture.</p>
+          and service via a flexible <em>adaptor</em> architecture.</p>
 
-        <p>The latest saga-python release install with the following adaptors:</p>
-        
-        <ul class="adaptors">
-          <li><a href="doc/adaptors/saga.adaptor.shell_job.html">SSH and GSISSH</a></li>
-          <li><a href="doc/adaptors/saga.adaptor.condorjob.html">Condor and Condor-G</a></li>
-          <li><a href="doc/adaptors/saga.adaptor.pbsjob.html">PBS and Torque</a></li>
-          <li><a href="doc/adaptors/saga.adaptor.sgejob.html">Sun Grid Engine</a></li>
-          <li><a href="doc/adaptors/saga.adaptor.slurm_job.html">SLURM</a></li>
-          <li><a href="doc/adaptors/saga.adaptor.shell_file.html">SFTP/GSIFTP</a></li>
-          <li><a href="doc/adaptors/saga.adaptor.http_file.html">HTTP/HTTPS</a></li>
+        <p>Job Submission Systems:
+          <ul class="adaptors">
+            <li><a href="doc/adaptors/saga.adaptor.shell_job.html">SSH and GSISSH</a></li>
+            <li><a href="doc/adaptors/saga.adaptor.condorjob.html">Condor and Condor-G</a></li>
+            <li><a href="doc/adaptors/saga.adaptor.pbsjob.html">PBS and Torque</a></li>
+            <li><a href="doc/adaptors/saga.adaptor.sgejob.html">Sun Grid Engine</a></li>
+            <li><a href="doc/adaptors/saga.adaptor.slurm_job.html">SLURM</a></li>
+          </ul>
+        </p>
 
-        </ul>
+        <p>File / Data Management:
+          <ul class="adaptors">
+            <li><a href="doc/adaptors/saga.adaptor.shell_file.html">SFTP/GSIFTP</a></li>
+            <li><a href="doc/adaptors/saga.adaptor.http_file.html">HTTP/HTTPS</a></li>
+          </ul>
+        </p>
 
-          <p>Adaptors for <a href="https://www.irods.org">iRODS</a> and <a href="http://libcloud.apache.org//">libcloud</a> are 
+        <p> Resource Management / Clouds:
+          <ul class="adaptors">
+            <li><a href="doc/adaptors/saga.adaptor.ec2_resource.html">EC2 (libcloud)</a></li>
+          </ul>
+        </p>
+
+          <p>An Adaptor for <a href="https://www.irods.org">iRODS</a> is 
             currently under development and will be part of one of the next releases</p>
 
           <p>Besides mapping the heterogeneous backend interfaces to the SAGA

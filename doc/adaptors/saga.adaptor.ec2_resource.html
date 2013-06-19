@@ -1,0 +1,421 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>8. saga.adaptor.ec2_resource &mdash; SAGA 0.9.7 documentation</title>
+
+<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
+
+
+    
+    <link rel="stylesheet" href="../_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.7',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../_static/searchtools.js"></script>
+    <link rel="top" title="SAGA 0.9.7 documentation" href="../index.html" />
+    <link rel="up" title="4. Adaptors" href="saga.adaptor.index.html" />
+    <link rel="next" title="5. Developer Documentation" href="../developers/index.html" />
+    <link rel="prev" title="7. saga.adaptor.http_file" href="saga.adaptor.http_file.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../developers/index.html" title="5. Developer Documentation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.http_file.html" title="7. saga.adaptor.http_file"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" accesskey="U">4. Adaptors</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="saga-adaptor-ec2-resource">
+<h1>8. saga.adaptor.ec2_resource<a class="headerlink" href="#saga-adaptor-ec2-resource" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>8.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>The EC2 resource adaptor. This adaptor interacts with a variety of
+IaaS backends via the Apache LibCloud.  It also provides EC2 related
+context types.</p>
+</div>
+<div class="section" id="supported-schemas">
+<h2>8.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<p>This adaptor is triggered by the following URL schemes:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="29%" />
+<col width="71%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">schema</th>
+<th class="head">description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><strong>ec2://</strong></td>
+<td>Amacon EC2 key/secret</td>
+</tr>
+<tr class="row-odd"><td><strong>ec2_keypair://</strong></td>
+<td>Amacon EC2 keypair name</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="example">
+<h2>8.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Ole Weidner&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
+<span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
+<span class="sd">&quot;&quot;&quot; This is an example which shows how to access Amazon EC2 clouds via the SAGA</span>
+<span class="sd">    resource package.</span>
+
+<span class="sd">    In order to run this example, you need to set the following environment</span>
+<span class="sd">    variables:</span>
+
+<span class="sd">    * EC2_ID:           Your Amazon EC2 ID</span>
+<span class="sd">    * EC2_KEY:          You Amazon EC2 KEY</span>
+<span class="sd">    * EC2_SSH_KEYPAIR:  The SSH keypair you want to use to access the VM, e.g.,</span>
+<span class="sd">                        /home/username/.ssh/rsa_ec2</span>
+<span class="sd">                        (You can create a new temporary one using &#39;ssh-keygen&#39;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">saga</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">libcloud.security</span>
+<span class="n">libcloud</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">VERIFY_SSL_CERT</span> <span class="o">=</span> <span class="bp">False</span>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+
+    <span class="c"># In order to connect to EC2, we need an EC2 ID and KEY. We read those</span>
+    <span class="c"># from the environment.</span>
+    <span class="n">ec2_ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&#39;EC2&#39;</span><span class="p">)</span>
+    <span class="n">ec2_ctx</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;EC2_ID&#39;</span><span class="p">]</span>
+    <span class="n">ec2_ctx</span><span class="o">.</span><span class="n">user_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;EC2_KEY&#39;</span><span class="p">]</span>
+
+    <span class="c"># The SSH keypair we want to use the access the EC2 VM. If the keypair is</span>
+    <span class="c"># not yet registered on EC2 saga will register it automatically.</span>
+    <span class="n">ec2keypair_ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&#39;EC2_KEYPAIR&#39;</span><span class="p">)</span>
+    <span class="n">ec2keypair_ctx</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="s">&#39;TODO&#39;</span>  <span class="c"># keypair name</span>
+    <span class="n">ec2keypair_ctx</span><span class="o">.</span><span class="n">user_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;EC2_SSH_KEYPAIR&#39;</span><span class="p">]</span>
+    <span class="n">ec2keypair_ctx</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="s">&#39;root&#39;</span>  <span class="c"># the user id on the target VM</span>
+
+    <span class="c"># TODO</span>
+    <span class="n">ssh_ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&#39;SSH&#39;</span><span class="p">)</span>
+    <span class="n">ssh_ctx</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="s">&#39;root&#39;</span>
+    <span class="n">ssh_ctx</span><span class="o">.</span><span class="n">user_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;EC2_SSH_KEYPAIR&#39;</span><span class="p">]</span>
+
+    <span class="n">session</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>  <span class="c"># FALSE: don&#39;t use other (default) contexts</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ec2_ctx</span><span class="p">)</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ec2keypair_ctx</span><span class="p">)</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ssh_ctx</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c">######################################################################</span>
+        <span class="c">##  STEP 1: Start a VM on EC2                                       ##</span>
+        <span class="c">######################################################################</span>
+
+        <span class="c"># in this session, connect to the EC2 resource manager</span>
+        <span class="n">rm</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">Manager</span><span class="p">(</span><span class="s">&quot;ec2://aws.amazon.com/&quot;</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+
+        <span class="c"># Create a resource description with an image and an OS template,.</span>
+        <span class="c"># We pick a small VM and a plain Ubuntu image...</span>
+        <span class="n">cd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">ComputeDescription</span><span class="p">()</span>
+        <span class="n">cd</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="s">&#39;ami-0256b16b&#39;</span>
+        <span class="n">cd</span><span class="o">.</span><span class="n">template</span> <span class="o">=</span> <span class="s">&#39;Small Instance&#39;</span>
+
+        <span class="c"># Create a VM instance from that description.</span>
+        <span class="n">cr</span> <span class="o">=</span> <span class="n">rm</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">cd</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Waiting for VM to become active...&quot;</span>
+
+        <span class="c"># Wait for the VM to &#39;boot up&#39;, i.e., become &#39;ACTIVE&#39;</span>
+        <span class="k">if</span> <span class="n">cr</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="n">saga</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">ACTIVE</span><span class="p">:</span>
+            <span class="n">cr</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">ACTIVE</span><span class="p">)</span>
+
+        <span class="c"># Query some information about the newly created VM</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Created VM: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cr</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">print</span> <span class="s">&quot;  state  : </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cr</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">cr</span><span class="o">.</span><span class="n">state_detail</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;  access : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cr</span><span class="o">.</span><span class="n">access</span>
+
+        <span class="c"># give the VM some time to start up comlpetely, otherwise the subsequent</span>
+        <span class="c"># job submission might end up failing...</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+
+        <span class="c">######################################################################</span>
+        <span class="c">##  STEP 2: Run a Job on the VM                                     ##</span>
+        <span class="c">######################################################################</span>
+
+        <span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="n">cr</span><span class="o">.</span><span class="n">access</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+
+        <span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/sleep&#39;</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;30&#39;</span><span class="p">]</span>
+
+        <span class="n">job</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+        <span class="n">job</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Running Job: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">print</span> <span class="s">&quot;  state : </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">job</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+        <span class="k">print</span> <span class="s">&quot;  state : </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">SagaException</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="c"># Catch all saga exceptions</span>
+        <span class="k">print</span> <span class="s">&quot;An exception occured: (</span><span class="si">%s</span><span class="s">) </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)))</span>
+        <span class="c"># Trace back the exception. That can be helpful for debugging.</span>
+        <span class="k">print</span> <span class="s">&quot; </span><span class="se">\n</span><span class="s">*** Backtrace:</span><span class="se">\n</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ex</span><span class="o">.</span><span class="n">traceback</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">finally</span><span class="p">:</span>
+
+        <span class="c">######################################################################</span>
+        <span class="c">##  STEP 2: Shut down the VM                                        ##</span>
+        <span class="c">######################################################################</span>
+
+        <span class="n">cr</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Destroyed VM: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cr</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">print</span> <span class="s">&quot;  state : </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cr</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">cr</span><span class="o">.</span><span class="n">state_detail</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="configuration-options">
+<h2>8.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<p>Configuration options can be used to control the adaptor&#8217;s runt    ime behavior. Most adaptors don&#8217;t need any configuration options to b    e set in order to work. They are mostly for controlling experimental feat    ures and properties of the adaptors.</p>
+<blockquote>
+<div></div></blockquote>
+<div class="section" id="enabled">
+<h3>8.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<p>enable / disable saga.adaptor.ec2_resource adaptor</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>type</strong> : &lt;type &#8216;bool&#8217;&gt;</li>
+<li><strong>default</strong> : True</li>
+<li><strong>environment</strong> : None</li>
+<li><strong>valid options</strong> : [True, False]</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="capabilities">
+<h2>8.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="supported-monitorable-metrics">
+<h3>8.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>State</li>
+<li>StateDetail</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="supported-context-types">
+<h3>8.5.2. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Attribute</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference internal" href="../library/context.html#security-contexts"><em>Security Contexts</em></a> : ec2_keypair</td>
+<td>ec2 keypair for node access</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="../library/context.html#security-contexts"><em>Security Contexts</em></a> : ec2</td>
+<td>EC2 ID and Secret</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="res-attributes">
+<h3>8.5.3. res_attributes<a class="headerlink" href="#res-attributes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>Rtype</li>
+<li>Template</li>
+<li>Image</li>
+<li>MachineOS</li>
+<li>MachineArch</li>
+<li>Size</li>
+<li>Memory</li>
+<li>Access</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="rdes-attributes">
+<h3>8.5.4. rdes_attributes<a class="headerlink" href="#rdes-attributes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>Rtype</li>
+<li>Template</li>
+<li>Image</li>
+<li>MachineOS</li>
+<li>MachineArch</li>
+<li>Size</li>
+<li>Memory</li>
+<li>Access</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="supported-api-classes">
+<h2>8.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>This adaptor supports the following API classes:</dt>
+<dd><ul class="first last simple">
+<li><tt class="xref py py-class docutils literal"><span class="pre">saga.Context</span></tt></li>
+<li><a class="reference internal" href="../library/resource/index.html#saga.resource.Manager" title="saga.resource.Manager"><tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Manager</span></tt></a></li>
+<li><tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Compute</span></tt></li>
+</ul>
+</dd>
+</dl>
+<p>Method implementation details are listed below.</p>
+<div class="section" id="saga-context">
+<h3>8.6.1. saga.Context<a class="headerlink" href="#saga-context" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="saga-resource-manager">
+<h3>8.6.2. saga.resource.Manager<a class="headerlink" href="#saga-resource-manager" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="saga-resource-compute">
+<h3>8.6.3. saga.resource.Compute<a class="headerlink" href="#saga-resource-compute" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">8. saga.adaptor.ec2_resource</a><ul>
+<li><a class="reference internal" href="#description">8.1. Description</a></li>
+<li><a class="reference internal" href="#supported-schemas">8.2. Supported Schemas</a></li>
+<li><a class="reference internal" href="#example">8.3. Example</a></li>
+<li><a class="reference internal" href="#configuration-options">8.4. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">8.4.1. enabled</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#capabilities">8.5. Capabilities</a><ul>
+<li><a class="reference internal" href="#supported-monitorable-metrics">8.5.1. Supported Monitorable Metrics</a></li>
+<li><a class="reference internal" href="#supported-context-types">8.5.2. Supported Context Types</a></li>
+<li><a class="reference internal" href="#res-attributes">8.5.3. res_attributes</a></li>
+<li><a class="reference internal" href="#rdes-attributes">8.5.4. rdes_attributes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#supported-api-classes">8.6. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-context">8.6.1. saga.Context</a></li>
+<li><a class="reference internal" href="#saga-resource-manager">8.6.2. saga.resource.Manager</a></li>
+<li><a class="reference internal" href="#saga-resource-compute">8.6.3. saga.resource.Compute</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="saga.adaptor.http_file.html"
+                        title="previous chapter">7. saga.adaptor.http_file</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../developers/index.html"
+                        title="next chapter">5. Developer Documentation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/adaptors/saga.adaptor.ec2_resource.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../developers/index.html" title="5. Developer Documentation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.http_file.html" title="7. saga.adaptor.http_file"
+             >previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" >4. Adaptors</a> &raquo;</li> 
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2012, The SAGA Project.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+
+
+
+  </body>
+</html>

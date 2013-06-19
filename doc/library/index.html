@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>3. Library Reference &mdash; SAGA 0.9.6 documentation</title>
+    <title>3. Library Reference &mdash; SAGA 0.9.7 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.6',
+        VERSION:     '0.9.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,9 +31,9 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.6 documentation" href="../index.html" />
-    <link rel="next" title="3.1. Working with Jobs" href="job/index.html" />
-    <link rel="prev" title="2.5. Part 5: A More Complex Example: Mandelbrot" href="../tutorial/part5.html" /> 
+    <link rel="top" title="SAGA 0.9.7 documentation" href="../index.html" />
+    <link rel="next" title="1. Working with Jobs" href="job/index.html" />
+    <link rel="prev" title="5. Part 5: A More Complex Example: Mandelbrot" href="../tutorial/part5.html" /> 
   </head>
   <body>
     <div class="related">
@@ -46,12 +46,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="job/index.html" title="3.1. Working with Jobs"
+          <a href="job/index.html" title="1. Working with Jobs"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../tutorial/part5.html" title="2.5. Part 5: A More Complex Example: Mandelbrot"
+          <a href="../tutorial/part5.html" title="5. Part 5: A More Complex Example: Mandelbrot"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -65,47 +65,49 @@
 <p>Intro library reference...</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="job/index.html">3.1. Working with Jobs</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="job/index.html#job-service-saga-job-service">3.1.1. Job Service &#8211; <tt class="docutils literal"><span class="pre">saga.job.Service</span></tt></a></li>
-<li class="toctree-l2"><a class="reference internal" href="job/index.html#job-description-saga-job-description">3.1.2. Job Description &#8211; <tt class="docutils literal"><span class="pre">saga.job.Description</span></tt></a></li>
-<li class="toctree-l2"><a class="reference internal" href="job/index.html#jobs-saga-job-job">3.1.3. Jobs &#8211; <tt class="docutils literal"><span class="pre">saga.job.Job</span></tt></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="job/index.html#attributes">3.1.3.1. Attributes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="job/index.html#states">3.1.3.2. States</a></li>
-<li class="toctree-l3"><a class="reference internal" href="job/index.html#metrics">3.1.3.3. Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job/index.html">1. Working with Jobs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="job/index.html#job-service-saga-job-service">1.1. Job Service &#8211; <tt class="docutils literal"><span class="pre">saga.job.Service</span></tt></a></li>
+<li class="toctree-l2"><a class="reference internal" href="job/index.html#job-description-saga-job-description">1.2. Job Description &#8211; <tt class="docutils literal"><span class="pre">saga.job.Description</span></tt></a></li>
+<li class="toctree-l2"><a class="reference internal" href="job/index.html#jobs-saga-job-job">1.3. Jobs &#8211; <tt class="docutils literal"><span class="pre">saga.job.Job</span></tt></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="job/index.html#attributes">1.3.1. Attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="job/index.html#states">1.3.2. States</a></li>
+<li class="toctree-l3"><a class="reference internal" href="job/index.html#metrics">1.3.3. Metrics</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="job/index.html#job-containers-saga-job-container">3.1.4. Job Containers &#8211; <tt class="docutils literal"><span class="pre">saga.job.Container</span></tt></a></li>
+<li class="toctree-l2"><a class="reference internal" href="job/index.html#job-containers-saga-job-container">1.4. Job Containers &#8211; <tt class="docutils literal"><span class="pre">saga.job.Container</span></tt></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="filesystem/index.html">3.2. Working with Files and Directories</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="filesystem/index.html#introduction">3.2.1. Introduction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="filesystem/index.html#file-saga-filesystem-file">3.2.2. File &#8211; <tt class="docutils literal"><span class="pre">saga.filesystem.File</span></tt></a></li>
-<li class="toctree-l2"><a class="reference internal" href="filesystem/index.html#directory-saga-filesystem-directory">3.2.3. Directory &#8211; <tt class="docutils literal"><span class="pre">saga.filesystem.Directory</span></tt></a></li>
+<li class="toctree-l1"><a class="reference internal" href="filesystem/index.html">2. Working with Files and Directories</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="filesystem/index.html#introduction">2.1. Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filesystem/index.html#file-saga-filesystem-file">2.2. File &#8211; <tt class="docutils literal"><span class="pre">saga.filesystem.File</span></tt></a></li>
+<li class="toctree-l2"><a class="reference internal" href="filesystem/index.html#directory-saga-filesystem-directory">2.3. Directory &#8211; <tt class="docutils literal"><span class="pre">saga.filesystem.Directory</span></tt></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="url.html">3.3. Using URLs</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="url.html#url-saga-url">3.3.1. Url &#8211; <tt class="docutils literal"><span class="pre">saga.Url</span></tt></a></li>
+<li class="toctree-l1"><a class="reference internal" href="url.html">3. Using URLs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="url.html#url-saga-url">3.1. Url &#8211; <tt class="docutils literal"><span class="pre">saga.Url</span></tt></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="context.html">3.4. Security Contexts</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="context.html#module-saga.context">3.4.1. Context Class &#8211; <tt class="docutils literal"><span class="pre">saga.context</span></tt></a></li>
-<li class="toctree-l2"><a class="reference internal" href="context.html#userpass-context">3.4.2. UserPass Context</a></li>
-<li class="toctree-l2"><a class="reference internal" href="context.html#ssh-context">3.4.3. SSH Context</a></li>
-<li class="toctree-l2"><a class="reference internal" href="context.html#x-509-context">3.4.4. X.509 Context</a></li>
-<li class="toctree-l2"><a class="reference internal" href="context.html#myproxy-context">3.4.5. MyProxy Context</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html">4. Security Contexts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="context.html#module-saga.context">4.1. Context Class &#8211; <tt class="docutils literal"><span class="pre">saga.context</span></tt></a></li>
+<li class="toctree-l2"><a class="reference internal" href="context.html#userpass-context">4.2. UserPass Context</a></li>
+<li class="toctree-l2"><a class="reference internal" href="context.html#ssh-context">4.3. SSH Context</a></li>
+<li class="toctree-l2"><a class="reference internal" href="context.html#x-509-context">4.4. X.509 Context</a></li>
+<li class="toctree-l2"><a class="reference internal" href="context.html#myproxy-context">4.5. MyProxy Context</a></li>
+<li class="toctree-l2"><a class="reference internal" href="context.html#ec2-context">4.6. EC2 Context</a></li>
+<li class="toctree-l2"><a class="reference internal" href="context.html#ec2-keypair-context">4.7. EC2_KEYPAIR Context</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="session.html">3.5. Sessions</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="session.html#module-saga.session">3.5.1. Session &#8211; <tt class="docutils literal"><span class="pre">saga.session</span></tt></a></li>
+<li class="toctree-l1"><a class="reference internal" href="session.html">5. Sessions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="session.html#module-saga.session">5.1. Session &#8211; <tt class="docutils literal"><span class="pre">saga.session</span></tt></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="attribute.html">3.6. Attributes and Callbacks</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="attribute.html#callbacks-saga-callback">3.6.1. Callbacks &#8211; <tt class="docutils literal"><span class="pre">saga.Callback</span></tt></a></li>
-<li class="toctree-l2"><a class="reference internal" href="attribute.html#attribute-saga-attributes">3.6.2. Attribute &#8211; <tt class="docutils literal"><span class="pre">saga.Attributes</span></tt></a></li>
+<li class="toctree-l1"><a class="reference internal" href="attribute.html">6. Attributes and Callbacks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="attribute.html#callbacks-saga-callback">6.1. Callbacks &#8211; <tt class="docutils literal"><span class="pre">saga.Callback</span></tt></a></li>
+<li class="toctree-l2"><a class="reference internal" href="attribute.html#attribute-saga-attributes">6.2. Attribute &#8211; <tt class="docutils literal"><span class="pre">saga.Attributes</span></tt></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="exceptions.html">3.7. Exception Handling</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="exceptions.html#module-saga.exceptions">3.7.1. Exceptions &#8211; <tt class="docutils literal"><span class="pre">saga.exceptions</span></tt></a></li>
+<li class="toctree-l1"><a class="reference internal" href="exceptions.html">7. Exception Handling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="exceptions.html#module-saga.exceptions">7.1. Exceptions &#8211; <tt class="docutils literal"><span class="pre">saga.exceptions</span></tt></a></li>
 </ul>
 </li>
 </ul>
@@ -120,10 +122,10 @@
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
   <p class="topless"><a href="../tutorial/part5.html"
-                        title="previous chapter">2.5. Part 5: A More Complex Example: Mandelbrot</a></p>
+                        title="previous chapter">5. Part 5: A More Complex Example: Mandelbrot</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="job/index.html"
-                        title="next chapter">3.1. Working with Jobs</a></p>
+                        title="next chapter">1. Working with Jobs</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/library/index.txt"
@@ -156,12 +158,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="job/index.html" title="3.1. Working with Jobs"
+          <a href="job/index.html" title="1. Working with Jobs"
              >next</a> |</li>
         <li class="right" >
-          <a href="../tutorial/part5.html" title="2.5. Part 5: A More Complex Example: Mandelbrot"
+          <a href="../tutorial/part5.html" title="5. Part 5: A More Complex Example: Mandelbrot"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">

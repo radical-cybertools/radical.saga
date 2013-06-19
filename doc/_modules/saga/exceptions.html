@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.exceptions &mdash; SAGA 0.9.6 documentation</title>
+    <title>saga.exceptions &mdash; SAGA 0.9.7 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.6',
+        VERSION:     '0.9.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.6 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.7 documentation" href="../../index.html" />
     <link rel="up" title="saga" href="../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -67,10 +67,20 @@
 <span class="kn">import</span> <span class="nn">weakref</span>
 <span class="kn">import</span> <span class="nn">operator</span>
 
-<span class="kn">import</span> <span class="nn">saga.utils.exception</span>
+<span class="kn">import</span> <span class="nn">saga.utils.exception</span>  <span class="kn">as</span> <span class="nn">sue</span>
+
+<span class="c"># We have the choice of doing signature checks in exceptions, or to raise saga</span>
+<span class="c"># exceptions on signature checks -- we cannot do both.  At this point, we use</span>
+<span class="c"># the saga.exceptions in signatures, thus can *not* have signature checks</span>
+<span class="c"># here...</span>
+<span class="c">#</span>
+<span class="c"># import saga.utils.signatures as sus</span>
+<span class="c"># import saga.base             as sb</span>
 
 
-<span class="k">class</span> <span class="nc">SagaException</span><span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">ExceptionBase</span><span class="p">):</span>
+<span class="c"># ------------------------------------------------------------------------------</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">SagaException</span> <span class="p">(</span><span class="n">sue</span><span class="o">.</span><span class="n">ExceptionBase</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="SagaException"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The Exception class encapsulates information about error conditions</span>
 <span class="sd">    encountered in SAGA.</span>
@@ -101,8 +111,12 @@
 <span class="sd">    the rank, the better defined / known is the cause of the problem.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
+  <span class="c"># @sus.takes   (&#39;SagaException&#39;, </span>
+  <span class="c">#               basestring, </span>
+  <span class="c">#               sus.optional (sb.Base))</span>
+  <span class="c"># @sus.returns (sus.nothing)</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">api_object</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">        Create a new exception object.</span>
@@ -111,22 +125,24 @@
 <span class="sd">        :param object:  The object that has caused the exception, default is</span>
 <span class="sd">                        None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">ExceptionBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">sue</span><span class="o">.</span><span class="n">ExceptionBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_type</span>          <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_message</span>       <span class="o">=</span> <span class="n">message</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_messages</span>      <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_message</span> <span class="p">()]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_exceptions</span>    <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_top_exception</span> <span class="o">=</span> <span class="bp">self</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_traceback</span>     <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">get_traceback</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_traceback</span>     <span class="o">=</span> <span class="n">sue</span><span class="o">.</span><span class="n">get_traceback</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">api_object</span> <span class="p">:</span> 
             <span class="bp">self</span><span class="o">.</span><span class="n">_object</span>    <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span> <span class="p">(</span><span class="n">api_object</span><span class="p">)</span>
         <span class="k">else</span> <span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_object</span>    <span class="o">=</span> <span class="bp">None</span>
 
-    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
+  <span class="c"># @sus.takes   (&#39;SagaException&#39;)</span>
+  <span class="c"># @sus.returns (&#39;SagaException&#39;)</span>
     <span class="k">def</span> <span class="nf">_clone</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot; This method is used internally -- see :func:`_get_exception_stack`.&quot;&quot;&quot;</span>
 
@@ -139,31 +155,39 @@
         <span class="k">return</span> <span class="n">clone</span>
 
 
-    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
+  <span class="c"># @sus.takes   (&#39;SagaException&#39;)</span>
+  <span class="c"># @sus.returns (basestring)</span>
     <span class="k">def</span> <span class="nf">get_message</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="SagaException.get_message"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_message">[docs]</a>        <span class="sd">&quot;&quot;&quot; Return the exception message as a string.  That message is also</span>
 <span class="sd">        available via the &#39;message&#39; property.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_message</span><span class="p">)</span>
 
 
-    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
+  <span class="c"># @sus.takes   (&#39;SagaException&#39;)</span>
+  <span class="c"># @sus.returns (basestring)</span>
     <span class="k">def</span> <span class="nf">_get_plain_message</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
         <span class="sd">&quot;&quot;&quot; Return the plain error message as a string. &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_message</span>
 
 
-    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
+  <span class="c"># @sus.takes   (&#39;SagaException&#39;)</span>
+  <span class="c"># @sus.returns (basestring)</span>
     <span class="k">def</span> <span class="nf">get_type</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <div class="viewcode-block" id="SagaException.get_type"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_type">[docs]</a>        <span class="sd">&quot;&quot;&quot; Return the type of the exception as string.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_type</span>
 
 
-    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
+  <span class="c"># @sus.takes   (&#39;SagaException&#39;)</span>
+  <span class="c"># @sus.returns (sb.Base)</span>
     <span class="k">def</span> <span class="nf">get_object</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
 <div class="viewcode-block" id="SagaException.get_object"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_object">[docs]</a>        <span class="sd">&quot;&quot;&quot; Return the object that raised this exception. An object may not</span>
 <span class="sd">        always be available -- for example, exceptions raised during object</span>
@@ -184,8 +208,11 @@
         <span class="k">return</span> <span class="n">o</span>
 
 
-    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
+  <span class="c"># @sus.takes   (&#39;SagaException&#39;, </span>
+  <span class="c">#               &#39;SagaException&#39;)</span>
+  <span class="c"># @sus.returns (sb.Base)</span>
     <span class="k">def</span> <span class="nf">_add_exception</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">:</span></div>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Some sub-operation raised a SAGA exception, but other exceptions may</span>
@@ -205,8 +232,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_top_exception</span> <span class="o">=</span> <span class="n">e</span>
 
 
-    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
+  <span class="c"># @sus.takes   (&#39;SagaException&#39;)</span>
+  <span class="c"># @sus.returns (&#39;SagaException&#39;)</span>
     <span class="k">def</span> <span class="nf">_get_exception_stack</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">        This method is internally used by the saga-python engine, and is only</span>
@@ -234,20 +263,26 @@
         <span class="k">return</span> <span class="n">clone</span>
 
                 
-    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
+  <span class="c"># @sus.takes   (&#39;SagaException&#39;)</span>
+  <span class="c"># @sus.returns (sus.list_of (&#39;SagaException&#39;))</span>
     <span class="k">def</span> <span class="nf">get_all_exceptions</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="SagaException.get_all_exceptions"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_all_exceptions">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exceptions</span>
 
 
-    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
+  <span class="c"># @sus.takes   (&#39;SagaException&#39;)</span>
+  <span class="c"># @sus.returns (sus.list_of (basestring))</span>
     <span class="k">def</span> <span class="nf">get_all_messages</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
 <div class="viewcode-block" id="SagaException.get_all_messages"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.SagaException.get_all_messages">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_messages</span>
 
 
-    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
+  <span class="c"># @sus.takes   (&#39;SagaException&#39;)</span>
+  <span class="c"># @sus.returns (basestring)</span>
     <span class="k">def</span> <span class="nf">__str__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span> <span class="p">()</span>
 
@@ -260,18 +295,22 @@
     <span class="n">messages</span>       <span class="o">=</span> <span class="nb">property</span> <span class="p">(</span><span class="n">get_all_messages</span><span class="p">)</span>    <span class="c"># list [string]</span>
 
 
-<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">NotImplemented</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span></div>
 <div class="viewcode-block" id="NotImplemented"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.NotImplemented">[docs]</a>    <span class="sd">&quot;&quot;&quot; SAGA-Python does not implement this method or class. (rank: 11)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">11</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
-        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+  <span class="c"># @sus.takes   (&#39;NotImplemented&#39;, </span>
+  <span class="c">#               basestring, </span>
+  <span class="c">#               sus.optional (sb.Base))</span>
+  <span class="c"># @sus.returns (sus.nothing)</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="p">)</span>
 
 
-<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">IncorrectURL</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
 <div class="viewcode-block" id="IncorrectURL"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.IncorrectURL">[docs]</a>    <span class="sd">&quot;&quot;&quot; The given URL could not be interpreted, for example due to an incorrect</span>
@@ -279,106 +318,149 @@
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">10</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
-        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+  <span class="c"># @sus.takes   (&#39;IncorrectUrl&#39;, </span>
+  <span class="c">#               basestring, </span>
+  <span class="c">#               sus.optional (sb.Base))</span>
+  <span class="c"># @sus.returns (sus.nothing)</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="p">)</span>
 
 
-<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">BadParameter</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
 <div class="viewcode-block" id="BadParameter"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.BadParameter">[docs]</a>    <span class="sd">&quot;&quot;&quot; A given parameter is out of bound or ill formatted. (rank: 9)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">9</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
-        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+  <span class="c"># @sus.takes   (&#39;BadParameter&#39;, </span>
+  <span class="c">#               basestring, </span>
+  <span class="c">#               sus.optional (sb.Base))</span>
+  <span class="c"># @sus.returns (sus.nothing)</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="p">)</span>
 
 
-<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">AlreadyExists</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
 <div class="viewcode-block" id="AlreadyExists"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.AlreadyExists">[docs]</a>    <span class="sd">&quot;&quot;&quot; The entity to be created already exists. (rank: 8)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">8</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
-        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+  <span class="c"># @sus.takes   (&#39;AlreadyExists&#39;, </span>
+  <span class="c">#               basestring, </span>
+  <span class="c">#               sus.optional (sb.Base))</span>
+  <span class="c"># @sus.returns (sus.nothing)</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="p">)</span>
 
 
-<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">DoesNotExist</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span></div>
 <div class="viewcode-block" id="DoesNotExist"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.DoesNotExist">[docs]</a>    <span class="sd">&quot;&quot;&quot; An operation tried to access a non-existing entity. (rank: 7)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">7</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
-        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+  <span class="c"># @sus.takes   (&#39;DoesNotExist&#39;, </span>
+  <span class="c">#               basestring, </span>
+  <span class="c">#               sus.optional (sb.Base))</span>
+  <span class="c"># @sus.returns (sus.nothing)</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="p">)</span>
 
 
-<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">IncorrectState</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
 <div class="viewcode-block" id="IncorrectState"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.IncorrectState">[docs]</a>    <span class="sd">&quot;&quot;&quot; The operation is not allowed on the entity in its current state. (rank: 6)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">6</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
-        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+  <span class="c"># @sus.takes   (&#39;IncorrestState&#39;, </span>
+  <span class="c">#               basestring, </span>
+  <span class="c">#               sus.optional (sb.Base))</span>
+  <span class="c"># @sus.returns (sus.nothing)</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="p">)</span>
 
 
-<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">PermissionDenied</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
 <div class="viewcode-block" id="PermissionDenied"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.PermissionDenied">[docs]</a>    <span class="sd">&quot;&quot;&quot; The used identity is not permitted to perform the requested operation. (rank: 5)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">5</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
-        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+  <span class="c"># @sus.takes   (&#39;PermissionDenied&#39;, </span>
+  <span class="c">#               basestring, </span>
+  <span class="c">#               sus.optional (sb.Base))</span>
+  <span class="c"># @sus.returns (sus.nothing)</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="p">)</span>
 
 
-<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">AuthorizationFailed</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
 <div class="viewcode-block" id="AuthorizationFailed"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.AuthorizationFailed">[docs]</a>    <span class="sd">&quot;&quot;&quot; The backend could not establish a valid identity. (rank: 4)&quot;&quot;&quot;</span>
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">4</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
-        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+  <span class="c"># @sus.takes   (&#39;AuthorizationFailed&#39;, </span>
+  <span class="c">#               basestring, </span>
+  <span class="c">#               sus.optional (sb.Base))</span>
+  <span class="c"># @sus.returns (sus.nothing)</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="p">)</span>
 
 
-<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">AuthenticationFailed</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
 <div class="viewcode-block" id="AuthenticationFailed"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.AuthenticationFailed">[docs]</a>    <span class="sd">&quot;&quot;&quot; The backend could not establish a valid identity. (rank: 3)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">3</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
-        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+  <span class="c"># @sus.takes   (&#39;AuthenticationFailed&#39;, </span>
+  <span class="c">#               basestring, </span>
+  <span class="c">#               sus.optional (sb.Base))</span>
+  <span class="c"># @sus.returns (sus.nothing)</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="p">)</span>
 
 
-<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">Timeout</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
 <div class="viewcode-block" id="Timeout"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.Timeout">[docs]</a>    <span class="sd">&quot;&quot;&quot; The interaction with the backend times out. (rank: 2)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">2</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
-        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+  <span class="c"># @sus.takes   (&#39;Timeout&#39;, </span>
+  <span class="c">#               basestring, </span>
+  <span class="c">#               sus.optional (sb.Base))</span>
+  <span class="c"># @sus.returns (sus.nothing)</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="p">)</span>
 
 
-<span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">NoSuccess</span><span class="p">(</span><span class="n">SagaException</span><span class="p">):</span> </div>
 <div class="viewcode-block" id="NoSuccess"><a class="viewcode-back" href="../../library/exceptions.html#saga.exceptions.NoSuccess">[docs]</a>    <span class="sd">&quot;&quot;&quot; Some other error occurred. (rank: 1)&quot;&quot;&quot;</span>
 
     <span class="n">_rank</span> <span class="o">=</span> <span class="mi">1</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
-        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+  <span class="c"># @sus.takes   (&#39;NoSuccess&#39;, </span>
+  <span class="c">#               basestring, </span>
+  <span class="c">#               sus.optional (sb.Base))</span>
+  <span class="c"># @sus.returns (sus.nothing)</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">SagaException</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">api_object</span><span class="p">)</span>
+
+
+<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
 </pre></div></div>
 
           </div>
@@ -412,7 +494,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" >saga</a> &raquo;</li> 
       </ul>

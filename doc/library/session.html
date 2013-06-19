@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>3.5. Sessions &mdash; SAGA 0.9.6 documentation</title>
+    <title>5. Sessions &mdash; SAGA 0.9.7 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.6',
+        VERSION:     '0.9.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,10 +31,10 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.6 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.7 documentation" href="../index.html" />
     <link rel="up" title="3. Library Reference" href="index.html" />
-    <link rel="next" title="3.6. Attributes and Callbacks" href="attribute.html" />
-    <link rel="prev" title="3.4. Security Contexts" href="context.html" /> 
+    <link rel="next" title="6. Attributes and Callbacks" href="attribute.html" />
+    <link rel="prev" title="4. Security Contexts" href="context.html" /> 
   </head>
   <body>
     <div class="related">
@@ -47,12 +47,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="attribute.html" title="3.6. Attributes and Callbacks"
+          <a href="attribute.html" title="6. Attributes and Callbacks"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="context.html" title="3.4. Security Contexts"
+          <a href="context.html" title="4. Security Contexts"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">3. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -63,16 +63,16 @@
           <div class="body">
             
   <div class="section" id="sessions">
-<h1>3.5. Sessions<a class="headerlink" href="#sessions" title="Permalink to this headline">¶</a></h1>
+<h1>5. Sessions<a class="headerlink" href="#sessions" title="Permalink to this headline">¶</a></h1>
 <div class="admonition-todo admonition" id="index-0">
 <p class="first admonition-title">Todo</p>
 <p class="last">Intro to SAGA Session</p>
 </div>
 <div class="section" id="module-saga.session">
-<span id="session-saga-session"></span><h2>3.5.1. Session &#8211; <a class="reference internal" href="#module-saga.session" title="saga.session"><tt class="xref py py-mod docutils literal"><span class="pre">saga.session</span></tt></a><a class="headerlink" href="#module-saga.session" title="Permalink to this headline">¶</a></h2>
+<span id="session-saga-session"></span><h2>5.1. Session &#8211; <a class="reference internal" href="#module-saga.session" title="saga.session"><tt class="xref py py-mod docutils literal"><span class="pre">saga.session</span></tt></a><a class="headerlink" href="#module-saga.session" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="saga.session.Session">
-<em class="property">class </em><tt class="descclassname">saga.session.</tt><tt class="descname">Session</tt><big>(</big><em>default=True</em><big>)</big><a class="reference internal" href="../_modules/saga/session.html#Session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.session.Session" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.session.</tt><tt class="descname">Session</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/session.html#Session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.session.Session" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.SimpleBase</span></tt></p>
 <p>A SAGA Session object as defined in GFD.90.</p>
 <p>A Bliss session has the purpose of scoping the use of security credentials
@@ -110,29 +110,18 @@ authentication contexts managed by this session.  As the contexts and the
 session are stateless, it is safe to modify this list as needed.</p>
 <dl class="method">
 <dt id="saga.session.Session.add_context">
-<tt class="descname">add_context</tt><big>(</big><em>ctx</em><big>)</big><a class="reference internal" href="../_modules/saga/session.html#Session.add_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.session.Session.add_context" title="Permalink to this definition">¶</a></dt>
-<dd><p>ctx:     saga.Context
-ret:     None</p>
-<p>Add a security L{Context} to the session.
-It is encouraged to use the L{contexts} property instead.</p>
-</dd></dl>
+<tt class="descname">add_context</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/session.html#Session.add_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.session.Session.add_context" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.session.Session.remove_context">
-<tt class="descname">remove_context</tt><big>(</big><em>ctx</em><big>)</big><a class="reference internal" href="../_modules/saga/session.html#Session.remove_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.session.Session.remove_context" title="Permalink to this definition">¶</a></dt>
-<dd><p>ctx:     saga.Context
-ret:     None</p>
-<p>Remove a security L{Context} from the session.
-It is encouraged to use the L{contexts} property instead.</p>
-</dd></dl>
+<tt class="descname">remove_context</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/session.html#Session.remove_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.session.Session.remove_context" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.session.Session.list_contexts">
-<tt class="descname">list_contexts</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/session.html#Session.list_contexts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.session.Session.list_contexts" title="Permalink to this definition">¶</a></dt>
-<dd><p>ret:     list[saga.Context]</p>
-<p>Retrieve all L{Context} objects attached to the session.
-It is encouraged to use the L{contexts} property instead.</p>
-</dd></dl>
+<tt class="descname">list_contexts</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/session.html#Session.list_contexts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.session.Session.list_contexts" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -147,18 +136,18 @@ It is encouraged to use the L{contexts} property instead.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">3.5. Sessions</a><ul>
-<li><a class="reference internal" href="#module-saga.session">3.5.1. Session &#8211; <tt class="docutils literal"><span class="pre">saga.session</span></tt></a></li>
+<li><a class="reference internal" href="#">5. Sessions</a><ul>
+<li><a class="reference internal" href="#module-saga.session">5.1. Session &#8211; <tt class="docutils literal"><span class="pre">saga.session</span></tt></a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="context.html"
-                        title="previous chapter">3.4. Security Contexts</a></p>
+                        title="previous chapter">4. Security Contexts</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="attribute.html"
-                        title="next chapter">3.6. Attributes and Callbacks</a></p>
+                        title="next chapter">6. Attributes and Callbacks</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/library/session.txt"
@@ -191,12 +180,12 @@ It is encouraged to use the L{contexts} property instead.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="attribute.html" title="3.6. Attributes and Callbacks"
+          <a href="attribute.html" title="6. Attributes and Callbacks"
              >next</a> |</li>
         <li class="right" >
-          <a href="context.html" title="3.4. Security Contexts"
+          <a href="context.html" title="4. Security Contexts"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="index.html" >3. Library Reference</a> &raquo;</li> 
       </ul>
     </div>

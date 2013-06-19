@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>3.6. Attributes and Callbacks &mdash; SAGA 0.9.6 documentation</title>
+    <title>6. Attributes and Callbacks &mdash; SAGA 0.9.7 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.6',
+        VERSION:     '0.9.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,10 +31,10 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.6 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.7 documentation" href="../index.html" />
     <link rel="up" title="3. Library Reference" href="index.html" />
-    <link rel="next" title="3.7. Exception Handling" href="exceptions.html" />
-    <link rel="prev" title="3.5. Sessions" href="session.html" /> 
+    <link rel="next" title="7. Exception Handling" href="exceptions.html" />
+    <link rel="prev" title="5. Sessions" href="session.html" /> 
   </head>
   <body>
     <div class="related">
@@ -47,12 +47,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="exceptions.html" title="3.7. Exception Handling"
+          <a href="exceptions.html" title="7. Exception Handling"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="session.html" title="3.5. Sessions"
+          <a href="session.html" title="5. Sessions"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">3. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -63,13 +63,13 @@
           <div class="body">
             
   <div class="section" id="attributes-and-callbacks">
-<h1>3.6. Attributes and Callbacks<a class="headerlink" href="#attributes-and-callbacks" title="Permalink to this headline">¶</a></h1>
+<h1>6. Attributes and Callbacks<a class="headerlink" href="#attributes-and-callbacks" title="Permalink to this headline">¶</a></h1>
 <div class="admonition-todo admonition" id="index-0">
 <p class="first admonition-title">Todo</p>
 <p class="last">Intro to SAGA attribute interface.</p>
 </div>
 <div class="section" id="callbacks-saga-callback">
-<h2>3.6.1. Callbacks &#8211; <tt class="xref py py-class docutils literal"><span class="pre">saga.Callback</span></tt><a class="headerlink" href="#callbacks-saga-callback" title="Permalink to this headline">¶</a></h2>
+<h2>6.1. Callbacks &#8211; <tt class="xref py py-class docutils literal"><span class="pre">saga.Callback</span></tt><a class="headerlink" href="#callbacks-saga-callback" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="saga.attributes.Callback">
 <em class="property">class </em><tt class="descclassname">saga.attributes.</tt><tt class="descname">Callback</tt><a class="reference internal" href="../_modules/saga/attributes.html#Callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Callback" title="Permalink to this definition">¶</a></dt>
@@ -140,7 +140,7 @@ get unregistered after this invocation (return False).</p>
 
 </div>
 <div class="section" id="attribute-saga-attributes">
-<h2>3.6.2. Attribute &#8211; <tt class="xref py py-class docutils literal"><span class="pre">saga.Attributes</span></tt><a class="headerlink" href="#attribute-saga-attributes" title="Permalink to this headline">¶</a></h2>
+<h2>6.2. Attribute &#8211; <tt class="xref py py-class docutils literal"><span class="pre">saga.Attributes</span></tt><a class="headerlink" href="#attribute-saga-attributes" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="saga.attributes.Attributes">
 <em class="property">class </em><tt class="descclassname">saga.attributes.</tt><tt class="descname">Attributes</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes" title="Permalink to this definition">¶</a></dt>
@@ -158,8 +158,8 @@ attributes into vector attributes and back.</p>
 <p>Also, the consumer of this API can register callbacks, which get triggered
 on changes to specific attribute values.</p>
 <p>Example use case:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c">###########################################</span>
-<span class="k">class</span> <span class="nc">Transliterator</span> <span class="p">(</span> <span class="n">saga</span><span class="o">.</span><span class="n">Attribute</span> <span class="p">)</span> <span class="p">:</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># --------------------------------------------------------------------------------</span>
+<span class="k">class</span> <span class="nc">Transliterator</span> <span class="p">(</span> <span class="n">pilot</span><span class="o">.</span><span class="n">Attributes</span> <span class="p">)</span> <span class="p">:</span>
     
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="p">:</span>
         <span class="c"># setting attribs to non-extensible will cause the cal to init below to</span>
@@ -179,13 +179,13 @@ on changes to specific attribute values.</p>
       <span class="c"># self._attributes_extensible (False)</span>
 
 
-<span class="c">###########################################</span>
+<span class="c"># --------------------------------------------------------------------------------</span>
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
 
     <span class="c"># define a callback method.  This callback can get registered for</span>
     <span class="c"># attribute changes later.</span>
 
-    <span class="c">#################################</span>
+    <span class="c"># ----------------------------------------------------------------------------</span>
     <span class="k">def</span> <span class="nf">cb</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span> <span class="p">:</span>
         <span class="c"># the callback gets information about what attribute was changed</span>
         <span class="c"># on what object:</span>
@@ -194,7 +194,7 @@ on changes to specific attribute values.</p>
         <span class="c"># returning True will keep the callback registered for further</span>
         <span class="c"># attribute changes.</span>
         <span class="k">return</span> <span class="bp">True</span>
-    <span class="c">#################################</span>
+    <span class="c"># ----------------------------------------------------------------------------</span>
 
     <span class="c"># create a class instance and add a &#39;cherry&#39; attribute/value on</span>
     <span class="c"># creation.  </span>
@@ -267,147 +267,73 @@ Birne</pre>
 </div>
 <dl class="method">
 <dt id="saga.attributes.Attributes.set_attribute">
-<tt class="descname">set_attribute</tt><big>(</big><em>key</em>, <em>val</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.set_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.set_attribute" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method sets the value of the specified attribute.  If that
-attribute does not exist, DoesNotExist is raised &#8211; unless the attribute
-set is marked &#8216;extensible&#8217; or &#8216;private&#8217;.  In that case, the attribute is
-created and set on the fly (defaulting to mode=writeable, flavor=Scalar,
-type=ANY, default=None).  A value of &#8216;None&#8217; may reset the attribute to
-its default value, if such one exists (see documentation).</p>
-<p>Note that this method is performing a number of checks and conversions,
-to match the value type to the attribute properties (type, mode, flavor).
-Those conversions are not guaranteed to yield the expected result &#8211; for
-example, the conversion from &#8216;scalar&#8217; to &#8216;vector&#8217; is, for complex types,
-ambiguous at best, and somewhat stupid.  The consumer of the API SHOULD
-ensure correct attribute values.  The conversions are intended to
-support the most trivial and simple use cases (int to string etc).
-Failed conversions will result in an BadParameter exception.</p>
-<p>Attempts to set a &#8216;final&#8217; attribute are silently ignored.  Attempts to
-set a &#8216;readonly&#8217; attribute will result in an IncorrectState exception
-being raised.</p>
-<p>Note that set_attribute() will trigger callbacks, if a new value
-(different from the old value) is given.</p>
-</dd></dl>
+<tt class="descname">set_attribute</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.set_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.set_attribute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.attributes.Attributes.get_attribute">
-<tt class="descname">get_attribute</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.get_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.get_attribute" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method returns the value of the specified attribute.  If that
-attribute does not exist, an DoesNotExist is raised.  It is not an
-error to query an existing, but unset attribute though &#8211; that will
-result in &#8216;None&#8217; to be returned (or the default value, if available).</p>
-</dd></dl>
+<tt class="descname">get_attribute</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.get_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.get_attribute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.attributes.Attributes.set_vector_attribute">
-<tt class="descname">set_vector_attribute</tt><big>(</big><em>key</em>, <em>val</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.set_vector_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.set_vector_attribute" title="Permalink to this definition">¶</a></dt>
-<dd><p>See also: <tt class="xref py py-func docutils literal"><span class="pre">saga.Attributes.set_attribute()</span></tt> (key, val).</p>
-<p>As python can handle scalar and vector types transparently, this method
-is in fact not very useful.  For that reason, it maps internally to the
-set_attribute method.</p>
-</dd></dl>
+<tt class="descname">set_vector_attribute</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.set_vector_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.set_vector_attribute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.attributes.Attributes.get_vector_attribute">
-<tt class="descname">get_vector_attribute</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.get_vector_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.get_vector_attribute" title="Permalink to this definition">¶</a></dt>
-<dd><p>See also: <tt class="xref py py-func docutils literal"><span class="pre">saga.AttributeInterface.get_attribute()</span></tt> (key).</p>
-<p>As python can handle scalar and vector types transparently, this method
-is in fact not very useful.  For that reason, it maps internally to the
-get_attribute method.</p>
-</dd></dl>
+<tt class="descname">get_vector_attribute</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.get_vector_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.get_vector_attribute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.attributes.Attributes.remove_attribute">
-<tt class="descname">remove_attribute</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.remove_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.remove_attribute" title="Permalink to this definition">¶</a></dt>
-<dd><p>Removing an attribute is actually different from unsetting it, or from
-setting it to &#8216;None&#8217;.  On remove, all traces of the attribute are
-purged, and the key will not be listed on 
-<tt class="xref py py-func docutils literal"><span class="pre">saga.AttributeInterface.list_attributes()</span></tt> () anymore.</p>
-</dd></dl>
+<tt class="descname">remove_attribute</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.remove_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.remove_attribute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.attributes.Attributes.list_attributes">
-<tt class="descname">list_attributes</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.list_attributes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.list_attributes" title="Permalink to this definition">¶</a></dt>
-<dd><p>List all attributes which have been explicitly set.</p>
-</dd></dl>
+<tt class="descname">list_attributes</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.list_attributes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.list_attributes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.attributes.Attributes.find_attributes">
-<tt class="descname">find_attributes</tt><big>(</big><em>pattern</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.find_attributes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.find_attributes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Similar to list(), but also grep for a given attribute pattern.  That
-pattern is of the form &#8216;key=val&#8217;, where both &#8216;key&#8217; and &#8216;val&#8217; can contain
-POSIX shell wildcards.  For non-string typed attributes, the pattern is
-applied to a string serialization of the typed value, if that exists.</p>
-</dd></dl>
+<tt class="descname">find_attributes</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.find_attributes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.find_attributes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.attributes.Attributes.attribute_exists">
-<tt class="descname">attribute_exists</tt><big>(</big><em>key</em>, <em>_flow='_down'</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.attribute_exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.attribute_exists" title="Permalink to this definition">¶</a></dt>
-<dd><p>attribute_exist (key)</p>
-<p>This method will check if the given key is known and was set explicitly.
-The call will also return &#8216;True&#8217; if the value for that key is &#8216;None&#8217;.</p>
-</dd></dl>
+<tt class="descname">attribute_exists</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.attribute_exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.attribute_exists" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.attributes.Attributes.attribute_is_readonly">
-<tt class="descname">attribute_is_readonly</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.attribute_is_readonly"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.attribute_is_readonly" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method will check if the given key is readonly, i.e. cannot be
-&#8216;set&#8217;.  The call will also return &#8216;True&#8217; if the attribute is final</p>
-</dd></dl>
+<tt class="descname">attribute_is_readonly</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.attribute_is_readonly"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.attribute_is_readonly" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.attributes.Attributes.attribute_is_writeable">
-<tt class="descname">attribute_is_writeable</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.attribute_is_writeable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.attribute_is_writeable" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method will check if the given key is writeable - i.e. not readonly.</p>
-</dd></dl>
+<tt class="descname">attribute_is_writeable</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.attribute_is_writeable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.attribute_is_writeable" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.attributes.Attributes.attribute_is_removable">
-<tt class="descname">attribute_is_removable</tt><big>(</big><em>key</em>, <em>_flow='_down'</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.attribute_is_removable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.attribute_is_removable" title="Permalink to this definition">¶</a></dt>
-<dd><p>attribute_is_writeable (key)</p>
-<p>This method will check if the given key can be removed.</p>
-</dd></dl>
+<tt class="descname">attribute_is_removable</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.attribute_is_removable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.attribute_is_removable" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.attributes.Attributes.attribute_is_vector">
-<tt class="descname">attribute_is_vector</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.attribute_is_vector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.attribute_is_vector" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method will check if the given attribute has a vector value type.</p>
-</dd></dl>
+<tt class="descname">attribute_is_vector</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.attribute_is_vector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.attribute_is_vector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.attributes.Attributes.add_callback">
-<tt class="descname">add_callback</tt><big>(</big><em>key</em>, <em>cb</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.add_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.add_callback" title="Permalink to this definition">¶</a></dt>
-<dd><p>For any attribute change, the API will check if any callbacks are
-registered for that attribute.  If so, those callbacks will be called
-in order of registration.  This registration function will return an
-id (cookie) identifying the callback &#8211; that id can be used to
-remove the callback.</p>
-<p>A callback is any callable python construct, and MUST accept three
-arguments:</p>
-<div class="highlight-python"><pre>- STRING key: the name of the attribute which changed
-- ANY    val: the new value of the attribute
-- ANY    obj: the object on which this attribute interface was called</pre>
-</div>
-<p>The &#8216;obj&#8217; can be any python object type, but is guaranteed to expose
-this attribute interface.</p>
-<p>The callback SHOULD return &#8216;True&#8217; or &#8216;False&#8217; &#8211; on &#8216;True&#8217;, the callback
-will remain registered, and will thus be called again on the next
-attribute change.  On returning &#8216;False&#8217;, the callback will be
-unregistered, and will thus not be called again.  Returning nothing is
-interpreted as &#8216;False&#8217;, other return values lead to undefined behavior.</p>
-<p>Note that callbacks will not be called on &#8216;Final&#8217; attributes (they will
-be called once as that attribute enters finality).</p>
-</dd></dl>
+<tt class="descname">add_callback</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.add_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.add_callback" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.attributes.Attributes.remove_callback">
-<tt class="descname">remove_callback</tt><big>(</big><em>key</em>, <em>id</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.remove_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.remove_callback" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method allows to unregister a previously registered callback, by
-providing its id.  It is not an error to remove a non-existing cb, but
-a valid ID MUST be provided &#8211; otherwise, a BadParameter is raised.</p>
-<p>If no ID is provided (id == None), all callbacks are removed for this
-attribute.</p>
-</dd></dl>
+<tt class="descname">remove_callback</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/attributes.html#Attributes.remove_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.attributes.Attributes.remove_callback" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.attributes.Attributes.as_dict">
@@ -428,19 +354,19 @@ attribute.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">3.6. Attributes and Callbacks</a><ul>
-<li><a class="reference internal" href="#callbacks-saga-callback">3.6.1. Callbacks &#8211; <tt class="docutils literal"><span class="pre">saga.Callback</span></tt></a></li>
-<li><a class="reference internal" href="#attribute-saga-attributes">3.6.2. Attribute &#8211; <tt class="docutils literal"><span class="pre">saga.Attributes</span></tt></a></li>
+<li><a class="reference internal" href="#">6. Attributes and Callbacks</a><ul>
+<li><a class="reference internal" href="#callbacks-saga-callback">6.1. Callbacks &#8211; <tt class="docutils literal"><span class="pre">saga.Callback</span></tt></a></li>
+<li><a class="reference internal" href="#attribute-saga-attributes">6.2. Attribute &#8211; <tt class="docutils literal"><span class="pre">saga.Attributes</span></tt></a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="session.html"
-                        title="previous chapter">3.5. Sessions</a></p>
+                        title="previous chapter">5. Sessions</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="exceptions.html"
-                        title="next chapter">3.7. Exception Handling</a></p>
+                        title="next chapter">7. Exception Handling</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/library/attribute.txt"
@@ -473,12 +399,12 @@ attribute.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="exceptions.html" title="3.7. Exception Handling"
+          <a href="exceptions.html" title="7. Exception Handling"
              >next</a> |</li>
         <li class="right" >
-          <a href="session.html" title="3.5. Sessions"
+          <a href="session.html" title="5. Sessions"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="index.html" >3. Library Reference</a> &raquo;</li> 
       </ul>
     </div>

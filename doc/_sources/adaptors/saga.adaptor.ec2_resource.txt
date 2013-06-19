@@ -1,14 +1,15 @@
 
-###################
-saga.adaptor.pbsjob
-###################
+#########################
+saga.adaptor.ec2_resource
+#########################
 
 Description
 -----------
+ 
+The EC2 resource adaptor. This adaptor interacts with a variety of
+IaaS backends via the Apache LibCloud.  It also provides EC2 related
+context types.
 
-The PBS adaptor allows to run and manage jobs on `PBS <http://www.pbsworks.com/>`_
-and `TORQUE <http://www.adaptivecomputing.com/products/open-source/torque>`_
-controlled HPC clusters.
 
 
 
@@ -20,9 +21,8 @@ This adaptor is triggered by the following URL schemes:
 ======================== ============================================================
 schema                   description                                                 
 ======================== ============================================================
-**pbs://**               connect to a local cluster                                  
-**pbs+ssh://**           conenct to a remote cluster via SSH                         
-**pbs+gsissh://**        connect to a remote cluster via GSISSH                      
+**ec2://**               Amacon EC2 key/secret                                       
+**ec2_keypair://**       Amacon EC2 keypair name                                     
 ======================== ============================================================
 
 
@@ -30,7 +30,7 @@ schema                   description
 Example
 -------
 
-.. literalinclude:: ../../../examples/jobs/pbsjob.py
+.. literalinclude:: ../../../examples/resource/amazon_ec2.py
 
 
 Configuration Options
@@ -42,7 +42,7 @@ Configuration options can be used to control the adaptor's runt    ime behavior.
 enabled
 *******
 
-enable / disable saga.adaptor.pbsjob adaptor
+enable / disable saga.adaptor.ec2_resource adaptor
 
   - **type** : <type 'bool'>
   - **default** : True
@@ -57,15 +57,7 @@ Supported Monitorable Metrics
 *****************************
 
   - State
-
-Supported Job Attributes
-************************
-
-  - ExitCode
-  - ExecutionHosts
-  - Created
-  - Started
-  - Finished
+  - StateDetail
 
 Supported Context Types
 ***********************
@@ -73,33 +65,33 @@ Supported Context Types
 ============================================================ ============================================================
                                                    Attribute Description
 ============================================================ ============================================================
-                             :ref:`security_contexts` : x509 GSISSH X509 proxy context
-                         :ref:`security_contexts` : userpass username/password pair (ssh)
-                              :ref:`security_contexts` : ssh SSH public/private keypair
+                      :ref:`security_contexts` : ec2_keypair ec2 keypair for node access
+                              :ref:`security_contexts` : ec2 EC2 ID and Secret
 ============================================================ ============================================================
 
-Supported Job Description Attributes
-************************************
+res_attributes
+**************
 
-  - Name
-  - Executable
-  - Arguments
-  - Environment
-  - Input
-  - Output
-  - Error
-  - Queue
-  - Project
-  - WallTimeLimit
-  - WorkingDirectory
-  - WallTimeLimit
-  - SPMDVariation
-  - TotalCPUCount
+  - Rtype
+  - Template
+  - Image
+  - MachineOS
+  - MachineArch
+  - Size
+  - Memory
+  - Access
 
-callbacks
-*********
+rdes_attributes
+***************
 
-  - State
+  - Rtype
+  - Template
+  - Image
+  - MachineOS
+  - MachineArch
+  - Size
+  - Memory
+  - Access
 
 
 
@@ -107,22 +99,30 @@ Supported API Classes
 ---------------------
 
 This adaptor supports the following API classes:
-  - :class:`saga.job.Service`
-  - :class:`saga.job.Job`
+  - :class:`saga.Context`
+  - :class:`saga.resource.Manager`
+  - :class:`saga.resource.Compute`
 
 Method implementation details are listed below.
 
-saga.job.Service
-****************
+saga.Context
+************
 
-.. autoclass:: saga.adaptors.pbs.pbsjob.PBSJobService
+.. autoclass:: saga.adaptors.aws.ec2_resource.EC2Keypair
    :members:
 
 
-saga.job.Job
-************
+saga.resource.Manager
+*********************
 
-.. autoclass:: saga.adaptors.pbs.pbsjob.PBSJob
+.. autoclass:: saga.adaptors.aws.ec2_resource.EC2ResourceManager
+   :members:
+
+
+saga.resource.Compute
+*********************
+
+.. autoclass:: saga.adaptors.aws.ec2_resource.EC2ResourceCompute
    :members:
 
 

@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.shell.shell_file &mdash; SAGA 0.9.6 documentation</title>
+    <title>saga.adaptors.shell.shell_file &mdash; SAGA 0.9.7 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.9.6',
+        VERSION:     '0.9.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.6 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.9.7 documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -61,7 +61,7 @@
 <span class="kn">import</span> <span class="nn">saga.utils.pty_shell</span> <span class="kn">as</span> <span class="nn">sups</span>
 <span class="kn">import</span> <span class="nn">saga.utils.misc</span>      <span class="kn">as</span> <span class="nn">sumisc</span>
 
-<span class="kn">import</span> <span class="nn">saga.adaptors.cpi.base</span>
+<span class="kn">import</span> <span class="nn">saga.adaptors.base</span>
 <span class="kn">import</span> <span class="nn">saga.adaptors.cpi.filesystem</span>
 
 <span class="kn">from</span>   <span class="nn">saga.filesystem.constants</span> <span class="kn">import</span> <span class="o">*</span>
@@ -86,7 +86,7 @@
 <span class="c"># the adaptor name</span>
 <span class="c">#</span>
 <span class="n">_ADAPTOR_NAME</span>          <span class="o">=</span> <span class="s">&quot;saga.adaptor.shell_file&quot;</span>
-<span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&quot;file&quot;</span><span class="p">,</span> <span class="s">&quot;local&quot;</span><span class="p">,</span> <span class="s">&quot;sftp&quot;</span><span class="p">,</span> <span class="s">&quot;gsiftp&quot;</span><span class="p">]</span>
+<span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&quot;file&quot;</span><span class="p">,</span> <span class="s">&quot;local&quot;</span><span class="p">,</span> <span class="s">&quot;sftp&quot;</span><span class="p">,</span> <span class="s">&quot;gsiftp&quot;</span><span class="p">,</span> <span class="s">&quot;ssh&quot;</span><span class="p">,</span> <span class="s">&quot;gsissh&quot;</span><span class="p">]</span>
 <span class="n">_ADAPTOR_OPTIONS</span>       <span class="o">=</span> <span class="p">[</span>
     <span class="p">{</span> 
     <span class="s">&#39;category&#39;</span>         <span class="p">:</span> <span class="s">&#39;saga.adaptor.shell_file&#39;</span><span class="p">,</span>
@@ -170,7 +170,9 @@
 <span class="s">        &quot;&quot;&quot;</span><span class="p">,</span>
     <span class="s">&quot;schemas&quot;</span>          <span class="p">:</span> <span class="p">{</span><span class="s">&quot;file&quot;</span>   <span class="p">:</span><span class="s">&quot;use /bin/sh to access local filesystems&quot;</span><span class="p">,</span> 
                           <span class="s">&quot;local&quot;</span>  <span class="p">:</span><span class="s">&quot;alias for file://&quot;</span><span class="p">,</span> 
+                          <span class="s">&quot;ssh&quot;</span>    <span class="p">:</span><span class="s">&quot;use sftp to access remote filesystems&quot;</span><span class="p">,</span> 
                           <span class="s">&quot;sftp&quot;</span>   <span class="p">:</span><span class="s">&quot;use sftp to access remote filesystems&quot;</span><span class="p">,</span> 
+                          <span class="s">&quot;gsissh&quot;</span> <span class="p">:</span><span class="s">&quot;use gsiftp to access remote filesystems&quot;</span><span class="p">,</span>
                           <span class="s">&quot;gsiftp&quot;</span> <span class="p">:</span><span class="s">&quot;use gsiftp to access remote filesystems&quot;</span><span class="p">}</span>
 <span class="p">}</span>
 
@@ -204,7 +206,7 @@
 <span class="c">###############################################################################</span>
 <span class="c"># The adaptor class</span>
 
-<span class="k">class</span> <span class="nc">Adaptor</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AdaptorBase</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Adaptor</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">    This is the actual adaptor class, which gets loaded by SAGA (i.e. by the</span>
 <span class="sd">    SAGA engine), and which registers the CPI implementation classes which</span>
@@ -216,7 +218,7 @@
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 
-        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">AdaptorBase</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_ADAPTOR_INFO</span><span class="p">,</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">)</span>
+        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_ADAPTOR_INFO</span><span class="p">,</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">id_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span> <span class="p">(</span><span class="s">&#39;^\[(.*)\]-\[(.*?)\]$&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">opts</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_config</span> <span class="p">()</span>
@@ -618,6 +620,36 @@
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">make_dir</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt_in</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
+<div class="viewcode-block" id="ShellDirectory.make_dir"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_file.html#saga.adaptors.shell.shell_file.ShellDirectory.make_dir">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid</span> <span class="p">()</span>
+
+        <span class="n">cwdurl</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span> <span class="c"># deep copy</span>
+        <span class="n">tgturl</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
+
+        <span class="n">tgt_abs</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_make_absolute</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgturl</span><span class="p">)</span>
+
+        <span class="k">if</span>  <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">EXCLUSIVE</span> <span class="p">:</span> 
+            <span class="c"># FIXME: this creates a race condition between testing for exclusive</span>
+            <span class="c"># mkdir and creating the dir.</span>
+            <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;test -d </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">tgt_abs</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+
+            <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">AlreadyExists</span> <span class="p">(</span><span class="s">&quot;make_dir target (</span><span class="si">%s</span><span class="s">) exists (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                    <span class="o">%</span> <span class="n">tgt_in</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+
+
+        <span class="n">options</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+
+        <span class="k">if</span>  <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="p">:</span> 
+            <span class="n">options</span> <span class="o">+=</span> <span class="s">&quot;-p&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;mkdir </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">tgt_abs</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+
+   
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_size_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="ShellDirectory.get_size_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_file.html#saga.adaptors.shell.shell_file.ShellDirectory.get_size_self">[docs]</a>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid</span> <span class="p">()</span>
@@ -847,6 +879,7 @@
       <span class="c"># self.shell.set_finalize_hook   (self.finalize)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span> <span class="p">()</span>
+
 
         <span class="c"># we create a local shell handle, too, if only to support copy and move</span>
         <span class="c"># to and from local file systems (mkdir for staging target, remove of move</span>
@@ -1182,7 +1215,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>

@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>3.3. Using URLs &mdash; SAGA 0.9.6 documentation</title>
+    <title>3. Using URLs &mdash; SAGA 0.9.7 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.6',
+        VERSION:     '0.9.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,10 +31,10 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.6 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.7 documentation" href="../index.html" />
     <link rel="up" title="3. Library Reference" href="index.html" />
-    <link rel="next" title="3.4. Security Contexts" href="context.html" />
-    <link rel="prev" title="3.2. Working with Files and Directories" href="filesystem/index.html" /> 
+    <link rel="next" title="4. Security Contexts" href="context.html" />
+    <link rel="prev" title="2. Working with Files and Directories" href="filesystem/index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -47,12 +47,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="context.html" title="3.4. Security Contexts"
+          <a href="context.html" title="4. Security Contexts"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="filesystem/index.html" title="3.2. Working with Files and Directories"
+          <a href="filesystem/index.html" title="2. Working with Files and Directories"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">3. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -63,16 +63,16 @@
           <div class="body">
             
   <div class="section" id="using-urls">
-<h1>3.3. Using URLs<a class="headerlink" href="#using-urls" title="Permalink to this headline">¶</a></h1>
+<h1>3. Using URLs<a class="headerlink" href="#using-urls" title="Permalink to this headline">¶</a></h1>
 <div class="admonition-todo admonition" id="index-0">
 <p class="first admonition-title">Todo</p>
 <p class="last">Intro to SAGA Urls</p>
 </div>
 <div class="section" id="url-saga-url">
-<h2>3.3.1. Url &#8211; <a class="reference internal" href="#saga.Url" title="saga.Url"><tt class="xref py py-class docutils literal"><span class="pre">saga.Url</span></tt></a><a class="headerlink" href="#url-saga-url" title="Permalink to this headline">¶</a></h2>
+<h2>3.1. Url &#8211; <a class="reference internal" href="#saga.Url" title="saga.Url"><tt class="xref py py-class docutils literal"><span class="pre">saga.Url</span></tt></a><a class="headerlink" href="#url-saga-url" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="saga.Url">
-<em class="property">class </em><tt class="descclassname">saga.</tt><tt class="descname">Url</tt><big>(</big><em>url_string=''</em><big>)</big><a class="headerlink" href="#saga.Url" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.</tt><tt class="descname">Url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
 <p>The SAGA Url class.</p>
 <p>URLs are used in several places in the SAGA API: to specify service
@@ -103,21 +103,18 @@ alternatively, via getter / setter methods. Example:</p>
 </div>
 <dl class="method">
 <dt id="saga.Url.set_scheme">
-<tt class="descname">set_scheme</tt><big>(</big><em>scheme</em><big>)</big><a class="headerlink" href="#saga.Url.set_scheme" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the &#8216;scheme&#8217; component.</p>
-</dd></dl>
+<tt class="descname">set_scheme</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.set_scheme" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.Url.get_scheme">
-<tt class="descname">get_scheme</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_scheme" title="Permalink to this definition">¶</a></dt>
-<dd><p>R eturn the &#8216;scheme&#8217; component.</p>
-</dd></dl>
+<tt class="descname">get_scheme</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.get_scheme" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="saga.Url.scheme">
 <tt class="descname">scheme</tt><a class="headerlink" href="#saga.Url.scheme" title="Permalink to this definition">¶</a></dt>
-<dd><p>R eturn the &#8216;scheme&#8217; component.</p>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="saga.Url.schema">
@@ -127,15 +124,13 @@ alternatively, via getter / setter methods. Example:</p>
 
 <dl class="method">
 <dt id="saga.Url.set_host">
-<tt class="descname">set_host</tt><big>(</big><em>host</em><big>)</big><a class="headerlink" href="#saga.Url.set_host" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the &#8216;host&#8217; component.</p>
-</dd></dl>
+<tt class="descname">set_host</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.set_host" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.Url.get_host">
-<tt class="descname">get_host</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_host" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the &#8216;host&#8217; component.</p>
-</dd></dl>
+<tt class="descname">get_host</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.get_host" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="saga.Url.host">
@@ -145,15 +140,13 @@ alternatively, via getter / setter methods. Example:</p>
 
 <dl class="method">
 <dt id="saga.Url.set_port">
-<tt class="descname">set_port</tt><big>(</big><em>port</em><big>)</big><a class="headerlink" href="#saga.Url.set_port" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the &#8216;port&#8217; component.</p>
-</dd></dl>
+<tt class="descname">set_port</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.set_port" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.Url.get_port">
-<tt class="descname">get_port</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_port" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the &#8216;port&#8217; component.</p>
-</dd></dl>
+<tt class="descname">get_port</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.get_port" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="saga.Url.port">
@@ -163,15 +156,13 @@ alternatively, via getter / setter methods. Example:</p>
 
 <dl class="method">
 <dt id="saga.Url.set_username">
-<tt class="descname">set_username</tt><big>(</big><em>username</em><big>)</big><a class="headerlink" href="#saga.Url.set_username" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the &#8216;username&#8217; component.</p>
-</dd></dl>
+<tt class="descname">set_username</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.set_username" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.Url.get_username">
-<tt class="descname">get_username</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_username" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the &#8216;username&#8217; component.</p>
-</dd></dl>
+<tt class="descname">get_username</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.get_username" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="saga.Url.username">
@@ -181,15 +172,13 @@ alternatively, via getter / setter methods. Example:</p>
 
 <dl class="method">
 <dt id="saga.Url.set_password">
-<tt class="descname">set_password</tt><big>(</big><em>password</em><big>)</big><a class="headerlink" href="#saga.Url.set_password" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the &#8216;password&#8217; component.</p>
-</dd></dl>
+<tt class="descname">set_password</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.set_password" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.Url.get_password">
-<tt class="descname">get_password</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_password" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the &#8216;username&#8217; component.</p>
-</dd></dl>
+<tt class="descname">get_password</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.get_password" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="saga.Url.password">
@@ -199,15 +188,13 @@ alternatively, via getter / setter methods. Example:</p>
 
 <dl class="method">
 <dt id="saga.Url.set_fragment">
-<tt class="descname">set_fragment</tt><big>(</big><em>fragment</em><big>)</big><a class="headerlink" href="#saga.Url.set_fragment" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the &#8216;fragment&#8217; component.</p>
-</dd></dl>
+<tt class="descname">set_fragment</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.set_fragment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.Url.get_fragment">
-<tt class="descname">get_fragment</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_fragment" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the &#8216;fragment&#8217; component.</p>
-</dd></dl>
+<tt class="descname">get_fragment</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.get_fragment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="saga.Url.fragment">
@@ -217,15 +204,13 @@ alternatively, via getter / setter methods. Example:</p>
 
 <dl class="method">
 <dt id="saga.Url.set_path">
-<tt class="descname">set_path</tt><big>(</big><em>path</em><big>)</big><a class="headerlink" href="#saga.Url.set_path" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the &#8216;path&#8217; component.</p>
-</dd></dl>
+<tt class="descname">set_path</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.set_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.Url.get_path">
-<tt class="descname">get_path</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_path" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the &#8216;path&#8217; component.</p>
-</dd></dl>
+<tt class="descname">get_path</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.get_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="saga.Url.path">
@@ -235,15 +220,13 @@ alternatively, via getter / setter methods. Example:</p>
 
 <dl class="method">
 <dt id="saga.Url.set_query">
-<tt class="descname">set_query</tt><big>(</big><em>query</em><big>)</big><a class="headerlink" href="#saga.Url.set_query" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the &#8216;query&#8217; component.</p>
-</dd></dl>
+<tt class="descname">set_query</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.set_query" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.Url.get_query">
-<tt class="descname">get_query</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_query" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the &#8216;query&#8217; component.</p>
-</dd></dl>
+<tt class="descname">get_query</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.Url.get_query" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="saga.Url.query">
@@ -264,18 +247,18 @@ alternatively, via getter / setter methods. Example:</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">3.3. Using URLs</a><ul>
-<li><a class="reference internal" href="#url-saga-url">3.3.1. Url &#8211; <tt class="docutils literal"><span class="pre">saga.Url</span></tt></a></li>
+<li><a class="reference internal" href="#">3. Using URLs</a><ul>
+<li><a class="reference internal" href="#url-saga-url">3.1. Url &#8211; <tt class="docutils literal"><span class="pre">saga.Url</span></tt></a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="filesystem/index.html"
-                        title="previous chapter">3.2. Working with Files and Directories</a></p>
+                        title="previous chapter">2. Working with Files and Directories</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="context.html"
-                        title="next chapter">3.4. Security Contexts</a></p>
+                        title="next chapter">4. Security Contexts</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/library/url.txt"
@@ -308,12 +291,12 @@ alternatively, via getter / setter methods. Example:</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="context.html" title="3.4. Security Contexts"
+          <a href="context.html" title="4. Security Contexts"
              >next</a> |</li>
         <li class="right" >
-          <a href="filesystem/index.html" title="3.2. Working with Files and Directories"
+          <a href="filesystem/index.html" title="2. Working with Files and Directories"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="index.html" >3. Library Reference</a> &raquo;</li> 
       </ul>
     </div>

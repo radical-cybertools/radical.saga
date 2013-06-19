@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.session &mdash; SAGA 0.9.6 documentation</title>
+    <title>saga.session &mdash; SAGA 0.9.7 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.6',
+        VERSION:     '0.9.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.6 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.7 documentation" href="../../index.html" />
     <link rel="up" title="saga" href="../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -64,13 +64,65 @@
 <span class="kn">import</span> <span class="nn">saga.utils.singleton</span>
 <span class="kn">import</span> <span class="nn">saga.utils.logger</span>
 <span class="kn">import</span> <span class="nn">saga.engine.engine</span>
+<span class="kn">import</span> <span class="nn">saga.context</span>
 <span class="kn">import</span> <span class="nn">saga.base</span>
 
+<span class="kn">import</span> <span class="nn">saga.utils.signatures</span> <span class="kn">as</span> <span class="nn">sus</span>
 
+
+<span class="c"># ------------------------------------------------------------------------------</span>
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">_ContextList</span> <span class="p">(</span><span class="nb">list</span><span class="p">)</span> <span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The `saga.Session` class has a &#39;contexts&#39; member which is a mutable list of</span>
+<span class="sd">    `saga.Context` instances.  Adding contexts to that list is semantically</span>
+<span class="sd">    equivalent to calling `saga.Session.add_context (ctx)`, which (a) creates</span>
+<span class="sd">    a deep copy of the context, and (b) initializes the context (i.e. calls</span>
+<span class="sd">    `ctx._initialize (self)`, with `self` being the session instance).  We thus</span>
+<span class="sd">    create our own provate `_ContextList` class which inherits from the native</span>
+<span class="sd">    Python `list` class, and overload the `append()` call with said semantics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
+
+        <span class="n">l</span> <span class="o">=</span> <span class="nb">super</span>  <span class="p">(</span><span class="n">_ContextList</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">l</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">append</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="k">if</span>  <span class="ow">not</span> <span class="nb">isinstance</span> <span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="s">&quot;appended item is not a saga.Context instance&quot;</span>
+
+        <span class="c"># create a deep copy of the context</span>
+        <span class="n">ctx_clone</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span>  <span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">_attributes_deep_copy</span> <span class="p">(</span><span class="n">ctx_clone</span><span class="p">)</span>
+
+        <span class="c"># initialize the cloned context before adding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;adding  context : </span><span class="si">%s</span><span class="s">&quot;</span> \
+                                 <span class="o">%</span> <span class="p">(</span><span class="n">ctx_clone</span><span class="p">))</span>
+        <span class="n">ctx_clone</span><span class="o">.</span><span class="n">_initialize</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span>
+
+        <span class="nb">super</span> <span class="p">(</span><span class="n">_ContextList</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">append</span> <span class="p">(</span><span class="n">ctx_clone</span><span class="p">)</span>
+
+
+
+<span class="c"># ------------------------------------------------------------------------------</span>
+<span class="c">#</span>
 <span class="k">class</span> <span class="nc">_DefaultSession</span> <span class="p">(</span><span class="nb">object</span><span class="p">)</span> <span class="p">:</span>
 
     <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">singleton</span><span class="o">.</span><span class="n">Singleton</span>
 
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;_DefaultSession&#39;</span><span class="p">)</span>
+    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 
         <span class="c"># the default session picks up default contexts, from all context</span>
@@ -78,7 +130,7 @@
         <span class="c"># dig through the registered context adaptors, and ask each of them for</span>
         <span class="c"># default contexts.</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_contexts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contexts</span>  <span class="o">=</span> <span class="n">_ContextList</span> <span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span>   <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">getLogger</span> <span class="p">(</span><span class="s">&#39;saga.DefaultSession&#39;</span><span class="p">)</span>
 
         <span class="n">_engine</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Engine</span> <span class="p">()</span>
@@ -87,16 +139,19 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warn</span> <span class="p">(</span><span class="s">&quot;no context adaptors found&quot;</span><span class="p">)</span>
             <span class="k">return</span>
 
-        <span class="n">ctx_adaptors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">schema</span> <span class="ow">in</span>   <span class="n">_engine</span><span class="o">.</span><span class="n">_adaptor_registry</span><span class="p">[</span><span class="s">&#39;saga.Context&#39;</span><span class="p">]</span> <span class="p">:</span>
-            <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">_engine</span><span class="o">.</span><span class="n">_adaptor_registry</span><span class="p">[</span><span class="s">&#39;saga.Context&#39;</span><span class="p">][</span><span class="n">schema</span><span class="p">]:</span>
-                <span class="n">ctx_adaptors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s">&#39;adaptor_name&#39;</span><span class="p">])</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_contexts</span> <span class="o">+=</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;adaptor_instance&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">_get_default_contexts</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">_engine</span><span class="o">.</span><span class="n">_adaptor_registry</span><span class="p">[</span><span class="s">&#39;saga.Context&#39;</span><span class="p">][</span><span class="n">schema</span><span class="p">]</span> <span class="p">:</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;Adding defaults for context adaptors: </span><span class="si">%s</span><span class="s"> &quot;</span> \
-                       <span class="o">%</span> <span class="n">ctx_adaptors</span><span class="p">)</span>
+                <span class="n">default_ctxs</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;adaptor_instance&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">_get_default_contexts</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">default_ctx</span> <span class="ow">in</span> <span class="n">default_ctxs</span> <span class="p">:</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">append</span> <span class="p">(</span><span class="n">default_ctx</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;default context [</span><span class="si">%-20s</span><span class="s">] : </span><span class="si">%s</span><span class="s">&quot;</span> \
+                                     <span class="o">%</span> <span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s">&#39;adaptor_name&#39;</span><span class="p">],</span> <span class="n">default_ctx</span><span class="p">))</span>
 
 
+<span class="c"># ------------------------------------------------------------------------------</span>
+<span class="c">#</span>
 <span class="k">class</span> <span class="nc">Session</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">SimpleBase</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Session"><a class="viewcode-back" href="../../library/session.html#saga.session.Session">[docs]</a>    <span class="sd">&quot;&quot;&quot;A SAGA Session object as defined in GFD.90.</span>
 
@@ -144,6 +199,11 @@
 
     <span class="c"># FIXME: session deep copy not implemented</span>
 
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Session&#39;</span><span class="p">,</span> 
+                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span><span class="p">(</span><span class="nb">bool</span><span class="p">))</span>
+    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        default: bool</span>
@@ -155,15 +215,18 @@
         <span class="c"># if the default session is expected, we point our context list to the</span>
         <span class="c"># shared list of the default session singleton.  Otherwise, we create</span>
         <span class="c"># a private list which is not populated.</span>
+
         <span class="k">if</span> <span class="n">default</span> <span class="p">:</span>
             <span class="n">default_session</span>  <span class="o">=</span> <span class="n">_DefaultSession</span> <span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">contexts</span>    <span class="o">=</span> <span class="n">default_session</span><span class="o">.</span><span class="n">_contexts</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">contexts</span>    <span class="o">=</span> <span class="n">default_session</span><span class="o">.</span><span class="n">contexts</span> 
         <span class="k">else</span> <span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">contexts</span>    <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">contexts</span>    <span class="o">=</span> <span class="n">_ContextList</span> <span class="p">(</span><span class="n">session</span> <span class="o">=</span> <span class="bp">self</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
+    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Session&#39;</span><span class="p">)</span>
+    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String represenation.&quot;&quot;&quot;</span>
 
@@ -172,6 +235,9 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
+    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Session&#39;</span><span class="p">,</span> 
+                  <span class="n">saga</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">Context</span><span class="p">)</span>
+    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">add_context</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Session.add_context"><a class="viewcode-back" href="../../library/session.html#saga.session.Session.add_context">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        ctx:     saga.Context</span>
@@ -197,7 +263,10 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">remove_context</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span> <span class="p">:</span></div>
+    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Session&#39;</span><span class="p">,</span> </div>
+                  <span class="n">saga</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">Context</span><span class="p">)</span>
+    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">remove_context</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Session.remove_context"><a class="viewcode-back" href="../../library/session.html#saga.session.Session.remove_context">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        ctx:     saga.Context</span>
 <span class="sd">        ret:     None</span>
@@ -212,7 +281,9 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">list_contexts</span>  <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Session&#39;</span><span class="p">)</span></div>
+    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">list_of</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">Context</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">list_contexts</span>  <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Session.list_contexts"><a class="viewcode-back" href="../../library/session.html#saga.session.Session.list_contexts">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        ret:     list[saga.Context]</span>
 <span class="sd">        </span>
@@ -258,7 +329,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" >saga</a> &raquo;</li> 
       </ul>

@@ -1,13 +1,14 @@
 
-#######################
-saga.adaptor.shell_file
-#######################
+###########################
+saga.adaptor.shell_resource
+###########################
 
 Description
 -----------
  
-The shell file adaptor. This adaptor uses the sh command line tools (sh,
-ssh, gsissh) to access remote filesystems.
+The Shell resource adaptor. This adaptor attempts to determine what job
+submission endpoint and file system resources are available for a given
+host, and provides the respective access URLs.
 
 
 
@@ -20,12 +21,7 @@ This adaptor is triggered by the following URL schemes:
 ======================== ============================================================
 schema                   description                                                 
 ======================== ============================================================
-**ssh://**               use sftp to access remote filesystems                       
-**sftp://**              use sftp to access remote filesystems                       
-**file://**              use /bin/sh to access local filesystems                     
-**local://**             alias for file://                                           
-**gsiftp://**            use gsiftp to access remote filesystems                     
-**gsissh://**            use gsiftp to access remote filesystems                     
+**shell://**             find access URLs for shell-job/file adaptors                
 ======================== ============================================================
 
 
@@ -33,7 +29,7 @@ schema                   description
 Example
 -------
 
-.. literalinclude:: ../../../NO EXAMPLE AVAILABLE
+.. literalinclude:: ../../../examples/jobs/localresource.py
 
 
 Configuration Options
@@ -45,22 +41,10 @@ Configuration options can be used to control the adaptor's runt    ime behavior.
 enabled
 *******
 
-enable / disable saga.adaptor.shell_file adaptor
+enable / disable saga.adaptor.shell_resource adaptor
 
   - **type** : <type 'bool'>
   - **default** : True
-  - **environment** : None
-  - **valid options** : [True, False]
-enable_notifications
-********************
-
-Enable support for filesystem notifications.  Note that
-enabling this option will create a local thread and a remote 
-shell process.
-
-
-  - **type** : <type 'bool'>
-  - **default** : False
   - **environment** : None
   - **valid options** : [True, False]
 
@@ -71,6 +55,8 @@ Capabilities
 Supported Monitorable Metrics
 *****************************
 
+  - State
+  - StateDetail
 
 Supported Context Types
 ***********************
@@ -83,44 +69,48 @@ Supported Context Types
                               :ref:`security_contexts` : ssh public/private keypair
 ============================================================ ============================================================
 
+res_attributes
+**************
+
+  - Rtype
+  - MachineOS
+  - MachineArch
+  - Size
+  - Memory
+  - Access
+
+rdes_attributes
+***************
+
+  - Rtype
+  - MachineOS
+  - MachineArch
+  - Size
+  - Memory
+  - Access
+
 
 
 Supported API Classes
 ---------------------
 
 This adaptor supports the following API classes:
-  - :class:`saga.namespace.Directory`
-  - :class:`saga.namespace.Entry`
-  - :class:`saga.filesystem.Directory`
-  - :class:`saga.filesystem.File`
+  - :class:`saga.resource.Manager`
+  - :class:`saga.resource.Compute`
 
 Method implementation details are listed below.
 
-saga.namespace.Directory
-************************
+saga.resource.Manager
+*********************
 
-.. autoclass:: saga.adaptors.shell.shell_file.ShellDirectory
+.. autoclass:: saga.adaptors.shell.shell_resource.ShellResourceManager
    :members:
 
 
-saga.namespace.Entry
-********************
+saga.resource.Compute
+*********************
 
-.. autoclass:: saga.adaptors.shell.shell_file.ShellFile
-   :members:
-
-
-saga.filesystem.Directory
-*************************
-
-.. autoclass:: saga.adaptors.shell.shell_file.ShellDirectory
-   :members:
-
-
-saga.filesystem.File
-********************
-
-.. autoclass:: saga.adaptors.shell.shell_file.ShellFile
+.. autoclass:: saga.adaptors.shell.shell_resource.ShellResourceCompute
    :members:
 
 

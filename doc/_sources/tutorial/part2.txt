@@ -1,6 +1,6 @@
 
-Local Job Submission
-********************
+Part 2: Local Job Submission
+****************************
 
 One of the most important feature of SAGA Python is the capability to submit
 jobs to local and remote queueing systems and resource managers. This first

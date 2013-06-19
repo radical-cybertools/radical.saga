@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>4.4. saga.adaptor.pbsjob &mdash; SAGA 0.9.6 documentation</title>
+    <title>4. saga.adaptor.pbsjob &mdash; SAGA 0.9.7 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.6',
+        VERSION:     '0.9.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,10 +31,10 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.6 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.7 documentation" href="../index.html" />
     <link rel="up" title="4. Adaptors" href="saga.adaptor.index.html" />
-    <link rel="next" title="4.5. saga.adaptor.condorjob" href="saga.adaptor.condorjob.html" />
-    <link rel="prev" title="4.3. saga.adaptor.sgejob" href="saga.adaptor.sgejob.html" /> 
+    <link rel="next" title="5. saga.adaptor.condorjob" href="saga.adaptor.condorjob.html" />
+    <link rel="prev" title="3. saga.adaptor.sgejob" href="saga.adaptor.sgejob.html" /> 
   </head>
   <body>
     <div class="related">
@@ -47,12 +47,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.condorjob.html" title="4.5. saga.adaptor.condorjob"
+          <a href="saga.adaptor.condorjob.html" title="5. saga.adaptor.condorjob"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.sgejob.html" title="4.3. saga.adaptor.sgejob"
+          <a href="saga.adaptor.sgejob.html" title="3. saga.adaptor.sgejob"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" accesskey="U">4. Adaptors</a> &raquo;</li> 
       </ul>
     </div>  
@@ -63,15 +63,15 @@
           <div class="body">
             
   <div class="section" id="saga-adaptor-pbsjob">
-<h1>4.4. saga.adaptor.pbsjob<a class="headerlink" href="#saga-adaptor-pbsjob" title="Permalink to this headline">¶</a></h1>
+<h1>4. saga.adaptor.pbsjob<a class="headerlink" href="#saga-adaptor-pbsjob" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
-<h2>4.4.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<h2>4.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>The PBS adaptor allows to run and manage jobs on <a class="reference external" href="http://www.pbsworks.com/">PBS</a>
 and <a class="reference external" href="http://www.adaptivecomputing.com/products/open-source/torque">TORQUE</a>
 controlled HPC clusters.</p>
 </div>
 <div class="section" id="supported-schemas">
-<h2>4.4.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<h2>4.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
 <p>This adaptor is triggered by the following URL schemes:</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -97,7 +97,7 @@ controlled HPC clusters.</p>
 </table>
 </div>
 <div class="section" id="example">
-<h2>4.4.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<h2>4.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Ole Weidner&quot;</span>
 <span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
@@ -212,12 +212,12 @@ controlled HPC clusters.</p>
 </div>
 </div>
 <div class="section" id="configuration-options">
-<h2>4.4.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<h2>4.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
 <p>Configuration options can be used to control the adaptor&#8217;s runt    ime behavior. Most adaptors don&#8217;t need any configuration options to b    e set in order to work. They are mostly for controlling experimental feat    ures and properties of the adaptors.</p>
 <blockquote>
 <div></div></blockquote>
 <div class="section" id="enabled">
-<h3>4.4.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<h3>4.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
 <p>enable / disable saga.adaptor.pbsjob adaptor</p>
 <blockquote>
 <div><ul class="simple">
@@ -230,9 +230,9 @@ controlled HPC clusters.</p>
 </div>
 </div>
 <div class="section" id="capabilities">
-<h2>4.4.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<h2>4.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="supported-monitorable-metrics">
-<h3>4.4.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
+<h3>4.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>State</li>
@@ -240,7 +240,7 @@ controlled HPC clusters.</p>
 </div></blockquote>
 </div>
 <div class="section" id="supported-job-attributes">
-<h3>4.4.5.2. Supported Job Attributes<a class="headerlink" href="#supported-job-attributes" title="Permalink to this headline">¶</a></h3>
+<h3>4.5.2. Supported Job Attributes<a class="headerlink" href="#supported-job-attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>ExitCode</li>
@@ -252,7 +252,7 @@ controlled HPC clusters.</p>
 </div></blockquote>
 </div>
 <div class="section" id="supported-context-types">
-<h3>4.4.5.3. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
+<h3>4.5.3. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="50%" />
@@ -277,7 +277,7 @@ controlled HPC clusters.</p>
 </table>
 </div>
 <div class="section" id="supported-job-description-attributes">
-<h3>4.4.5.4. Supported Job Description Attributes<a class="headerlink" href="#supported-job-description-attributes" title="Permalink to this headline">¶</a></h3>
+<h3>4.5.4. Supported Job Description Attributes<a class="headerlink" href="#supported-job-description-attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>Name</li>
@@ -297,9 +297,17 @@ controlled HPC clusters.</p>
 </ul>
 </div></blockquote>
 </div>
+<div class="section" id="callbacks">
+<h3>4.5.5. callbacks<a class="headerlink" href="#callbacks" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>State</li>
+</ul>
+</div></blockquote>
+</div>
 </div>
 <div class="section" id="supported-api-classes">
-<h2>4.4.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<h2>4.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt>This adaptor supports the following API classes:</dt>
 <dd><ul class="first last simple">
@@ -310,7 +318,7 @@ controlled HPC clusters.</p>
 </dl>
 <p>Method implementation details are listed below.</p>
 <div class="section" id="saga-job-service">
-<h3>4.4.6.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
+<h3>4.6.1. saga.job.Service<a class="headerlink" href="#saga-job-service" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.pbs.pbsjob.PBSJobService">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.pbs.pbsjob.</tt><tt class="descname">PBSJobService</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/pbs/pbsjob.html#PBSJobService"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.pbs.pbsjob.PBSJobService" title="Permalink to this definition">¶</a></dt>
@@ -360,7 +368,7 @@ controlled HPC clusters.</p>
 
 </div>
 <div class="section" id="saga-job-job">
-<h3>4.4.6.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
+<h3>4.6.2. saga.job.Job<a class="headerlink" href="#saga-job-job" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.pbs.pbsjob.PBSJob">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.pbs.pbsjob.</tt><tt class="descname">PBSJob</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/pbs/pbsjob.html#PBSJob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.pbs.pbsjob.PBSJob" title="Permalink to this definition">¶</a></dt>
@@ -440,24 +448,25 @@ controlled HPC clusters.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">4.4. saga.adaptor.pbsjob</a><ul>
-<li><a class="reference internal" href="#description">4.4.1. Description</a></li>
-<li><a class="reference internal" href="#supported-schemas">4.4.2. Supported Schemas</a></li>
-<li><a class="reference internal" href="#example">4.4.3. Example</a></li>
-<li><a class="reference internal" href="#configuration-options">4.4.4. Configuration Options</a><ul>
-<li><a class="reference internal" href="#enabled">4.4.4.1. enabled</a></li>
+<li><a class="reference internal" href="#">4. saga.adaptor.pbsjob</a><ul>
+<li><a class="reference internal" href="#description">4.1. Description</a></li>
+<li><a class="reference internal" href="#supported-schemas">4.2. Supported Schemas</a></li>
+<li><a class="reference internal" href="#example">4.3. Example</a></li>
+<li><a class="reference internal" href="#configuration-options">4.4. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">4.4.1. enabled</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#capabilities">4.4.5. Capabilities</a><ul>
-<li><a class="reference internal" href="#supported-monitorable-metrics">4.4.5.1. Supported Monitorable Metrics</a></li>
-<li><a class="reference internal" href="#supported-job-attributes">4.4.5.2. Supported Job Attributes</a></li>
-<li><a class="reference internal" href="#supported-context-types">4.4.5.3. Supported Context Types</a></li>
-<li><a class="reference internal" href="#supported-job-description-attributes">4.4.5.4. Supported Job Description Attributes</a></li>
+<li><a class="reference internal" href="#capabilities">4.5. Capabilities</a><ul>
+<li><a class="reference internal" href="#supported-monitorable-metrics">4.5.1. Supported Monitorable Metrics</a></li>
+<li><a class="reference internal" href="#supported-job-attributes">4.5.2. Supported Job Attributes</a></li>
+<li><a class="reference internal" href="#supported-context-types">4.5.3. Supported Context Types</a></li>
+<li><a class="reference internal" href="#supported-job-description-attributes">4.5.4. Supported Job Description Attributes</a></li>
+<li><a class="reference internal" href="#callbacks">4.5.5. callbacks</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#supported-api-classes">4.4.6. Supported API Classes</a><ul>
-<li><a class="reference internal" href="#saga-job-service">4.4.6.1. saga.job.Service</a></li>
-<li><a class="reference internal" href="#saga-job-job">4.4.6.2. saga.job.Job</a></li>
+<li><a class="reference internal" href="#supported-api-classes">4.6. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-job-service">4.6.1. saga.job.Service</a></li>
+<li><a class="reference internal" href="#saga-job-job">4.6.2. saga.job.Job</a></li>
 </ul>
 </li>
 </ul>
@@ -466,10 +475,10 @@ controlled HPC clusters.</p>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="saga.adaptor.sgejob.html"
-                        title="previous chapter">4.3. saga.adaptor.sgejob</a></p>
+                        title="previous chapter">3. saga.adaptor.sgejob</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="saga.adaptor.condorjob.html"
-                        title="next chapter">4.5. saga.adaptor.condorjob</a></p>
+                        title="next chapter">5. saga.adaptor.condorjob</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/adaptors/saga.adaptor.pbsjob.txt"
@@ -502,12 +511,12 @@ controlled HPC clusters.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.condorjob.html" title="4.5. saga.adaptor.condorjob"
+          <a href="saga.adaptor.condorjob.html" title="5. saga.adaptor.condorjob"
              >next</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.sgejob.html" title="4.3. saga.adaptor.sgejob"
+          <a href="saga.adaptor.sgejob.html" title="3. saga.adaptor.sgejob"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" >4. Adaptors</a> &raquo;</li> 
       </ul>
     </div>

@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.context &mdash; SAGA 0.9.6 documentation</title>
+    <title>saga.context &mdash; SAGA 0.9.7 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.6',
+        VERSION:     '0.9.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.6 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.7 documentation" href="../../index.html" />
     <link rel="up" title="saga" href="../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -61,18 +61,19 @@
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
 
 
-<span class="kn">from</span>   <span class="nn">saga.constants</span>  <span class="kn">import</span> <span class="o">*</span>
 
-<span class="kn">import</span> <span class="nn">saga</span>
+<span class="kn">import</span> <span class="nn">saga.utils.signatures</span> <span class="kn">as</span> <span class="nn">sus</span>
+<span class="kn">import</span> <span class="nn">saga.adaptors.base</span>    <span class="kn">as</span> <span class="nn">sab</span>
+<span class="kn">import</span> <span class="nn">saga.attributes</span>       <span class="kn">as</span> <span class="nn">sa</span>
+<span class="kn">import</span> <span class="nn">saga.base</span>             <span class="kn">as</span> <span class="nn">sb</span>
 
-<span class="kn">from</span> <span class="nn">saga.constants</span> <span class="kn">import</span> <span class="n">TYPE</span><span class="p">,</span> <span class="n">SERVER</span><span class="p">,</span> <span class="n">CERT_REPOSITORY</span><span class="p">,</span> <span class="n">USER_PROXY</span><span class="p">,</span> <span class="n">USER_CERT</span>
-<span class="kn">from</span> <span class="nn">saga.constants</span> <span class="kn">import</span> <span class="n">USER_KEY</span><span class="p">,</span> <span class="n">USER_ID</span><span class="p">,</span> <span class="n">USER_PASS</span><span class="p">,</span> <span class="n">USER_VO</span><span class="p">,</span> <span class="n">LIFE_TIME</span>
-<span class="kn">from</span> <span class="nn">saga.constants</span> <span class="kn">import</span> <span class="n">REMOTE_ID</span><span class="p">,</span> <span class="n">REMOTE_HOST</span><span class="p">,</span> <span class="n">REMOTE_PORT</span>
-
+<span class="kn">from</span>   <span class="nn">saga.constants</span> <span class="kn">import</span> <span class="n">TYPE</span><span class="p">,</span>       <span class="n">SERVER</span><span class="p">,</span>    <span class="n">USER_CERT</span><span class="p">,</span>   <span class="n">CERT_REPOSITORY</span>
+<span class="kn">from</span>   <span class="nn">saga.constants</span> <span class="kn">import</span> <span class="n">USER_PROXY</span><span class="p">,</span> <span class="n">USER_KEY</span><span class="p">,</span>  <span class="n">USER_ID</span><span class="p">,</span>     <span class="n">USER_PASS</span><span class="p">,</span>   <span class="n">USER_VO</span>
+<span class="kn">from</span>   <span class="nn">saga.constants</span> <span class="kn">import</span> <span class="n">LIFE_TIME</span><span class="p">,</span>  <span class="n">REMOTE_ID</span><span class="p">,</span> <span class="n">REMOTE_HOST</span><span class="p">,</span> <span class="n">REMOTE_PORT</span><span class="p">,</span> <span class="n">TOKEN</span>
 
 <span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
-<span class="k">class</span> <span class="nc">Context</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">Attributes</span><span class="p">)</span> <span class="p">:</span>
+<span class="k">class</span> <span class="nc">Context</span> <span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">Base</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">Attributes</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Context"><a class="viewcode-back" href="../../library/context.html#saga.context.Context">[docs]</a>    <span class="sd">&#39;&#39;&#39;A SAGA Context object as defined in GFD.90.</span>
 
 <span class="sd">    A security context is a description of a security token.  It is important to</span>
@@ -120,15 +121,21 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">_adaptor</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_adaptor_state</span><span class="o">=</span><span class="p">{})</span> <span class="p">:</span> 
+    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Context&#39;</span><span class="p">,</span> 
+                  <span class="nb">basestring</span><span class="p">,</span> 
+                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sab</span><span class="o">.</span><span class="n">Base</span><span class="p">),</span>
+                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">dict</span><span class="p">))</span>
+    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctype</span><span class="p">,</span> <span class="n">_adaptor</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_adaptor_state</span><span class="o">=</span><span class="p">{})</span> <span class="p">:</span> 
         <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        type: string</span>
-<span class="sd">        ret:  None</span>
+<span class="sd">        ctype: string</span>
+<span class="sd">        ret:   None</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="kn">import</span> <span class="nn">saga.attributes</span> <span class="kn">as</span> <span class="nn">sa</span>
+        <span class="n">sb</span><span class="o">.</span><span class="n">Base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctype</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">_adaptor</span><span class="p">,</span> <span class="n">_adaptor_state</span><span class="p">,</span> <span class="n">ctype</span><span class="p">,</span> <span class="n">ttype</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
 
-        <span class="n">saga</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">_adaptor</span><span class="p">,</span> <span class="n">_adaptor_state</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">ttype</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+
+        <span class="kn">import</span> <span class="nn">saga.attributes</span> <span class="kn">as</span> <span class="nn">sa</span>
 
         <span class="c"># set attribute interface propertiesP</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_extensible</span>  <span class="p">(</span><span class="bp">False</span><span class="p">)</span>
@@ -137,6 +144,7 @@
         <span class="c"># register properties with the attribute interface</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">TYPE</span><span class="p">,</span>            <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">SERVER</span><span class="p">,</span>          <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">TOKEN</span><span class="p">,</span>           <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">CERT_REPOSITORY</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">USER_PROXY</span><span class="p">,</span>      <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">USER_CERT</span><span class="p">,</span>       <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
@@ -149,12 +157,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">REMOTE_HOST</span><span class="p">,</span>     <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span>  <span class="p">(</span><span class="n">REMOTE_PORT</span><span class="p">,</span>     <span class="bp">None</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">VECTOR</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">WRITEABLE</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">ctype</span>
 
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">__str__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Context&#39;</span><span class="p">)</span>
+    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__str__</span>  <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_dict</span> <span class="p">()</span>
         <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;{&quot;</span>
@@ -171,11 +181,23 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
+    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Context&#39;</span><span class="p">)</span>
+    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__repr__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@sus.takes</span>      <span class="p">(</span><span class="s">&#39;Context&#39;</span><span class="p">,</span> 
+                     <span class="p">(</span><span class="s">&#39;Session&#39;</span><span class="p">,</span> <span class="s">&#39;_DefaultSession&#39;</span><span class="p">))</span>
+    <span class="nd">@sus.returns</span>    <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_initialize</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        ret:  None</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">_initialize</span> <span class="p">(</span><span class="n">session</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">_initialize</span> <span class="p">(</span><span class="n">session</span><span class="p">)</span>
 
 
 <span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
@@ -212,7 +234,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" >saga</a> &raquo;</li> 
       </ul>

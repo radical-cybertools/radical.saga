@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>2.1. Introduction &mdash; SAGA 0.9.6 documentation</title>
+    <title>1. Part 1: Introduction &mdash; SAGA 0.9.7 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.6',
+        VERSION:     '0.9.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,9 +31,9 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.6 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.7 documentation" href="../index.html" />
     <link rel="up" title="2. Tutorial" href="index.html" />
-    <link rel="next" title="2.2. Local Job Submission" href="part2.html" />
+    <link rel="next" title="2. Part 2: Local Job Submission" href="part2.html" />
     <link rel="prev" title="2. Tutorial" href="index.html" /> 
   </head>
   <body>
@@ -47,12 +47,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="part2.html" title="2.2. Local Job Submission"
+          <a href="part2.html" title="2. Part 2: Local Job Submission"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="2. Tutorial"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">2. Tutorial</a> &raquo;</li> 
       </ul>
     </div>  
@@ -62,8 +62,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="introduction">
-<h1>2.1. Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="part-1-introduction">
+<h1>1. Part 1: Introduction<a class="headerlink" href="#part-1-introduction" title="Permalink to this headline">¶</a></h1>
 <p>The SAGA Python module provides an object-oriented programming interface for job
 submission and management, resource allocation, file handling and coordination
 and communication - functionality that is required in the majority of
@@ -80,13 +80,13 @@ host. In part 4, we use one of the HPC adaptors (sge, slurm, pbs) to submit a
 job to an HPC cluster. Additionally, we introduce the sftp file adaptor  to
 implement input and output file staging.</p>
 <div class="section" id="installation">
-<h2>2.1.1. Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<h2>1.1. Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p class="last">SAGA-Python requires <strong>Python &gt;= 2.5</strong>. It won&#8217;t work with an older version of Python.</p>
 </div>
 <div class="section" id="install-virtualenv">
-<h3>2.1.1.1. Install Virtualenv<a class="headerlink" href="#install-virtualenv" title="Permalink to this headline">¶</a></h3>
+<h3>1.1.1. Install Virtualenv<a class="headerlink" href="#install-virtualenv" title="Permalink to this headline">¶</a></h3>
 <p>A small Python command-line tool called <a class="reference external" href="http://www.python.org/">virtualenv</a>
 allows you to create a local Python environment (sandbox) in user space, which
 allows you to install additional Python packages without having to be &#8216;root&#8217;.</p>
@@ -109,7 +109,7 @@ allows you to install additional Python packages without having to be &#8216;roo
 <p>Activating the virtualenv is very important. If you don&#8217;t activate your virtualenv, the rest of this tutorial will not work. You can usually tell that your environment is activated properly if your bash command-line prompt starts with <tt class="docutils literal"><span class="pre">(tutorial)</span></tt>.</p>
 </div>
 <div class="section" id="install-saga-python">
-<h3>2.1.1.2. Install SAGA Python<a class="headerlink" href="#install-saga-python" title="Permalink to this headline">¶</a></h3>
+<h3>1.1.2. Install SAGA Python<a class="headerlink" href="#install-saga-python" title="Permalink to this headline">¶</a></h3>
 <p>The latest saga-python module is available via the <a class="reference external" href="https://pypi.python.org/pypi/saga-python">Python Package Index</a>  (PyPi). PyPi packages are installed very similar to Linux deb or rpm packages with a tool called <tt class="docutils literal"><span class="pre">pip</span></tt> (which stands for &#8220;pip installs packages&#8221;). Pip is installed by default in your virtualenv, so in order to install SAGA Python, the only thing you have to do is this:</p>
 <div class="highlight-bash"><div class="highlight"><pre>pip install saga-python
 </pre></div>
@@ -136,10 +136,10 @@ command below should be version number of the saga-python module):</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">2.1. Introduction</a><ul>
-<li><a class="reference internal" href="#installation">2.1.1. Installation</a><ul>
-<li><a class="reference internal" href="#install-virtualenv">2.1.1.1. Install Virtualenv</a></li>
-<li><a class="reference internal" href="#install-saga-python">2.1.1.2. Install SAGA Python</a></li>
+<li><a class="reference internal" href="#">1. Part 1: Introduction</a><ul>
+<li><a class="reference internal" href="#installation">1.1. Installation</a><ul>
+<li><a class="reference internal" href="#install-virtualenv">1.1.1. Install Virtualenv</a></li>
+<li><a class="reference internal" href="#install-saga-python">1.1.2. Install SAGA Python</a></li>
 </ul>
 </li>
 </ul>
@@ -151,7 +151,7 @@ command below should be version number of the saga-python module):</p>
                         title="previous chapter">2. Tutorial</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="part2.html"
-                        title="next chapter">2.2. Local Job Submission</a></p>
+                        title="next chapter">2. Part 2: Local Job Submission</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/tutorial/part1.txt"
@@ -184,12 +184,12 @@ command below should be version number of the saga-python module):</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="part2.html" title="2.2. Local Job Submission"
+          <a href="part2.html" title="2. Part 2: Local Job Submission"
              >next</a> |</li>
         <li class="right" >
           <a href="index.html" title="2. Tutorial"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="index.html" >2. Tutorial</a> &raquo;</li> 
       </ul>
     </div>

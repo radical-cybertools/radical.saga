@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>Replica Management &mdash; SAGA 0.9.6 documentation</title>
+    <title>Replica Management &mdash; SAGA 0.9.7 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.6',
+        VERSION:     '0.9.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.6 documentation" href="../../index.html" /> 
+    <link rel="top" title="SAGA 0.9.7 documentation" href="../../index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.6 documentation</a> &raquo;</li> 
+        <li><a href="../../index.html">SAGA 0.9.7 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -95,78 +95,52 @@ documentation.</p>
 </table>
 <dl class="class">
 <dt id="saga.replica.LogicalFile">
-<em class="property">class </em><tt class="descclassname">saga.replica.</tt><tt class="descname">LogicalFile</tt><big>(</big><em>url=None</em>, <em>flags=512</em>, <em>session=None</em>, <em>_adaptor=None</em>, <em>_adaptor_state={}</em>, <em>_ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.replica.</tt><tt class="descname">LogicalFile</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.namespace.entry.Entry</span></tt>, <a class="reference internal" href="../attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a></p>
 <dl class="classmethod">
 <dt id="saga.replica.LogicalFile.create">
-<em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>url=None</em>, <em>flags=512</em>, <em>session=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.create" title="Permalink to this definition">¶</a></dt>
-<dd><p>url:       saga.Url
-flags:     saga.replica.flags enum
-session:   saga.Session
-ttype:     saga.task.type enum
-ret:       saga.Task</p>
-</dd></dl>
+<em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.create" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.replica.LogicalFile.is_file">
+<tt class="descname">is_file</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.is_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.add_location">
-<tt class="descname">add_location</tt><big>(</big><em>name</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.add_location" title="Permalink to this definition">¶</a></dt>
-<dd><p>name:           saga.Url
-ttype:          saga.task.type enum
-ret:            None / saga.Task</p>
-</dd></dl>
+<tt class="descname">add_location</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.add_location" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.remove_location">
-<tt class="descname">remove_location</tt><big>(</big><em>name</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.remove_location" title="Permalink to this definition">¶</a></dt>
-<dd><p>name:           saga.Url
-ttype:          saga.task.type enum
-ret:            None / saga.Task</p>
-</dd></dl>
+<tt class="descname">remove_location</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.remove_location" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.update_location">
-<tt class="descname">update_location</tt><big>(</big><em>old</em>, <em>new</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.update_location" title="Permalink to this definition">¶</a></dt>
-<dd><p>old:            saga.Url
-new:            saga.Url 
-ttype:          saga.task.type enum
-ret:            None / saga.Task</p>
-</dd></dl>
+<tt class="descname">update_location</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.update_location" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.list_locations">
-<tt class="descname">list_locations</tt><big>(</big><em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.list_locations" title="Permalink to this definition">¶</a></dt>
-<dd><p>ttype:          saga.task.type enum
-ret:            list [saga.Url] / saga.Task</p>
-</dd></dl>
+<tt class="descname">list_locations</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.list_locations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.replicate">
-<tt class="descname">replicate</tt><big>(</big><em>name</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.replicate" title="Permalink to this definition">¶</a></dt>
-<dd><p>name:           saga.Url
-flags:          flags enum
-ttype:          saga.task.type enum
-ret:            None / saga.Task</p>
-</dd></dl>
+<tt class="descname">replicate</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.replicate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.upload">
-<tt class="descname">upload</tt><big>(</big><em>name</em>, <em>tgt=''</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.upload" title="Permalink to this definition">¶</a></dt>
-<dd><p>name:           saga.Url
-tgt:            saga.Url
-flags:          flags enum
-ttype:          saga.task.type enum
-ret:            None / saga.Task</p>
-</dd></dl>
+<tt class="descname">upload</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.upload" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.download">
-<tt class="descname">download</tt><big>(</big><em>name</em>, <em>src=''</em>, <em>flags=None</em>, <em>ttype=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.download" title="Permalink to this definition">¶</a></dt>
-<dd><p>name:           saga.Url
-src:            saga.Url
-flags:          flags enum
-ttype:          saga.task.type enum
-ret:            None / saga.Task</p>
-</dd></dl>
+<tt class="descname">download</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.download" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -218,7 +192,7 @@ ret:            None / saga.Task</p>
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.6 documentation</a> &raquo;</li> 
+        <li><a href="../../index.html">SAGA 0.9.7 documentation</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">

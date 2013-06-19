@@ -1,6 +1,6 @@
 
-Remote Job Submission
-*********************
+Part 3: Remote Job Submission
+*****************************
 
 Next, we take the previous example and modify it, so that our job is executed on
 a remote machine instead of localhost. This examples shows one of the

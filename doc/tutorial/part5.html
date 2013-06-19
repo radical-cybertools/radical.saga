@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>2.5. A More Complex Example: Mandelbrot &mdash; SAGA 0.9.6 documentation</title>
+    <title>5. Part 5: A More Complex Example: Mandelbrot &mdash; SAGA 0.9.7 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.6',
+        VERSION:     '0.9.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,10 +31,10 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.6 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.7 documentation" href="../index.html" />
     <link rel="up" title="2. Tutorial" href="index.html" />
     <link rel="next" title="3. Library Reference" href="../library/index.html" />
-    <link rel="prev" title="2.4. Adding File Transfer" href="part4.html" /> 
+    <link rel="prev" title="4. Part 4: Adding File Transfer" href="part4.html" /> 
   </head>
   <body>
     <div class="related">
@@ -50,9 +50,9 @@
           <a href="../library/index.html" title="3. Library Reference"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="part4.html" title="2.4. Adding File Transfer"
+          <a href="part4.html" title="4. Part 4: Adding File Transfer"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">2. Tutorial</a> &raquo;</li> 
       </ul>
     </div>  
@@ -62,11 +62,11 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="a-more-complex-example-mandelbrot">
-<h1>2.5. A More Complex Example: Mandelbrot<a class="headerlink" href="#a-more-complex-example-mandelbrot" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="part-5-a-more-complex-example-mandelbrot">
+<h1>5. Part 5: A More Complex Example: Mandelbrot<a class="headerlink" href="#part-5-a-more-complex-example-mandelbrot" title="Permalink to this headline">¶</a></h1>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">If you want to run the Mandelbrot example on OSG with Condor, please refer to the OSG-specific instructions: <a class="reference internal" href="part5_osg.html#tutorial-mandelbrot-osg"><em>A More Complex Example: Mandelbrot (OSG VERSION)</em></a>.</p>
+<p class="last">If you want to run the Mandelbrot example on OSG with Condor, please refer to the OSG-specific instructions: <a class="reference internal" href="part5_osg.html#tutorial-mandelbrot-osg"><em>Part 5: A More Complex Example: Mandelbrot (OSG VERSION)</em></a>.</p>
 </div>
 <p>In this example, we split up the calculation of a Mandelbrot set into several
 tiles, submit a job for each tile using the SAGA Job API, retrieve the tiles
@@ -74,7 +74,7 @@ using the SAGA File API and stitch together the final image from the individual
 tiles. This example shows how SAGA can be used to create more complex
 application workflows that involve multiple aspects of the API.</p>
 <div class="section" id="hands-on-distributed-mandelbrot-fractals">
-<h2>2.5.1. Hands-On: Distributed Mandelbrot Fractals<a class="headerlink" href="#hands-on-distributed-mandelbrot-fractals" title="Permalink to this headline">¶</a></h2>
+<h2>5.1. Hands-On: Distributed Mandelbrot Fractals<a class="headerlink" href="#hands-on-distributed-mandelbrot-fractals" title="Permalink to this headline">¶</a></h2>
 <p>In order for this example to work, we need to install an additional Python
 module, the Python Image Library (PIL). This is done via pip:</p>
 <div class="highlight-bash"><div class="highlight"><pre>pip install PIL
@@ -225,15 +225,15 @@ favorite editor and paste the following content:</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">2.5. A More Complex Example: Mandelbrot</a><ul>
-<li><a class="reference internal" href="#hands-on-distributed-mandelbrot-fractals">2.5.1. Hands-On: Distributed Mandelbrot Fractals</a></li>
+<li><a class="reference internal" href="#">5. Part 5: A More Complex Example: Mandelbrot</a><ul>
+<li><a class="reference internal" href="#hands-on-distributed-mandelbrot-fractals">5.1. Hands-On: Distributed Mandelbrot Fractals</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="part4.html"
-                        title="previous chapter">2.4. Adding File Transfer</a></p>
+                        title="previous chapter">4. Part 4: Adding File Transfer</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="../library/index.html"
                         title="next chapter">3. Library Reference</a></p>
@@ -272,9 +272,9 @@ favorite editor and paste the following content:</p>
           <a href="../library/index.html" title="3. Library Reference"
              >next</a> |</li>
         <li class="right" >
-          <a href="part4.html" title="2.4. Adding File Transfer"
+          <a href="part4.html" title="4. Part 4: Adding File Transfer"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.7 documentation</a> &raquo;</li>
           <li><a href="index.html" >2. Tutorial</a> &raquo;</li> 
       </ul>
     </div>

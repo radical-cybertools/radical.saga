@@ -1,7 +1,7 @@
 .. _tutorial_mandelbrot_osg:
 
-A More Complex Example: Mandelbrot (OSG VERSION)
-************************************************
+Part 5: A More Complex Example: Mandelbrot (OSG VERSION)
+********************************************************
 
 Description... why is this different from XSEDE?
 
