@@ -5,7 +5,6 @@ import saga
 import time
 
 import libcloud.security
-libcloud.security.VERIFY_SSL_CERT = False
 
 """
 This is an example which shows how to access Amazon EC2 clouds via the SAGA
@@ -100,9 +99,9 @@ def usage (msg = None) :
     print """
     Usage:
 
-        %s -c             :  create a new VM
-        %s -u <id> [...]  :  use VMS: run a job
-        %s -d <id> [...]  :  destroy specified VMs
+        %s -c             :  create  VM
+        %s -u <id> [...]  :  use     VMs (run jobs)
+        %s -d <id> [...]  :  destroy VMs
 
     """
 
