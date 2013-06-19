@@ -211,8 +211,13 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
     The `UserKey` attribute can point to either the public or private key of the
     ssh keypair -- the SAGA-Python implementation will internally complete the
-    repsective other key (public key file names are expected to be derived from
+    respective other key (public key file names are expected to be derived from
     the private key, by appending the suffix `.pub`).
+
+    *Note* that `Token` is not a standard :class:`saga.Context` attribute -- at
+    this point, there seems to exist no suitable attribute for that
+    functionality.  The `Token` attribute may be officially included into the
+    list of context attributes at some point.
 
 
     Known Limitations
@@ -403,6 +408,31 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 ###############################################################################
 #
 class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
+    """
+
+    Known Limitations
+    =================
+
+    1) the EC2 backend reports a VM to be in `ACTIVE` state as soon as it begins
+       to boot up (From that point in time on, the VM indeed consumes resources,
+       and is billed against the user's account).  The VM is at that point,
+       however, not yet reachable, as the boot process needs to be completed
+       bevore the ssh daemon (or any other service) can operate correctly.
+       Furthermore, the VM's IP address may not yet be registered in DNS,
+       further limiting reachability of the machine.  Finally, it seems that
+       also the VM contextualization is at this point not completed, so that for
+       example an ssh connection may fail due to unregistered keys.
+
+       There does not seem to exist and universal way to wait for the boot,
+       registration and contextualization completion.  Retrying to connect is
+       one option, but (a) the connection mechanism depends on the VM's OS image
+       configuration, and (b) a connection failure due to incomplete system
+       startup is indistinguishable from any 'real' system error.
+
+       For the time being it is left to the application level on how to handle
+       that problem, and this adaptor will simply report the state as returned
+       by EC2.
+    """
 
     # ----------------------------------------------------------------
     #
