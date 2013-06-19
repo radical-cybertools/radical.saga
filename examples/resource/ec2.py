@@ -17,7 +17,7 @@ This program has two modes of operation:
 
   starting VMs on EC2:
 
-    Usage:  python ec2.py -c / -u <id> / -d <id> 
+    Usage:  python ec2.py -c 
     Output: available compute templates
             ['Micro Instance', 'Small Instance', 'Medium Instance', 'Large
               Instance', 'Extra Large Instance', 'High-Memory Extra Large
@@ -82,6 +82,7 @@ This program has two modes of operation:
 #
 # defines
 #
+LIST    = 'list'
 CREATE  = 'create'
 USE     = 'use'
 DESTROY = 'destroy'
@@ -99,6 +100,7 @@ def usage (msg = None) :
     print """
     Usage:
 
+        %s -l             :  list    VMs
         %s -c             :  create  VM
         %s -u <id> [...]  :  use     VMs (run jobs)
         %s -d <id> [...]  :  destroy VMs
@@ -127,6 +129,10 @@ def state2str (state) :
 def main () :
     """
     scan argv
+    if  -l in argv:
+        list VM instances
+        exit
+
     if  -c in argv:
         create VM instance
         exit
@@ -147,12 +153,17 @@ def main () :
     vm_ids = []
     args   = sys.argv[1:]
 
+    if  '-l' in args :
+        mode = LIST
+        args.remove ('-l')
+        if  len (args) > 0 :
+            usage ("no additional args allowed on '-l'")
+
     if  '-c' in args :
         mode = CREATE
         args.remove ('-c')
         if  len (args) > 0 :
             usage ("no additional args allowed on '-c'")
-
 
     if  '-u' in args :
         mode = USE
@@ -200,6 +211,13 @@ def main () :
     # in this session, connect to the EC2 resource manager
     rm  = saga.resource.Manager ("ec2://aws.amazon.com/", session=s)
     crs = [] # list of compute resources
+
+
+    if  mode == LIST :
+
+        for cr_id in rm.list () :
+            print cr_id
+        sys.exit (0)
 
 
     if  mode == CREATE :
@@ -295,7 +313,7 @@ def main () :
 
 
 
-    else :  # mode == DESTROY
+    elif mode == DESTROY :
 
         # we want to reconnect to running VMs, specified by their IDs
         for vm_id in vm_ids :
@@ -317,6 +335,13 @@ def main () :
             print "\nshutting down %s (%s)" % (cr.id, state2str(cr.state))
             cr.destroy ()
             print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
+
+
+    else :
+
+        usage ('unknown operation')
+
+        
 
 
 # ------------------------------------------------------------------------------

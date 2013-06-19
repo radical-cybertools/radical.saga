@@ -292,13 +292,11 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
         # for backward compatibility, we allow to specify user_cert instead of
         # user_key
         if  self._api ().user_cert :
-            self._logger.error ('reset usercert')
             self._api ().user_key  = self._api ().user_cert
             self._api ().user_cert = None
 
         # convert public key into private key
         if  self._api ().user_key.endswith ('.pub') :
-            self._logger.error ('privatize pub key')
             self._api ().user_key = self._api ().user_key[:-4]
 
 
@@ -599,21 +597,20 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
 
         if  self.backend == 'amazon.ec2' :
 
-            if True :
-          # try :
+            try :
                 
                 manager_url, rid_s = self._adaptor.parse_id (str(rid))
-
+           
                 # FIXME: interpret / verify size
                 nodes  = self.conn.list_nodes (ex_node_ids=[rid_s])
-
+           
                 if  len (nodes) < 1 :
                     raise saga.BadParameter ("Cannot find resource '%s'" % rid_s)
                 if  len (nodes) > 1 :
                     raise saga.BadParameter ("Cannot identify resource '%s'" % rid_s)
-
+           
                 node = nodes[0]
-
+           
                 resource_info = { 'backend'                 : self.backend   ,
                                   'resource'                : node           ,
                                   'resource_type'           : COMPUTE        ,
@@ -622,10 +619,10 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
                                   'resource_manager_url'    : self.url       , 
                                   'resource_schema'         : self.url.schema, 
                                   'connection'              : self.conn      }
-
-          # except Exception as e :
-          #     # FIXME: translate errors more sensibly
-          #     raise saga.NoSuccess ("Failed with %s" % e)
+           
+            except Exception as e :
+                # FIXME: translate errors more sensibly
+                raise saga.NoSuccess ("Failed with %s" % e)
 
         if  resource_info :
             return saga.resource.Compute (_adaptor       = self._adaptor, 
@@ -646,9 +643,26 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
     @SYNC_CALL
     def list (self, rtype):
 
-        # FIXME
-        return self.access[rtype]
+        if  not self.conn :
+            raise saga.IncorrectState ("not connected to backend")
+
+
+        if  self.backend == 'amazon.ec2' :
+
+            ret = []
+            
+            try :
+                
+                for node in self.conn.list_nodes () :
+                  ret.append ("[%s]-[%s]" % (self.url, node.id))
+
+            except Exception as e :
+                # FIXME: translate errors more sensibly
+                raise saga.NoSuccess ("Failed with %s" % e)
+
+            return ret
    
+        raise saga.NoSuccess ("Could not list resources")
    
     # ----------------------------------------------------------------
     #
