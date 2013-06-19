@@ -4,88 +4,92 @@ import sys
 import saga
 import time
 
-import libcloud.security
-
-"""
+""" 
 This is an example which shows how to access Amazon EC2 clouds via the SAGA
 resource package. The code expects the environment variables EC2_ID and EC2_KEY
-to contain the respective authentication tokens required for EC2 access.  Before
-running, please also inspect the comments for the EC2 keypair setup (search for
-keypair).
+to contain the respective authentication tokens required for EC2 access.  It
+also expects EC2_KEYPAIR to point to the ssh key to be used in the EC2 keypair
+authentication.
 
-This program has two modes of operation:
+This program has different modes of operation:
 
-  starting VMs on EC2:
+  * *Help* ::
+  
+    # python examples/resource/ec2.py -h
+    
+    Usage:
 
-    Usage:  python ec2.py -c 
-    Output: available compute templates
-            ['Micro Instance', 'Small Instance', 'Medium Instance', 'Large
-              Instance', 'Extra Large Instance', 'High-Memory Extra Large
-              Instance', 'High-Memory Double Extra Large Instance',
-              'High-Memory Quadruple Extra Large Instance', 'Extra Large
-              Instance', 'Double Extra Large Instance', 'High-CPU Medium
-              Instance', 'High-CPU Extra Large Instance', 'Cluster Compute
-              Quadruple Extra Large Instance', 'Cluster Compute Eight Extra
-              Large Instance', 'Cluster GPU Quadruple Extra Large Instance',
-              'High Memory Cluster Eight Extra Large', 'High Storage Eight
-              Extra Large Instance']
-            
-            Created VM
-              id           : [ec2://aws.amazon.com/]-[i-376de158]
-              state        : PENDING (pending)
-              access       : None
-            
-            Connecting to VM [ec2://aws.amazon.com/]-[i-376de158]
-              state        : PENDING (pending)
-              state        : ACTIVE (running)
-            Running job
-              job state    : Running
-              job state    : Done
+        %s -l             :  list    VMs
+        %s -c             :  create  VM
+        %s -u <id> [...]  :  use     VMs (run jobs)
+        %s -d <id> [...]  :  destroy VMs
 
 
-  Destroying VMs on EC2:
+  * *Listing* of templates and existing VMs on EC2::
 
-    Usage:  python ec2.py -d <vm_id> [...]
-    Output: reconnecting to id [ec2://aws.amazon.com/]-[i-376de158]
-              id           : [ec2://aws.amazon.com/]-[i-376de158]
-              state        : ACTIVE (running)
-              access       : ssh://50.19.8.253/
-            
-            reconnecting to id [ec2://aws.amazon.com/]-[i-721ac919]
-              id           : [ec2://aws.amazon.com/]-[i-721ac919]
-              state        : ACTIVE (running)
-              access       : ssh://50.16.125.173/
-            
-            Connecting to VM [ec2://aws.amazon.com/]-[i-376de158]
-              state        : ACTIVE (running)
-              state        : ACTIVE (running)
-            Running job
-              job state    : Running
-              job state    : Done
-            
-            Connecting to VM [ec2://aws.amazon.com/]-[i-721ac919]
-              state        : ACTIVE (running)
-              state        : ACTIVE (running)
-            Running job
-              job state    : Running
-              job state    : Done
-            
-            shutting down [ec2://aws.amazon.com/]-[i-376de158] (ACTIVE)
-              state        : EXPIRED (destroyed by user)
-            
-            shutting down [ec2://aws.amazon.com/]-[i-721ac919] (ACTIVE)
-              state        : EXPIRED (destroyed by user)
+    # python examples/resource/ec2.py -l
+    
+    compute resources
+      [ec2://aws.amazon.com/]-[i-cba515ab]
+      [ec2://aws.amazon.com/]-[i-f93f2299]
+    
+    compute templates
+      Micro Instance
+      Small Instance
+      Medium Instance
+      Large Instance
+      Extra Large Instance
+      High-Memory Extra Large Instance
+      High-Memory Double Extra Large Instance
+      High-Memory Quadruple Extra Large Instance
+      Extra Large Instance
+      Double Extra Large Instance
+      High-CPU Medium Instance
+      High-CPU Extra Large Instance
+      Cluster Compute Quadruple Extra Large Instance
+      Cluster Compute Eight Extra Large Instance
+      Cluster GPU Quadruple Extra Large Instance
+      High Memory Cluster Eight Extra Large
+      High Storage Eight Extra Large Instance
+    
+
+  * *Creating* a VM instance on EC2::
+
+    # python examples/resource/ec2.py -c
+
+    Created VM
+      id           : [ec2://aws.amazon.com/]-[i-e0d2ad8a]
+      state        : PENDING (pending)
+      access       : None
+
+
+  * *Using* a VM instance on EC2::
+  
+    # python examples/resource/ec2.py -u '[ec2://aws.amazon.com/]-[i-e0d2ad8a]'
+
+    connecting to [ec2://aws.amazon.com/]-[i-e0d2ad8a]
+      id           : [ec2://aws.amazon.com/]-[i-e0d2ad8a]
+      state        : PENDING (pending)
+      wait for ACTIVE state
+      state        : ACTIVE (running)
+    running job
+      job state    : Running
+      job state    : Done
+
+
+  * *Destroying* a VMs instance on EC2::
+
+    # python examples/resource/ec2.py -d '[ec2://aws.amazon.com/]-[i-e0d2ad8a]'
+
+    reconnecting to id [ec2://aws.amazon.com/]-[i-e0d2ad8a]
+      id           : [ec2://aws.amazon.com/]-[i-e0d2ad8a]
+      state        : ACTIVE (running)
+      access       : ssh://107.21.154.248/
+    
+    shutting down [ec2://aws.amazon.com/]-[i-e0d2ad8a] (ACTIVE)
+      state        : EXPIRED (destroyed by user)
+    
 """
-
-
-# ------------------------------------------------------------------------------
-#
-# defines
-#
-LIST    = 'list'
-CREATE  = 'create'
-USE     = 'use'
-DESTROY = 'destroy'
 
 
 # ------------------------------------------------------------------------------
@@ -111,6 +115,8 @@ def usage (msg = None) :
     else   : sys.exit ( 0)
 
 
+# ------------------------------------------------------------------------------
+#
 def state2str (state) :
 
     if state == saga.resource.UNKNOWN  : return "UNKNOWN"
@@ -127,64 +133,8 @@ def state2str (state) :
 # ------------------------------------------------------------------------------
 #
 def main () :
-    """
-    scan argv
-    if  -l in argv:
-        list VM instances
-        exit
-
-    if  -c in argv:
-        create VM instance
-        exit
-
-    if  -u in argv
-        for each vm_id in argv
-            connect to vm with id vm_id
-            run job
-        exit
-
-    if  -d in argv
-        for each vm_id in argv
-            destroy vm instance
-        exit
-    """
-
-    mode   = None
-    vm_ids = []
-    args   = sys.argv[1:]
-
-    if  '-l' in args :
-        mode = LIST
-        args.remove ('-l')
-        if  len (args) > 0 :
-            usage ("no additional args allowed on '-l'")
-
-    if  '-c' in args :
-        mode = CREATE
-        args.remove ('-c')
-        if  len (args) > 0 :
-            usage ("no additional args allowed on '-c'")
-
-    if  '-u' in args :
-        mode = USE
-        args.remove ('-u')
-        if  len (args) == 0 :
-            usage ("additional args required on '-u'")
-        # we may have VM IDs to connect to
-        vm_ids = args
-
-    if  '-d' in args :
-        mode = DESTROY
-        args.remove ('-d')
-        if  len (args) == 0 :
-            usage ("additional args required on '-d'")
-        # we may have VM IDs to connect to
-        vm_ids = args
-
-    # make sure we know what to do
-    if  not mode :
-        usage ()
-
+    # get command line args, w/o command name
+    args = sys.argv[1:]
 
     # in order to connect to EC2, we need an EC2 ID and KEY
     c1 = saga.Context ('ec2')
@@ -198,7 +148,7 @@ def main () :
     # transfererd to EC2).
     c2 = saga.Context ('ec2_keypair')
     c2.token     = 'futuregrid_1'  # keypair name
-    c2.user_cert = '/home/merzky/.ssh/id_rsa_futuregrid.pub'
+    c2.user_cert = os.environ['EC2_KEYPAIR']
     c2.user_id   = 'root'         # the user id on the target VM
 
     # we create a session for all SAGA interactions, and attach the respective
@@ -210,28 +160,41 @@ def main () :
 
     # in this session, connect to the EC2 resource manager
     rm  = saga.resource.Manager ("ec2://aws.amazon.com/", session=s)
-    crs = [] # list of compute resources
 
 
-    if  mode == LIST :
+    # --------------------------------------------------------------------------
+    if  '-l' in args :
+        args.remove ('-l')
+        if  len (args) > 0 :
+            usage ("no additional args allowed on '-l'")
 
+        # list known VMs (compute resources)
+        print "\ncompute resources"
         for cr_id in rm.list () :
-            print cr_id
+            print "  %s" % cr_id
+
+        # list the available VM templates
+        print "\ncompute templates"
+        for tmp in rm.list_templates () :
+            print "  %s" % tmp
+
+        # # we can also list the available OS images, as per below -- but since
+        # # the list of OS images avaialble on EC2 is *huge*, this operation is
+        # # rather slow (libcloud does one additional hop per image, for
+        # # inspection)
+        # print "\nOS images"
+        # for osi in rm.list_images () :
+        #     print "  %s" % osi
+
+        print
         sys.exit (0)
 
 
-    if  mode == CREATE :
-
-        # we want to start a VM -- list the available VM templates
-        print "\navailable compute templates"
-        print rm.list_templates ()
-
-        # we can also list the available OS images, as per below -- but since
-        # the list of OS images avaialble on EC2 is *huge*, this operation is
-        # rather slow (libcloud does one additional hop per image, for
-        # inspection)
-        # print "\navailable OS images"
-        # print rm.list_images ()
+    # --------------------------------------------------------------------------
+    elif  '-c' in args :
+        args.remove ('-c')
+        if  len (args) > 0 :
+            usage ("no additional args allowed on '-c'")
 
         # create a resource description with an image and an OS template, out of
         # the ones listed above.  We pick a small VM and a plain Ubuntu image...
@@ -247,38 +210,29 @@ def main () :
         print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
         print "  access       : %s"       %  cr.access
 
-        # keep that instance in our list of resources to run jobs on
-        crs.append (cr)
+        sys.exit (0)
 
-
-    elif mode == USE :
+    # --------------------------------------------------------------------------
+    elif  '-u' in args :
+        args.remove ('-u')
+        if  len (args) == 0 :
+            usage ("additional args required on '-u'")
 
         # we want to reconnect to running VMs, specified by their IDs
-        for vm_id in vm_ids :
+        for vm_id in args :
 
-            print "\nreconnecting to id %s" % vm_id
+            print "\nconnecting to %s" % vm_id
 
             # get a handle on that VM, and print some information
             cr = rm.acquire (vm_id)
 
             print "  id           : %s"       %  cr.id
             print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
-            print "  access       : %s"       %  cr.access
-
-            # keep that instance in our list of resources to run jobs on
-            crs.append (cr)
-
-        # run a simple job on each compute resource (VM) in our list
-        for cr in crs :
-
-            print "\nConnecting to VM %s" % cr.id
 
             # make sure the machine is not in final state already
-            state = cr.state
-            print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
-            if  state in [saga.resource.EXPIRED,
-                          saga.resource.DONE,
-                          saga.resource.FAILED] :
+            if  cr.state in [saga.resource.EXPIRED,
+                             saga.resource.DONE,
+                             saga.resource.FAILED] :
                 print "  VM %s is alrady in final state"  %  vm_id
                 continue
 
@@ -286,15 +240,16 @@ def main () :
             # is in that state.
             # Note: the careful coder will spot the subtle race condition between the 
             # check above and the check on this line... ;-)
-            if state != saga.resource.ACTIVE :
+            if cr.state != saga.resource.ACTIVE :
+              print "  wait for ACTIVE state"
               cr.wait (saga.resource.ACTIVE)
 
               # Once a VM comes active, it still needs to boot and setup the ssh
               # daemon to be usable -- we thus wait for a while
-              # Note: this is a workaround and needs to be fixed in the adaptor!
               time.sleep (60)
 
             print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
+            print "  access       : %s"       %   cr.access
 
 
             # The session created above contains the ssh context to access the VM
@@ -303,20 +258,26 @@ def main () :
             # session to create a job service instance for that VM:
             js = saga.job.Service (cr.access, session=s)
 
-            print "Running job"
+            print "running job"
             # all ready: do the deed!
             j = js.run_job ('sleep 10')
             print "  job state    : %s"  %  j.state
             j.wait ()
             print "  job state    : %s"  %  j.state
 
+        print
+        sys.exit (0)
 
 
 
-    elif mode == DESTROY :
+    # --------------------------------------------------------------------------
+    elif  '-d' in args :
+        args.remove ('-d')
+        if  len (args) == 0 :
+            usage ("additional args required on '-d'")
 
         # we want to reconnect to running VMs, specified by their IDs
-        for vm_id in vm_ids :
+        for vm_id in args :
 
             print "\nreconnecting to id %s" % vm_id
 
@@ -327,21 +288,25 @@ def main () :
             print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
             print "  access       : %s"       %  cr.access
 
-            # keep that instance in our list of resources to run jobs on
-            crs.append (cr)
+            if cr.state in [saga.resource.EXPIRED,
+                            saga.resource.DONE,
+                            saga.resource.FAILED] :
+                print "  VM %s is alrady in final state"  %  vm_id
+                continue
 
-
-        for cr in crs :
-            print "\nshutting down %s (%s)" % (cr.id, state2str(cr.state))
+            print "\nshutting down  %s "      %  cr.id
             cr.destroy ()
             print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
+        
+        print 
+        sys.exit (0)
 
 
+    # --------------------------------------------------------------------------
     else :
 
-        usage ('unknown operation')
+        usage ('invalid arguments')
 
-        
 
 
 # ------------------------------------------------------------------------------
