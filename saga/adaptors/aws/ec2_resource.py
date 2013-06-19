@@ -142,9 +142,6 @@ class Adaptor (saga.adaptors.base.Base):
             else :
                 self.lc_has_footprint = True
 
-            # avoid the CA validation warning
-            self.lc.security.VERIFY_SSL_CERT = True
-
 
         except Exception as e :
             self._logger.warning ("Could not load libcloud module, "
@@ -559,8 +556,12 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
 
                 # FIXME: interpret / verify size
 
+                # user name as id tag
+                import getpass
+                cid = getpass.getuser()
+
                 # it should be safe to create the VM instance now
-                node = self.conn.create_node (name  = 'saga.resource.Compute',
+                node = self.conn.create_node (name  = 'saga.resource.Compute.%s' % cid,
                                               size  = self.templates_dict[rd.template], 
                                               image = self.images_dict[rd.image], 
                                               ex_keyname = token)
