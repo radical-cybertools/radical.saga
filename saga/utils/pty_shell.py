@@ -389,7 +389,8 @@ class PTYShell (object) :
             self.prompt    = new_prompt
             self.prompt_re = re.compile ("^(.*?)%s\s*$" % self.prompt, re.DOTALL)
 
-            retries = 0
+            retries  = 0
+            triggers = 0
 
             while True :
 
@@ -417,7 +418,8 @@ class PTYShell (object) :
                             raise se.BadParameter ("Cannot use new prompt, parsing failed (10 retries)")
 
                         self.pty_shell.write ("\n")
-                  #     self.logger.error  ("sent prompt trigger again (%d)" % retries)
+                        self.logger.debug  ("sent prompt trigger again (%d)" % retries)
+                        triggers += 1
                         continue
 
 
@@ -435,6 +437,23 @@ class PTYShell (object) :
                 except Exception as e :
                     self.prompt = old_prompt
                     raise self._translate_exception (e, "Could not set shell prompt")
+
+
+            # got a valid prompt -- but we have to sync the output again in
+            # those cases where we had to use triggers to actually get the
+            # prompt
+            if triggers > 0 :
+                self.run_async ('printf "SYNCHRONIZE_PROMPT\n"')
+
+                # FIXME: better timout value?
+                _, match = self.pty_shell.find (["SYNCHRONIZE_PROMPT"], timeout=1.0)  
+
+                if not match :
+                    # not find prompt after blocking?  BAD!  Restart the shell
+                    self.finalize (kill_pty=True)
+                    raise se.NoSuccess ("Could not synchronize prompt detection")
+
+                self.find_prompt ()
 
 
 

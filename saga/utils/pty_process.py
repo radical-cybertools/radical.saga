@@ -347,11 +347,14 @@ class PTYProcess (object) :
             if  self.child :
 
                 while True :
+                    # print 'waitpid %s' % self.child
                     # hey, kiddo, whats up?
                     wpid, wstat = os.waitpid (self.child, os.WNOHANG)
+                    # print 'waitpid %s : %s - %s' % (self.child, wpid, wstat)
 
                     # did we get a note about child termination?
                     if 0 == wpid :
+                        # print 'waitpid %s : %s - %s -- none' % (self.child, wpid, wstat)
                         # nope, all is well - carry on
                         return True
 
@@ -360,6 +363,7 @@ class PTYProcess (object) :
                     # Well, maybe the child fooled us and is just playing dead?
                     if os.WIFSTOPPED   (wstat) or \
                        os.WIFCONTINUED (wstat)    :
+                        # print 'waitpid %s : %s - %s -- stop/cont' % (self.child, wpid, wstat)
                         # we don't care if someone stopped/resumed the child -- that is up
                         # to higher powers.  For our purposes, the child is alive.  Ha!
                         continue
@@ -374,6 +378,7 @@ class PTYProcess (object) :
 
             # check if we can attempt a post-mortem revival though
             if  not recover :
+                # print 'not alive, not recover'
                 # nope, we are on holy ground - revival not allowed.
                 return False
 
@@ -382,6 +387,7 @@ class PTYProcess (object) :
             # reincarnate, etc.)
             if self.recover_attempts >= self.recover_max :
                 # nope, its gone for good - just report the sad news
+                # print 'not alive, no recover anymore'
                 return False
 
             # MEDIIIIC!!!!
@@ -392,6 +398,7 @@ class PTYProcess (object) :
             # again.  Yes, this is recursive -- but note that recover_attempts get
             # incremented on every iteration, and this will eventually lead to
             # call termination (tm).
+            # print 'alive, or not alive?  Check again!'
             return self.alive (recover=True)
 
 
