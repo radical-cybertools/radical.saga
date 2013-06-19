@@ -1,4 +1,12 @@
 
+Version 0.9.7 released 2013-06-19
+----------------------------------------------------------------------
+
+* Added resource package
+* Added 'liblcoud' based adaptor to access Amazon EC2 clouds
+* Closed issues:
+  - https://github.com/saga-project/saga-python/issues?milestone=5&page=1&state=closed
+
 Version 0.9.6 released 2013-06-17
 ----------------------------------------------------------------------
 
