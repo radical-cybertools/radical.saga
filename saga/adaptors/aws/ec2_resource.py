@@ -61,7 +61,7 @@ _ADAPTOR_DOC           = {
         IaaS backends via the Apache LibCloud.  It also provides EC2 related
         context types.
         """,
-    "example": "examples/jobs/resource_ec2.py",
+    "example": "examples/resource/amazon_ec2.py",
     "schemas"          : {"ec2"         : "Amacon EC2 key/secret",
                           "ec2_keypair" : "Amacon EC2 keypair name"}
 }
