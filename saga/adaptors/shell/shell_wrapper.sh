@@ -596,7 +596,7 @@ cmd_stderr () {
 # list all job IDs
 #
 cmd_list () {
-  RETVAL=`(cd "$BASE" ; ls -C1 -d */) | cut -f 1 -d '/'`
+  RETVAL=`(cd "$BASE" ; ls -C1 -d */ 2>/dev/null) | cut -f 1 -d '/'`
 }
 
 

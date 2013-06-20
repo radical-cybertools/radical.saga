@@ -691,6 +691,8 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         # FIXME: this should also fetch job state and metadata, and cache those
 
+        return 2
+
         ret, out, _ = self.shell.run_sync ("LIST\n")
         if  ret != 0 :
             raise saga.NoSuccess ("failed to list jobs: (%s)(%s)" \
