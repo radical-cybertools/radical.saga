@@ -388,7 +388,7 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Job',
-                  float,
+                  sus.optional (float),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((bool, st.Task))
     def wait     (self, timeout=None, ttype=None) :
