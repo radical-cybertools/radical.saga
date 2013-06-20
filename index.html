@@ -2,12 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>saga-python: A Light-Weight Access Layer for Distributed Computing Infrastructure</title>
+    <title>SAGA-Python: A Light-Weight Access Layer for Distributed Computing Infrastructure</title>
     <!-- SAGA, Distributed, Cloud -->
 
     <meta name="viewport"      content="width=device-width, initial-scale=1.0">
     <meta name="description"   content="">
-    <meta name="title"         content="saga-python: A Light-Weight Access Layer for Distributed Computing Infrastructure">
+    <meta name="title"         content="SAGA-Python: A Light-Weight Access Layer for Distributed Computing Infrastructure">
     <meta name="keywords"      content="SAGA,SAGA Python,SAGA-Python,GFD-90,OGF,Grid Computing,Cloud Computing,Python,API,Distributed Computing,Simple API for Grid Applications,PBS,SGE,XSEDE,FutureGrid,Ole Weidner,RADICAL,Rutgers,Distributed Applications,Pilot-Job,HPC" />
     <meta name="revisit-after" content="1 month" />
     <meta name="author"        content="Ole Weidner">
@@ -44,7 +44,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="brand" href="./index.html">saga-python</a>
+          <a class="brand" href="./index.html">SAGA-Python</a>
           <div class="nav-collapse collapse">
             <ul class="nav">
               <li class="active">
@@ -60,7 +60,7 @@
                 <a href="./doc/index.html">Documentation</a>
               </li>
               <li class="">
-                <a href="https://github.com/saga-project/saga-python/issues">Issue Tracker</a>
+                <a href="https://github.com/saga-project/SAGA-Python/issues">Issue Tracker</a>
               </li>
             </ul>
           </div>
@@ -70,14 +70,14 @@
 
 <div class="jumbotron masthead">
   <div class="container">
-    <h1>saga-python</h1>
+    <h1>SAGA-Python</h1>
     <p>A Light-Weight Access Layer for Distributed Computing Infrastructure</p>
     <p>
       <a href="#getstarted" class="btn btn-primary btn-large smoothScroll" >Get Started</a>
     </p>
     <ul class="masthead-links">
       <li>
-        <a href="https://github.com/saga-project/saga-python" >GitHub Project</a>
+        <a href="https://github.com/saga-project/SAGA-Python" >GitHub Project</a>
       </li>
       <li>
         <a href="./doc/index.html" >Documentation</a>
@@ -96,16 +96,16 @@
   <div class="container">
     <ul class="bs-docs-social-buttons">
       <li>
-        <iframe class="github-btn" src="http://ghbtns.com/github-btn.html?user=saga-project&repo=saga-python&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100px" height="20px"></iframe>
+        <iframe class="github-btn" src="http://ghbtns.com/github-btn.html?user=saga-project&repo=SAGA-Python&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100px" height="20px"></iframe>
       </li>
       <li>
-        <iframe class="github-btn" src="http://ghbtns.com/github-btn.html?user=saga-project&repo=saga-python&type=fork&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="102px" height="20px"></iframe>
+        <iframe class="github-btn" src="http://ghbtns.com/github-btn.html?user=saga-project&repo=SAGA-Python&type=fork&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="102px" height="20px"></iframe>
       </li>
       <li class="follow-btn">
         <a href="https://twitter.com/sagagridapi" class="twitter-follow-button" data-link-color="#0069D6" data-show-count="true">Follow @sagagridapi</a>
       </li>
       <li class="tweet-btn">
-        <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://saga-project.github.com/saga-python/" data-count="horizontal" data-via="sagagridapi" data-related="mdo:SAGA Python">Tweet</a>
+        <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://saga-project.github.com/SAGA-Python/" data-count="horizontal" data-via="sagagridapi" data-related="mdo:SAGA Python">Tweet</a>
       </li>
     </ul>
   </div>
@@ -123,37 +123,38 @@
         <!--img class="marketing-img" src="img/bs-docs-twitter-github.png"-->
         <br />
         <br />
-        <h2>About</h2>
+        <h2>Introduction</h2>
 
         <p class="marketing-byline">A Simple API for Grid and Distributed Applications.</p>
 
-            <p> 
-            SAGA (<em>Simple API for Grid Applications</em>) defines a high-level interface to the most commonly used distributed computing functionality.
-              SAGA provides an access-layer and mechanisms for distributed infrastructure components like 
-              job schedulers, file transfer and resource provisioning services. 
-              Given the heterogeneity of distributed infrastructure, SAGA provides a much 
+            <p align="justify"> 
+            SAGA (<em>Simple API for Grid Applications</em>) defines a high-level 
+            interface to the most commonly used distributed computing functionality.
+            SAGA provides an access-layer and mechanisms for distributed infrastructure components like 
+            job schedulers, file transfer and resource provisioning services. 
+            Given the heterogeneity of distributed infrastructure, SAGA provides a much 
             needed interoperability layer that lowers the
             complexity and improves the simplicity of using distributed infrastructure whilst enhancing 
             the sustainability of distributed applications, services and tools.
             </p>
             
-              <p>  
-              <i>saga-python</i> provides a Python module that is compliant with 
+            <p align="justify" >  
+              <i>SAGA-Python</i> provides a Python module that is compliant with 
               the <a href="http://www.ogf.org/documents/GFD.90.pdf">OGF GFD.90</a> SAGA  specification.
-              Behind the API façade, saga-python implements a flexible  
+              Behind the API façade, SAGA-Python implements a flexible  
               <i>adaptor</i> architecture. Adaptors are dynamically loadable modules
               that interface the API with different 
               middleware systems and services. Most application developers use 
-              the adaptors that are already part of saga-python, but you can
+              the adaptors that are already part of SAGA-Python, but you can
               easily implement your own in case your backend system is not supported yet.
             </p>
 
-            <p>
-              saga-python's main focus is ease of use and simple 
+            <p align="justify" >
+              SAGA-Python's main focus is ease of use and simple 
               user-space deployment in heterogeneous distributed computing 
               environments. It supports a wide range of application use-cases
               from simple, uncoupled tasks to complex workflows. 
-              saga-python is being used on many distributed 
+              SAGA-Python is being used on many distributed 
               cyberinfrastructures, including <a href="">XSEDE</a>, 
               <a href="">OSG</a> and <a href="">FutureGrid</a> where it  
               marshals <i>tens of thousands</i> of cores and 
@@ -166,18 +167,68 @@
     <hr class="soften">
 
     <div class="row-fluid">
+
+
+      <div class="span6" id="supportedmw">
+        <h2>Supported Middleware</h2>
+
+        <p class="marketing-byline">Extensible Connectivity Through Adaptors.</p>
+
+        <p align="justify">
+          SAGA-Python supports a wide range of distributed computing middleware 
+          and service via a flexible <em>adaptor</em> architecture. Adaptors 
+          are plug-ins that bind API calls to the respective backend. SAGA-Python
+          currently supports the following backends:</p>
+
+        <p align="justify"><b>Job Submission Systems</b></br>
+           <i>(All queuing system adaptors can also access clusters remotely
+              by tunneling commands through SSH and GSISSH)</i>
+          <ul class="adaptors">
+            <li><a href="doc/adaptors/saga.adaptor.shell_job.html">SSH and GSISSH</a></li>
+            <li><a href="doc/adaptors/saga.adaptor.condorjob.html">Condor and Condor-G</a></li>
+            <li><a href="doc/adaptors/saga.adaptor.pbsjob.html">PBS and Torque</a></li>
+            <li><a href="doc/adaptors/saga.adaptor.sgejob.html">Sun Grid Engine</a></li>
+            <li><a href="doc/adaptors/saga.adaptor.slurm_job.html">SLURM</a></li>
+          </ul>
+        </p>
+
+        <p><b>File / Data Management</b>
+          <ul class="adaptors">
+            <li><a href="doc/adaptors/saga.adaptor.shell_file.html">SFTP/GSIFTP</a></li>
+            <li><a href="doc/adaptors/saga.adaptor.http_file.html">HTTP/HTTPS</a></li>
+          </ul>
+        </p>
+
+        <p><b>Resource Management / Clouds</b>
+          <ul class="adaptors">
+            <li><a href="doc/adaptors/saga.adaptor.ec2_resource.html">EC2 (libcloud)</a></li>
+          </ul>
+        </p>
+
+          <p align="justify">
+            <i>An Adaptor for <a href="https://www.irods.org">iRODS</a> is 
+            currently under development and will be part of one of the next releases</i></p>
+
+          <p align="justify" >
+          A list of all available adaptors, their description and usage 
+          examples can be found in the <a href="doc/adaptors/saga.adaptor.index.html">
+          SAGA-Python manual</a>.
+        </p>
+      </div>
+
+
       <div class="span6" id="usershowcase">
         <h2>Who is Using It</h2>
         <p class="marketing-byline">An Active and Diverse User Community</p>
 
-       <p>SAGA is used by a variety of CI projects and a host of applications
+       <p align="justify"> SAGA is used by a variety of CI projects and a host of applications
 seeking to utilize CI in advanced and scalable ways. SAGA provides the interoperability layer for
 <a href="http://saga-project.github.com/BigJob/">BigJob</a>, a general purpose Pilot-Job System. Some other users of SAGA include:
 the KEK project in Japan in their studies of
 neutrinos and scientists at <a href="http://repository.egi.eu/2013/02/18/saga-1-6-1-3/"> EGI </a>
 in the search for fundamental particles such as the Higgs.</p>
 
-<p>SAGA is also used by companies like
+<p align="justify">SAGA is also used by companies like
 Airbus to distribute simulations across their internal clusters/machines,  and finally by a multitude of scientists using NSF
 national-scale production infrastructure such as XSEDE and OSG to meet
 the need for scalable resources. 
@@ -188,66 +239,24 @@ Last but not least, SAGA has brought music to many ears in the <a href="http://m
         <p><a class="btn" href="#">Read more &raquo;</a></p-->
 
       </div>
-      <div class="span6" id="supportedmw">
-        <h2>Supported Middleware</h2>
-
-        <p class="marketing-byline">Extensible Connectivity Through Adaptors.</p>
-
-        <p>Saga-python supports a wide range of distributed computing middleware 
-          and service via a flexible <em>adaptor</em> architecture.</p>
-
-        <p>Job Submission Systems:
-          <ul class="adaptors">
-            <li><a href="doc/adaptors/saga.adaptor.shell_job.html">SSH and GSISSH</a></li>
-            <li><a href="doc/adaptors/saga.adaptor.condorjob.html">Condor and Condor-G</a></li>
-            <li><a href="doc/adaptors/saga.adaptor.pbsjob.html">PBS and Torque</a></li>
-            <li><a href="doc/adaptors/saga.adaptor.sgejob.html">Sun Grid Engine</a></li>
-            <li><a href="doc/adaptors/saga.adaptor.slurm_job.html">SLURM</a></li>
-          </ul>
-        </p>
-
-        <p>File / Data Management:
-          <ul class="adaptors">
-            <li><a href="doc/adaptors/saga.adaptor.shell_file.html">SFTP/GSIFTP</a></li>
-            <li><a href="doc/adaptors/saga.adaptor.http_file.html">HTTP/HTTPS</a></li>
-          </ul>
-        </p>
-
-        <p> Resource Management / Clouds:
-          <ul class="adaptors">
-            <li><a href="doc/adaptors/saga.adaptor.ec2_resource.html">EC2 (libcloud)</a></li>
-          </ul>
-        </p>
-
-          <p>An Adaptor for <a href="https://www.irods.org">iRODS</a> is 
-            currently under development and will be part of one of the next releases</p>
-
-          <p>Besides mapping the heterogeneous backend interfaces to the SAGA
-          API, the majority of adaptors also provide transparent remote access 
-          to otherwise exclusively local services (like most HPC queuing systems) 
-          by tunneling interface calls through either SSH or GSISSH.
-          A list of available adaptors and their description can be found 
-          in the <a href="doc/adaptors/saga.adaptor.index.html">manual</a>.
-        </p>
-      </div>
     </div>
 
     <hr class="soften">
 
     <h1 id="getstarted">Get Started</h1>
 
-    <p class="marketing-byline">Run your first saga-python program in less than 5 minutes.</p>
+    <p class="marketing-byline">Run your first SAGA-Python program in less than 5 minutes.</p>
 
 
     <h3>Installation</h3>
-    <p> The easiest way to install saga-python under your user account is 
+    <p> The easiest way to install SAGA-Python under your user account is 
     via <a href="https://pypi.python.org/pypi/virtualenv">virtualenv</a>
     and easy_install or pip.
 
 
     <pre class="prettyprint languague-bash">$ virtualenv $HOME/saga
 $ source $HOME/saga/bin/activate
-$ easy_install saga-python</pre>
+$ easy_install SAGA-Python</pre>
 
     <p>More detailed installation instructions can be found in the
       <a href="doc/usage/index.html">manual</a>.
@@ -258,7 +267,7 @@ $ easy_install saga-python</pre>
       <em>/bin/echo</em> job It then uses the SFTP file adpator to copy the 
       output file back to the local machine. 
 
-    More information about the saga-python job API can be found in the 
+    More information about the SAGA-Python job API can be found in the 
     respective <a href="doc/library/job/index.html">manual section</a>.</p>
 
     <p>If you don't have access to a PBS cluster, you can try a different 
@@ -410,15 +419,15 @@ Staged out sftp://gw68.quarry.iu.teragrid.org/tmp/mysagajob.stdout to file://loc
 
         <p>Code licensed under <a href="http://opensource.org/licenses/MIT" target="_blank">MIT License</a>, documentation under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.</p>
         <ul class="footer-links">
-          <li><a href="https://pypi.python.org/pypi/saga-python">PyPi</a></li>
+          <li><a href="https://pypi.python.org/pypi/SAGA-Python">PyPi</a></li>
           <li class="muted">&middot;</li>
           <li><a href="http://repex2.tacc.utexas.edu:8080">Jenkins</a></li>
           <li class="muted">&middot;</li>
-          <li><a href="https://github.com/saga-project/saga-python/wiki">Wiki</a></li>
+          <li><a href="https://github.com/saga-project/SAGA-Python/wiki">Wiki</a></li>
           <li class="muted">&middot;</li>
-          <li><a href="https://github.com/saga-project/saga-python/issues?state=open">Issues</a></li>
+          <li><a href="https://github.com/saga-project/SAGA-Python/issues?state=open">Issues</a></li>
           <li class="muted">&middot;</li>
-          <li><a href="https://github.com/saga-project/saga-python/blob/master/CHANGES.md">Changelog</a></li>
+          <li><a href="https://github.com/saga-project/SAGA-Python/blob/master/CHANGES.md">Changelog</a></li>
         </ul>
       </div>
     </footer>
@@ -451,7 +460,7 @@ Staged out sftp://gw68.quarry.iu.teragrid.org/tmp/mysagajob.stdout to file://loc
     </script>
 
 
-    <!-- Get the current saga-python version number
+    <!-- Get the current SAGA-Python version number
     ================================================== -->
     <script type="text/javascript">
 
@@ -461,7 +470,7 @@ Staged out sftp://gw68.quarry.iu.teragrid.org/tmp/mysagajob.stdout to file://loc
         }
 
         // Issue a request to load test_file as text (don't eval it, jQuery!).
-        jQuery.get('https://raw.github.com/saga-project/saga-python/master/saga/VERSION',
+        jQuery.get('https://raw.github.com/saga-project/SAGA-Python/master/saga/VERSION',
                    handleFile,
                    'text');
 
