@@ -151,9 +151,10 @@ no_check = False # set this to True to turn all checks off
 
 ################################################################################
 
-from inspect import getargspec, isfunction, isbuiltin, isclass
-from types   import NoneType
-from re      import compile as regex
+from traceback import extract_stack
+from inspect   import getargspec, isfunction, isbuiltin, isclass
+from types     import NoneType
+from re        import compile as regex
 
 ################################################################################
 # 
@@ -337,6 +338,55 @@ class OneOfChecker (Checker):
 
 one_of = lambda *args: OneOfChecker (*args).check
 
+def raise_return_exception (method, spectype, result) :
+
+    stack = extract_stack ()
+    for f in stack : 
+        if  'saga/utils/signatures.py' in f[0] :
+            break
+        frame = f
+
+    msg   = "\nSignature Mismatch\n"
+    msg  += "  in function   : %s\n"       % (frame[2])
+    msg  += "  in file       : %s +%s\n"   % (frame[0], frame[1])
+    msg  += "  on line       : %s\n"       % (frame[3])
+    msg  += "  method        : %s\n"       % (method.__name__)
+    msg  += "  returned type : %s\n"       % (type_name (result))
+    msg  += "  instead  of   : %s\n"       % (type_name (spectype))
+    msg  += "  This is an internale SAGA-Python error!"
+
+    raise se.NoSuccess (msg)
+
+
+def raise_type_exception (method, arg0, i, arg, kwname="") :
+
+    narg = 0
+    
+    if  arg0 and isinstance (arg0, object) :
+        narg = i
+    else :
+        narg = i+1
+    
+    stack = extract_stack ()
+    for f in stack : 
+        if  'saga/utils/signatures.py' in f[0] :
+            break
+        frame = f
+
+    msg   = "\nSignature Mismatch\n"
+    msg  += "  in function        : %s\n"       % (frame[2])
+    msg  += "  in file            : %s +%s\n"   % (frame[0], frame[1])
+    msg  += "  on line            : %s\n"       % (frame[3])
+    msg  += "  method             : %s\n"       % (method.__name__)
+    if  not kwname :
+        msg  += "  argument           : #%s\n"  % (narg)
+    else :
+        msg  += "  parameter          : %s"     % (kwname)
+    msg  += "  has incorrect type : %s"         % (type_name (arg))
+
+    raise se.NoSuccess (msg)
+
+
 ################################################################################
 
 def takes (*args, **kwargs):
@@ -371,31 +421,25 @@ def takes (*args, **kwargs):
             
             method_args, method_defaults = getargspec (method)[0::3]
 
-            def takes_invocation_proxy (*args, **kwargs):
+            def takes_invocation_proxy (*pargs, **pkwargs):
     
                 # append the default parameters
 
                 if  method_defaults is not None and len (method_defaults) > 0 \
-                    and len (method_args) - len (method_defaults) <= len (args) < len (method_args):
-                    args += method_defaults[len (args) - len (method_args):]
+                    and len (method_args) - len (method_defaults) <= len (pargs) < len (method_args):
+                    pargs += method_defaults[len (pargs) - len (method_args):]
 
                 # check the types of the actual call parameters
 
-                for i, (arg, checker) in enumerate (zip (args, checkers)):
-                    if not checker.check (arg):
-                        raise InputParameterError ("%s() got invalid parameter "
-                                                   "%d of type %s" %
-                                                   (method.__name__, i + 1, 
-                                                    type_name (arg)))
+                for i, (arg, checker) in enumerate (zip (pargs, checkers)):
+                    if  not checker.check (arg):
+                        raise_type_exception (method, pargs[0], i, arg)
 
                 for kwname, checker in kwcheckers.iteritems ():
-                    if not checker.check (kwargs.get (kwname, None)):
-                        raise InputParameterError ("%s() got invalid parameter "
-                                                   "%s of type %s" %
-                                                   (method.__name__, kwname, 
-                                                    type_name (kwargs.get (kwname, None))))
+                    if  not checker.check (pkwargs.get (kwname, None)):
+                        raise_type_exception (method, pargs[0], i, arg, kwname)
 
-                return method(*args, **kwargs)
+                return method(*pargs, **pkwargs)
 
             takes_invocation_proxy.__name__ = method.__name__
             return takes_invocation_proxy
@@ -427,10 +471,9 @@ def returns (sometype):
                 
                 result = method (*args, **kwargs)
                 
-                if not checker.check (result):
-                    raise ReturnValueError ("%s() has returned an invalid "
-                                            "value of type %s" % 
-                                            (method.__name__, type_name (result)))
+                if  not checker.check (result):
+                    
+                    raise_return_exception (method, sometype, result)
 
                 return result
     
