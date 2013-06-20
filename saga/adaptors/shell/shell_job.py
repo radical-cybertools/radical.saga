@@ -1041,6 +1041,8 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             # don't know what to do...
             raise saga.BadParameter ("Cannot create job, insufficient information")
         
+        if self._created : self._created = float(self._created)
+
         return self.get_api ()
 
 
@@ -1071,6 +1073,9 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
         if 'start' in stats : self._started  = stats['start']
         if 'stop'  in stats : self._finished = stats['stop']
+
+        if self._started  : self._started  = float(self._started)
+        if self._finished : self._finished = float(self._finished)
         
         if  not 'state' in stats :
             raise saga.NoSuccess ("failed to get job state for '%s': (%s)" \
