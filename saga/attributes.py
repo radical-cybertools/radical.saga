@@ -615,7 +615,7 @@ class Attributes (_AttributesBase) :
                 d['attributes'][key]['value'] = val
             except Exception as e :
                 retries -= 1
-                if not retries : raise e
+                if not retries : raise
             finally :
               d['attributes'][key]['recursion'] = False
 
@@ -626,7 +626,7 @@ class Attributes (_AttributesBase) :
                 d['attributes'][key]['value'] = val
             except Exception as e :
                 retries -= 1
-                if not retries : raise e
+                if not retries : raise
             finally :
                 d['attributes'][key]['recursion'] = False
 
