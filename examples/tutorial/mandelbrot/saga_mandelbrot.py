@@ -6,10 +6,23 @@ from PIL import Image
 
 #-----------------------------------------------------------------------------
 #
-REMOTE_HOST = "localhost" # try this with different hosts
-REMOTE_DIR = "/tmp/"      # change this to your home directory
 
+# Change REMOTE_HOST to the machine you want to run this on.
+# You might have to change the URL scheme below for REMOTE_JOB_ENDPOINT
+# accordingly.
+REMOTE_HOST = "localhost"  # try this with different hosts
+
+# This refers to your working directory on 'REMOTE_HOST'. If you use a\
+# cluster for 'REMOTE_HOST', make sure this points to a shared filesystem.
+REMOTE_DIR = "/tmp/"  # change this to your home directory
+
+# If you change 'REMOTE_HOST' above, you might have to change 'ssh://' to e.g.,
+# 'pbs+ssh://', 'sge+ssh://', depdending on the type of service endpoint on
+# that particualr host.
 REMOTE_JOB_ENDPOINT = "ssh://" + REMOTE_HOST
+
+# At the moment saga-python only provides an sftp file adaptor, so changing
+# the URL scheme here wouldn't make any sense.
 REMOTE_FILE_ENDPOINT = "sftp://" + REMOTE_HOST + "/" + REMOTE_DIR
 
 # the dimension (in pixel) of the whole fractal
@@ -115,3 +128,4 @@ if __name__ == "__main__":
         for job in jobs:
             job.cancel()
         sys.exit(-1)
+
