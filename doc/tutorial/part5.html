@@ -103,10 +103,23 @@ favorite editor and paste the following content:</p>
 
 <span class="c">#-----------------------------------------------------------------------------</span>
 <span class="c">#</span>
-<span class="n">REMOTE_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span> <span class="c"># try this with different hosts</span>
-<span class="n">REMOTE_DIR</span> <span class="o">=</span> <span class="s">&quot;/tmp/&quot;</span>      <span class="c"># change this to your home directory</span>
 
+<span class="c"># Change REMOTE_HOST to the machine you want to run this on.</span>
+<span class="c"># You might have to change the URL scheme below for REMOTE_JOB_ENDPOINT</span>
+<span class="c"># accordingly.</span>
+<span class="n">REMOTE_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>  <span class="c"># try this with different hosts</span>
+
+<span class="c"># This refers to your working directory on &#39;REMOTE_HOST&#39;. If you use a\</span>
+<span class="c"># cluster for &#39;REMOTE_HOST&#39;, make sure this points to a shared filesystem.</span>
+<span class="n">REMOTE_DIR</span> <span class="o">=</span> <span class="s">&quot;/tmp/&quot;</span>  <span class="c"># change this to your home directory</span>
+
+<span class="c"># If you change &#39;REMOTE_HOST&#39; above, you might have to change &#39;ssh://&#39; to e.g.,</span>
+<span class="c"># &#39;pbs+ssh://&#39;, &#39;sge+ssh://&#39;, depdending on the type of service endpoint on</span>
+<span class="c"># that particualr host.</span>
 <span class="n">REMOTE_JOB_ENDPOINT</span> <span class="o">=</span> <span class="s">&quot;ssh://&quot;</span> <span class="o">+</span> <span class="n">REMOTE_HOST</span>
+
+<span class="c"># At the moment saga-python only provides an sftp file adaptor, so changing</span>
+<span class="c"># the URL scheme here wouldn&#39;t make any sense.</span>
 <span class="n">REMOTE_FILE_ENDPOINT</span> <span class="o">=</span> <span class="s">&quot;sftp://&quot;</span> <span class="o">+</span> <span class="n">REMOTE_HOST</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="n">REMOTE_DIR</span>
 
 <span class="c"># the dimension (in pixel) of the whole fractal</span>
@@ -214,6 +227,43 @@ favorite editor and paste the following content:</p>
         <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>Look at the code and change the constants at the very top accordingly. Then
+run it. The output should look something like this:</p>
+<div class="highlight-bash"><div class="highlight"><pre>python saga_mandelbrot.py
+
+* Submitted <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4073<span class="o">]</span>. Output will be written to: tile_x0_y0.gif
+* Submitted <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4094<span class="o">]</span>. Output will be written to: tile_x0_y1.gif
+* Submitted <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4116<span class="o">]</span>. Output will be written to: tile_x1_y0.gif
+* Submitted <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4144<span class="o">]</span>. Output will be written to: tile_x1_y1.gif
+* Job <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4073<span class="o">]</span> status: Running
+* Job <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4094<span class="o">]</span> status: Running
+* Job <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4116<span class="o">]</span> status: Running
+* Job <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4144<span class="o">]</span> status: Running
+
+* Job <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4073<span class="o">]</span> status: Running
+* Job <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4094<span class="o">]</span> status: Running
+* Job <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4116<span class="o">]</span> status: Running
+* Job <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4144<span class="o">]</span> status: Running
+
+* Job <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4073<span class="o">]</span> status: Done
+* Job <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4116<span class="o">]</span> status: Running
+* Job <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4144<span class="o">]</span> status: Running
+
+* Job <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4094<span class="o">]</span> status: Done
+* Job <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4144<span class="o">]</span> status: Done
+
+* Job <span class="o">[</span>ssh://india.futuregrid.org<span class="o">]</span>-<span class="o">[</span>4116<span class="o">]</span> status: Done
+
+* Copying sftp://india.futuregrid.org//N/u/oweidner/sftp://india.futuregrid.org//N/u/oweidner/mbrot//tile_x0_y0.gif back to /Users/oweidner/MB
+* Copying sftp://india.futuregrid.org//N/u/oweidner/sftp://india.futuregrid.org//N/u/oweidner/mbrot//tile_x0_y1.gif back to /Users/oweidner/MB
+* Copying sftp://india.futuregrid.org//N/u/oweidner/sftp://india.futuregrid.org//N/u/oweidner/mbrot//tile_x1_y0.gif back to /Users/oweidner/MB
+* Copying sftp://india.futuregrid.org//N/u/oweidner/sftp://india.futuregrid.org//N/u/oweidner/mbrot//tile_x1_y1.gif back to /Users/oweidner/MB
+* Stitching together the whole fractal: mandelbrot_full.gif
+</pre></div>
+</div>
+<p>Open mandelbrot_full.gif with your favorite image editor. It should look like the image below.
+The different tile*.gif files (open them if you want) were computed on &#8216;REMOTE_HOST&#8217;, transfered back and stitched together as the full image.</p>
+<img alt="../_images/mandelbrot_full.gif" src="../_images/mandelbrot_full.gif" />
 </div>
 </div>
 
