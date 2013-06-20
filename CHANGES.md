@@ -2,6 +2,7 @@ Version 0.9.8 released 2013-06-20
 ----------------------------------------------------------------------
 
 * Hotfix release: critical bug in wait() signature
+  - https://github.com/saga-project/saga-python/issues?milestone=7&page=1&state=closed
 
 Version 0.9.7 released 2013-06-19
 ----------------------------------------------------------------------
