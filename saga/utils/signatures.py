@@ -384,7 +384,7 @@ def raise_type_exception (method, arg0, i, arg, kwname="") :
         msg  += "  parameter          : %s"     % (kwname)
     msg  += "  has incorrect type : %s"         % (type_name (arg))
 
-    raise se.NoSuccess (msg)
+    raise se.BadParameter (msg)
 
 
 ################################################################################
