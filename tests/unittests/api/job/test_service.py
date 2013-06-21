@@ -54,6 +54,7 @@ def test_close():
 def test_open_close():
     """ Test job service create / close() in a big loop
     """
+    js = None
     try:
         tc = sutc.TestConfig()
 
@@ -76,6 +77,7 @@ def test_open_close():
 def test_get_url():
     """ Test job service url/get_url()
     """
+    js = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -133,7 +135,6 @@ def test_list_jobs():
 #
 def test_run_job():
     """ Test to submit a job via run_job, and retrieve id"""
-    j  = None
     js = None
     try:
         tc = sutc.TestConfig()

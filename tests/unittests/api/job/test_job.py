@@ -33,6 +33,7 @@ def _silent_close_js(js_obj):
 # ------------------------------------------------------------------------------
 #
 def test_job_service_get_url():
+    js = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -69,6 +70,7 @@ def test_job_service_invalid_url():
 def test_job_service_create():
     """ Test service.create_job() - expecting state 'NEW'
     """
+    js = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -98,6 +100,8 @@ def test_job_service_create():
 def test_job_run():
     """ Test job.run() - expecting state: RUNNING/PENDING
     """
+    js = None
+    j  = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -130,6 +134,8 @@ def test_job_run():
 def test_job_wait():
     """ Test job.wait() - expecting state: DONE (this test might take a while)
     """
+    js = None
+    j  = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -162,6 +168,8 @@ def test_job_wait():
 def test_job_multiline_run():
     """ Test job.run() with multiline command
     """
+    js = None
+    j  = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -201,6 +209,8 @@ if True :
 def test_job_suspend_resume():
     """ Test job.suspend()/resume() - expecting state: SUSPENDED/RUNNING
     """
+    js = None
+    j  = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -238,6 +248,8 @@ def test_job_suspend_resume():
 def test_job_cancel():
     """ Test job.cancel() - expecting state: CANCELED
     """
+    js = None
+    j  = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -271,8 +283,9 @@ def test_job_run_many():
     """
     NUM_JOBS = 32
 
+    js   = None
+    jobs = []
     try:
-        jobs = list()
 
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -305,6 +318,9 @@ def test_job_run_many():
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
+        for j in jobs:
+            j.cancel()
+            _silent_cancel_j(j)
         _silent_close_js(js)
 
 
@@ -313,6 +329,8 @@ def test_job_run_many():
 def test_get_exit_code():
     """ Test job.exit_code
     """
+    js = None
+    j  = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -345,6 +363,7 @@ def test_get_exit_code():
 def test_get_service_url():
     """ Test if job.service_url == Service.url
     """
+    js = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -374,6 +393,8 @@ def test_get_service_url():
 def test_get_id():
     """ Test job.get_id() / job.id
     """
+    js = None
+    j  = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
