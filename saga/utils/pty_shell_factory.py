@@ -11,8 +11,11 @@ import string
 import getpass
 import threading
 
-import saga.utils.singleton
-import saga.utils.pty_process
+import saga
+import saga.exceptions         as se
+import saga.utils.logger       as sul
+import saga.utils.singleton    as sus
+import saga.utils.pty_process  as supp
 
 # ------------------------------------------------------------------------------
 #
@@ -119,14 +122,14 @@ class PTYShellFactory (object) :
 
     """
 
-    __metaclass__ = saga.utils.singleton.Singleton
+    __metaclass__ = sus.Singleton
 
 
     # --------------------------------------------------------------------------
     #
     def __init__ (self) :
 
-        self.logger   = saga.utils.logger.getLogger ('PTYShellFactory')
+        self.logger   = sul.getLogger ('PTYShellFactory')
         self.registry = {}
         self.rlock    = threading.RLock ()
 
@@ -145,7 +148,7 @@ class PTYShellFactory (object) :
             url = saga.Url (url)
 
             if  not logger :
-                logger = saga.utils.logger.getLogger ('PTYShellFactory')
+                logger = sul.getLogger ('PTYShellFactory')
 
             # collect all information we have/need about the requested master
             # connection
@@ -169,7 +172,7 @@ class PTYShellFactory (object) :
 
                 info['pty'] = saga.utils.pty_process.PTYProcess (m_cmd, logger=logger)
                 if not info['pty'].alive () :
-                    raise saga.NoSuccess._log (logger, \
+                    raise se.NoSuccess._log (logger, \
                 	  "Shell not connected to %s" % info['host_str'])
 
                 # authorization, prompt setup, etc
@@ -185,7 +188,7 @@ class PTYShellFactory (object) :
                 info = self.registry[host_s][user_s][type_s]
 
                 if  not info['pty'].alive (recover=True) :
-                    raise saga.IncorrectState._log (logger, \
+                    raise se.IncorrectState._log (logger, \
                 	  "Lost shell connection to %s" % info['host_str'])
 
             return info
@@ -211,7 +214,8 @@ class PTYShellFactory (object) :
             # most one second.  We try to get within that range with 10*latency.
             delay = min (1.0, max (0.1, 50 * latency))
 
-            try :
+            if True : # FIXME
+          # try :
                 prompt_patterns = ["[Pp]assword:\s*$",                   # password   prompt
                                    "Enter passphrase for key '.*':\s*$", # passphrase prompt
                                    "want to continue connecting",        # hostkey confirmation
@@ -237,7 +241,7 @@ class PTYShellFactory (object) :
                         # print 'HELLO_SAGA', and search for that one, too
 
                         if retries > 50 :
-                            raise saga.NoSuccess ("Could not detect shell prompt (timeout)")
+                            raise se.NoSuccess ("Could not detect shell prompt (timeout)")
 
                         retries += 1
                         pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
@@ -250,7 +254,7 @@ class PTYShellFactory (object) :
                     elif n == 0 :
                         logger.info ("got password prompt")
                         if  not shell_pass :
-                            raise saga.AuthenticationFailed ("prompted for unknown password (%s)" \
+                            raise se.AuthenticationFailed ("prompted for unknown password (%s)" \
                                                           % match)
 
                         pty_shell.write ("%s\n" % shell_pass)
@@ -265,12 +269,12 @@ class PTYShellFactory (object) :
                         end   = string.find (match, "'", start+1)
 
                         if start == -1 or end == -1 :
-                            raise saga.AuthenticationFailed ("could not extract key name (%s)" % match)
+                            raise se.AuthenticationFailed ("could not extract key name (%s)" % match)
 
                         key = match[start+1:end]
 
                         if  not key in key_pass    :
-                            raise saga.AuthenticationFailed ("prompted for unknown key password (%s)" \
+                            raise se.AuthenticationFailed ("prompted for unknown key password (%s)" \
                                                           % key)
 
                         pty_shell.write ("%s\n" % key_pass[key])
@@ -302,8 +306,9 @@ class PTYShellFactory (object) :
                         break
                 
                 
-            except Exception as e :
-                raise self._translate_exception (e)
+          # except Exception as e :
+          #     print e
+          #     raise self._translate_exception (e)
 
 
     # --------------------------------------------------------------------------
@@ -350,7 +355,7 @@ class PTYShellFactory (object) :
         cp_slave.wait  ()
 
         if  cp_slave.exit_code != 0 :
-            raise saga.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+            raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
 
         info['logger'].debug ("copy done")
 
@@ -379,7 +384,7 @@ class PTYShellFactory (object) :
         cp_slave.wait  ()
 
         if  cp_slave.exit_code != 0 :
-            raise saga.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+            raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
 
         info['logger'].debug ("copy done")
 
@@ -428,7 +433,7 @@ class PTYShellFactory (object) :
                     info['cp_exe'] =  saga.utils.which.which ("cp")
 
             else :
-                raise saga.BadParameter._log (self.logger, \
+                raise se.BadParameter._log (self.logger, \
                 	  "cannot handle schema '%s://'" % url.schema)
 
 
@@ -443,12 +448,12 @@ class PTYShellFactory (object) :
             info['latency'] = sumisc.get_host_latency (url)
 
             if None == info['latency'] :
-                raise saga.BadParameter._log (self.logger, "Could not resolve host '%s'" % (url))
+                raise se.BadParameter._log (self.logger, "Could not resolve host '%s'" % (url))
 
             if  info['type'] == "sh" :
 
                 if not sumisc.host_is_local (url.host) :
-                    raise saga.BadParameter._log (self.logger, \
+                    raise se.BadParameter._log (self.logger, \
                             "expect local host for '%s://', not '%s'" % (url.schema, url.host))
 
                 if  'user' in info and info['user'] :
@@ -558,11 +563,11 @@ class PTYShellFactory (object) :
         message and appropriate exception type.
         """
 
-        if  not issubclass (e.__class__, saga.SagaException) :
+        if  not issubclass (e.__class__, se.SagaException) :
             # we do not touch non-saga exceptions
             return e
 
-        if  not issubclass (e.__class__, saga.NoSuccess) :
+        if  not issubclass (e.__class__, se.NoSuccess) :
             # this seems to have a specific cause already, leave it alone
             return e
 
@@ -570,27 +575,27 @@ class PTYShellFactory (object) :
         lmsg = cmsg.lower ()
 
         if 'auth' in lmsg :
-            e = saga.AuthorizationFailed (cmsg)
+            e = se.AuthorizationFailed (cmsg)
 
         elif 'pass' in lmsg :
-            e = saga.AuthenticationFailed (cmsg)
+            e = se.AuthenticationFailed (cmsg)
 
         elif 'ssh_exchange_identification' in lmsg :
-            e = saga.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
+            e = se.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
 
         elif 'denied' in lmsg :
-            e = saga.PermissionDenied (cmsg)
+            e = se.PermissionDenied (cmsg)
 
         elif 'shared connection' in lmsg :
-            e = saga.NoSuccess ("Insufficient system resources: %s" % cmsg)
+            e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
 
         elif 'pty allocation' in lmsg :
-            e = saga.NoSuccess ("Insufficient system resources: %s" % cmsg)
+            e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
 
         elif 'Connection to master closed' in lmsg :
-            e = saga.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
+            e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
 
-        # print e.traceback
+        print e.traceback
         return e
 
 
