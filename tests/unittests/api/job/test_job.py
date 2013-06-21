@@ -319,7 +319,7 @@ def test_job_run_many():
         assert False, "Unexpected exception: %s" % se
     finally:
         for j in jobs:
-            _silent_cancel_j(j)
+            _silent_cancel(j)
         _silent_close_js(js)
 
 
