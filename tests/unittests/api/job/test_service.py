@@ -224,3 +224,4 @@ def test_multiple_services():
 
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
+
