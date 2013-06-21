@@ -1,4 +1,8 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 ################################################################################
 #
 # Method call parameters/return value type checking decorators.
@@ -147,7 +151,8 @@ __all__ = [ "takes",    "InputParameterError",   "returns", "ReturnValueError",
             "optional", "nothing",   "anything", "list_of", "tuple_of", "dict_of",
             "by_regex", "with_attr", "one_of",   "set_of" ]
 
-no_check = False # set this to True to turn all checks off
+no_check = False  # set this to True to turn all checks off
+no_return_check = True  # set this to True to turn return value cchecks off
 
 ################################################################################
 
@@ -340,6 +345,10 @@ one_of = lambda *args: OneOfChecker (*args).check
 
 def raise_return_exception (method, spectype, result) :
 
+    if no_return_check:
+        # disable this!
+        return
+
     stack = extract_stack ()
     for f in stack : 
         if  'saga/utils/signatures.py' in f[0] :
@@ -353,7 +362,7 @@ def raise_return_exception (method, spectype, result) :
     msg  += "  method        : %s\n"       % (method.__name__)
     msg  += "  returned type : %s\n"       % (type_name (result))
     msg  += "  instead  of   : %s\n"       % (type_name (spectype))
-    msg  += "  This is an internale SAGA-Python error!"
+    msg  += "  This is an internal SAGA-Python error!"
 
     raise se.NoSuccess (msg)
 
