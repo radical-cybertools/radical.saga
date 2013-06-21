@@ -124,6 +124,13 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
 
  
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Job')
+    @sus.returns (basestring)
+    def __str__  (self) :
+        return str (self.id)
+
 
     # --------------------------------------------------------------------------
     #
