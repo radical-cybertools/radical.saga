@@ -11,6 +11,7 @@ import math
 import time
 import socket
 import threading
+import traceback
 
 import saga
 import saga.utils.threads     as suth
@@ -265,6 +266,7 @@ def benchmark_init (name, func_pre, func_core, func_post) :
     _benchmark = {}
 
     s = saga.Session (default=True)
+    print 'session was set up'
 
     # check if a config file was specified via '-c' command line option, and
     # read it, return the dict
@@ -277,7 +279,7 @@ def benchmark_init (name, func_pre, func_core, func_post) :
 
 
     if  not config_name :
-        benchmark_eval ('no configuration specified (-c <conf>')
+        benchmark_eval (_benchmark, 'no configuration specified (-c <conf>')
 
     tc   = sutc.TestConfig ()
     tc.read_config (config_name)
@@ -288,10 +290,10 @@ def benchmark_init (name, func_pre, func_core, func_post) :
 
 
     if  not 'concurrency' in bench_cfg : 
-        benchmark_eval ('no concurrency configured')
+        benchmark_eval (_benchmark, 'no concurrency configured')
 
     if  not 'iterations'  in bench_cfg : 
-        benchmark_eval ('no iterations configured')
+        benchmark_eval (_benchmark, 'no iterations configured')
 
 
     _benchmark['url']       = bench_cfg['url']
@@ -322,7 +324,11 @@ def benchmark_thread (tid, _benchmark) :
         core     = b_cfg['core']
         post     = b_cfg['post']
 
-        pre_ret  = pre (t_cfg, b_cfg, session)
+        try :
+            pre_ret  = pre (t_cfg, b_cfg, session)
+        except Exception as e :
+            print "benchmark setup failed: %s" % e
+            sys.exit (-1)
 
         _benchmark['events'][tid]['event_1'].set  ()  # signal we are done        
         _benchmark['events'][tid]['event_2'].wait ()  # wait 'til others are done 
@@ -330,12 +336,20 @@ def benchmark_thread (tid, _benchmark) :
         iterations = int(b_cfg['iterations']) / int(b_cfg['concurrency'])
 
         for i in range (0, iterations) :
-            core_ret = core (pre_ret)
+            try :
+                core_ret = core (pre_ret)
+            except Exception as e :
+                print "benchmark tic failed: %s" % e
+                sys.exit (-1)
             benchmark_tic (_benchmark)
 
         _benchmark['events'][tid]['event_3'].set ()  # signal we are done        
 
-        post_ret = post (core_ret)
+        try :
+            post_ret = post (core_ret)
+        except Exception as e :
+            print "benchmark tic failed: %s" % e
+            sys.exit (-1)
 
 
     except Exception as e :

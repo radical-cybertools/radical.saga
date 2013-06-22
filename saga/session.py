@@ -183,6 +183,8 @@ class Session (saga.base.SimpleBase) :
     def __str__  (self):
         """String represenation."""
 
+        import traceback
+        traceback.print_stack ()
         return "Registered contexts: %s" % (str(self.contexts))
 
 

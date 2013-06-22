@@ -5,61 +5,63 @@ import saga
 
 import saga.utils.misc as sumisc
 
-try:
-
-    # get test backend and benchmark configurations
-    (test_cfg, bench_cfg, session) = sumisc.benchmark_init ()
+# ------------------------------------------------------------------------------
+#
+def benchmark_pre (test_cfg, bench_cfg, session) :
 
     if  not 'job_service_url' in test_cfg :
         sumisc.benchmark_eval ('no job service URL configured')
 
-    if  not 'n_js' in bench_cfg :
-        sumisc.benchmark_eval ('no job service count configured')
-
-    if  not 'n_j' in bench_cfg :
-        sumisc.benchmark_eval ('no job count configured')
-
-    if  not 'n_j' in bench_cfg :
-        TIME = 10
-    else :
-        TIME = int(bench_cfg['sleep'])
-
-    N_JS = int(bench_cfg['n_js'])
-    N_J  = int(bench_cfg['n_j'])
-    HOST = test_cfg['job_service_url']
+    return {'host'    : test_cfg['job_service_url'], 
+            'session' : session}
 
 
-    sumisc.benchmark_start (HOST, 'job.Service startup')
 
-    for i in range (-1, N_JS):
-        ctx = saga.Context("ssh")
-        ctx.user_id = USER_ID
+# ------------------------------------------------------------------------------
+#
+def benchmark_core (args={}) :
 
-        session = saga.Session()
-        session.add_context(ctx)
+    host    = args['host']
+    session = args['session']
 
-        js = saga.job.Service ("%s" % HOST, session=session) 
-        jd = saga.job.Description()
+    js = saga.job.Service (host, session=session) 
+    js.close ()
 
-        jd.executable          = '/bin/sleep'
-        jd.queue               = 'normal'
-        jd.project             = 'TG-MCB090174'
-        jd.wall_time_limit     = TIME + 1 # should be positive
-        jd.total_cpu_count     = 1
-        jd.number_of_processes = 1
-        jd.arguments           = [TIME]
-        jd.output              = "/tmp/saga_job.%s.stdout" % USER_ID
-        jd.error               = "/tmp/saga_job.%s.stderr" % USER_ID
 
-        # js.close ()
-        
-        sumisc.benchmark_tic ()
+# ------------------------------------------------------------------------------
+#
+def benchmark_post (args={}) :
 
-    sumisc.benchmark_eval ()
-    sys.exit (0)
+    pass
+
+
+# ------------------------------------------------------------------------------
+#
+# services = []
+# jobs     = []
+# 
+# for n in range (0, 100) :
+#     services.append (saga.job.Service ('ssh://gw68.quarry.iu.teragrid.org'))
+#     print n
+# 
+# print services
+# 
+# for js in services :
+#     j = js.run_job ('/bin/sleep 100')
+#     print j
+#     jobs.append (j)
+# 
+# print jobs
+# 
+# import sys
+# sys.exit (0)
+
+try:
+
+    sumisc.benchmark_init ('job.Servicec.create', benchmark_pre, benchmark_core, benchmark_post)
 
 except saga.SagaException, ex:
-    print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+    print "An exception occured: (%s) %s " % (ex.type, ex)
     print " \n*** Backtrace:\n %s" % ex.traceback
-    sys.exit (-1)
+
 

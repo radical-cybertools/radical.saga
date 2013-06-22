@@ -320,15 +320,18 @@ class PTYShellFactory (object) :
         is created.  If needed, the existing master connection is revived.  
         """
 
-        s_cmd = _SCRIPTS[info['type']]['shell'] % info
+        if True :
+      # with self.rlock :
 
-        # at this point, we do have a valid, living master
-        sh_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
+            s_cmd = _SCRIPTS[info['type']]['shell'] % info
 
-        # authorization, prompt setup, etc
-        self._initialize_pty (sh_slave, info)
+            # at this point, we do have a valid, living master
+            sh_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
 
-        return sh_slave
+            # authorization, prompt setup, etc
+            self._initialize_pty (sh_slave, info)
+
+            return sh_slave
 
 
     # --------------------------------------------------------------------------
@@ -339,25 +342,28 @@ class PTYShellFactory (object) :
         path, tgt as path on the remote host.
         """
 
-        repl = dict ({'src'      : src, 
-                      'tgt'      : tgt, 
-                      'cp_flags' : cp_flags}.items ()+ info.items ())
+      # if True :
+        with self.rlock :
 
-        # at this point, we do have a valid, living master
-        s_cmd = _SCRIPTS[info['type']]['copy_to']    % repl
-        s_in  = _SCRIPTS[info['type']]['copy_to_in'] % repl
+            repl = dict ({'src'      : src, 
+                          'tgt'      : tgt, 
+                          'cp_flags' : cp_flags}.items ()+ info.items ())
 
-        cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
+            # at this point, we do have a valid, living master
+            s_cmd = _SCRIPTS[info['type']]['copy_to']    % repl
+            s_in  = _SCRIPTS[info['type']]['copy_to_in'] % repl
 
-        self._initialize_pty (cp_slave, info)
+            cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
 
-        cp_slave.write ("%s\n" % s_in)
-        cp_slave.wait  ()
+            self._initialize_pty (cp_slave, info)
 
-        if  cp_slave.exit_code != 0 :
-            raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+            cp_slave.write ("%s\n" % s_in)
+            cp_slave.wait  ()
 
-        info['logger'].debug ("copy done")
+            if  cp_slave.exit_code != 0 :
+                raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+
+            info['logger'].debug ("copy done")
 
 
     # --------------------------------------------------------------------------
@@ -368,25 +374,28 @@ class PTYShellFactory (object) :
         the remote host, tgt as local path.
         """
 
-        repl = dict ({'src'      : src, 
-                      'tgt'      : tgt, 
-                      'cp_flags' : cp_flags}.items ()+ info.items ())
+      # if True :
+        with self.rlock :
 
-        # at this point, we do have a valid, living master
-        s_cmd = _SCRIPTS[info['type']]['copy_from']    % repl
-        s_in  = _SCRIPTS[info['type']]['copy_from_in'] % repl
+            repl = dict ({'src'      : src, 
+                          'tgt'      : tgt, 
+                          'cp_flags' : cp_flags}.items ()+ info.items ())
 
-        cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
+            # at this point, we do have a valid, living master
+            s_cmd = _SCRIPTS[info['type']]['copy_from']    % repl
+            s_in  = _SCRIPTS[info['type']]['copy_from_in'] % repl
 
-        self._initialize_pty (cp_slave, info)
+            cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
 
-        cp_slave.write ("%s\n" % s_in)
-        cp_slave.wait  ()
+            self._initialize_pty (cp_slave, info)
 
-        if  cp_slave.exit_code != 0 :
-            raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+            cp_slave.write ("%s\n" % s_in)
+            cp_slave.wait  ()
 
-        info['logger'].debug ("copy done")
+            if  cp_slave.exit_code != 0 :
+                raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+
+            info['logger'].debug ("copy done")
 
 
     # --------------------------------------------------------------------------
@@ -395,7 +404,8 @@ class PTYShellFactory (object) :
         # FIXME: cache 'which' results, etc
         # FIXME: check 'which' results
 
-        with self.rlock :
+      # with self.rlock :
+        if True :
 
             info = {}
 
