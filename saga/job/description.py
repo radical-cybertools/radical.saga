@@ -7,6 +7,7 @@ __license__   = "MIT"
 """ SAGA job description interface """
 
 import saga
+import saga.utils.signatures as sus
 
 #-------------------------------------------------------------------------------
 #
@@ -15,6 +16,8 @@ class Description (saga.Attributes) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Description')
+    @sus.returns (sus.nothing)
     def __init__(self):
 
         # set attribute interface properties
@@ -30,7 +33,6 @@ class Description (saga.Attributes) :
         self._attributes_register  (saga.job.EXECUTABLE           , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.ARGUMENTS            , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
         self._attributes_register  (saga.job.ENVIRONMENT          , None, sa.STRING, sa.DICT,   sa.WRITEABLE)
-        self._attributes_register  (saga.job.SPMD_VARIATION       , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.TOTAL_CPU_COUNT      , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.NUMBER_OF_PROCESSES  , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.PROCESSES_PER_HOST   , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
@@ -52,7 +54,9 @@ class Description (saga.Attributes) :
         self._attributes_register  (saga.job.PROJECT              , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.JOB_CONTACT          , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
 
+
         # FIXME
+        self._attributes_register  (saga.job.SPMD_VARIATION       , 'Single', sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
       # self._attributes_set_enums (saga.job.SPMD_VARIATION,      ['MPI', 'OpenMP', 'MPICH-G'])
 
         self._env_is_list = False
@@ -81,11 +85,18 @@ class Description (saga.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    def __deepcopy__ (self, other) :
+    @sus.takes   ('Description',
+                  ('Description', dict))
+    @sus.returns ('Description')
+    def __deepcopy__ (self, memo) :
+        other = saga.job.Description ()
         return self.clone (other)
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Description',
+                  'Description')
+    @sus.returns ('Description')
     def clone (self, other=None) :
         """ 
         deep copy: unlike the default python assignment (copy object reference),

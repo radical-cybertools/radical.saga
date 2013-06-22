@@ -11,7 +11,7 @@ import saga.utils.which
 import saga.utils.pty_shell
 import saga.utils.exception
 
-import saga.adaptors.cpi.base
+import saga.adaptors.base
 import saga.adaptors.cpi.job
 
 from saga.job.constants import *
@@ -38,30 +38,50 @@ class _job_state_monitor(threading.Thread):
 
         self.logger = job_service._logger
         self.js = job_service
+        self._stop = threading.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
 
+    def stop(self):
+        self._stop.set()
+
+
+    def stopped(self):
+        return self._stop.isSet()
+
     def run(self):
         try:
-            while True:
+            while self.stopped() is False:
                 # do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
                 jobs = self.js.jobs
-                for job in jobs:
+                job_keys = jobs.keys()
+
+                for job in job_keys:
                     # if the job hasn't been started, we can't update its
                     # state. we can tell if a job has been started if it
                     # has a job id
                     if jobs[job]['job_id'] is not None:
-                        job_info = self.js._job_get_info(job)
-                        self.logger.info("Job monitoring thread updating Job %s (state: %s)" % (job, job_info['state']))
+                        # we only need to monitor jobs that are not in a
+                        # terminal state, so we can skip the ones that are 
+                        # either done, failed or canceled
+                        state = jobs[job]['state']
+                        if (state != saga.job.DONE) and (state != saga.job.FAILED) and (state != saga.job.CANCELED):
 
-                        if job_info['state'] != jobs[job]['state']:
-                            # fire job state callback if 'state' has changed
-                            job._api()._attributes_i_set('state', job_info['state'], job._api()._UP, True)
+                            job_info = self.js._job_get_info(job)
+                            self.logger.info("Job monitoring thread updating Job %s (state: %s)" % (job, job_info['state']))
 
-                        # update job info
-                        self.js.jobs[job] = job_info
+                            if job_info['state'] != jobs[job]['state']:
+                                # fire job state callback if 'state' has changed
+                                if job._api() is not None:
+                                    job._api()._attributes_i_set('state', job_info['state'], job._api()._UP, True)
+                                else:
+                                    self.logger.warning("api() object is 'None' for job object %s - can't fire callback." % str(job))
+
+                            # update job info
+                            self.js.jobs[job] = job_info
+
                 time.sleep(MONITOR_UPDATE_INTERVAL)
 
         except Exception as e:
@@ -107,7 +127,7 @@ def _pbs_to_saga_jobstate(pbsjs):
 
 # --------------------------------------------------------------------
 #
-def _pbscript_generator(url, logger, jd, ppn, is_cray=False, queue=None):
+def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=None, ):
     """ generates a PBS script from a SAGA job description
     """
     pbs_params = str()
@@ -167,18 +187,23 @@ def _pbscript_generator(url, logger, jd, ppn, is_cray=False, queue=None):
     if jd.job_contact is not None:
         pbs_params += "#PBS -m abe \n"
 
-    # TORQUE on a cray requires different -l size.. arguments than regular
-    # HPC clusters:
-    if is_cray is True:
-        # Special case for TORQUE on Cray XT5s
-        logger.info("Using Cray XT specific '#PBS - size=xx' flags.")
-        if jd.total_cpu_count is not None:
-            pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
-    else:
-        # Default case, i.e, standard HPC cluster (non-Cray XT)
-        if jd.total_cpu_count is None:
-            jd.total_cpu_count = 1
+    # if total_cpu_count is not defined, we assume 1
+    if jd.total_cpu_count is None:
+        jd.total_cpu_count = 1
 
+    if is_cray is True:
+        # Special cases for PBS/TORQUE on Cray. Different PBSes,
+        # different flags. A complete nightmare...
+        if 'PBSPro_10' in pbs_version:
+            logger.info("Using Cray specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
+            if jd.total_cpu_count is not None:
+                pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
+        else:
+            logger.info("Using Cray XT specific '#PBS -l size=xx' flags (TORQUE).")
+            if jd.total_cpu_count is not None:
+                pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
+    else:
+        # Default case, i.e, standard HPC cluster (non-Cray)
         tcc = int(jd.total_cpu_count)
         tbd = float(tcc) / float(ppn)
         if float(tbd) > int(tbd):
@@ -226,6 +251,8 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.PROJECT,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
+                          saga.job.WALL_TIME_LIMIT,
+                          saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
                           saga.job.TOTAL_CPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -233,6 +260,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.STARTED,
                           saga.job.FINISHED],
     "metrics":           [saga.job.STATE],
+    "callbacks":         [saga.job.STATE],
     "contexts":          {"ssh": "SSH public/private keypair",
                           "x509": "GSISSH X509 proxy context",
                           "userpass": "username/password pair (ssh)"}
@@ -260,9 +288,10 @@ controlled HPC clusters.
 # the adaptor info is used to register the adaptor with SAGA
 #
 _ADAPTOR_INFO = {
-    "name":    _ADAPTOR_NAME,
-    "version": "v0.1",
-    "schemas": _ADAPTOR_SCHEMAS,
+    "name"        :    _ADAPTOR_NAME,
+    "version"     : "v0.1",
+    "schemas"     : _ADAPTOR_SCHEMAS,
+    "capabilities":  _ADAPTOR_CAPABILITIES,
     "cpis": [
         {
         "type": "saga.job.Service",
@@ -278,7 +307,7 @@ _ADAPTOR_INFO = {
 
 ###############################################################################
 # The adaptor class
-class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.base.Base):
     """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by 
         the SAGA engine), and which registers the CPI implementation classes 
         which provide the adaptor's functionality.
@@ -288,7 +317,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     #
     def __init__(self):
 
-        saga.adaptors.cpi.base.AdaptorBase.__init__(self,
+        saga.adaptors.base.Base.__init__(self,
             _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
@@ -342,7 +371,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """
         self.rm      = rm_url
         self.session = session
-        self.ppn     = 0
+        self.ppn     = 1
         self.is_cray = False
         self.queue   = None
         self.shell   = None
@@ -387,15 +416,23 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
       # self.shell.set_finalize_hook(self.finalize)
 
         self.initialize()
-
-        return self.get_api ()
-
+        return self.get_api()
 
     # ----------------------------------------------------------------
     #
-    def close (self) :
-        if  self.shell :
-            self.shell.finalize (True)
+    def __del__(self):
+        self.close()
+
+    # ----------------------------------------------------------------
+    #
+    def close(self):
+
+        self.mt.stop()
+        self.mt.join(10)  # don't block forever on join()
+        self._logger.info("Job monitoring thread stopped.")
+
+        if self.shell:
+            self.shell.finalize(True)
 
 
     # ----------------------------------------------------------------
@@ -492,7 +529,9 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             # create a PBS job script from SAGA job description
             script = _pbscript_generator(url=self.rm, logger=self._logger,
                                          jd=jd, ppn=self.ppn,
-                                         is_cray=self.is_cray, queue=self.queue)
+                                         pbs_version=self._commands['qstat']['version'],
+                                         is_cray=self.is_cray, queue=self.queue,
+                                         )
 
             self._logger.debug("Generated PBS script: %s" % script)
         except Exception, ex:
@@ -523,19 +562,22 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             # sometimes there are a couple of lines of warnings before.
             # if that's the case, we log those as 'warnings'
             lines = out.split('\n')
-            lines = filter(lambda lines: lines != '', lines)  # remove empty 
+            lines = filter(lambda lines: lines != '', lines)  # remove empty
 
             if len(lines) > 1:
                 self._logger.warning('qsub: %s' % ''.join(lines[:-2]))
 
             # we asssume job id is in the last line
+            #print cmdline
+            #print out
+
             job_id = "[%s]-[%s]" % (self.rm, lines[-1].strip().split('.')[0])
             self._logger.info("Submitted PBS job with id: %s" % job_id)
 
             # update job dictionary
             self.jobs[job_obj]['job_id'] = job_id
             self.jobs[job_obj]['submitted'] = job_id
-            
+
             # set status to 'pending' and manually trigger callback
             self.jobs[job_obj]['state'] = saga.job.PENDING
             job_obj._api()._attributes_i_set('state', self.jobs[job_obj]['state'], job_obj._api()._UP, True)
@@ -590,7 +632,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                     elif key == 'exec_host':
                         job_info['exec_hosts'] = val.split('+')
                     elif key == 'exit_status':
-                        job_info['returncode'] = val
+                        job_info['returncode'] = int(val)
                     elif key == 'ctime':
                         job_info['create_time'] = val
                     elif key == 'start_time':
@@ -670,7 +712,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                     elif key == 'exec_host':
                         curr_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
                     elif key == 'exit_status':
-                        curr_info['returncode'] = val
+                        curr_info['returncode'] = int(val)
                     elif key == 'ctime':
                         curr_info['create_time'] = val
                     elif key == 'start_time':
@@ -773,13 +815,6 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     def create_job(self, jd):
         """ implements saga.adaptors.cpi.job.Service.get_url()
         """
-        # check that only supported attributes are provided
-        for attribute in jd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITIES["jdes_attributes"]:
-                message = "'jd.%s' is not supported by this adaptor" \
-                    % attribute
-                log_error_and_raise(message, saga.BadParameter, self._logger)
-
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         adaptor_state = {"job_service":     self,

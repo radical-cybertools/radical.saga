@@ -22,11 +22,13 @@ adaptor_registry = [
                     "saga.adaptors.context.x509",
                     "saga.adaptors.context.ssh",
                     "saga.adaptors.context.userpass",
-                    "saga.adaptors.shell.shell_file",
                     "saga.adaptors.shell.shell_job",
+                    "saga.adaptors.shell.shell_file",
+                    #"saga.adaptors.shell.shell_resource",
                     "saga.adaptors.sge.sgejob",
                     "saga.adaptors.pbs.pbsjob",
                     "saga.adaptors.condor.condorjob",
                     "saga.adaptors.slurm.slurm_job",
-                    "saga.adaptors.http.http_file"
+                    "saga.adaptors.http.http_file",
+                    "saga.adaptors.aws.ec2_resource"
                    ]

@@ -24,6 +24,10 @@ class Attributes (object) :
     @SYNC
     def attribute_caller    (self, key, id, cb) : pass
 
+    @SYNC
+    def add_callback        (self, key, cb)     :
+        raise saga.NotImplemented ("Callbacks are not supported for this backend")
+
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

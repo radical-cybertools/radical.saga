@@ -100,6 +100,9 @@ The output should look something like this:
     Exitcode  : 0
 
 
+Values marked as 'None' could not be fetched from the backend, at that point.
+
+
 Check the Output
 ----------------
 

@@ -40,7 +40,8 @@ except IOError:
     except OSError:
         pass
 
-scripts = []  # ["bin/bliss-run"]
+scripts = []  # ["bin/saga-run"]
+
 
 # check python version. we need > 2.5
 if sys.hexversion < 0x02050000:
@@ -49,14 +50,14 @@ if sys.hexversion < 0x02050000:
 
 class our_install_data(install_data):
 
-    def finalize_options(self):
+    def finalize_options(self): 
         self.set_undefined_options('install',
                                    ('install_lib', 'install_dir'))
         install_data.finalize_options(self)
 
     def run(self):
         install_data.run(self)
-        # ensure there's a bliss/VERSION file
+        # ensure there's a saga/VERSION file
         fn = os.path.join(self.install_dir, 'saga', 'VERSION')
         open(fn, 'w').write(version)
         self.outfiles.append(fn)
@@ -131,6 +132,7 @@ setup_args = {
         "saga.namespace",
         "saga.filesystem",
         "saga.replica",
+        "saga.resource",
         "saga.advert",
         "saga.adaptors",
         "saga.adaptors.cpi",
@@ -138,6 +140,7 @@ setup_args = {
         "saga.adaptors.cpi.namespace",
         "saga.adaptors.cpi.filesystem",
         "saga.adaptors.cpi.replica",
+        "saga.adaptors.cpi.resource",
         "saga.adaptors.cpi.advert",
         "saga.adaptors.context",
         "saga.adaptors.local",
@@ -146,6 +149,7 @@ setup_args = {
         "saga.adaptors.pbs",
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
+        "saga.adaptors.aws",
         "saga.adaptors.http",
         "saga.engine",
         "saga.utils",
@@ -165,7 +169,7 @@ setup_args = {
         'sdist': our_sdist,
         'test': our_test
     },
-    'install_requires': ['setuptools', 'colorama'],
+    'install_requires': ['setuptools', 'colorama', 'apache-libcloud'],
     'tests_require': ['setuptools', 'nose']
 }
 

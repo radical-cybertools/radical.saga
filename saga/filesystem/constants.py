@@ -16,9 +16,9 @@ LOCK           = ns.LOCK            #     32
 CREATE_PARENTS = ns.CREATE_PARENTS  #     64
 TRUNCATE       =                         128
 APPEND         =                         256
-READ           = ns.READ            #    512
-WRITE          = ns.WRITE           #   1024
-READ_WRITE     = ns.READ_WRITE      #   1536
+READ           =                         512
+WRITE          =                        1024
+READ_WRITE     =                        1536
 BINARY         =                        2048
 
 # filesystem seek_mode enum:

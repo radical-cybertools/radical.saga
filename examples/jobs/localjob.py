@@ -18,17 +18,16 @@ def main():
         # Create a job service object that represent the local machine.
         # The keyword 'fork' in the url scheme triggers the 'shell' adaptor.
         # The adaptor also support ssh:// and gsissh://
-        js = saga.job.Service("fork://localhost")
+        js = saga.job.Service("ssh://localhost")
+        l  = js.list ()
 
-        # Next, we describe the job we want to run. A complete set of job
-        # description attributes can be found in the API documentation.
-        jd = saga.job.Description()
+       
+        sys.exit (0)
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
         jd.environment       = {'FILENAME': 'testfile'}
-        jd.wall_time_limit   = 1 # minutes
 
         jd.executable        = '/usr/bin/touch'
         jd.arguments         = ['$FILENAME']
@@ -85,4 +84,6 @@ def main():
         return -1
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main ()
+    sys.exit (0)
+

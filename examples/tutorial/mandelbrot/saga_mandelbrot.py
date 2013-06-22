@@ -4,23 +4,42 @@ import time
 import saga
 from PIL import Image
 
-REMOTE_HOST = "india.futuregrid.org"
-REMOTE_JOB_ENDPOINT = "pbs+ssh://" + REMOTE_HOST 
-REMOTE_FILE_ENDPOINT = "sftp://" + REMOTE_HOST
+#-----------------------------------------------------------------------------
+#
+
+# Change REMOTE_HOST to the machine you want to run this on.
+# You might have to change the URL scheme below for REMOTE_JOB_ENDPOINT
+# accordingly.
+REMOTE_HOST = "localhost"  # try this with different hosts
+
+# This refers to your working directory on 'REMOTE_HOST'. If you use a\
+# cluster for 'REMOTE_HOST', make sure this points to a shared filesystem.
+REMOTE_DIR = "/tmp/"  # change this to your home directory
+
+# If you change 'REMOTE_HOST' above, you might have to change 'ssh://' to e.g.,
+# 'pbs+ssh://', 'sge+ssh://', depdending on the type of service endpoint on
+# that particualr host.
+REMOTE_JOB_ENDPOINT = "ssh://" + REMOTE_HOST
+
+# At the moment saga-python only provides an sftp file adaptor, so changing
+# the URL scheme here wouldn't make any sense.
+REMOTE_FILE_ENDPOINT = "sftp://" + REMOTE_HOST + "/" + REMOTE_DIR
 
 # the dimension (in pixel) of the whole fractal
-imgx = 2048 
+imgx = 2048
 imgy = 2048
 
 # the number of tiles in X and Y direction
 tilesx = 2
 tilesy = 2
 
+#-----------------------------------------------------------------------------
+#
 if __name__ == "__main__":
     try:
         # Your ssh identity on the remote machine
         ctx = saga.Context("ssh")
-        ctx.user_id = "oweidner"
+        #ctx.user_id = ""
 
         session = saga.Session()
         session.add_context(ctx)
@@ -29,7 +48,7 @@ if __name__ == "__main__":
         jobs = []
 
         # create a working directory in /scratch
-        dirname = '%s/%s/mbrot/' % (REMOTE_FILE_ENDPOINT, '/N/u/oweidner/')
+        dirname = '%s/mbrot/' % (REMOTE_FILE_ENDPOINT)
         workdir = saga.filesystem.Directory(dirname, saga.filesystem.CREATE,
                                             session=session)
 
@@ -56,7 +75,7 @@ if __name__ == "__main__":
                 jd.total_cpu_count   = 1
                 jd.working_directory = workdir.get_url().path
                 jd.executable        = 'sh'
-                jd.arguments         = ['mandelbrot.sh', imgx, imgy, 
+                jd.arguments         = ['mandelbrot.sh', imgx, imgy,
                                         (imgx/tilesx*x), (imgx/tilesx*(x+1)),
                                         (imgy/tilesy*y), (imgy/tilesy*(y+1)),
                                         outputfile]
@@ -74,6 +93,7 @@ if __name__ == "__main__":
                 print ' * Job %s status: %s' % (job.id, jobstate)
                 if jobstate in [saga.job.DONE, saga.job.FAILED]:
                     jobs.remove(job)
+            print ""
             time.sleep(5)
 
         # copy image tiles back to our 'local' directory
@@ -108,3 +128,4 @@ if __name__ == "__main__":
         for job in jobs:
             job.cancel()
         sys.exit(-1)
+

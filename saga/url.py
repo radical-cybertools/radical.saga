@@ -6,11 +6,15 @@ __license__   = "MIT"
 
 import os
 
-from saga.exceptions import BadParameter
+
 # this urlparse needs Python 2.5
 from saga.utils.contrib import urlparse25 as urlparse
 
+import saga.exceptions       as se
+import saga.utils.signatures as sus
 
+# ------------------------------------------------------------------------------
+#
 class Url (object):
     """ The SAGA Url class.
 
@@ -43,8 +47,11 @@ class Url (object):
           url.set_scheme("anotherscheme")
     """
 
-    ######################################################################
-    ##
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Url', 
+                  sus.optional (basestring, 'Url'))
+    @sus.returns (sus.nothing)
     def __init__(self, url_string=''):
         """ Create a new Url object from a string or another Url object.
         """
@@ -56,34 +63,51 @@ class Url (object):
         elif type(url_string) == Url:
             self._urlobj = urlparse.urlparse(str(url_string))
         else:
-            raise BadParameter ("Url expects str or Url type as parameter, not %s" \
-                             % type(url_string))
+            raise se.BadParameter ("Url expects str or Url type as parameter, not %s" \
+                                % type(url_string))
 
-    ######################################################################
+    # --------------------------------------------------------------------------
+    #
     ##
-    def __str__(self):
+    @sus.takes   ('Url')
+    @sus.returns ((sus.nothing, basestring))
+    def __str__  (self):
         """ String representation (utf-8).
         """
         return unicode(self).decode('utf-8', 'ignore')
 
-    ######################################################################
+    # --------------------------------------------------------------------------
+    #
     ##
+    @sus.takes   ('Url')
+    @sus.returns (basestring)
     def __unicode__(self):
         """ Unicode representation.
         """
         ucstring = u'%s' % unicode(self._urlobj.geturl())
         return ucstring
 
-    ######################################################################
+    # --------------------------------------------------------------------------
+    #
     ##
-    def __deepcopy__(self, obj):
+    @sus.takes   ('Url', 
+                  ('Url', dict))
+    @sus.returns ('Url')
+    def __deepcopy__(self, memo):
         """ Deep copy of a Url
         """
         new_url = Url(str(self))
         return new_url
 
-    ######################################################################
+    # --------------------------------------------------------------------------
+    #
     ##
+    @sus.takes   ('Url', 
+                  basestring,
+                  basestring,
+                  basestring,
+                  (basestring, int))
+    @sus.returns (basestring)
     def _make_netloc(self, username, password, host, port):
         """ Private helper function to generate netloc string.
         """
@@ -99,8 +123,13 @@ class Url (object):
             netloc += ":%s" % (port)
         return netloc
 
-    ######################################################################
-    ## Scheme property
+    # --------------------------------------------------------------------------
+    #
+    # Scheme property
+    #
+    @sus.takes   ('Url', 
+                  basestring)
+    @sus.returns (sus.nothing)
     def set_scheme(self, scheme):
         """ Set the 'scheme' component.
         """
@@ -112,6 +141,8 @@ class Url (object):
                                      self._urlobj.fragment))
         self._urlobj = urlparse.urlparse(newurl)
 
+    @sus.takes   ('Url')
+    @sus.returns ((sus.nothing, basestring))
     def get_scheme(self):
         """R eturn the 'scheme' component.
         """
@@ -122,8 +153,13 @@ class Url (object):
     """ The scheme component.
     """
 
-    ######################################################################
-    ## Host property
+    # --------------------------------------------------------------------------
+    #
+    # Host property
+    #
+    @sus.takes   ('Url', 
+                  basestring)
+    @sus.returns (sus.nothing)
     def set_host(self, host):
         """ Set the 'host' component.
         """
@@ -139,6 +175,8 @@ class Url (object):
                                      self._urlobj.fragment))
         self._urlobj = urlparse.urlparse(newurl)
 
+    @sus.takes   ('Url')
+    @sus.returns ((sus.nothing, basestring))
     def get_host(self):
         """ Return the 'host' component.
         """
@@ -148,8 +186,13 @@ class Url (object):
     """ The host component.
     """
 
-    ######################################################################
-    ## Port property
+    # --------------------------------------------------------------------------
+    #
+    # Port property
+    #
+    @sus.takes   ('Url', 
+                  (basestring, int))
+    @sus.returns (sus.nothing)
     def set_port(self, port):
         """ Set the 'port' component.
         """
@@ -165,6 +208,8 @@ class Url (object):
                                      self._urlobj.fragment))
         self._urlobj = urlparse.urlparse(newurl)
 
+    @sus.takes   ('Url')
+    @sus.returns ((sus.nothing, int))
     def get_port(self):
         """ Return the 'port' component.
         """
@@ -177,8 +222,13 @@ class Url (object):
     """ The port component.
     """
 
-    ######################################################################
-    ## Username property
+    # --------------------------------------------------------------------------
+    #
+    # Username property
+    #
+    @sus.takes   ('Url', 
+                  basestring)
+    @sus.returns (sus.nothing)
     def set_username(self, username):
         """ Set the 'username' component.
         """
@@ -193,6 +243,8 @@ class Url (object):
                                      self._urlobj.fragment))
         self._urlobj = urlparse.urlparse(newurl)
 
+    @sus.takes   ('Url')
+    @sus.returns ((sus.nothing, basestring))
     def get_username(self):
         """ Return the 'username' component.
         """
@@ -202,8 +254,13 @@ class Url (object):
     """ The username component.
     """
 
-    ######################################################################
-    ## Password property
+    # --------------------------------------------------------------------------
+    #
+    # Password property
+    #
+    @sus.takes   ('Url', 
+                  basestring)
+    @sus.returns (sus.nothing)
     def set_password(self, password):
         """ Set the 'password' component.
         """
@@ -218,6 +275,8 @@ class Url (object):
                                      self._urlobj.fragment))
         self._urlobj = urlparse.urlparse(newurl)
 
+    @sus.takes   ('Url')
+    @sus.returns ((sus.nothing, basestring))
     def get_password(self):
         """ Return the 'username' component.
         """
@@ -227,8 +286,13 @@ class Url (object):
     """ The password component.
     """
 
-    ######################################################################
-    ## Fragment property
+    # --------------------------------------------------------------------------
+    #
+    # Fragment property
+    #
+    @sus.takes   ('Url', 
+                  basestring)
+    @sus.returns (sus.nothing)
     def set_fragment(self, fragment):
         """ Set the 'fragment' component.
         """
@@ -240,6 +304,8 @@ class Url (object):
                                      fragment))
         self._urlobj = urlparse.urlparse(newurl)
 
+    @sus.takes   ('Url')
+    @sus.returns ((sus.nothing, basestring))
     def get_fragment(self):
         """ Return the 'fragment' component.
         """
@@ -249,8 +315,13 @@ class Url (object):
     """ The fragment component.
     """
 
-    ######################################################################
-    ## Path property
+    # --------------------------------------------------------------------------
+    #
+    # Path property
+    #
+    @sus.takes   ('Url', 
+                  basestring)
+    @sus.returns (sus.nothing)
     def set_path(self, path):
         """ Set the 'path' component.
         """
@@ -262,6 +333,8 @@ class Url (object):
                                      self._urlobj.fragment))
         self._urlobj = urlparse.urlparse(newurl)
 
+    @sus.takes   ('Url')
+    @sus.returns ((sus.nothing, basestring))
     def get_path(self):
         """ Return the 'path' component.
         """
@@ -275,8 +348,13 @@ class Url (object):
     """ The path component.
     """
 
-    ######################################################################
-    ## Query property
+    # --------------------------------------------------------------------------
+    #
+    # Query property
+    #
+    @sus.takes   ('Url', 
+                  basestring)
+    @sus.returns (sus.nothing)
     def set_query(self, query):
         """ Set the 'query' component.
         """
@@ -288,6 +366,8 @@ class Url (object):
                                      self._urlobj.fragment))
         self._urlobj = urlparse.urlparse(newurl)
 
+    @sus.takes   ('Url')
+    @sus.returns ((sus.nothing, basestring))
     def get_query(self):
         """ Return the 'query' component.
         """
