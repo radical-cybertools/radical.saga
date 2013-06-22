@@ -632,7 +632,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                     elif key == 'exec_host':
                         job_info['exec_hosts'] = val.split('+')
                     elif key == 'exit_status':
-                        job_info['returncode'] = val
+                        job_info['returncode'] = int(val)
                     elif key == 'ctime':
                         job_info['create_time'] = val
                     elif key == 'start_time':
@@ -712,7 +712,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                     elif key == 'exec_host':
                         curr_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
                     elif key == 'exit_status':
-                        curr_info['returncode'] = val
+                        curr_info['returncode'] = int(val)
                     elif key == 'ctime':
                         curr_info['create_time'] = val
                     elif key == 'start_time':

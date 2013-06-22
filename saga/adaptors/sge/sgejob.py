@@ -584,7 +584,7 @@ about finished jobs. Setting state to 'DONE'.")
         and (self.jobs[job_id]['returncode'] is None):
             self.jobs[job_id] = self._job_get_info(job_id=job_id)
 
-        return self.jobs[job_id]['returncode']
+        return int(self.jobs[job_id]['returncode'])
 
     # ----------------------------------------------------------------
     #
