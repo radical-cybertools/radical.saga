@@ -444,12 +444,15 @@ class PTYShellFactory (object) :
             # interactive login shell, so that it interprets the users startup
             # files, and reacts on commands.
 
-            import saga.utils.misc as sumisc
-            info['latency'] = sumisc.get_host_latency (url)
+            try :
+                import saga.utils.misc as sumisc
+                info['latency'] = sumisc.get_host_latency (url)
 
-            if None == info['latency'] :
-                raise se.BadParameter._log (self.logger, "Could not resolve host '%s'" % (url))
-
+            except Exception  as e
+                info['latency'] = 1.0  # generic value assuming slow link
+                raise se.BadParameter._log (self.logger, "Could not contact host '%s': %s" \
+                                         % (url, e))
+                
             if  info['type'] == "sh" :
 
                 if not sumisc.host_is_local (url.host) :

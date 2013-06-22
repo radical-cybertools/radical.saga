@@ -105,7 +105,7 @@ def get_host_latency (host_url) :
 
     except :
 
-        return None
+        raise
 
 
 
