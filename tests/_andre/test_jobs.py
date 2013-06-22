@@ -17,10 +17,12 @@ try :
     c.user_id   = 'tester'
     c.user_pass = 'testtest'
 
-    s = saga.Session (default=False)
+    s = saga.Session (default=True)
   # s.add_context (c)
 
+
     js = saga.job.Service ('ssh://localhost/bin/sh', session=s)
+    js = saga.job.Service ('gsissh://gsissh.kraken.nics.xsede.org', session=s)
   
     jd = saga.job.Description ()
     jd.executable = '/bin/echo'

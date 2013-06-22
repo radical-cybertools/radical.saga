@@ -9,7 +9,7 @@ __license__   = "MIT"
 import os.path
 import urllib
 
-import saga.adaptors.cpi.base
+import saga.adaptors.base
 import saga.adaptors.cpi.filesystem
 import saga.utils.misc as sumisc
 
@@ -42,7 +42,8 @@ _ADAPTOR_DOC           = {
     "name"             : _ADAPTOR_NAME,
     "cfg_options"      : _ADAPTOR_OPTIONS, 
     "capabilities"     : _ADAPTOR_CAPABILITIES,
-    "description"      : """TODO""",
+    "description"      : """The HTTP file adpator allows file transfer (copy) from remote resources to the local machine via the HTTP/HTTPS protocol, similar to cURL.""",
+    "example"          : "examples/files/http_file_copy.py",
     "schemas"          : {"http"   :"use the http protocol to access a remote file", 
                           "https"  :"use the https protocol to access a remote file"}
 }
@@ -69,7 +70,7 @@ _ADAPTOR_INFO = {
 
 ###############################################################################
 # The adaptor class
-class Adaptor(saga.adaptors.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.base.Base):
     """
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -80,7 +81,7 @@ class Adaptor(saga.adaptors.cpi.base.AdaptorBase):
     #
     def __init__(self):
 
-        saga.adaptors.cpi.base.AdaptorBase.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
     # ----------------------------------------------------------------
     #

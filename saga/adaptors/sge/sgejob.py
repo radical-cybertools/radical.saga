@@ -10,7 +10,7 @@ __license__   = "MIT"
 import saga.utils.which
 import saga.utils.pty_shell
 
-import saga.adaptors.cpi.base
+import saga.adaptors.base
 import saga.adaptors.cpi.job
 
 from saga.job.constants import *
@@ -209,9 +209,10 @@ The SGE (Sun/Oracle Grid Engine) adaptor allows to run and manage jobs on
 # the adaptor info is used to register the adaptor with SAGA
 #
 _ADAPTOR_INFO = {
-    "name":    _ADAPTOR_NAME,
-    "version": "v0.1",
-    "schemas": _ADAPTOR_SCHEMAS,
+    "name"        :    _ADAPTOR_NAME,
+    "version"     : "v0.1",
+    "schemas"     : _ADAPTOR_SCHEMAS,
+    "capabilities":  _ADAPTOR_CAPABILITIES,
     "cpis": [
         {
         "type": "saga.job.Service",
@@ -227,7 +228,7 @@ _ADAPTOR_INFO = {
 
 ###############################################################################
 # The adaptor class
-class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.base.Base):
     """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by 
         the SAGA engine), and which registers the CPI implementation classes 
         which provide the adaptor's functionality.
@@ -237,7 +238,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     #
     def __init__(self):
 
-        saga.adaptors.cpi.base.AdaptorBase.__init__(self,
+        saga.adaptors.base.Base.__init__(self,
             _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
@@ -583,7 +584,7 @@ about finished jobs. Setting state to 'DONE'.")
         and (self.jobs[job_id]['returncode'] is None):
             self.jobs[job_id] = self._job_get_info(job_id=job_id)
 
-        return self.jobs[job_id]['returncode']
+        return int(self.jobs[job_id]['returncode'])
 
     # ----------------------------------------------------------------
     #
@@ -682,13 +683,6 @@ about finished jobs. Setting state to 'DONE'.")
     def create_job(self, jd):
         """ implements saga.adaptors.cpi.job.Service.get_url()
         """
-        # check that only supported attributes are provided
-        for attribute in jd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITIES["jdes_attributes"]:
-                message = "'jd.%s' is not supported by this adaptor" \
-                    % attribute
-                log_error_and_raise(message, saga.BadParameter, self._logger)
-
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         adaptor_state = {"job_service":     self,

@@ -325,4 +325,5 @@ class TestConfig (sconf.Configurable):
     @property
     def advert_url (self):
 
-        return self._tcfg['job_advert_url'].get_value ()
+        return self._tcfg['advert_url'].get_value ()
+
