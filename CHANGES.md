@@ -1,4 +1,4 @@
-Version 0.9.8 released 2013-06-20
+Version 0.9.8 released 2013-06-22
 ----------------------------------------------------------------------
 
 * Hotfix release: critical bug in wait() signature

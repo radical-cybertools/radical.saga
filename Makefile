@@ -22,7 +22,7 @@ pylint:
 				 echo \
 		) \
 	done | tee pylint.out;\
-	return `cat pylint.out | wc -c`
+	`cat pylint.out | wc -c`
 
 viz:
 	gource -s 0.1 -i 0 --title saga-python --max-files 99999 --max-file-lag -1 --user-friction 0.3 --user-scale 0.5 --camera-mode overview --highlight-users --hide progress,filenames -r 25 -viewport 1024x1024
