@@ -15,15 +15,15 @@ def benchmark_pre (test_cfg, bench_cfg, session) :
     if  not 'load'        in bench_cfg : 
         sumisc.benchmark_eval ('no benchmark load configured')
 
-    HOST = test_cfg['job_service_url']
-    N_J  = int(bench_cfg['iterations'])  
-    LOAD = int(bench_cfg['load'])       
+    host = test_cfg['job_service_url']
+    n_j  = int(bench_cfg['iterations'])  
+    load = int(bench_cfg['load'])       
 
-    js = saga.job.Service ("%s" % HOST, session=session) 
+    js = saga.job.Service (host, session=session) 
     jd = saga.job.Description()
 
     jd.executable = '/bin/sleep'
-    jd.arguments  = [LOAD]
+    jd.arguments  = [load]
 
     return {'js' : js, 'jd' : jd}
 
