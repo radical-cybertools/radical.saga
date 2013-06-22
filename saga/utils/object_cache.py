@@ -25,7 +25,7 @@ class ObjectCache (object) :
 
     # --------------------------------------------------------------------------
     #
-    def get_obj (self, oid, creator, *args, **kwargs) :
+    def get_obj (self, oid, creator) :
         """
         For a given object id, attempt to retrieve an existing object.  If that
         object exists, increase the reference counter, as there is now one more
@@ -41,7 +41,7 @@ class ObjectCache (object) :
 
             if  not oid in self._cache :
 
-                obj = creator (*args,  **kwargs)
+                obj = creator ()
 
                 self._cache [oid]        = {}
                 self._cache [oid]['cnt'] = 0
