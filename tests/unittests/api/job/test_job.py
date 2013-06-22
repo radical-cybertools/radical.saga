@@ -343,8 +343,8 @@ def test_get_exit_code():
         j.run()
         j.wait()
 
-        ec = str(j.exit_code)
-        assert ec == "1", "%s != 1" % ec
+        ec = j.exit_code
+        assert ec == 1, "%s != 1" % ec
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni

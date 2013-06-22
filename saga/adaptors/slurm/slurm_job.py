@@ -676,7 +676,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                 self._logger.debug("Returning exit code %s" % self.exit_code)
                 
                 # return whatever our exit code is
-                return self.exit_code
+                return int(self.exit_code)
         
         ### couldn't get the exitcode -- maybe should change this to just return
         ### None?  b/c we will lose the code if a program waits too
