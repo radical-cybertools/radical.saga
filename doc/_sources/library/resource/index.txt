@@ -4,12 +4,9 @@
 Resource Management
 ===================
 
-SAGA's resource management module is ...
+The basic usage of the resource module is as follows:
 
-The basic usage of the resource module is as follows::
-
-   # ...
-   ...
+.. literalinclude:: ../../../../examples/resource/amazon_ec2.py
 
 .. seealso:: More examples on how to use the SAGA resource module can be found in 
              the :ref:`code_examples_resource` section of the 

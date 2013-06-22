@@ -134,7 +134,7 @@ documentation.</p>
 </table>
 <dl class="class">
 <dt id="saga.job.Service">
-<em class="property">class </em><tt class="descclassname">saga.job.</tt><tt class="descname">Service</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.job.</tt><tt class="descname">Service</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.Base</span></tt>, <tt class="xref py py-class docutils literal"><span class="pre">saga.async.Async</span></tt></p>
 <p>The job.Service represents a resource management backend, and as such allows
 the creation, submission and management of jobs.</p>
@@ -175,27 +175,27 @@ endpoint for that service.</p>
 </div>
 <dl class="classmethod">
 <dt id="saga.job.Service.create">
-<em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service.create" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service.create" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Service.close">
-<tt class="descname">close</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service.close" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">close</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service.close" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Service.create_job">
-<tt class="descname">create_job</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service.create_job" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">create_job</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service.create_job" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Service.run_job">
-<tt class="descname">run_job</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service.run_job" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">run_job</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service.run_job" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Service.list">
-<tt class="descname">list</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service.list" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">list</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service.list" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -205,7 +205,7 @@ endpoint for that service.</p>
 
 <dl class="method">
 <dt id="saga.job.Service.get_url">
-<tt class="descname">get_url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service.get_url" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_url</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service.get_url" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -215,7 +215,7 @@ endpoint for that service.</p>
 
 <dl class="method">
 <dt id="saga.job.Service.get_job">
-<tt class="descname">get_job</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service.get_job" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_job</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service.get_job" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -238,12 +238,12 @@ the <a class="reference internal" href="../../developers/index.html#chapter-midd
 adaptor-specific lists of supported attributes.</p>
 <dl class="class">
 <dt id="saga.job.Description">
-<em class="property">class </em><tt class="descclassname">saga.job.</tt><tt class="descname">Description</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Description" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.job.</tt><tt class="descname">Description</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Description" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a></p>
 <p>The job description class.</p>
 <dl class="method">
 <dt id="saga.job.Description.clone">
-<tt class="descname">clone</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Description.clone" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">clone</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Description.clone" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -727,7 +727,7 @@ If the argument is a string, the return value is the same object.</p>
 </table>
 <dl class="class">
 <dt id="saga.job.Job">
-<em class="property">class </em><tt class="descclassname">saga.job.</tt><tt class="descname">Job</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.job.</tt><tt class="descname">Job</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.Base</span></tt>, <a class="reference internal" href="../attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a>, <tt class="xref py py-class docutils literal"><span class="pre">saga.async.Async</span></tt></p>
 <p>Represents a SAGA job as defined in GFD.90</p>
 <p>A &#8216;Job&#8217; represents a running application instance, which may consist of one
@@ -750,52 +750,52 @@ actively canceled by the user or the application (&#8216;Canceled&#8217;).</p>
 job&#8217;s state, and initiating job state transitions.</p>
 <dl class="method">
 <dt id="saga.job.Job.get_id">
-<tt class="descname">get_id</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_id" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_id</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_id" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.get_description">
-<tt class="descname">get_description</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_description" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_description</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_description" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.get_stdin">
-<tt class="descname">get_stdin</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_stdin" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_stdin</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_stdin" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.get_stdout">
-<tt class="descname">get_stdout</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_stdout" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_stdout</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_stdout" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.get_stderr">
-<tt class="descname">get_stderr</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_stderr" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_stderr</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_stderr" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.suspend">
-<tt class="descname">suspend</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.suspend" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">suspend</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.suspend" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.resume">
-<tt class="descname">resume</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.resume" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">resume</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.resume" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.checkpoint">
-<tt class="descname">checkpoint</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.checkpoint" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">checkpoint</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.checkpoint" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.migrate">
-<tt class="descname">migrate</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.migrate" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">migrate</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.migrate" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.signal">
-<tt class="descname">signal</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.signal" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">signal</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.signal" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -825,42 +825,42 @@ job&#8217;s state, and initiating job state transitions.</p>
 
 <dl class="method">
 <dt id="saga.job.Job.run">
-<tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.run" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">run</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.run" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.cancel">
-<tt class="descname">cancel</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.cancel" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">cancel</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.cancel" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.wait">
-<tt class="descname">wait</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.wait" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">wait</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.wait" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.get_state">
-<tt class="descname">get_state</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_state" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_state</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_state" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.get_result">
-<tt class="descname">get_result</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_result" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_result</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_result" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.get_object">
-<tt class="descname">get_object</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_object" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_object</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_object" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.get_exception">
-<tt class="descname">get_exception</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_exception" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_exception</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.get_exception" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.job.Job.re_raise">
-<tt class="descname">re_raise</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.re_raise" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">re_raise</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Job.re_raise" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">

@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>Resource Management &mdash; SAGA 0.9.8 documentation</title>
+    <title>3. Resource Management &mdash; SAGA 0.9.8 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -31,7 +31,10 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.8 documentation" href="../../index.html" /> 
+    <link rel="top" title="SAGA 0.9.8 documentation" href="../../index.html" />
+    <link rel="up" title="3. Library Reference" href="../index.html" />
+    <link rel="next" title="4. Using URLs" href="../url.html" />
+    <link rel="prev" title="2. Working with Files and Directories" href="../filesystem/index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,7 +46,14 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.8 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="../url.html" title="4. Using URLs"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../filesystem/index.html" title="2. Working with Files and Directories"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">SAGA 0.9.8 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">3. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -53,11 +63,130 @@
           <div class="body">
             
   <div class="section" id="resource-management">
-<span id="id1"></span><h1>Resource Management<a class="headerlink" href="#resource-management" title="Permalink to this headline">¶</a></h1>
-<p>SAGA&#8217;s resource management module is ...</p>
+<span id="id1"></span><h1>3. Resource Management<a class="headerlink" href="#resource-management" title="Permalink to this headline">¶</a></h1>
 <p>The basic usage of the resource module is as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># ...</span>
-<span class="o">...</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Ole Weidner&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
+<span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
+<span class="sd">&quot;&quot;&quot; This is an example which shows how to access Amazon EC2 clouds via the SAGA</span>
+<span class="sd">    resource package.</span>
+
+<span class="sd">    In order to run this example, you need to set the following environment</span>
+<span class="sd">    variables:</span>
+
+<span class="sd">    * EC2_ID:           Your Amazon EC2 ID</span>
+<span class="sd">    * EC2_KEY:          You Amazon EC2 KEY</span>
+<span class="sd">    * EC2_SSH_KEYPAIR:  The SSH keypair you want to use to access the VM, e.g.,</span>
+<span class="sd">                        /home/username/.ssh/rsa_ec2</span>
+<span class="sd">                        (You can create a new temporary one using &#39;ssh-keygen&#39;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">saga</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">libcloud.security</span>
+<span class="n">libcloud</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">VERIFY_SSL_CERT</span> <span class="o">=</span> <span class="bp">False</span>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+
+    <span class="c"># In order to connect to EC2, we need an EC2 ID and KEY. We read those</span>
+    <span class="c"># from the environment.</span>
+    <span class="n">ec2_ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&#39;EC2&#39;</span><span class="p">)</span>
+    <span class="n">ec2_ctx</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;EC2_ID&#39;</span><span class="p">]</span>
+    <span class="n">ec2_ctx</span><span class="o">.</span><span class="n">user_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;EC2_KEY&#39;</span><span class="p">]</span>
+
+    <span class="c"># The SSH keypair we want to use the access the EC2 VM. If the keypair is</span>
+    <span class="c"># not yet registered on EC2 saga will register it automatically.</span>
+    <span class="n">ec2keypair_ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&#39;EC2_KEYPAIR&#39;</span><span class="p">)</span>
+    <span class="n">ec2keypair_ctx</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="s">&#39;TODO&#39;</span>  <span class="c"># keypair name</span>
+    <span class="n">ec2keypair_ctx</span><span class="o">.</span><span class="n">user_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;EC2_SSH_KEYPAIR&#39;</span><span class="p">]</span>
+    <span class="n">ec2keypair_ctx</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="s">&#39;root&#39;</span>  <span class="c"># the user id on the target VM</span>
+
+    <span class="c"># TODO</span>
+    <span class="n">ssh_ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&#39;SSH&#39;</span><span class="p">)</span>
+    <span class="n">ssh_ctx</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="s">&#39;root&#39;</span>
+    <span class="n">ssh_ctx</span><span class="o">.</span><span class="n">user_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;EC2_SSH_KEYPAIR&#39;</span><span class="p">]</span>
+
+    <span class="n">session</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>  <span class="c"># FALSE: don&#39;t use other (default) contexts</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ec2_ctx</span><span class="p">)</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ec2keypair_ctx</span><span class="p">)</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ssh_ctx</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c">######################################################################</span>
+        <span class="c">##  STEP 1: Start a VM on EC2                                       ##</span>
+        <span class="c">######################################################################</span>
+
+        <span class="c"># in this session, connect to the EC2 resource manager</span>
+        <span class="n">rm</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">Manager</span><span class="p">(</span><span class="s">&quot;ec2://aws.amazon.com/&quot;</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+
+        <span class="c"># Create a resource description with an image and an OS template,.</span>
+        <span class="c"># We pick a small VM and a plain Ubuntu image...</span>
+        <span class="n">cd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">ComputeDescription</span><span class="p">()</span>
+        <span class="n">cd</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="s">&#39;ami-0256b16b&#39;</span>
+        <span class="n">cd</span><span class="o">.</span><span class="n">template</span> <span class="o">=</span> <span class="s">&#39;Small Instance&#39;</span>
+
+        <span class="c"># Create a VM instance from that description.</span>
+        <span class="n">cr</span> <span class="o">=</span> <span class="n">rm</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">cd</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Waiting for VM to become active...&quot;</span>
+
+        <span class="c"># Wait for the VM to &#39;boot up&#39;, i.e., become &#39;ACTIVE&#39;</span>
+        <span class="k">if</span> <span class="n">cr</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="n">saga</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">ACTIVE</span><span class="p">:</span>
+            <span class="n">cr</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">ACTIVE</span><span class="p">)</span>
+
+        <span class="c"># Query some information about the newly created VM</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Created VM: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cr</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">print</span> <span class="s">&quot;  state  : </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cr</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">cr</span><span class="o">.</span><span class="n">state_detail</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;  access : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cr</span><span class="o">.</span><span class="n">access</span>
+
+        <span class="c"># give the VM some time to start up comlpetely, otherwise the subsequent</span>
+        <span class="c"># job submission might end up failing...</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+
+        <span class="c">######################################################################</span>
+        <span class="c">##  STEP 2: Run a Job on the VM                                     ##</span>
+        <span class="c">######################################################################</span>
+
+        <span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="n">cr</span><span class="o">.</span><span class="n">access</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+
+        <span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s">&#39;/bin/sleep&#39;</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;30&#39;</span><span class="p">]</span>
+
+        <span class="n">job</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
+        <span class="n">job</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Running Job: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">print</span> <span class="s">&quot;  state : </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">job</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+        <span class="k">print</span> <span class="s">&quot;  state : </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">SagaException</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="c"># Catch all saga exceptions</span>
+        <span class="k">print</span> <span class="s">&quot;An exception occured: (</span><span class="si">%s</span><span class="s">) </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)))</span>
+        <span class="c"># Trace back the exception. That can be helpful for debugging.</span>
+        <span class="k">print</span> <span class="s">&quot; </span><span class="se">\n</span><span class="s">*** Backtrace:</span><span class="se">\n</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ex</span><span class="o">.</span><span class="n">traceback</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">finally</span><span class="p">:</span>
+
+        <span class="c">######################################################################</span>
+        <span class="c">##  STEP 2: Shut down the VM                                        ##</span>
+        <span class="c">######################################################################</span>
+
+        <span class="n">cr</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+        <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Destroyed VM: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cr</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">print</span> <span class="s">&quot;  state : </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cr</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">cr</span><span class="o">.</span><span class="n">state_detail</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
 </pre></div>
 </div>
 <div class="admonition-see-also admonition seealso">
@@ -83,7 +212,7 @@ documentation.</p>
 </ul>
 </div>
 <div class="section" id="resource-manager-saga-resource-manager">
-<span id="resource-manager"></span><h2><a class="toc-backref" href="#id2">Resource manager &#8211; <a class="reference internal" href="#saga.resource.Manager" title="saga.resource.Manager"><tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Manager</span></tt></a></a><a class="headerlink" href="#resource-manager-saga-resource-manager" title="Permalink to this headline">¶</a></h2>
+<span id="resource-manager"></span><h2><a class="toc-backref" href="#id2">3.1. Resource manager &#8211; <a class="reference internal" href="#saga.resource.Manager" title="saga.resource.Manager"><tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Manager</span></tt></a></a><a class="headerlink" href="#resource-manager-saga-resource-manager" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -94,7 +223,7 @@ documentation.</p>
 </table>
 <dl class="class">
 <dt id="saga.resource.Manager">
-<em class="property">class </em><tt class="descclassname">saga.resource.</tt><tt class="descname">Manager</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.resource.</tt><tt class="descname">Manager</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.Base</span></tt>, <tt class="xref py py-class docutils literal"><span class="pre">saga.async.Async</span></tt></p>
 <p>In the context of SAGA-Python, a <em>ResourceManager</em> is a service which asserts
 control over a set of resources.  That manager can, on request, render
@@ -105,47 +234,47 @@ or network resources, according to some resource specification, for a bound
 or unbound amount of time.</p>
 <dl class="classmethod">
 <dt id="saga.resource.Manager.create">
-<em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.create" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.create" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.list">
-<tt class="descname">list</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.list" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">list</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.list" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.get_description">
-<tt class="descname">get_description</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.get_description" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_description</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.get_description" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.list_templates">
-<tt class="descname">list_templates</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.list_templates" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">list_templates</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.list_templates" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.get_template">
-<tt class="descname">get_template</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.get_template" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_template</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.get_template" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.list_images">
-<tt class="descname">list_images</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.list_images" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">list_images</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.list_images" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.acquire">
-<tt class="descname">acquire</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.acquire" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">acquire</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.acquire" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.destroy">
-<tt class="descname">destroy</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.destroy" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">destroy</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.destroy" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.wait">
-<tt class="descname">wait</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.wait" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">wait</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.wait" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -161,12 +290,18 @@ or unbound amount of time.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Resource Management</a><ul>
-<li><a class="reference internal" href="#resource-manager-saga-resource-manager">Resource manager &#8211; <tt class="docutils literal"><span class="pre">saga.resource.Manager</span></tt></a></li>
+<li><a class="reference internal" href="#">3. Resource Management</a><ul>
+<li><a class="reference internal" href="#resource-manager-saga-resource-manager">3.1. Resource manager &#8211; <tt class="docutils literal"><span class="pre">saga.resource.Manager</span></tt></a></li>
 </ul>
 </li>
 </ul>
 
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../filesystem/index.html"
+                        title="previous chapter">2. Working with Files and Directories</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../url.html"
+                        title="next chapter">4. Using URLs</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../../_sources/library/resource/index.txt"
@@ -198,7 +333,14 @@ or unbound amount of time.</p>
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.8 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="../url.html" title="4. Using URLs"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../filesystem/index.html" title="2. Working with Files and Directories"
+             >previous</a> |</li>
+        <li><a href="../../index.html">SAGA 0.9.8 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >3. Library Reference</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
