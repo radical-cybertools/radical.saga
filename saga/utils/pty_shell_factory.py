@@ -448,7 +448,7 @@ class PTYShellFactory (object) :
                 import saga.utils.misc as sumisc
                 info['latency'] = sumisc.get_host_latency (url)
 
-            except Exception  as e
+            except Exception  as e :
                 info['latency'] = 1.0  # generic value assuming slow link
                 raise se.BadParameter._log (self.logger, "Could not contact host '%s': %s" \
                                          % (url, e))
