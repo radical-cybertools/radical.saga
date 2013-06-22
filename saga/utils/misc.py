@@ -207,7 +207,7 @@ def benchmark_init (name, func_pre, func_core, func_post) :
 
 
     if  not config_name :
-        sumisc.benchmark_eval ('no configuration specified (-c <conf>')
+        benchmark_eval ('no configuration specified (-c <conf>')
 
     tc   = sutc.TestConfig ()
     tc.read_config (config_name)
@@ -218,10 +218,10 @@ def benchmark_init (name, func_pre, func_core, func_post) :
 
 
     if  not 'concurrency' in bench_cfg : 
-        sumisc.benchmark_eval ('no concurrency configured')
+        benchmark_eval ('no concurrency configured')
 
     if  not 'iterations'  in bench_cfg : 
-        sumisc.benchmark_eval ('no iterations configured')
+        benchmark_eval ('no iterations configured')
 
 
     _benchmark['url']       = bench_cfg['url']
