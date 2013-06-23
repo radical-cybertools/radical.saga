@@ -123,7 +123,7 @@ class Directory (nsdir.Directory) :
         ttype:    saga.task.type enum
         ret:      saga.namespace.Entry / saga.Task
         '''
-        url = saga.url.Url(path)
+        url = surl.Url(path)
         return self._adaptor.open (url, flags, ttype=ttype)
 
 

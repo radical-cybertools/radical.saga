@@ -111,7 +111,7 @@ def test_ptyshell_file_stage () :
 
     txt = "______1______2_____3_____"
     shell.stage_to_remote (txt, "/tmp/saga-test-staging-$$")
-    out = shell.stage_from_remote ("/tmp/saga-test-staging-$$")
+    out = shell.read_from_remote ("/tmp/saga-test-staging-$$")
 
     assert (txt == out)
 
