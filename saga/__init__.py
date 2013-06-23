@@ -25,9 +25,11 @@ from   saga.exceptions     import AuthenticationFailed
 from   saga.exceptions     import Timeout
 from   saga.exceptions     import NoSuccess
 
+from   saga.constants      import * 
+
 import saga.job
 import saga.filesystem
 import saga.replica
 import saga.advert
-# import saga.resource
+import saga.resource
 

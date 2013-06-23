@@ -42,9 +42,10 @@ help:
 
 clean:
 	-rm -rf $(BUILDDIR)/*
-	-rm -rf source/aaptors/saga.adaptor.*
+	-rm -rf source/adaptors/
 
 generate_docs:
+	mkdir -p source/adaptors/
 	python generate_adaptor_docs.py 
 
 html: generate_docs

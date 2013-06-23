@@ -11,8 +11,8 @@ import saga.attributes       as sa
 import saga.base             as sb
 
 from   saga.constants import TYPE,       SERVER,    USER_CERT,   CERT_REPOSITORY
-from   saga.constants import USER_PROXY, USER_KEY,  USER_ID,     USER_PASS, USER_VO
-from   saga.constants import LIFE_TIME,  REMOTE_ID, REMOTE_HOST, REMOTE_PORT 
+from   saga.constants import USER_PROXY, USER_KEY,  USER_ID,     USER_PASS,   USER_VO
+from   saga.constants import LIFE_TIME,  REMOTE_ID, REMOTE_HOST, REMOTE_PORT, TOKEN
 
 # ------------------------------------------------------------------------------
 #
@@ -34,18 +34,17 @@ class Context (sb.Base, sa.Attributes) :
     The usage example for contexts is below::
 
         # define an ssh context
-        c = saga.Context()
-        c.context_type = 'ssh'
-        c.user_cert = '$HOME/.ssh/special_id_rsa'
-        c.user_key  = '$HOME/.ssh/special_id_rsa.pub'
+        ctx = saga.Context("SSH")
+        ctx.user_cert = '$HOME/.ssh/special_id_rsa'
+        ctx.user_key  = '$HOME/.ssh/special_id_rsa.pub'
 
         # add the context to a session
-        s = saga.Session()
-        s.contexts.append(c)
+        session = saga.Session()
+        session.add_context(ctx)
 
         # create a job service in this session -- that job service can now
         # *only* use that ssh context. 
-        j = saga.job.Service('ssh://remote.host.net/', s)
+        j = saga.job.Service('ssh://remote.host.net/', session=session)
 
 
     The L{Session} argument to the L{job.Service} constructor is fully optional
@@ -81,13 +80,14 @@ class Context (sb.Base, sa.Attributes) :
 
         import saga.attributes as sa
 
-        # set attribute interface properties
+        # set attribute interface propertiesP
         self._attributes_extensible  (False)
         self._attributes_camelcasing (True)
 
         # register properties with the attribute interface
         self._attributes_register  (TYPE,            None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (SERVER,          None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (TOKEN,           None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (CERT_REPOSITORY, None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (USER_PROXY,      None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (USER_CERT,       None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
@@ -113,7 +113,7 @@ class Context (sb.Base, sa.Attributes) :
         s = "{"
 
         for key in sorted (d.keys ()) :
-            if  key == 'UserPass' :
+            if  key == 'UserPass' and d[key] :
                 s += "'UserPass' : '%s'" % ('x'*len(d[key]))
             else :
                 s += "'%s' : '%s'" % (key, d[key])
@@ -124,8 +124,17 @@ class Context (sb.Base, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Context')
+    @sus.returns (basestring)
+    def __repr__ (self) :
+
+        return str(self)
+
+
+    # --------------------------------------------------------------------------
+    #
     @sus.takes      ('Context', 
-                     'Session')
+                     ('Session', '_DefaultSession'))
     @sus.returns    (sus.nothing)
     def _initialize (self, session) :
         '''

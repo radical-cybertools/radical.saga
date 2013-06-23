@@ -1,15 +1,39 @@
-Version 0.9.4 released 
+Version 0.9.8 released 2013-06-22
+----------------------------------------------------------------------
+
+* Hotfix release: critical bug in wait() signature
+  - https://github.com/saga-project/saga-python/issues?milestone=7&page=1&state=closed
+
+Version 0.9.7 released 2013-06-19
+----------------------------------------------------------------------
+
+* Added resource package
+* Added 'liblcoud' based adaptor to access Amazon EC2 clouds
+* Closed issues:
+  - https://github.com/saga-project/saga-python/issues?milestone=5&page=1&state=closed
+
+Version 0.9.6 released 2013-06-17
+----------------------------------------------------------------------
+
+* Hotfix release: critical PBS/TORQUE adaptor fixes
+  - https://github.com/saga-project/saga-python/issues?&milestone=6&page=1&state=closed
+
+Version 0.9.5 released 2013-06-06
+----------------------------------------------------------------------
+
+* Hotfix release: critical SLURM adaptor fixes
+  - https://github.com/saga-project/saga-python/issues?milestone=4&page=1&state=closed
+
+Version 0.9.4 released 2013-06-01
 ----------------------------------------------------------------------
 
 * jd.working_directory now gets created if it doesn't exist
-* Updated example scripts - replaced 'sleep' with 'touch' ;-)
-* Closed issues:
-  - https://github.com/saga-project/saga-python/issues/88
-  - https://github.com/saga-project/saga-python/issues/82
-  - https://github.com/saga-project/saga-python/issues/81
-  - https://github.com/saga-project/saga-python/issues/79
-  - https://github.com/saga-project/saga-python/issues/75
-  - https://github.com/saga-project/saga-python/issues/74
+* Support for older Cray systems running PBS Pro 10
+* Job state callback support for the PBS adaptor - others to follow 
+* A simple HTTP protocol file adaptor
+* Fixed some issues with user-pass and X.509 security contexts
+* Over 40 bugfixes and improvements: 
+  - https://github.com/saga-project/saga-python/issues?milestone=2&page=1&state=closed
 
 Version 0.9.3 released 2013-04-08
 ----------------------------------------------------------------------

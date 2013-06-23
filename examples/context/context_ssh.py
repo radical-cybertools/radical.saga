@@ -1,4 +1,6 @@
 
+import saga
+
 c = saga.Context ('ssh')
 c.user_id   = 'tg12736'
 c.user_cert = '/home/user/ssh/id_rsa_xsede' # private key derived from cert

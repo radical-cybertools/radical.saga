@@ -52,7 +52,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
-                          #saga.job.SPMD_VARIATION, #implement later, somehow
+                          saga.job.SPMD_VARIATION, #implement later, somehow
                           saga.job.TOTAL_CPU_COUNT, 
                           saga.job.NUMBER_OF_PROCESSES,
                           saga.job.PROCESSES_PER_HOST,
@@ -66,7 +66,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.CLEANUP,
                           saga.job.JOB_START_TIME,
                           saga.job.WALL_TIME_LIMIT, 
-                          #saga.job.TOTAL_PHYSICAL_MEMORY, 
+                          saga.job.TOTAL_PHYSICAL_MEMORY, 
                           #saga.job.CPU_ARCHITECTURE, 
                           #saga.job.OPERATING_SYSTEM_TYPE, 
                           #saga.job.CANDIDATE_HOSTS,
@@ -186,6 +186,7 @@ _ADAPTOR_INFO          = {
     "name"             : _ADAPTOR_NAME,
     "version"          : "v0.2",
     "schemas"          : _ADAPTOR_SCHEMAS,
+    "capabilities"     : _ADAPTOR_CAPABILITIES,
     "cpis"             : [
         { 
         "type"         : "saga.job.Service",
@@ -675,7 +676,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                 self._logger.debug("Returning exit code %s" % self.exit_code)
                 
                 # return whatever our exit code is
-                return self.exit_code
+                return int(self.exit_code)
         
         ### couldn't get the exitcode -- maybe should change this to just return
         ### None?  b/c we will lose the code if a program waits too
@@ -747,12 +748,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     def create_job (self, jd) :
         """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
-        # check that only supported attributes are provided
-        for attribute in jd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITIES["jdes_attributes"]:
-                msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
-                raise saga.BadParameter._log (self._logger, msg)
-        
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         adaptor_state = { "job_service"     : self, 

@@ -40,7 +40,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Entry', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session),
                   sus.optional (sab.Base), 
@@ -91,7 +91,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @classmethod
     @sus.takes   ('Entry', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
@@ -233,6 +233,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Entry',
+                  (surl.Url, basestring),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def copy     (self, tgt, flags=0, ttype=None) :
@@ -294,6 +295,7 @@ class Entry (sb.Base, sasync.Async) :
                 # activate recursion guard
                 self._is_recursive += 1
 
+                import saga.engine
                 engine = saga.engine.Engine ()
     
                 # find applicable adaptors we could fall back to, i.e. which
@@ -343,6 +345,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Entry',
+                  (surl.Url, basestring),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def link     (self, tgt, flags=0, ttype=None) :
@@ -359,6 +362,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Entry',
+                  (surl.Url, basestring),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def move     (self, tgt, flags=0, ttype=None) :

@@ -24,6 +24,7 @@ def _silent_close_js(js_obj):
     # try to cancel job but silently ignore all errors
     try:
         js_obj.close()
+        js_obj.close()
     except Exception:
         pass
 
@@ -53,10 +54,11 @@ def test_close():
 def test_open_close():
     """ Test job service create / close() in a big loop
     """
+    js = None
     try:
         tc = sutc.TestConfig()
 
-        for i in range(0, 100):
+        for i in range(0, 10):
             js = saga.job.Service(tc.js_url, tc.session)
             js.close()
 
@@ -75,6 +77,7 @@ def test_open_close():
 def test_get_url():
     """ Test job service url/get_url()
     """
+    js = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -95,6 +98,8 @@ def test_get_url():
 #
 def test_list_jobs():
     """ Test if a submitted job shows up in Service.list() """
+    j  = None
+    js = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -129,7 +134,8 @@ def test_list_jobs():
 # ------------------------------------------------------------------------------
 #
 def test_run_job():
-    """ Test to submit a job via run_job, and retrieve id """
+    """ Test to submit a job via run_job, and retrieve id"""
+    js = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -152,6 +158,8 @@ def test_run_job():
 #
 def test_get_job():
     """ Test to submit a job, and retrieve it by id """
+    j  = None
+    js = None
     try:
         tc = sutc.TestConfig()
         js = saga.job.Service(tc.js_url, tc.session)
@@ -200,11 +208,13 @@ def helper_multiple_services(i):
 
 # ------------------------------------------------------------------------------
 #
+NUM_SERVICES = 20
+
 def test_multiple_services():
     """ Test to create multiple job service instances  (this test might take a while) """
     try:
         tc = sutc.TestConfig()
-        for i in range(0, 20):
+        for i in range(0, NUM_SERVICES):
             helper_multiple_services(i)
 
     except saga.NotImplemented as ni:
@@ -214,3 +224,4 @@ def test_multiple_services():
 
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
+

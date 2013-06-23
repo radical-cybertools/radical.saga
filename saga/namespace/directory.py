@@ -54,7 +54,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session),
                   sus.optional (sab.Base), 
@@ -97,7 +97,7 @@ class Directory (entry.Entry) :
     #
     @classmethod
     @sus.takes   ('Directory', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
@@ -118,7 +118,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  surl.Url, 
+                  (surl.Url, basestring), 
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((entry.Entry, st.Task))
@@ -136,7 +136,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  surl.Url, 
+                  (surl.Url, basestring), 
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (('Directory', st.Task))
@@ -166,7 +166,7 @@ class Directory (entry.Entry) :
     # namespace directory methods
     #
     @sus.takes   ('Directory', 
-                  surl.Url, 
+                  (surl.Url, basestring), 
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
@@ -188,13 +188,13 @@ class Directory (entry.Entry) :
             dir = saga.namespace.Directory("sftp://localhost/tmp/")
             dir.make_dir ('data/')
         '''
-        return self._adaptor.make_dir (tgt, flags, ttype=ttype)
+        return self._adaptor.make_dir (surl.Url (tgt), flags, ttype=ttype)
   
     
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  surl.Url, 
+                  (surl.Url, basestring), 
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def change_dir (self, url, ttype=None) :
@@ -236,7 +236,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  surl.Url,
+                  (surl.Url, basestring),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((bool, st.Task))
     def exists (self, path, ttype=None) :
@@ -310,8 +310,8 @@ class Directory (entry.Entry) :
     # methods overloaded from namespace.Entry
     #
     @sus.takes   ('Directory', 
-                  surl.Url, 
-                  sus.optional (surl.Url), 
+                  (surl.Url, basestring), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
@@ -345,8 +345,8 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  surl.Url, 
-                  sus.optional (surl.Url), 
+                  (surl.Url, basestring), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
@@ -365,8 +365,8 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  surl.Url, 
-                  sus.optional (surl.Url), 
+                  (surl.Url, basestring), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
@@ -396,7 +396,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  surl.Url, 
+                  (surl.Url, basestring), 
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
@@ -414,7 +414,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  sus.optional (surl.Url),
+                  sus.optional ((surl.Url, basestring)),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((bool, st.Task))
     def is_dir (self, tgt=None, ttype=None) :
@@ -439,7 +439,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  sus.optional (surl.Url),
+                  sus.optional ((surl.Url, basestring)),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((bool, st.Task))
     def is_entry (self, tgt=None, ttype=None) :
@@ -455,7 +455,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  sus.optional (surl.Url),
+                  sus.optional ((surl.Url, basestring)),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((bool, st.Task))
     def is_link (self, tgt=None, ttype=None) :
@@ -471,7 +471,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  sus.optional (surl.Url),
+                  sus.optional ((surl.Url, basestring)),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((surl.Url, st.Task))
     def read_link (self, tgt=None, ttype=None) :

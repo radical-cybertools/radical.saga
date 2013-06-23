@@ -103,28 +103,27 @@ class Callback () :
 
     To register a callback on a object instance, use::
 
-      class MyCallback (saga.Callback) :
+      class MyCallback (saga.Callback):
 
-        def __init__ (self, msg) :
-          self._msg = msg
+          def __init__ (self):
+              pass
 
-        def cb (self, obj, key, val) :
-          print " %s\\n %s (%s) : %s"  %  self._msg, obj, key, val
+          def cb (self, obj, key, val) :
+              print " %s\\n %s (%s) : %s"  %  self._msg, obj, key, val
+
+      jd  = saga.job.Description ()
+      jd.executable = "/bin/date"
+
+      js  = saga.job.Service ("fork://localhost/")
+      job = js.create_job(jd)
+
+      cb = MyCallback()
+      job.add_callback(saga.STATE, cb)
+      job.run()
 
 
-        def main () :
-
-        jd  = saga.job.description ()
-        js  = saga.job.service ("fork://localhost/")
-        job = js.create_job (jd)
-
-        cb = MyCallback ("Hello Pilot, how is your state?")
-        job.add_callback ('state', cb)
-        job.run ()
-
-
-    See documentation of the :class:`saga.Attributes` interface for further details and
-    examples.
+    See documentation of the :class:`saga.Attribute` interface for further 
+    details and examples.
     """
 
     def __call__ (self, obj, key, val) :
@@ -531,7 +530,6 @@ class Attributes (_AttributesBase) :
                 d['attributes'][key]['recursion'] = True
                 all_setter (key, val)
             except Exception as e :
-                print "setter exception: " + str(e)
                 # ignoring failures from setter
                 pass
             except Exception as e :
@@ -617,7 +615,7 @@ class Attributes (_AttributesBase) :
                 d['attributes'][key]['value'] = val
             except Exception as e :
                 retries -= 1
-                if not retries : raise e
+                if not retries : raise
             finally :
               d['attributes'][key]['recursion'] = False
 
@@ -628,7 +626,7 @@ class Attributes (_AttributesBase) :
                 d['attributes'][key]['value'] = val
             except Exception as e :
                 retries -= 1
-                if not retries : raise e
+                if not retries : raise
             finally :
                 d['attributes'][key]['recursion'] = False
 
@@ -1589,10 +1587,9 @@ class Attributes (_AttributesBase) :
                         return True
 
                 # Houston, we got a problem...
-                return """
-                incorrect value (%s) for Enum typed attribute (%s).
-                Allowed values: %s
-                """  %  (str(val), key, str(vals))
+                msg = "incorrect value (%s) for Enum typed attribute (%s)." \
+                      "Allowed values: %s"  %  (str(val), key, str(vals))
+                raise se.BadParameter (msg)
 
             self._attributes_add_check (key, _enum_check, flow=flow)
 
@@ -1839,6 +1836,8 @@ class Attributes (_AttributesBase) :
         are also deep copies of the respective attributes.  In accordance with
         GFD.90, the deep copy will ignore callbacks.  It will copy checks
         though, as the assumption is that value constraints stay valid.
+
+        Note that we don't copy private keys.
         """
 
         
@@ -1846,6 +1845,7 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init ()
 
         other_d = {}
+        orig_d  = other._attributes_t_init ()
 
         # for some reason, deep copy won't work on the 'attributes' dict, so we
         # do it manually.  Use the list copy c'tor to copy list elements.
@@ -1882,13 +1882,18 @@ class Attributes (_AttributesBase) :
             other_d['attributes'][key]['last']         =       d['attributes'][key]['last']
             other_d['attributes'][key]['ttl']          =       d['attributes'][key]['ttl']
 
-            if d['attributes'][key]['value' ] == None :
+            if d['attributes'][key]['private' ] and key in orig_d['attributes'] :
+                # don't copy private keys
+                other_d['attributes'][key] = orig_d['attributes'][key]
+                continue
+
+            if        d['attributes'][key]['value'] == None :
                 other_d['attributes'][key]['value'] = None
             else :
-                if d['attributes'][key]['flavor'] == VECTOR :
-                    other_d['attributes'][key]['value'] = list (d['attributes'][key]['value'])
+                if        d['attributes'][key]['flavor'] == VECTOR :
+                    other_d['attributes'][key]['value']  = list (d['attributes'][key]['value'])
                 else :
-                    other_d['attributes'][key]['value'] =       d['attributes'][key]['value']
+                    other_d['attributes'][key]['value']  =       d['attributes'][key]['value']
 
         # set the new dictionary as state for copied class
         _AttributesBase.__setattr__ (other, '_d', other_d)
@@ -2625,6 +2630,7 @@ class Attributes (_AttributesBase) :
 
         return s
 
+
     ####################################
     def as_dict (self) :
         """ return a dict representation of all set attributes """
@@ -2632,7 +2638,7 @@ class Attributes (_AttributesBase) :
         d = {}
 
         for a in self.list_attributes () :
-            d[a] = str(self.get_attribute (a))
+            d[a] = self.get_attribute (a)
 
         return d
 

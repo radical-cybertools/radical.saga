@@ -42,6 +42,7 @@ except IOError:
 
 scripts = []  # ["bin/saga-run"]
 
+
 # check python version. we need > 2.5
 if sys.hexversion < 0x02050000:
     raise RuntimeError("SAGA requires Python 2.5 or higher")
@@ -49,7 +50,7 @@ if sys.hexversion < 0x02050000:
 
 class our_install_data(install_data):
 
-    def finalize_options(self):
+    def finalize_options(self): 
         self.set_undefined_options('install',
                                    ('install_lib', 'install_dir'))
         install_data.finalize_options(self)
@@ -83,8 +84,9 @@ class our_test(Command):
     def run(self):
         import sys
         import subprocess
-        errno = subprocess.call([sys.executable, 'tests/run_tests.py',
-                                '--config=tests/configs/basetests.cfg'])
+        testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
+        errno = subprocess.call([sys.executable, '%s/run_tests.py' % testdir,
+                                '--config=%s/configs/basetests.cfg' % testdir])
         raise SystemExit(errno)
 
 
@@ -130,7 +132,7 @@ setup_args = {
         "saga.namespace",
         "saga.filesystem",
         "saga.replica",
-     #  "saga.resource",
+        "saga.resource",
         "saga.advert",
         "saga.adaptors",
         "saga.adaptors.cpi",
@@ -138,7 +140,7 @@ setup_args = {
         "saga.adaptors.cpi.namespace",
         "saga.adaptors.cpi.filesystem",
         "saga.adaptors.cpi.replica",
-     #  "saga.adaptors.cpi.resource",
+        "saga.adaptors.cpi.resource",
         "saga.adaptors.cpi.advert",
         "saga.adaptors.context",
         "saga.adaptors.local",
@@ -148,6 +150,7 @@ setup_args = {
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
         "saga.adaptors.redis",
+        "saga.adaptors.aws",
         "saga.adaptors.http",
         "saga.engine",
         "saga.utils",
@@ -167,7 +170,7 @@ setup_args = {
         'sdist': our_sdist,
         'test': our_test
     },
-    'install_requires': ['setuptools', 'colorama'],
+    'install_requires': ['setuptools', 'colorama', 'apache-libcloud'],
     'tests_require': ['setuptools', 'nose']
 }
 

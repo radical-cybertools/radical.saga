@@ -42,6 +42,11 @@ class Thread (threading.Thread) :
         return t
 
 
+    @property 
+    def tid (self) :
+        return self.tid
+
+
     def run (self) :
 
         try :

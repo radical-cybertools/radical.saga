@@ -44,7 +44,7 @@ class Directory (nsdir.Directory) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session),
                   sus.optional (sab.Base), 
@@ -90,7 +90,7 @@ class Directory (nsdir.Directory) :
     #
     @classmethod
     @sus.takes   ('Directory', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
@@ -112,7 +112,7 @@ class Directory (nsdir.Directory) :
     # filesystem directory methods
     #
     @sus.takes   ('Directory', 
-                  surl.Url,
+                  (surl.Url, basestring),
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (('File', st.Task))
@@ -123,14 +123,14 @@ class Directory (nsdir.Directory) :
         ttype:    saga.task.type enum
         ret:      saga.namespace.Entry / saga.Task
         '''
-        url = saga.url.Url(path)
+        url = surl.Url(path)
         return self._adaptor.open (url, flags, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  surl.Url,
+                  (surl.Url, basestring),
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (('Directory', st.Task))
@@ -158,7 +158,7 @@ class Directory (nsdir.Directory) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  sus.optional (surl.Url),
+                  sus.optional ((surl.Url, basestring)),
                   sus.optional (int),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((int, st.Task))
@@ -186,7 +186,7 @@ class Directory (nsdir.Directory) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Directory', 
-                  sus.optional (surl.Url),
+                  sus.optional ((surl.Url, basestring)),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((bool, st.Task))
     def is_file (self, tgt=None, ttype=None) :
