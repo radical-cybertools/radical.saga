@@ -37,13 +37,13 @@ _ADAPTOR_INFO        = {
 }
 
 
-class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.base.Base):
 
     __metaclass__ = Singleton
 
     def __init__ (self) :
 
-        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS) 
+        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS) 
 
 
     def sanity_check (self) :
@@ -51,8 +51,11 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
 
 class MockJob(saga.adaptors.cpi.job.Job):
+
     def __init__ (self, api, adaptor) :
-        saga.adaptors.cpi.Base.__init__ (self, api, adaptor, 'MockJob')
+
+        self._cpi_base = super(MockJob, self)
+        self._cpi_base.__init__(api, adaptor)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

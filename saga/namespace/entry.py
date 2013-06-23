@@ -4,16 +4,22 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.url
-import saga.base
-import saga.async
-import saga.exceptions
-import saga.engine
+import saga.utils.signatures as sus
+import saga.adaptors.base    as sab
+import saga.exceptions       as se
+import saga.session          as ss
+import saga.task             as st
+import saga.url              as surl
+import saga.base             as sb
+import saga.async            as sasync
 
 from   saga.namespace.constants  import *
+from   saga.constants            import SYNC, ASYNC, TASK
 
 
-class Entry (saga.base.Base, saga.async.Async) :
+# ------------------------------------------------------------------------------
+#
+class Entry (sb.Base, sasync.Async) :
     '''
     Represents a SAGA namespace entry as defined in GFD.90
 
@@ -31,12 +37,21 @@ class Entry (saga.base.Base, saga.async.Async) :
         entry.move ("sftp://localhost/tmp/data/data.new")
     '''
 
-
-    def __init__ (self, url=None, flags=READ, session=None, 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Entry', 
+                  sus.optional ((surl.Url, basestring)), 
+                  sus.optional (int), 
+                  sus.optional (ss.Session),
+                  sus.optional (sab.Base), 
+                  sus.optional (dict), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
+    def __init__ (self, url=None, flags=None, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         :param url: Url of the (remote) entry
-        :type  url: :class:`bliss.saga.Url` 
+        :type  url: :class:`saga.Url` 
 
         flags:     flags enum
         session:   saga.Session
@@ -62,17 +77,26 @@ class Entry (saga.base.Base, saga.async.Async) :
 
         # param checks
         if not session :
-            session = saga.Session (default=True)
+            session = ss.Session (default=True)
 
-        url     = saga.url.Url (url)
+        url     = surl.Url (url)
         scheme  = url.scheme.lower ()
 
-        saga.base.Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
-                                 url, flags, session, ttype=_ttype)
+        self._base = super  (Entry, self)
+        self._base.__init__ (scheme, _adaptor, _adaptor_state, 
+                             url, flags, session, ttype=_ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
     @classmethod
-    def create (cls, url=None, flags=READ, session=None, ttype=None) :
+    @sus.takes   ('Entry', 
+                  sus.optional ((surl.Url, basestring)), 
+                  sus.optional (int), 
+                  sus.optional (ss.Session),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (st.Task)
+    def create   (cls, url=None, flags=None, session=None, ttype=None) :
         '''
         url:       saga.Url
         flags:     saga.namespace.flags enum
@@ -83,7 +107,7 @@ class Entry (saga.base.Base, saga.async.Async) :
 
         # param checks
         if not session :
-            session = saga.Session (default=True)
+            session = ss.Session (default=True)
 
         return cls (url, flags, session, _ttype=ttype)._init_task
 
@@ -93,7 +117,10 @@ class Entry (saga.base.Base, saga.async.Async) :
     #
     # namespace entry methods
     #
-    def get_url (self, ttype=None) :
+    @sus.takes   ('Entry',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((surl.Url, st.Task))
+    def get_url  (self, ttype=None) :
         '''
         ttype:         saga.task.type enum
         ret:           saga.Url / saga.Task
@@ -110,7 +137,12 @@ class Entry (saga.base.Base, saga.async.Async) :
         return self._adaptor.get_url (ttype=ttype)
 
   
-    def get_cwd (self, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Entry',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((basestring, st.Task))
+    def get_cwd  (self, ttype=None) :
         '''
         ttype:         saga.task.type enum
         ret:           string / saga.Task
@@ -118,6 +150,11 @@ class Entry (saga.base.Base, saga.async.Async) :
         return self._adaptor.get_cwd (ttype=ttype)
   
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Entry',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((basestring, st.Task))
     def get_name (self, ttype=None) :
         '''
         ttype:         saga.task.type enum
@@ -130,7 +167,10 @@ class Entry (saga.base.Base, saga.async.Async) :
     #
     # namespace entry / directory methods
     #
-    def is_dir (self, ttype=None) :
+    @sus.takes   ('Entry',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((bool, st.Task))
+    def is_dir   (self, ttype=None) :
         '''
         ttype:         saga.task.type enum
         ret:           bool / saga.Task
@@ -147,6 +187,11 @@ class Entry (saga.base.Base, saga.async.Async) :
         return self._adaptor.is_dir_self (ttype=ttype)
   
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Entry',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((bool, st.Task))
     def is_entry (self, ttype=None) :
         '''
         ttype:         saga.task.type enum
@@ -155,7 +200,12 @@ class Entry (saga.base.Base, saga.async.Async) :
         return self._adaptor.is_entry_self (ttype=ttype)
   
     
-    def is_link (self, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Entry',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((bool, st.Task))
+    def is_link  (self, ttype=None) :
         '''
         tgt:           saga.Url / None
         ttype:         saga.task.type enum
@@ -164,6 +214,11 @@ class Entry (saga.base.Base, saga.async.Async) :
         return self._adaptor.is_link_self (ttype=ttype)
   
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes    ('Entry',
+                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns  ((surl.Url, st.Task))
     def read_link (self, ttype=None) :
         '''
         tgt:           saga.Url / None
@@ -175,7 +230,13 @@ class Entry (saga.base.Base, saga.async.Async) :
   
 
     
-    def copy (self, tgt, flags=0, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Entry',
+                  (surl.Url, basestring),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def copy     (self, tgt, flags=0, ttype=None) :
         '''
         tgt:           saga.Url
         flags:         enum flags
@@ -197,7 +258,7 @@ class Entry (saga.base.Base, saga.async.Async) :
         '''
         
         # parameter checks
-        tgt_url = saga.url.Url (tgt)  # ensure valid and typed Url
+        tgt_url = surl.Url (tgt)  # ensure valid and typed Url
     
     
         # async ops don't deserve a fallback (yet)
@@ -212,7 +273,7 @@ class Entry (saga.base.Base, saga.async.Async) :
         try :
             True
         
-        except saga.exceptions.SagaException as e :
+        except se.SagaException as e :
             # if we don't have a scheme for tgt, all is in vain (adaptor
             # should have handled a relative path...)
             if not tgt_url.scheme :
@@ -234,6 +295,7 @@ class Entry (saga.base.Base, saga.async.Async) :
                 # activate recursion guard
                 self._is_recursive += 1
 
+                import saga.engine
                 engine = saga.engine.Engine ()
     
                 # find applicable adaptors we could fall back to, i.e. which
@@ -256,8 +318,8 @@ class Entry (saga.base.Base, saga.async.Async) :
                         # get an tgt-scheme'd adaptor for the new src url, and try copy again
                         adaptor = engine.bind_adaptor (self, 'saga.namespace.Entry', tgt_url.scheme, 
                                                              adaptor_instance)
-                        adaptor.init_instance ({}, tmp_url, READ, self._session)
-                        tmp     = saga.namespace.Entry (tmp_url, READ, self._session, _adaptor=adaptor_instance)
+                        adaptor.init_instance ({}, tmp_url, None, self._session)
+                        tmp     = Entry (tmp_url, None, self._session, _adaptor=adaptor_instance)
     
                         ret = tmp.copy (tgt_url, flags)
     
@@ -268,7 +330,7 @@ class Entry (saga.base.Base, saga.async.Async) :
                         return 
     
     
-                    except saga.exceptions.SagaException as e :
+                    except se.SagaException as e :
     
                         self._logger.info("fallback failed: %s" % e)
     
@@ -280,7 +342,13 @@ class Entry (saga.base.Base, saga.async.Async) :
             raise e
      
     
-    def link (self, tgt, flags=0, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Entry',
+                  (surl.Url, basestring),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def link     (self, tgt, flags=0, ttype=None) :
         '''
         tgt:           saga.Url
         flags:         enum flags
@@ -291,7 +359,13 @@ class Entry (saga.base.Base, saga.async.Async) :
         return self._adaptor.link_self (tgt, flags, ttype=ttype) 
 
 
-    def move (self, tgt, flags=0, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Entry',
+                  (surl.Url, basestring),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def move     (self, tgt, flags=0, ttype=None) :
         '''
         :param target: Url of the move target.
         :param flags:  Flags to use for the operation.
@@ -313,7 +387,12 @@ class Entry (saga.base.Base, saga.async.Async) :
   
     
     
-    def remove (self, flags=0, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Entry',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def remove   (self, flags=0, ttype=None) :
         '''
         :param flags:  Flags to use for the operation.
 
@@ -333,6 +412,12 @@ class Entry (saga.base.Base, saga.async.Async) :
   
     
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Entry',
+                  sus.optional (float),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def close (self, timeout=None, ttype=None) :
         '''
         timeout:       float
@@ -342,6 +427,8 @@ class Entry (saga.base.Base, saga.async.Async) :
         return self._adaptor.close (timeout, ttype=ttype)
 
     
+    # --------------------------------------------------------------------------
+    #
     url  = property (get_url)   # saga.Url
     cwd  = property (get_cwd)   # string
     name = property (get_name)  # string

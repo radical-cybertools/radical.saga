@@ -4,21 +4,27 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-""" SAGA job service interface
-"""
+""" SAGA job service interface """
 
 
-from saga.base            import Base
-from saga.async           import Async
-from saga.url             import Url
-from saga.job.description import Description
-from saga.exceptions      import BadParameter
-from saga.session         import Session
+import saga.utils.signatures as sus
+import saga.adaptors.base    as sab
+import saga.url              as surl
+import saga.task             as st
+import saga.base             as sb
+import saga.async            as sasync
+import saga.exceptions       as se
+import saga.session          as ss
 
-from saga.constants       import SYNC, ASYNC, TASK, NOTASK # task constants
+import job                   as j
+import description           as descr
+
+from   saga.constants        import SYNC, ASYNC, TASK
 
 
-class Service (Base, Async) :
+# ------------------------------------------------------------------------------
+#
+class Service (sb.Base, sasync.Async) :
     """
     The job.Service represents a resource management backend, and as such allows
     the creation, submission and management of jobs.
@@ -30,7 +36,7 @@ class Service (Base, Async) :
     :rtype:         :class:`saga.job.Service`
 
     A job.Service represents anything which accepts job creation requests, and
-    which manages thus created :class:`bliss.saga.job.Job` instances.  That can be a local shell, 
+    which manages thus created :class:`saga.job.Job` instances.  That can be a local shell, 
     a remote ssh shell, a cluster queuing system, a IaaS backend -- you name it.
 
     The job.Service is identified by an URL, which usually points to the contact
@@ -53,32 +59,52 @@ class Service (Base, Async) :
           else                                        : print "job is already final!"
     """
 
-    def __init__ (self, url=None, session=None,
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Service', 
+                  sus.optional ((basestring, surl.Url)), 
+                  sus.optional (ss.Session), 
+                  sus.optional (sab.Base),
+                  sus.optional (dict),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
+    def __init__ (self, rm=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         """
         Create a new job.Service instance.
         
-        :param url: Url of the (remote) job manager.
-        :type  url: :class:`saga.Url` 
+        :param rm: Url of the (remote) job manager.
+        :type  rm: :class:`saga.Url` 
         """
 
 
         # param checks
         if not session :
-            session = Session (default=True)
+            session = ss.Session (default=True)
 
-        url     = Url (url)
+        url     = surl.Url (rm)
         scheme  = url.scheme.lower ()
 
-        Base.__init__ (self, scheme, _adaptor, _adaptor_state, 
-                       url, session, ttype=_ttype)
+        self._super = super  (Service, self)
+        self._super.__init__ (scheme, _adaptor, _adaptor_state, 
+                              url, session, ttype=_ttype)
 
+        self.valid = True
+
+
+    # --------------------------------------------------------------------------
+    #
     @classmethod
-    def create (cls, url=None, session=None, ttype=SYNC) :
+    @sus.takes   ('Service', 
+                  sus.optional ((surl.Url, basestring)), 
+                  sus.optional (ss.Session), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (st.Task)
+    def create   (cls, rm=None, session=None, ttype=SYNC) :
         """ Create a new job.Service instance asynchronously.
 
-            :param url:     resource manager URL
-            :type  url:     string or :class:`saga.Url`
+            :param rm:     resource manager URL
+            :type  rm:     string or :class:`saga.Url`
             :param session: an optional session object with security contexts
             :type  session: :class:`saga.Session`
             :rtype:         :class:`saga.Task`
@@ -86,14 +112,33 @@ class Service (Base, Async) :
 
         # param checks
         if not session :
-            session = Session (default=True)
+            session = ss.Session (default=True)
 
-        url     = Url (url)
+        url     = surl.Url (rm)
         scheme  = url.scheme.lower ()
 
         return cls (url, session, _ttype=ttype)._init_task
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes     ('Service')
+    @sus.returns   (sus.nothing)
+    def close (self) :
+
+        if not self.valid :
+            raise se.IncorrectState ("This instance was already closed.")
+
+        self._adaptor.close ()
+        self.valid = False
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes     ('Service', 
+                    descr.Description, 
+                    sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns   ((j.Job, st.Task))
     def create_job (self, job_desc, ttype=None) :
         """ 
         Create a new job.Job instance from a :class:`~saga.job.Description`. The
@@ -130,14 +175,56 @@ class Service (Base, Async) :
           else                                        : print "oops!"
         """
 
-        jd_copy = Description()
+
+        if not self.valid :
+            raise se.IncorrectState ("This instance was already closed.")
+
+        jd_copy = descr.Description()
         job_desc._attributes_deep_copy (jd_copy)
 
-        # do some sanity checks:
+        # do some sanity checks: if the adaptor has specified a set of supported
+        # job description attributes, we scan the given description for any
+        # mismatches, and complain then.
+        adaptor_info = self._adaptor._adaptor.get_info ()
+
+        if  'capabilities'    in adaptor_info             and \
+            'jdes_attributes' in adaptor_info['capabilities'] :
+
+            # this is the list of key supported by the adaptor.  These
+            # attributes may be set to non-default values
+            supported_keys = adaptor_info['capabilities']['jdes_attributes']
+
+            # use an empty job description to compare default values
+            jd_default = descr.Description ()
+
+            for key in jd_copy.list_attributes () :
+
+                val     = jd_copy   .get_attribute (key)
+                default = jd_default.get_attribute (key)
+
+                # we count empty strings as none, for string type parameters.
+                if  isinstance (val, basestring) :
+                    if  not val :
+                        val = None
+
+                # Also, we make string compares case insensitive
+                if isinstance (val,     basestring) : val     = val    .lower ()
+                if isinstance (default, basestring) : default = default.lower ()
+
+                # supported keys are also valid, as are keys with default or
+                # None values
+                if  not (key in supported_keys or \
+                         val == default        or \
+                         val == None           )  :
+
+                    msg = "'JobDescription.%s' (%s) is not supported by adaptor %s" \
+                        % (key, val, adaptor_info['name'])
+                    raise se.BadParameter._log (self._logger, msg)
+
 
         # make sure at least 'executable' is defined
         if jd_copy.executable is None:
-            raise BadParameter("No executable defined")
+            raise se.BadParameter("No executable defined")
 
         # convert environment to string
         if jd_copy.attribute_exists ('Environment') :
@@ -147,13 +234,32 @@ class Service (Base, Async) :
         return self._adaptor.create_job (jd_copy, ttype=ttype)
 
 
-    def run_job (self, cmd, host="", ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Service', 
+                  basestring,
+                  sus.optional (basestring),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((j.Job, st.Task))
+    def run_job  (self, cmd, host=None, ttype=None) :
         """ .. warning:: |not_implemented|
         """
+
+        if not self.valid :
+            raise se.IncorrectState ("This instance was already closed.")
+
+        if  None == host :
+            host = "" # FIXME
+
         return self._adaptor.run_job (cmd, host, ttype=ttype)
 
 
-    def list (self, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Service',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.list_of (basestring), st.Task))
+    def list     (self, ttype=None) :
         """ 
         Return a list of the jobs that are managed by this Service 
         instance. 
@@ -186,12 +292,21 @@ class Service (Base, Async) :
             else                                        : print "job is already final!"
         """
 
+        if not self.valid :
+            raise se.IncorrectState ("This instance was already closed.")
+
+
         return self._adaptor.list (ttype=ttype)
 
     jobs = property (list)    
 
 
-    def get_url (self, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Service',
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((surl.Url, st.Task))
+    def get_url  (self, ttype=None) :
         """ Return the URL this Service instance was created with.
 
             .. seealso:: 
@@ -204,12 +319,22 @@ class Service (Base, Async) :
             :ttype: |param_ttype|
             :rtype: list of :class:`saga.job.Url`
         """
+
+        if not self.valid :
+            raise se.IncorrectState ("This instance was already closed.")
+
         return self._adaptor.get_url (ttype=ttype)
 
     url = property (get_url) 
 
 
-    def get_job (self, job_id, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Service',
+                  basestring,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((j.Job, st.Task))
+    def get_job  (self, job_id, ttype=None) :
         """ 
         Return the job object for a given job id.
 
@@ -227,8 +352,13 @@ class Service (Base, Async) :
           elif j.get_state() == saga.job.Job.Running  : print "running"
           else                                        : print "job is already final!"
         """
+
+        if not self.valid :
+            raise se.IncorrectState ("This instance was already closed.")
+
         return self._adaptor.get_job (job_id, ttype=ttype)
 
+# FIXME: add get_self()
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

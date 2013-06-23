@@ -12,6 +12,7 @@ Intro library reference...
 
    job/index.rst
    filesystem/index.rst
+   resource/index.rst
    url.rst
    context.rst
    session.rst

@@ -16,9 +16,10 @@ __license__   = "MIT"
 
 """ Attribute interface """
 
-from saga.exceptions import *
+import saga.exceptions       as se
+import saga.utils.signatures as sus
 
-################################################################################
+# ------------------------------------------------------------------------------
 
 import datetime
 import datetime
@@ -34,7 +35,7 @@ from   pprint import pprint
 now   = datetime.datetime.now 
 never = datetime.datetime.min
 
-################################################################################
+# ------------------------------------------------------------------------------
 #
 # define a couple of constants for the attribute API, mostly for registering
 # attributes.
@@ -71,7 +72,7 @@ SCALAR      = 'scalar'     # the attribute value is a single data element
 DICT        = 'dict'       # the attribute value is a dict of data elements
 VECTOR      = 'vector'     # the attribute value is a list of data elements
 
-################################################################################
+# ------------------------------------------------------------------------------
 #
 # Callback (Abstract) Class
 #
@@ -102,28 +103,27 @@ class Callback () :
 
     To register a callback on a object instance, use::
 
-      class MyCallback (saga.Callback) :
+      class MyCallback (saga.Callback):
 
-        def __init__ (self, msg) :
-          self._msg = msg
+          def __init__ (self):
+              pass
 
-        def cb (self, obj, key, val) :
-          print " %s\\n %s (%s) : %s"  %  self._msg, obj, key, val
+          def cb (self, obj, key, val) :
+              print " %s\\n %s (%s) : %s"  %  self._msg, obj, key, val
+
+      jd  = saga.job.Description ()
+      jd.executable = "/bin/date"
+
+      js  = saga.job.Service ("fork://localhost/")
+      job = js.create_job(jd)
+
+      cb = MyCallback()
+      job.add_callback(saga.STATE, cb)
+      job.run()
 
 
-        def main () :
-
-        jd  = saga.job.description ()
-        js  = saga.job.service ("fork://localhost/")
-        job = js.create_job (jd)
-
-        cb = MyCallback ("Hello Pilot, how is your state?")
-        job.add_callback ('state', cb)
-        job.run ()
-
-
-    See documentation of the :class:`saga.Attributes` interface for further details and
-    examples.
+    See documentation of the :class:`saga.Attribute` interface for further 
+    details and examples.
     """
 
     def __call__ (self, obj, key, val) :
@@ -155,19 +155,24 @@ class Callback () :
 
 
 
-################################################################################
-#
-#
+# ------------------------------------------------------------------------------
 #
 class _AttributesBase (object) :
     """ 
     This class only exists to host properties -- as object itself does *not* have
     properties!  This class is not part of the public attribute API.
     """
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('_AttributesBase')
+    @sus.returns (sus.nothing)
     def __init__ (self) :
         pass
 
 
+# ------------------------------------------------------------------------------
+#
 class Attributes (_AttributesBase) :
     """
     Attribute Interface Class
@@ -189,7 +194,7 @@ class Attributes (_AttributesBase) :
     Example use case::
 
 
-        ###########################################
+        # --------------------------------------------------------------------------------
         class Transliterator ( pilot.Attributes ) :
             
             def __init__ (self, *args, **kwargs) :
@@ -210,13 +215,13 @@ class Attributes (_AttributesBase) :
               # self._attributes_extensible (False)
         
         
-        ###########################################
+        # --------------------------------------------------------------------------------
         if __name__ == "__main__":
         
             # define a callback method.  This callback can get registered for
             # attribute changes later.
         
-            #################################
+            # ----------------------------------------------------------------------------
             def cb (key, val, obj) :
                 # the callback gets information about what attribute was changed
                 # on what object:
@@ -225,7 +230,7 @@ class Attributes (_AttributesBase) :
                 # returning True will keep the callback registered for further
                 # attribute changes.
                 return True
-            #################################
+            # ----------------------------------------------------------------------------
         
             # create a class instance and add a 'cherry' attribute/value on
             # creation.  
@@ -310,10 +315,12 @@ class Attributes (_AttributesBase) :
     _camel_case_regex_2 = re.compile('([a-z0-9])([A-Z])')
 
 
-    ############################################################################
+    # --------------------------------------------------------------------------
     #
-    #
-    #
+    @sus.takes   ('Attributes', 
+                  sus.anything,
+                  sus.anything)
+    @sus.returns (sus.nothing)
     def __init__ (self, *args, **kwargs) :
         """
         This method is not supposed to be directly called by the consumer of
@@ -334,7 +341,7 @@ class Attributes (_AttributesBase) :
         # self.update (*args, **kwargs)
 
 
-    ############################################################################
+    # --------------------------------------------------------------------------
     #
     # Internal interface tools.
     #
@@ -343,7 +350,9 @@ class Attributes (_AttributesBase) :
     #
     # Naming: _attributes_t_*
     #
-    ####################################
+    @sus.takes   ('Attributes', 
+                  sus.optional (basestring))
+    @sus.returns (dict)
     def _attributes_t_init (self, key=None) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -383,13 +392,17 @@ class Attributes (_AttributesBase) :
         # check if we know about the given attribute
         if key :
             if not key in d['attributes'] :
-                raise DoesNotExist ("attribute key is invalid: %s"  %  (key))
+                raise se.DoesNotExist ("attribute key is invalid: %s"  %  (key))
 
         # all is well
         return d
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (basestring)
     def _attributes_t_keycheck (self, key) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -425,7 +438,12 @@ class Attributes (_AttributesBase) :
         return key
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.anything)
+    @sus.returns (sus.nothing)
     def _attributes_t_call_cb (self, key, val) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -465,7 +483,12 @@ class Attributes (_AttributesBase) :
 
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.anything)
+    @sus.returns (sus.nothing)
     def _attributes_t_call_setter (self, key, val) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -507,7 +530,6 @@ class Attributes (_AttributesBase) :
                 d['attributes'][key]['recursion'] = True
                 all_setter (key, val)
             except Exception as e :
-                print "setter exception: " + str(e)
                 # ignoring failures from setter
                 pass
             except Exception as e :
@@ -528,7 +550,11 @@ class Attributes (_AttributesBase) :
 
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (sus.nothing)
     def _attributes_t_call_getter (self, key) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -558,10 +584,6 @@ class Attributes (_AttributesBase) :
         # # is not triggering backend setter hooks, to avoid trashing (hooks are
         # # expected to be costly).  The force flag set to True will request to call 
         # # registered getter hooks even if ttl is not yet expired.
-        # 
-        # # NOTE: in Bliss, ttl does not make much sense, as this will only lead to
-        # # valid attribute values if attribute changes are pushed from adaptor to
-        # # API -- Bliss does not do that.
         # 
         # # For example, job.wait() will update the plugin level state to 'Done',
         # # but the cached job.state attribute will remain 'New' as the plugin does
@@ -593,7 +615,7 @@ class Attributes (_AttributesBase) :
                 d['attributes'][key]['value'] = val
             except Exception as e :
                 retries -= 1
-                if not retries : raise e
+                if not retries : raise
             finally :
               d['attributes'][key]['recursion'] = False
 
@@ -604,13 +626,17 @@ class Attributes (_AttributesBase) :
                 d['attributes'][key]['value'] = val
             except Exception as e :
                 retries -= 1
-                if not retries : raise e
+                if not retries : raise
             finally :
                 d['attributes'][key]['recursion'] = False
 
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (sus.list_of (basestring))
     def _attributes_t_call_lister (self) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -644,7 +670,13 @@ class Attributes (_AttributesBase) :
 
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  int,
+                  callable)
+    @sus.returns (sus.anything)
     def _attributes_t_call_caller (self, key, id, cb) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -678,11 +710,15 @@ class Attributes (_AttributesBase) :
             finally :
                 d['recursion'] = False
 
-        return []
+        return
 
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (basestring)
     def _attributes_t_underscore (self, key) :
         """ 
         This internal function is not to be used by the consumer of this API.
@@ -705,7 +741,11 @@ class Attributes (_AttributesBase) :
 
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (sus.anything)
     def _attributes_t_conversion (self, key, val) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -743,13 +783,18 @@ class Attributes (_AttributesBase) :
         for check in d['attributes'][key]['checks'] :
             ret = check (key, val)
             if ret != True :
-                raise BadParameter ("attribute value %s is not valid: %s"  %  (key, ret))
+                raise se.BadParameter ("attribute value %s is not valid: %s"  %  (key, ret))
 
         # aaaand done
         return val
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.anything)
+    @sus.returns (sus.anything)
     def _attributes_t_conversion_flavor (self, key, val) :
         """ 
         This internal function is not to be used by the consumer of this API.
@@ -854,10 +899,15 @@ class Attributes (_AttributesBase) :
 
 
         # we should never get here...
-        raise BadParameter ("Cannot evaluate attribute flavor (%s) : %s"  %  (key, str(f)))
+        raise se.BadParameter ("Cannot evaluate attribute flavor (%s) : %s"  %  (key, str(f)))
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.anything)
+    @sus.returns (sus.anything)
     def _attributes_t_conversion_type (self, key, val) :
         """ 
         This internal function is not to be used by the consumer of this API.
@@ -879,12 +929,16 @@ class Attributes (_AttributesBase) :
             elif t == STRING : return str   (val) 
             else             : return        val  
         except ValueError as e:
-            raise BadParameter ("attribute value %s has incorrect type: %s" %  (key, val))
+            raise se.BadParameter ("attribute value %s has incorrect type: %s" %  (key, val))
 
         # we should never get here...
-        raise BadParameter ("Cannot evaluate attribute type (%s) : %s"  %  (key, str(t)))
+        raise se.BadParameter ("Cannot evaluate attribute type (%s) : %s"  %  (key, str(t)))
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (basestring)
     def _attributes_t_wildcard2regex (self, pattern) :
         """ 
         This internal function is not to be used by the consumer of this API.
@@ -931,8 +985,11 @@ class Attributes (_AttributesBase) :
             first = re.find ('{', last + 1)
             last  = re.find ('}', first + 1)
 
+        return re
 
-    ####################################
+
+    # --------------------------------------------------------------------------
+    #
     def _attributes_t_get_age (self, key) :
         """ get the age of the attribute, i.e. seconds.microseconds since last set """
 
@@ -945,7 +1002,7 @@ class Attributes (_AttributesBase) :
 
 
 
-    ###########################################################################
+    # --------------------------------------------------------------------------
     #
     # internal interface
     #
@@ -956,7 +1013,6 @@ class Attributes (_AttributesBase) :
     #
     # Naming: _attributes_i_*
     #
-    ####################################
     def _attributes_i_set (self, key, val=None, force=False, flow=_DOWN) :
         """
         This internal method should not be explicitly called by consumers of
@@ -992,7 +1048,7 @@ class Attributes (_AttributesBase) :
 
             else :
                 # we cannot add new keys on non-extensible / non-private sets
-                raise IncorrectState ("attribute set is not extensible/private (key %s)" %  key)
+                raise se.IncorrectState ("attribute set is not extensible/private (key %s)" %  key)
 
 
         # known attribute
@@ -1009,7 +1065,7 @@ class Attributes (_AttributesBase) :
 
                 elif READONLY == mode :
                     if not force :
-                        raise BadParameter ("attribute %s is not writeable" %  key)
+                        raise se.BadParameter ("attribute %s is not writeable" %  key)
 
 
         # permissions are confirmed, set the attribute with conversion etc.
@@ -1050,7 +1106,8 @@ class Attributes (_AttributesBase) :
         self._attributes_t_call_cb (key, val)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
     def _attributes_i_get (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1082,7 +1139,8 @@ class Attributes (_AttributesBase) :
 
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
     def _attributes_i_list (self, ext=True, priv=False, CamelCase=True, flow=_DOWN) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1126,7 +1184,8 @@ class Attributes (_AttributesBase) :
         return ret
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
     def _attributes_i_find (self, pattern, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1180,7 +1239,12 @@ class Attributes (_AttributesBase) :
         return matches
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_exists (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1203,7 +1267,12 @@ class Attributes (_AttributesBase) :
         return False
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_is_extended (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1221,7 +1290,12 @@ class Attributes (_AttributesBase) :
         return d['attributes'][key]['extended']
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_is_private (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1239,7 +1313,12 @@ class Attributes (_AttributesBase) :
         return d['attributes'][key]['private']
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_is_readonly (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1262,7 +1341,12 @@ class Attributes (_AttributesBase) :
         return False
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_is_writeable (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1276,7 +1360,12 @@ class Attributes (_AttributesBase) :
         return not self._attributes_i_is_readonly (key, flow=flow)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_is_removable (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1293,7 +1382,12 @@ class Attributes (_AttributesBase) :
 
         return False
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_is_vector (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1312,7 +1406,12 @@ class Attributes (_AttributesBase) :
         return False
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (bool)
     def _attributes_i_is_final (self, key, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1334,7 +1433,13 @@ class Attributes (_AttributesBase) :
         return False
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  callable,
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (int)
     def _attributes_i_add_cb (self, key, cb, flow) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1356,7 +1461,13 @@ class Attributes (_AttributesBase) :
         return id
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.optional (int),
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (sus.nothing)
     def _attributes_i_del_cb (self, key, id=None, flow=_DOWN) :
         """
         This internal method should not be explicitly called by consumers of
@@ -1376,14 +1487,14 @@ class Attributes (_AttributesBase) :
             d['attributes'][key]['callbacks'] = []
         else :
             if len (d['attributes'][key]['callbacks']) < id :
-                raise BadParameter ("invalid callback cookie for attribute %s"  %  key)
+                raise se.BadParameter ("invalid callback cookie for attribute %s"  %  key)
             else :
                 # do not pop from list, that would invalidate the id's!
                 d['attributes'][key]['callbacks'][id] = None
 
 
 
-    ############################################################################
+    # --------------------------------------------------------------------------
     #
     # This part of the interface is primarily for use in deriving classes, which
     # thus provide the Attributes interface.
@@ -1393,7 +1504,15 @@ class Attributes (_AttributesBase) :
     #
     # Naming: _attributes_*
     #
-    ####################################
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.optional (sus.optional (sus.anything)),
+                  sus.optional (sus.one_of (ANY, URL, INT, FLOAT, STRING, BOOL, ENUM, TIME)),
+                  sus.optional (sus.one_of (SCALAR, VECTOR, DICT)),
+                  sus.optional (sus.one_of (READONLY, WRITEABLE, ALIAS, FINAL)),
+                  sus.optional (sus.one_of (bool, EXTENDED)),
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_register (self, key, default=None, typ=ANY, flavor=SCALAR,
                               mode=WRITEABLE, ext=False, flow=_DOWN) :
         """
@@ -1448,7 +1567,7 @@ class Attributes (_AttributesBase) :
 
         # for enum types, we add a value checker
         if typ == ENUM :
-            ######################################
+
             def _enum_check (key, val) :
                 if None == val  :
                     # None is always allowed
@@ -1468,17 +1587,21 @@ class Attributes (_AttributesBase) :
                         return True
 
                 # Houston, we got a problem...
-                return """
-                incorrect value (%s) for Enum typed attribute (%s).
-                Allowed values: %s
-                """  %  (str(val), key, str(vals))
-            ######################################
+                msg = "incorrect value (%s) for Enum typed attribute (%s)." \
+                      "Allowed values: %s"  %  (str(val), key, str(vals))
+                raise se.BadParameter (msg)
 
             self._attributes_add_check (key, _enum_check, flow=flow)
 
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (sus.nothing)
     def _attributes_register_deprecated (self, key, alias, flow) :
         """
         Often enough, there is the need to use change attribute names.  It is
@@ -1496,7 +1619,7 @@ class Attributes (_AttributesBase) :
 
         The first parameter is the old name of the attribute, the second
         parameter is the aliased new name.  Note that the new name needs to be
-        registered before (via :class:`bliss.saga._attributes_register`)::
+        registered before (via :class:`saga._attributes_register`)::
 
             # old code:
             self._attributes_register ('apple', 'Appel', STRING, SCALAR, WRITEABLE)
@@ -1540,7 +1663,12 @@ class Attributes (_AttributesBase) :
 
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (sus.nothing)
     def _attributes_unregister (self, key, flow) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1568,7 +1696,12 @@ class Attributes (_AttributesBase) :
             del (d['attributes'][us_key])
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.one_of (_UP, _DOWN))
+    @sus.returns (sus.nothing)
     def _attributes_remove (self, key, flow) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1588,7 +1721,13 @@ class Attributes (_AttributesBase) :
             del (d['attributes'][us_key])
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.optional (sus.list_of (sus.anything)),
+                  sus.optional (sus.one_of  (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_enums (self, key, enums=None, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1604,7 +1743,16 @@ class Attributes (_AttributesBase) :
         d['attributes'][us_key]['enums'] = enums
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  sus.optional (bool),
+                  sus.optional (callable),
+                  sus.optional (callable),
+                  sus.optional (callable),
+                  sus.optional (callable),
+                  sus.optional (sus.one_of  (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_extensible (self, e=True, 
                                 getter=None, setter=None, 
                                 lister=None, caller=None, 
@@ -1629,7 +1777,12 @@ class Attributes (_AttributesBase) :
 
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  sus.optional (bool),
+                  sus.optional (sus.one_of  (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_allow_private (self, p=True, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1646,7 +1799,12 @@ class Attributes (_AttributesBase) :
         d['private'] = p
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  sus.optional (bool),
+                  sus.optional (sus.one_of  (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_camelcasing (self, c=True, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1663,7 +1821,12 @@ class Attributes (_AttributesBase) :
         d['camelcasing'] = c
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  'Attributes', 
+                  sus.optional (sus.one_of  (_UP, _DOWN)))
+    @sus.returns ('Attributes')
     def _attributes_deep_copy (self, other, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1673,6 +1836,8 @@ class Attributes (_AttributesBase) :
         are also deep copies of the respective attributes.  In accordance with
         GFD.90, the deep copy will ignore callbacks.  It will copy checks
         though, as the assumption is that value constraints stay valid.
+
+        Note that we don't copy private keys.
         """
 
         
@@ -1680,6 +1845,7 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init ()
 
         other_d = {}
+        orig_d  = other._attributes_t_init ()
 
         # for some reason, deep copy won't work on the 'attributes' dict, so we
         # do it manually.  Use the list copy c'tor to copy list elements.
@@ -1716,13 +1882,18 @@ class Attributes (_AttributesBase) :
             other_d['attributes'][key]['last']         =       d['attributes'][key]['last']
             other_d['attributes'][key]['ttl']          =       d['attributes'][key]['ttl']
 
-            if d['attributes'][key]['value' ] == None :
+            if d['attributes'][key]['private' ] and key in orig_d['attributes'] :
+                # don't copy private keys
+                other_d['attributes'][key] = orig_d['attributes'][key]
+                continue
+
+            if        d['attributes'][key]['value'] == None :
                 other_d['attributes'][key]['value'] = None
             else :
-                if d['attributes'][key]['flavor'] == VECTOR :
-                    other_d['attributes'][key]['value'] = list (d['attributes'][key]['value'])
+                if        d['attributes'][key]['flavor'] == VECTOR :
+                    other_d['attributes'][key]['value']  = list (d['attributes'][key]['value'])
                 else :
-                    other_d['attributes'][key]['value'] =       d['attributes'][key]['value']
+                    other_d['attributes'][key]['value']  =       d['attributes'][key]['value']
 
         # set the new dictionary as state for copied class
         _AttributesBase.__setattr__ (other, '_d', other_d)
@@ -1730,7 +1901,12 @@ class Attributes (_AttributesBase) :
         return other
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  sus.optional (basestring),
+                  sus.optional (sus.one_of  (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_dump (self, msg=None, flow=_DOWN) :
         """ 
         This interface method is not part of the public consumer API, but can
@@ -1818,7 +1994,13 @@ class Attributes (_AttributesBase) :
         print "---------------------------------------"
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.anything),
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_final (self, key, val=None, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1856,7 +2038,13 @@ class Attributes (_AttributesBase) :
         self._attributes_t_call_cb (key, val)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (float),
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_ttl (self, key, ttl=0.0, flow=_DOWN) :
         """ set attributes TTL in seconds (float) -- see L{_attributes_i_set} """
 
@@ -1868,7 +2056,13 @@ class Attributes (_AttributesBase) :
 
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  callable,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_add_check (self, key, check, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1893,7 +2087,13 @@ class Attributes (_AttributesBase) :
         d['attributes'][us_key]['checks'].append (check)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  callable,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_getter (self, key, getter, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1949,7 +2149,13 @@ class Attributes (_AttributesBase) :
         d['attributes'][us_key]['getter'] = getter
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  callable,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_setter (self, key, setter, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1966,7 +2172,12 @@ class Attributes (_AttributesBase) :
         d['attributes'][us_key]['setter'] = setter
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  callable,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_global_lister (self, lister, flow) :
         """
         This interface method is not part of the public consumer API, but can
@@ -1981,13 +2192,18 @@ class Attributes (_AttributesBase) :
         d['lister'] = lister
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  callable,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_global_caller (self, caller, flow) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
 
-        See documentation of :class:`bliss.saga._attributes_set_setter ` for details.
+        See documentation of :class:`saga._attributes_set_setter ` for details.
         """
 
         d = self._attributes_t_init ()
@@ -1996,7 +2212,12 @@ class Attributes (_AttributesBase) :
         d['caller'] = caller
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  callable,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_global_getter (self, getter, flow) :
         """
         This interface method is not part of the public consumer API, but can
@@ -2011,7 +2232,12 @@ class Attributes (_AttributesBase) :
         d['getter'] = getter
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  callable,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def _attributes_set_global_setter (self, setter, flow) :
         """
         This interface method is not part of the public consumer API, but can
@@ -2026,14 +2252,18 @@ class Attributes (_AttributesBase) :
         d['setter'] = setter
 
 
-    ###########################################################################
+    # --------------------------------------------------------------------------
     #
     # the GFD.90 attribute interface
     #
     # The GFD.90 interface supports CamelCasing, and thus converts all keys to
     # underscore before using them.
     # 
-    ####################################
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.anything,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def set_attribute (self, key, val, _flow=_DOWN) :
         """
         set_attribute(key, val)
@@ -2067,7 +2297,12 @@ class Attributes (_AttributesBase) :
         return   self._attributes_i_set        (us_key, val, flow=_flow)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.anything)
     def get_attribute (self, key, _flow=_DOWN) :
         """
         get_attribute(key)
@@ -2083,7 +2318,13 @@ class Attributes (_AttributesBase) :
         return   self._attributes_i_get        (us_key, _flow)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.list_of (sus.anything),
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def set_vector_attribute (self, key, val, _flow=_DOWN) :
         """
         set_vector_attribute (key, val)
@@ -2100,12 +2341,17 @@ class Attributes (_AttributesBase) :
         return   self._attributes_i_set        (us_key, val, _flow)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.list_of (sus.anything))
     def get_vector_attribute (self, key, _flow=_DOWN) :
         """
         get_vector_attribute (key)
 
-        See also: :func:`bliss.saga.AttributeInterface.get_attribute` (key).
+        See also: :func:`saga.Attributes.get_attribute` (key).
 
         As python can handle scalar and vector types transparently, this method
         is in fact not very useful.  For that reason, it maps internally to the
@@ -2117,7 +2363,12 @@ class Attributes (_AttributesBase) :
         return   self._attributes_i_get        (us_key, _flow)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def remove_attribute (self, key, _flow=_DOWN) :
         """
         remove_attribute (key)
@@ -2125,7 +2376,7 @@ class Attributes (_AttributesBase) :
         Removing an attribute is actually different from unsetting it, or from
         setting it to 'None'.  On remove, all traces of the attribute are
         purged, and the key will not be listed on 
-        :func:`bliss.saga.AttributeInterface.list_attributes` () anymore.
+        :func:`saga.Attributes.list_attributes` () anymore.
         """
 
         key    = self._attributes_t_keycheck   (key)
@@ -2133,7 +2384,11 @@ class Attributes (_AttributesBase) :
         return   self._attributes_remove       (us_key, _flow)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.list_of (basestring))
     def list_attributes (self, _flow=_DOWN) :
         """
         list_attributes ()
@@ -2144,7 +2399,12 @@ class Attributes (_AttributesBase) :
         return self._attributes_i_list (_flow)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.list_of (basestring))
     def find_attributes (self, pattern, _flow=_DOWN) :
         """
         find_attributes (pattern)
@@ -2158,7 +2418,12 @@ class Attributes (_AttributesBase) :
         return self._attributes_i_find (pattern, _flow)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (bool)
     def attribute_exists (self, key, _flow=_DOWN) :
         """
         attribute_exist (key)
@@ -2172,7 +2437,12 @@ class Attributes (_AttributesBase) :
         return self._attributes_i_exists (us_key, _flow)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (bool)
     def attribute_is_readonly (self, key, _flow=_DOWN) :
         """
         attribute_is_readonly (key)
@@ -2186,7 +2456,12 @@ class Attributes (_AttributesBase) :
         return self._attributes_i_is_readonly (us_key, _flow)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (bool)
     def attribute_is_writeable (self, key, _flow=_DOWN) :
         """
         attribute_is_writeable (key)
@@ -2199,7 +2474,12 @@ class Attributes (_AttributesBase) :
         return self._attributes_i_is_writeable (us_key, _flow)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (bool)
     def attribute_is_removable (self, key, _flow=_DOWN) :
         """
         attribute_is_writeable (key)
@@ -2212,7 +2492,12 @@ class Attributes (_AttributesBase) :
         return self._attributes_i_is_removable (us_key, _flow)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (bool)
     def attribute_is_vector (self, key, _flow=_DOWN) :
         """
         attribute_is_vector (key)
@@ -2225,9 +2510,15 @@ class Attributes (_AttributesBase) :
         return self._attributes_i_is_vector (us_key, _flow)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
     # fold the GFD.90 monitoring API into the attributes API
-    ####################################
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  callable, 
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (int)
     def add_callback (self, key, cb, _flow=_DOWN) :
         """
         add_callback (key, cb)
@@ -2263,7 +2554,13 @@ class Attributes (_AttributesBase) :
         return self._attributes_i_add_cb (us_key, cb, _flow)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring,
+                  int, 
+                  sus.optional (sus.one_of (_UP, _DOWN)))
+    @sus.returns (sus.nothing)
     def remove_callback (self, key, id, _flow=_DOWN) :
         """
         remove_callback (key, id)
@@ -2282,13 +2579,15 @@ class Attributes (_AttributesBase) :
 
 
 
-    ############################################################################
+    # --------------------------------------------------------------------------
     #
     # Python property interface
     #
     # we assume that properties are always used in under_score notation.
     #
-    ####################################
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (sus.anything)
     def __getattr__ (self, key) :
         """ see L{get_attribute} (key) for details. """
         
@@ -2296,7 +2595,12 @@ class Attributes (_AttributesBase) :
         return self._attributes_i_get      (key, flow=self._DOWN)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring, 
+                  sus.anything)
+    @sus.returns (sus.nothing)
     def __setattr__ (self, key, val) :
         """ see L{set_attribute} (key, val) for details. """
 
@@ -2304,20 +2608,28 @@ class Attributes (_AttributesBase) :
         return self._attributes_i_set      (key, val, flow=self._DOWN)
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes', 
+                  basestring)
+    @sus.returns (sus.nothing)
     def __delattr__ (self, key) :
         """ see L{remove_attribute} (key) for details. """
         
         key  = self._attributes_t_keycheck (key)
         return self._attributes_remove     (key, flow=self._DOWN)
 
-    ####################################
-    def __str__ (self) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Attributes')
+    @sus.returns (basestring)
+    def __str__  (self) :
         """ return a string representation of all set attributes """
 
         s = "%s %s" % (type(self), str(self.as_dict))
 
         return s
+
 
     ####################################
     def as_dict (self) :
@@ -2326,16 +2638,24 @@ class Attributes (_AttributesBase) :
         d = {}
 
         for a in self.list_attributes () :
-            d[a] = str(self.get_attribute (a))
+            d[a] = self.get_attribute (a)
 
         return d
 
 
-################################################################################
+# ------------------------------------------------------------------------------
 
-# FIXME: add 'as_dict()'
+# FIXME: add 
+#   - as_dict()
+#   - class metric()
+#   - add_metric()
+#   - remove_metric()
+#   - fire_metric()
+#   - list_metrics()
+#   - get_metric()
+#   - list_calbacks()
 
-################################################################################
+# ------------------------------------------------------------------------------
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

@@ -28,11 +28,13 @@ adaptor_registry = [
                     "saga.adaptors.redis.redis_advert",
                     "saga.adaptors.irods.irods_replica",
                     "saga.adaptors.srm.srmfile"
-                    "saga.adaptors.shell.shell_file",
                     "saga.adaptors.shell.shell_job",
+                    "saga.adaptors.shell.shell_file",
+                    "saga.adaptors.shell.shell_resource",
                     "saga.adaptors.sge.sgejob",
                     "saga.adaptors.pbs.pbsjob",
                     "saga.adaptors.condor.condorjob",
                     "saga.adaptors.slurm.slurm_job",
-                    "saga.adaptors.http.http_file"
+                    "saga.adaptors.http.http_file",
+                    "saga.adaptors.aws.ec2_resource"
                    ]

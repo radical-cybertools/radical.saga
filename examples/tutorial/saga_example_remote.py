@@ -3,9 +3,10 @@ import saga
 
 def main():
     try:
-        # Your ssh identity on the remote machine
+        # Your ssh identity on the remote machine. Change if necessary.
         ctx = saga.Context("ssh")
-        ctx.user_id = "oweidner" 
+        #ctx.user_id  = "oweidner"
+        #ctx.user_key = "/Users/oweidner/.ssh/sagaproj_rsa"
 
         session = saga.Session()
         session.add_context(ctx)
@@ -13,15 +14,16 @@ def main():
         # Create a job service object that represent the local machine.
         # The keyword 'fork://' in the url scheme triggers the 'shell' adaptor
         # which can execute jobs on the local machine as well as on a remote
-        # machine via "ssh://hostname".
-        js = saga.job.Service("ssh://gw68.quarry.iu.teragrid.org", session=session)
+        # machine via "ssh://hostname". You can use 'localhost' or replace
+        # it with the name/address of a machien you have ssh access to.
+        js = saga.job.Service("ssh://localhost", session=session)
 
         # describe our job
         jd = saga.job.Description()
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
-        jd.environment     = {'MYOUTPUT':'"Hello from SAGA"'}
+        jd.environment     = {'MYOUTPUT': '"Hello from SAGA"'}
         jd.executable      = '/bin/echo'
         jd.arguments       = ['$MYOUTPUT']
         jd.output          = "mysagajob.stdout"
