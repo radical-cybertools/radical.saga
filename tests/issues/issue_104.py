@@ -3,7 +3,7 @@ import os
 import sys
 import saga
 
-from pudb import set_interrupt_handler; set_interrupt_handler()
+import pudb; pudb.set_interrupt_handler()
 
 USER_ID     = "merzky"
 REMOTE_HOST = "ssh://gw68.quarry.iu.teragrid.org"

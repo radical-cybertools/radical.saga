@@ -699,7 +699,7 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
     @SYNC_CALL
     def destroy (self, id):
 
-        node = self.aquire (id)
+        node = self.acquire (id)
         node.destroy ()
 
    
@@ -838,7 +838,7 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
                 raise saga.IncorrectState ("resource '%s' disappeared")
 
             if  len (nodes) != 1 :
-                self._log.warning ("Could not uniquely identify instance for '%s'" % self.rid)
+                self._logger.warning ("Could not uniquely identify instance for '%s'" % self.rid)
 
             self.resource = nodes[0]
 

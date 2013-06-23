@@ -295,6 +295,7 @@ class Entry (sb.Base, sasync.Async) :
                 # activate recursion guard
                 self._is_recursive += 1
 
+                import saga.engine
                 engine = saga.engine.Engine ()
     
                 # find applicable adaptors we could fall back to, i.e. which
