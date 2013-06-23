@@ -31,6 +31,8 @@ class Service (cpi_base.CPIBase, cpi_async.Async) :
     @ASYNC
     def init_instance_async        (self, rm, session)         : pass
 
+    @SYNC
+    def close                      (self)                      : pass
 
 
     # ----------------------------------------------------------------

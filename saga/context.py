@@ -4,18 +4,19 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-from   saga.constants  import *
 
-import saga
+import saga.utils.signatures as sus
+import saga.adaptors.base    as sab
+import saga.attributes       as sa
+import saga.base             as sb
 
-from saga.constants import TYPE, SERVER, CERT_REPOSITORY, USER_PROXY, USER_CERT
-from saga.constants import USER_KEY, USER_ID, USER_PASS, USER_VO, LIFE_TIME
-from saga.constants import REMOTE_ID, REMOTE_HOST, REMOTE_PORT
-
+from   saga.constants import TYPE,       SERVER,    USER_CERT,   CERT_REPOSITORY
+from   saga.constants import USER_PROXY, USER_KEY,  USER_ID,     USER_PASS,   USER_VO
+from   saga.constants import LIFE_TIME,  REMOTE_ID, REMOTE_HOST, REMOTE_PORT, TOKEN
 
 # ------------------------------------------------------------------------------
 #
-class Context (saga.base.Base, saga.Attributes) :
+class Context (sb.Base, sa.Attributes) :
     '''A SAGA Context object as defined in GFD.90.
 
     A security context is a description of a security token.  It is important to
@@ -33,18 +34,17 @@ class Context (saga.base.Base, saga.Attributes) :
     The usage example for contexts is below::
 
         # define an ssh context
-        c = saga.Context()
-        c.context_type = 'ssh'
-        c.user_cert = '$HOME/.ssh/special_id_rsa'
-        c.user_key  = '$HOME/.ssh/special_id_rsa.pub'
+        ctx = saga.Context("SSH")
+        ctx.user_cert = '$HOME/.ssh/special_id_rsa'
+        ctx.user_key  = '$HOME/.ssh/special_id_rsa.pub'
 
         # add the context to a session
-        s = saga.Session()
-        s.contexts.append(c)
+        session = saga.Session()
+        session.add_context(ctx)
 
         # create a job service in this session -- that job service can now
         # *only* use that ssh context. 
-        j = saga.job.Service('ssh://remote.host.net/', s)
+        j = saga.job.Service('ssh://remote.host.net/', session=session)
 
 
     The L{Session} argument to the L{job.Service} constructor is fully optional
@@ -64,23 +64,30 @@ class Context (saga.base.Base, saga.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    def __init__ (self, type, _adaptor=None, _adaptor_state={}) : 
+    @sus.takes   ('Context', 
+                  basestring, 
+                  sus.optional (sab.Base),
+                  sus.optional (dict))
+    @sus.returns (sus.nothing)
+    def __init__ (self, ctype, _adaptor=None, _adaptor_state={}) : 
         '''
-        type: string
-        ret:  None
+        ctype: string
+        ret:   None
         '''
+
+        sb.Base.__init__ (self, ctype.lower(), _adaptor, _adaptor_state, ctype, ttype=None)
+
 
         import saga.attributes as sa
 
-        saga.base.Base.__init__ (self, type.lower(), _adaptor, _adaptor_state, type, ttype=None)
-
-        # set attribute interface properties
+        # set attribute interface propertiesP
         self._attributes_extensible  (False)
         self._attributes_camelcasing (True)
 
         # register properties with the attribute interface
         self._attributes_register  (TYPE,            None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (SERVER,          None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (TOKEN,           None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (CERT_REPOSITORY, None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (USER_PROXY,      None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (USER_CERT,       None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
@@ -93,18 +100,20 @@ class Context (saga.base.Base, saga.Attributes) :
         self._attributes_register  (REMOTE_HOST,     None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (REMOTE_PORT,     None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
 
-        self.type = type
+        self.type = ctype
 
 
     # --------------------------------------------------------------------------
     #
-    def __str__ (self) :
+    @sus.takes   ('Context')
+    @sus.returns (basestring)
+    def __str__  (self) :
 
         d = self.as_dict ()
         s = "{"
 
         for key in sorted (d.keys ()) :
-            if  key == 'UserPass' :
+            if  key == 'UserPass' and d[key] :
                 s += "'UserPass' : '%s'" % ('x'*len(d[key]))
             else :
                 s += "'%s' : '%s'" % (key, d[key])
@@ -115,11 +124,23 @@ class Context (saga.base.Base, saga.Attributes) :
 
     # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Context')
+    @sus.returns (basestring)
+    def __repr__ (self) :
+
+        return str(self)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes      ('Context', 
+                     ('Session', '_DefaultSession'))
+    @sus.returns    (sus.nothing)
     def _initialize (self, session) :
         '''
         ret:  None
         '''
-        return self._adaptor._initialize (session)
+        self._adaptor._initialize (session)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

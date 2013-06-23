@@ -24,10 +24,6 @@ def test_deepcopy():
         assert jd1.executable != jd2.executable, "%s != %s" % (jd1.executable, jd2.executable)
         assert jd1.arguments  == jd2.arguments 
 
-    except saga.NotImplemented as ni:
-            assert tc.notimpl_warn_only, "%s " % ni
-            if tc.notimpl_warn_only:
-                print "%s " % ni
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
 

@@ -12,7 +12,7 @@ __license__   = "MIT"
 import saga.utils.which
 import saga.utils.pty_shell
 
-import saga.adaptors.cpi.base
+import saga.adaptors.base
 import saga.adaptors.cpi.job
 
 import re
@@ -52,7 +52,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
-                          #saga.job.SPMD_VARIATION, #implement later, somehow
+                          saga.job.SPMD_VARIATION, #implement later, somehow
                           saga.job.TOTAL_CPU_COUNT, 
                           saga.job.NUMBER_OF_PROCESSES,
                           saga.job.PROCESSES_PER_HOST,
@@ -66,7 +66,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.CLEANUP,
                           saga.job.JOB_START_TIME,
                           saga.job.WALL_TIME_LIMIT, 
-                          #saga.job.TOTAL_PHYSICAL_MEMORY, 
+                          saga.job.TOTAL_PHYSICAL_MEMORY, 
                           #saga.job.CPU_ARCHITECTURE, 
                           #saga.job.OPERATING_SYSTEM_TYPE, 
                           #saga.job.CANDIDATE_HOSTS,
@@ -186,6 +186,7 @@ _ADAPTOR_INFO          = {
     "name"             : _ADAPTOR_NAME,
     "version"          : "v0.2",
     "schemas"          : _ADAPTOR_SCHEMAS,
+    "capabilities"     : _ADAPTOR_CAPABILITIES,
     "cpis"             : [
         { 
         "type"         : "saga.job.Service",
@@ -201,7 +202,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -213,7 +214,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     #
     def __init__ (self) :
 
-        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
 
@@ -242,11 +243,9 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     # ----------------------------------------------------------------
     #
     def __init__ (self, api, adaptor) :
-        #saga.adaptors.cpi.CPIBase.__init__ (self, api, adaptor)
+        
         _cpi_base = super  (SLURMJobService, self)
         _cpi_base.__init__ (api, adaptor)
-
-        self._base = base = "$HOME/.saga/adaptors/slurm_job"
 
         self.exit_code_re = re.compile("""(?<=ExitCode=)[0-9]*""")
         self.scontrol_jobstate_re = re.compile("""(?<=JobState=)[a-zA-Z]*""")
@@ -287,6 +286,14 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self._open ()
 
         return self.get_api ()
+
+
+    # ----------------------------------------------------------------
+    #
+    def close (self) :
+        if  self.shell :
+            self.shell.finalize (True)
+
 
     # # ----------------------------------------------------------------
     # #
@@ -362,12 +369,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                           "configured properly? " % (cmd, self.rm, out)
                 raise saga.NoSuccess._log (self._logger, message)
                 
-        # prepare our remote working directory for wrappers/etc
-        ret, out, _ = self.shell.run_sync ("mkdir -p %s" % self._base)
-        if  ret != 0 :
-            raise saga.NoSuccess ("failed to prepare base dir (%s)(%s)" \
-                                      % (ret, out))
-
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
         
         self.rm.detected_username = self.rm.username
@@ -556,10 +557,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self._logger.debug("SLURM script generated:\n%s" % slurm_script)
         self._logger.debug("Transferring SLURM script to remote host")
 
-        # transfer our script over
-        #self.shell.write_to_remote (src = slurm_script,
-        #                            tgt = "%s/wrapper.sh" % self._base)
-
         # try to create the working directory (if defined)
         # WRANING: this assumes a shared filesystem between login node and
         #           comnpute nodes.
@@ -612,7 +609,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     #    Jobs typically pass through several states in the course of their execution.  The typical states are PENDING, RUNNING, SUSPENDED, COMPLETING, and COMPLETED.   An  explanation  of  each
     #    state follows.
 
-    #    CA  CANCELLED       Job was explicitly cancelled by the user or system administrator.  The job may or may not have been initiated.
+    #    CA  CANCELED        Job was explicitly cancelled by the user or system administrator.  The job may or may not have been initiated.
     #    CD  COMPLETED       Job has terminated all processes on all nodes.
     #    CF  CONFIGURING     Job has been allocated resources, but are waiting for them to become ready for use (e.g. booting).
     #    CG  COMPLETING      Job is in the process of completing. Some processes on some nodes may still be active.
@@ -679,7 +676,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                 self._logger.debug("Returning exit code %s" % self.exit_code)
                 
                 # return whatever our exit code is
-                return self.exit_code
+                return int(self.exit_code)
         
         ### couldn't get the exitcode -- maybe should change this to just return
         ### None?  b/c we will lose the code if a program waits too
@@ -751,12 +748,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     def create_job (self, jd) :
         """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
-        # check that only supported attributes are provided
-        for attribute in jd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITIES["jdes_attributes"]:
-                msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
-                raise saga.BadParameter._log (self._logger, msg)
-        
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         adaptor_state = { "job_service"     : self, 

@@ -4,7 +4,7 @@
 import saga.utils.pty_shell as sups
 import saga.utils.misc      as sumisc
 
-import saga.adaptors.cpi.base
+import saga.adaptors.base
 import saga.adaptors.cpi.filesystem
 
 from   saga.filesystem.constants import *
@@ -29,7 +29,7 @@ _PTY_TIMEOUT = 2.0
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.shell_file"
-_ADAPTOR_SCHEMAS       = ["file", "local", "sftp", "gsiftp"]
+_ADAPTOR_SCHEMAS       = ["file", "local", "sftp", "gsiftp", "ssh", "gsissh"]
 _ADAPTOR_OPTIONS       = [
     { 
     'category'         : 'saga.adaptor.shell_file',
@@ -113,7 +113,9 @@ _ADAPTOR_DOC           = {
         """,
     "schemas"          : {"file"   :"use /bin/sh to access local filesystems", 
                           "local"  :"alias for file://", 
+                          "ssh"    :"use sftp to access remote filesystems", 
                           "sftp"   :"use sftp to access remote filesystems", 
+                          "gsissh" :"use gsiftp to access remote filesystems",
                           "gsiftp" :"use gsiftp to access remote filesystems"}
 }
 
@@ -147,7 +149,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -159,7 +161,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     #
     def __init__ (self) :
 
-        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config ()
@@ -561,6 +563,36 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
+    def make_dir (self, tgt_in, flags):
+
+        self._is_valid ()
+
+        cwdurl = saga.Url (self.url) # deep copy
+        tgturl = saga.Url (tgt_in)   # deep copy
+
+        tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
+
+        if  flags & saga.filesystem.EXCLUSIVE : 
+            # FIXME: this creates a race condition between testing for exclusive
+            # mkdir and creating the dir.
+            ret, out, _ = self.shell.run_sync ("test -d %s " % tgt_abs.path)
+
+            if  ret != 0 :
+                raise saga.AlreadyExists ("make_dir target (%s) exists (%s)" \
+                    % tgt_in, out)
+
+
+        options = ""
+
+        if  flags & saga.filesystem.CREATE_PARENTS : 
+            options += "-p"
+
+        self.shell.run_sync ("mkdir %s %s" % (options, tgt_abs.path))
+
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
     def get_size_self (self) :
 
         self._is_valid ()
@@ -790,6 +822,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
       # self.shell.set_finalize_hook   (self.finalize)
 
         self.initialize ()
+
 
         # we create a local shell handle, too, if only to support copy and move
         # to and from local file systems (mkdir for staging target, remove of move
