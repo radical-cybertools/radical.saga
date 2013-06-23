@@ -124,12 +124,19 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
 
  
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Job')
+    @sus.returns (basestring)
+    def __str__  (self) :
+        return str (self.id)
+
 
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Job',
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((basestring, st.Task))
+    @sus.returns ((sus.nothing, basestring, st.Task))
     def get_id   (self, ttype=None) :
         '''
         ttype:     saga.task.type enum
@@ -321,16 +328,16 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
           jd.executable = '/bin/date'
           j  = js.create_job(jd)
 
-          if j.get_state() == saga.job.Job.New : 
+          if j.get_state() == saga.job.NEW : 
               print "new"
           else : 
               print "oops!"
 
           j.run()
 
-          if   j.get_state() == saga.job.Job.Pending :
+          if   j.get_state() == saga.job.PENDING :
               print "pending"
-          elif j.get_state() == saga.job.Job.Running :
+          elif j.get_state() == saga.job.RUNNING :
               print "running"
           else :
               print "oops!"
@@ -360,23 +367,23 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
           jd.executable = '/bin/date'
           j  = js.create_job(jd)
 
-          if   j.get_state() == saga.job.Job.New :
+          if   j.get_state() == saga.job.NEW :
               print "new"
           else :
               print "oops!"
 
           j.run()
 
-          if   j.get_state() == saga.job.Job.Pending  :
+          if   j.get_state() == saga.job.PENDING :
               print "pending"
-          elif j.get_state() == saga.job.Job.Running :
+          elif j.get_state() == saga.job.RUNNING :
               print "running"
           else :
               print "oops!"
 
           j.cancel()
 
-          if   j.get_state() == saga.job.Job.Canceled :
+          if   j.get_state() == saga.job.CANCELED :
               print "canceled"
           else :
               print "oops!"
@@ -388,7 +395,7 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Job',
-                  float,
+                  sus.optional (sus.anything),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((bool, st.Task))
     def wait     (self, timeout=None, ttype=None) :
@@ -417,25 +424,25 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
           jd.executable = '/bin/date'
           j  = js.create_job(jd)
 
-          if   j.get_state() == saga.job.Job.New :
+          if   j.get_state() == saga.job.NEW :
               print "new"
           else :
               print "oops!"
 
           j.run()
 
-          if   j.get_state() == saga.job.Job.Pending :
+          if   j.get_state() == saga.job.PENDING :
               print "pending"
-          elif j.get_state() == saga.job.Job.Running :
+          elif j.get_state() == saga.job.RUNNING :
               print "running"
           else :
               print "oops!"
 
           j.wait(-1.0)
 
-          if   j.get_state() == saga.job.Job.Done :
+          if   j.get_state() == saga.job.DONE :
               print "done"
-          elif j.get_state() == saga.job.Job.Failed :
+          elif j.get_state() == saga.job.FAILED :
               print "failed"
           else :
               print "oops!"
@@ -465,16 +472,16 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
           jd.executable = '/bin/date'
           j  = js.create_job(jd)
     
-          if   j.get_state() == saga.job.Job.New : 
+          if   j.get_state() == saga.job.NEW : 
               print "new"
           else : 
               print "oops!"
     
           j.run()
     
-          if   j.get_state() == saga.job.Job.Pending : 
+          if   j.get_state() == saga.job.PENDING : 
               print "pending"
-          elif j.get_state() == saga.job.Job.Running : 
+          elif j.get_state() == saga.job.RUNNING : 
               print "running"
           else :
               print "oops!"
@@ -542,7 +549,7 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
     #
     @sus.takes         ('Job',
                         sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns       ((int, st.Task))
+    @sus.returns       ((sus.nothing, int, st.Task))
     def _get_exit_code (self, ttype=None) :
         ec = self._adaptor.get_exit_code(ttype=ttype)
         if ec in [None, ""]:
@@ -550,37 +557,37 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
         else:
             # Exit code is always an int. If this 'cast' fails, 
             # the adaptor is doing something stupid.
-            return int(ec)
+            return ec
 
     # --------------------------------------------------------------------------
     #
     @sus.takes       ('Job',
                       sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns     ((float, st.Task))
+    @sus.returns     ((sus.nothing, float, st.Task))
     def _get_created (self, ttype=None) :
-        return float (self._adaptor.get_created (ttype=ttype))
+        return self._adaptor.get_created (ttype=ttype)
 
     # --------------------------------------------------------------------------
     #
     @sus.takes       ('Job',
                       sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns     ((float, st.Task))
+    @sus.returns     ((sus.nothing, float, st.Task))
     def _get_started (self, ttype=None) :
-        return float (self._adaptor.get_started (ttype=ttype))
+        return self._adaptor.get_started (ttype=ttype)
 
     # --------------------------------------------------------------------------
     #
     @sus.takes       ('Job',
                       sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns     ((float, st.Task))
+    @sus.returns     ((sus.nothing, float, st.Task))
     def _get_finished (self, ttype=None) :
-        return float (self._adaptor.get_finished (ttype=ttype))
+        return self._adaptor.get_finished (ttype=ttype)
 
     # --------------------------------------------------------------------------
     #
     @sus.takes       ('Job',
                       sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns     ((sus.list_of (basestring), st.Task))
+    @sus.returns     ((sus.nothing, sus.list_of (basestring), st.Task))
     def _get_execution_hosts (self, ttype=None) :
         return self._adaptor.get_execution_hosts (ttype=ttype)
 
@@ -588,7 +595,7 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
     #
     @sus.takes       ('Job',
                       sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns     ((surl.Url, st.Task))
+    @sus.returns     ((sus.nothing, surl.Url, st.Task))
     def _get_service_url (self, ttype=None) :
         return self._adaptor.get_service_url (ttype=ttype)
 
@@ -618,7 +625,7 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
       j.run()
       j.wait()
 
-      if j.get_state() == saga.job.Job.Failed :
+      if j.get_state() == saga.job.FAILED :
         if j.exitcode == "42" :
             print "Ah, galaxy bypass error!"
         else :

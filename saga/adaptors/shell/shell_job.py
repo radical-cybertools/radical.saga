@@ -70,14 +70,13 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
                           saga.job.WORKING_DIRECTORY,
-                          saga.job.PROJECT,         # FIXME
-                          saga.job.QUEUE,           # FIXME
-                          saga.job.SPMD_VARIATION,  # FIXME
-                          saga.job.TOTAL_CPU_COUNT, # FIXME
-                          saga.job.WALL_TIME_LIMIT, # FIXME
                           saga.job.INPUT,
                           saga.job.OUTPUT,
-                          saga.job.ERROR],
+                          saga.job.ERROR,
+                          saga.job.WALL_TIME_LIMIT, # TODO: 'hot'-fix for BigJob - implement properly
+                          saga.job.TOTAL_CPU_COUNT, # TODO: 'hot'-fix for BigJob - implement properly
+                          saga.job.SPMD_VARIATION,  # TODO: 'hot'-fix for BigJob - implement properly
+                         ],
     "job_attributes"   : [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
                           saga.job.CREATED,
@@ -206,6 +205,7 @@ _ADAPTOR_INFO          = {
     "name"             : _ADAPTOR_NAME,
     "version"          : "v0.1",
     "schemas"          : _ADAPTOR_SCHEMAS,
+    "capabilities"     : _ADAPTOR_CAPABILITIES,
     "cpis"             : [
         { 
         "type"         : "saga.job.Service",
@@ -311,7 +311,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
             if  self.shell : 
              #  self.shell.run_sync  ("PURGE", iomode=None)
-                self.shell.run_async ("QUIT" , iomode=None)
+                self.shell.run_async ("QUIT")
                 self.finalize (kill_shell=True)
 
         except Exception as e :
@@ -394,14 +394,20 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # Well, actually, we do not use exec, as that does not give us good
         # feedback on failures (the shell just quits) -- so we replace it with
         # this poor-man's version...
-        ret, out, _ = self.shell.run_sync ("/bin/sh -c '/bin/sh %s/wrapper.sh $$ && kill -9 $PPID' || false" \
-                                        % (base))
+        self.shell.run_async ("/bin/sh -c '/bin/sh %s/wrapper.sh $$ && kill -9 $PPID' || false" \
+                           % (base))
 
-        # either way, we somehow ran the script, and just need to check if it
-        # came up all right...
+        # shell_wrapper.sh will report its own PID -- we use that to sync prompt
+        # detection, too.  Wait for 1sec max.
+        pid_match = self.shell.find (['PID: \d+'], 1.0)
+        if  pid_match[0] != 0 :
+            raise saga.NoSuccess ("host bootstrap failed (%s)" % (pid_match))
+
+        # now we can be sure to expect the valid prompt instance
+        ret, out = self.shell.find_prompt ()
         if  ret != 0 :
-            raise saga.NoSuccess ("host setup failed (%s): (%s)" % (ret, out))
-
+            raise saga.NoSuccess ("failed to run bootstrap: (%s)(%s)" % (ret, out))
+        
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out.strip ()))
 
 
@@ -411,6 +417,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         if  kill_shell :
             if  self.shell :
+                self.shell.run_async ("QUIT")
                 self.shell.finalize (True)
 
 
@@ -474,16 +481,19 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         ret, out, _ = self.shell.run_sync (run_cmd)
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to run job '%s': (%s)(%s)" % (cmd, ret, out))
+            raise saga.NoSuccess ("failed to run Job '%s': (%s)(%s)" % (cmd, ret, out))
 
         lines = filter (None, out.split ("\n"))
         self._logger.debug (lines)
 
         if  len (lines) < 2 :
-            raise saga.NoSuccess ("failed to run job (%s)" % lines)
+            raise saga.NoSuccess ("Failed to run job (%s)" % lines)
+        
+      # for i in range (0, len(lines)) :
+      #     print "%d: %s" % (i, lines[i])
 
         if lines[-2] != "OK" :
-            raise saga.NoSuccess ("failed to run job (%s)" % lines)
+            raise saga.NoSuccess ("Failed to run Job (%s)" % lines)
 
         # FIXME: verify format of returned pid (\d+)!
         pid    = lines[-1].strip ()
@@ -528,7 +538,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 continue
 
             key, val = line.split (":", 2)
-            ret[key.strip ().lower ()] = val.strip()
+            ret[key.strip ().lower ()] = val.strip ()
 
         return ret
 
@@ -657,12 +667,6 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     def create_job (self, jd) :
         """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
-        # check that only supported attributes are provided
-        for attribute in jd.list_attributes():
-            if attribute not in _ADAPTOR_CAPABILITIES["jdes_attributes"]:
-                msg = "'JobDescription.%s' is not supported by this adaptor" % attribute
-                raise saga.BadParameter._log (self._logger, msg)
-
         
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -1037,6 +1041,8 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             # don't know what to do...
             raise saga.BadParameter ("Cannot create job, insufficient information")
         
+        if self._created : self._created = float(self._created)
+
         return self.get_api ()
 
 
@@ -1053,7 +1059,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     def get_state (self):
         """ Implements saga.adaptors.cpi.job.Job.get_state() """
 
-        # may not yet have backend representation, state is probably 'NEW'
+        # may not yet have backend representation, state is 'NEW'
         if self._id == None :
             return self._state
 
@@ -1067,12 +1073,18 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
         if 'start' in stats : self._started  = stats['start']
         if 'stop'  in stats : self._finished = stats['stop']
+
+        if self._started  : self._started  = float(self._started)
+        if self._finished : self._finished = float(self._finished)
         
         if  not 'state' in stats :
-            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" % id)
+            raise saga.NoSuccess ("failed to get job state for '%s': (%s)" \
+                               % (self._id, stats))
 
         self._state = self._adaptor.string_to_state (stats['state'])
 
+        self._api ()._attributes_i_set ('state', self._state, self._api ()._UP)
+        
         return self._state
 
 

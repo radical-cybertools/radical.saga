@@ -12,6 +12,58 @@ import saga.base
 
 import saga.utils.signatures as sus
 
+
+# ------------------------------------------------------------------------------
+#
+class _ContextList (list) :
+    """
+    The `saga.Session` class has a 'contexts' member which is a mutable list of
+    `saga.Context` instances.  Adding contexts to that list is semantically
+    equivalent to calling `saga.Session.add_context (ctx)`, which (a) creates
+    a deep copy of the context, and (b) initializes the context (i.e. calls
+    `ctx._initialize (self)`, with `self` being the session instance).  We thus
+    create our own provate `_ContextList` class which inherits from the native
+    Python `list` class, and overload the `append()` call with said semantics.
+    """
+
+    # --------------------------------------------------------------------------
+    #
+    def __init__ (self, session, *args, **kwargs) :
+
+        self.session = session
+
+        l = super  (_ContextList, self)
+        l.__init__ (*args, **kwargs)
+
+
+    # --------------------------------------------------------------------------
+    #
+    def append (self, ctx) :
+
+        if  not isinstance (ctx, saga.Context) :
+            raise TypeError, "appended item is not a saga.Context instance"
+
+        # create a deep copy of the context (this keeps _adaptor etc)
+        ctx_clone = saga.Context  (ctx.type)
+        ctx._attributes_deep_copy (ctx_clone)
+
+        # from pudb import set_trace; set_trace()
+
+        # try to initialize that context, i.e. evaluate its attributes and
+        # infer additional runtime information as needed
+        self.session._logger.debug ("adding  context : %s" \
+                                 % (ctx_clone))
+        try :
+            ctx_clone._initialize (self.session)
+        except saga.exceptions.SagaException as e :
+            msg = "Cannot add context, initialization failed (%s)"  %  str(e)
+            raise saga.exceptions.BadParameter (msg)
+
+        # context initialized ok, add it to the list of known contexts
+        super (_ContextList, self).append (ctx_clone)
+
+
+
 # ------------------------------------------------------------------------------
 #
 class _DefaultSession (object) :
@@ -29,7 +81,7 @@ class _DefaultSession (object) :
         # dig through the registered context adaptors, and ask each of them for
         # default contexts.
 
-        self._contexts = []
+        self.contexts  = _ContextList (session=self)
         self._logger   = saga.utils.logger.getLogger ('saga.DefaultSession')
 
         _engine = saga.engine.engine.Engine ()
@@ -38,14 +90,17 @@ class _DefaultSession (object) :
             self._logger.warn ("no context adaptors found")
             return
 
-        ctx_adaptors = list()
         for schema in   _engine._adaptor_registry['saga.Context'] :
-            for info in _engine._adaptor_registry['saga.Context'][schema]:
-                ctx_adaptors.append(info['adaptor_name'])
-                self._contexts += info['adaptor_instance']._get_default_contexts()
+            for info in _engine._adaptor_registry['saga.Context'][schema] :
 
-        self._logger.debug ("Adding defaults for context adaptors: %s " \
-                       % ctx_adaptors)
+                default_ctxs = info['adaptor_instance']._get_default_contexts()
+                # FIXME:
+                default_ctxs = []
+                for default_ctx in default_ctxs :
+
+                    self.contexts.append (default_ctx)
+                    self._logger.debug ("default context [%-20s] : %s" \
+                                     % (info['adaptor_name'], default_ctx))
 
 
 # ------------------------------------------------------------------------------
@@ -113,18 +168,19 @@ class Session (saga.base.SimpleBase) :
         # if the default session is expected, we point our context list to the
         # shared list of the default session singleton.  Otherwise, we create
         # a private list which is not populated.
+
         if default :
             default_session  = _DefaultSession ()
-            self.contexts    = default_session._contexts 
+            self.contexts    = default_session.contexts 
         else :
-            self.contexts    = []
+            self.contexts    = _ContextList (session = self)
 
 
     # ----------------------------------------------------------------
     #
     @sus.takes   ('Session')
     @sus.returns (basestring)
-    def __str__(self):
+    def __str__  (self):
         """String represenation."""
 
         return "Registered contexts: %s" % (str(self.contexts))
@@ -132,9 +188,9 @@ class Session (saga.base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Session', 
-                  saga.context.Context)
-    @sus.returns (sus.nothing)
+    @sus.takes      ('Session', 
+                     saga.context.Context)
+    @sus.returns    (sus.nothing)
     def add_context (self, ctx) :
         """
         ctx:     saga.Context
@@ -144,18 +200,7 @@ class Session (saga.base.SimpleBase) :
         It is encouraged to use the L{contexts} property instead. 
         """
 
-        if ctx not in self.contexts :
-
-            # try to initialize that context, i.e. evaluate its attributes and
-            # infer additional runtime information as needed
-            try :
-                ctx._initialize (self)
-            except saga.exceptions.SagaException as e :
-                msg = "Cannot add context, initialization failed (%s)"  %  str(e)
-                raise saga.exceptions.BadParameter (msg)
-
-            # context initialized ok, add it to the session
-            self.contexts.append (ctx)
+        return self.contexts.append (ctx)
 
 
     # ----------------------------------------------------------------

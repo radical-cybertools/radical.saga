@@ -1,0 +1,2 @@
+Coordination Time: 0:00:00.853988
+Communication Time: 0:00:06.197698

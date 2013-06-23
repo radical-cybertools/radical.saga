@@ -1,6 +1,7 @@
 
-""" """
-
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
 
 import saga.utils.signatures    as sus
 import saga.adaptors.base       as sab
@@ -37,7 +38,7 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @sus.takes   ('Manager', 
-                  sus.optional (surl.Url), 
+                  sus.optional (basestring, surl.Url), 
                   sus.optional (ss.Session),
                   sus.optional (sab.Base), 
                   sus.optional (dict), 
@@ -66,7 +67,7 @@ class Manager (sb.Base, async.Async) :
     #
     @classmethod
     @sus.takes   ('Manager', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (ss.Session),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (st.Task)
@@ -160,13 +161,31 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @sus.takes   ('Manager', 
-                  descr.Description,
+                  sus.optional (sus.one_of (COMPUTE, STORAGE, NETWORK)),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.list_of (basestring), st.Task))
+    def list_images (self, rtype=None, ttype=None) :
+        """
+        :type  rtype: None or enum (COMPUTE | STORAGE | NETWORK)
+        :param rtype: specifies a filter of resource types to list.
+
+        List image names available for the specified resource type(s).
+        Returns a list of strings.
+        """
+
+        return self._adaptor.list_images (rtype, ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    # 
+    @sus.takes   ('Manager', 
+                  (basestring, surl.Url, descr.Description),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((resrc.Resource, st.Task))
     def acquire  (self, spec, ttype=None) :
         """
-        :type  descr: :class:`Description`
-        :param descr: specifies the resource to be acquired.
+        :type  spec: :class:`Description`
+        :param spec: specifies the resource to be acquired.
 
         Get a :class:`saga.resource.Resource` handle for the specified
         description.  Depending on the `RTYPE` attribute in the description, the
@@ -176,8 +195,8 @@ class Manager (sb.Base, async.Async) :
         state.
         """
 
-        if  type(spec) == type(surl.Url) or \
-            type(spec) == type(basestring)      :
+        if  isinstance (spec, surl.Url) or \
+            isinstance (spec, basestring)  :
 
             id = surl.Url (spec)
             
@@ -185,16 +204,14 @@ class Manager (sb.Base, async.Async) :
 
         else :
 
-            descr = descr.Description (spec)
-
             # make sure at least 'executable' is defined
-            if descr.rtype is None:
+            if spec.rtype is None:
                 raise se.BadParameter ("No resource type defined in resource description")
     
-            descr_copy = descr.Description ()
-            descr._attributes_deep_copy (descr_copy)
+            spec_copy = descr.Description ()
+            spec._attributes_deep_copy (spec_copy)
 
-            return self._adaptor.acquire (descr_copy, ttype=ttype)
+            return self._adaptor.acquire (spec_copy, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -203,7 +220,7 @@ class Manager (sb.Base, async.Async) :
                   basestring,
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
-    def release  (self, id, ttype=None) :
+    def destroy  (self, id, ttype=None) :
         """
         :type  id   : string
         :param id   : identifies the resource to be released.
@@ -212,7 +229,7 @@ class Manager (sb.Base, async.Async) :
         `CANCELED` state.  
         """
 
-        return self._adaptor.release (id, ttype=ttype)
+        return self._adaptor.destroy (id, ttype=ttype)
 
   # FIXME: add 
   # templates = property (list_templates, get_template)  # dict {string : Description}
@@ -231,14 +248,14 @@ class Manager (sb.Base, async.Async) :
     def wait     (self, id, timeout=-1.0, ttype=None) :
         """
         :type  id   : string
-        :param id   : identifies the resource to be released.
+        :param id   : identifies the resource to be waited for.
 
         This call will block for at more 'timeout' seconds, or until the
         specified resource has entered the specified stat, whatever occurs
         first. If the timeout is smaller 0, the call can block forever.
         """
 
-        return self._adaptor.release (id, ttype=ttype)
+        return self._adaptor.wait (id, timeout, ttype=ttype)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

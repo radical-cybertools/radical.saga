@@ -23,7 +23,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('LogicalDirectory', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session),
                   sus.optional (sab.Base), 
@@ -51,7 +51,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     #
     @classmethod
     @sus.takes   ('LogicalDirectory', 
-                  sus.optional (surl.Url), 
+                  sus.optional ((surl.Url, basestring)), 
                   sus.optional (int), 
                   sus.optional (ss.Session),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
@@ -86,7 +86,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         ttype:    saga.task.type enum
         ret:      saga.namespace.Entry / saga.Task
         '''
-        url = saga.url.Url(path)
+        url = surl.Url(path)
         return self._adaptor.open (url, flags, ttype=ttype)
 
 

@@ -1,4 +1,8 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 import saga.utils.signatures    as sus
 import saga.adaptors.base       as sab
 import saga.async               as async
@@ -60,7 +64,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     active at some point, and usage requests can already be submitted -- those
     usage requests will not be executed until the resources enters the `ACTIVE`
     state.  The resource can be release from application control in three
-    different ways: they can be actively be released by the application, and
+    different ways: they can be actively be destroyed by the application, and
     will then enter the `CANCELED` state; they can internally cease to function
     and become unable to serve usage requests, represented by a `FAILED` state,
     and the resource manager can retract control from the application because
@@ -213,13 +217,13 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
                   basestring,
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
-    def release (self, ttype=None) :
+    def destroy  (self, ttype=None) :
         """
         The semantics of this method is equivalent to the semantics of the
-        :func:`release` call on the :class:`saga.resource.Manager` class.
+        :func:`destroy` call on the :class:`saga.resource.Manager` class.
         """
 
-        return self._adaptor.release (ttype=ttype)
+        return self._adaptor.destroy (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -250,35 +254,45 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((basestring, st.Task))
+    @sus.returns ((sus.nothing, basestring, st.Task))
     def get_id   (self, ttype=None) : return self._adaptor.get_id            (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @sus.takes    ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns  ((basestring, st.Task))
+    @sus.returns  ((sus.one_of (const.COMPUTE, 
+                                const.STORAGE, 
+                                const.NETWORK), st.Task))
     def get_rtype (self, ttype=None) : return self._adaptor.get_rtype         (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @sus.takes    ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns  ((basestring, st.Task))
+    @sus.returns  ((sus.one_of (const.UNKNOWN ,
+                                const.NEW     ,
+                                const.PENDING ,
+                                const.ACTIVE  ,
+                                const.CANCELED,
+                                const.EXPIRED ,
+                                const.DONE    ,
+                                const.FAILED  ,
+                                const.FINAL   ), st.Task))
     def get_state (self, ttype=None) : return self._adaptor.get_state         (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((basestring, st.Task))
+    @sus.returns ((sus.nothing, basestring, st.Task))
     def get_state_detail (self, ttype=None) : return self._adaptor.get_state_detail  (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @sus.takes     ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns   ((basestring, st.Task))
+    @sus.returns   ((sus.nothing, basestring, st.Task))
     def get_access (self, ttype=None) : return self._adaptor.get_access        (ttype=ttype)
 
 
@@ -292,7 +306,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((basestring, st.Task))
+    @sus.returns ((sus.nothing, descr.Description, st.Task))
     def get_description  (self, ttype=None) : return self._adaptor.get_description   (ttype=ttype)
 # 
 # ------------------------------------------------------------------------------
@@ -311,16 +325,16 @@ class Compute (Resource) :
     # FIXME: should 'ACCESS' be a list of URLs?  A VM could have an ssh *and*
     #        a gram endpoint...
 
-    @sus.takes   ('ComputeResource', 
-                  sus.optional (basestring), 
-                  sus.optional (ss.Session),
-                  sus.optional (sab.Base), 
-                  sus.optional (dict), 
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (sus.nothing)
+    # @sus.takes   ('ComputeResource', 
+    #               sus.optional (basestring), 
+    #               sus.optional (ss.Session),
+    #               sus.optional (sab.Base), 
+    #               sus.optional (dict), 
+    #               sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    # @sus.returns (sus.nothing)
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
-        
+
         self._resrc = super  (Compute, self)
         self._resrc.__init__ (id, session, _adaptor, _adaptor_state, _ttype)
 
