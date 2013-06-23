@@ -361,7 +361,28 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def __del__(self):
 
-        self.finalize (kill_shell=True)
+        self.close()
+
+
+    # ----------------------------------------------------------------
+    #
+    def close(self):
+
+        self.mt.stop()
+        self.mt.join(10)  # don't block forever on join()
+        self._logger.info("Job monitoring thread stopped.")
+
+        self.finalize(True)
+
+
+    # ----------------------------------------------------------------
+    #
+    def finalize(self, kill_shell=False):
+
+        if  kill_shell :
+            if  self.shell :
+                self.shell.finalize (True)
+
 
     # ----------------------------------------------------------------
     #
@@ -417,22 +438,6 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         self.initialize()
         return self.get_api()
-
-    # ----------------------------------------------------------------
-    #
-    def __del__(self):
-        self.close()
-
-    # ----------------------------------------------------------------
-    #
-    def close(self):
-
-        self.mt.stop()
-        self.mt.join(10)  # don't block forever on join()
-        self._logger.info("Job monitoring thread stopped.")
-
-        if self.shell:
-            self.shell.finalize(True)
 
 
     # ----------------------------------------------------------------
@@ -503,14 +508,6 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             self._logger.debug("Found the following 'ppn' configurations: %s. \
     Using %s as default ppn." 
                 % (ppn_list, self.ppn))
-
-    # ----------------------------------------------------------------
-    #
-    def finalize(self, kill_shell=False):
-
-        if  kill_shell :
-            if  self.shell :
-                self.shell.finalize (True)
 
     # ----------------------------------------------------------------
     #
