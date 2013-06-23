@@ -4,16 +4,20 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.url
-import saga.base
-import saga.async
-import saga.exceptions
-
-from   saga.namespace.constants import *
+import saga.utils.signatures     as sus
+import saga.adaptors.base        as sab
+import saga.session              as ss
+import saga.task                 as st
+import saga.url                  as surl
 
 import entry
 
+from   saga.namespace.constants  import *
+from   saga.constants            import SYNC, ASYNC, TASK
 
+
+# ------------------------------------------------------------------------------
+#
 class Directory (entry.Entry) :
     '''
     Represents a SAGA directory as defined in GFD.90
@@ -47,7 +51,17 @@ class Directory (entry.Entry) :
     case switching based on the provided parameter set.
     '''
 
-    def __init__ (self, url=None, flags=READ, session=None, 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  sus.optional ((surl.Url, basestring)), 
+                  sus.optional (int), 
+                  sus.optional (ss.Session),
+                  sus.optional (sab.Base), 
+                  sus.optional (dict), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (sus.nothing)
+    def __init__ (self, url=None, flags=None, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         :param url: Url of the (remote) entry system directory.
@@ -79,8 +93,16 @@ class Directory (entry.Entry) :
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
     @classmethod
-    def create (cls, url=None, flags=READ, session=None, ttype=None) :
+    @sus.takes   ('Directory', 
+                  sus.optional ((surl.Url, basestring)), 
+                  sus.optional (int), 
+                  sus.optional (ss.Session),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (st.Task)
+    def create (cls, url=None, flags=None, session=None, ttype=None) :
         '''
         url:       saga.Url
         flags:     saga.namespace.flags enum
@@ -93,7 +115,32 @@ class Directory (entry.Entry) :
         return _nsentry.create (url, flags, session, ttype=ttype)
 
 
-    def open_dir (self, path, flags=READ, ttype=None) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  (surl.Url, basestring), 
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((entry.Entry, st.Task))
+    def open (self, name, flags=None, ttype=None) :
+        '''
+        name:     saga.Url
+        flags:    saga.namespace.flags enum
+        ttype:    saga.task.type enum
+        ret:      saga.namespace.Entry / saga.Task
+        '''
+        url = surl.Url(name)
+        return self._adaptor.open (url, flags, ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  (surl.Url, basestring), 
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns (('Directory', st.Task))
+    def open_dir (self, path, flags=None, ttype=None) :
         '''
         :param path: name/path of the directory to open
         :param flags: directory creation flags
@@ -114,21 +161,15 @@ class Directory (entry.Entry) :
         return self._adaptor.open_dir (path, flags, ttype=ttype)
 
     
-    def open (self, name, flags=READ, ttype=None) :
-        '''
-        name:     saga.Url
-        flags:    saga.namespace.flags enum
-        ttype:    saga.task.type enum
-        ret:      saga.namespace.Entry / saga.Task
-        '''
-        url = saga.url.Url(name)
-        return self._adaptor.open (url, flags, ttype=ttype)
-
-
     # ----------------------------------------------------------------
     #
     # namespace directory methods
     #
+    @sus.takes   ('Directory', 
+                  (surl.Url, basestring), 
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def make_dir (self, tgt, flags=0, ttype=None) :
         '''
         :param tgt:   name/path of the new directory
@@ -147,9 +188,15 @@ class Directory (entry.Entry) :
             dir = saga.namespace.Directory("sftp://localhost/tmp/")
             dir.make_dir ('data/')
         '''
-        return self._adaptor.make_dir (tgt, flags, ttype=ttype)
+        return self._adaptor.make_dir (surl.Url (tgt), flags, ttype=ttype)
   
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  (surl.Url, basestring), 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def change_dir (self, url, ttype=None) :
         '''
         url:           saga.Url
@@ -159,6 +206,13 @@ class Directory (entry.Entry) :
         return self._adaptor.change_dir (url, ttype=ttype)
   
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  sus.optional (basestring),
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.list_of (surl.Url), st.Task))
     def list (self, pattern=None, flags=0, ttype=None) :
         '''
         :param pattern: Entry name pattern (like POSIX 'ls', e.g. '\*.txt')
@@ -179,6 +233,12 @@ class Directory (entry.Entry) :
         return self._adaptor.list (pattern, flags, ttype=ttype)
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  (surl.Url, basestring),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((bool, st.Task))
     def exists (self, path, ttype=None) :
 
         '''
@@ -200,6 +260,13 @@ class Directory (entry.Entry) :
         return self._adaptor.exists (path, ttype=ttype)
   
   
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  sus.optional (basestring),
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.list_of (surl.Url), st.Task))
     def find (self, pattern, flags=RECURSIVE, ttype=None) :
         '''
         pattern:       string
@@ -210,6 +277,11 @@ class Directory (entry.Entry) :
         return self._adaptor.find (pattern, flags, ttype=ttype)
   
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((int, st.Task))
     def get_num_entries (self, ttype=None) :
         '''
         ttype:         saga.task.type enum
@@ -218,6 +290,12 @@ class Directory (entry.Entry) :
         return self._adaptor.get_num_entries (ttype=ttype)
   
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  int, 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((surl.Url, st.Task))
     def get_entry (self, num, ttype=None) :
         '''
         num:           int 
@@ -231,6 +309,12 @@ class Directory (entry.Entry) :
     #
     # methods overloaded from namespace.Entry
     #
+    @sus.takes   ('Directory', 
+                  (surl.Url, basestring), 
+                  sus.optional ((surl.Url, basestring)), 
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def copy (self, url_1, url_2=None, flags=0, ttype=None) :
         '''
         :param src: path of the entry to copy
@@ -258,6 +342,14 @@ class Directory (entry.Entry) :
         else      :  return self._nsentry.copy (url_1,        flags, ttype=ttype)
 
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  (surl.Url, basestring), 
+                  sus.optional ((surl.Url, basestring)), 
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def link (self, url_1, url_2, flags=0, ttype=None) :
         '''
         src:           saga.Url
@@ -270,6 +362,14 @@ class Directory (entry.Entry) :
         else      :  return self._nsentry.link (url_1,        flags, ttype=ttype)
   
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  (surl.Url, basestring), 
+                  sus.optional ((surl.Url, basestring)), 
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def move (self, url_1, url_2, flags=0, ttype=None) :
         '''
         :param src: path of the entry to copy
@@ -293,6 +393,13 @@ class Directory (entry.Entry) :
         else      :  return self._nsentry.move (url_1,        flags, ttype=ttype)
   
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  (surl.Url, basestring), 
+                  sus.optional (int),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
     def remove (self, tgt, flags=0, ttype=None) :
         '''
         tgt:           saga.Url
@@ -304,6 +411,12 @@ class Directory (entry.Entry) :
         else      :  return self._nsentry.remove (     flags, ttype=ttype)
   
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  sus.optional ((surl.Url, basestring)),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((bool, st.Task))
     def is_dir (self, tgt=None, ttype=None) :
         '''
         tgt:           saga.Url / None
@@ -323,6 +436,12 @@ class Directory (entry.Entry) :
         else      :  return self._nsentry.is_dir (     ttype=ttype)
   
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  sus.optional ((surl.Url, basestring)),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((bool, st.Task))
     def is_entry (self, tgt=None, ttype=None) :
         '''
         tgt:           saga.Url / None
@@ -333,6 +452,12 @@ class Directory (entry.Entry) :
         else      :  return self._nsentry.is_entry (     ttype=ttype)
   
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  sus.optional ((surl.Url, basestring)),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((bool, st.Task))
     def is_link (self, tgt=None, ttype=None) :
         '''
         tgt:           saga.Url / None
@@ -343,6 +468,12 @@ class Directory (entry.Entry) :
         else      :  return self._nsentry.is_link (     ttype=ttype)
   
     
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Directory', 
+                  sus.optional ((surl.Url, basestring)),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((surl.Url, st.Task))
     def read_link (self, tgt=None, ttype=None) :
         '''
         tgt:           saga.Url / None

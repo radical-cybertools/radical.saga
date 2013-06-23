@@ -4,6 +4,7 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+from   saga.constants      import *
 from   saga.attributes     import Attributes, Callback
 from   saga.session        import Session
 from   saga.context        import Context
@@ -24,8 +25,11 @@ from   saga.exceptions     import AuthenticationFailed
 from   saga.exceptions     import Timeout
 from   saga.exceptions     import NoSuccess
 
+from   saga.constants      import * 
+
 import saga.job
 import saga.filesystem
 import saga.replica
 import saga.advert
+import saga.resource
 

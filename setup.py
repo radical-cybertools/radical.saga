@@ -10,7 +10,7 @@ __license__   = "MIT"
 import os
 import sys
 
-from distutils.core import setup, Command
+from setuptools import setup, Command
 from distutils.command.install_data import install_data
 from distutils.command.sdist import sdist
 
@@ -40,7 +40,8 @@ except IOError:
     except OSError:
         pass
 
-scripts = []  # ["bin/bliss-run"]
+scripts = []  # ["bin/saga-run"]
+
 
 # check python version. we need > 2.5
 if sys.hexversion < 0x02050000:
@@ -49,14 +50,14 @@ if sys.hexversion < 0x02050000:
 
 class our_install_data(install_data):
 
-    def finalize_options(self):
+    def finalize_options(self): 
         self.set_undefined_options('install',
                                    ('install_lib', 'install_dir'))
         install_data.finalize_options(self)
 
     def run(self):
         install_data.run(self)
-        # ensure there's a bliss/VERSION file
+        # ensure there's a saga/VERSION file
         fn = os.path.join(self.install_dir, 'saga', 'VERSION')
         open(fn, 'w').write(version)
         self.outfiles.append(fn)
@@ -83,10 +84,11 @@ class our_test(Command):
     def run(self):
         import sys
         import subprocess
-        errno = subprocess.call([sys.executable, 'tests/run_tests.py',
-                                '--config=tests/configs/basetests.cfg'])
+        testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
+        errno = subprocess.call([sys.executable, '%s/run_tests.py' % testdir,
+                                '--config=%s/configs/basetests.cfg' % testdir])
         raise SystemExit(errno)
-        setup_args
+
 
 setup_args = {
     'name': "saga-python",
@@ -130,6 +132,7 @@ setup_args = {
         "saga.namespace",
         "saga.filesystem",
         "saga.replica",
+        "saga.resource",
         "saga.advert",
         "saga.adaptors",
         "saga.adaptors.cpi",
@@ -137,6 +140,7 @@ setup_args = {
         "saga.adaptors.cpi.namespace",
         "saga.adaptors.cpi.filesystem",
         "saga.adaptors.cpi.replica",
+        "saga.adaptors.cpi.resource",
         "saga.adaptors.cpi.advert",
         "saga.adaptors.context",
         "saga.adaptors.local",
@@ -145,6 +149,7 @@ setup_args = {
         "saga.adaptors.pbs",
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
+        "saga.adaptors.aws",
         "saga.adaptors.http",
         "saga.engine",
         "saga.utils",
@@ -163,12 +168,9 @@ setup_args = {
         'install_data': our_install_data,
         'sdist': our_sdist,
         'test': our_test
-    }
+    },
+    'install_requires': ['setuptools', 'colorama', 'apache-libcloud'],
+    'tests_require': ['setuptools', 'nose']
 }
-
-if sys.platform != "win32":
-    setup_args['install_requires'] = [
-        'colorama',
-    ]
 
 setup(**setup_args)
