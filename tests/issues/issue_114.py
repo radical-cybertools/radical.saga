@@ -1,10 +1,7 @@
 import sys
 import saga
 
-try :
-  from pudb import set_interrupt_handler; set_interrupt_handler()
-except :
-  pass
+import pudb; pudb.set_interrupt_handler()
 
 def main () :
 

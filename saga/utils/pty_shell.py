@@ -223,7 +223,7 @@ class PTYShell (object) :
         with self.pty_shell.rlock :
 
             if  self.initialized :
-                self.logger.warn ("initialization race: %s" % ' '.join (self.command))
+                self.logger.warn ("initialization race")
                 return
 
 
