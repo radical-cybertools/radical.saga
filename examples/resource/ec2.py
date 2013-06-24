@@ -195,14 +195,27 @@ if  '-l' in args :
     for tmp in rm.list_templates () :
         print "  %s" % tmp
 
-    # # we can also list the available OS images, as per below -- but since
-    # # the list of OS images avaialble on EC2 is *huge*, this operation is
-    # # rather slow (libcloud does one additional hop per image, for
-    # # inspection)
+    # we can also list the available OS images, as per below -- but since
+    # the list of OS images avaialble on EC2 is *huge*, this operation is
+    # rather slow (libcloud does one additional hop per image, for
+    # inspection)
+
+    # {'name': 'None (cube-1-0-5-2012-09-07)', 'ispublic': 'true', 'state': 'available', 'rootdevicetype': 'instance-store', 'imagetype': 'machine'}
     print "\nOS images"
+    
+    descr = None
+    ispublic = None
+
     for osi in rm.list_images () :
         descr = rm.get_image (osi)
-        print "  %-20s : %s" % (osi, descr)
+
+	if descr['ispublic'] == 'true' :
+	    ispublic = 'public'
+	else:
+	    ispublic = 'private'
+
+        print "  %s - %s, %s, %s" % (osi, descr['name'], ispublic,
+				     descr['state'])
 
     print
     sys.exit (0)
@@ -212,8 +225,8 @@ if  '-l' in args :
 elif  '-c' in args :
 
     args.remove ('-c')
-    if  len (args) > 0 :
-        usage ("no additional args allowed on '-c'")
+    if  len (args) == 0 :
+	usage ("additional args required on '-u'")
 
     # create a resource description with an image and an OS template, out of
     # the ones listed above.  We pick a small VM and a plain Ubuntu image...
