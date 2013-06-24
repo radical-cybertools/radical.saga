@@ -445,6 +445,8 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
             try :
                 keypair = conn.ex_import_keypair (token, key)
+                self._logger.info ("keypair upload gave %s" % keypair)
+
 
             except Exception as e :
                 raise saga.exceptions.BadParameter \
