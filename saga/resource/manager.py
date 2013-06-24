@@ -161,6 +161,23 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @sus.takes   ('Manager', 
+                  sus.optional (basestring),
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((basestring, st.Task))
+    def get_image (self, name, ttype=None) :
+        """
+        :type  name: string
+        :param name: specifies the image to be queried for a description.
+
+        Get a description string for the specified image.
+        """
+
+        return self._adaptor.get_image (name, ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    # 
+    @sus.takes   ('Manager', 
                   sus.optional (sus.one_of (COMPUTE, STORAGE, NETWORK)),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.list_of (basestring), st.Task))
