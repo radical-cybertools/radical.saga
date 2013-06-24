@@ -201,7 +201,8 @@ if  '-l' in args :
     # # inspection)
     print "\nOS images"
     for osi in rm.list_images () :
-        print "  %s" % osi
+        descr = rm.get_image (osi)
+        print "  %-20s : %s" % (osi, descr)
 
     print
     sys.exit (0)

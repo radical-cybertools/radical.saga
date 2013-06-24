@@ -791,7 +791,7 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
         if  not len (self.images) :
             self._refresh_images ()
 
-        if  not name in self.images_dict.key () :
+        if  not name in self.images_dict.keys () :
             raise saga.BadParameter ("unknown image %s" % name)
 
         return self.images_dict[name].extra
