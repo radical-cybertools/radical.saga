@@ -25,7 +25,7 @@ This program has different modes of operation:
     Usage:
 
         %s -l             :  list    VMs
-        %s -c             :  create  VM
+        %s -c <id> [...]  :  create  VM
         %s -u <id> [...]  :  use     VMs (run jobs)
         %s -d <id> [...]  :  destroy VMs
 
@@ -63,7 +63,7 @@ This program has different modes of operation:
     # python examples/resource/ec2.py -c
 
     Created VM
-      id           : [ec2://aws.amazon.com/]-[i-e0d2ad8a]
+      id           : 
       state        : PENDING (pending)
       access       : None
 
@@ -110,7 +110,7 @@ def usage (msg = None) :
     Usage:
 
         %s -l             :  list    VMs
-        %s -c             :  create  VM
+        %s -c <id> [...]  :  create  VM
         %s -u <id> [...]  :  use     VMs (run jobs)
         %s -d <id> [...]  :  destroy VMs
 
@@ -226,21 +226,25 @@ elif  '-c' in args :
 
     args.remove ('-c')
     if  len (args) == 0 :
-	usage ("additional args required on '-u'")
+	usage ("additional args required on '-c'")
 
-    # create a resource description with an image and an OS template, out of
-    # the ones listed above.  We pick a small VM and a plain Ubuntu image...
-    cd = saga.resource.ComputeDescription ()
-    cd.image    = 'ami-0256b16b'
-    cd.template = 'Small Instance'
+    for image in args :
 
-    # create a VM instance with that description, and inspect it for some
-    # detailes
-    cr = rm.acquire (cd)
-    print "\nCreated VM"
-    print "  id           : %s"       %  cr.id
-    print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
-    print "  access       : %s"       %  cr.access
+	print"\ncreating an instance from image %s" % image
+
+        # create a resource description with an image and an OS template, out of
+	# the ones listed above.  We pick a small VM and a plain Ubuntu image...
+        cd = saga.resource.ComputeDescription ()
+	cd.image    = image
+	cd.template = 'Small Instance'
+
+	# create a VM instance with that description, and inspect it for some
+	# detailes
+	cr = rm.acquire (cd)
+	print "\nCreated VM"
+	print "  id           : %s"       %  cr.id
+	print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
+	print "  access       : %s"       %  cr.access
 
     sys.exit (0)
 
