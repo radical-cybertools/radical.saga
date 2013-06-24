@@ -786,15 +786,20 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_image (self, name) :
+    def get_image (self, img_id) :
 
         if  not len (self.images) :
             self._refresh_images ()
 
-        if  not name in self.images_dict.keys () :
-            raise saga.BadParameter ("unknown image %s" % name)
+        if  not img_id in self.images_dict.keys () :
+            raise saga.BadParameter ("unknown image %s" % img_id)
 
-        return self.images_dict[name].extra
+        descr = self.images_dict[img_id].extra
+
+        if  not 'name' in descr :
+            descr['name'] = self.images_dict[img_id].name
+
+        return str(descr)
 
 
 
