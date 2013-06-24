@@ -199,9 +199,9 @@ if  '-l' in args :
     # # the list of OS images avaialble on EC2 is *huge*, this operation is
     # # rather slow (libcloud does one additional hop per image, for
     # # inspection)
-    # print "\nOS images"
-    # for osi in rm.list_images () :
-    #     print "  %s" % osi
+    print "\nOS images"
+    for osi in rm.list_images () :
+        print "  %s" % osi
 
     print
     sys.exit (0)
