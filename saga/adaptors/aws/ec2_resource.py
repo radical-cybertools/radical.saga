@@ -20,7 +20,7 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 # the adaptor info
 #
 _ADAPTOR_NAME          = "saga.adaptor.ec2_resource"
-_ADAPTOR_SCHEMAS       = ["ec2", "ec2_keypair"]
+_ADAPTOR_SCHEMAS       = ["ec2", "ec2_keypair", "openstack", "eucalyptus", "euca", "aws", "amazon"]
 _ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
