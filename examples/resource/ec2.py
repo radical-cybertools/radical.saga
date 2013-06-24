@@ -142,8 +142,8 @@ def state2str (state) :
 
 # in order to connect to EC2, we need an EC2 ID and KEY
 c1 = saga.Context ('ec2')
-c1.user_id  = os.environ['EC2_ACCESS_KEY']
-c1.user_key = os.environ['EC2_SECRET_KEY']
+c1.user_id  = os.environ['EC2_ID']
+c1.user_key = os.environ['EC2_KEY']
 
 # in order to access a created VM, we additionally need to point to the ssh
 # key which is used for EC2 VM contextualization, i.e. as EC2 'keypair'.
