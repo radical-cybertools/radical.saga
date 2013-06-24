@@ -140,10 +140,16 @@ def state2str (state) :
 # set up the connection to EC2
 #
 
+server = 'ec2://aws.amazon.com'
+if  'EC2_URL' in os.environ :
+    server = saga.Url(os.environ['EC2_URL'])
+    server.schema = 'openstack'
+
 # in order to connect to EC2, we need an EC2 ID and KEY
 c1 = saga.Context ('ec2')
 c1.user_id  = os.environ['EC2_ACCESS_KEY']
 c1.user_key = os.environ['EC2_SECRET_KEY']
+c1.server   = server
 
 # in order to access a created VM, we additionally need to point to the ssh
 # key which is used for EC2 VM contextualization, i.e. as EC2 'keypair'.
@@ -163,11 +169,7 @@ s.contexts.append (c1)
 s.contexts.append (c2)
 
 # in this session, connect to the EC2 resource manager
-url = 'ec2://aws.amazon.com'
-if  'EC2_URL' in os.environ :
-    url = os.environ['EC2_URL']
-
-rm  = saga.resource.Manager (url, session=s)
+rm  = saga.resource.Manager (server, session=s)
 
 
 # --------------------------------------------------------------------------
@@ -197,9 +199,9 @@ if  '-l' in args :
     # # the list of OS images avaialble on EC2 is *huge*, this operation is
     # # rather slow (libcloud does one additional hop per image, for
     # # inspection)
-    # print "\nOS images"
-    # for osi in rm.list_images () :
-    #     print "  %s" % osi
+    print "\nOS images"
+    for osi in rm.list_images () :
+        print "  %s" % osi
 
     print
     sys.exit (0)
