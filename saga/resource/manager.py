@@ -161,9 +161,9 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @sus.takes   ('Manager', 
-                  sus.optional (basestring),
+                  basestring,
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((basestring, st.Task))
+    @sus.returns ((dict, st.Task))
     def get_image (self, name, ttype=None) :
         """
         :type  name: string

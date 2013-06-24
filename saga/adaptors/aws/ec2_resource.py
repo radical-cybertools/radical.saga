@@ -794,12 +794,16 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
         if  not img_id in self.images_dict.keys () :
             raise saga.BadParameter ("unknown image %s" % img_id)
 
-        descr = self.images_dict[img_id].extra
+        descr = dict(self.images_dict[img_id].extra)
 
         if  not 'name' in descr :
             descr['name'] = self.images_dict[img_id].name
 
-        return str(descr)
+        for key in descr.keys () :
+            if  not descr[key] :
+                descr.pop (key)
+
+        return descr
 
 
 
