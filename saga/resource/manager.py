@@ -104,15 +104,18 @@ class Manager (sb.Base, async.Async) :
                   sus.optional (basestring),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((descr.Description, st.Task))
-    def get_description (self, id, ttype=None) :
+    def get_description (self, rid, ttype=None) :
         """ 
-        :type  id: string
-        :param id: identifies the resource to be described.
+        :type  rid: string
+        :param rid: identifies the resource to be described.
 
         Get a resource :class:`Description` for the specified resource.
 
         NOTE: see drmaav2::machine_info?  Add GLUE inspection as
         read-only attribs?  link to SD or ISN?
+
+        NOTE: if rid is None, should we return a description of the managed
+        resources?  
         """
 
         return self._adaptor.get_description (id, ttype=ttype)
@@ -161,23 +164,6 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @sus.takes   ('Manager', 
-                  basestring,
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((dict, st.Task))
-    def get_image (self, name, ttype=None) :
-        """
-        :type  name: string
-        :param name: specifies the image to be queried for a description.
-
-        Get a description string for the specified image.
-        """
-
-        return self._adaptor.get_image (name, ttype=ttype)
-
-
-    # --------------------------------------------------------------------------
-    # 
-    @sus.takes   ('Manager', 
                   sus.optional (sus.one_of (COMPUTE, STORAGE, NETWORK)),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.list_of (basestring), st.Task))
@@ -191,6 +177,23 @@ class Manager (sb.Base, async.Async) :
         """
 
         return self._adaptor.list_images (rtype, ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    # 
+    @sus.takes   ('Manager', 
+                  basestring,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((dict, st.Task))
+    def get_image (self, name, ttype=None) :
+        """
+        :type  name: string
+        :param name: specifies the image to be queried for a description.
+
+        Get a description string for the specified image.
+        """
+
+        return self._adaptor.get_image (name, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -248,31 +251,10 @@ class Manager (sb.Base, async.Async) :
 
         return self._adaptor.destroy (id, ttype=ttype)
 
-  # FIXME: add 
-  # templates = property (list_templates, get_template)  # dict {string : Description}
-  # resources = property (get_resources)                 # list [string]
-
-
-    # --------------------------------------------------------------------------
-    # 
-    @sus.takes   ('Manager', 
-                  basestring,
-                  sus.optional (sus.one_of (UNKNOWN, NEW, PENDING, ACTIVE, DONE,
-                                            FAILED, EXPIRED, CANCELED, FINAL)),
-                  sus.optional (float),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((sus.nothing, st.Task))
-    def wait     (self, id, timeout=-1.0, ttype=None) :
-        """
-        :type  id   : string
-        :param id   : identifies the resource to be waited for.
-
-        This call will block for at more 'timeout' seconds, or until the
-        specified resource has entered the specified stat, whatever occurs
-        first. If the timeout is smaller 0, the call can block forever.
-        """
-
-        return self._adaptor.wait (id, timeout, ttype=ttype)
+  # FIXME: add
+  # templates = property (list_templates, get_template)    # dict {string : Description}
+  # images    = property (list_images,    get_image)       # dict {string : dict}
+  # resources = property (list,           get_description) # dict {string : Description}
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
