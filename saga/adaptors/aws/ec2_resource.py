@@ -420,8 +420,19 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
             # try to find it
             keypair = conn.ex_describe_keypairs (token)
 
+            if  not keypair               or \
+                not 'keyName' in keypair  or \
+                not keypair['keyName']       :
+
+                self._logger.info ("keypair check nok: %s" % (keypair))
+                upload = True
+
+            else :
+                self._logger.info ("keypair check ok: %s" % (keypair))
+
         except Exception as e :
 
+            self._logger.info ("keypair check : %s" % (e))
             e_str = str(e)
 
             if e_str.startswith ("InvalidKeyPair.NotFound") :

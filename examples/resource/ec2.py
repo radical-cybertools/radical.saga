@@ -157,9 +157,9 @@ c1.server   = server
 # -- but then a user_key *must* be specified (only the public key is ever
 # transfererd to EC2).
 c2 = saga.Context ('ec2_keypair')
-c2.token     = 'futuregrid_1'  # keypair name
+c2.token     = 'futuregrid' # keypair name
 c2.user_cert = os.environ['EC2_KEYPAIR']
-c2.user_id   = 'root'         # the user id on the target VM
+c2.user_id   = 'ubuntu'         # the user id on the target VM
 
 # we create a session for all SAGA interactions, and attach the respective
 # security contexts.  Those are now avail for all SAGA objects created in
