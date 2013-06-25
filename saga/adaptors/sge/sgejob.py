@@ -88,7 +88,7 @@ following values: %s" % pe_list)
 
     sge_params += "#$ -V \n"
 
-    if jd.environment is not None:
+    if jd.environment is not None and len(jd.environment) > 0:
         variable_list = str()
         for key in jd.environment.keys():
             variable_list += "%s=%s," % (key, jd.environment[key])
