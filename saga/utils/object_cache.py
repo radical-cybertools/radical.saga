@@ -1,6 +1,7 @@
 
 import threading
 import saga.utils.singleton
+import saga.utils.logger    as slog
 
 # ------------------------------------------------------------------------------
 #
@@ -20,7 +21,9 @@ class ObjectCache (object) :
         """
 
         with self._lock :
-            self._cache = {}
+            self._cache  = {}
+            self._logger = slog.getLogger ('saga.utils.object_cache')
+
 
 
     # --------------------------------------------------------------------------
@@ -48,6 +51,8 @@ class ObjectCache (object) :
                 self._cache [oid]['obj'] = obj
 
             self._cache [oid]['cnt'] += 1
+
+            self._logger.debug("get %s [%s] [%s]" % (oid, self._cache [oid]['cnt'], self._cache [oid]['obj']))
             return self._cache [oid]['obj']
 
 
@@ -64,13 +69,18 @@ class ObjectCache (object) :
 
         with self._lock :
 
+            self._logger.debug("rem %s" % (oid))
+
             for oid in self._cache.keys () :
 
                 if  obj == self._cache [oid]['obj'] :
 
                     self._cache [oid]['cnt'] -= 1
 
+                    self._logger.debug("rem %s [%s' [%s]" % (oid, self._cache [oid]['cnt'], self._cache [oid]['obj']))
+
                     if  self._cache [oid]['cnt'] == 0 :
+                        self._logger.debug("del %s [%s' [%s]" % (oid, self._cache [oid]['cnt'], self._cache [oid]['obj']))
                         self._cache [oid]['obj'] = None  # free the obj reference
                         self._cache.pop (oid, None)      # remove the cache entry
 
