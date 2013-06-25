@@ -52,7 +52,6 @@ def host_is_valid (host) :
     
     try :
         ip   = socket.gethostbyname (host)
-        name = socket.gethostbyaddr (ip)
         return True
     except :
         return False
@@ -87,7 +86,6 @@ def get_host_latency (host_url) :
 
         # ensure host is valid
         ip   = socket.gethostbyname (host)
-        name = socket.gethostbyaddr (ip)
 
         start = time.time ()
 
