@@ -365,23 +365,20 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
         if  self._type.lower () == 'ec2' :
             return 
 
+        # we first attempt to create an ssh context from the keypair
+        # context -- this will take care of all eventual key checks etc.
+        ssh_context = saga.Context ('ssh')
 
-        # either user_key or user_cert should be specified (or both), 
-        # then we complement the other, and convert to/from private 
-        # from/to public keys
-        if  self._api ().user_cert and not self._api ().user_key :
-            self._api ().user_key  = self._api ().user_cert
+        ssh_context.user_id   = self._api ().user_id
+        ssh_context.user_key  = self._api ().user_key
+        ssh_context.user_cert = self._api ().user_cert
+        ssh_context.user_pass = self._api ().user_pass
 
-        if  self._api ().user_key and not self._api ().user_cert :
-            self._api ().user_cert  = self._api ().user_key
-
-        # convert public key into private key
-        if  self._api ().user_cert.endswith ('.pub') :
-            self._api ().user_cert = self._api ().user_cert[:-4]
-
-        # convert private key into public key
-        if  not self._api ().user_key.endswith ('.pub') :
-            self._api ().user_key += ".pub"
+        # contexts are verified on session.add_context -- to force that
+        # verification we use a temporary session
+        tmp_session = saga.Session (default=False)
+        tmp_session.add_context (ssh_context)
+        ssh_context = tmp_session.contexts[0]  # FIXME: make sure this is valid
 
 
         # we have an ec2_keypair context.  We need to find an ec2  context in
@@ -417,9 +414,10 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
         # and capturing an eventual exception.
         keypair = None
         token   = self._api ().token
-        ssh_id  = self._api ().user_id
-        key     = self._api ().user_key
-        keypass = self._api ().user_pass
+        ssh_id  = ssh_context.user_id
+        key     = ssh_context.user_key
+        cert    = ssh_context.user_cert
+        keypass = ssh_context.user_pass
 
         # With theese information, attempt to verify or upload the keypair.
         upload  = False
@@ -473,7 +471,8 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
             # import worked -- we don't need to import again, so unset the
             # user_key attribute
-            self._api ().user_key = None
+            self._api ().user_key  = None
+            self._api ().user_cert = None
 
 
         # did not find it, and have nothing to upload?!
@@ -486,14 +485,8 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
 
         # we add the thusly derived ssh context to the session which originally
-        # contained our ec2_keypair context This will also verify and initialize
-        # the ssh key.  We do that even for failed uploads, in the hope that
-        # some out-of-band setup kicks in.
-        ssh_context           = saga.Context ('ssh')
-        ssh_context.user_key  = key
-        ssh_context.user_pass = keypass
-        ssh_context.user_id   = ssh_id
-
+        # contained our ec2_keypair context.  We do that even for failed 
+        # uploads, in the hope that some out-of-band setup kicks in.
         session.add_context (ssh_context)
 
 
