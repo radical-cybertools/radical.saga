@@ -211,23 +211,31 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
         if  _key and not _cert :
             _cert  = _key
 
-        # convert public key into private key
-        if  _cert.endswith ('.pub') :
-            _cert = _cert[:-4]
-
-        # convert private key into public key
-        if  not _key.endswith ('.pub') :
-            _key += ".pub"
-
-        # update the context with these setting
-        _api.set_attribute (saga.context.USER_KEY , _key )
-        _api.set_attribute (saga.context.USER_CERT, _cert)
-
-
         if  not _key :
             # nothing to do, really.  This likely means that ssh key setup is
             # done out-of-band.
             return
+
+        # if we have an pem key, we don't do anything else
+        if  _key.endswith ('.pem') :
+            pass
+
+        # otherwise we assume normal public/private key pairs
+        else :
+
+            # convert public key into private key
+            if  _cert.endswith ('.pub') :
+                _cert = _cert[:-4]
+
+            # convert private key into public key
+            if  not _key.endswith ('.pub') :
+                _key += ".pub"
+
+            # update the context with these setting
+            _api.set_attribute (saga.context.USER_KEY , _key )
+            _api.set_attribute (saga.context.USER_CERT, _cert)
+
+
 
         # the private and public keys must exist
         if  not os.path.exists (_key ) or \
