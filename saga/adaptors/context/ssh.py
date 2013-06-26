@@ -109,10 +109,13 @@ class Adaptor (saga.adaptors.base.Base):
                     # don't want public keys in this loop
                     continue
 
-                key  = "%s.pub" % cert
+                if  cert.endswith ('.pem') :
+                    key  = cert
+                else :
+                    key  = "%s.pub" % cert
             
-                if  not os.path.exists (key)  or \
-                    not os.path.isfile (key)  or \
+                if  not os.path.exists (key)   or \
+                    not os.path.isfile (key)   or \
                     not os.path.exists (cert)  or \
                     not os.path.isfile (cert)     :
                   # self._logger.info ("incomplete ssh key at %s" %  cert)
