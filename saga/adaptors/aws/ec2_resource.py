@@ -360,21 +360,28 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
     @SYNC_CALL
     def _initialize (self, session) :
 
-        # for backward compatibility, we allow to specify user_cert instead of
-        # user_key
-        if  self._api ().user_cert :
-            self._api ().user_key  = self._api ().user_cert
-            self._api ().user_cert = None
-
-        # convert public key into private key
-        if  self._api ().user_key.endswith ('.pub') :
-            self._api ().user_key = self._api ().user_key[:-4]
-
-
         # nothing to do for simple ec2 id/secret containers
         # FIXME: we could in principle validate validity...
         if  self._type.lower () == 'ec2' :
             return 
+
+
+        # either user_key or user_cert should be specified (or both), 
+        # then we complement the other, and convert to/from private 
+        # from/to public keys
+        if  self._api ().user_cert and not self._api ().user_key :
+            self._api ().user_key  = self._api ().user_cert
+
+        if  self._api ().user_key and not self._api ().user_cert :
+            self._api ().user_cert  = self._api ().user_key
+
+        # convert public key into private key
+        if  self._api ().user_cert.endswith ('.pub') :
+            self._api ().user_cert = self._api ().user_cert[:-4]
+
+        # convert private key into public key
+        if  not self._api ().user_key.endswith ('.pub') :
+            self._api ().user_key += ".pub"
 
 
         # we have an ec2_keypair context.  We need to find an ec2  context in
@@ -455,6 +462,7 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
             self._logger.info ("import new keypair %s : %s" % (token, key))
 
             try :
+                print "keypair = conn.ex_import_keypair (%s, %s)" % (token, key)
                 keypair = conn.ex_import_keypair (token, key)
                 self._logger.info ("keypair upload gave %s" % keypair)
 
