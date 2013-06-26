@@ -29,6 +29,14 @@ This program has different modes of operation:
         %s -u <id> [...]  :  use     VMs (run jobs)
         %s -d <id> [...]  :  destroy VMs
 
+    Environment:
+       
+       EC2_URL        : backend manager service endpoint
+       EC2_ACCESS_KEY : id  for backend access
+       EC2_SECRET_KEY : key for backend access
+       EC2_KEYPAIR_ID : name of keypair for VM access
+       EC2_KEYPAIR    : public ssh key for VM access
+
 
   * *Listing* of templates and existing VMs on EC2::
 
@@ -114,6 +122,16 @@ def usage (msg = None) :
         %s -u <id> [...]  :  use     VMs (run jobs)
         %s -d <id> [...]  :  destroy VMs
 
+
+    Environment:
+       
+       EC2_URL        : backend manager service endpoint
+       EC2_ACCESS_KEY : id  for backend access
+       EC2_SECRET_KEY : key for backend access
+       EC2_KEYPAIR_ID : name of keypair for VM access
+       EC2_KEYPAIR    : public ssh key for VM access
+
+
     """
 
     if msg : sys.exit (-1)
@@ -140,10 +158,14 @@ def state2str (state) :
 # set up the connection to EC2
 #
 
-server = 'ec2://aws.amazon.com'
-if  'EC2_URL' in os.environ :
-    server = saga.Url(os.environ['EC2_URL'])
-    server.schema = 'openstack'
+if not 'EC2_URL'        in os.environ : usage ("no %s in environment" % 'EC2_URL'       )
+if not 'EC2_ACCESS_KEY' in os.environ : usage ("no %s in environment" % 'EC2_ACCESS_KEY')
+if not 'EC2_SECRET_KEY' in os.environ : usage ("no %s in environment" % 'EC2_SECRET_KEY')
+if not 'EC2_KEYPAIR_ID' in os.environ : usage ("no %s in environment" % 'EC2_KEYPAIR_ID')
+if not 'EC2_KEYPAIR'    in os.environ : usage ("no %s in environment" % 'EC2_KEYPAIR'   )
+
+server = saga.Url(os.environ['EC2_URL'])
+
 
 # in order to connect to EC2, we need an EC2 ID and KEY
 c1 = saga.Context ('ec2')
@@ -157,7 +179,7 @@ c1.server   = server
 # -- but then a user_key *must* be specified (only the public key is ever
 # transfererd to EC2).
 c2 = saga.Context ('ec2_keypair')
-c2.token     = 'futuregrid' # keypair name
+c2.token     = os.environ['EC2_KEYPAIR_ID']
 c2.user_cert = os.environ['EC2_KEYPAIR']
 c2.user_id   = 'ubuntu'         # the user id on the target VM
 
