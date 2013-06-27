@@ -101,50 +101,54 @@ class Adaptor (saga.adaptors.base.Base):
         if not self._have_defaults :
  
             import glob
-            candidate_keys = glob.glob ("%s/.ssh/*" % os.environ['HOME'])
+            candidate_certs = glob.glob ("%s/.ssh/*" % os.environ['HOME'])
 
-            for key in candidate_keys :
+            for cert in candidate_certs :
 
-                if  key.endswith ('.pub') :
+                if  cert.endswith ('.pub') :
                     # don't want public keys in this loop
                     continue
 
-                pub  = "%s.pub" % key
+                if  cert.endswith ('.pem') :
+                    key  = cert
+                else :
+                    key  = "%s.pub" % cert
             
-                if  not os.path.exists (pub)  or \
-                    not os.path.isfile (pub)  or \
-                    not os.path.exists (key)  or \
-                    not os.path.isfile (key)     :
-                  # self._logger.info ("incomplete ssh key at %s" %  key)
+                if  not os.path.exists (key)   or \
+                    not os.path.isfile (key)   or \
+                    not os.path.exists (cert)  or \
+                    not os.path.isfile (cert)     :
+                  # self._logger.info ("incomplete ssh key at %s" %  cert)
                     continue
 
 
                 try :
-                    fh_pub = open (pub)
-                    fh_key = open (key)
+                    fh_pub = open (key)
+                    fh_key = open (cert)
 
                     fh_pub.close ()
                     fh_key.close ()
 
                 except Exception as e:
-                    self._logger.info ("invalid ssh key at %s (%s)" %  (key, e))
+                    self._logger.info ("invalid ssh key at %s (%s)" %  (cert, e))
                     continue
 
 
                 import subprocess
-                if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % key]) :
+                if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % cert]) :
                     # needs passphrase.  Great, actually, but won't work for
                     # default contexts as long as we can't prompt for pass
                     # phrases...
-                    self._logger.warn ("ignore  ssh key at %s (requires passphrase)" %  key)
+                    self._logger.warn ("ignore  ssh key at %s (requires passphrase)" %  cert)
                     continue
 
                 c = saga.Context ('ssh')
-                c.user_key = key
+                c.user_key  = key
+                c.user_cert = cert
 
                 self._default_contexts.append (c)
 
-                self._logger.info ("default ssh key at %s" %  key)
+                self._logger.info ("default ssh key at %s" %  cert)
 
             self._have_defaults = True
 
@@ -189,44 +193,65 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
         _api  = self.get_api ()
 
         _key  = None
+        _cert = None
         _pass = None
 
         
         if          _api.attribute_exists (saga.context.USER_KEY ) :
             _key  = _api.get_attribute    (saga.context.USER_KEY )
+        if          _api.attribute_exists (saga.context.USER_CERT) :
+            _cert = _api.get_attribute    (saga.context.USER_CERT)
         if          _api.attribute_exists (saga.context.USER_PASS) :
             _pass = _api.get_attribute    (saga.context.USER_PASS)
 
-        # for backward compatibility, we interpret cert as key, overwriting the
-        # previous key (which in former times was the public ssh key...)
-        if          _api.attribute_exists (saga.context.USER_CERT) :
-            _key  = _api.get_attribute    (saga.context.USER_CERT)
-            _api.set_attribute (saga.context.USER_KEY, _key)
-            self._logger.warning ("using context.user_cert as context.user_key (%s)" % _key)
 
+        # either user_key or user_cert should be specified (or both), 
+        # then we complement the other, and convert to/from private 
+        # from/to public keys
+        if  _cert and not _key :
+            _key  = _cert
+
+        if  _key and not _cert :
+            _cert  = _key
 
         if  not _key :
             # nothing to do, really.  This likely means that ssh key setup is
             # done out-of-band.
             return
 
-        # convert public key into private key
-        if  _key.endswith ('.pub') :
-            _key = _key[:-4]
-            _api.set_attribute (saga.context.USER_KEY, _key)
+        # if we have an pem key, we don't do anything else
+        if  _key.endswith ('.pem') :
+            pass
 
-        # the key itself must exist, as must the public key.
+        # otherwise we assume normal public/private key pairs
+        else :
+
+            # convert public key into private key
+            if  _cert.endswith ('.pub') :
+                _cert = _cert[:-4]
+
+            # convert private key into public key
+            if  not _key.endswith ('.pub') :
+                _key += ".pub"
+
+            # update the context with these setting
+            _api.set_attribute (saga.context.USER_KEY , _key )
+            _api.set_attribute (saga.context.USER_CERT, _cert)
+
+
+
+        # the private and public keys must exist
         if  not os.path.exists (_key ) or \
             not os.path.isfile (_key )    :
-            raise se.BadParameter ("ssh private key inaccessible: %s" % (_key))
+            raise se.BadParameter ("ssh public  key inaccessible: %s" % (_key))
 
-        if  not os.path.exists (_key + '.pub') or \
-            not os.path.isfile (_key + '.pub')    :
-            raise se.BadParameter ("ssh public  key inaccessible: %s" % (_key+'.pub'))
+        if  not os.path.exists (_cert) or \
+            not os.path.isfile (_cert)    :
+            raise se.BadParameter ("ssh private key inaccessible: %s" % (_cert))
 
 
         try :
-            fh_key  = open (_key )
+            fh_key  = open (_key)
 
         except Exception as e:
             raise se.PermissionDenied ("ssh key '%s' not readable: %s" % (_key, e))
@@ -234,18 +259,27 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
             fh_key .close ()
 
 
+        try :
+            fh_cert = open (_cert)
+
+        except Exception as e:
+            raise se.PermissionDenied ("ssh key '%s' not readable: %s" % (_cert, e))
+        else :
+            fh_cert.close ()
+
+
         import subprocess
-        if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % _key]) :
+        if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % _cert]) :
             if  not _pass :
-                raise se.PermissionDenied ("ssh key '%s' is encrypted, need password" % (_key))
+                raise se.PermissionDenied ("ssh key '%s' is encrypted, need password" % (_cert))
 
 
         if  subprocess.call (["sh", "-c", "ssh-keygen -y -f %s -P %s > /dev/null"
-                          % (_key, _pass)]) :
-            raise se.PermissionDenied ("ssh key '%s' is encrypted, incorrect password" % (_key))
+                          % (_cert, _pass)]) :
+            raise se.PermissionDenied ("ssh key '%s' is encrypted, incorrect password" % (_cert))
 
 
-        self._logger.info ("init SSH context for key  at '%s' done" %  _key)
+        self._logger.info ("init SSH context for key  at '%s' done" %  _cert)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
