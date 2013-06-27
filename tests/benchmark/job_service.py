@@ -3,7 +3,8 @@ import os
 import sys
 import saga
 
-import saga.utils.misc as sumisc
+import saga.utils.benchmark as sb
+
 
 # ------------------------------------------------------------------------------
 #
@@ -57,8 +58,7 @@ def benchmark_post (args={}) :
 # sys.exit (0)
 
 try:
-
-    sumisc.benchmark_init ('job.Servicec.create', benchmark_pre, benchmark_core, benchmark_post)
+    sb.benchmark_init ('job.Servicec.create', benchmark_pre, benchmark_core, benchmark_post)
 
 except saga.SagaException, ex:
     print "An exception occured: (%s) %s " % (ex.type, ex)

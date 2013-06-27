@@ -2,7 +2,8 @@
 import os
 import sys
 
-import saga.utils.misc as sumisc
+import saga.utils.benchmark as sb
+
 
 # ------------------------------------------------------------------------------
 #
@@ -27,12 +28,12 @@ def benchmark_post (args={}) :
 
 # ------------------------------------------------------------------------------
 #
-try:
+# try:
+if True :
+    sb.benchmark_init ('benchmark.selftest', benchmark_pre, benchmark_core, benchmark_post)
 
-    sumisc.benchmark_init ('benchmark.selftest', benchmark_pre, benchmark_core, benchmark_post)
-
-except Exception as e :
-
-    print "Exception: %s" % e
+# except Exception as e :
+# 
+#     print "Exception: %s" % e
 
 
