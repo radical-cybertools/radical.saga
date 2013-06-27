@@ -1,8 +1,9 @@
 
+import saga.utils.benchmark as sb
+
 import os
 import sys
 
-import saga.utils.benchmark as sb
 
 
 # ------------------------------------------------------------------------------
@@ -36,4 +37,6 @@ if True :
 # 
 #     print "Exception: %s" % e
 
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

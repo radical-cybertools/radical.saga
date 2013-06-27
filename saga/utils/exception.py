@@ -7,37 +7,9 @@ __license__   = "MIT"
 """ Provides exception handling utilities and base classes.
 """
 
-import pdb
 import sys
-import traceback
 
-def get_traceback (limit=1) :
-    """ Returns the current stacktrace as string.
-    """
-
-    limit += 2  # ignore local stack
-    ret = ""
-
-    stack  = traceback.extract_stack ()
-    frames = traceback.format_list (stack)
-
-    # ignore last <limit> frames
-    for i in range (0, limit) :
-        del frames[-1]
-
-    # dump frames into string
-    for frame in frames :
-        ret += str(frame)
-
-    return ret
-
-
-def breakpoint () :
-    """ set a breakpoint
-    """
-    pdb.pm()
-
-
+from saga.utils.misc import get_traceback
 
 
 class ExceptionBase(Exception):

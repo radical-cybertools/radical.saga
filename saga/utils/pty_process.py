@@ -15,10 +15,10 @@ import shlex
 import select
 import signal
 import termios
-import threading
 
-import saga.utils.logger as sul
-import saga.exceptions   as se
+import saga.utils.threads   as sut
+import saga.utils.logger    as sul
+import saga.exceptions      as se
 
 # --------------------------------------------------------------------
 #
@@ -110,7 +110,7 @@ class PTYProcess (object) :
         if len(command) < 1 :
             raise se.BadParameter ("PTYProcess expects non-empty command")
 
-        self.rlock   = threading.RLock ()
+        self.rlock   = sut.RLock ()
 
         self.command = command # list of strings too run()
 

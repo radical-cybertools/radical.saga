@@ -10,6 +10,7 @@ __license__   = "MIT"
 import saga.utils.which
 import saga.utils.pty_shell
 import saga.utils.exception
+import saga.utils.threads   as sut
 
 import saga.adaptors.base
 import saga.adaptors.cpi.job
@@ -18,9 +19,9 @@ from saga.job.constants import *
 
 import re
 import time
-import threading
+
 from copy import deepcopy
-from cgi import parse_qs
+from cgi  import parse_qs
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -31,14 +32,14 @@ MONITOR_UPDATE_INTERVAL = 3  # seconds
 
 # --------------------------------------------------------------------
 #
-class _job_state_monitor(threading.Thread):
+class _job_state_monitor(sut.SagaThread):
     """ thread that periodically monitors job states
     """
     def __init__(self, job_service):
 
         self.logger = job_service._logger
         self.js = job_service
-        self._stop = threading.Event()
+        self._stop = sut.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)

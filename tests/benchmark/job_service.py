@@ -2,6 +2,7 @@
 import os
 import sys
 import saga
+import threading
 
 import saga.utils.benchmark as sb
 
@@ -64,4 +65,6 @@ except saga.SagaException, ex:
     print "An exception occured: (%s) %s " % (ex.type, ex)
     print " \n*** Backtrace:\n %s" % ex.traceback
 
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

@@ -16,7 +16,7 @@ from   saga.utils.logger.filehandler        import FileHandler
 from   saga.utils.logger.defaultformatter   import DefaultFormatter
 from   saga.utils.singleton                 import Singleton
 from   saga.utils.exception                 import ExceptionBase
-from   saga.utils.exception                 import get_traceback, breakpoint
+from   saga.utils.misc                      import get_traceback
 
 
 ############# These are all supported options for saga.logging #################
@@ -195,13 +195,7 @@ def getLogger (name='saga-python'):
                 logger.debug (get_traceback (0))
             return trace
 
-        def mk_breakpoint (logger) :
-            def breakpoint () :
-                logger.debug (breakpoint ())
-            return breakpoint
-
-        _logger.__dict__['trace']      = mk_trace      (_logger)
-        _logger.__dict__['breakpoint'] = mk_breakpoint (_logger)
+        _logger.__dict__['trace'] = mk_trace      (_logger)
 
     
     # setup done - we can return the logger

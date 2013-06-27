@@ -7,14 +7,37 @@ __license__   = "MIT"
 import re
 import time
 import socket
+import traceback
 
 import saga
 
 
 """ Provides an assortment of utilities """
 
-_benchmark = {}
 _latencies = {}
+
+
+# --------------------------------------------------------------------
+#
+def get_traceback (limit=1) :
+    """ Returns the current stacktrace as string.
+    """
+
+    limit += 2  # ignore local stack
+    ret = ""
+
+    stack  = traceback.extract_stack ()
+    frames = traceback.format_list (stack)
+
+    # ignore last <limit> frames
+    for i in range (0, limit) :
+        del frames[-1]
+
+    # dump frames into string
+    for frame in frames :
+        ret += str(frame)
+
+    return ret
 
 
 # --------------------------------------------------------------------

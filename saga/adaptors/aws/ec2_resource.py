@@ -10,7 +10,6 @@ ANY = COMPUTE | STORAGE
 import re
 import os
 import time
-import threading
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
