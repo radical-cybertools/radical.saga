@@ -1,6 +1,6 @@
 
-import threading
-import saga.utils.singleton
+import saga.util.threading  as sut
+import saga.utils.singleton as sus
 import saga.utils.logger    as slog
 
 # ------------------------------------------------------------------------------
@@ -10,8 +10,8 @@ class ObjectCache (object) :
     """ This is a singleton object caching class -- it maintains a reference
     counted registry of existing objects."""
 
-    __metaclass__ = saga.utils.singleton.Singleton
-    _lock         = threading.RLock ()
+    __metaclass__ = sus.Singleton
+    _lock         = sut.RLock ()
 
     # --------------------------------------------------------------------------
     #

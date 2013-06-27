@@ -4,18 +4,53 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+import sys
 import threading
+import saga.utils.exception as sue
 
-import saga.utils.exception
 
-
+# ------------------------------------------------------------------------------
+#
 NEW     = 'New'
 RUNNING = 'Running'
 FAILED  = 'Failed'
 DONE    = 'Done'
 
 
-class Thread (threading.Thread) :
+# ------------------------------------------------------------------------------
+#
+class Thread (threading.Thread) : pass
+
+def Event (*args, **kwargs) :
+    return threading.Event (*args, **kwargs)
+
+# ------------------------------------------------------------------------------
+#
+class RLock (object) :
+    # see http://stackoverflow.com/questions/6780613/is-it-possible-to-subclass-lock-objects-in-python-if-not-other-ways-to-debug
+
+    def __init__ (self) :
+        self._lock = threading.RLock ()
+
+    def acquire (self) :
+        print >> sys.stderr, "acquired", self
+        self._lock.acquire ()
+
+    def release (self) :
+        print >> sys.stderr, "released", self
+        self._lock.release ()
+
+    def __enter__ (self) :
+        self.acquire ()
+
+    def __exit__ (self, type, value, traceback) :
+        self.release ()
+
+
+
+# ------------------------------------------------------------------------------
+#
+class SagaThread (Thread) :
 
     def __init__ (self, call, *args, **kwargs) :
 
@@ -23,7 +58,7 @@ class Thread (threading.Thread) :
             raise saga.exceptions.BadParameter ("Thread requires a callable to function, not %s" \
                                              % (str(call)))
 
-        threading.Thread.__init__ (self)
+        Thread.__init__ (self)
 
         self._call      = call
         self._args      = args
@@ -56,7 +91,7 @@ class Thread (threading.Thread) :
 
         except Exception as e :
             self._exception = e
-            self._traceback = saga.utils.exception.get_traceback ()
+            self._traceback = sue.get_traceback ()
             self._state     = FAILED
 
 

@@ -9,10 +9,11 @@ import sys
 import pwd
 import string
 import getpass
-import threading
 
 import saga
 import saga.exceptions         as se
+import saga.utils.threads      as sut
+import saga.utils.misc         as sumisc
 import saga.utils.logger       as sul
 import saga.utils.singleton    as sus
 import saga.utils.pty_process  as supp
@@ -131,7 +132,7 @@ class PTYShellFactory (object) :
 
         self.logger   = sul.getLogger ('PTYShellFactory')
         self.registry = {}
-        self.rlock    = threading.RLock ()
+        self.rlock    = sut.RLock ()
 
         self.logger.debug ("PTYShellFactory init %s" % self)
 
@@ -170,7 +171,7 @@ class PTYShellFactory (object) :
                 self.logger.debug ("open master pty for [%s] [%s] %s: %s'" \
                                 % (type_s, host_s, user_s, m_cmd))
 
-                info['pty'] = saga.utils.pty_process.PTYProcess (m_cmd, logger=logger)
+                info['pty'] = supp.PTYProcess (m_cmd, logger=logger)
                 if not info['pty'].alive () :
                     raise se.NoSuccess._log (logger, \
                 	  "Shell not connected to %s" % info['host_str'])
@@ -326,7 +327,7 @@ class PTYShellFactory (object) :
             s_cmd = _SCRIPTS[info['type']]['shell'] % info
 
             # at this point, we do have a valid, living master
-            sh_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
+            sh_slave = supp.PTYProcess (s_cmd, info['logger'])
 
             # authorization, prompt setup, etc
             self._initialize_pty (sh_slave, info)
@@ -353,7 +354,7 @@ class PTYShellFactory (object) :
             s_cmd = _SCRIPTS[info['type']]['copy_to']    % repl
             s_in  = _SCRIPTS[info['type']]['copy_to_in'] % repl
 
-            cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
+            cp_slave = supp.PTYProcess (s_cmd, info['logger'])
 
             self._initialize_pty (cp_slave, info)
 
@@ -385,7 +386,7 @@ class PTYShellFactory (object) :
             s_cmd = _SCRIPTS[info['type']]['copy_from']    % repl
             s_in  = _SCRIPTS[info['type']]['copy_from_in'] % repl
 
-            cp_slave = saga.utils.pty_process.PTYProcess (s_cmd, info['logger'])
+            cp_slave = supp.PTYProcess (s_cmd, info['logger'])
 
             self._initialize_pty (cp_slave, info)
 
@@ -418,15 +419,15 @@ class PTYShellFactory (object) :
             # find out what type of shell we have to deal with
             if  info['schema']   in _SCHEMAS_SSH :
                 info['type']     = "ssh"
-                info['ssh_exe']  = saga.utils.which.which ("ssh")
-                info['scp_exe']  = saga.utils.which.which ("scp")
-                info['sftp_exe'] = saga.utils.which.which ("sftp")
+                info['ssh_exe']  = suw.which ("ssh")
+                info['scp_exe']  = suw.which ("scp")
+                info['sftp_exe'] = suw.which ("sftp")
 
             elif info['schema']  in _SCHEMAS_GSI :
                 info['type']     = "ssh"
-                info['ssh_exe']  = saga.utils.which.which ("gsissh")
-                info['scp_exe']  = saga.utils.which.which ("gsiscp")
-                info['sftp_exe'] = saga.utils.which.which ("gsisftp")
+                info['ssh_exe']  = suw.which ("gsissh")
+                info['scp_exe']  = suw.which ("gsiscp")
+                info['sftp_exe'] = suw.which ("gsisftp")
 
             elif info['schema']  in _SCHEMAS_SH :
                 info['type']     = "sh"
@@ -436,11 +437,11 @@ class PTYShellFactory (object) :
                 info['fs_root']  = "/"
 
                 if  "SHELL" in os.environ :
-                    info['sh_exe'] =  saga.utils.which.which (os.environ["SHELL"])
-                    info['cp_exe'] =  saga.utils.which.which ("cp")
+                    info['sh_exe'] =  suw.which (os.environ["SHELL"])
+                    info['cp_exe'] =  suw.which ("cp")
                 else :
-                    info['sh_exe'] =  saga.utils.which.which ("sh")
-                    info['cp_exe'] =  saga.utils.which.which ("cp")
+                    info['sh_exe'] =  suw.which ("sh")
+                    info['cp_exe'] =  suw.which ("cp")
 
             else :
                 raise se.BadParameter._log (self.logger, \
@@ -455,7 +456,6 @@ class PTYShellFactory (object) :
             # files, and reacts on commands.
 
             try :
-                import saga.utils.misc as sumisc
                 info['latency'] = sumisc.get_host_latency (url)
 
             except Exception  as e :

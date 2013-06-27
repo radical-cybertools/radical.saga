@@ -58,3 +58,5 @@ except saga.SagaException, ex:
     print " \n*** Backtrace:\n %s" % ex.traceback
 
 
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
