@@ -13,19 +13,13 @@ import saga.utils.test_config as sutc
 
 # --------------------------------------------------------------------
 #
-def _out (txt) :
-    sys.stdout.write (txt)
-    sys.stdout.flush ()
-
-# --------------------------------------------------------------------
-#
 def benchmark_init (name, func_pre, func_core, func_post) :
 
     
     _benchmark = {}
 
     s = sess.Session (default=True)
-    _out ('session was set up\n')
+    sut.lout ('session was set up\n')
 
     # check if a config file was specified via '-c' command line option, and
     # read it, return the dict
@@ -131,6 +125,7 @@ def benchmark_run (_benchmark) :
     benchmark_start (_benchmark)
 
     _benchmark['events'] = {}
+
     for tid in range (0, concurrency) :
 
         _benchmark['events'][tid] = {}
@@ -149,8 +144,8 @@ def benchmark_run (_benchmark) :
 
     
     # wait for all threads to start up and initialize
-    _out ("\n> " + "="*concurrency)
-    _out ("\n> ")
+    sut.lout ("\n> " + "="*concurrency)
+    sut.lout ("\n> ")
     for tid in range (0, concurrency) :
         _benchmark['events'][tid]['event_1'].wait ()
 
@@ -165,8 +160,8 @@ def benchmark_run (_benchmark) :
         _benchmark['events'][tid]['event_3'].wait ()
 
     # start shut down
-    _out ("\n< " + "-"*concurrency)
-    _out ("\n< ")
+    sut.lout ("\n< " + "-"*concurrency)
+    sut.lout ("\n< ")
     for tid in range (0, concurrency) :
         _benchmark['events'][tid]['event_4'].set ()
 
@@ -182,7 +177,7 @@ def benchmark_start (_benchmark) :
 
     cfg = _benchmark['bench_cfg']
 
-    _out ("\nBenchmark : %s : %s\n" % (cfg['name'], cfg['url']))
+    sut.lout ("\nBenchmark : %s : %s\n" % (cfg['name'], cfg['url']))
 
     _url = surl.Url (cfg['url'])
     lock = sut.RLock ()
@@ -264,7 +259,7 @@ def benchmark_tic (_benchmark) :
 def benchmark_eval (_benchmark, error=None) :
 
     if  error :
-        _out ("\nBenchmark error: %s\n" % error)
+        sut.lout ("\nBenchmark error: %s\n" % error)
         sys.exit (-1)
 
 
@@ -336,7 +331,7 @@ def benchmark_eval (_benchmark, error=None) :
            "'%s'" % _benchmark['bench_cfg']['name'],   # I am sorry, sooo sorry...  
            _benchmark['url'])
 
-    _out ("\n%s" % out)
+    sut.lout ("\n%s" % out)
 
     create_top = True
     statinfo   = os.stat ('benchmark.dat')

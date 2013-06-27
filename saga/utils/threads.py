@@ -8,6 +8,7 @@ import sys
 import threading
 import saga.utils.exception as sue
 
+_out_lock = threading.RLock ()
 
 # ------------------------------------------------------------------------------
 #
@@ -15,6 +16,16 @@ NEW     = 'New'
 RUNNING = 'Running'
 FAILED  = 'Failed'
 DONE    = 'Done'
+
+
+# ------------------------------------------------------------------------------
+#
+def lout (txt, stream=sys.stdout) :
+
+    with _out_lock :
+        stream.write (txt)
+        stream.flush ()
+
 
 
 # ------------------------------------------------------------------------------
@@ -27,24 +38,52 @@ def Event (*args, **kwargs) :
 # ------------------------------------------------------------------------------
 #
 class RLock (object) :
-    # see http://stackoverflow.com/questions/6780613/is-it-possible-to-subclass-lock-objects-in-python-if-not-other-ways-to-debug
+    # see http://stackoverflow.com/questions/6780613/
+    #     is-it-possible-to-subclass-lock-objects-in-python-if-not-other-ways-to-debug
 
-    def __init__ (self) :
+# ------------------------------------------------------------------------------
+#
+    def __init__ (self, obj=None) :
+
         self._lock = threading.RLock ()
 
+      # with self._lock :
+      #     self._obj = obj
+      #     self._cnt = 0
+
+
+# ------------------------------------------------------------------------------
+#
     def acquire (self) :
-        print >> sys.stderr, "acquired", self
+
+      # ind = (self._cnt)*' '+'>'+(30-self._cnt)*' '
+      # lout ("%s -- %-10s %50s acquire  - %s\n" % (ind, threading.current_thread().name, self, self._lock))
+
         self._lock.acquire ()
 
+      # self._cnt += 1
+      # ind = (self._cnt)*' '+'|'+(30-self._cnt)*' '
+      # lout ("%s    %-10s %50s acquired - %s\n" % (ind, threading.current_thread().name, self, self._lock))
+
+
+# ------------------------------------------------------------------------------
+#
     def release (self) :
-        print >> sys.stderr, "released", self
+
+      # ind = (self._cnt)*' '+'-'+(30-self._cnt)*' '
+      # lout ("%s    %-10s %50s release  - %s\n" % (ind, threading.current_thread().name, self, self._lock))
+
         self._lock.release ()
 
-    def __enter__ (self) :
-        self.acquire ()
+      # self._cnt -= 1
+      # ind = (self._cnt)*' '+'<'+(30-self._cnt)*' '
+      # lout ("%s -- %-10s %50s released - %s\n" % (ind, threading.current_thread().name, self, self._lock))
 
-    def __exit__ (self, type, value, traceback) :
-        self.release ()
+
+# ------------------------------------------------------------------------------
+#
+    def __enter__ (self)                         : self.acquire () 
+    def __exit__  (self, type, value, traceback) : self.release ()
 
 
 

@@ -110,7 +110,7 @@ class PTYProcess (object) :
         if len(command) < 1 :
             raise se.BadParameter ("PTYProcess expects non-empty command")
 
-        self.rlock   = sut.RLock ()
+        self.rlock   = sut.RLock ("pty process %s" % command)
 
         self.command = command # list of strings too run()
 
