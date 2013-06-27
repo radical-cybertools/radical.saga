@@ -52,6 +52,16 @@ class Manager (cpi_base.CPIBase, cpi_async.Async) :
     def get_template_async         (self, name,      ttype)    : pass
 
     @SYNC
+    def list_images                (self, type,      ttype)    : pass
+    @ASYNC
+    def list_images_async          (self, type,      ttype)    : pass
+
+    @SYNC
+    def get_image                  (self, name,      ttype)    : pass
+    @ASYNC
+    def get_image_async            (self, name,      ttype)    : pass
+
+    @SYNC
     def acquire                    (self, descr,     ttype)    : pass
     @ASYNC
     def acquire_async              (self, descr,     ttype)    : pass
