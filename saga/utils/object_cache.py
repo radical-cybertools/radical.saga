@@ -11,7 +11,7 @@ class ObjectCache (object) :
     counted registry of existing objects."""
 
     __metaclass__ = sus.Singleton
-    _lock         = sut.RLock ()
+    _lock         = sut.RLock ('ObjectCache')
 
     # --------------------------------------------------------------------------
     #

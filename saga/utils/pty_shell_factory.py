@@ -13,6 +13,7 @@ import getpass
 import saga
 import saga.exceptions         as se
 import saga.utils.threads      as sut
+import saga.utils.which        as suw
 import saga.utils.misc         as sumisc
 import saga.utils.logger       as sul
 import saga.utils.singleton    as sus
@@ -132,7 +133,7 @@ class PTYShellFactory (object) :
 
         self.logger   = sul.getLogger ('PTYShellFactory')
         self.registry = {}
-        self.rlock    = sut.RLock ()
+        self.rlock    = sut.RLock ('pty shell factory')
 
         self.logger.debug ("PTYShellFactory init %s" % self)
 
