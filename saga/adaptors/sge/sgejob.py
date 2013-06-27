@@ -394,13 +394,12 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
     def _remote_mkdir(self, path):
         # check if the path exists
-        ret, out, _ = self.shell.run_sync("if [ -d '%s' ]; then echo -n 1; else echo -n 0; fi" % path)
-        if ret == 0 and out == "1":
-            return # the path already exists
+        ret, out, _ = self.shell.run_sync(
+                        "(test -d %s && echo -n 0) || (mkdir -p %s && echo -n 1)" % (path, path))
 
-        self._logger.info("Creating remote directory %s" % path)
-        ret, out, _ = self.shell.run_sync("mkdir -p %s" % (path))
-        if ret != 0:
+        if ret == 0 and out == "1":
+            self._logger.info("Remote directory created: %s" % path)
+        elif ret != 0:
             # something went wrong
             message = "Couldn't create remote directory - %s" % (out)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
