@@ -352,9 +352,13 @@ def benchmark_eval (_benchmark, error=None) :
     sut.lout ("\n%s" % out)
 
     create_top = True
-    statinfo   = os.stat ('benchmark.dat')
-    if  statinfo.st_size > 0 :
-        create_top = False
+
+    try :
+        statinfo = os.stat ('benchmark.dat')
+        if  statinfo.st_size > 0 :
+            create_top = False
+    except :
+        pass
 
     f = open ("benchmark.dat", "a+")
 
