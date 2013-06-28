@@ -5,6 +5,7 @@ __license__   = "MIT"
 
 
 import re
+import sys
 import time
 import socket
 import traceback
@@ -39,6 +40,19 @@ def get_traceback (limit=1) :
 
     return ret
 
+
+# --------------------------------------------------------------------
+#
+def get_exception_traceback (limit=1) :
+    """ Returns the current exception's stacktrace as string.
+    """
+
+    return sys.exc_info ()[2]
+
+# --------------------------------------------------------------------
+#
+def get_exception_traceback_str () :
+    return traceback.format_tb (get_exception_traceback ())
 
 # --------------------------------------------------------------------
 #

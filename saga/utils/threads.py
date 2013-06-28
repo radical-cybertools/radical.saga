@@ -6,7 +6,7 @@ __license__   = "MIT"
 
 import sys
 import threading
-import saga.utils.exception as sue
+import saga.utils.misc as sumisc
 
 _out_lock = threading.RLock ()
 
@@ -130,7 +130,7 @@ class SagaThread (Thread) :
 
         except Exception as e :
             self._exception = e
-            self._traceback = sue.get_traceback ()
+            self._traceback = sumisc.get_traceback ()
             self._state     = FAILED
 
 

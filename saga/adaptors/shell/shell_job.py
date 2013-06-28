@@ -364,21 +364,19 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         if  ret != 0 :
             raise saga.NoSuccess ("host setup failed (%s): (%s)" % (ret, out))
 
-        # FIXME: this is a race condition is multiple job services stage the
-        # script at the same time.  We should make that atomic by
-        #
-        #   cat > .../wrapper.sh.$$ ... ; mv .../wrapper.sh.$$ .../wrapper.sh
-        #
-        # which should work nicely as long as compatible versions of the script
-        # are staged.  Oh well...
-        #
         # TODO: replace some constants in the script with values from config
         # files, such as 'timeout' or 'purge_on_quit' ...
-        #
         src = shell_wrapper._WRAPPER_SCRIPT % ({ 'PURGE_ON_START' : str(self._adaptor.purge_on_start) })
         tgt = ".saga/adaptors/shell_job/wrapper.sh"
 
-        self.shell.write_to_remote (src, tgt)
+        # lets check if we actually need to stage the wrapper script.  We need
+        # an adaptor lock on this one.
+        with self._adaptor._lock :
+
+            ret, out, _ = self.shell.run_sync ("test -f %s" % tgt)
+            if  ret != 0 :
+                # yep, need to stage...
+                self.shell.write_to_remote (src, tgt)
 
         # we run the script.  In principle, we should set a new / different
         # prompt -- but, due to some strange and very unlikely coincidence, the
@@ -394,13 +392,14 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # feedback on failures (the shell just quits) -- so we replace it with
         # this poor-man's version...
         self.shell.run_async ("/bin/sh -c '/bin/sh %s/wrapper.sh $$ && kill -9 $PPID' || false" \
-                           % (base))
+                           % base)
 
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
-        # detection, too.  Wait for 1sec max.
-        pid_match = self.shell.find (['PID: \d+'], 1.0)
-        if  pid_match[0] != 0 :
-            raise saga.NoSuccess ("host bootstrap failed (%s)" % (pid_match))
+        # detection, too.  Wait for 3sec max.
+        n, pid_match = self.shell.find (['PID: \d+'], 3.0)
+        if  n != 0 :
+            print "host bootstrap failed (%s)" % pid_match
+            raise saga.NoSuccess ("host bootstrap failed (%s)" % pid_match)
 
         # now we can be sure to expect the valid prompt instance
         ret, out = self.shell.find_prompt ()

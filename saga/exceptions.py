@@ -10,7 +10,7 @@ __license__   = "MIT"
 import weakref
 import operator
 
-import saga.utils.exception  as sue
+import saga.utils.exception as sue
 
 # We have the choice of doing signature checks in exceptions, or to raise saga
 # exceptions on signature checks -- we cannot do both.  At this point, we use
@@ -75,7 +75,6 @@ class SagaException (sue.ExceptionBase) :
         self._messages      = [self.get_message ()]
         self._exceptions    = [self]
         self._top_exception = self
-        self._traceback     = sue.get_traceback (1)
 
         if api_object : 
             self._object    = weakref.ref (api_object)

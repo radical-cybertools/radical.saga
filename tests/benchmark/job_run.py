@@ -1,9 +1,10 @@
 
+import saga.utils.benchmark as sb
+
 import os
 import sys
 import saga
 
-import saga.utils.benchmark as sb
 
 
 # ------------------------------------------------------------------------------

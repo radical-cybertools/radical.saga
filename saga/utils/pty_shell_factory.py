@@ -216,12 +216,12 @@ class PTYShellFactory (object) :
             # most one second.  We try to get within that range with 10*latency.
             delay = min (1.0, max (0.1, 50 * latency))
 
-            if True : # FIXME
-          # try :
+          # if True : # FIXME
+            try :
                 prompt_patterns = ["[Pp]assword:\s*$",                   # password   prompt
                                    "Enter passphrase for key '.*':\s*$", # passphrase prompt
                                    "want to continue connecting",        # hostkey confirmation
-                                   ".*HELLO_\\d+_SAGA(.*)$",             # prompt detection helper
+                                   ".*HELLO_\\d+_SAGA$",                 # prompt detection helper
                                    "^(.*[\$#%>])\s*$"]                   # greedy native shell prompt 
 
                 # find a prompt
@@ -232,7 +232,9 @@ class PTYShellFactory (object) :
                 # we'll try to set a different prompt, and when we found that,
                 # too, we exit the loop and are be ready to running shell
                 # commands.
-                retries = 0
+                retries       = 0
+                retry_trigger         = True
+                found_trigger = ""
                 while True :
 
                     # --------------------------------------------------------------
@@ -240,10 +242,18 @@ class PTYShellFactory (object) :
 
                         # we found none of the prompts, yet, and need to try
                         # again.  But to avoid hanging on invalid prompts, we
-                        # print 'HELLO_SAGA', and search for that one, too
+                        # print 'HELLO_x_SAGA', and search for that one, too.
+                        # We actually do 'printf HELLO_%d_SAGA x' so that the
+                        # pattern only appears in the result, not in the
+                        # command... 
 
                         if retries > 50 :
                             raise se.NoSuccess ("Could not detect shell prompt (timeout)")
+
+                        if  not retry_trigger : 
+                            # just waiting for the *right* trigger, don't need
+                            # new ones...
+                            continue
 
                         retries += 1
                         pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
@@ -292,25 +302,43 @@ class PTYShellFactory (object) :
 
                     # --------------------------------------------------------------
                     elif n == 3 :
-                        logger.info ("got shell prompt trigger (%s) (%s)" %  (n, match))
 
-                        # one of the trigger commands got through -- we are
-                        # happy to declare success, ignore any further output,
-                        # and set a 'real' prompt.
-                        break
+                        # one of the trigger commands got through -- we can now
+                        # hope to find the prompt (or the next trigger...)
+                        logger.debug ("got shell prompt trigger (%s) (%s)" %  (n, match))
+
+                        found_trigger = match
+                        retry_trigger = False
+                        n, match = pty_shell.find (prompt_patterns, delay)
+                        continue
 
 
                     # --------------------------------------------------------------
                     elif n == 4 :
-                        logger.info ("got initial shell prompt (%s) (%s)" %  (n, match))
+
+                        if  retries :
+                            # we already sent triggers -- so this match is only
+                            # useful if saw the *correct* shell prompt trigger
+                            # first
+                            trigger = "HELLO_%d_SAGA" % retries
+                            if  not trigger in found_trigger :
+                                logger.debug ("waiting for prompt trigger %s: (%s) (%s)" \
+                                           % (trigger, n, match))
+                                # but more retries won't help...
+                                retry_trigger = False
+                                n, match = pty_shell.find (prompt_patterns, delay)
+                                continue
+
+
+                        logger.info ("got initial shell prompt (%s) (%s)" \
+                                   % (n, match))
 
                         # we are done waiting for a prompt
                         break
                 
                 
-          # except Exception as e :
-          #     print e
-          #     raise self._translate_exception (e)
+            except Exception as e :
+                raise self._translate_exception (e)
 
 
     # --------------------------------------------------------------------------
@@ -322,8 +350,8 @@ class PTYShellFactory (object) :
         is created.  If needed, the existing master connection is revived.  
         """
 
-        if True :
-      # with self.rlock :
+      # if True :
+        with self.rlock :
 
             s_cmd = _SCRIPTS[info['type']]['shell'] % info
 
@@ -406,8 +434,8 @@ class PTYShellFactory (object) :
         # FIXME: cache 'which' results, etc
         # FIXME: check 'which' results
 
-      # with self.rlock :
-        if True :
+        with self.rlock :
+      # if True :
 
             info = {}
 
@@ -609,7 +637,7 @@ class PTYShellFactory (object) :
         elif 'Connection to master closed' in lmsg :
             e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
 
-        print e.traceback
+        e.traceback = sumisc.get_exception_traceback ()
         return e
 
 

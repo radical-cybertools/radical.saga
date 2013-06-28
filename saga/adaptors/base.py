@@ -9,6 +9,7 @@ __license__   = "MIT"
 import saga.utils.singleton  as sing
 import saga.utils.logger     as sul
 import saga.utils.config     as suc
+import saga.utils.threads    as sut
 
 from   saga.exceptions import *
 
@@ -36,7 +37,8 @@ class Base (suc.Configurable) :
         self._name    = adaptor_info['name']
         self._schemas = adaptor_info['schemas']
 
-        self._logger = sul.getLogger (self._name)
+        self._lock    = sut.RLock     (self._name)
+        self._logger  = sul.getLogger (self._name)
 
         has_enabled = False
         for option in self._opts :
