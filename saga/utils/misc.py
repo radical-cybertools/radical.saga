@@ -39,6 +39,9 @@ def get_traceback () :
 def trace2str (trace, limit=1) :
     """ Returns the trace as string.  """
 
+    if  not trace : 
+        return 'no trace'
+
     limit += 2  # ignore local stack
     ret = ""
 
