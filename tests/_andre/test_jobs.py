@@ -21,8 +21,8 @@ try :
   # s.add_context (c)
 
 
+  # js = saga.job.Service ('gsissh://gsissh.kraken.nics.xsede.org', session=s)
     js = saga.job.Service ('ssh://localhost/bin/sh', session=s)
-    js = saga.job.Service ('gsissh://gsissh.kraken.nics.xsede.org', session=s)
   
     jd = saga.job.Description ()
     jd.executable = '/bin/echo'

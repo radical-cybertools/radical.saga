@@ -4,32 +4,35 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-""" Provides exception handling utilities and base classes.
-"""
+""" Provides exception base class.  """
 
 import sys
 
-from saga.utils.misc import get_traceback
+import saga.utils.misc as sumisc
 
 
+# ------------------------------------------------------------------------------
+#
 class ExceptionBase(Exception):
     """ Base exception class. 
     """
+
+    # --------------------------------------------------------------------------
+    #
     def __init__(self, message):
         Exception.__init__(self, message)
         self._message   = message
-        self._traceback = get_traceback()
+        self.traceback  = sumisc.get_exception_traceback_str ()
 
-    def get_traceback (self) :
-        """ Return the full traceback for this exception.
-        """
-        return self._traceback
-    traceback = property (get_traceback) 
 
+    # --------------------------------------------------------------------------
+    #
     def __str__ (self) :
         return "%s: %s" % (self.__class__.__name__, self._message)
 
 
+    # --------------------------------------------------------------------------
+    #
     @classmethod
     def _log (cls, logger, message, level='error'):
         """ this class method allows to log the exception message while

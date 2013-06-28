@@ -242,18 +242,22 @@ class PTYShell (object) :
 
             # make sure this worked, and that we find the prompt. We use
             # a versatile prompt pattern to account for the custom shell case.
+            self.logger.error ("find  sh prompt")
+            self.find (["^(.*[\$#%>])\s*$"])
+            self.logger.error ("found sh prompt")
+
+            # make sure this worked, and that we find the prompt. We use
+            # a versatile prompt pattern to account for the custom shell case.
             try :
                 # set and register new prompt
                 self.run_async  ("unset PROMPT_COMMAND ; "
                                      + "PS1='PROMPT-$?->'; "
                                      + "PS2=''; "
-                                     + "export PS1 PS2 2>&1 >/dev/null; true\n")
+                                     + "export PS1 PS2 2>&1 >/dev/null;"
+                                     + "/bin/true\n")
                 self.set_prompt (new_prompt="PROMPT-(\d+)->$")
 
                 self.logger.debug ("got new shell prompt")
-
-            except se.SagaException as e :
-                raise
 
             except Exception as e :
                 raise se.NoSuccess ("Shell startup on target host failed: %s" % e)

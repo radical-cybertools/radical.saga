@@ -639,15 +639,16 @@ class PTYProcess (object) :
 
                             return (n, ret.replace('\r', ''))
 
-                    # if a timeout is given, and actually passed, return a non-match
+                    # if a timeout is given, and actually passed, return
+                    # a non-match and a copy of the data we looked at
                     if timeout == 0 :
-                        return (None, None)
+                        return (None, str(data))
 
                     if timeout > 0 :
                         now = time.time ()
                         if (now-start) > timeout :
                             self.cache = data
-                            return (None, None)
+                            return (None, str(data))
 
                     # no match yet, still time -- read more data
                     data += self.read (timeout=_POLLDELAY)
