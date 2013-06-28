@@ -6,7 +6,8 @@ __license__   = "MIT"
 
 import sys
 import threading
-import saga.utils.misc as sumisc
+import saga.exceptions  as se
+import saga.utils.misc  as sumisc
 
 _out_lock = threading.RLock ()
 
@@ -94,8 +95,8 @@ class SagaThread (Thread) :
     def __init__ (self, call, *args, **kwargs) :
 
         if not callable (call) :
-            raise saga.exceptions.BadParameter ("Thread requires a callable to function, not %s" \
-                                             % (str(call)))
+            raise se.BadParameter ("Thread requires a callable to function, not %s" \
+                                % (str(call)))
 
         Thread.__init__ (self)
 

@@ -80,45 +80,45 @@ def benchmark_thread (tid, _benchmark) :
     post     = b_cfg['post']
 
     try :
-      pre_ret  = pre (t_cfg, b_cfg, session)
-      sys.stdout.write ('-')
-      sys.stdout.flush ()
+        pre_ret  = pre (t_cfg, b_cfg, session)
+        sys.stdout.write ('-')
+        sys.stdout.flush ()
 
 
-      _benchmark['events'][tid]['event_1'].set  ()  # signal we are done        
-      _benchmark['events'][tid]['event_2'].wait ()  # wait 'til others are done 
+        _benchmark['events'][tid]['event_1'].set  ()  # signal we are done        
+        _benchmark['events'][tid]['event_2'].wait ()  # wait 'til others are done 
 
-      iterations = int(b_cfg['iterations']) / int(b_cfg['concurrency'])
-
-
-      for i in range (0, iterations) :
-          core_ret = core (pre_ret)
-          benchmark_tic   (_benchmark)
+        iterations = int(b_cfg['iterations']) / int(b_cfg['concurrency'])
 
 
-      _benchmark['events'][tid]['event_3'].set ()   # signal we are done        
-      _benchmark['events'][tid]['event_4'].wait ()  # wait 'til others are done 
+        for i in range (0, iterations) :
+            core_ret = core (pre_ret)
+            benchmark_tic   (_benchmark)
 
 
-      post_ret = post (core_ret)
-      sys.stdout.write ('=')
-      sys.stdout.flush ()
+        _benchmark['events'][tid]['event_3'].set ()   # signal we are done        
+        _benchmark['events'][tid]['event_4'].wait ()  # wait 'til others are done 
 
-      _benchmark['events'][tid]['event_5'].set ()   # signal we are done        
+
+        post_ret = post (core_ret)
+        sys.stdout.write ('=')
+        sys.stdout.flush ()
+
+        _benchmark['events'][tid]['event_5'].set ()   # signal we are done        
 
     except Exception as e :
 
-      # Oops, we are screwed.  Tell main thread that wer are done for, and
-      # bye-bye...
-      _benchmark['events'][tid]['event_1'].set  ()  # signal we are done        
-      _benchmark['events'][tid]['event_3'].set  ()  # signal we are done        
-      _benchmark['events'][tid]['event_5'].set  ()  # signal we are done        
+        # Oops, we are screwed.  Tell main thread that wer are done for, and
+        # bye-bye...
+        _benchmark['events'][tid]['event_1'].set  ()  # signal we are done        
+        _benchmark['events'][tid]['event_3'].set  ()  # signal we are done        
+        _benchmark['events'][tid]['event_5'].set  ()  # signal we are done        
 
-      print sumisc.get_exception_traceback_str  ()
+        print sumisc.trace2str (sumisc.get_exception_traceback ())
 
-      sys.stdout.write ("exception in benchmark thread: %s\n\n" % e)
-      sys.stdout.flush ()
-      sys.exit (-1)
+        sys.stdout.write ("exception in benchmark thread: %s\n\n" % e)
+        sys.stdout.flush ()
+        sys.exit (-1)
 
     sys.exit (0)
 

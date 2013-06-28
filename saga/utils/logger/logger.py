@@ -16,7 +16,7 @@ from   saga.utils.logger.filehandler        import FileHandler
 from   saga.utils.logger.defaultformatter   import DefaultFormatter
 from   saga.utils.singleton                 import Singleton
 from   saga.utils.exception                 import ExceptionBase
-from   saga.utils.misc                      import get_traceback
+from   saga.utils.misc                      import get_traceback, trace2str
 
 
 ############# These are all supported options for saga.logging #################
@@ -192,7 +192,7 @@ def getLogger (name='saga-python'):
         # prints a traceback on the debug handler / enters the debugger
         def mk_trace (logger) :
             def trace () :
-                logger.debug (get_traceback (0))
+                logger.debug (trace2str (get_traceback ()))
             return trace
 
         _logger.__dict__['trace'] = mk_trace      (_logger)

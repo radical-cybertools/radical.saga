@@ -27,7 +27,7 @@ class Cache :
         self.size   = size
         self.ttl    = ttl
         self.dict   = rod.OrderedDict ()
-        self.lock   = sut.Lock ()
+        self.lock   = sut.RLock ()
         self.logger = logger
         self.hit    = 0
         self.miss   = 0

@@ -1,7 +1,7 @@
 
-import saga.util.threading  as sut
-import saga.utils.singleton as sus
-import saga.utils.logger    as slog
+import saga.utils.threads    as sut
+import saga.utils.singleton  as sus
+import saga.utils.logger     as slog
 
 # ------------------------------------------------------------------------------
 #
@@ -69,7 +69,7 @@ class ObjectCache (object) :
 
         with self._lock :
 
-            self._logger.debug("rem %s" % (oid))
+            self._logger.debug("rem %s" % str(obj))
 
             for oid in self._cache.keys () :
 
