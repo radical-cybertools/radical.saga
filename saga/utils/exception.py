@@ -19,10 +19,11 @@ class ExceptionBase(Exception):
 
     # --------------------------------------------------------------------------
     #
-    def __init__(self, message):
+    def __init__(self, message, exc):
         Exception.__init__(self, message)
         self._message   = message
-        self.traceback  = sumisc.get_exception_traceback_str ()
+        self.traceback  = sumisc.trace2str (sumisc.get_exception_traceback ())
+        self.stack      = sumisc.trace2str (sumisc.get_traceback ())
 
 
     # --------------------------------------------------------------------------

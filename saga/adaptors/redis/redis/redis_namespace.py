@@ -52,9 +52,9 @@ import redis_cache
 
 from   saga.exceptions       import *
 from   saga.advert.constants import *
-
 from   saga.utils.logger     import getLogger
-import saga.utils.exception
+
+import saga.utils.misc       as sumisc
 import saga.utils.threads    as sut
 
 
@@ -166,7 +166,7 @@ class redis_ns_monitor (sut.SagaThread) :
 
         except Exception as e :
             self.logger.critical ("redis monitoring thread crashed - disable callback handling (%s)") % str(e)
-            self.logger.debug    (saga.utils.exception.get_traceback (0))
+            self.logger.debug (sumisc.trace2str(sumisc.get_exception_traceback ()))
             return
 
 
