@@ -7,10 +7,10 @@ __license__   = "MIT"
 """ Exception classes
 """
 
+import sys
 import weakref
 import operator
-
-import saga.utils.exception as sue
+import traceback
 
 # We have the choice of doing signature checks in exceptions, or to raise saga
 # exceptions on signature checks -- we cannot do both.  At this point, we use
@@ -23,7 +23,7 @@ import saga.utils.exception as sue
 
 # ------------------------------------------------------------------------------
 #
-class SagaException (sue.ExceptionBase) :
+class SagaException (Exception) :
     """
     The Exception class encapsulates information about error conditions
     encountered in SAGA.
@@ -60,26 +60,98 @@ class SagaException (sue.ExceptionBase) :
   #               basestring, 
   #               sus.optional (sb.Base))
   # @sus.returns (sus.nothing)
-    def __init__(self, message, api_object=None):
+    def __init__(self, msg, parent=None, api_object=None):
         """ 
         Create a new exception object.
 
-        :param message: The exception message.
+        :param msg:     The exception message.
         :param object:  The object that has caused the exception, default is
                         None.
         """
-        sue.ExceptionBase.__init__ (self, message)
+        Exception.__init__(self, msg)
 
-        self._type          = self.__class__.__name__
-        self._message       = message
-        self._messages      = [self.get_message ()]
+        self._plain_message = msg
         self._exceptions    = [self]
         self._top_exception = self
+        self._ptype         = type(parent).__name__   # parent exception type
+        self._stype         = type(self  ).__name__   # own exception    type 
+
 
         if api_object : 
             self._object    = weakref.ref (api_object)
         else :
             self._object    = None
+
+
+        # did we get a parent exception?
+        if  parent :
+
+            # if so, then this exception is likely created in some 'except'
+            # clause, as a reaction on a previously catched exception (the
+            # parent).  Thus we append the message of the parent to our own
+            # message, but keep the parent's traceback (after all, the original
+            # exception location is what we are interested in).
+            #
+            if  isinstance (parent, SagaException) :
+                # that all works nicely when parent is our own exception type...
+                self._traceback = parent.traceback
+
+                frame           = traceback.extract_stack ()[-2]
+                line            = "%s +%s (%s)  :  %s" % frame 
+                self._message   = "  %-20s: %s (%s)\n%s" \
+                                % (self._stype, msg, line, parent.msg)
+
+            else :
+                # ... but if parent is a native (or any other) exception type,
+                # we don't have a traceback really -- so we dig it out of
+                # sys.exc_info. 
+                trace           = sys.exc_info ()[2]
+                stack           = traceback.extract_tb  (trace)
+                traceback_list  = traceback.format_list (stack)
+                self._traceback = "".join (traceback_list)
+
+                # the message composition is very similar -- we just inject the
+                # parent exception type inconspicuously somewhere (above that
+                # was part of 'parent.message' already).
+                frame           = traceback.extract_stack ()[-2]
+                line            = "%s +%s (%s)  :  %s" % frame 
+                self._message   = "  %-20s: %s (%s)\n  %-20s: %s" \
+                                % (self._stype, msg, line, self._ptype, parent)
+
+        else :
+
+            # if we don't have a parent, we are a 1st principle exception,
+            # i.e. a reaction to some genuine code error.  Thus we extract the
+            # traceback from exactly where we are in the code (the last stack
+            # frame will be the call to this exception constructor), and we
+            # create the original exception message from 'stype' and 'message'.
+            stack           = traceback.extract_stack ()
+            traceback_list  = traceback.format_list (stack)
+            self._traceback = "".join (traceback_list[:-1])
+            frame           = traceback.extract_stack ()[-3]
+            line            = "%s +%s (%s)  :  %s" % frame 
+            self._message   = "  %-20s: %s (%s)\n  %-20s: %s" \
+                            % (self._stype, msg, line, self._ptype, parent)
+
+        # we can't do that earlier as _msg was not set up before
+        self._messages = [self._message]
+
+
+    # --------------------------------------------------------------------------
+    #
+  # @sus.takes   ('SagaException')
+  # @sus.returns (basestring)
+    def __str__ (self) :
+        return self.get_message ()
+
+
+    # --------------------------------------------------------------------------
+    #
+  # @sus.takes   ('SagaException')
+  # @sus.returns (basestring)
+    def __repr__ (self) :
+        return "%s\n%s" % (self._message, self._traceback)
+
 
     # --------------------------------------------------------------------------
     #
@@ -88,13 +160,51 @@ class SagaException (sue.ExceptionBase) :
     def _clone (self) :
         """ This method is used internally -- see :func:`_get_exception_stack`."""
 
-        clone = self.__class__ (self._message, self._object)
+        clone = self.__class__ ("")
+
+        clone._parent    = self._parent
+        clone._object    = self._object
+        clone._message   = self._message
         clone._messages  = self._messages
         clone._exception = self._exceptions
         clone._traceback = self._traceback
-        clone._type      = self._type
+        clone._stype     = self._stype
+        clone._ptype     = self._ptype
 
         return clone
+
+    # --------------------------------------------------------------------------
+    #
+    @classmethod
+    def _log (cls, logger, msg, parent=None, api_object=None, level='error'):
+        """ this class method allows to log the exception message while
+            constructing a SAGA exception, like::
+
+              # raise an exception, no logging
+              raise saga.IncorrectState ("File is not open")
+
+              # raise an exception, log as error event (error level is default)
+              raise saga.IncorrectState._log (self._logger, "File is not open")
+
+              # raise an exception, log as warning event
+              raise saga.IncorrectState._log (self._logger, "File is not open", level=warning)
+              raise saga.IncorrectState._log (self._logger, "File is not open", warning) # same
+
+            This way, the 'raise' remains clearly in the code, as that is the
+            dominating semantics of the call.
+        """
+
+        log_method = logger.error
+
+        try :
+            log_method = getattr (logger, level.lower())
+        except :
+            sys.stderr.write ("unknown log level '%s'"  %  level)
+
+        log_method ("%s: %s" % (cls.__name__, msg))
+
+        return cls (msg, parent=parent, api_object=api_object)
+
 
 
     # --------------------------------------------------------------------------
@@ -104,7 +214,7 @@ class SagaException (sue.ExceptionBase) :
     def get_message (self) :
         """ Return the exception message as a string.  That message is also
         available via the 'message' property."""
-        return "%s: %s" % (self.type, self._message)
+        return self._message
 
 
     # --------------------------------------------------------------------------
@@ -137,17 +247,10 @@ class SagaException (sue.ExceptionBase) :
         around.  In those cases, this method will return 'None'.  Either way,
         the object is also accessible via the 'object' property.
         """
-        o = None
 
-        if self._object :
-            o = self._object ()
-
-            if o is None:
-                # object has been garbage collected - we simply won't return
-                # anything then...
-                pass
-
-        return o
+        # object is a weak_ref, and may have been garbage collected - we simply
+        # return 'None' then
+        return self._object ()
 
 
     # --------------------------------------------------------------------------
@@ -221,15 +324,6 @@ class SagaException (sue.ExceptionBase) :
         return self._messages
 
 
-    # --------------------------------------------------------------------------
-    #
-  # @sus.takes   ('SagaException')
-  # @sus.returns (basestring)
-    def __str__ (self) :
-        return self.get_message ()
-
-
-    _plain_message = property (_get_plain_message)  # string
     message        = property (get_message)         # string
     object         = property (get_object)          # object type
     type           = property (get_type)            # exception type

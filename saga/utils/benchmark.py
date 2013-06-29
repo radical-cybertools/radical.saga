@@ -42,7 +42,18 @@ def benchmark_init (name, func_pre, func_core, func_post) :
     bench_cfg = tc.get_benchmark_config ()
     session   = tc.session
 
+    # SAGA_BENCHMARK_ environments will overwrite config settings
+    if  'SAGA_BENCHMARK_CONCURRENCY' in os.environ :
+        bench_cfg['concurrency'] = os.environ['SAGA_BENCHMARK_CONCURRENCY']
 
+    if  'SAGA_BENCHMARK_ITERATIONS' in os.environ :
+        bench_cfg['iterations'] = os.environ['SAGA_BENCHMARK_ITERATIONS']
+
+    if  'SAGA_BENCHMARK_LOAD' in os.environ :
+        bench_cfg['load'] = os.environ['SAGA_BENCHMARK_LOAD']
+
+    
+    # check benchmark settings for completeness, set some defaults
     if  not 'concurrency' in bench_cfg : 
         benchmark_eval (_benchmark, 'no concurrency configured')
 
@@ -108,16 +119,24 @@ def benchmark_thread (tid, _benchmark) :
 
     except Exception as e :
 
-        # Oops, we are screwed.  Tell main thread that wer are done for, and
+        print " 1 --------------------------------------- "
+        print str(e)
+        print " 2 --------------------------------------- "
+        print repr(e)
+        print " 3 --------------------------------------- "
+        print sumisc.get_trace ()
+        print " 4 --------------------------------------- "
+
+
+        sys.stdout.write ("exception in benchmark thread: %s\n\n" % e)
+        sys.stdout.flush ()
+
+        # Oops, we are screwed.  Tell main thread that we are done for, and
         # bye-bye...
         _benchmark['events'][tid]['event_1'].set  ()  # signal we are done        
         _benchmark['events'][tid]['event_3'].set  ()  # signal we are done        
         _benchmark['events'][tid]['event_5'].set  ()  # signal we are done        
 
-        print sumisc.trace2str (sumisc.get_exception_traceback ())
-
-        sys.stdout.write ("exception in benchmark thread: %s\n\n" % e)
-        sys.stdout.flush ()
         sys.exit (-1)
 
     sys.exit (0)

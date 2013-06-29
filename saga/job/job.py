@@ -80,6 +80,8 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
         if not _adaptor :
             raise se.IncorrectState ("saga.job.Job constructor is private")
 
+        self._valid = False
+
 
         # we need to keep _method_type around, for the task interface (see
         # :class:`saga.Task`)
@@ -122,6 +124,7 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
         self._attributes_set_getter (EXECUTION_HOSTS, self._get_execution_hosts)
         self._attributes_set_getter (SERVICE_URL    , self._get_service_url)
 
+        self._valid = True
  
 
     # --------------------------------------------------------------------------
@@ -129,6 +132,10 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
     @sus.takes   ('Job')
     @sus.returns (basestring)
     def __str__  (self) :
+
+        if  not self._valid :
+            return 'no job id'
+
         return str (self.id)
 
 

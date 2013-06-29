@@ -12,10 +12,10 @@ import saga
 def benchmark_pre (test_cfg, bench_cfg, session) :
 
     if  not 'job_service_url' in test_cfg :
-        sumisc.benchmark_eval ('no job service URL configured')
+        raise saga.NoSuccess ('no job service URL configured')
 
-    if  not 'load'        in bench_cfg : 
-        sumisc.benchmark_eval ('no benchmark load configured')
+    if  not 'load' in bench_cfg : 
+        raise saga.NoSuccess ('no benchmark load configured')
 
     host = test_cfg['job_service_url']
     n_j  = int(bench_cfg['iterations'])  

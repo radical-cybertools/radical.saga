@@ -384,13 +384,12 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         # wait for all threads to finish
         for thread in threads :
-            if thread.isAlive () :
+            if  thread.isAlive () :
                 thread.join ()
 
-            if thread.get_state () == FAILED :
+            if  thread.get_state () == FAILED :
                 raise se.NoSuccess ("thread exception: %s\n%s" \
-                                 %  (str(thread.get_exception ()),
-                                     str(thread.get_traceback ())))
+                                 %  (thread.get_exception ()))
 
 
     # --------------------------------------------------------------------------
