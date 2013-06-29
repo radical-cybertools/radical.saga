@@ -396,7 +396,8 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
         # detection, too.  Wait for 3sec max.
-        n, pid_match = self.shell.find (['PID: \d+'], 3.0)
+        n, pid_match = self.shell.find (['PID: \d+'], 10.0)
+        if  n != 0 	:
             raise saga.NoSuccess ("host bootstrap failed (%s)" % pid_match)
 
         # now we can be sure to expect the valid prompt instance

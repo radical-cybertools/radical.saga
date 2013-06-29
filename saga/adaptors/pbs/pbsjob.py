@@ -353,6 +353,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def __init__(self, api, adaptor):
 
+        self._mt  = None
         _cpi_base = super(PBSJobService, self)
         _cpi_base.__init__(api, adaptor)
 
@@ -369,8 +370,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def close(self):
 
-        self.mt.stop()
-        self.mt.join(10)  # don't block forever on join()
+        if  self.mt :
+            self.mt.stop()
+            self.mt.join(10)  # don't block forever on join()
+
         self._logger.info("Job monitoring thread stopped.")
 
         self.finalize(True)

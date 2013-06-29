@@ -92,18 +92,19 @@ class Service (sb.Base, sasync.Async) :
 
 
         # param checks
+        self.valid  = False
+        url         = surl.Url (rm)
+        scheme      = url.scheme.lower ()
+
         if not session :
             session = ss.Session (default=True)
 
-        url     = surl.Url (rm)
-        scheme  = url.scheme.lower ()
 
         self._super = super  (Service, self)
         self._super.__init__ (scheme, _adaptor, _adaptor_state, 
                               url, session, ttype=_ttype)
 
-        self.valid = True
-
+        self.valid  = True
 
     # --------------------------------------------------------------------------
     #
@@ -138,7 +139,11 @@ class Service (sb.Base, sasync.Async) :
     @sus.takes     ('Service')
     @sus.returns   (basestring)
     def __str__ (self) :
-        return "[%s]" % self.url
+
+        if  self.valid :
+            return "[%s]" % self.url
+
+        return ""
 
 
     # --------------------------------------------------------------------------

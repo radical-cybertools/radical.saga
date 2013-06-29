@@ -131,7 +131,6 @@ class SagaThread (Thread) :
 
         except Exception as e :
             self._exception = e
-            self._traceback = sumisc.get_traceback ()
             self._state     = FAILED
 
 
@@ -171,17 +170,6 @@ class SagaThread (Thread) :
         return self._exception 
 
     exception = property (get_exception)
-
-
-    def get_traceback (self) :
-
-        if not self._state == FAILED :
-            return None
-
-        return self._traceback 
-
-    traceback = property (get_traceback)
-
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

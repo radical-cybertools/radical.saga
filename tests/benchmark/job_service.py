@@ -2,7 +2,6 @@
 import os
 import sys
 import saga
-import threading
 
 import saga.utils.benchmark as sb
 
@@ -12,7 +11,7 @@ import saga.utils.benchmark as sb
 def benchmark_pre (test_cfg, bench_cfg, session) :
 
     if  not 'job_service_url' in test_cfg :
-        sumisc.benchmark_eval ('no job service URL configured')
+        saga.NoSuccess ('no job service URL configured')
 
     return {'host'    : test_cfg['job_service_url'], 
             'session' : session}

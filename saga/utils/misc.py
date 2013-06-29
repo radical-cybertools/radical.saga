@@ -20,43 +20,23 @@ _latencies = {}
 
 # --------------------------------------------------------------------
 #
-def get_exception_traceback () :
-    """ Returns the current exception's stacktrace.  """
+def get_trace () :
 
-    return sys.exc_info ()[2]
+    print "X 1"
 
+    trace = sys.exc_info ()[2]
 
-# --------------------------------------------------------------------
-#
-def get_traceback () :
-    """ Returns the current stack as traceback.  """
+    if  trace :
+        print "X 2"
+        stack           = traceback.extract_tb  (trace)
+        traceback_list  = traceback.format_list (stack)
+        return "".join (traceback_list)
 
-    return traceback.extract_stack ()
-
-
-# --------------------------------------------------------------------
-#
-def trace2str (trace, limit=1) :
-    """ Returns the trace as string.  """
-
-    if  not trace : 
-        return 'no trace'
-
-    limit += 2  # ignore local stack
-    ret = ""
-
-    frames = traceback.format_list (trace)
-
-    # ignore last <limit> frames
-    for i in range (0, limit) :
-        del frames[-1]
-
-    # dump frames into string
-    for frame in frames :
-        ret += str(frame)
-
-    return ret
-
+    else :
+        print "X 3"
+        stack           = traceback.extract_stack ()
+        traceback_list  = traceback.format_list (stack)
+        return "".join (traceback_list[:-1])
 
 # --------------------------------------------------------------------
 #
