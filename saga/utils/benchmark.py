@@ -61,7 +61,12 @@ def benchmark_init (name, func_pre, func_core, func_post) :
         benchmark_eval (_benchmark, 'no iterations configured')
 
     if  not 'url' in bench_cfg :
-        bench_cfg['url'] = ''
+        if  'job_service_url' in test_cfg :
+            bench_cfg['url'] = test_cfg['job_service_url']
+        elif 'filesystem_url' in test_cfg :
+            bench_cfg['url'] = test_cfg['filesystem_url']
+        else :
+            bench_cfg['url'] = 'n/a'
 
     _benchmark['url']       = bench_cfg['url']
     _benchmark['session']   = session
@@ -101,10 +106,9 @@ def benchmark_thread (tid, _benchmark) :
 
         iterations = int(b_cfg['iterations']) / int(b_cfg['concurrency'])
 
-
         for i in range (0, iterations) :
             core_ret = core (pre_ret)
-            benchmark_tic   (_benchmark)
+            benchmark_tic   (_benchmark, tid)
 
 
         _benchmark['events'][tid]['event_3'].set ()   # signal we are done        
@@ -172,6 +176,9 @@ def benchmark_run (_benchmark) :
         _benchmark['events'][tid]['event_4'] = sut.Event ()
         _benchmark['events'][tid]['event_5'] = sut.Event ()
 
+        _benchmark['start'][tid] = time.time ()
+        _benchmark['times'][tid] = []
+
         t = sut.SagaThread (benchmark_thread, tid, _benchmark)
         threads.append (t)
 
@@ -181,20 +188,21 @@ def benchmark_run (_benchmark) :
 
     
     # wait for all threads to start up and initialize
+    _benchmark['t_init'] = time.time ()
     sut.lout ("\n> " + "="*concurrency)
     sut.lout ("\n> ")
     for tid in range (0, concurrency) :
         _benchmark['events'][tid]['event_1'].wait ()
 
-    benchmark_tic (_benchmark)
-
     # start workload in all threads
+    _benchmark['t_start'] = time.time ()
     for tid in range (0, concurrency) :
         _benchmark['events'][tid]['event_2'].set ()
 
     # wait for all threads to finish core test
     for tid in range (0, concurrency) :
         _benchmark['events'][tid]['event_3'].wait ()
+    _benchmark['t_stop'] = time.time ()
 
     # start shut down
     sut.lout ("\n< " + "-"*concurrency)
@@ -214,15 +222,18 @@ def benchmark_start (_benchmark) :
 
     cfg = _benchmark['bench_cfg']
 
-    sut.lout ("\nBenchmark : %s : %s\n" % (cfg['name'], cfg['url']))
+    sut.lout ("\nBenchmark   : %s : %s\n" % (cfg['name'], cfg['url']))
+    sut.lout ("iterations  : %s\n"        %  cfg['iterations'])
+    sut.lout ("concurrency : %s\n"        %  cfg['concurrency'])
+
 
     _url = surl.Url (cfg['url'])
     lock = sut.RLock ()
 
     _benchmark['lock']  = lock
     _benchmark['url']   = _url 
-    _benchmark['start'] = time.time()
-    _benchmark['times'] = []
+    _benchmark['start'] = {}
+    _benchmark['times'] = {}
     _benchmark['idx']   = 0
 
     if _url.host : host = _url.host
@@ -234,7 +245,7 @@ def benchmark_start (_benchmark) :
     ping_start = time.time ()
 
     try :
-        sys.stdout.write ('Latency   : ')
+        sys.stdout.write ('Latency     : ')
         sys.stdout.flush ()
 
         s = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
@@ -255,37 +266,36 @@ def benchmark_start (_benchmark) :
 
 # --------------------------------------------------------------------
 #
-def benchmark_tic (_benchmark) :
+def benchmark_tic (_benchmark, tid='master_tid') :
 
     with _benchmark['lock'] :
 
         now   = time.time ()
-        timer = now - _benchmark['start']
+        timer = now - _benchmark['start'][tid]
 
-        _benchmark['times'].append (timer)
-        _benchmark['start'] = now
+        _benchmark['times'][tid].append (timer)
+        _benchmark['start'][tid] = now
 
-        if len(_benchmark['times'][1:]) :
-            vmean = sum (_benchmark['times'][1:]) / len(_benchmark['times'][1:])
+        if len(_benchmark['times'][tid][1:]) :
+            vmean = sum (_benchmark['times'][tid][1:]) / len(_benchmark['times'][tid][1:])
         else :
             vmean = timer
 
-        if   timer  <  0.75 * vmean : marker = '-'
-        if   timer  <  0.90 * vmean : marker = '_'
-        elif timer  <  0.95 * vmean : marker = '.'
-        elif timer  <  1.05 * vmean : marker = '*'
-        elif timer  <  1.10 * vmean : marker = ':'
-        elif timer  <  1.25 * vmean : marker = '='
-        else                        : marker = '+'
+        if   timer  <  0.75 * vmean : marker = '='
+        if   timer  <  0.90 * vmean : marker = '~'
+        elif timer  <  0.95 * vmean : marker = '_'
+        elif timer  <  1.05 * vmean : marker = '.'
+        elif timer  <  1.10 * vmean : marker = '-'
+        elif timer  <  1.25 * vmean : marker = '+'
+        else                        : marker = '*'
 
 
-        if       not ( (_benchmark['idx'] - 1)        ) : sys.stdout.write ('\n* ')
+        if       not ( (_benchmark['idx'])        ) : sys.stdout.write ('\n* ')
         else :
-            if   not ( (_benchmark['idx'] - 1) % 1000 ) : sys.stdout.write ('\n\n# ')
-            elif not ( (_benchmark['idx'] - 1) %  100 ) : sys.stdout.write ('\n| ')
-            elif not ( (_benchmark['idx'] - 1) %   10 ) : sys.stdout.write (' ')
-
-        if           ( (_benchmark['idx']    )        ) : sys.stdout.write (marker)
+            if   not ( (_benchmark['idx']) % 1000 ) : sys.stdout.write (" %7d\n\n# " % _benchmark['idx'])
+            elif not ( (_benchmark['idx']) %  100 ) : sys.stdout.write (" %7d\n| " % _benchmark['idx'])
+            elif not ( (_benchmark['idx']) %   10 ) : sys.stdout.write (' ')
+        if  True                                    : sys.stdout.write (marker)
         
         sys.stdout.flush ()
 
@@ -299,9 +309,13 @@ def benchmark_eval (_benchmark, error=None) :
         sut.lout ("\nBenchmark error: %s\n" % error)
         sys.exit (-1)
 
+    times = []
 
-    if  len(_benchmark['times']) <= 4 :
-        raise Exception ("min 4 timing values required for benchmark evaluation")
+    for tid in _benchmark['times'] :
+        times += _benchmark['times'][tid][1:]
+
+    if  len(times) < 4 :
+        raise Exception ("min 4 timing values required for benchmark evaluation (%d)" % len(times))
 
     concurrency = int(_benchmark['bench_cfg']['concurrency'])
 
@@ -312,37 +326,33 @@ def benchmark_eval (_benchmark, error=None) :
 
     out += "Results :\n"
 
-    vn    = len (_benchmark['times']) - 1
-    vsum  = sum (_benchmark['times'][1:])
-    vmin  = min (_benchmark['times'][1:])
-    vmax  = max (_benchmark['times'][1:])
-    vmean = sum (_benchmark['times'][1:]) / vn
-    vsdev = math.sqrt (sum ((x - vmean) ** 2 for x in _benchmark['times'][1:]) / vn)
-    vrate = vn / vsum
+    vtot  = _benchmark['t_stop']  - _benchmark['t_start']
+    vini  = _benchmark['t_start'] - _benchmark['t_init']
+    vn    = len (times)
+    vsum  = sum (times)
+    vmin  = min (times)
+    vmax  = max (times)
+    vmean = sum (times) / vn
+    vsdev = math.sqrt (sum ((x - vmean) ** 2 for x in times) / vn)
+    vrate = vn / vtot
 
-    out += "  url     : %s\n"                                % (_benchmark['url']            )
-    out += "  ping    : %8.5fs\n"                            % (_benchmark['ping']           )
-    out += "  n       : %9d          total   : %8.2fs\n"     % (vn, vsum                     )
-    out += "  threads : %9d          min     : %8.2fs\n"     % (concurrency           , vmin )
-    out += "  init    : %8.2fs          max     : %8.2fs\n"  % (_benchmark['times'][0], vmax )
-    out += "  1       : %8.2fs          mean    : %8.2fs\n"  % (_benchmark['times'][1], vmean)
-    out += "  2       : %8.2fs          sdev    : %8.2fs\n"  % (_benchmark['times'][2], vsdev)
-    out += "  3       : %8.2fs          rate    : %8.2f/s\n" % (_benchmark['times'][3], vrate)
+    out += "  url     : %s\n"                                % (_benchmark['url'] )
+    out += "  ping    : %8.5fs\n"                            % (_benchmark['ping'])
+    out += "  n       : %9d          threads : %9d\n"        % (vn, concurrency)
+    out += "  total   : %8.2fs          min     : %8.2fs\n"  % (vtot,     vmin )
+    out += "  init    : %8.2fs          max     : %8.2fs\n"  % (vini,     vmax )
+    out += "  mean    : %8.2fs          sdev    : %8.2fs\n"  % (vmean,    vsdev)
+    out += "  rate    : %8.2fs\n"                            % (vrate          )
 
-    num = "# %5s  %7s  %7s  %7s  %7s  %7s  %7s" \
-          "  %7s  %7s  %7s  %8s  %8s  %9s   %-18s   %s" \
-        % (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
-    top = "# %5s  %7s  %7s  %7s  %7s  %7s  %7s" \
-          "  %7s  %7s  %7s  %8s  %8s  %9s   %-18s   %s" \
-        % ('ping', 'n', 'threads', 'init', 'time.1', 'time.2', 'time.3', \
-           'sum', 'min',  'max', 'mean', 'std-dev', 'rate', 'name', 'url')
+    num = "# %5s  %7s  %7s  %7s  %7s  %7s  %7s  %8s  %8s  %9s   %-18s   %s" \
+        % (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+    top = "# %5s  %7s  %7s  %7s  %7s  %7s  %7s  %8s  %8s  %9s   %-18s   %s" \
+        % ('ping', 'n', 'threads', 'init', 'tot', 'min',  'max', 'mean', \
+           'std-dev', 'rate', 'name', 'url')
 
     tab = "%7.5f  " \
           "%7d  "   \
           "%7d  "   \
-          "%7.2f  " \
-          "%7.2f  " \
-          "%7.2f  " \
           "%7.2f  " \
           "%7.2f  " \
           "%7.2f  " \
@@ -355,11 +365,8 @@ def benchmark_eval (_benchmark, error=None) :
         % (_benchmark['ping'], 
            vn, 
            concurrency, 
-           _benchmark['times'][0],      
-           _benchmark['times'][1], 
-           _benchmark['times'][2], 
-           _benchmark['times'][3],
-           vsum,   
+           vini,
+           vtot,   
            vmin,  
            vmax, 
            vmean, 
@@ -372,14 +379,17 @@ def benchmark_eval (_benchmark, error=None) :
 
     create_top = True
 
+    burl = surl.Url (_benchmark['url'])
+    bid  = "%s.%s" % (burl.scheme, burl.host)
+    bdat = "benchmark.%s.dat" % bid
     try :
-        statinfo = os.stat ('benchmark.dat')
+        statinfo = os.stat (bdat)
         if  statinfo.st_size > 0 :
             create_top = False
     except :
         pass
 
-    f = open ("benchmark.dat", "a+")
+    f = open (bdat, "a+")
 
     if  create_top :
         f.write ("%s\n" % num)

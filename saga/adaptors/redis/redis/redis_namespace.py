@@ -166,7 +166,6 @@ class redis_ns_monitor (sut.SagaThread) :
 
         except Exception as e :
             self.logger.critical ("redis monitoring thread crashed - disable callback handling (%s)") % str(e)
-            self.logger.debug (sumisc.trace2str(sumisc.get_exception_traceback ()))
             return
 
 

@@ -183,7 +183,6 @@ class Engine(sconf.Configurable):
 
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s 1: module loading failed: %s" % (module_name, e))
-                self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -199,12 +198,10 @@ class Engine(sconf.Configurable):
 
             except se.SagaException as e:
                 self._logger.error ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
-              # self._logger.trace ()
                 continue # skip to next adaptor
 
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
-              # self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -217,7 +214,6 @@ class Engine(sconf.Configurable):
 
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: failed self test: %s" % (module_name, e))
-              # self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -225,7 +221,6 @@ class Engine(sconf.Configurable):
             if adaptor_info is None :
                 self._logger.warning ("Skipping adaptor %s: adaptor meta data are invalid" \
                                    % module_name)
-                self._logger.trace ()
                 continue  # skip to next adaptor
 
 
@@ -235,7 +230,6 @@ class Engine(sconf.Configurable):
                 not 'schemas' in adaptor_info    :
                 self._logger.warning ("Skipping adaptor %s: adaptor meta data are incomplete" \
                                    % module_name)
-                self._logger.trace ()
                 continue  # skip to next adaptor
 
 
@@ -268,7 +262,6 @@ class Engine(sconf.Configurable):
 
             except se.SagaException as e:
                 self._logger.error ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
-                self._logger.trace ()
                 continue # skip to next adaptor
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
@@ -545,7 +538,6 @@ class Engine(sconf.Configurable):
                 exception._add_exception (e)
                 self._logger.info  ("bind_adaptor adaptor class ctor failed : %s.%s: %s" \
                                  % (adaptor_name, cpi_class, str(e)))
-                self._logger.trace ()
                 continue
             except Exception as e :
                 exception._add_exception (saga.NoSuccess (str(e), api_instance))

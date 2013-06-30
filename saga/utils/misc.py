@@ -22,18 +22,14 @@ _latencies = {}
 #
 def get_trace () :
 
-    print "X 1"
-
     trace = sys.exc_info ()[2]
 
     if  trace :
-        print "X 2"
         stack           = traceback.extract_tb  (trace)
         traceback_list  = traceback.format_list (stack)
         return "".join (traceback_list)
 
     else :
-        print "X 3"
         stack           = traceback.extract_stack ()
         traceback_list  = traceback.format_list (stack)
         return "".join (traceback_list[:-1])
