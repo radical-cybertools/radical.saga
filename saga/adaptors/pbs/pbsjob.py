@@ -9,7 +9,6 @@ __license__   = "MIT"
 
 import saga.utils.which
 import saga.utils.pty_shell
-import saga.utils.exception
 import saga.utils.threads   as sut
 
 import saga.adaptors.base
@@ -19,6 +18,7 @@ from saga.job.constants import *
 
 import re
 import time
+import threading
 
 from copy import deepcopy
 from cgi  import parse_qs
@@ -32,7 +32,7 @@ MONITOR_UPDATE_INTERVAL = 3  # seconds
 
 # --------------------------------------------------------------------
 #
-class _job_state_monitor(sut.SagaThread):
+class _job_state_monitor(threading.Thread):
     """ thread that periodically monitors job states
     """
     def __init__(self, job_service):

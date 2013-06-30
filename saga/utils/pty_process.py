@@ -96,6 +96,8 @@ class PTYProcess (object) :
         :param logger:  logger stream to send status messages to.
         """
 
+        self._debug = False
+
         self.logger = logger
         if  not  self.logger : self.logger = sul.getLogger ('PTYProcess') 
         self.logger.debug ("PTYProcess init %s" % self)
@@ -617,13 +619,13 @@ class PTYProcess (object) :
                     # skip non-lines
                     if  None == data :
                         data += self.read (timeout=_POLLDELAY)
+                    if self._debug : print ">>%s<<" % data
 
                     # check current data for any matching pattern
-                  # print ">>%s<<" % data
                     for n in range (0, len(patts)) :
 
                         match = patts[n].search (data)
-                      # print "==%s==" % patterns[n]
+                     #  if self._debug : print "==%s==" % patterns[n]
 
                         if match :
                             # a pattern matched the current data: return a tuple of
@@ -632,10 +634,10 @@ class PTYProcess (object) :
                             ret  = data[0:match.end()]
                             self.cache = data[match.end():] 
 
-                          # print "~~match!~~ %s" % data[match.start():match.end()]
-                          # print "~~match!~~ %s" % (len(data))
-                          # print "~~match!~~ %s" % (str(match.span()))
-                          # print "~~match!~~ %s" % (ret)
+                     #      if self._debug : print "~~match!~~ %s" % data[match.start():match.end()]
+                     #      if self._debug : print "~~match!~~ %s" % (len(data))
+                     #      if self._debug : print "~~match!~~ %s" % (str(match.span()))
+                     #      if self._debug : print "~~match!~~ %s" % (ret)
 
                             return (n, ret.replace('\r', ''))
 

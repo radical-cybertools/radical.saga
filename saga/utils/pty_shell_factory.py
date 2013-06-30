@@ -198,7 +198,11 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def _initialize_pty (self, pty_shell, info) :
+    def _initialize_pty (self, pty_shell, info, use_trigger=False) :
+
+        # 'trigger' determines if prompt triggers are to be used or not.  sftp
+        # for example does not deal well with triggers (no printf).  So, only
+        # proper shells should use triggers...
 
         with self.rlock :
 
@@ -233,8 +237,9 @@ class PTYShellFactory (object) :
                 # too, we exit the loop and are be ready to running shell
                 # commands.
                 retries       = 0
-                retry_trigger         = True
+                retry_trigger = True
                 found_trigger = ""
+
                 while True :
 
                     # --------------------------------------------------------------
@@ -251,14 +256,16 @@ class PTYShellFactory (object) :
                             raise se.NoSuccess ("Could not detect shell prompt (timeout)")
 
                         if  not retry_trigger : 
-                            # just waiting for the *right* trigger, don't need
-                            # new ones...
+                            # just waiting for the *right* trigger or prompt, 
+                            # don't need new ones...
                             continue
 
                         retries += 1
-                        pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
 
-                        # FIXME:  consider timeout
+                        if  use_trigger :
+                            pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+
+                        # FIXME:  consider better timeout
                         n, match = pty_shell.find (prompt_patterns, delay)
 
 
@@ -317,17 +324,19 @@ class PTYShellFactory (object) :
                     elif n == 4 :
 
                         if  retries :
-                            # we already sent triggers -- so this match is only
-                            # useful if saw the *correct* shell prompt trigger
-                            # first
-                            trigger = "HELLO_%d_SAGA" % retries
-                            if  not trigger in found_trigger :
-                                logger.debug ("waiting for prompt trigger %s: (%s) (%s)" \
-                                           % (trigger, n, match))
-                                # but more retries won't help...
-                                retry_trigger = False
-                                n, match = pty_shell.find (prompt_patterns, delay)
-                                continue
+                            if  use_trigger :
+                                # we already sent triggers -- so this match is only
+                                # useful if saw the *correct* shell prompt trigger
+                                # first
+                                trigger = "HELLO_%d_SAGA" % retries
+
+                                if  not trigger in found_trigger :
+                                    logger.debug ("waiting for prompt trigger %s: (%s) (%s)" \
+                                               % (trigger, n, match))
+                                    # but more retries won't help...
+                                    retry_trigger = False
+                                    n, match = pty_shell.find (prompt_patterns, delay)
+                                    continue
 
 
                         logger.info ("got initial shell prompt (%s) (%s)" \
@@ -359,7 +368,7 @@ class PTYShellFactory (object) :
             sh_slave = supp.PTYProcess (s_cmd, info['logger'])
 
             # authorization, prompt setup, etc
-            self._initialize_pty (sh_slave, info)
+            self._initialize_pty (sh_slave, info, use_trigger=True)
 
             return sh_slave
 
@@ -637,7 +646,7 @@ class PTYShellFactory (object) :
         elif 'Connection to master closed' in lmsg :
             e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
 
-        e.traceback = sumisc.get_exception_traceback ()
+        e.traceback = sumisc.get_trace ()
         return e
 
 

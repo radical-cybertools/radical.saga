@@ -22,7 +22,7 @@ try :
 
 
   # js = saga.job.Service ('gsissh://gsissh.kraken.nics.xsede.org', session=s)
-    js = saga.job.Service ('ssh://localhost/bin/sh', session=s)
+    js = saga.job.Service ('ssh://localhost/', session=s)
   
     jd = saga.job.Description ()
     jd.executable = '/bin/echo'
