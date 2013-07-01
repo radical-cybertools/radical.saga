@@ -420,7 +420,7 @@ class PTYShellFactory (object) :
 
             elif info['schema']  in _SCHEMAS_SH :
                 info['type']     = "sh"
-                info['sh_args']  = "-l -i"
+                info['sh_args']  = "-i"
                 info['sh_env']   = "/usr/bin/env TERM=vt100"
                 info['cp_env']   = "/usr/bin/env TERM=vt100"
                 info['fs_root']  = "/"
