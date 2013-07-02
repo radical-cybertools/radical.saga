@@ -143,8 +143,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Task', 
-                  float)
-    @sus.returns (sus.nothing)
+                  sus.optional (float))
+    @sus.returns (bool)
     def wait (self, timeout=None) :
 
         if  None == timeout :
@@ -161,7 +161,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Task')
+    @sus.takes   ('Task', 
+                  float)
     @sus.returns (sus.nothing)
     def cancel (self) :
 
@@ -305,6 +306,18 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
+    def __str__ (self) :
+
+        ret  = "["
+        for task in self.tasks :
+            ret += "'%s', "  %  str(task)
+        ret += "]"
+
+        return ret
+
+
+    # --------------------------------------------------------------------------
+    #
     @sus.takes   ('Container', 
                   Task)
     @sus.returns (sus.nothing)
@@ -312,11 +325,9 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         import saga.job as sjob
 
-        # AM: oh I hate that we don't use proper inheritance...
-        if  not isinstance (task, Task) and \
-            not isinstance (task, sjob.Job) :
+        if  not isinstance (task, Task) :
             
-            raise se.BadParameter ("Container handles jobs or tasks, not %s" \
+            raise se.BadParameter ("Container handles tasks, not %s" \
                                 % (type(task)))
 
         if not task in self.tasks :

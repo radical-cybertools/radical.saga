@@ -96,7 +96,7 @@ def benchmark_thread (tid, _benchmark) :
     post     = b_cfg['post']
 
     try :
-        pre_ret  = pre (t_cfg, b_cfg, session)
+        pre_ret  = pre (tid, t_cfg, b_cfg, session)
         sys.stdout.write ('-')
         sys.stdout.flush ()
 
@@ -106,8 +106,12 @@ def benchmark_thread (tid, _benchmark) :
 
         iterations = int(b_cfg['iterations']) / int(b_cfg['concurrency'])
 
-        for i in range (0, iterations) :
-            core_ret = core (pre_ret)
+        # poor-mans ceil()
+        if (iterations * int(b_cfg['concurrency'])) < int(b_cfg['iterations']) :
+            iterations += 1
+
+        for i in range (0, iterations+1) :
+            core_ret = core (tid, i, pre_ret)
             benchmark_tic   (_benchmark, tid)
 
 
@@ -115,7 +119,7 @@ def benchmark_thread (tid, _benchmark) :
         _benchmark['events'][tid]['event_4'].wait ()  # wait 'til others are done 
 
 
-        post_ret = post (core_ret)
+        post_ret = post (tid, core_ret)
         sys.stdout.write ('=')
         sys.stdout.flush ()
 
@@ -223,8 +227,9 @@ def benchmark_start (_benchmark) :
     cfg = _benchmark['bench_cfg']
 
     sut.lout ("\nBenchmark   : %s : %s\n" % (cfg['name'], cfg['url']))
-    sut.lout ("iterations  : %s\n"        %  cfg['iterations'])
     sut.lout ("concurrency : %s\n"        %  cfg['concurrency'])
+    sut.lout ("iterations  : %s\n"        %  cfg['iterations'])
+    sut.lout ("load        : %s\n"        %  cfg['load'])
 
 
     _url = surl.Url (cfg['url'])
@@ -314,10 +319,11 @@ def benchmark_eval (_benchmark, error=None) :
     for tid in _benchmark['times'] :
         times += _benchmark['times'][tid][1:]
 
-    if  len(times) < 4 :
-        raise Exception ("min 4 timing values required for benchmark evaluation (%d)" % len(times))
+    if  len(times) < 1 :
+        raise Exception ("min 1 timing value required for benchmark evaluation (%d)" % len(times))
 
     concurrency = int(_benchmark['bench_cfg']['concurrency'])
+    load        = int(_benchmark['bench_cfg']['load'])
 
     out = "\n"
     top = ""
@@ -336,21 +342,27 @@ def benchmark_eval (_benchmark, error=None) :
     vsdev = math.sqrt (sum ((x - vmean) ** 2 for x in times) / vn)
     vrate = vn / vtot
 
-    out += "  url     : %s\n"                                % (_benchmark['url'] )
-    out += "  ping    : %8.5fs\n"                            % (_benchmark['ping'])
-    out += "  n       : %9d          threads : %9d\n"        % (vn, concurrency)
-    out += "  total   : %8.2fs          min     : %8.2fs\n"  % (vtot,     vmin )
-    out += "  init    : %8.2fs          max     : %8.2fs\n"  % (vini,     vmax )
-    out += "  mean    : %8.2fs          sdev    : %8.2fs\n"  % (vmean,    vsdev)
-    out += "  rate    : %8.2fs\n"                            % (vrate          )
+    bname = _benchmark['bench_cfg']['name']
+    burl  = surl.Url (_benchmark['url'])
+    bid   = "%s.%s" % (burl.scheme, burl.host)
+    bdat  = "benchmark.%s.%s.dat" % (bname, bid)
 
-    num = "# %5s  %7s  %7s  %7s  %7s  %7s  %7s  %8s  %8s  %9s   %-18s   %s" \
-        % (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
-    top = "# %5s  %7s  %7s  %7s  %7s  %7s  %7s  %8s  %8s  %9s   %-18s   %s" \
-        % ('ping', 'n', 'threads', 'init', 'tot', 'min',  'max', 'mean', \
+    out += "  url     : %s\n"                                % (burl)
+    out += "  ping    : %8.5fs\n"                            % (_benchmark['ping'])
+    out += "  threads : %9d          load    : %9d\n"        % (concurrency, load )
+    out += "  iterats.: %9d          min     : %8.2fs\n"     % (vn,          vmin )
+    out += "  init    : %8.2fs          max     : %8.2fs\n"  % (vini,        vmax )
+    out += "  total   : %8.2fs          mean    : %8.2fs\n"  % (vtot,        vmean)
+    out += "  rate    : %8.2fs          sdev    : %8.2fs\n"  % (vrate,       vsdev)
+
+    num = "# %5s  %7s  %7s  %7s  %7s  %7s  %7s  %7s  %8s  %8s  %9s   %-18s   %s" \
+        % (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
+    top = "# %5s  %7s  %7s  %7s  %7s  %7s  %7s  %7s  %8s  %8s  %9s   %-18s   %s" \
+        % ('ping', 'n', 'threads', 'load', 'init', 'tot', 'min',  'max', 'mean', \
            'std-dev', 'rate', 'name', 'url')
 
     tab = "%7.5f  " \
+          "%7d  "   \
           "%7d  "   \
           "%7d  "   \
           "%7.2f  " \
@@ -365,6 +377,7 @@ def benchmark_eval (_benchmark, error=None) :
         % (_benchmark['ping'], 
            vn, 
            concurrency, 
+           load, 
            vini,
            vtot,   
            vmin,  
@@ -372,16 +385,12 @@ def benchmark_eval (_benchmark, error=None) :
            vmean, 
            vsdev, 
            vrate, 
-           "'%s'" % _benchmark['bench_cfg']['name'],   # I am sorry, sooo sorry...  
+           bname,
            _benchmark['url'])
 
     sut.lout ("\n%s" % out)
 
     create_top = True
-
-    burl = surl.Url (_benchmark['url'])
-    bid  = "%s.%s" % (burl.scheme, burl.host)
-    bdat = "benchmark.%s.dat" % bid
     try :
         statinfo = os.stat (bdat)
         if  statinfo.st_size > 0 :
