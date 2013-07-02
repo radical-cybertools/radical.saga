@@ -450,8 +450,7 @@ class PTYShellFactory (object) :
 
             except Exception  as e :
                 info['latency'] = 1.0  # generic value assuming slow link
-                raise se.BadParameter._log (self.logger, "Could not contact host '%s': %s" \
-                                         % (url, e))
+                info['logger'].warning ("Could not contact host '%s': %s" % (url, e))
                 
             if  info['type'] == "sh" :
 
