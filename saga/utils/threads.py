@@ -130,6 +130,14 @@ class SagaThread (Thread) :
             self._state     = DONE
 
         except Exception as e :
+            print ' ========================================== '
+            print repr(e)
+            print ' ========================================== '
+            print str(e)
+            print ' ========================================== '
+            print sumisc.get_trace ()
+            print ' ========================================== '
+
             self._exception = e
             self._state     = FAILED
 

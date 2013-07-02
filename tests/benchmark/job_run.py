@@ -6,10 +6,9 @@ import sys
 import saga
 
 
-
 # ------------------------------------------------------------------------------
 #
-def benchmark_pre (test_cfg, bench_cfg, session) :
+def benchmark_pre (tid, test_cfg, bench_cfg, session) :
 
     if  not 'job_service_url' in test_cfg :
         raise saga.NoSuccess ('no job service URL configured')
@@ -32,7 +31,7 @@ def benchmark_pre (test_cfg, bench_cfg, session) :
 
 # ------------------------------------------------------------------------------
 #
-def benchmark_core (args={}) :
+def benchmark_core (tid, i, args={}) :
 
     js = args['js']
     jd = args['jd']
@@ -43,7 +42,7 @@ def benchmark_core (args={}) :
 
 # ------------------------------------------------------------------------------
 #
-def benchmark_post (args={}) :
+def benchmark_post (tid, args={}) :
 
     pass
 
@@ -52,7 +51,7 @@ def benchmark_post (args={}) :
 #
 try:
 
-    sb.benchmark_init ('job.run', benchmark_pre, benchmark_core, benchmark_post)
+    sb.benchmark_init ('job_run', benchmark_pre, benchmark_core, benchmark_post)
 
 except saga.SagaException, ex:
     print "An exception occured: (%s) %s " % (ex.type, (str(ex)))

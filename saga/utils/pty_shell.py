@@ -313,10 +313,12 @@ class PTYShell (object) :
             try :
 
                 match = None
+                fret  = None
 
-                while not match :
-                    _, match = self.pty_shell.find ([self.prompt], _PTY_TIMEOUT)
-
+                while fret == None :
+                    fret, match = self.pty_shell.find ([self.prompt], _PTY_TIMEOUT)
+                
+              # self.logger.debug  ("find prompt '%s' in '%s'" % (self.prompt, match))
                 ret, txt = self._eval_prompt (match)
 
                 return (ret, txt)
@@ -409,11 +411,11 @@ class PTYShell (object) :
 
                     # FIXME: how do we know that _PTY_TIMOUT suffices?  In particular if
                     # we actually need to flush...
-                    _, match  = self.pty_shell.find ([self.prompt], delay)
+                    fret, match = self.pty_shell.find ([self.prompt], delay)
 
                   # self.logger.error  ("got match (%s)" % match)
 
-                    if not match :
+                    if  fret == None :
                     
                         retries += 1
                         if  retries > 10 :
@@ -449,9 +451,9 @@ class PTYShell (object) :
                 self.run_async ('printf "SYNCHRONIZE_PROMPT\n"')
 
                 # FIXME: better timout value?
-                _, match = self.pty_shell.find (["SYNCHRONIZE_PROMPT"], timeout=1.0)  
+                fret, match = self.pty_shell.find (["SYNCHRONIZE_PROMPT"], timeout=1.0)  
 
-                if not match :
+                if  fret == None :
                     # not find prompt after blocking?  BAD!  Restart the shell
                     self.finalize (kill_pty=True)
                     raise se.NoSuccess ("Could not synchronize prompt detection")
@@ -608,9 +610,9 @@ class PTYShell (object) :
                     prompt = new_prompt
 
                 # command has been started - now find prompt again.  
-                _, match = self.pty_shell.find ([prompt], timeout=-1.0)  # blocks
+                fret, match = self.pty_shell.find ([prompt], timeout=-1.0)  # blocks
 
-                if not match :
+                if  fret == None :
                     # not find prompt after blocking?  BAD!  Restart the shell
                     self.finalize (kill_pty=True)
                     raise se.IncorrectState ("run_sync failed, no prompt (%s)" % command)
@@ -631,9 +633,9 @@ class PTYShell (object) :
                     stdout =  txt
 
                     self.pty_shell.write ("cat %s\n" % _err)
-                    _, match = self.pty_shell.find ([self.prompt], timeout=-1.0)  # blocks
+                    fret, match = self.pty_shell.find ([self.prompt], timeout=-1.0)  # blocks
 
-                    if not match :
+                    if  fret == None :
                         # not find prompt after blocking?  BAD!  Restart the shell
                         self.finalize (kill_pty=True)
                         raise se.IncorrectState ("run_sync failed, no prompt (%s)" \
