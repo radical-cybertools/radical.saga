@@ -20,10 +20,15 @@ import re
 import time
 from copy import deepcopy
 from cgi import parse_qs
+from StringIO import StringIO
+from datetime import datetime
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
+_QSTAT_JOB_STATE_RE = re.compile(r"^([^ ]+) (.+)$")
+_QSTAT_KEY_VALUE_RE = re.compile(r"(.+): +(.+)$")
+_QACCT_KEY_VALUE_RE = re.compile(r"^([^ ]+) +(.+)$")
 
 # --------------------------------------------------------------------
 #
@@ -66,7 +71,7 @@ def _sge_to_saga_jobstate(sgejs):
 def _sgescript_generator(url, logger, jd, pe_list, queue=None):
     """ generates an SGE script from a SAGA job description
     """
-    sge_params = str()
+    sge_params = "#$ -S /bin/bash\n"
     exec_n_args = str()
 
     # check spmd variation. this translates to the SGE qsub -pe flag.
@@ -230,8 +235,8 @@ _ADAPTOR_INFO = {
 ###############################################################################
 # The adaptor class
 class Adaptor (saga.adaptors.base.Base):
-    """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by 
-        the SAGA engine), and which registers the CPI implementation classes 
+    """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by
+        the SAGA engine), and which registers the CPI implementation classes
         which provide the adaptor's functionality.
     """
 
@@ -321,11 +326,12 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         # these are the commands that we need in order to interact with SGE.
         # the adaptor will try to find them during initialize(self) and bail
-        # out in case they are note avaialbe.
+        # out in case they are not available.
         self._commands = {'qstat': None,
                           'qsub':  None,
                           'qdel':  None,
-                          'qconf': None}
+                          'qconf': None,
+                          'qacct': None}
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
@@ -474,48 +480,158 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
-    def _retrieve_job(self, job_id):
-        """ see if we can get some info about a job that we don't
-            know anything about
+    def __shell_run(self, cmd):
+        """ Run a shell command remotely and logs the command and the result.
+        :param cmd: The shell command to run
+        :return: return_code, output
         """
+        #self._logger.debug("$ {}".format(cmd))
+
+        ret, out, _ = self.shell.run_sync(cmd)
+
+        #self._logger.debug("> {}\n{}".format(ret, out.rstrip()))
+
+        return ret, out
+
+    def __job_info_from_accounting(self, pid, max_retries=10):
+        """ Returns job information from the SGE accounting using qacct.
+        It may happen that when the job exits from the queue system the results in
+        the accounting database take some time to appear. To avoid premature failing
+        several tries can be done (up to a maximum) with delays of 1 second in between.
+        :param pid: SGE job id
+        :param max_retries: The maximum number of retries in case qacct fails
+        :return: job information dictionary
+        """
+
+        job_info = None
+        retries = max_retries
+
+        while job_info is None and retries > 0:
+            retries -= 1
+
+            ret, out = self.__shell_run("qacct -j %s | grep -E '%s'" % (
+                                pid, "hostname|qsub_time|start_time|end_time|exit_status|failed"))
+
+            if ret == 0: # ok, put qacct results into a dictionary
+                # hostname     sge
+                # qsub_time    Mon Jun 24 17:24:43 2013
+                # start_time   Mon Jun 24 17:24:50 2013
+                # end_time     Mon Jun 24 17:44:50 2013
+                # failed       0
+                # exit_status  0
+                qres = dict()
+                for line in StringIO(out):
+                    line = line.rstrip("\n")
+                    m = _QACCT_KEY_VALUE_RE.match(line)
+                    if m is not None:
+                        key, value = m.groups()
+                        qres[key] = value.rstrip()
+                    else:
+                        self._logger.warn("Unmatched qacct line: %s" % line)
+
+                # extract job info from qres
+                job_info = dict(
+                    state=saga.job.DONE if qres.get("failed") == "0" else saga.job.FAILED,
+                    exec_hosts=qres.get("hostname"),
+                    returncode=int(qres.get("exit_status")),
+                    create_time=qres.get("qsub_time"),
+                    start_time=qres.get("start_time"),
+                    end_time=qres.get("end_time"),
+                    gone=False)
+            elif retries > 0:
+                # sometimes there is a lapse between the job exits from the queue and
+                # its information enters in the accounting database
+                # let's run qacct again after a delay
+                time.sleep(1)
+
+        return job_info
+
+    # ----------------------------------------------------------------
+    #
+    def _retrieve_job(self, job_id):
+        """ retrieve job information
+        :param job_id: SAGA job id
+        :return: job information dictionary
+        """
+
         rm, pid = self._adaptor.parse_id(job_id)
 
-        # run the SGE 'qstat' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync("echo -n \"JID: \" && %s | grep %s \
-                && %s -f -j %s | egrep '(submission_time)'" \
-                % (self._commands['qstat']['path'], pid,
-                   self._commands['qstat']['path'], pid))
+        # check the state of the job
+        ret, out = self.__shell_run(
+                        "{qstat} | tail -n+3 | awk '($1=={pid}) {{print $5,$6,$7}}'".format(
+                            qstat=self._commands['qstat']['path'], pid=pid))
 
-        if ret != 0:
-            message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
-        else:
-            # the job seems to exist on the backend. let's gather some data
-            job_info = {
-                'state':        saga.job.UNKNOWN,
-                'exec_hosts':   None,
-                'returncode':   None,
-                'create_time':  None,
-                'start_time':   None,
-                'end_time':     None,
-                'gone':         False
-            }
+        out = out.strip()
 
-            results = out.split('\n')
-            for result in results:
-                if 'JID:' in result:
-                    job_state = _sge_to_saga_jobstate(out.split()[5])
-                    job_info['state'] = job_state
-                elif 'submission_time:' in result:
-                    val = result.replace('submission_time:', '')
-                    job_info['create_time'] = val.strip()
+        if ret == 0 and len(out) > 0: # job is still in the queue
+            # output is something like
+            # r 06/24/2013 17:24:50
+            m = _QSTAT_JOB_STATE_RE.match(out)
+            if m is None: # something wrong with the result of qstat
+                message = "Unexpected qstat results retrieving job info:\n%s" % out.rstrip()
+                log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-            return job_info
+            state, start_time = m.groups()
+
+            # Convert start time into POSIX format
+            try:
+                dt = datetime.strptime(start_time, "%m/%d/%Y %H:%M:%S")
+                start_time = dt.strftime("%a %b %d %H:%M:%S %Y")
+            except:
+                start_time = None
+
+            if state not in ["r", "t", "s", "S", "T", "d", "E", "Eqw"]:
+                start_time = None
+
+            if state == "Eqw": # if it is an Eqw job it is better to retrieve the information from qacct
+                job_info = self.__job_info_from_accounting(pid)
+                # TODO remove the job from the queue ?
+                # self.__shell_run("%s %s" % (self._commands['qdel']['path'], pid))
+
+            else: # use qstat -j pid
+                ret, out = self.__shell_run(
+                            "{qstat} -j {pid} | grep -E 'submission_time|sge_o_host'".format(
+                                qstat=self._commands['qstat']['path'], pid=pid))
+
+                if ret == 0: # if ret != 0 fall back to qacct
+                    # output is something like
+                    # submission_time:            Mon Jun 24 17:24:43 2013
+                    # sge_o_host:                 sge
+                    qres = dict()
+                    for line in StringIO(out):
+                        line = line.rstrip("\n")
+                        m = _QSTAT_KEY_VALUE_RE.match(line)
+                        if m is not None:
+                            key, value = m.groups()
+                            qres[key] = value.rstrip()
+                        else:
+                            self._logger.warn("Unmatched qstat line: %s" % line)
+
+                    job_info = dict(
+                        state=_sge_to_saga_jobstate(state),
+                        exec_hosts=qres.get("sge_o_host"),
+                        returncode=None, # it can not be None because it will be casted to int()
+                        create_time=qres.get("submission_time"),
+                        start_time=start_time,
+                        end_time=None,
+                        gone=False)
+
+                    self._logger.debug("job_info={}".format(repr(job_info)))
+
+                    return job_info
+
+        # job already finished or there were an error with qstat
+        # let's try running qacct to get accounting info about the job
+        job_info = self.__job_info_from_accounting(pid)
+
+        self._logger.debug("job_info={}".format(repr(job_info)))
+
+        return job_info
 
     # ----------------------------------------------------------------
     #
     def _job_get_info(self, job_id):
-        """ get job attributes via qstat
+        """ get job attributes
         """
 
         # if we don't have the job in our dictionary, we don't want it
@@ -533,42 +649,18 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             self._logger.warning("Job information is not available anymore.")
             return prev_info
 
-        # curr. info will contain the new job info collect. it starts off
-        # as a copy of prev_info
-        curr_info = deepcopy(prev_info)
+        # if the job is in a terminal state don't expect it to change anymore
+        if prev_info["state"] in [saga.job.CANCELED, saga.job.FAILED, saga.job.DONE]:
+            return prev_info
 
-        rm, pid = self._adaptor.parse_id(job_id)
+        # retrieve updated job information
+        curr_info = self._retrieve_job(job_id)
+        if curr_info is None:
+            prev_info["gone"] = True
+            return prev_info
 
-        # run the SGE 'qstat' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync("echo -n \"JID: \" && %s | grep %s \
-                && %s -f -j %s | egrep '(submission_time)'" \
-                % (self._commands['qstat']['path'], pid,
-                   self._commands['qstat']['path'], pid))
-
-        if ret != 0:
-            # Let's see if the previous job state was runnig or pending. in
-            # that case, the job is gone now, which can either mean DONE,
-            # or FAILED. the only thing we can do is set it to 'DONE'
-            if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                curr_info['state'] = saga.job.DONE
-                curr_info['gone'] = True
-                self._logger.warning("Previously running job has \
-disappeared. This probably means that the backend doesn't store informations \
-about finished jobs. Setting state to 'DONE'.")
-            else:
-                curr_info['gone'] = True
-
-        else:
-            results = out.split('\n')
-            for result in results:
-                if 'JID:' in result:
-                    job_state = _sge_to_saga_jobstate(out.split()[5])
-                    curr_info['state'] = job_state
-                elif 'submission_time:' in result:
-                    val = result.replace('submission_time:', '')
-                    curr_info['create_time'] = val.strip()
-
-        # return the new job info dict
+        # update the job info cache and return it
+        self.jobs[job_id] = curr_info
         return curr_info
 
     # ----------------------------------------------------------------
@@ -715,9 +807,15 @@ about finished jobs. Setting state to 'DONE'.")
         """ Implements saga.adaptors.cpi.job.Service.get_job()
         """
 
-        # try to get some information about this job and throw it into
-        # our job dictionary.
-        self.jobs[jobid] = self._retrieve_job(jobid)
+        # try to get some information about this job
+        job_info = self._retrieve_job(jobid)
+
+        if job_info is None: # the job doesn't exist in sge
+            message = "Couldn't reconnect to job '%s'" % jobid
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+        # save it into our job dictionary.
+        self.jobs[jobid] = job_info
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
