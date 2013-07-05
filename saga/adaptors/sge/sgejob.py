@@ -485,11 +485,11 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         :param cmd: The shell command to run
         :return: return_code, output
         """
-        #self._logger.debug("$ {}".format(cmd))
+        self._logger.debug("$ {}".format(cmd))
 
         ret, out, _ = self.shell.run_sync(cmd)
 
-        #self._logger.debug("> {}\n{}".format(ret, out.rstrip()))
+        self._logger.debug("> {}\n{}".format(ret, out.rstrip()))
 
         return ret, out
 
@@ -563,6 +563,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         out = out.strip()
 
+        job_info = None
+
         if ret == 0 and len(out) > 0: # job is still in the queue
             # output is something like
             # r 06/24/2013 17:24:50
@@ -588,7 +590,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 # TODO remove the job from the queue ?
                 # self.__shell_run("%s %s" % (self._commands['qdel']['path'], pid))
 
-            else: # use qstat -j pid
+            if job_info is None: # use qstat -j pid
                 ret, out = self.__shell_run(
                             "{qstat} -j {pid} | grep -E 'submission_time|sge_o_host'".format(
                                 qstat=self._commands['qstat']['path'], pid=pid))
@@ -616,15 +618,17 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                         end_time=None,
                         gone=False)
 
-                    self._logger.debug("job_info={}".format(repr(job_info)))
+        if job_info is None:
+            # job already finished or there was an error with qstat
+            # let's try running qacct to get accounting info about the job
+            job_info = self.__job_info_from_accounting(pid)
 
-                    return job_info
+        if job_info is None: # Oooops, we couldn't retrieve information from SGE
+            message = "Couldn't reconnect to job '%s'" % job_id
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        # job already finished or there were an error with qstat
-        # let's try running qacct to get accounting info about the job
-        job_info = self.__job_info_from_accounting(pid)
-
-        self._logger.debug("job_info={}".format(repr(job_info)))
+        self._logger.debug("job_info=[{}]".format(", ".join(["%s=%s" % (k, job_info[k]) for k in [
+                "state", "returncode", "exec_hosts", "create_time", "start_time", "end_time", "gone"]])))
 
         return job_info
 
@@ -809,10 +813,6 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         # try to get some information about this job
         job_info = self._retrieve_job(jobid)
-
-        if job_info is None: # the job doesn't exist in sge
-            message = "Couldn't reconnect to job '%s'" % jobid
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         # save it into our job dictionary.
         self.jobs[jobid] = job_info
