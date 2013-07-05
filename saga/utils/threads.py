@@ -34,6 +34,7 @@ class Thread (threading.Thread) :
         self.daemon     = True
 
 
+    @classmethod
     def Run (self, call, *args, **kwargs) :
 
         t = self (call, *args, **kwargs)

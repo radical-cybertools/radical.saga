@@ -94,7 +94,18 @@ _ADAPTOR_INFO          = {
 
 class Adaptor (saga.adaptors.base.Base):
     """
-    use 'export LIBCLOUD_DEBUG=/dev/stderr' for debugging
+
+    Known Limitations, Notes
+    ========================
+
+    1) EC2 reports the VM instance to be 'Running' when it starts booting -- at
+    that point the ssh login is not yet functional, and job service instance
+    creation will thus fail.  I don't see a simple way to inspect the internal
+    state (apart from trial/error which is not implemented), so the application
+    needs to cater for that, for example by re-trying to connect.
+
+    2) use `export LIBCLOUD_DEBUG=/dev/stderr` for debugging
+
     """
 
     # ----------------------------------------------------------------
@@ -249,16 +260,6 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
     [1] `https://issues.apache.org/jira/browse/LIBCLOUD-326`
     [2] `https://forums.aws.amazon.com/message.jspa?messageID=386571`
-
-
-    2) The `Server` attribute is ignored at this point, only the default AWS
-    service endpoint is supported (the default defined by libcloud).
-
-    3) EC2 reports the VM instance to be 'Running' when it starts booting -- at
-    that point the ssh login is not yet functional, and job service instance
-    creation will thus fail.  I don't see a simple way to inspect the internal
-    state (apart from trial/error which is not implemented), so the application
-    needs to cater for that, for example by re-trying to connect.
 
     """
 
@@ -699,7 +700,7 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
     @SYNC_CALL
     def destroy (self, id):
 
-        node = self.aquire (id)
+        node = self.acquire (id)
         node.destroy ()
 
    
@@ -838,7 +839,7 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
                 raise saga.IncorrectState ("resource '%s' disappeared")
 
             if  len (nodes) != 1 :
-                self._log.warning ("Could not uniquely identify instance for '%s'" % self.rid)
+                self._logger.warning ("Could not uniquely identify instance for '%s'" % self.rid)
 
             self.resource = nodes[0]
 

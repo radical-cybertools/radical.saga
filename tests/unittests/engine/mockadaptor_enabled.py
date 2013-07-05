@@ -54,7 +54,7 @@ class MockJob(saga.adaptors.cpi.job.Job):
 
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super(SGEJobService, self)
+        self._cpi_base = super(MockJob, self)
         self._cpi_base.__init__(api, adaptor)
 
 
