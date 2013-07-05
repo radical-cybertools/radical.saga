@@ -480,19 +480,6 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
-    def __shell_run(self, cmd):
-        """ Run a shell command remotely and logs the command and the result.
-        :param cmd: The shell command to run
-        :return: return_code, output
-        """
-        self._logger.debug("$ {}".format(cmd))
-
-        ret, out, _ = self.shell.run_sync(cmd)
-
-        self._logger.debug("> {}\n{}".format(ret, out.rstrip()))
-
-        return ret, out
-
     def __job_info_from_accounting(self, pid, max_retries=10):
         """ Returns job information from the SGE accounting using qacct.
         It may happen that when the job exits from the queue system the results in
@@ -509,7 +496,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         while job_info is None and retries > 0:
             retries -= 1
 
-            ret, out = self.__shell_run("qacct -j %s | grep -E '%s'" % (
+            ret, out, _ = self.shell.run_sync("qacct -j %s | grep -E '%s'" % (
                                 pid, "hostname|qsub_time|start_time|end_time|exit_status|failed"))
 
             if ret == 0: # ok, put qacct results into a dictionary
@@ -557,7 +544,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # check the state of the job
-        ret, out = self.__shell_run(
+        ret, out, _ = self.shell.run_sync(
                         "{qstat} | tail -n+3 | awk '($1=={pid}) {{print $5,$6,$7}}'".format(
                             qstat=self._commands['qstat']['path'], pid=pid))
 
@@ -591,7 +578,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 # self.__shell_run("%s %s" % (self._commands['qdel']['path'], pid))
 
             if job_info is None: # use qstat -j pid
-                ret, out = self.__shell_run(
+                ret, out, _ = self.shell.run_sync(
                             "{qstat} -j {pid} | grep -E 'submission_time|sge_o_host'".format(
                                 qstat=self._commands['qstat']['path'], pid=pid))
 
