@@ -9,8 +9,23 @@ adaptors for different distributed middleware systems and services. SAGA-Python
 focuses on usability, extensibility and simple deployment in real-world
 heterogeneous distributed computing environments and application scenarios.
 
-More information can be found at https://github.com/saga-project/saga-python/ .
+**More information:**
 
+.. tabularcolumns:: |c|p{50cm}|
+
++-------------------------+-------------------------------------------------------------------+
+|                         | **Website:**                                                      | 
+|                         |                                                                   |
+|                         | https://github.com/saga-project/saga-python                       |
++-------------------------+-------------------------------------------------------------------+
+| .. image:: ggroups.png  | **saga-users Group:**                                             |
+|                         |                                                                   |
+|                         | https://groups.google.com/forum/#!forum/saga-users                |
++-------------------------+-------------------------------------------------------------------+
+| .. image:: twitter.png  | **Twitter:**                                                      |
+|                         |                                                                   |
+|                         | https://twitter.com/SAGAGridAPI                                   |
++-------------------------+-------------------------------------------------------------------+
 
 #########
 Contents:
