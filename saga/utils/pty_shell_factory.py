@@ -469,7 +469,7 @@ class PTYShellFactory (object) :
 
             elif info['schema']  in _SCHEMAS_SH :
                 info['type']     = "sh"
-                info['sh_args']  = "-l -i"
+                info['sh_args']  = "-i"
                 info['sh_env']   = "/usr/bin/env TERM=vt100"
                 info['cp_env']   = "/usr/bin/env TERM=vt100"
                 info['fs_root']  = "/"
@@ -498,8 +498,7 @@ class PTYShellFactory (object) :
 
             except Exception  as e :
                 info['latency'] = 1.0  # generic value assuming slow link
-                raise se.BadParameter._log (self.logger, "Could not contact host '%s': %s" \
-                                         % (url, e))
+                info['logger'].warning ("Could not contact host '%s': %s" % (url, e))
                 
             if  info['type'] == "sh" :
 
