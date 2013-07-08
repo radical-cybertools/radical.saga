@@ -35,7 +35,7 @@ _ADAPTOR_DOC           = {
 
 _ADAPTOR_INFO          = {
     'name'             : _ADAPTOR_NAME,
-    'version'          : 'v0.2',
+    'version'          : 'v0.2.beta',
     'schemas'          : _ADAPTOR_SCHEMAS,
     'cpis'             : [{
         'type'         : 'saga.advert.Directory',
