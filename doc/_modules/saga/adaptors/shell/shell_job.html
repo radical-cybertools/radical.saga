@@ -368,7 +368,7 @@
 
             <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="p">:</span> 
              <span class="c">#  self.shell.run_sync  (&quot;PURGE&quot;, iomode=None)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_async</span> <span class="p">(</span><span class="s">&quot;QUIT&quot;</span> <span class="p">,</span> <span class="n">iomode</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_async</span> <span class="p">(</span><span class="s">&quot;QUIT&quot;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">kill_shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
@@ -451,14 +451,20 @@
         <span class="c"># Well, actually, we do not use exec, as that does not give us good</span>
         <span class="c"># feedback on failures (the shell just quits) -- so we replace it with</span>
         <span class="c"># this poor-man&#39;s version...</span>
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;/bin/sh -c &#39;/bin/sh </span><span class="si">%s</span><span class="s">/wrapper.sh $$ &amp;&amp; kill -9 $PPID&#39; || false&quot;</span> \
-                                        <span class="o">%</span> <span class="p">(</span><span class="n">base</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_async</span> <span class="p">(</span><span class="s">&quot;/bin/sh -c &#39;/bin/sh </span><span class="si">%s</span><span class="s">/wrapper.sh $$ &amp;&amp; kill -9 $PPID&#39; || false&quot;</span> \
+                           <span class="o">%</span> <span class="p">(</span><span class="n">base</span><span class="p">))</span>
 
-        <span class="c"># either way, we somehow ran the script, and just need to check if it</span>
-        <span class="c"># came up all right...</span>
+        <span class="c"># shell_wrapper.sh will report its own PID -- we use that to sync prompt</span>
+        <span class="c"># detection, too.  Wait for 1sec max.</span>
+        <span class="n">pid_match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&#39;PID: \d+&#39;</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">if</span>  <span class="n">pid_match</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;host bootstrap failed (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pid_match</span><span class="p">))</span>
+
+        <span class="c"># now we can be sure to expect the valid prompt instance</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">find_prompt</span> <span class="p">()</span>
         <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;host setup failed (</span><span class="si">%s</span><span class="s">): (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
-
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to run bootstrap: (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got cmd prompt (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">strip</span> <span class="p">()))</span>
 
 
@@ -1092,6 +1098,8 @@
             <span class="c"># don&#39;t know what to do...</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;Cannot create job, insufficient information&quot;</span><span class="p">)</span>
         
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_created</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_created</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_created</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
 
@@ -1122,6 +1130,9 @@
 
         <span class="k">if</span> <span class="s">&#39;start&#39;</span> <span class="ow">in</span> <span class="n">stats</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span>  <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s">&#39;start&#39;</span><span class="p">]</span>
         <span class="k">if</span> <span class="s">&#39;stop&#39;</span>  <span class="ow">in</span> <span class="n">stats</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finished</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s">&#39;stop&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span>  <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span>  <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_started</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finished</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finished</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_finished</span><span class="p">)</span>
         
         <span class="k">if</span>  <span class="ow">not</span> <span class="s">&#39;state&#39;</span> <span class="ow">in</span> <span class="n">stats</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to get job state for &#39;</span><span class="si">%s</span><span class="s">&#39;: (</span><span class="si">%s</span><span class="s">)&quot;</span> \

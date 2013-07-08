@@ -100,15 +100,23 @@
         <span class="k">if</span>  <span class="ow">not</span> <span class="nb">isinstance</span> <span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">)</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="s">&quot;appended item is not a saga.Context instance&quot;</span>
 
-        <span class="c"># create a deep copy of the context</span>
+        <span class="c"># create a deep copy of the context (this keeps _adaptor etc)</span>
         <span class="n">ctx_clone</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span>  <span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
         <span class="n">ctx</span><span class="o">.</span><span class="n">_attributes_deep_copy</span> <span class="p">(</span><span class="n">ctx_clone</span><span class="p">)</span>
 
-        <span class="c"># initialize the cloned context before adding</span>
+        <span class="c"># from pudb import set_trace; set_trace()</span>
+
+        <span class="c"># try to initialize that context, i.e. evaluate its attributes and</span>
+        <span class="c"># infer additional runtime information as needed</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;adding  context : </span><span class="si">%s</span><span class="s">&quot;</span> \
                                  <span class="o">%</span> <span class="p">(</span><span class="n">ctx_clone</span><span class="p">))</span>
-        <span class="n">ctx_clone</span><span class="o">.</span><span class="n">_initialize</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="n">ctx_clone</span><span class="o">.</span><span class="n">_initialize</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">SagaException</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Cannot add context, initialization failed (</span><span class="si">%s</span><span class="s">)&quot;</span>  <span class="o">%</span>  <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
+        <span class="c"># context initialized ok, add it to the list of known contexts</span>
         <span class="nb">super</span> <span class="p">(</span><span class="n">_ContextList</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">append</span> <span class="p">(</span><span class="n">ctx_clone</span><span class="p">)</span>
 
 
@@ -143,6 +151,8 @@
             <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">_engine</span><span class="o">.</span><span class="n">_adaptor_registry</span><span class="p">[</span><span class="s">&#39;saga.Context&#39;</span><span class="p">][</span><span class="n">schema</span><span class="p">]</span> <span class="p">:</span>
 
                 <span class="n">default_ctxs</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;adaptor_instance&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">_get_default_contexts</span><span class="p">()</span>
+                <span class="c"># FIXME:</span>
+                <span class="n">default_ctxs</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">for</span> <span class="n">default_ctx</span> <span class="ow">in</span> <span class="n">default_ctxs</span> <span class="p">:</span>
 
                     <span class="bp">self</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">append</span> <span class="p">(</span><span class="n">default_ctx</span><span class="p">)</span>
@@ -227,7 +237,7 @@
     <span class="c">#</span>
     <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Session&#39;</span><span class="p">)</span>
     <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__str__</span>  <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String represenation.&quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="s">&quot;Registered contexts: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contexts</span><span class="p">))</span>
@@ -235,9 +245,9 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Session&#39;</span><span class="p">,</span> 
-                  <span class="n">saga</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">Context</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+    <span class="nd">@sus.takes</span>      <span class="p">(</span><span class="s">&#39;Session&#39;</span><span class="p">,</span> 
+                     <span class="n">saga</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">Context</span><span class="p">)</span>
+    <span class="nd">@sus.returns</span>    <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">add_context</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Session.add_context"><a class="viewcode-back" href="../../library/session.html#saga.session.Session.add_context">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        ctx:     saga.Context</span>
@@ -247,18 +257,7 @@
 <span class="sd">        It is encouraged to use the L{contexts} property instead. </span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="n">ctx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">contexts</span> <span class="p">:</span>
-
-            <span class="c"># try to initialize that context, i.e. evaluate its attributes and</span>
-            <span class="c"># infer additional runtime information as needed</span>
-            <span class="k">try</span> <span class="p">:</span>
-                <span class="n">ctx</span><span class="o">.</span><span class="n">_initialize</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-            <span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">SagaException</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Cannot add context, initialization failed (</span><span class="si">%s</span><span class="s">)&quot;</span>  <span class="o">%</span>  <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-
-            <span class="c"># context initialized ok, add it to the session</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">append</span> <span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">append</span> <span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>

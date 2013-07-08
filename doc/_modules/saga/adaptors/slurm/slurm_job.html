@@ -733,7 +733,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Returning exit code </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span><span class="p">)</span>
                 
                 <span class="c"># return whatever our exit code is</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span>
+                <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span><span class="p">)</span>
         
         <span class="c">### couldn&#39;t get the exitcode -- maybe should change this to just return</span>
         <span class="c">### None?  b/c we will lose the code if a program waits too</span>

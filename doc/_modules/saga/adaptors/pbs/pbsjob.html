@@ -95,30 +95,50 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">job_service</span><span class="o">.</span><span class="n">_logger</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">js</span> <span class="o">=</span> <span class="n">job_service</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">_job_state_monitor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setDaemon</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="nf">stopped</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="o">.</span><span class="n">isSet</span><span class="p">()</span>
+
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span><span class="p">()</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
                 <span class="c"># do bulk updates here! we don&#39;t want to pull information</span>
                 <span class="c"># job by job. that would be too inefficient!</span>
                 <span class="n">jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">jobs</span>
-                <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">jobs</span><span class="p">:</span>
+                <span class="n">job_keys</span> <span class="o">=</span> <span class="n">jobs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+                <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">job_keys</span><span class="p">:</span>
                     <span class="c"># if the job hasn&#39;t been started, we can&#39;t update its</span>
                     <span class="c"># state. we can tell if a job has been started if it</span>
                     <span class="c"># has a job id</span>
                     <span class="k">if</span> <span class="n">jobs</span><span class="p">[</span><span class="n">job</span><span class="p">][</span><span class="s">&#39;job_id&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                        <span class="n">job_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_info</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Job monitoring thread updating Job </span><span class="si">%s</span><span class="s"> (state: </span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]))</span>
+                        <span class="c"># we only need to monitor jobs that are not in a</span>
+                        <span class="c"># terminal state, so we can skip the ones that are </span>
+                        <span class="c"># either done, failed or canceled</span>
+                        <span class="n">state</span> <span class="o">=</span> <span class="n">jobs</span><span class="p">[</span><span class="n">job</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">state</span> <span class="o">!=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">state</span> <span class="o">!=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">state</span> <span class="o">!=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span><span class="p">):</span>
 
-                        <span class="k">if</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">jobs</span><span class="p">[</span><span class="n">job</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">]:</span>
-                            <span class="c"># fire job state callback if &#39;state&#39; has changed</span>
-                            <span class="n">job</span><span class="o">.</span><span class="n">_api</span><span class="p">()</span><span class="o">.</span><span class="n">_attributes_i_set</span><span class="p">(</span><span class="s">&#39;state&#39;</span><span class="p">,</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">],</span> <span class="n">job</span><span class="o">.</span><span class="n">_api</span><span class="p">()</span><span class="o">.</span><span class="n">_UP</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+                            <span class="n">job_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_info</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Job monitoring thread updating Job </span><span class="si">%s</span><span class="s"> (state: </span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]))</span>
 
-                        <span class="c"># update job info</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job</span><span class="p">]</span> <span class="o">=</span> <span class="n">job_info</span>
+                            <span class="k">if</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">jobs</span><span class="p">[</span><span class="n">job</span><span class="p">][</span><span class="s">&#39;state&#39;</span><span class="p">]:</span>
+                                <span class="c"># fire job state callback if &#39;state&#39; has changed</span>
+                                <span class="k">if</span> <span class="n">job</span><span class="o">.</span><span class="n">_api</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                                    <span class="n">job</span><span class="o">.</span><span class="n">_api</span><span class="p">()</span><span class="o">.</span><span class="n">_attributes_i_set</span><span class="p">(</span><span class="s">&#39;state&#39;</span><span class="p">,</span> <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">],</span> <span class="n">job</span><span class="o">.</span><span class="n">_api</span><span class="p">()</span><span class="o">.</span><span class="n">_UP</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+                                <span class="k">else</span><span class="p">:</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;api() object is &#39;None&#39; for job object </span><span class="si">%s</span><span class="s"> - can&#39;t fire callback.&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">job</span><span class="p">))</span>
+
+                            <span class="c"># update job info</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job</span><span class="p">]</span> <span class="o">=</span> <span class="n">job_info</span>
+
                 <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">MONITOR_UPDATE_INTERVAL</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -398,11 +418,32 @@
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">kill_shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@SYNC_CALL</span>
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="PBSJobService.close"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.pbsjob.html#saga.adaptors.pbs.pbsjob.PBSJobService.close">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mt</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mt</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="c"># don&#39;t block forever on join()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Job monitoring thread stopped.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kill_shell</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span></div>
+<div class="viewcode-block" id="PBSJobService.finalize"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.pbsjob.html#saga.adaptors.pbs.pbsjob.PBSJobService.finalize">[docs]</a>
+        <span class="k">if</span>  <span class="n">kill_shell</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">init_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">rm_url</span><span class="p">,</span> <span class="n">session</span><span class="p">):</span>
 <div class="viewcode-block" id="PBSJobService.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.pbsjob.html#saga.adaptors.pbs.pbsjob.PBSJobService.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; service instance constructor</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -453,15 +494,7 @@
       <span class="c"># self.shell.set_finalize_hook(self.finalize)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
-
-
-    <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">close</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
-<div class="viewcode-block" id="PBSJobService.close"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.pbsjob.html#saga.adaptors.pbs.pbsjob.PBSJobService.close">[docs]</a>        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span><span class="p">()</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -535,14 +568,6 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kill_shell</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span></div>
-<div class="viewcode-block" id="PBSJobService.finalize"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.pbsjob.html#saga.adaptors.pbs.pbsjob.PBSJobService.finalize">[docs]</a>
-        <span class="k">if</span>  <span class="n">kill_shell</span> <span class="p">:</span>
-            <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="bp">True</span><span class="p">)</span>
-
-    <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span>
     <span class="k">def</span> <span class="nf">_job_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_obj</span><span class="p">):</span></div>
         <span class="sd">&quot;&quot;&quot; runs a job via qsub</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -597,6 +622,9 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;qsub: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]))</span>
 
             <span class="c"># we asssume job id is in the last line</span>
+            <span class="c">#print cmdline</span>
+            <span class="c">#print out</span>
+
             <span class="n">job_id</span> <span class="o">=</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">]-[</span><span class="si">%s</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">lines</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Submitted PBS job with id: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job_id</span><span class="p">)</span>
 
@@ -658,7 +686,7 @@
                     <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;exec_host&#39;</span><span class="p">:</span>
                         <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;exec_hosts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;+&#39;</span><span class="p">)</span>
                     <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;exit_status&#39;</span><span class="p">:</span>
-                        <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+                        <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
                     <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;ctime&#39;</span><span class="p">:</span>
                         <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;create_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
                     <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;start_time&#39;</span><span class="p">:</span>
@@ -738,7 +766,7 @@
                     <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;exec_host&#39;</span><span class="p">:</span>
                         <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;exec_hosts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;+&#39;</span><span class="p">)</span>  <span class="c"># format i73/7+i73/6+...</span>
                     <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;exit_status&#39;</span><span class="p">:</span>
-                        <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+                        <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
                     <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;ctime&#39;</span><span class="p">:</span>
                         <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;create_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
                     <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;start_time&#39;</span><span class="p">:</span>

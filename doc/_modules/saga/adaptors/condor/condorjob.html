@@ -712,7 +712,7 @@
         <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_info</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="n">job_id</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;returncode&#39;</span><span class="p">])</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
