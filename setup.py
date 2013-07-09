@@ -9,7 +9,6 @@ __license__   = "MIT"
 
 import os
 import sys
-import subprocess
 
 from setuptools import setup, Command
 from distutils.command.install_data import install_data
