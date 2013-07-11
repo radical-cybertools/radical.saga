@@ -20,7 +20,7 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 # the adaptor info
 #
 _ADAPTOR_NAME          = "saga.adaptor.ec2_resource"
-_ADAPTOR_SCHEMAS       = ["ec2", "ec2_keypair", "openstack", "eucalyptus", "euca", "aws", "amazon"]
+_ADAPTOR_SCHEMAS       = ["ec2", "ec2_keypair", "openstack", "eucalyptus", "euca", "aws", "amazon", "http", "https"]
 _ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
@@ -225,6 +225,8 @@ class Adaptor (saga.adaptors.base.Base):
             backend = 'aws'
         elif url.scheme == 'eucalyptus' or \
             url.scheme  == 'euca'       or \
+            url.scheme  == 'http'       or \
+            url.scheme  == 'https'      or \
             url.scheme  == 'openstack'     :
             driver  = self.lccp.get_driver (self.lcct.Provider.EUCALYPTUS)
             backend = 'euca'
