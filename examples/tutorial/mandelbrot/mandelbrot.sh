@@ -4,4 +4,7 @@ curl --insecure -s https://raw.github.com/pypa/virtualenv/master/virtualenv.py |
 . /tmp/sagaenv/bin/activate
 
 pip install PIL
-python mandelbrot.py $@
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+python $DIR/mandelbrot.py $@
