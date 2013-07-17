@@ -217,7 +217,7 @@ class PTYShellFactory (object) :
             # went wrong.  Try to prompt a prompt (duh!)  Delay should be
             # minimum 0.1 second (to avoid flooding of local shells), and at
             # maximum 1 second (to keep startup time reasonable)
-            # most one second.  We try to get within that range with 10*latency.
+            # most one second.  We try to get within that range with 100*latency.
             delay = min (1.0, max (0.1, 50 * latency))
 
           # if True : # FIXME
@@ -252,7 +252,7 @@ class PTYShellFactory (object) :
                         # pattern only appears in the result, not in the
                         # command... 
 
-                        if retries > 50 :
+                        if retries > 100 :
                             raise se.NoSuccess ("Could not detect shell prompt (timeout)")
 
                         if  not retry_trigger : 
