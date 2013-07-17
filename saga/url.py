@@ -72,9 +72,9 @@ class Url (object):
     @sus.takes   ('Url')
     @sus.returns ((sus.nothing, basestring))
     def __str__  (self):
-        """ String representation (utf-8).
+        """ String representation
         """
-        return unicode(self).decode('utf-8', 'ignore')
+        return self._urlobj.geturl()
 
     # --------------------------------------------------------------------------
     #
