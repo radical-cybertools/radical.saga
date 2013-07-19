@@ -1,3 +1,4 @@
+import os
 import sys
 import saga
 
@@ -53,7 +54,7 @@ def main():
         print "Exitcode  : %s" % (myjob.exit_code)
 
         outfilesource = 'sftp://%s/tmp/mysagajob.stdout' % REMOTE_HOST
-        outfiletarget = 'file://localhost/tmp/'
+        outfiletarget = "file://%s/" % os.getcwd()
         out = saga.filesystem.File(outfilesource, session=session)
         out.copy(outfiletarget)
 
