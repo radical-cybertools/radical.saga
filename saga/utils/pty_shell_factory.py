@@ -198,7 +198,7 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def _initialize_pty (self, pty_shell, info, use_trigger=False) :
+    def _initialize_pty (self, pty_shell, info) :
 
         # 'trigger' determines if prompt triggers are to be used or not.  sftp
         # for example does not deal well with triggers (no printf).  So, only
@@ -220,7 +220,6 @@ class PTYShellFactory (object) :
             # most one second.  We try to get within that range with 100*latency.
             delay = min (1.0, max (0.1, 50 * latency))
 
-          # if True : # FIXME
             try :
                 prompt_patterns = ["[Pp]assword:\s*$",                   # password   prompt
                                    "Enter passphrase for key '.*':\s*$", # passphrase prompt
@@ -238,6 +237,7 @@ class PTYShellFactory (object) :
                 # commands.
                 retries       = 0
                 retry_trigger = True
+                used_trigger  = False
                 found_trigger = ""
 
                 while True :
@@ -262,8 +262,9 @@ class PTYShellFactory (object) :
 
                         retries += 1
 
-                        if  use_trigger :
+                        if  not 'copy' in info['type'] :
                             pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+                            used_trigger = True
 
                         # FIXME:  consider better timeout
                         n, match = pty_shell.find (prompt_patterns, delay)
@@ -324,7 +325,7 @@ class PTYShellFactory (object) :
                     elif n == 4 :
 
                         if  retries :
-                            if  use_trigger :
+                            if  used_trigger :
                                 # we already sent triggers -- so this match is only
                                 # useful if saw the *correct* shell prompt trigger
                                 # first
@@ -368,7 +369,7 @@ class PTYShellFactory (object) :
             sh_slave = supp.PTYProcess (s_cmd, info['logger'])
 
             # authorization, prompt setup, etc
-            self._initialize_pty (sh_slave, info, use_trigger=True)
+            self._initialize_pty (sh_slave, info)
 
             return sh_slave
 
