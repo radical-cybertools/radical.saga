@@ -5,7 +5,7 @@
 """ A Simple Mandelbrot Fractal Generator.
 
     We use this example to explore the distributed capabilites of
-    the SAGA Job and Filesystem APIs in Bliss. The mandelbrot module
+    the SAGA Job and Filesystem APIs. The mandelbrot module
     calculates a full or partial (tile) mandelbrot set fractal and
     writes it to a PNG image file.
 
