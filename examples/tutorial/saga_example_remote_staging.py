@@ -1,7 +1,7 @@
 import sys
 import saga
 
-REMOTE_HOST = "gw68.quarry.iu.teragrid.org"
+REMOTE_HOST = "localhost"
 
 def main():
     try:
