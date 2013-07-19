@@ -252,7 +252,7 @@ class PTYShellFactory (object) :
                         # pattern only appears in the result, not in the
                         # command... 
 
-                        if retries > 100 :
+                        if  retries > 100 :
                             raise se.NoSuccess ("Could not detect shell prompt (timeout)")
 
                         if  not retry_trigger : 
