@@ -63,7 +63,7 @@ be credited:
 
     jd = saga.job.Description()
 
-    jd.environment     = {'MYOUTPUT':'"Hello from Bliss"'}       
+    jd.environment     = {'MYOUTPUT':'"Hello from SAGA"'}       
     jd.executable      = '/bin/echo'
     jd.arguments       = ['$MYOUTPUT']
     jd.output          = "mysagajob.stdout"
