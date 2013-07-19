@@ -25,10 +25,10 @@ class Context (sb.Base, sa.Attributes) :
     a X509 certificate -- but it will in general not hold the certificate
     contents.
 
-    Context classes are used to inform the backends used by Bliss on what
-    security tokens are expected to be used.  By default, Bliss will be able to
+    Context classes are used to inform the backends used by SAGA on what
+    security tokens are expected to be used.  By default, SAGA will be able to
     pick up such tokens from their default location, but in some cases it might
-    be necessary to explicitly point to them - then use a L{Session} with
+    be necessary to explicitly point to them - then use Session with
     context instances to do so.
 
     The usage example for contexts is below::
@@ -47,8 +47,8 @@ class Context (sb.Base, sa.Attributes) :
         j = saga.job.Service('ssh://remote.host.net/', session=session)
 
 
-    The L{Session} argument to the L{job.Service} constructor is fully optional
-    -- if left out, Bliss will use default session, which picks up some default
+    The Session argument to the job.Service constructor is fully optional
+    -- if left out, SAGA will use default session, which picks up some default
     contexts as described above -- that will suffice for the majority of use
     cases.
 
