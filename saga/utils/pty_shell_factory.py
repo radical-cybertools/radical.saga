@@ -214,8 +214,7 @@ class PTYShellFactory (object) :
             # most one second.  We try to get within that range with 10*latency.
             delay = min (1.0, max (0.1, 50 * latency))
 
-            if True : # FIXME
-          # try :
+            try :
                 prompt_patterns = ["[Pp]assword:\s*$",                   # password   prompt
                                    "Enter passphrase for key '.*':\s*$", # passphrase prompt
                                    "want to continue connecting",        # hostkey confirmation
@@ -238,13 +237,18 @@ class PTYShellFactory (object) :
 
                         # we found none of the prompts, yet, and need to try
                         # again.  But to avoid hanging on invalid prompts, we
-                        # print 'HELLO_SAGA', and search for that one, too
-
-                        if retries > 50 :
+                        # print 'HELLO_SAGA', and search for that one, too.
+                        # Well, we only do that on shell prompts, of course
+                        # (sftp doesn't like our echos)
+                        
+                        if  retries > 100 :
                             raise se.NoSuccess ("Could not detect shell prompt (timeout)")
 
                         retries += 1
-                        pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+
+                        if  not 'copy' in info['type'] :
+                            pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+
 
                         # FIXME:  consider timeout
                         n, match = pty_shell.find (prompt_patterns, delay)
@@ -306,9 +310,9 @@ class PTYShellFactory (object) :
                         break
                 
                 
-          # except Exception as e :
-          #     print e
-          #     raise self._translate_exception (e)
+            except Exception as e :
+                print e
+                raise self._translate_exception (e)
 
 
     # --------------------------------------------------------------------------
