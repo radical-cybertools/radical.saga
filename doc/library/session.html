@@ -75,14 +75,14 @@
 <em class="property">class </em><tt class="descclassname">saga.session.</tt><tt class="descname">Session</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/session.html#Session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.session.Session" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.SimpleBase</span></tt></p>
 <p>A SAGA Session object as defined in GFD.90.</p>
-<p>A Bliss session has the purpose of scoping the use of security credentials
+<p>A SAGA session has the purpose of scoping the use of security credentials
 for remote operations.  In other words, a session instance acts as
-a container for security L{Context} instances &#8211; Bliss objects (such as
-L{job.Service} or L{filesystem.File}) created in that session will then use
+a container for security Context instances &#8211; SAGA objects (such as
+job.Service or filesystem.File) created in that session will then use
 exactly the security contexts from that session (and no others).</p>
-<p>That way, the session serves two purposes:  (1) it helps Bliss to decide
+<p>That way, the session serves two purposes:  (1) it helps SAGA to decide
 which security mechanism should be used for what interaction, and (2) it
-helps Bliss to find security credentials which would be difficult to pick up
+helps SAGA to find security credentials which would be difficult to pick up
 automatically.</p>
 <p>The use of a session is as follows:</p>
 <p>Example:</p>
@@ -102,7 +102,7 @@ automatically.</p>
 </pre></div>
 </div>
 <p>The session argument to the L{job.Service} constructor is fully optional &#8211;
-if left out, Bliss will use default session, which picks up some default
+if left out, SAGA will use default session, which picks up some default
 contexts as described above &#8211; that will suffice for the majority of use
 cases.</p>
 <p>A session instance exposes a <cite>context</cite> property, which is a list of

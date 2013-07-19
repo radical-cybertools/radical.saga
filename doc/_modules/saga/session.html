@@ -165,15 +165,15 @@
 <span class="k">class</span> <span class="nc">Session</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">SimpleBase</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Session"><a class="viewcode-back" href="../../library/session.html#saga.session.Session">[docs]</a>    <span class="sd">&quot;&quot;&quot;A SAGA Session object as defined in GFD.90.</span>
 
-<span class="sd">    A Bliss session has the purpose of scoping the use of security credentials</span>
+<span class="sd">    A SAGA session has the purpose of scoping the use of security credentials</span>
 <span class="sd">    for remote operations.  In other words, a session instance acts as</span>
-<span class="sd">    a container for security L{Context} instances -- Bliss objects (such as</span>
-<span class="sd">    L{job.Service} or L{filesystem.File}) created in that session will then use</span>
+<span class="sd">    a container for security Context instances -- SAGA objects (such as</span>
+<span class="sd">    job.Service or filesystem.File) created in that session will then use</span>
 <span class="sd">    exactly the security contexts from that session (and no others).</span>
 
-<span class="sd">    That way, the session serves two purposes:  (1) it helps Bliss to decide</span>
+<span class="sd">    That way, the session serves two purposes:  (1) it helps SAGA to decide</span>
 <span class="sd">    which security mechanism should be used for what interaction, and (2) it</span>
-<span class="sd">    helps Bliss to find security credentials which would be difficult to pick up</span>
+<span class="sd">    helps SAGA to find security credentials which would be difficult to pick up</span>
 <span class="sd">    automatically.</span>
 <span class="sd">    </span>
 <span class="sd">    The use of a session is as follows:</span>
@@ -198,7 +198,7 @@
 
 
 <span class="sd">    The session argument to the L{job.Service} constructor is fully optional --</span>
-<span class="sd">    if left out, Bliss will use default session, which picks up some default</span>
+<span class="sd">    if left out, SAGA will use default session, which picks up some default</span>
 <span class="sd">    contexts as described above -- that will suffice for the majority of use</span>
 <span class="sd">    cases.</span>
 

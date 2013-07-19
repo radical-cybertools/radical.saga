@@ -76,10 +76,10 @@ understand that, in general, a context really just <em>describes</em> a token, b
 that a context <em>is not</em> a token (*). For example, a context may point to
 a X509 certificate &#8211; but it will in general not hold the certificate
 contents.</p>
-<p>Context classes are used to inform the backends used by Bliss on what
-security tokens are expected to be used.  By default, Bliss will be able to
+<p>Context classes are used to inform the backends used by SAGA on what
+security tokens are expected to be used.  By default, SAGA will be able to
 pick up such tokens from their default location, but in some cases it might
-be necessary to explicitly point to them - then use a L{Session} with
+be necessary to explicitly point to them - then use Session with
 context instances to do so.</p>
 <p>The usage example for contexts is below:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># define an ssh context</span>
@@ -96,8 +96,8 @@ context instances to do so.</p>
 <span class="n">j</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&#39;ssh://remote.host.net/&#39;</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The L{Session} argument to the L{job.Service} constructor is fully optional
-&#8211; if left out, Bliss will use default session, which picks up some default
+<p>The Session argument to the job.Service constructor is fully optional
+&#8211; if left out, SAGA will use default session, which picks up some default
 contexts as described above &#8211; that will suffice for the majority of use
 cases.</p>
 <p>(*) The only exception to this rule is the &#8216;UserPass&#8217; key, which is used to

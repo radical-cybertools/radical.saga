@@ -82,10 +82,10 @@
 <span class="sd">    a X509 certificate -- but it will in general not hold the certificate</span>
 <span class="sd">    contents.</span>
 
-<span class="sd">    Context classes are used to inform the backends used by Bliss on what</span>
-<span class="sd">    security tokens are expected to be used.  By default, Bliss will be able to</span>
+<span class="sd">    Context classes are used to inform the backends used by SAGA on what</span>
+<span class="sd">    security tokens are expected to be used.  By default, SAGA will be able to</span>
 <span class="sd">    pick up such tokens from their default location, but in some cases it might</span>
-<span class="sd">    be necessary to explicitly point to them - then use a L{Session} with</span>
+<span class="sd">    be necessary to explicitly point to them - then use Session with</span>
 <span class="sd">    context instances to do so.</span>
 
 <span class="sd">    The usage example for contexts is below::</span>
@@ -104,8 +104,8 @@
 <span class="sd">        j = saga.job.Service(&#39;ssh://remote.host.net/&#39;, session=session)</span>
 
 
-<span class="sd">    The L{Session} argument to the L{job.Service} constructor is fully optional</span>
-<span class="sd">    -- if left out, Bliss will use default session, which picks up some default</span>
+<span class="sd">    The Session argument to the job.Service constructor is fully optional</span>
+<span class="sd">    -- if left out, SAGA will use default session, which picks up some default</span>
 <span class="sd">    contexts as described above -- that will suffice for the majority of use</span>
 <span class="sd">    cases.</span>
 

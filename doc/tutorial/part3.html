@@ -111,7 +111,7 @@ name of the queue you want to use or the allocation or project name that should
 be credited:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">jd</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Description</span><span class="p">()</span>
 
-<span class="n">jd</span><span class="o">.</span><span class="n">environment</span>     <span class="o">=</span> <span class="p">{</span><span class="s">&#39;MYOUTPUT&#39;</span><span class="p">:</span><span class="s">&#39;&quot;Hello from Bliss&quot;&#39;</span><span class="p">}</span>
+<span class="n">jd</span><span class="o">.</span><span class="n">environment</span>     <span class="o">=</span> <span class="p">{</span><span class="s">&#39;MYOUTPUT&#39;</span><span class="p">:</span><span class="s">&#39;&quot;Hello from SAGA&quot;&#39;</span><span class="p">}</span>
 <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>      <span class="o">=</span> <span class="s">&#39;/bin/echo&#39;</span>
 <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&#39;$MYOUTPUT&#39;</span><span class="p">]</span>
 <span class="n">jd</span><span class="o">.</span><span class="n">output</span>          <span class="o">=</span> <span class="s">&quot;mysagajob.stdout&quot;</span>
