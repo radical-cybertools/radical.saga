@@ -178,7 +178,7 @@ class PTYShellFactory (object) :
                 	  "Shell not connected to %s" % info['host_str'])
 
                 # authorization, prompt setup, etc
-                self._initialize_pty (info['pty'], info)
+                self._initialize_pty (info['pty'], info, is_shell=True)
 
                 # master was created - register it
                 self.registry[host_s][user_s][type_s] = info
@@ -198,7 +198,9 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def _initialize_pty (self, pty_shell, info) :
+    def _initialize_pty (self, pty_shell, info, is_shell=False) :
+
+        # is_shell: only for shells we use prompt triggers
 
         # 'trigger' determines if prompt triggers are to be used or not.  sftp
         # for example does not deal well with triggers (no printf).  So, only
@@ -262,7 +264,7 @@ class PTYShellFactory (object) :
 
                         retries += 1
 
-                        if  not 'copy' in info['type'] :
+                        if  is_shell :
                             pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
                             used_trigger = True
 
