@@ -56,11 +56,15 @@ class Url (object):
         """ Create a new Url object from a string or another Url object.
         """
 
-        if  not url_string :
-            url_string = ""
-
-        self._urlobj = urlparse.urlparse (str(url_string))
-
+        if type(url_string) == type(None):
+            self._urlobj = urlparse.urlparse("")
+        if type(url_string) == str:
+            self._urlobj = urlparse.urlparse(url_string)
+        elif type(url_string) == Url:
+            self._urlobj = urlparse.urlparse(str(url_string))
+        else:
+            raise se.BadParameter ("Url expects str or Url type as parameter, not %s" \
+                                % type(url_string))
 
     # --------------------------------------------------------------------------
     #
@@ -68,9 +72,9 @@ class Url (object):
     @sus.takes   ('Url')
     @sus.returns ((sus.nothing, basestring))
     def __str__  (self):
-        """ String representation (utf-8).
+        """ String representation
         """
-        return unicode(self).decode('utf-8', 'ignore')
+        return self._urlobj.geturl()
 
     # --------------------------------------------------------------------------
     #

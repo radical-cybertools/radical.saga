@@ -88,7 +88,7 @@ the `saga.job module (API Doc). Three classes are defined in this module:
 * The ``job.Description`` class is used to describe the executable, arguments, environment and requirements (e.g., number of cores, etc) of a new job.
 * The ``job.Job`` class is a handle to a job associated with a job.Service. It is used to control (start, stop) the job and query its status (e.g., Running, Finished, etc).
 
-In order to use the Bliss Job API, we first need to import the saga-python
+In order to use the SAGA Job API, we first need to import the saga-python
 module:
 
 .. code-block:: python

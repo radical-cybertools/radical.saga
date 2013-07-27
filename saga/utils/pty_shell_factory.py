@@ -211,11 +211,10 @@ class PTYShellFactory (object) :
             # went wrong.  Try to prompt a prompt (duh!)  Delay should be
             # minimum 0.1 second (to avoid flooding of local shells), and at
             # maximum 1 second (to keep startup time reasonable)
-            # most one second.  We try to get within that range with 10*latency.
+            # most one second.  We try to get within that range with 100*latency.
             delay = min (1.0, max (0.1, 50 * latency))
 
-            if True : # FIXME
-          # try :
+            try :
                 prompt_patterns = ["[Pp]assword:\s*$",                   # password   prompt
                                    "Enter passphrase for key '.*':\s*$", # passphrase prompt
                                    "want to continue connecting",        # hostkey confirmation
@@ -238,13 +237,18 @@ class PTYShellFactory (object) :
 
                         # we found none of the prompts, yet, and need to try
                         # again.  But to avoid hanging on invalid prompts, we
-                        # print 'HELLO_SAGA', and search for that one, too
-
-                        if retries > 50 :
+                        # print 'HELLO_SAGA', and search for that one, too.
+                        # Well, we only do that on shell prompts, of course
+                        # (sftp doesn't like our echos)
+                        
+                        if  retries > 100 :
                             raise se.NoSuccess ("Could not detect shell prompt (timeout)")
 
                         retries += 1
-                        pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+
+                        if  not 'copy' in info['type'] :
+                            pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+
 
                         # FIXME:  consider timeout
                         n, match = pty_shell.find (prompt_patterns, delay)
@@ -306,9 +310,9 @@ class PTYShellFactory (object) :
                         break
                 
                 
-          # except Exception as e :
-          #     print e
-          #     raise self._translate_exception (e)
+            except Exception as e :
+                print e
+                raise self._translate_exception (e)
 
 
     # --------------------------------------------------------------------------
@@ -420,7 +424,7 @@ class PTYShellFactory (object) :
 
             elif info['schema']  in _SCHEMAS_SH :
                 info['type']     = "sh"
-                info['sh_args']  = "-l -i"
+                info['sh_args']  = "-i"
                 info['sh_env']   = "/usr/bin/env TERM=vt100"
                 info['cp_env']   = "/usr/bin/env TERM=vt100"
                 info['fs_root']  = "/"
@@ -450,8 +454,7 @@ class PTYShellFactory (object) :
 
             except Exception  as e :
                 info['latency'] = 1.0  # generic value assuming slow link
-                raise se.BadParameter._log (self.logger, "Could not contact host '%s': %s" \
-                                         % (url, e))
+                info['logger'].warning ("Could not contact host '%s': %s" % (url, e))
                 
             if  info['type'] == "sh" :
 

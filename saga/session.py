@@ -108,15 +108,15 @@ class _DefaultSession (object) :
 class Session (saga.base.SimpleBase) :
     """A SAGA Session object as defined in GFD.90.
 
-    A Bliss session has the purpose of scoping the use of security credentials
+    A SAGA session has the purpose of scoping the use of security credentials
     for remote operations.  In other words, a session instance acts as
-    a container for security L{Context} instances -- Bliss objects (such as
-    L{job.Service} or L{filesystem.File}) created in that session will then use
+    a container for security Context instances -- SAGA objects (such as
+    job.Service or filesystem.File) created in that session will then use
     exactly the security contexts from that session (and no others).
 
-    That way, the session serves two purposes:  (1) it helps Bliss to decide
+    That way, the session serves two purposes:  (1) it helps SAGA to decide
     which security mechanism should be used for what interaction, and (2) it
-    helps Bliss to find security credentials which would be difficult to pick up
+    helps SAGA to find security credentials which would be difficult to pick up
     automatically.
     
     The use of a session is as follows:
@@ -141,7 +141,7 @@ class Session (saga.base.SimpleBase) :
 
 
     The session argument to the L{job.Service} constructor is fully optional --
-    if left out, Bliss will use default session, which picks up some default
+    if left out, SAGA will use default session, which picks up some default
     contexts as described above -- that will suffice for the majority of use
     cases.
 
