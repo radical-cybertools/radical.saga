@@ -231,11 +231,13 @@ class Adaptor (saga.adaptors.base.Base):
 
 
         if  backend  == 'aws' :
+            self._logger.debug ("aws backend")
             conn     =  driver (ctx_id, ctx_key)
 
         elif backend == 'euca' :
+            self._logger.debug ("eucalyptus backend")
             conn     =  driver (ctx_id, ctx_key,
-                                secure = False, 
+                                secure = True, 
                                 host   = ctx_url.host, 
                                 port   = ctx_url.port,
                                 path   = ctx_url.path)
@@ -429,10 +431,11 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
         except Exception as e :
 
-            self._logger.info ("keypair check : %s" % (e))
+            self._logger.error ("keypair check : %s" % (e))
             e_str = str(e)
 
-            if e_str.startswith ("InvalidKeyPair.NotFound") :
+          # if e_str.startswith ("InvalidKeyPair.NotFound") :
+            if True :
 
                 if  not key :
                     raise saga.exceptions.BadParameter \
