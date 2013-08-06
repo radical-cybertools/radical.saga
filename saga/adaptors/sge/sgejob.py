@@ -358,9 +358,15 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
                 ret, out, _ = self.shell.run_sync("%s -help" % cmd)
                 if ret != 0:
-                    message = "Error finding SGE tools: %s" % out
-                    log_error_and_raise(message, saga.NoSuccess,
-                                        self._logger)
+                    # fix for a bug in certain qstat versions that return
+                    # '1' after a successfull qstat -help:
+                    # https://github.com/saga-project/saga-python/issues/163
+                    if cmd == 'qstat':
+                        version = out.strip().split('\n')[0]
+                    else:
+                        message = "Error finding SGE tools: %s" % out
+                        log_error_and_raise(message, saga.NoSuccess,
+                                            self._logger)
                 else:
                     # version is reported in the first row of the
                     # help screen, e.g., GE 6.2u5_1
