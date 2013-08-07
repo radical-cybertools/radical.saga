@@ -168,7 +168,6 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     else:
         workdir_directives = ''
 
-
     if jd.output is not None:
         # if working directory is set, we want stdout to end up in
         # the working directory as well, unless it containes a specific
@@ -179,9 +178,10 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
                 # we prepend the workind directory path before passing
                 # it on to PBS
                 pbs_params += "#PBS -o %s/%s \n" % (jd.working_directory, jd.output)
+            else:
+                pbs_params += "#PBS -o %s \n" % jd.output
         else:
             pbs_params += "#PBS -o %s \n" % jd.output
-
 
     if jd.error is not None:
         # if working directory is set, we want stderr to end up in 
@@ -193,8 +193,11 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
                 # we prepend the workind directory path before passing
                 # it on to PBS
                 pbs_params += "#PBS -e %s/%s \n" % (jd.working_directory, jd.error)
+            else:
+                pbs_params += "#PBS -e %s \n" % jd.error
         else:
             pbs_params += "#PBS -e %s \n" % jd.error
+
 
     if jd.wall_time_limit is not None:
         hours = jd.wall_time_limit / 60
