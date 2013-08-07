@@ -1,3 +1,16 @@
+Version 0.9.10 released 2013-08-
+----------------------------------------------------------------------
+
+* Better support for Amazon EC2
+* Closed issues:
+  - https://github.com/saga-project/saga-python/issues?milestone=3&page=1&state=closed
+
+Version 0.9.9 released 2013-07-19
+----------------------------------------------------------------------
+
+* Hotfix release: bug in Url.__str__ and SFTP copy
+  - https://github.com/saga-project/saga-python/issues?milestone=8&page=1&state=closed
+
 Version 0.9.8 released 2013-06-22
 ----------------------------------------------------------------------
 
