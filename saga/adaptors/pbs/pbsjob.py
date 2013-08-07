@@ -164,12 +164,39 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
 
     # a workaround is to do an explicit 'cd'
     if jd.working_directory is not None:
-        exec_n_args = 'cd '+jd.working_directory+' && '+exec_n_args
+        workdir_directives  = 'export PBS_O_WORKDIR=%s \n' % jd.working_directory
+        workdir_directives += 'cd $PBS_O_WORKDIR \n'
+    else:
+        workdir_directives = ''
+
 
     if jd.output is not None:
-        pbs_params += "#PBS -o %s \n" % jd.output
+        # if working directory is set, we want stdout to end up in
+        # the working directory as well, unless it containes a specific
+        # path name.
+        if jd.working_directory is not None:
+            if '/' not in jd.output:
+                # user provided just a file as STDOUT. in this case 
+                # we prepend the workind directory path before passing
+                # it on to PBS
+                pbs_params += "#PBS -o %s/%s \n" % (jd.working_directory, jd.output)
+        else:
+            pbs_params += "#PBS -o %s \n" % jd.output
+
+
     if jd.error is not None:
-        pbs_params += "#PBS -e %s \n" % jd.error
+        # if working directory is set, we want stderr to end up in 
+        # the working directory as well, unless it contains a specific
+        # path name. 
+        if jd.working_directory is not None:
+            if '/' not in jd.error:
+                # user provided just a file as STDERR. in this case 
+                # we prepend the workind directory path before passing
+                # it on to PBS
+                pbs_params += "#PBS -e %s/%s \n" % (jd.working_directory, jd.error)
+        else:
+            pbs_params += "#PBS -e %s \n" % jd.error
+
     if jd.wall_time_limit is not None:
         hours = jd.wall_time_limit / 60
         minutes = jd.wall_time_limit % 60
@@ -217,6 +244,7 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
     # only escape '$' in args and exe. not in the params
+    exec_n_args = workdir_directives + exec_n_args
     exec_n_args = exec_n_args.replace('$', '\\$')
 
     pbscript = "\n#!/bin/bash \n%s%s" % (pbs_params, exec_n_args)
@@ -534,7 +562,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                                          is_cray=self.is_cray, queue=self.queue,
                                          )
 
-            self._logger.debug("Generated PBS script: %s" % script)
+            self._logger.info("Generated PBS script: %s" % script)
         except Exception, ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 

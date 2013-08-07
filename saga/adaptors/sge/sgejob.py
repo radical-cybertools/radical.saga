@@ -426,7 +426,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                                           jd=jd, pe_list=self.pe_list,
                                           queue=self.queue)
 
-            self._logger.debug("Generated SGE script: %s" % script)
+            self._logger.info("Generated SGE script: %s" % script)
         except Exception, ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
