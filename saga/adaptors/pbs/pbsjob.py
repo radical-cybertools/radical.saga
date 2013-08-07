@@ -732,7 +732,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     def _job_get_exit_code(self, job_obj):
         """ get the job's exit code
         """
-        return self.jobs[job_obj]['returncode']
+        ret = self.jobs[job_obj]['returncode']
+
+        # FIXME: 'None' should cause an exception
+        if ret == None : return None
+        else           : return int(ret)
 
     # ----------------------------------------------------------------
     #
