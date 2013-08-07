@@ -312,7 +312,6 @@ class PTYShellFactory (object) :
 
                     # --------------------------------------------------------------
                     elif n == 3 :
-
                         # one of the trigger commands got through -- we can now
                         # hope to find the prompt (or the next trigger...)
                         logger.debug ("got shell prompt trigger (%s) (%s)" %  (n, match))
