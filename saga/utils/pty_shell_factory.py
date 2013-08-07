@@ -296,7 +296,7 @@ class PTYShellFactory (object) :
 
                     # --------------------------------------------------------------
                     elif n == 3 :
-                        logger.info ("got shell prompt trigger (%s) (%s)" %  (n, match))
+                        logger.debug ("got shell prompt trigger (%s) (%s)" %  (n, match))
 
                         # one of the trigger commands got through -- we are
                         # happy to declare success, ignore any further output,
@@ -306,7 +306,7 @@ class PTYShellFactory (object) :
 
                     # --------------------------------------------------------------
                     elif n == 4 :
-                        logger.info ("got initial shell prompt (%s) (%s)" %  (n, match))
+                        logger.debug ("got initial shell prompt (%s) (%s)" %  (n, match))
 
                         # we are done waiting for a prompt
                         break

@@ -46,7 +46,7 @@ def main():
         jd.spmd_variation    = '12way' # translates to the qsub -pe flag
 
         jd.queue             = "development"
-        jd.project           = "TG-MCB090174"
+        jd.project           = "TG-SEE100004"
 
         jd.working_directory = "$SCRATCH/A/B/C"
         jd.output            = "examplejob.out"
