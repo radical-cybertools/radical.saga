@@ -655,7 +655,11 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         and (self.jobs[job_id]['returncode'] is None):
             self.jobs[job_id] = self._job_get_info(job_id=job_id)
 
-        return int(self.jobs[job_id]['returncode'])
+        ret = self.jobs[job_id]['returncode']
+
+        # FIXME: 'None' should cause an exception
+        if ret == None : return None
+        else           : return int(ret)
 
     # ----------------------------------------------------------------
     #
