@@ -69,14 +69,18 @@ def _sgescript_generator(url, logger, jd, pe_list, queue=None):
     sge_params = str()
     exec_n_args = str()
 
+    # if no cores are requested at all, we default to one
+    if jd.total_cpu_count is None:
+        jd.total_cpu_count = 1
+
     # check spmd variation. this translates to the SGE qsub -pe flag.
     if jd.spmd_variation is not None:
         if jd.spmd_variation not in pe_list:
             raise Exception("'%s' is not a valid option for jd.spmd_variation. \
 Valid options are: %s" % (jd.spmd_variation, pe_list))
     else:
-        raise Exception("jd.spmd_variation needs to be set to one of the \
-following values: %s" % pe_list)
+        if jd.total_cpu_count > 1:
+            raise Exception("jd.spmd_variation need to be set in order for jd.total_cpu_count to be greater than 1. Valid options for jd.spmd_variation are: %s" % (pe_list))
 
     if jd.executable is not None:
         exec_n_args += "%s " % (jd.executable)
@@ -121,6 +125,7 @@ following values: %s" % pe_list)
         sge_params += "#$ -m be \n"
         sge_params += "#$ -M %s \n" % jd.contact
 
+<<<<<<< HEAD
     # memory requirements - TOTAL_PHYSICAL_MEMORY
     # it is assumed that the value passed through jd is always in Megabyte
     if jd.total_physical_memory is not None:
@@ -130,6 +135,8 @@ following values: %s" % pe_list)
     if jd.total_cpu_count is None:
         jd.total_cpu_count = 1
 
+=======
+>>>>>>> Allowing spmd_variation to be None in the SGE adaptor
     # we need to translate the # cores requested into
     # multiplicity, i.e., if one core is requested and
     # the cluster consists of 16-way SMP nodes, we will
@@ -146,8 +153,8 @@ following values: %s" % pe_list)
     # only escape '$' in args and exe. not in the params
     exec_n_args = exec_n_args.replace('$', '\\$')
 
-
-    sge_params += "#$ -pe %s %s" % (jd.spmd_variation, jd.total_cpu_count)
+    if jd.spmd_variation is not None:
+        sge_params += "#$ -pe %s %s" % (jd.spmd_variation, jd.total_cpu_count)       
 
     sgescript = "\n#!/bin/bash \n%s \n%s" % (sge_params, exec_n_args)
 
