@@ -121,6 +121,11 @@ following values: %s" % pe_list)
         sge_params += "#$ -m be \n"
         sge_params += "#$ -M %s \n" % jd.contact
 
+    # memory requirements - TOTAL_PHYSICAL_MEMORY
+    # it is assumed that the value passed through jd is always in Megabyte
+    if jd.total_physical_memory is not None:
+        sge_params += "#$ -l virtual_free=%sm \n" % jd.total_physical_memory
+
     # if no cores are requested at all, we default to one
     if jd.total_cpu_count is None:
         jd.total_cpu_count = 1
@@ -177,7 +182,8 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
                           saga.job.SPMD_VARIATION,
-                          saga.job.TOTAL_CPU_COUNT],
+                          saga.job.TOTAL_CPU_COUNT,
+                          saga.job.TOTAL_PHYSICAL_MEMORY],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
                           saga.job.CREATED,
