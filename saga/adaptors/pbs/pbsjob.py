@@ -17,6 +17,7 @@ import saga.adaptors.cpi.job
 from saga.job.constants import *
 
 import re
+import os 
 import time
 import threading
 
@@ -174,13 +175,13 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         # the working directory as well, unless it containes a specific
         # path name.
         if jd.working_directory is not None:
-            if '/' not in jd.output:
-                # user provided just a file as STDOUT. in this case 
+            if os.path.isabs(jd.output):
+                pbs_params += "#PBS -o %s \n" % jd.output
+            else:
+                # user provided a relative path for STDOUT. in this case 
                 # we prepend the workind directory path before passing
                 # it on to PBS
                 pbs_params += "#PBS -o %s/%s \n" % (jd.working_directory, jd.output)
-            else:
-                pbs_params += "#PBS -o %s \n" % jd.output
         else:
             pbs_params += "#PBS -o %s \n" % jd.output
 
@@ -189,13 +190,13 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         # the working directory as well, unless it contains a specific
         # path name. 
         if jd.working_directory is not None:
-            if '/' not in jd.error:
-                # user provided just a file as STDERR. in this case 
+            if os.path.isabs(jd.error):
+                pbs_params += "#PBS -e %s \n" % jd.error
+            else:
+                # user provided a realtive path for STDERR. in this case 
                 # we prepend the workind directory path before passing
                 # it on to PBS
                 pbs_params += "#PBS -e %s/%s \n" % (jd.working_directory, jd.error)
-            else:
-                pbs_params += "#PBS -e %s \n" % jd.error
         else:
             pbs_params += "#PBS -e %s \n" % jd.error
 
