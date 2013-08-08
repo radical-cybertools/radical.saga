@@ -44,6 +44,7 @@ def main():
 
         jd.total_cpu_count   = 12 # for lonestar this has to be a multiple of 12
         jd.spmd_variation    = '12way' # translates to the qsub -pe flag
+        #jd.total_physical_memory = 1024 # Megabyte
 
         jd.queue             = "development"
         jd.project           = "TG-SEE100004"
