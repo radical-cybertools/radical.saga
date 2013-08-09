@@ -251,6 +251,9 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self.cwdurl      = saga.Url (url) # deep copy
         self.cwdurl.path = self.cwd
 
+        if  not self.flags :
+            self.flags = 0
+
         self.shell = sups.PTYShell     (self.url, self.session, self._logger)
 
       # self.shell.set_initialize_hook (self.initialize)
@@ -813,6 +816,9 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
             self.cwdurl      = saga.Url (url) # deep copy
             self.cwdurl.path = self.cwd
+
+            if  not self.flags :
+                self.flags = 0
 
 
         # FIXME: get ssh Master connection from _adaptor dict

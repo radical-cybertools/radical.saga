@@ -12,17 +12,16 @@ def my_cb (a, b, c) :
     return True
 
 try :
-    c = saga.Context ('ssh')
-    c.user_key  = '/home/merzky/.ssh/id_rsa_test'
+    c = saga.Context ('UserPass')
     c.user_id   = 'tester'
     c.user_pass = 'testtest'
 
-    s = saga.Session (default=True)
+    s = saga.Session (default=False)
   # s.add_context (c)
 
 
-    js = saga.job.Service ('ssh://localhost/bin/sh', session=s)
-    js = saga.job.Service ('gsissh://gsissh.kraken.nics.xsede.org', session=s)
+    js = saga.job.Service ('ssh://localhost/', session=s)
+ #  js = saga.job.Service ('gsissh://gsissh.kraken.nics.xsede.org', session=s)
   
     jd = saga.job.Description ()
     jd.executable = '/bin/echo'
