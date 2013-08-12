@@ -1,9 +1,9 @@
-Version 0.9.10 released 2013-08-
+Version 0.9.10 released 2013-08-12
 ----------------------------------------------------------------------
 
 * Better support for Amazon EC2
 * Fixed working directory handling for PBS
-* Closed issues:
+* Closed issues: 
   - https://github.com/saga-project/saga-python/issues?milestone=3&page=1&state=closed
 
 Version 0.9.9 released 2013-07-19
