@@ -63,7 +63,7 @@ def _sge_to_saga_jobstate(sgejs):
 
 # --------------------------------------------------------------------
 #
-def _sgescript_generator(url, logger, jd, pe_list, queue=None):
+def _sgescript_generator(url, logger, jd, pe_list, queue=None, memreqs=None):
     """ generates an SGE script from a SAGA job description
     """
     sge_params = str()
@@ -128,7 +128,22 @@ Valid options are: %s" % (jd.spmd_variation, pe_list))
     # memory requirements - TOTAL_PHYSICAL_MEMORY
     # it is assumed that the value passed through jd is always in Megabyte
     if jd.total_physical_memory is not None:
-        sge_params += "#$ -l virtual_free=%sm \n" % jd.total_physical_memory
+        # this is (of course) not the same for all SGE installations. some 
+        # use virtual_free, some use a combination of mem_req / h_vmem. 
+        # It is very annoying. We need some sort of configuration variable 
+        # that can control this. Yes, ugly and not very saga-ish, but 
+        # the only way to do this, IMHO... 
+
+        if memreqs is None:
+            raise Exception("When using 'total_physical_memory', you also need to define 'memreqs' in the query parameters of the job.Service URL. Valid options are memreqs=virtual_free and memreqs=mem_req-h_vmem.")
+
+        if memreqs.lower() == 'virtual_free':
+            sge_params += "#$ -l virtual_free=%sm \n" % jd.total_physical_memory
+        elif memreqs.lower() == 'mem_req-h_vmem':
+            sge_params += "#$ -l mem_req=%sm \n" % jd.total_physical_memory
+            sge_params += "#$ -l h_vmem=%sm \n" % int (round (1.5*int(jd.total_physical_memory) ) )
+        else:
+            raise Exception("Unknown 'memreqs' value: %s" %s)
 
 
     # we need to translate the # cores requested into
@@ -286,6 +301,9 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         self._adaptor = adaptor
 
+
+
+
     # ----------------------------------------------------------------
     #
     def __del__(self):
@@ -304,7 +322,9 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         self.pe_list = list()
         self.jobs    = dict()
         self.queue   = None
+        self.memreqs = None
         self.shell   = None
+
 
         rm_scheme = rm_url.scheme
         pty_url   = deepcopy(rm_url)
@@ -315,6 +335,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             for key, val in parse_qs(rm_url.query).iteritems():
                 if key == 'queue':
                     self.queue = val[0]
+                elif key == 'memreqs':
+                    self.memreqs = val[0]
 
         # we need to extrac the scheme for PTYShell. That's basically the
         # job.Serivce Url withou the sge+ part. We use the PTYShell to execute
@@ -431,7 +453,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             # create a SGE job script from SAGA job description
             script = _sgescript_generator(url=self.rm, logger=self._logger,
                                           jd=jd, pe_list=self.pe_list,
-                                          queue=self.queue)
+                                          queue=self.queue,
+                                          memreqs=self.memreqs)
 
             self._logger.info("Generated SGE script: %s" % script)
         except Exception, ex:
