@@ -62,6 +62,31 @@ def _sge_to_saga_jobstate(sgejs):
 
 
 # --------------------------------------------------------------------
+# simple parser for getting memory requirements flags and multipliers from the memreqs part of the job.Service url
+#
+def _parse_memreqs(s):
+    flags = []
+    multipliers = []
+    while not s=='':
+        # find multiplier
+        m = re.match(r'\d+\.?\d*|\d*\.?\d+', s)
+        if m:
+            multipliers.append(float(s[m.start():m.end()]))
+            s = s[m.end():]
+        else:
+            multipliers.append(1.)        
+        # find flag
+        pos = s.find('~')
+        if pos < 0:
+            flags.append(s)
+            s = ''
+        else:                
+            flags.append(s[:pos])
+            s = s[pos+1:]
+    return flags, multipliers
+
+# --------------------------------------------------------------------
+#
 #
 def _sgescript_generator(url, logger, jd, pe_list, queue=None, memreqs=None):
     """ generates an SGE script from a SAGA job description
@@ -132,19 +157,13 @@ Valid options are: %s" % (jd.spmd_variation, pe_list))
         # use virtual_free, some use a combination of mem_req / h_vmem. 
         # It is very annoying. We need some sort of configuration variable 
         # that can control this. Yes, ugly and not very saga-ish, but 
-        # the only way to do this, IMHO... 
-
+        # the only way to do this, IMHO...
         if memreqs is None:
-            raise Exception("When using 'total_physical_memory', you also need to define 'memreqs' in the query parameters of the job.Service URL. Valid options are memreqs=virtual_free and memreqs=mem_req-h_vmem.")
-
-        if memreqs.lower() == 'virtual_free':
-            sge_params += "#$ -l virtual_free=%sm \n" % jd.total_physical_memory
-        elif memreqs.lower() == 'mem_req-h_vmem':
-            sge_params += "#$ -l mem_req=%sm \n" % jd.total_physical_memory
-            sge_params += "#$ -l h_vmem=%sm \n" % int (round (1.5*int(jd.total_physical_memory) ) )
-        else:
-            raise Exception("Unknown 'memreqs' value: %s" %s)
-
+            raise Exception("When using 'total_physical_memory' with the SGE adaptor, the query parameters of the job.Service URL must define the attributes used by your particular instance of SGE to control memory allocation.\n 'virtual_free', 'h_vmem' or 'mem_req' are commonly encountered examples of such attributes.\n A valid job.Service URL could be for instance:\n 'sge+ssh://myserver.edu?memreqs=virtual_free~1.5h_vmem'\n here the attribute 'virtual_free' would be set to 'total_physical_memory' and the attribute 'h_vmem' would be set to 1.5*'total_physical_memory', '~' is used as a separator.")            
+        
+        flags, multipliers = _parse_memreqs(memreqs)
+        for flag,mult in zip(flags, multipliers):
+            sge_params += "#$ -l %s=%sm \n" % (flag, int (round (mult*int(jd.total_physical_memory) ) ) )
 
     # we need to translate the # cores requested into
     # multiplicity, i.e., if one core is requested and
@@ -324,6 +343,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         self.queue   = None
         self.memreqs = None
         self.shell   = None
+        self.mandatory_memreqs = list()
 
 
         rm_scheme = rm_url.scheme
@@ -419,6 +439,48 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                     self.pe_list.append(pe)
             self._logger.debug("Available processing elements: %s" %
                 (self.pe_list))
+         
+        # find out mandatory and optional memory attributes 
+        ret, out, _ = self.shell.run_sync('%s -sc' % (self._commands['qconf']['path']))
+        if ret != 0:
+            message = "Error running 'qconf': %s" % out
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+        else: 
+            mandatory_attrs = []
+            optional_attrs = []           
+            for line in out.split('\n'):
+                if (line != '') and (line[0] != '#'):
+                    [name, _, att_type, _, requestable, _, _, _] = line.split()
+                    if att_type == 'MEMORY' and requestable == 'YES':
+                        optional_attrs.append(name)
+                    elif att_type == 'MEMORY' and requestable == 'FORCED':
+                        mandatory_attrs.append(name)
+            self._logger.debug("Optional memory attributes: %s" % (mandatory_attrs))
+            self._logger.debug("Mandatory memory attributes: %s" % (optional_attrs))       
+        # find out user specified memory attributes in job.Service URL
+        if self.memreqs is None:
+            flags = []
+        else:
+            flags, _ = _parse_memreqs(self.memreqs) 
+        # if there are mandatory memory attributes store them and check that they were specified in the job.Service URL
+        if not (mandatory_attrs == []):
+            self.mandatory_memreqs = mandatory_attrs
+            missing_flags = []
+            for attr in mandatory_attrs:
+                if not attr in flags:
+                    missing_flags.append(attr)
+            if not (missing_flags == []):
+                message = "The following memory attribute(s) are mandatory in your SGE environment and thus must be specified in the job service URL: %s" % ' '.join(missing_flags)
+                log_error_and_raise(message, saga.BadParameter, self._logger) 
+        # if memory attributes were specified in the job.Service URL, check that they correspond to existing optional or mandatory memory attributes
+        invalid_attrs = []              
+        for f in flags:
+            if not (f in optional_attrs or f in mandatory_attrs):
+                invalid_attrs.append(f)
+        if not (invalid_attrs == []):
+            message = "The following memory attribute(s) were specified in the job.Service URL but are not valid memory attributes in your SGE environment: %s" % ' '.join(invalid_attrs)
+            log_error_and_raise(message, saga.BadParameter, self._logger)
+                    
 
     # ----------------------------------------------------------------
     #
@@ -448,7 +510,9 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             self._logger.warning("Job service was instantiated explicitly with \
 'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." %
                 (self.queue, jd.queue, self.queue))
-
+        # In SGE environments with mandatory memory attributes, 'total_physical_memory' must be specified        
+        if (not (self.mandatory_memreqs == [])) and (jd.total_physical_memory is None):
+            log_error_and_raise("Your SGE environments has mandatory memory attributes, so 'total_physical_memory' must be specified in your job descriptor", saga.BadParameter, self._logger)            
         try:
             # create a SGE job script from SAGA job description
             script = _sgescript_generator(url=self.rm, logger=self._logger,
@@ -972,3 +1036,4 @@ class SGEJob (saga.adaptors.cpi.job.Job):
             return None
         else:
             return self.js._job_get_execution_hosts(self._id)
+
