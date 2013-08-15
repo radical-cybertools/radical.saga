@@ -109,7 +109,10 @@ class Adaptor (saga.adaptors.base.Base):
                     # don't want public keys in this loop
                     continue
 
-                pub  = "%s.pub" % key
+                if  key.endswith ('.pem') :
+                    pub  = "%s" % key
+                else :
+                    pub  = "%s.pub" % key
             
                 if  not os.path.exists (pub)  or \
                     not os.path.isfile (pub)  or \
@@ -210,28 +213,41 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
             # done out-of-band.
             return
 
+
         # convert public key into private key
         if  _key.endswith ('.pub') :
             _key = _key[:-4]
             _api.set_attribute (saga.context.USER_KEY, _key)
+        elif _key.endswith ('.pem') :
+            _pub = _key
+        else :
+            _pub = _key+'.pub'
+
 
         # the key itself must exist, as must the public key.
         if  not os.path.exists (_key ) or \
             not os.path.isfile (_key )    :
             raise se.BadParameter ("ssh private key inaccessible: %s" % (_key))
 
-        if  not os.path.exists (_key + '.pub') or \
-            not os.path.isfile (_key + '.pub')    :
-            raise se.BadParameter ("ssh public  key inaccessible: %s" % (_key+'.pub'))
+        if  not os.path.exists (_pub) or \
+            not os.path.isfile (_pub)    :
+            raise se.BadParameter ("ssh public  key inaccessible: %s" % (_pub))
 
 
         try :
             fh_key  = open (_key )
-
         except Exception as e:
             raise se.PermissionDenied ("ssh key '%s' not readable: %s" % (_key, e))
         else :
             fh_key .close ()
+
+
+        try :
+            fh_pub  = open (_pub )
+        except Exception as e:
+            raise se.PermissionDenied ("ssh public key '%s' not readable: %s" % (_pub, e))
+        else :
+            fh_pub .close ()
 
 
         import subprocess
@@ -240,6 +256,7 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
                 raise se.PermissionDenied ("ssh key '%s' is encrypted, need password" % (_key))
 
 
+        print                ["sh", "-c", "ssh-keygen -y -f %s -P %s > /dev/null" % (_key, _pass)]
         if  subprocess.call (["sh", "-c", "ssh-keygen -y -f %s -P %s > /dev/null"
                           % (_key, _pass)]) :
             raise se.PermissionDenied ("ssh key '%s' is encrypted, incorrect password" % (_key))

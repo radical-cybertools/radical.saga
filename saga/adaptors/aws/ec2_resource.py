@@ -477,9 +477,9 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
 
             self.backend = 'amazon.ec2'
 
-            # FIXME: support proper contexts, and also default EC2 env vars
-            self.ec2_id  = os.environ['EC2_ID']
-            self.ec2_key = os.environ['EC2_KEY']
+            # FIXME: support proper contexts
+            if 'EC2_ACCESS_KEY' in os.environ : self.ec2_id  = os.environ['EC2_ACCESS_KEY']
+            if 'EC2_SECRET_KEY' in os.environ : self.ec2_key = os.environ['EC2_SECRET_KEY']
             
             # FIXME: translate exceptions, in particular connectivity and auth
             # exceptions.

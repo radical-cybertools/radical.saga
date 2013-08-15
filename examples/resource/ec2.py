@@ -11,8 +11,8 @@ import time
 
 """  
 This is an example which shows how to access Amazon EC2 clouds via the SAGA
-resource package. The code expects the environment variables EC2_ID and
-EC2_KEY to contain the respective authentication tokens required for EC2
+resource package. The code expects the environment variables EC2_ACCESS_KEY and
+EC2_SECRET_KEY to contain the respective authentication tokens required for EC2
 access.  It also expects EC2_KEYPAIR to point to the ssh key to be used in the
 EC2 keypair authentication.
 
@@ -142,8 +142,8 @@ def state2str (state) :
 
 # in order to connect to EC2, we need an EC2 ID and KEY
 c1 = saga.Context ('ec2')
-c1.user_id  = os.environ['EC2_ID']
-c1.user_key = os.environ['EC2_KEY']
+c1.user_id  = os.environ['EC2_ACCESS_KEY']
+c1.user_key = os.environ['EC2_SECRET_KEY']
 
 # in order to access a created VM, we additionally need to point to the ssh
 # key which is used for EC2 VM contextualization, i.e. as EC2 'keypair'.
