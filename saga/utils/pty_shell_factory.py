@@ -454,6 +454,9 @@ class PTYShellFactory (object) :
                 import saga.utils.misc as sumisc
                 info['latency'] = sumisc.get_host_latency (url)
 
+                # FIXME: note that get_host_latency is considered broken (see
+                # saga/utils/misc.py line 73), and will return a constant 250ms.
+
             except Exception  as e :
                 info['latency'] = 1.0  # generic value assuming slow link
                 info['logger'].warning ("Could not contact host '%s': %s" % (url, e))

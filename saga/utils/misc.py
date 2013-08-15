@@ -70,6 +70,13 @@ def get_host_latency (host_url) :
 
     try :
 
+        # FIXME see comments to #62bebc9 -- this breaks for some cases, or is at
+        # least annoying.  Thus we disable latency checking for the time being,
+        # and return a constant assumed latency of 250ms (which approximately 
+        # represents a random WAN link).
+        return 0.25
+
+
         global _latencies
 
         if  host_url in _latencies :
