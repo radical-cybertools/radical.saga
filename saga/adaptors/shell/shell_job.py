@@ -15,10 +15,7 @@ import saga.adaptors.cpi.job
 from   saga.job.constants import *
 
 import re
-import os
 import time
-import threading
-import subprocess
 
 import shell_wrapper
 
