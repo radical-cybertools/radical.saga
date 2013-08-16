@@ -1,47 +1,59 @@
 
+import saga.utils.benchmark as sb
+
 import os
 import sys
+import time
 import saga
 
-import saga.utils.misc as sumisc
 
 # ------------------------------------------------------------------------------
 #
-def benchmark_pre (test_cfg, bench_cfg, session) :
+def benchmark_pre (tid, test_cfg, bench_cfg, session) :
 
     if  not 'job_service_url' in test_cfg :
-        sumisc.benchmark_eval ('no job service URL configured')
+        raise saga.NoSuccess ('no job service URL configured')
 
-    if  not 'load'        in bench_cfg : 
-        sumisc.benchmark_eval ('no benchmark load configured')
+    if  not 'load' in bench_cfg :
+        raise saga.NoSuccess ('no benchmark load configured')
 
-    HOST = test_cfg['job_service_url']
-    N_J  = int(bench_cfg['iterations'])  
-    LOAD = int(bench_cfg['load'])       
+    host  = saga.Url(test_cfg['job_service_url']).host
+    n_j   = int(bench_cfg['iterations'])
+    load  = int(bench_cfg['load'])
+    exe   = '/bin/sleep'
 
-    js = saga.job.Service ("%s" % HOST, session=session) 
-    jd = saga.job.Description()
+    ssh   = subprocess ("ssh %s" % host, stdin  = subprocess.PIPE, 
+                                         stdout = subprocess.PIPE,
+                                         stderr = subprocess.STDOUT)
 
-    jd.executable = '/bin/sleep'
-    jd.arguments  = [LOAD]
+    # find the ssh prompt
+    stdin  = ssh.communicate[0]
+    stdout = ssh.communicate[1]
 
-    return {'js' : js, 'jd' : jd}
+    while <stdin> ~! /'>$'/io :
+        time.sleep (0.1)
+
+    # setup is done
+    return {'ssh' : ssh, 'cmd' : "%s %s" % (executable, load)}
 
 
 # ------------------------------------------------------------------------------
 #
-def benchmark_core (args={}) :
+def benchmark_core (tid, i, args={}) :
 
-    js = args['js']
-    jd = args['jd']
+    ssh = args['ssh']
+    exe = args['exe']
 
-    j  = js.create_job (jd)
+    stdin  = ssh.stdin
+    stdout = ssh.stdout
+    stderr = ssh.stderr
+
     j.run()
 
 
 # ------------------------------------------------------------------------------
 #
-def benchmark_post (args={}) :
+def benchmark_post (tid, args={}) :
 
     pass
 
@@ -50,10 +62,12 @@ def benchmark_post (args={}) :
 #
 try:
 
-    sumisc.benchmark_init ('job.run', benchmark_pre, benchmark_core, benchmark_post)
+    sb.benchmark_init ('job_run', benchmark_pre, benchmark_core, benchmark_post)
 
 except saga.SagaException, ex:
     print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
     print " \n*** Backtrace:\n %s" % ex.traceback
 
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
