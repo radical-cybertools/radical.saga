@@ -47,15 +47,15 @@ import os
 import time
 import string
 import redis
-import threading
 
 import redis_cache
 
 from   saga.exceptions       import *
 from   saga.advert.constants import *
-
 from   saga.utils.logger     import getLogger
-import saga.utils.exception
+
+import saga.utils.misc       as sumisc
+import saga.utils.threads    as sut
 
 
 TYPE   = 'type'
@@ -88,7 +88,7 @@ def redis_ns_name (path) :
 
 # --------------------------------------------------------------------
 #
-class redis_ns_monitor (threading.Thread) :
+class redis_ns_monitor (sut.SagaThread) :
 
     # ----------------------------------------------------------------
     #
@@ -101,7 +101,7 @@ class redis_ns_monitor (threading.Thread) :
         self.pat = {}
         self.pat['ATTRIBUTE'] = re.compile ('\s*\[(?P<key>[^=]+)=(?P<val>.+)]\s*')
 
-        threading.Thread.__init__ (self)
+        sut.SagaThread.__init__ (self)
         self.setDaemon (True)
 
 
@@ -166,7 +166,6 @@ class redis_ns_monitor (threading.Thread) :
 
         except Exception as e :
             self.logger.critical ("redis monitoring thread crashed - disable callback handling (%s)") % str(e)
-            self.logger.debug    (saga.utils.exception.get_traceback (0))
             return
 
 

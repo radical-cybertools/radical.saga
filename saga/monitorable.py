@@ -9,7 +9,6 @@ __license__   = "MIT"
 import saga.attributes       as sa
 import saga.base             as sb
 import saga.exceptions       as se
-import saga.utils.exception  as sue
 import saga.utils.signatures as sus
 
 

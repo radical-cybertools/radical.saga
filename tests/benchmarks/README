@@ -1,0 +1,96 @@
+
+Benchmark Experiments in the SAGA Paper
+---------------------------------------
+
+  1) local call stack overhead for any SAGA API call, as compared to native
+     middleware calls
+
+     We measure the overhead by running 10.000 jobs over ssh, for localhost and
+     a remote host (india.futuregrid.org).  While SAGA-Python is managing the
+     spawned ssh processes via fork/exec (providing a PTY for better I/O
+     capture), we use a simple python subprocess for the non-saga example
+     (simpler, faster).  We are interested in the total time to completion, but
+     the benchmark will also report on startup overhead, jitter, min/max, and
+     some other metrics.  
+
+     Both the SAGA-Python benchmark and the native ssh benchmark will used the
+     SAGA-Python benchmarking framework -- but no SAGA calls will be present in
+     the benchmark's load in the latter case.
+
+     To reproduce graph 1 in the paper (4 measurements), make sure to use the
+     following settings in ../configs/ssh_localhost.cfg and
+     ../configs/ssh_india.cfg, respectively (you may also need to adapt the ssh
+     authentication keys):
+
+       ssh_localhost.cfg:
+           [saga.tests]
+           job_service_url  = ssh://localhost/
+
+           [saga.benchmark]
+           concurrency      = 1
+           iterations       = 10000
+           load             = 1
+           url              = ssh://localhost
+
+       ssh_india.cfg:
+           [saga.tests]
+           job_service_url  = ssh://india.futuregrid.org/
+
+           [saga.benchmark]
+           concurrency      = 1
+           iterations       = 10000
+           load             = 1
+           url              = ssh://india
+
+
+     Run the four benchmarks with:
+     
+         python saga_01_call_stack_overhead_saga.py \
+             -c ../configs/ssh_localhost.cfg
+
+         python saga_01_call_stack_overhead_native.py \
+             -c ../configs/ssh_localhost.cfg
+
+
+         python saga_01_call_stack_overhead_saga.py \
+             -c ../configs/ssh_india.cfg
+
+         python saga_01_call_stack_overhead_native.py \
+             -c ../configs/ssh_india.cfg
+
+
+
+
+  2) local memory footprint for any SAGA API object instance, as compared to
+     native middleware handles 
+
+     The benchmark code is very similar to case (1) above, but we ignore the
+     timing values and focus on memory consumption instead: on each benchmark
+     iteration we create *and keep* a new API object, and monitor memory usage
+     of the python process.  We run the benchmark only for the local ssh
+     connection.  The benchmark postprocessing will then print memory statistics.  
+     The settings required for the benchmark are the same as above.  Run the two
+     benchmarks with:
+     
+         python saga_02_memory_overhead_saga.py \
+             -c ../configs/ssh_localhost.cfg
+
+         python saga_02_memory_overhead_native.py \
+             -c ../configs/ssh_localhost.cfg
+
+
+
+  3) scaling behaviour for many \I{sequential} backend interactions, i.e.
+     consistency of performance over a large sequence of interactions, as
+     compared to native middleware interactions 
+
+     
+
+
+
+  4) scaling behaviour for many \I{concurrent} backend interactions, i.e.
+     consistency of performance over a number of multi-threaded interactions, as
+     compared to native middleware interactions
+
+
+
