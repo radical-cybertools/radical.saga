@@ -529,6 +529,20 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
     """
 
+    EC2_URLs
+    ========
+
+    AWS Generic access point           https://ec2.amazonaws.com/
+    AWS US East (Northern Virginia)    https://ec2.us-east-1.amazonaws.com/
+    AWS US West (Oregon)               https://ec2.us-west-2.amazonaws.com/
+    AWS US West (Northern California)  https://ec2.us-west-1.amazonaws.com/
+    AWS EU (Ireland)                   https://ec2.eu-west-1.amazonaws.com/
+    AWS Asia Pacific (Singapore)       https://ec2.ap-southeast-1.amazonaws.com/
+    AWS Asia Pacific (Tokyo)           https://ec2.ap-northeast-1.amazonaws.com/
+    AWS South America (Sao Paulo)      https://ec2.sa-east-1.amazonaws.com/
+
+    OSDC                               euca://api.opensciencedatacloud.org:8773/sullivan/services/Cloud
+
     Known Limitations
     =================
 
