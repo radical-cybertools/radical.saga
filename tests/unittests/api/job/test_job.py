@@ -33,6 +33,8 @@ def _silent_close_js(js_obj):
 # ------------------------------------------------------------------------------
 #
 def test_job_service_get_url():
+    """ Test if the job service URL is returned cotrrectly
+    """
     js = None
     try:
         tc = sutc.TestConfig()

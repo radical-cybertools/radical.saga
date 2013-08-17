@@ -10,7 +10,6 @@ ANY = COMPUTE | STORAGE
 import re
 import os
 import time
-import threading
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -20,7 +19,7 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 # the adaptor info
 #
 _ADAPTOR_NAME          = "saga.adaptor.ec2_resource"
-_ADAPTOR_SCHEMAS       = ["ec2", "ec2_keypair"]
+_ADAPTOR_SCHEMAS       = ["ec2", "ec2_keypair", "openstack", "eucalyptus", "euca", "aws", "amazon", "http", "https"]
 _ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
@@ -153,6 +152,11 @@ class Adaptor (saga.adaptors.base.Base):
             else :
                 self.lc_has_footprint = True
 
+            # we pick EC2 environment parameters for default settings
+            self._EC2_URL        = os.environ.get ('EC2_URL'       , "")
+            self._EC2_SECRET_KEY = os.environ.get ('EC2_ACCESS_KEY', "")
+            self._EC2_ACCESS_KEY = os.environ.get ('EC2_SECRET_KEY', "")
+
 
         except Exception as e :
             self._logger.warning ("Could not load libcloud module, "
@@ -165,9 +169,22 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def _get_default_contexts (self) :
 
-        # no default keypair in ec2
-        # FIXME: pick up a default context from the EC2 default env vars
-        return []
+        # no default keypair in ec2 -- but lets see if we have default access
+        # information
+        if  not self._EC2_URL        and \
+            not self._EC2_ACCESS_KEY and \
+            not self._EC2_SECRET_KEY : 
+            # no default access info...
+            return []
+
+        # ok, lets pick up a default context from the EC2 default env vars
+        ctx = saga.Context ('ec2')
+
+        if self._EC2_URL        : ctx.server   = self._EC2_URL
+        if self._EC2_ACCESS_KEY : ctx.user_id  = self._EC2_ACCESS_KEY
+        if self._EC2_SECRET_KEY : ctx.user_key = self._EC2_SECRET_KEY
+
+        return [ctx]
 
 
     # ----------------------------------------------------------------
@@ -181,6 +198,86 @@ class Adaptor (saga.adaptors.base.Base):
             raise saga.BadParameter ("Cannot parse resource id '%s'" % id)
 
         return (saga.Url (match.group(1)), str (match.group (2)))
+
+
+    # ----------------------------------------------------------------
+    #
+    def connect (self, session=None, url=None) :
+
+        if  not session :
+            session = saga.Session (default=True)
+
+        ctx_id  = None
+        ctx_key = None
+        ctx_url = None
+        error   = None
+
+        print session
+        for ctx in session.contexts :
+
+            print ctx
+
+            if  ctx.type.lower () == 'ec2' :
+                ctx_id  = ctx.user_id
+                ctx_key = ctx.user_key
+                ctx_url = saga.Url (ctx.server)
+
+                if  not ctx_url or not str(ctx_url) :
+                    ctx_url = saga.Url (self._EC2_URL)
+
+                if  url :
+                    ec2_url = url
+                else :
+                    ec2_url = ctx_url
+
+                # ec2_url may still be empty!
+
+                driver = None
+                print "url: %s" % ec2_url
+                if  not ec2_url                     or \
+                    ec2_url.scheme  == 'ec2'        or \
+                    ec2_url.scheme  == 'aws'        or \
+                    ec2_url.scheme  == 'amazon'        :
+                    driver  = self.lccp.get_driver (self.lcct.Provider.EC2)
+                    backend = 'aws'
+                elif ec2_url.scheme == 'eucalyptus' or \
+                    ec2_url.scheme  == 'euca'       or \
+                    ec2_url.scheme  == 'http'       or \
+                    ec2_url.scheme  == 'https'      or \
+                    ec2_url.scheme  == 'openstack'     :
+                    driver  = self.lccp.get_driver (self.lcct.Provider.EUCALYPTUS)
+                    backend = 'euca'
+                else :
+                    error = saga.BadParameter ( "URL schema not supported by aws adaptor(%s)" % ec2_url)
+                    next
+
+
+                if  backend  == 'aws' :
+                    self._logger.debug ("aws backend")
+                    conn     =  driver (ctx_id, ctx_key)
+                    # do we need URL details for different availability zones?
+
+                elif backend == 'euca' :
+                    self._logger.debug ("eucalyptus backend")
+                    conn     =  driver (ctx_id, ctx_key,
+                                      # secure = True, # how do we know?
+                                        host   = ctx_url.host, 
+                                        port   = ctx_url.port,
+                                        path   = ctx_url.path)
+                else :
+                    error = saga.BadParameter ( "only EC2 supported (not %s)" % ec2_url)
+                    next
+
+                print "got connection: %s (%s, %s)" % (conn, ctx_id, ctx_key)
+                return conn, backend
+
+        # no luck, didn't get a valid connection...
+        if  error :
+            raise error
+
+        # no particular context failed -- raise generic exception
+        raise saga.BadParameter ("no valid EC2 credentials found (ec2 url='%s')" % ec2_url)
+
 
 
 
@@ -295,21 +392,25 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
     @SYNC_CALL
     def _initialize (self, session) :
 
-        # for backward compatibility, we allow to specify user_cert instead of
-        # user_key
-        if  self._api ().user_cert :
-            self._api ().user_key  = self._api ().user_cert
-            self._api ().user_cert = None
-
-        # convert public key into private key
-        if  self._api ().user_key.endswith ('.pub') :
-            self._api ().user_key = self._api ().user_key[:-4]
-
-
         # nothing to do for simple ec2 id/secret containers
         # FIXME: we could in principle validate validity...
         if  self._type.lower () == 'ec2' :
             return 
+
+        # we first attempt to create an ssh context from the keypair
+        # context -- this will take care of all eventual key checks etc.
+        ssh_context = saga.Context ('ssh')
+
+        ssh_context.user_id   = self._api ().user_id
+        ssh_context.user_key  = self._api ().user_key
+        ssh_context.user_cert = self._api ().user_cert
+        ssh_context.user_pass = self._api ().user_pass
+
+        # contexts are verified on session.add_context -- to force that
+        # verification we use a temporary session.  This will check if the ssh
+        # key exists, etc.
+        tmp_session = saga.Session (default=False)
+        tmp_session.add_context (ssh_context)
 
 
         # we have an ec2_keypair context.  We need to find an ec2  context in
@@ -333,16 +434,16 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
         # valid context, connect to backend  
         # FIXME: use 'Server' if defined
-        driver = self.lccp.get_driver (self.lcct.Provider.EC2)
-        conn   = driver (self.ec2_id, self.ec2_key)
+        conn, backend = self._adaptor.connect (session)
 
         # check if given keypair exists.  We only can do that by inspecting it,
         # and capturing an eventual exception.
         keypair = None
         token   = self._api ().token
-        ssh_id  = self._api ().user_id
-        key     = self._api ().user_key
-        keypass = self._api ().user_pass
+        ssh_id  = ssh_context.user_id
+        key     = ssh_context.user_key
+        cert    = ssh_context.user_cert
+        keypass = ssh_context.user_pass
 
         # With theese information, attempt to verify or upload the keypair.
         upload  = False
@@ -350,22 +451,39 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
             # try to find it
             keypair = conn.ex_describe_keypairs (token)
 
-        except Exception as e :
+            if  not keypair               or \
+                not 'keyName' in keypair  or \
+                not keypair['keyName']       :
 
-            e_str = str(e)
-
-            if e_str.startswith ("InvalidKeyPair.NotFound") :
-
-                if  not key :
-                    raise saga.exceptions.BadParameter \
-                          ("'ec2_keypair' not found: %s" % e)
-
-                # keypair not found, but we have a key, so we can register it!
+                self._logger.info ("keypair check nok: %s" % (keypair))
                 upload = True
 
             else :
-                raise saga.exceptions.BadParameter \
-                      ("'ec2_keypair' invalid: %s" % e)
+                self._logger.info ("keypair check ok: %s" % (keypair))
+
+        except Exception as e :
+
+            self._logger.error ("keypair check : %s" % (e))
+
+            # FIXME: actually, key management only seems to work for AWS/EC2
+            # proper (ex_describe_keypairs is documented as EC2 only by
+            # libcloud), so we only raise a warning on errors for other
+            # backends.
+            
+            if  backend == 'aws' :
+
+                if str(e).startswith ("InvalidKeyPair.NotFound") :
+
+                    if  not key :
+                        raise saga.exceptions.BadParameter \
+                              ("'ec2_keypair' not found: %s" % e)
+
+                    # keypair not found, but we have a key, so we can register it!
+                    upload = True
+
+                else :
+                    raise saga.exceptions.BadParameter \
+                          ("'ec2_keypair' invalid: %s" % e)
 
 
         # upload keypair if we did not find it, and have something to upload.
@@ -374,7 +492,10 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
             self._logger.info ("import new keypair %s : %s" % (token, key))
 
             try :
+                print "keypair = conn.ex_import_keypair (%s, %s)" % (token, key)
                 keypair = conn.ex_import_keypair (token, key)
+                self._logger.info ("keypair upload gave %s" % keypair)
+
 
             except Exception as e :
                 raise saga.exceptions.BadParameter \
@@ -382,7 +503,8 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
             # import worked -- we don't need to import again, so unset the
             # user_key attribute
-            self._api ().user_key = None
+            self._api ().user_key  = None
+            self._api ().user_cert = None
 
 
         # did not find it, and have nothing to upload?!
@@ -395,14 +517,8 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
 
         # we add the thusly derived ssh context to the session which originally
-        # contained our ec2_keypair context This will also verify and initialize
-        # the ssh key.  We do that even for failed uploads, in the hope that
-        # some out-of-band setup kicks in.
-        ssh_context           = saga.Context ('ssh')
-        ssh_context.user_key  = key
-        ssh_context.user_pass = keypass
-        ssh_context.user_id   = ssh_id
-
+        # contained our ec2_keypair context.  We do that even for failed 
+        # uploads, in the hope that some out-of-band setup kicks in.
         session.add_context (ssh_context)
 
 
@@ -410,6 +526,20 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 #
 class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
     """
+
+    EC2_URLs
+    ========
+
+    AWS Generic access point           https://ec2.amazonaws.com/
+    AWS US East (Northern Virginia)    https://ec2.us-east-1.amazonaws.com/
+    AWS US West (Oregon)               https://ec2.us-west-2.amazonaws.com/
+    AWS US West (Northern California)  https://ec2.us-west-1.amazonaws.com/
+    AWS EU (Ireland)                   https://ec2.eu-west-1.amazonaws.com/
+    AWS Asia Pacific (Singapore)       https://ec2.ap-southeast-1.amazonaws.com/
+    AWS Asia Pacific (Tokyo)           https://ec2.ap-northeast-1.amazonaws.com/
+    AWS South America (Sao Paulo)      https://ec2.sa-east-1.amazonaws.com/
+
+    OSDC                               euca://api.opensciencedatacloud.org:8773/sullivan/services/Cloud
 
     Known Limitations
     =================
@@ -465,36 +595,13 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
         self.access[STORAGE] = []
         self.access[ANY]     = []
 
-        self.backend = None
-        self.driver  = None
-        self.conn    = None
+        self.conn, self.backend = self._adaptor.connect (session, url)
 
-        if  self.url.schema.lower () == 'ec2' :
-            if  self.url.host and \
-                self.url.host != 'aws.amazon.com' :
-                raise saga.BadParameter ("only amazon/EC2 supported (not %s)" \
-                                      % self.url)
+        self.templates = []
+        self.images    = []
 
-            self.backend = 'amazon.ec2'
-
-            # FIXME: support proper contexts, and also default EC2 env vars
-            self.ec2_id  = os.environ['EC2_ID']
-            self.ec2_key = os.environ['EC2_KEY']
+        # FIXME: we could pre-fetch existing resources right now...
             
-            # FIXME: translate exceptions, in particular connectivity and auth
-            # exceptions.
-            self.driver = self.lccp.get_driver (self.lcct.Provider.EC2)
-            self.conn   = self.driver (self.ec2_id, self.ec2_key)
-
-            self.templates = []
-            self.images    = []
-
-            # FIXME: we could pre-fetch existing resources right now...
-            
-        else :
-            raise saga.BadParameter ( "only EC2 is supported (not %s)" \
-                                  % self.url)
-
 
     # ----------------------------------------------------------------
     #
@@ -554,59 +661,59 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
                 raise saga.BadParameter._log (self._logger, msg)
 
 
-        if  self.backend.lower () == 'amazon.ec2' :
-            # for amazon EC2, we only support template defined instances
-            if  not rd.template :
-                raise saga.BadParameter ("no 'template' attribute in resource description")
+        # we only support template defined instances right now
+        # FIXME: should be able to select suitable template from given
+        # resource attributes
+        if  not rd.template :
+            raise saga.BadParameter ("no 'template' attribute in resource description")
+        
+        # we also need an OS image
+        if  not rd.image :
+            raise saga.BadParameter ("no 'image' attribute in resource description")
+
+        # and we don't support any other attribute right now
+        if  rd.dynamic      or rd.start        or \
+            rd.end          or rd.duration     or \
+            rd.machine_os   or rd.machine_arch or \
+            rd.access       or rd.memory       :
+            raise saga.BadParameter ("resource descriptions only supports "
+                                     "'template' and 'image' attributes "
+                                     "right now")
+
+        try :
             
-            # we also need an OS image
-            if  not rd.image :
-                raise saga.BadParameter ("no 'image' attribute in resource description")
+            # make sure template and image are valid, and get handles
+            if  not rd.template in self.templates_dict : 
+                self._refresh_templates (rd.template)
 
-            # and we don't support any other attribute right now
-            if  rd.dynamic      or rd.start        or \
-                rd.end          or rd.duration     or \
-                rd.machine_os   or rd.machine_arch or \
-                rd.access       or rd.memory       :
-                raise saga.BadParameter ("amazon.ec2 resource descriptions only "
-                                         "supports 'template' and 'image' attributes")
-
-            if True :
-          # try :
-                
-
-                # make sure template and image are valid, and get handles
-                if  not rd.template in self.templates_dict : 
-                    self._refresh_templates (rd.template)
-
-                if  not rd.image in self.images_dict : 
-                    self._refresh_images (rd.image)
+            if  not rd.image in self.images_dict : 
+                self._refresh_images (rd.image)
 
 
-                # FIXME: interpret / verify size
+            # FIXME: interpret / verify size
 
-                # user name as id tag
-                import getpass
-                cid = getpass.getuser()
+            # user name as id tag
+            import getpass
+            cid = getpass.getuser()
 
-                # it should be safe to create the VM instance now
-                node = self.conn.create_node (name  = 'saga.resource.Compute.%s' % cid,
-                                              size  = self.templates_dict[rd.template], 
-                                              image = self.images_dict[rd.image], 
-                                              ex_keyname = token)
+            # it should be safe to create the VM instance now
+            node = self.conn.create_node (name  = 'saga.resource.Compute.%s' % cid,
+                                          size  = self.templates_dict[rd.template], 
+                                          image = self.images_dict[rd.image], 
+                                          ex_keyname = token)
 
-                resource_info = { 'backend'                 : self.backend   ,
-                                  'resource'                : node           ,
-                                  'resource_type'           : rd.rtype       ,
-                                  'resource_description'    : rd             ,
-                                  'resource_manager'        : self.get_api (), 
-                                  'resource_manager_url'    : self.url       , 
-                                  'resource_schema'         : self.url.schema, 
-                                  'connection'              : self.conn      }
+            resource_info = { 'backend'                 : self.backend   ,
+                              'resource'                : node           ,
+                              'resource_type'           : rd.rtype       ,
+                              'resource_description'    : rd             ,
+                              'resource_manager'        : self.get_api (), 
+                              'resource_manager_url'    : self.url       , 
+                              'resource_schema'         : self.url.schema, 
+                              'connection'              : self.conn      }
 
-          # except Exception as e :
-          #     # FIXME: translate errors more sensibly
-          #     raise saga.NoSuccess ("Failed with %s" % e)
+        except Exception as e :
+            # FIXME: translate errors more sensibly
+            raise saga.NoSuccess ("Failed with %s" % e)
 
         if  resource_info :
             if  rd.rtype == COMPUTE :
@@ -626,34 +733,34 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
 
         resource_info = None
 
-        if  self.backend == 'amazon.ec2' :
 
-            try :
-                
-                manager_url, rid_s = self._adaptor.parse_id (str(rid))
-           
-                # FIXME: interpret / verify size
-                nodes  = self.conn.list_nodes (ex_node_ids=[rid_s])
-           
-                if  len (nodes) < 1 :
-                    raise saga.BadParameter ("Cannot find resource '%s'" % rid_s)
-                if  len (nodes) > 1 :
-                    raise saga.BadParameter ("Cannot identify resource '%s'" % rid_s)
-           
-                node = nodes[0]
-           
-                resource_info = { 'backend'                 : self.backend   ,
-                                  'resource'                : node           ,
-                                  'resource_type'           : COMPUTE        ,
-                                  'resource_description'    : None           ,
-                                  'resource_manager'        : self.get_api (), 
-                                  'resource_manager_url'    : self.url       , 
-                                  'resource_schema'         : self.url.schema, 
-                                  'connection'              : self.conn      }
-           
-            except Exception as e :
-                # FIXME: translate errors more sensibly
-                raise saga.NoSuccess ("Failed with %s" % e)
+        try :
+            
+            manager_url, rid_s = self._adaptor.parse_id (str(rid))
+        
+            # FIXME: interpret / verify size
+            nodes  = self.conn.list_nodes (ex_node_ids=[rid_s])
+        
+            if  len (nodes) < 1 :
+                raise saga.BadParameter ("Cannot find resource '%s'" % rid_s)
+            if  len (nodes) > 1 :
+                raise saga.BadParameter ("Cannot identify resource '%s'" % rid_s)
+        
+            node = nodes[0]
+        
+            resource_info = { 'backend'                 : self.backend   ,
+                              'resource'                : node           ,
+                              'resource_type'           : COMPUTE        ,
+                              'resource_description'    : None           ,
+                              'resource_manager'        : self.get_api (), 
+                              'resource_manager_url'    : self.url       , 
+                              'resource_schema'         : self.url.schema, 
+                              'connection'              : self.conn      }
+        
+        except Exception as e :
+            # FIXME: translate errors more sensibly
+            raise saga.NoSuccess ("Failed with %s" % e)
+
 
         if  resource_info :
             return saga.resource.Compute (_adaptor       = self._adaptor, 
@@ -678,22 +785,19 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
             raise saga.IncorrectState ("not connected to backend")
 
 
-        if  self.backend == 'amazon.ec2' :
-
-            ret = []
+        ret = []
+        
+        try :
             
-            try :
-                
-                for node in self.conn.list_nodes () :
-                  ret.append ("[%s]-[%s]" % (self.url, node.id))
+            for node in self.conn.list_nodes () :
+              ret.append ("[%s]-[%s]" % (self.url, node.id))
 
-            except Exception as e :
-                # FIXME: translate errors more sensibly
-                raise saga.NoSuccess ("Failed with %s" % e)
+        except Exception as e :
+            # FIXME: translate errors more sensibly
+            raise saga.NoSuccess ("Failed with %s" % e)
 
-            return ret
+        return ret
    
-        raise saga.NoSuccess ("Could not list resources")
    
     # ----------------------------------------------------------------
     #
@@ -743,6 +847,29 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
         return self.images
 
    
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_image (self, img_id) :
+
+        if  not len (self.images) :
+            self._refresh_images ()
+
+        if  not img_id in self.images_dict.keys () :
+            raise saga.BadParameter ("unknown image %s" % img_id)
+
+        descr = dict(self.images_dict[img_id].extra)
+
+        if  not 'name' in descr :
+            descr['name'] = self.images_dict[img_id].name
+
+        for key in descr.keys () :
+            if  not descr[key] :
+                descr.pop (key)
+
+        return descr
+
+
 
 ###############################################################################
 #
@@ -805,9 +932,6 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
             self.rid    = self.resource.id
             self.id     = "[%s]-[%s]" % (self.manager_url, self.rid)
             self.access = None
-
-            if  self.backend != 'amazon.ec2' :
-                raise saga.BadParameter ("not support for %s" % self.backend)
 
 
             # FIXME: we don't actually need new state, it should be fresh at

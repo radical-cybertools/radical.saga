@@ -1,26 +1,28 @@
 
+import saga.utils.benchmark as sb
+
 import os
 import sys
 
-import saga.utils.misc as sumisc
+
 
 # ------------------------------------------------------------------------------
 #
-def benchmark_pre (test_cfg, bench_cfg, session) :
+def benchmark_pre (tid, test_cfg, bench_cfg, session) :
 
     pass
 
 
 # ------------------------------------------------------------------------------
 #
-def benchmark_core (args={}) :
+def benchmark_core (tid, i, args={}) :
 
     pass
 
 
 # ------------------------------------------------------------------------------
 #
-def benchmark_post (args={}) :
+def benchmark_post (tid, args={}) :
 
     pass
 
@@ -28,11 +30,11 @@ def benchmark_post (args={}) :
 # ------------------------------------------------------------------------------
 #
 try:
-
-    sumisc.benchmark_init ('benchmark.selftest', benchmark_pre, benchmark_core, benchmark_post)
+    sb.benchmark_init ('benchmark_selftest', benchmark_pre, benchmark_core, benchmark_post)
 
 except Exception as e :
-
     print "Exception: %s" % e
 
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

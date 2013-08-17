@@ -35,6 +35,10 @@ TIMESTAMP=0
 
 PURGE_ON_START="%(PURGE_ON_START)s"
 
+# default exit value is 1, for error.  We need to set explicitly to 0 for
+# non-error conditions.
+EXIT_VAL=1
+
 # --------------------------------------------------------------------
 #
 # idle_checker is running in the background, and will terminate the wrapper
@@ -63,6 +67,7 @@ idle_checker () {
     if test -e "$BASE/quit.$ppid" 
     then
       \rm   -f  "$BASE/quit.$ppid" 
+      EXIT_VAL=0
       exit 0
     fi
 
@@ -649,6 +654,7 @@ cmd_quit () {
   then
     \printf "IDLE TIMEOUT\n"
     \touch "$BASE/timed_out.$$"
+    EXIT_VAL=2
   else
     \touch "$BASE/quit.$$"
   fi
@@ -664,7 +670,7 @@ cmd_quit () {
   \stty echo    >/dev/null 2>&1
   \stty echonl  >/dev/null 2>&1
 
-  exit 0
+  exit $EXIT_VAL
 }
 
 
@@ -802,10 +808,11 @@ listen() {
 \stty -echo   2> /dev/null
 \stty -echonl 2> /dev/null
 
-if test "$PURGE_ON_START" = "True"
-then
-  cmd_purge
-fi
+# FIXME: this leads to timing issues -- disabled for benchmarking
+# if test "$PURGE_ON_START" = "True"
+# then
+#   cmd_purge
+# fi
 
 create_monitor
 listen $1
