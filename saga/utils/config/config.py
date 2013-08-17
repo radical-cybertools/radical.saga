@@ -10,8 +10,6 @@ __license__   = "MIT"
 import os
 
 from saga.utils.singleton  import Singleton
-from saga.utils.exception  import ExceptionBase
-
 from configfile            import ConfigFileReader
 
 ################################################################################
@@ -308,21 +306,23 @@ class Configurable(object):
 
 ################################################################################
 ##
-class CategoryNotFound(ExceptionBase):
+class CategoryNotFound(Exception):
     def __init__(self, name):
-        self.message = "A category with name '%s' could not be found." % name
+        msg = "A category with name '%s' could not be found." % name
+        Exception.__init__(self, msg)
 
-class OptionNotFound(ExceptionBase):
+class OptionNotFound(Exception):
     def __init__(self, category_name, option_name):
         name = "%s.%s" % (category_name, option_name)
-        self.message = "An option with name '%s' could not be found." % (name)
+        msg  = "An option with name '%s' could not be found." % (name)
+        Exception.__init__(self, msg)
 
-class ValueTypeError(ExceptionBase):
+class ValueTypeError(Exception):
     def __init__(self, category_name, option_name, value_type, required_type):
         name = "%s.%s" % (category_name, option_name)
-        self.message = "Option %s requires value of type '%s' but got '%s'." % \
-            (name, required_type, value_type)
-        ExceptionBase.__init__ (self, self.message)
+        msg  = "Option %s requires value of type '%s' but got '%s'." \
+             % (name, required_type, value_type)
+        Exception.__init__ (self, msg)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

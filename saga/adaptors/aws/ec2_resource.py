@@ -10,7 +10,6 @@ ANY = COMPUTE | STORAGE
 import re
 import os
 import time
-import threading
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -20,7 +19,7 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 # the adaptor info
 #
 _ADAPTOR_NAME          = "saga.adaptor.ec2_resource"
-_ADAPTOR_SCHEMAS       = ["ec2", "ec2_keypair"]
+_ADAPTOR_SCHEMAS       = ["ec2", "ec2_keypair", "openstack", "eucalyptus", "euca", "aws", "amazon"]
 _ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
@@ -295,21 +294,25 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
     @SYNC_CALL
     def _initialize (self, session) :
 
-        # for backward compatibility, we allow to specify user_cert instead of
-        # user_key
-        if  self._api ().user_cert :
-            self._api ().user_key  = self._api ().user_cert
-            self._api ().user_cert = None
-
-        # convert public key into private key
-        if  self._api ().user_key.endswith ('.pub') :
-            self._api ().user_key = self._api ().user_key[:-4]
-
-
         # nothing to do for simple ec2 id/secret containers
         # FIXME: we could in principle validate validity...
         if  self._type.lower () == 'ec2' :
             return 
+
+        # we first attempt to create an ssh context from the keypair
+        # context -- this will take care of all eventual key checks etc.
+        ssh_context = saga.Context ('ssh')
+
+        ssh_context.user_id   = self._api ().user_id
+        ssh_context.user_key  = self._api ().user_key
+        ssh_context.user_cert = self._api ().user_cert
+        ssh_context.user_pass = self._api ().user_pass
+
+        # contexts are verified on session.add_context -- to force that
+        # verification we use a temporary session
+        tmp_session = saga.Session (default=False)
+        tmp_session.add_context (ssh_context)
+        ssh_context = tmp_session.contexts[0]  # FIXME: make sure this is valid
 
 
         # we have an ec2_keypair context.  We need to find an ec2  context in
@@ -340,9 +343,10 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
         # and capturing an eventual exception.
         keypair = None
         token   = self._api ().token
-        ssh_id  = self._api ().user_id
-        key     = self._api ().user_key
-        keypass = self._api ().user_pass
+        ssh_id  = ssh_context.user_id
+        key     = ssh_context.user_key
+        cert    = ssh_context.user_cert
+        keypass = ssh_context.user_pass
 
         # With theese information, attempt to verify or upload the keypair.
         upload  = False
@@ -350,8 +354,19 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
             # try to find it
             keypair = conn.ex_describe_keypairs (token)
 
+            if  not keypair               or \
+                not 'keyName' in keypair  or \
+                not keypair['keyName']       :
+
+                self._logger.info ("keypair check nok: %s" % (keypair))
+                upload = True
+
+            else :
+                self._logger.info ("keypair check ok: %s" % (keypair))
+
         except Exception as e :
 
+            self._logger.info ("keypair check : %s" % (e))
             e_str = str(e)
 
             if e_str.startswith ("InvalidKeyPair.NotFound") :
@@ -374,7 +389,10 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
             self._logger.info ("import new keypair %s : %s" % (token, key))
 
             try :
+                print "keypair = conn.ex_import_keypair (%s, %s)" % (token, key)
                 keypair = conn.ex_import_keypair (token, key)
+                self._logger.info ("keypair upload gave %s" % keypair)
+
 
             except Exception as e :
                 raise saga.exceptions.BadParameter \
@@ -382,7 +400,8 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
             # import worked -- we don't need to import again, so unset the
             # user_key attribute
-            self._api ().user_key = None
+            self._api ().user_key  = None
+            self._api ().user_cert = None
 
 
         # did not find it, and have nothing to upload?!
@@ -395,14 +414,8 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
 
         # we add the thusly derived ssh context to the session which originally
-        # contained our ec2_keypair context This will also verify and initialize
-        # the ssh key.  We do that even for failed uploads, in the hope that
-        # some out-of-band setup kicks in.
-        ssh_context           = saga.Context ('ssh')
-        ssh_context.user_key  = key
-        ssh_context.user_pass = keypass
-        ssh_context.user_id   = ssh_id
-
+        # contained our ec2_keypair context.  We do that even for failed 
+        # uploads, in the hope that some out-of-band setup kicks in.
         session.add_context (ssh_context)
 
 
@@ -743,6 +756,29 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
         return self.images
 
    
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_image (self, img_id) :
+
+        if  not len (self.images) :
+            self._refresh_images ()
+
+        if  not img_id in self.images_dict.keys () :
+            raise saga.BadParameter ("unknown image %s" % img_id)
+
+        descr = dict(self.images_dict[img_id].extra)
+
+        if  not 'name' in descr :
+            descr['name'] = self.images_dict[img_id].name
+
+        for key in descr.keys () :
+            if  not descr[key] :
+                descr.pop (key)
+
+        return descr
+
+
 
 ###############################################################################
 #

@@ -165,6 +165,10 @@ Valid options are: %s" % (jd.spmd_variation, pe_list))
         for flag,mult in zip(flags, multipliers):
             sge_params += "#$ -l %s=%sm \n" % (flag, int (round (mult*int(jd.total_physical_memory) ) ) )
 
+    # if no cores are requested at all, we default to one
+    if jd.total_cpu_count is None:
+        jd.total_cpu_count = 1
+
     # we need to translate the # cores requested into
     # multiplicity, i.e., if one core is requested and
     # the cluster consists of 16-way SMP nodes, we will
@@ -344,6 +348,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         self.memreqs = None
         self.shell   = None
         self.mandatory_memreqs = list()
+
 
 
         rm_scheme = rm_url.scheme

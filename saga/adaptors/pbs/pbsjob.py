@@ -9,7 +9,7 @@ __license__   = "MIT"
 
 import saga.utils.which
 import saga.utils.pty_shell
-import saga.utils.exception
+import saga.utils.threads   as sut
 
 import saga.adaptors.base
 import saga.adaptors.cpi.job
@@ -20,8 +20,9 @@ import re
 import os 
 import time
 import threading
+
 from copy import deepcopy
-from cgi import parse_qs
+from cgi  import parse_qs
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -39,7 +40,7 @@ class _job_state_monitor(threading.Thread):
 
         self.logger = job_service._logger
         self.js = job_service
-        self._stop = threading.Event()
+        self._stop = sut.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
@@ -384,6 +385,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def __init__(self, api, adaptor):
 
+        self._mt  = None
         _cpi_base = super(PBSJobService, self)
         _cpi_base.__init__(api, adaptor)
 
@@ -400,8 +402,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def close(self):
 
-        self.mt.stop()
-        self.mt.join(10)  # don't block forever on join()
+        if  self.mt :
+            self.mt.stop()
+            self.mt.join(10)  # don't block forever on join()
+
         self._logger.info("Job monitoring thread stopped.")
 
         self.finalize(True)
