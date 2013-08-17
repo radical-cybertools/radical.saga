@@ -10,7 +10,6 @@ ANY = COMPUTE | STORAGE
 import re
 import os
 import time
-import threading
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -271,7 +270,6 @@ class Adaptor (saga.adaptors.base.Base):
 
                 print "got connection: %s (%s, %s)" % (conn, ctx_id, ctx_key)
                 return conn, backend
-
 
         # no luck, didn't get a valid connection...
         if  error :

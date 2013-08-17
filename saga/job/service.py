@@ -77,20 +77,34 @@ class Service (sb.Base, sasync.Async) :
         :type  rm: :class:`saga.Url` 
         """
 
+        # job service instances are resource hogs.  Before attempting to create
+        # a new instance, we attempt to clear out all old instances.   There is
+        # some collateral damage: we cannot run the Python GC over only the
+        # job.Service instances, but have to run it globally -- however,
+        # compared to the latency introduced by the job service setup, this
+        # should be a minor inconvenienve (tm)
+        try :
+            import gc
+            gc.collect ()
+
+        except :
+            pass
+
 
         # param checks
+        self.valid  = False
+        url         = surl.Url (rm)
+        scheme      = url.scheme.lower ()
+
         if not session :
             session = ss.Session (default=True)
 
-        url     = surl.Url (rm)
-        scheme  = url.scheme.lower ()
 
         self._super = super  (Service, self)
         self._super.__init__ (scheme, _adaptor, _adaptor_state, 
                               url, session, ttype=_ttype)
 
-        self.valid = True
-
+        self.valid  = True
 
     # --------------------------------------------------------------------------
     #
@@ -118,6 +132,18 @@ class Service (sb.Base, sasync.Async) :
         scheme  = url.scheme.lower ()
 
         return cls (url, session, _ttype=ttype)._init_task
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes     ('Service')
+    @sus.returns   (basestring)
+    def __str__ (self) :
+
+        if  self.valid :
+            return "[%s]" % self.url
+
+        return ""
 
 
     # --------------------------------------------------------------------------

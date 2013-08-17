@@ -8,15 +8,13 @@ __license__   = "MIT"
 '''
 
 import logging
-import saga.exceptions
+import saga.exceptions as se
 
 from   saga.utils.config                    import Configurable
 from   saga.utils.logger.colorstreamhandler import *
 from   saga.utils.logger.filehandler        import FileHandler
 from   saga.utils.logger.defaultformatter   import DefaultFormatter
 from   saga.utils.singleton                 import Singleton
-from   saga.utils.exception                 import ExceptionBase
-from   saga.utils.exception                 import get_traceback, breakpoint
 
 
 ############# These are all supported options for saga.logging #################
@@ -110,14 +108,14 @@ class _Logger(Configurable):
                 elif int(self._loglevel)    == 2:           self._loglevel = logging.WARNING
                 elif int(self._loglevel)    == 1:           self._loglevel = logging.ERROR
                 elif int(self._loglevel)    == 0:           self._loglevel = logging.CRITICAL
-                else: raise saga.exceptions.NoSuccess('%s is not a valid value for SAGA_VERBOSE.' % self._loglevel)
+                else: raise se.NoSuccess('%s is not a valid value for SAGA_VERBOSE.' % self._loglevel)
             else:
                 if   self._loglevel.lower() == 'debug':     self._loglevel = logging.DEBUG
                 elif self._loglevel.lower() == 'info':      self._loglevel = logging.INFO
                 elif self._loglevel.lower() == 'warning':   self._loglevel = logging.WARNING
                 elif self._loglevel.lower() == 'error':     self._loglevel = logging.ERROR
                 elif self._loglevel.lower() == 'critical':  self._loglevel = logging.CRITICAL
-                else: raise saga.exceptions.NoSuccess('%s is not a valid value for SAGA_VERBOSE.' % self._loglevel)
+                else: raise se.NoSuccess('%s is not a valid value for SAGA_VERBOSE.' % self._loglevel)
 
         # create the handlers (target + formatter + filter)
         for target in self._targets:
@@ -188,22 +186,6 @@ def getLogger (name='saga-python'):
         _logger.setLevel(_Logger().loglevel)
         _logger.propagate = 0 # Don't bubble up to the root logger
 
-        # we add a 'trace' and 'breakpoint' methods to the system logger, which 
-        # prints a traceback on the debug handler / enters the debugger
-        def mk_trace (logger) :
-            def trace () :
-                logger.debug (get_traceback (0))
-            return trace
-
-        def mk_breakpoint (logger) :
-            def breakpoint () :
-                logger.debug (breakpoint ())
-            return breakpoint
-
-        _logger.__dict__['trace']      = mk_trace      (_logger)
-        _logger.__dict__['breakpoint'] = mk_breakpoint (_logger)
-
-    
     # setup done - we can return the logger
     return _logger
 

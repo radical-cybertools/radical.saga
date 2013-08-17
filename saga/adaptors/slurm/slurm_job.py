@@ -554,7 +554,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         slurm_script = slurm_script.replace("!", "\"'!'\"")
 
 
-        self._logger.debug("SLURM script generated:\n%s" % slurm_script)
+        self._logger.info("SLURM script generated:\n%s" % slurm_script)
         self._logger.debug("Transferring SLURM script to remote host")
 
         # try to create the working directory (if defined)

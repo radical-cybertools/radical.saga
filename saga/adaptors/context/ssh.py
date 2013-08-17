@@ -26,8 +26,9 @@ _ADAPTOR_OPTIONS       = []
 _ADAPTOR_CAPABILITIES  = {
      'ctx_attributes'   : {saga.context.TYPE      : "This MUST be set to ssh",
                            saga.context.USER_ID   : "user name on target machine",
-                           saga.context.USER_KEY  : "maps to public *or* private ssh key",
-                           saga.context.USER_PASS : "passphrase for encryped keys"}
+                           saga.context.USER_KEY  : "maps to public ssh key",
+                           saga.context.USER_CERT : "maps to private ssh key",
+                           saga.context.USER_PASS : "passphrase for encrypted keys"}
 }
 
 _ADAPTOR_DOC           = {
@@ -46,10 +47,11 @@ adaptor -- unspecified attributes will have sensible default values.  For
 example, the ``c.user_id`` will default to the local user id, and the default
 passphrase in ``c.user_pass`` will be empty.
 
-The `UserKey` attribute can point to either the public or private key of the ssh
-keypair -- the SAGA-Python implementation will internally complete the
-repsective other key (public key file names are expected to be derived from the
-private key, by appending the suffix `.pub`).
+The `UserKey` and `UserCert` attributes can point to either the public or
+private key of the ssh keypair -- the SAGA-Python implementation will internally
+complete the respective other key (public key file names are expected to be
+derived from the private key, by appending the suffix `.pub` -- `.pem` files are
+expected to contain both public and private key.).
     """,
 
     'schemas'          : {'ssh' : 'ssh key and userid information.'},
@@ -103,52 +105,63 @@ class Adaptor (saga.adaptors.base.Base):
             import glob
             candidate_certs = glob.glob ("%s/.ssh/*" % os.environ['HOME'])
 
-            for cert in candidate_certs :
+            for key in candidate_certs :
 
-                if  cert.endswith ('.pub') :
+                if  os.path.isdir (key) :
+                    # don't want directories -- only keys
+                    continue
+
+                if  key.endswith ('.pub') :
                     # don't want public keys in this loop
                     continue
 
-                if  cert.endswith ('.pem') :
-                    key  = cert
+                if  key.endswith ('.pem') :
+                    pub  = "%s" % key
                 else :
-                    key  = "%s.pub" % cert
+                    pub  = "%s.pub" % key
+
             
-                if  not os.path.exists (key)   or \
-                    not os.path.isfile (key)   or \
-                    not os.path.exists (cert)  or \
-                    not os.path.isfile (cert)     :
-                  # self._logger.info ("incomplete ssh key at %s" %  cert)
-                    continue
+                # the private and public keys must exist
+                if  not os.path.exists (key ) or \
+                    not os.path.isfile (key )    :
+                    self._logger.info ("ignore ssh key at %s (no private key: %s)" %  (key, key))
+
+                if  not os.path.exists (pub) or \
+                    not os.path.isfile (pub)    :
+                    self._logger.info ("ignore ssh key at %s (no public key: %s)" %  (key, pub))
 
 
                 try :
-                    fh_pub = open (key)
-                    fh_key = open (cert)
-
-                    fh_pub.close ()
-                    fh_key.close ()
-
+                    fh_key  = open (key )
                 except Exception as e:
-                    self._logger.info ("invalid ssh key at %s (%s)" %  (cert, e))
-                    continue
+                    self._logger.info ("ignore ssh key at %s (key not readable: %s)" %  (key, e))
+                else :
+                    fh_key .close ()
+
+
+                try :
+                    fh_pub  = open (pub )
+                except Exception as e:
+                    self._logger.info ("ignore ssh key at %s (public key %s not readable: %s)" %  (key, pub, e))
+                else :
+                    fh_pub .close ()
 
 
                 import subprocess
-                if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % cert]) :
+                if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % key]) :
                     # needs passphrase.  Great, actually, but won't work for
                     # default contexts as long as we can't prompt for pass
                     # phrases...
-                    self._logger.warn ("ignore  ssh key at %s (requires passphrase)" %  cert)
+                    self._logger.warn ("ignore  ssh key at %s (requires passphrase)" %  key)
                     continue
 
                 c = saga.Context ('ssh')
                 c.user_key  = key
-                c.user_cert = cert
+                c.user_cert = pub
 
                 self._default_contexts.append (c)
 
-                self._logger.info ("default ssh key at %s" %  cert)
+                self._logger.info ("default ssh key at %s" %  key)
 
             self._have_defaults = True
 
@@ -190,96 +203,86 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
     def _initialize (self, session) :
 
         # make sure we have can access the key
-        _api  = self.get_api ()
+        api = self.get_api ()
 
-        _key  = None
-        _cert = None
-        _pass = None
+        key = None
+        pub = None
+        pwd = None
 
         
-        if          _api.attribute_exists (saga.context.USER_KEY ) :
-            _key  = _api.get_attribute    (saga.context.USER_KEY )
-        if          _api.attribute_exists (saga.context.USER_CERT) :
-            _cert = _api.get_attribute    (saga.context.USER_CERT)
-        if          _api.attribute_exists (saga.context.USER_PASS) :
-            _pass = _api.get_attribute    (saga.context.USER_PASS)
+        if         api.attribute_exists (saga.context.USER_KEY ) :
+            key  = api.get_attribute    (saga.context.USER_KEY )
+        if         api.attribute_exists (saga.context.USER_CERT) :
+            pub  = api.get_attribute    (saga.context.USER_CERT)
+        if         api.attribute_exists (saga.context.USER_PASS) :
+            pwd  = api.get_attribute    (saga.context.USER_PASS)
 
 
         # either user_key or user_cert should be specified (or both), 
         # then we complement the other, and convert to/from private 
         # from/to public keys
-        if  _cert and not _key :
-            _key  = _cert
+        if  pub  and not key :
+            key  = pub
 
-        if  _key and not _cert :
-            _cert  = _key
-
-        if  not _key :
-            # nothing to do, really.  This likely means that ssh key setup is
+        if  not key :
+            # nothing to do, really.  This likely means that ssh setup is
             # done out-of-band.
             return
 
-        # if we have an pem key, we don't do anything else
-        if  _key.endswith ('.pem') :
-            pass
-
-        # otherwise we assume normal public/private key pairs
+        # convert public key into private key
+        if  key.endswith ('.pub') :
+            if  not pub :
+                pub = key
+            key = key[:-4]
+        elif key.endswith ('.pem') :
+            if  not pub :
+                pub = key
         else :
+            if  not pub :
+                pub = key+'.pub'
 
-            # convert public key into private key
-            if  _cert.endswith ('.pub') :
-                _cert = _cert[:-4]
-
-            # convert private key into public key
-            if  not _key.endswith ('.pub') :
-                _key += ".pub"
-
-            # update the context with these setting
-            _api.set_attribute (saga.context.USER_KEY , _key )
-            _api.set_attribute (saga.context.USER_CERT, _cert)
-
+        # update the context with these setting
+        api.set_attribute (saga.context.USER_KEY , key)
+        api.set_attribute (saga.context.USER_CERT, pub)
 
 
         # the private and public keys must exist
-        if  not os.path.exists (_key ) or \
-            not os.path.isfile (_key )    :
-            raise se.BadParameter ("ssh public  key inaccessible: %s" % (_key))
+        if  not os.path.exists (key) or \
+            not os.path.isfile (key)    :
+            raise se.BadParameter ("ssh key inaccessible: %s" % (key))
 
-        if  not os.path.exists (_cert) or \
-            not os.path.isfile (_cert)    :
-            raise se.BadParameter ("ssh private key inaccessible: %s" % (_cert))
-
-
-        try :
-            fh_key  = open (_key)
-
-        except Exception as e:
-            raise se.PermissionDenied ("ssh key '%s' not readable: %s" % (_key, e))
-        else :
-            fh_key .close ()
+        if  not os.path.exists (pub) or \
+            not os.path.isfile (pub)    :
+            raise se.BadParameter ("ssh public key inaccessible: %s" % (pub))
 
 
         try :
-            fh_cert = open (_cert)
-
+            fh_key = open (key)
         except Exception as e:
-            raise se.PermissionDenied ("ssh key '%s' not readable: %s" % (_cert, e))
+            raise se.PermissionDenied ("ssh key '%s' not readable: %s" % (key, e))
         else :
-            fh_cert.close ()
+            fh_key.close ()
+
+
+        try :
+            fh_pub = open (pub)
+        except Exception as e:
+            raise se.PermissionDenied ("ssh public key '%s' not readable: %s" % (pub, e))
+        else :
+            fh_pub.close ()
 
 
         import subprocess
-        if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % _cert]) :
-            if  not _pass :
-                raise se.PermissionDenied ("ssh key '%s' is encrypted, need password" % (_cert))
+        if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % key]) :
+            if  not pwd  :
+                raise se.PermissionDenied ("ssh key '%s' is encrypted, need password" % (key))
 
 
-        if  subprocess.call (["sh", "-c", "ssh-keygen -y -f %s -P %s > /dev/null"
-                          % (_cert, _pass)]) :
-            raise se.PermissionDenied ("ssh key '%s' is encrypted, incorrect password" % (_cert))
+        if  subprocess.call (["sh", "-c", "ssh-keygen -y -f %s -P %s > /dev/null" % (key, pwd)]) :
+            raise se.PermissionDenied ("ssh key '%s' is encrypted, incorrect password" % (key))
 
 
-        self._logger.info ("init SSH context for key  at '%s' done" %  _cert)
+        self._logger.info ("init SSH context for key  at '%s' done" % key)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
