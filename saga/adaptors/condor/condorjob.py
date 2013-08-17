@@ -449,7 +449,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # create a Condor job script from SAGA job description
         script = _condorscript_generator(url=self.rm, logger=self._logger, jd=jd,
             option_dict=self.query_options)
-        self._logger.debug("Generated Condor script: %s" % script)
+        self._logger.info("Generated Condor script: %s" % script)
 
         ret, out, _ = self.shell.run_sync('echo "%s" | %s -' \
             % (script, self._commands['condor_submit']['path']))
@@ -655,7 +655,11 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         and (self.jobs[job_id]['returncode'] is None):
             self.jobs[job_id] = self._job_get_info(job_id=job_id)
 
-        return int(self.jobs[job_id]['returncode'])
+        ret = self.jobs[job_id]['returncode']
+
+        # FIXME: 'None' should cause an exception
+        if ret == None : return None
+        else           : return int(ret)
 
     # ----------------------------------------------------------------
     #

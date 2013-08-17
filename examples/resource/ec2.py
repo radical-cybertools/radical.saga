@@ -3,18 +3,18 @@ __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
-
 import os
 import sys
 import saga
 import time
 
-""" 
+
+"""  
 This is an example which shows how to access Amazon EC2 clouds via the SAGA
-resource package. The code expects the environment variables EC2_ID and EC2_KEY
-to contain the respective authentication tokens required for EC2 access.  It
-also expects EC2_KEYPAIR to point to the ssh key to be used in the EC2 keypair
-authentication.
+resource package. The code expects the environment variables EC2_ACCESS_KEY and
+EC2_SECRET_KEY to contain the respective authentication tokens required for EC2
+access.  It also expects EC2_KEYPAIR to point to the ssh key to be used in the
+EC2 keypair authentication.
 
 This program has different modes of operation:
 

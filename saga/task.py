@@ -18,7 +18,7 @@ import saga.utils.signatures as sus
 
 from   saga.constants     import SYNC, ASYNC, TASK, ALL, ANY, UNKNOWN, CANCELED
 from   saga.constants     import RESULT, EXCEPTION, STATE, SIZE, TASKS, STATES
-from   saga.utils.threads import Thread, NEW, RUNNING, DONE, FAILED
+from   saga.utils.threads import SagaThread, NEW, RUNNING, DONE, FAILED
 
 
 # ------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
         If the ``_method_context`` has *exactly* two elements, names ``_call``
         and ``args``, then the created task will wrap
-        a :class:`saga.util.threads.Thread` with that ``_call (_args)``.
+        a :class:`saga.util.threads.SagaThread` with that ``_call (_args)``.
         """
         
         self._base = super  (Task, self)
@@ -112,7 +112,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
             args   = self._method_context['_args']
             kwargs = self._method_context['_kwargs']
 
-            self._thread = Thread (call, *args, **kwargs)
+            self._thread = SagaThread (call, *args, **kwargs)
 
 
         # ensure task goes into the correct state
@@ -143,8 +143,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Task', 
-                  float)
-    @sus.returns (sus.nothing)
+                  sus.optional (float))
+    @sus.returns (bool)
     def wait (self, timeout=None) :
 
         if  None == timeout :
@@ -161,7 +161,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Task')
+    @sus.takes   ('Task', 
+                  float)
     @sus.returns (sus.nothing)
     def cancel (self) :
 
@@ -305,6 +306,18 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
+    def __str__ (self) :
+
+        ret  = "["
+        for task in self.tasks :
+            ret += "'%s', "  %  str(task)
+        ret += "]"
+
+        return ret
+
+
+    # --------------------------------------------------------------------------
+    #
     @sus.takes   ('Container', 
                   Task)
     @sus.returns (sus.nothing)
@@ -312,11 +325,9 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         import saga.job as sjob
 
-        # AM: oh I hate that we don't use proper inheritance...
-        if  not isinstance (task, Task) and \
-            not isinstance (task, sjob.Job) :
+        if  not isinstance (task, Task) :
             
-            raise se.BadParameter ("Container handles jobs or tasks, not %s" \
+            raise se.BadParameter ("Container handles tasks, not %s" \
                                 % (type(task)))
 
         if not task in self.tasks :
@@ -373,24 +384,23 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
                 else :
                     # hand off to the container function, in a separate task
-                    threads.append (Thread.Run (m_handle, tasks))
+                    threads.append (SagaThread.Run (m_handle, tasks))
 
 
         # handle tasks not bound to a container
         for task in buckets['unbound'] :
 
-            threads.append (Thread.Run (task.run))
+            threads.append (SagaThread.Run (task.run))
             
 
         # wait for all threads to finish
         for thread in threads :
-            if thread.isAlive () :
+            if  thread.isAlive () :
                 thread.join ()
 
-            if thread.get_state () == FAILED :
+            if  thread.get_state () == FAILED :
                 raise se.NoSuccess ("thread exception: %s\n%s" \
-                                 %  (str(thread.get_exception ()),
-                                     str(thread.get_traceback ())))
+                                 %  (thread.get_exception ()))
 
 
     # --------------------------------------------------------------------------
@@ -442,13 +452,13 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
-            threads.append (Thread.Run (c.container_wait, tasks, ANY, timeout))
+            threads.append (SagaThread.Run (c.container_wait, tasks, ANY, timeout))
 
         
         # handle all tasks not bound to containers
         for task in buckets['unbound'] :
 
-            threads.append (Thread.Run (task.wait, timeout))
+            threads.append (SagaThread.Run (task.wait, timeout))
             
 
         # mode == ANY: we need to watch our threads, and whenever one
@@ -533,13 +543,13 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
-            threads.append (Thread.Run (c.container_cancel, tasks, timeout))
+            threads.append (SagaThread.Run (c.container_cancel, tasks, timeout))
 
         
         # handle all tasks not bound to containers
         for task in buckets['unbound'] :
 
-            threads.append (Thread.Run (task.cancel, timeout))
+            threads.append (SagaThread.Run (task.cancel, timeout))
             
 
         for thread in threads :
@@ -582,13 +592,13 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
-            threads.append (Thread.Run (c.container_get_states, tasks))
+            threads.append (SagaThread.Run (c.container_get_states, tasks))
 
         
         # handle all tasks not bound to containers
         for task in buckets['unbound'] :
 
-            threads.append (Thread.Run (task.get_state))
+            threads.append (SagaThread.Run (task.get_state))
             
 
         # We still need to get the states from all threads.

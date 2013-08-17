@@ -15,10 +15,10 @@ import shlex
 import select
 import signal
 import termios
-import threading
 
-import saga.utils.logger as sul
-import saga.exceptions   as se
+import saga.utils.threads   as sut
+import saga.utils.logger    as sul
+import saga.exceptions      as se
 
 # --------------------------------------------------------------------
 #
@@ -96,6 +96,8 @@ class PTYProcess (object) :
         :param logger:  logger stream to send status messages to.
         """
 
+        self._debug = False
+
         self.logger = logger
         if  not  self.logger : self.logger = sul.getLogger ('PTYProcess') 
         self.logger.debug ("PTYProcess init %s" % self)
@@ -110,7 +112,7 @@ class PTYProcess (object) :
         if len(command) < 1 :
             raise se.BadParameter ("PTYProcess expects non-empty command")
 
-        self.rlock   = threading.RLock ()
+        self.rlock   = sut.RLock ("pty process %s" % command)
 
         self.command = command # list of strings too run()
 
@@ -617,13 +619,13 @@ class PTYProcess (object) :
                     # skip non-lines
                     if  None == data :
                         data += self.read (timeout=_POLLDELAY)
+                    if self._debug : print ">>%s<<" % data
 
                     # check current data for any matching pattern
-                  # print ">>%s<<" % data
                     for n in range (0, len(patts)) :
 
                         match = patts[n].search (data)
-                      # print "==%s==" % patterns[n]
+                     #  if self._debug : print "==%s==" % patterns[n]
 
                         if match :
                             # a pattern matched the current data: return a tuple of
@@ -632,22 +634,23 @@ class PTYProcess (object) :
                             ret  = data[0:match.end()]
                             self.cache = data[match.end():] 
 
-                          # print "~~match!~~ %s" % data[match.start():match.end()]
-                          # print "~~match!~~ %s" % (len(data))
-                          # print "~~match!~~ %s" % (str(match.span()))
-                          # print "~~match!~~ %s" % (ret)
+                     #      if self._debug : print "~~match!~~ %s" % data[match.start():match.end()]
+                     #      if self._debug : print "~~match!~~ %s" % (len(data))
+                     #      if self._debug : print "~~match!~~ %s" % (str(match.span()))
+                     #      if self._debug : print "~~match!~~ %s" % (ret)
 
                             return (n, ret.replace('\r', ''))
 
-                    # if a timeout is given, and actually passed, return a non-match
+                    # if a timeout is given, and actually passed, return
+                    # a non-match and a copy of the data we looked at
                     if timeout == 0 :
-                        return (None, None)
+                        return (None, str(data))
 
                     if timeout > 0 :
                         now = time.time ()
                         if (now-start) > timeout :
                             self.cache = data
-                            return (None, None)
+                            return (None, str(data))
 
                     # no match yet, still time -- read more data
                     data += self.read (timeout=_POLLDELAY)
