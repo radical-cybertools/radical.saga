@@ -30,7 +30,7 @@ import string
 import errno
 
 import saga.url
-import saga.adaptors.cpi.base
+import saga.adaptors.base
 import saga.adaptors.cpi.replica
 import saga.utils.pty_shell
 import saga.utils.misc
@@ -156,7 +156,7 @@ class irods_resource_entry:
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -167,30 +167,36 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     #
     #
     def __init__ (self) :
-        saga.adaptors.cpi.base.AdaptorBase.__init__ (
-            self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__ (self, 
+                                          _ADAPTOR_INFO,
+                                          _ADAPTOR_OPTIONS)
 
 
     def sanity_check (self) :
-        #open a temporary shell
-        self.shell = saga.utils.pty_shell.PTYShell (saga.url.Url("ssh://localhost"))
 
-        # run ils, see if we get any errors -- if so, fail the
-        # sanity check
+
         try:
-            rc, result, _ = self.shell.run_sync("ils")
+            # temporarily silence logger
+            lvl = self._logger.getEffectiveLevel ()
+            self._logger.setLevel (saga.utils.logger.ERROR)
+
+            # open a temporary shell
+            self.shell = saga.utils.pty_shell.PTYShell (saga.url.Url("ssh://localhost"), 
+                                                        logger = self._logger)
+
+            # run ils, see if we get any errors -- if so, fail the
+            # sanity check
+            rc, _, _ = self.shell.run_sync("ils")
             if rc != 0:
                 raise Exception("sanity check error")
 
-            # remove our temp shell
-            del(self.shell)
-            
         except Exception, ex:
-            raise saga.NoSuccess ("Disabling iRODS plugin - could not access "
-                              "iRODS filesystem through ils.  Check your "
-                              "iRODS environment and certificates. %s" % ex)
+            raise saga.NoSuccess ("Could not run iRODS/ils.  Check iRODS"
+                                  "environment and certificates (%s)" % ex)
+        finally :
+            # re-enable logger
+            self._logger.setLevel (lvl)
 
-        #close shell
         # try ienv or imiscsvrinfo later? ( check for error messages )
 
 
