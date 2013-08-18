@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 """ Provides a number of call decorators. """
 
 import re
@@ -12,7 +17,7 @@ import saga.task       as st
 # decorator, which switches method to 
 # _async version if ttype is set and !None
 def SYNC_CALL (sync_function) :
-    
+
     def wrap_function (self, *args, **kwargs) :
 
         if 'ttype' in kwargs and kwargs['ttype'] != None :
@@ -56,16 +61,17 @@ def ASYNC_CALL (async_function) :
 
 
 # ------------------------------------
-# sync cpi calls ae only called when an adaptor does not implement that call --
+# sync cpi calls are only called when an adaptor does not implement that call --
 # we thus raise a NotImplemented exception.
 def CPI_SYNC_CALL (cpi_sync_function) :
 
     def wrap_function (self, *args, **kwargs) :
-        raise se.NotImplemented ("%s.%s is not implemented for %s.%s" \
+        raise se.NotImplemented ("%s.%s is not implemented for %s.%s (%s)" \
                 %  (self.get_api ().__class__.__name__, 
                     inspect.stack ()[1][3],
                     self._adaptor._name, 
-                    self.__class__.__name__))
+                    self.__class__.__name__,
+                    inspect.getmembers (cpi_sync_function)[15][1]))
 
     return wrap_function
 
@@ -74,8 +80,6 @@ def CPI_SYNC_CALL (cpi_sync_function) :
 def CPI_ASYNC_CALL (cpi_async_function) :
 
     def wrap_function (self, *args, **kwargs) :
-
-        print cpi_async_function
 
         my_ttype = None
         my_call  = None

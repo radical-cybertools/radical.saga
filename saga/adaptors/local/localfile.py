@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 """ Local filesystem adaptor implementation """
 
 import os
@@ -7,7 +12,7 @@ import shutil
 import traceback
 
 import saga.url
-import saga.adaptors.cpi.base
+import saga.adaptors.base
 import saga.adaptors.cpi.filesystem
 
 import saga.utils.misc
@@ -29,8 +34,7 @@ _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
-    'description'      : 'The local filesystem adaptor.',
-    'details'          : """This adaptor interacts with local filesystem, by
+    'description'      : """This adaptor interacts with local filesystem, by
                             using the (POSIX like) os and shutil Python packages.""",
     'schemas'          : {'file'  : 'local filesystem.', 
                           'local' : 'alias for *file*' 
@@ -56,7 +60,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -65,7 +69,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # the adaptor *singleton* creates a (single) instance of a bulk handler
         # (BulkDirectory), which implements container_* bulk methods.
@@ -137,8 +141,8 @@ class LocalDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (LocalDirectory, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (LocalDirectory, self)
+        _cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
@@ -359,8 +363,8 @@ class LocalFile (saga.adaptors.cpi.filesystem.File) :
 
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (LocalFile, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (LocalFile, self)
+        _cpi_base.__init__ (api, adaptor)
 
 
     def _dump (self) :
@@ -378,7 +382,7 @@ class LocalFile (saga.adaptors.cpi.filesystem.File) :
 
         self._init_check ()
 
-        return self
+        return self.get_api ()
 
 
     @ASYNC_CALL
@@ -469,8 +473,8 @@ class LocalFile (saga.adaptors.cpi.filesystem.File) :
         t = saga.task.Task (self, 'get_url', c, ttype)
 
         # FIXME: move to task_run...
-        t._set_state  = saga.task.DONE
-        t._set_result = self._url
+        t._set_state  (saga.task.DONE)
+        t._set_result (self._url)
 
         return t
 

@@ -1,14 +1,16 @@
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
+
+from   saga.constants      import *
 from   saga.attributes     import Attributes, Callback
 from   saga.session        import Session
 from   saga.context        import Context
 from   saga.url            import Url
 from   saga.task           import Task, Container
+from   saga.version        import version
 
 from   saga.exceptions     import SagaException
 from   saga.exceptions     import NotImplemented
@@ -23,8 +25,11 @@ from   saga.exceptions     import AuthenticationFailed
 from   saga.exceptions     import Timeout
 from   saga.exceptions     import NoSuccess
 
+from   saga.constants      import * 
+
 import saga.job
 import saga.filesystem
 import saga.replica
 import saga.advert
+import saga.resource
 

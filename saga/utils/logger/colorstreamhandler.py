@@ -1,18 +1,19 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 ''' Provides a stream handler for the Python logging framework that uses 
     colors to distinguish severity levels.
 '''
 
-from logging import StreamHandler, DEBUG, getLogger, Filter
+import logging 
  
 try:
     from colorama import Fore, Back, init, Style
  
-    class ColorStreamHandler(StreamHandler):
+    class ColorStreamHandler(logging.StreamHandler):
         """ A colorized output SteamHandler """
  
         # Some basic colour scheme defaults
@@ -69,15 +70,15 @@ def _test_():
     
     from defaultformatter import DefaultFormatter
 
-    log = getLogger('saga.engine')
+    log = logging.getLogger('saga.engine')
 
     # Only enable colour if support was loaded properly
-    handler = ColorStreamHandler() if has_color_stream_handler else StreamHandler()
-    handler.setLevel(DEBUG)
+    handler = ColorStreamHandler() if has_color_stream_handler else logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
     handler.setFormatter(DefaultFormatter)
 
     log.addHandler(handler)
-    log.setLevel(DEBUG)
+    log.setLevel(logging.DEBUG)
     log.propagate = 0 # Don't bubble up to the root logger
     log.debug('DEBUG')
     log.info('INFO')
@@ -85,8 +86,8 @@ def _test_():
     log.error('ERROR')
     log.critical('CRITICAL')
 
-    #log = getLogger('saga.adaptor')
-    #f = Filter(name='saga')
+    #log = logging.getLogger('saga.adaptor')
+    #f = logging.Filter(name='saga')
     #log.addFilter(f)
 
 

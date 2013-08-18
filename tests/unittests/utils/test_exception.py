@@ -1,25 +1,23 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ Unit tests for saga.utils.exception.py
 """
 
-from saga.utils.exception import *
+import saga
 
-def test_ExceptionBase():
-    """ Test if ExceptionBase works properly
+def test_Exceptions():
+    """ Test if Exceptions work properly
     """
     try:
-        raise ExceptionBase('message')
+        msg = 'this is the message'
+        raise saga.SagaException(msg)
         assert False
-    except ExceptionBase, eb:
-        if str(eb) != 'message':
-            assert False
-        else:
-            assert str(eb) == 'message'
-            assert True
+    except saga.SagaException, se:
+        assert (msg in str(se)), "'%s' not in '%s'" % (msg, se)
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

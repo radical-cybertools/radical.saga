@@ -4,11 +4,11 @@
 import traceback
 
 import saga.url
-import saga.adaptors.cpi.base
+import saga.adaptors.base
 import saga.adaptors.cpi.advert
 import saga.utils.misc
 
-from   redis_namespace      import *
+import redis_namespace as rns
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -18,7 +18,7 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 # adaptor info
 #
 
-_ADAPTOR_NAME          = 'saga.adaptor.advert.redis'
+_ADAPTOR_NAME          = 'saga.adaptors.advert.redis'
 _ADAPTOR_SCHEMAS       = ['redis']
 _ADAPTOR_OPTIONS       = []
 _ADAPTOR_CAPABILITIES  = {}
@@ -35,7 +35,7 @@ _ADAPTOR_DOC           = {
 
 _ADAPTOR_INFO          = {
     'name'             : _ADAPTOR_NAME,
-    'version'          : 'v0.2',
+    'version'          : 'v0.2.beta',
     'schemas'          : _ADAPTOR_SCHEMAS,
     'cpis'             : [{
         'type'         : 'saga.advert.Directory',
@@ -52,7 +52,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -63,7 +63,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
     #
     def __init__ (self) :
 
-        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # the adaptor *singleton* creates a (single) instance of a bulk handler
         # (BulkDirectory), which implements container_* bulk methods.
@@ -97,7 +97,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
                 hash = "redis://%s:%d"        %  (                host, port)
        
         if not hash in self._redis :
-            self._redis[hash] = redis_ns_server (url)
+            self._redis[hash] = rns.redis_ns_server (url)
 
         return self._redis[hash]
 
@@ -130,6 +130,7 @@ class BulkDirectory (saga.adaptors.cpi.advert.Directory) :
     # ----------------------------------------------------------------
     #
     def container_wait (self, tasks, mode, timeout) :
+
         if timeout >= 0 :
             raise saga.exceptions.BadParameter ("Cannot handle timeouts > 0")
         for task in tasks :
@@ -139,6 +140,7 @@ class BulkDirectory (saga.adaptors.cpi.advert.Directory) :
     # ----------------------------------------------------------------
     #
     def container_cancel (self, tasks) :
+
         for task in tasks :
             task.cancel ()
 
@@ -209,8 +211,8 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
     #
     def _init_check (self) :
 
-        self._r     = self._adaptor.get_redis (self._url)
-        self._nsdir = redis_ns_entry.opendir (self._r, self._url.path, self._flags)
+        self._r       = self._adaptor.get_redis (self._url)
+        self._nsdir   = rns.redis_ns_entry.opendir (self._r, self._url.path, self._flags)
 
 
     # ----------------------------------------------------------------
@@ -243,6 +245,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
     #
     @SYNC_CALL
     def attribute_lister (self) :
+
         return self._nsdir.get_data ().keys ()
 
 
@@ -250,6 +253,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
     #
     @SYNC_CALL
     def attribute_caller (self, key, id, cb) :
+
         self._nsdir.manage_callback (key, id, cb, self.get_api ())
 
 
@@ -257,6 +261,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
     #
     @SYNC_CALL
     def get_url (self) :
+
         return self._url
 
 
@@ -333,6 +338,7 @@ class RedisEntry (saga.adaptors.cpi.advert.Entry) :
     # ----------------------------------------------------------------
     #
     def _dump (self) :
+
         self._logger.debug ("url  : %s"  % self._url)
         self._logger.debug ("flags: %s"  % self._flags)
 
@@ -356,7 +362,7 @@ class RedisEntry (saga.adaptors.cpi.advert.Entry) :
     def _init_check (self) :
 
         self._r       = self._adaptor.get_redis (self._url)
-        self._nsentry = redis_ns_entry.open (self._r, self._url.path, self._flags)
+        self._nsentry = rns.redis_ns_entry.open (self._r, self._url.path, self._flags)
 
 
     # ----------------------------------------------------------------

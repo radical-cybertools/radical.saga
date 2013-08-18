@@ -1,6 +1,8 @@
-__author__    = "Andre Merzky"
+
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ Task interface
 """
@@ -8,18 +10,29 @@ __license__   = "MIT"
 import inspect
 import Queue
 
-import saga.base          as sbase
-import saga.exceptions    as se
-import saga.attributes    as satt
+import saga.base             as sbase
+import saga.exceptions       as se
+import saga.attributes       as satt
+import saga.adaptors.base    as sab
+import saga.utils.signatures as sus
 
-from   saga.constants     import *
-from   saga.utils.threads import Thread, NEW, RUNNING, DONE, FAILED
+from   saga.constants     import SYNC, ASYNC, TASK, ALL, ANY, UNKNOWN, CANCELED
+from   saga.constants     import RESULT, EXCEPTION, STATE, SIZE, TASKS, STATES
+from   saga.utils.threads import SagaThread, NEW, RUNNING, DONE, FAILED
 
 
+# ------------------------------------------------------------------------------
+#
 class Task (sbase.SimpleBase, satt.Attributes) :
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Task', 
+                  sab.Base, 
+                  basestring,
+                  dict, 
+                  sus.one_of (SYNC, ASYNC, TASK))
+    @sus.returns (sus.nothing)
     def __init__ (self, _adaptor, _method_type, _method_context, _ttype) :
         """ 
         This saga.Task constructor is private.
@@ -50,7 +63,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
         If the ``_method_context`` has *exactly* two elements, names ``_call``
         and ``args``, then the created task will wrap
-        a :class:`saga.util.threads.Thread` with that ``_call (_args)``.
+        a :class:`saga.util.threads.SagaThread` with that ``_call (_args)``.
         """
         
         self._base = super  (Task, self)
@@ -99,7 +112,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
             args   = self._method_context['_args']
             kwargs = self._method_context['_kwargs']
 
-            self._thread = Thread (call, *args, **kwargs)
+            self._thread = SagaThread (call, *args, **kwargs)
 
 
         # ensure task goes into the correct state
@@ -113,16 +126,95 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
 
 
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Task')
+    @sus.returns (sus.nothing)
+    def run (self) :
+
+        if self._thread :
+            self._thread.run ()
+
+        else :
+            # FIXME: make sure task_run exists.  Should be part of the CPI!
+            self._adaptor.task_run (self)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Task', 
+                  sus.optional (float))
+    @sus.returns (bool)
+    def wait (self, timeout=None) :
+
+        if  None == timeout :
+            timeout = -1.0 # FIXME
+
+        if self._thread :
+            self._thread.wait ()  # FIXME: timeout?!
+            self._set_state   (self._thread.state)
+
+        else :
+            # FIXME: make sure task_wait exists.  Should be part of the CPI!
+            self._adaptor.task_wait (self, timeout)
+
+
     # ----------------------------------------------------------------
     #
+    @sus.takes   ('Task', 
+                  float)
+    @sus.returns (sus.nothing)
+    def cancel (self) :
+
+        if self._thread :
+            self._thread.cancel ()
+            self._set_state (CANCELED)
+
+        else :
+            # FIXME: make sure task_cancel exists.  Should be part of the CPI!
+            self._adaptor.task_cancel (self)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Task', 
+                  sus.one_of (UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED))
+    @sus.returns (sus.nothing)
+    def _set_state (self, state) :
+
+        if not state in [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED] :
+            raise se.BadParameter ("attempt to set invalid task state '%s'" % state)
+
+        self._attributes_i_set (self._attributes_t_underscore (STATE), state, force=True)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Task')
+    @sus.returns (sus.one_of (UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED))
+    def get_state (self) :
+
+        if self._thread :
+            self._set_state (self._thread.state)
+
+        return self.state
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Task', 
+                  sus.anything)
+    @sus.returns (sus.nothing)
     def _set_result (self, result) :
 
         self._attributes_i_set (self._attributes_t_underscore (RESULT), result, force=True)
         self._attributes_i_set (self._attributes_t_underscore (STATE),  DONE,   force=True)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Task')
+    @sus.returns (sus.anything)
     def get_result (self) :
         
         if not self.state in [DONE, FAILED, CANCELED] :
@@ -145,71 +237,18 @@ class Task (sbase.SimpleBase, satt.Attributes) :
             return self.result
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
-    def _set_state (self, state) :
-
-        if not state in [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED] :
-            raise se.BadParameter ("attempt to set invalid task state '%s'" % state)
-
-        self._attributes_i_set (self._attributes_t_underscore (STATE), state, force=True)
-
-
-    # ----------------------------------------------------------------
-    #
-    def get_state (self) :
-
-        if self._thread :
-            self._set_state (self._thread.state)
-
-        return self.state
-
-
-    # ----------------------------------------------------------------
-    #
-    def wait (self, timeout=-1) :
-
-        if self._thread :
-            self._thread.wait ()  # FIXME: timeout?!
-            self._set_state   (self._thread.state)
-
-        else :
-            # FIXME: make sure task_wait exists.  Should be part of the CPI!
-            self._adaptor.task_wait (self, timeout)
-
-
-    # ----------------------------------------------------------------
-    #
-    def run (self) :
-
-        if self._thread :
-            self._thread.run ()
-
-        else :
-            # FIXME: make sure task_run exists.  Should be part of the CPI!
-            self._adaptor.task_run (self)
-
-
-    # ----------------------------------------------------------------
-    #
-    def cancel (self) :
-
-        if self._thread :
-            self._thread.cancel ()
-            self._set_state (CANCELED)
-
-        else :
-            # FIXME: make sure task_cancel exists.  Should be part of the CPI!
-            self._adaptor.task_cancel (self)
-
-
-    # ----------------------------------------------------------------
-    #
+    @sus.takes   ('Task', 
+                  se.SagaException)
+    @sus.returns (sus.nothing)
     def _set_exception (self, e) :
         self._attributes_i_set (self._attributes_t_underscore (EXCEPTION), e, force=True)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Task')
+    @sus.returns (se.SagaException)
     def get_exception (self) :
 
         if self._thread :
@@ -217,8 +256,10 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
         return self.exception
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Task')
+    @sus.returns (sus.nothing)
     def re_raise (self) :
 
         if self.exception :
@@ -227,13 +268,15 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 class Container (sbase.SimpleBase, satt.Attributes) :
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Container')
+    @sus.returns (sus.nothing)
     def __init__ (self) :
 
 
@@ -261,36 +304,53 @@ class Container (sbase.SimpleBase, satt.Attributes) :
         self._containers = {}
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
-    def add (self, t) :
+    def __str__ (self) :
+
+        ret  = "["
+        for task in self.tasks :
+            ret += "'%s', "  %  str(task)
+        ret += "]"
+
+        return ret
+
+
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Container', 
+                  Task)
+    @sus.returns (sus.nothing)
+    def add      (self, task) :
 
         import saga.job as sjob
 
-        # AM: oh I hate that we don't use proper inheritance...
-        if  not isinstance (t, Task) and \
-            not isinstance (t, sjob.Job) :
+        if  not isinstance (task, Task) :
             
-            raise se.BadParameter ("Container handles jobs or tasks, not %s" \
-                                % (type(t)))
+            raise se.BadParameter ("Container handles tasks, not %s" \
+                                % (type(task)))
 
-        if not t in self.tasks :
-            self.tasks.append (t)
+        if not task in self.tasks :
+            self.tasks.append (task)
 
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
-    def remove (self, t) :
+    @sus.takes   ('Container', 
+                  Task)
+    @sus.returns (sus.nothing)
+    def remove   (self, task) :
 
-        if t in self.tasks :
-            self.tasks.delete (t)
+        if task in self.tasks :
+            self.tasks.delete (task)
 
 
-
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
-    def run (self) :
+    @sus.takes   ('Container')
+    @sus.returns (sus.nothing)
+    def run      (self) :
 
         if not len (self.tasks) :
             # nothing to do
@@ -324,29 +384,37 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
                 else :
                     # hand off to the container function, in a separate task
-                    threads.append (Thread.Run (m_handle, tasks))
+                    threads.append (SagaThread.Run (m_handle, tasks))
 
 
         # handle tasks not bound to a container
         for task in buckets['unbound'] :
 
-            threads.append (Thread.Run (task.run))
+            threads.append (SagaThread.Run (task.run))
             
 
         # wait for all threads to finish
         for thread in threads :
-            if thread.isAlive () :
+            if  thread.isAlive () :
                 thread.join ()
 
-            if thread.get_state () == FAILED :
+            if  thread.get_state () == FAILED :
                 raise se.NoSuccess ("thread exception: %s\n%s" \
-                                 %  (str(thread.get_exception ()),
-                                     str(thread.get_traceback ())))
+                                 %  (thread.get_exception ()))
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
-    def wait (self, mode=ALL, timeout=-1) :
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('Container', 
+                  sus.one_of   (ANY, ALL),
+                  sus.optional (float))
+    @sus.returns (sus.list_of (Task))
+    def wait (self, mode=ALL, timeout=None) :
+
+        if  None == timeout :
+            timeout = -1.0 # FIXME
 
         if not mode in [ANY, ALL] :
             raise se.BadParameter ("wait mode must be saga.task.ANY or saga.task.ALL")
@@ -365,8 +433,11 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Container', 
+                  float)
+    @sus.returns (sus.list_of (Task))
     def _wait_any (self, timeout) :
 
         buckets = self._get_buckets ()
@@ -381,13 +452,13 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
-            threads.append (Thread.Run (c.container_wait, tasks, ANY, timeout))
+            threads.append (SagaThread.Run (c.container_wait, tasks, ANY, timeout))
 
         
         # handle all tasks not bound to containers
         for task in buckets['unbound'] :
 
-            threads.append (Thread.Run (task.wait, timeout))
+            threads.append (SagaThread.Run (task.wait, timeout))
             
 
         # mode == ANY: we need to watch our threads, and whenever one
@@ -397,7 +468,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
         # running (FIXME: consider sending a signal at least)
 
         timeout = 0.01 # seconds, heuristic :-/
-        done    = False
 
         for thread in threads :
             thread.join (timeout)
@@ -415,8 +485,11 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Container', 
+                  float)
+    @sus.returns (sus.list_of (Task))
     def _wait_all (self, timeout) :
         # this method should actually be symmetric to _wait_any, and could
         # almost be mapped to it, but the code below is a kind of optimization
@@ -433,33 +506,34 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
+            # TODO: this is semantically not correct: timeout is applied
+            #       n times...
             c.container_wait (tasks, ALL, timeout)
             ret = tasks[0]
  
         # handle all tasks not bound to containers
-        for t in buckets['unbound'] :
-            t.wait ()
-            ret = t
+        for task in buckets['unbound'] :
+            task.wait ()
+            ret = task
 
         # all done - return random task (first from last container, or last
         # unbound task)
         return ret
 
 
-
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
-    def cancel (self, timeout) :
+    @sus.takes   ('Container', 
+                  sus.optional (float))
+    @sus.returns (sus.nothing)
+    def cancel   (self, timeout=None) :
 
-        if not len (self.tasks) :
-            # nothing to do
-            return None
-
+        if  None == timeout :
+            timeout = -1.0 # FIXME
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
         queues  = {}
-
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :
@@ -467,98 +541,89 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             # handle all methods -- all go to the same 'container_cancel' though)
             tasks = []
             for m in buckets['bound'][c] :
+                tasks += buckets['bound'][c][m]
 
-                tasks += buckets['bound'][c]
+            threads.append (SagaThread.Run (c.container_cancel, tasks, timeout))
 
-            queue  = Queue.Queue ()
-            thread = Thread.Run (c.container_cancel, (queue, tasks))
-
-            threads.append (thread)
-            queues[thread] = queue
-
-
+        
         # handle all tasks not bound to containers
         for task in buckets['unbound'] :
 
-            queue  = Queue.Queue ()
-            thread = Thread.Run (task.cancel, (queue, timeout))
-
-            threads.append (thread)
-            queues[thread] = queue
+            threads.append (SagaThread.Run (task.cancel, timeout))
             
 
-        # wait for all threads to finish
         for thread in threads :
             thread.join ()
-
-            if thread.get_state () == FAILED :
-                raise se.NoSuccess ("thread exception: %s\n%s" \
-                                 %  (str(thread.get_exception ()),
-                                     str(thread.get_traceback ())))
 
 
     # ----------------------------------------------------------------
     #
+    @sus.takes   ('Container')
+    @sus.returns (int)
     def get_size (self) :
 
         return len (self.tasks)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Container')
+    @sus.returns (sus.list_of (Task))
     def get_tasks (self) :
 
         return self.tasks
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+    @sus.takes   ('Container')
+    @sus.returns (sus.list_of (sus.one_of (UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED)))
     def get_states (self) :
-
-        if not len (self.tasks) :
-            # nothing to do
-            return None
-
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
         queues  = {}
 
+        # handle all tasks bound to containers
+        for c in buckets['bound'] :
 
-        for container in buckets['bound'] :
+            # handle all methods -- all go to the same 'container_get_states' though)
+            tasks = []
+            for m in buckets['bound'][c] :
+                tasks += buckets['bound'][c][m]
 
-            tasks  = buckets['bound'][container]
-            threads.append (Thread.Run (container.container_get_states, tasks))
+            threads.append (SagaThread.Run (c.container_get_states, tasks))
 
-
+        
+        # handle all tasks not bound to containers
         for task in buckets['unbound'] :
 
-            threads.append (Thread.Run (task.get_states))
+            threads.append (SagaThread.Run (task.get_state))
             
 
-        # wait for all threads to finish
+        # We still need to get the states from all threads.
+        # FIXME: order
+        states  = []
+
         for thread in threads :
             thread.join ()
 
             if thread.get_state () == FAILED :
-                raise se.NoSuccess ("thread exception: %s\n%s" \
-                                 % (str(thread.get_exception ()),
-                                    str(thread.get_traceback ())))
+                raise thread.get_exception ()
 
+            # FIXME: what about ordering tasks / states?
+            res = thread.get_result ()
 
-        states = []
-        for queue in queues :
-            result = queue.get ()
-            
-            # FIXME: check if this was an exception
-            states.append (result)
+            if res != None :
+                states += res
 
         return states
 
 
-
     # ----------------------------------------------------------------
     #
+    @sus.takes   ('Container')
+    @sus.returns (dict)
     def _get_buckets (self) :
         # collective container ops: walk through the task list, and sort into
         # buckets of tasks which have (a) the same task._container, or if that
@@ -569,14 +634,14 @@ class Container (sbase.SimpleBase, satt.Attributes) :
         buckets['unbound'] = [] # no container adaptor for these [tasks]
         buckets['bound']   = {} # dict  of container adaptors [tasks]
 
-        for t in self.tasks :
+        for task in self.tasks :
 
-            if  t._adaptor and t._adaptor._container :
+            if  task._adaptor and task._adaptor._container :
 
                 # the task's adaptor has a valid associated container class 
                 # which can handle the container ops - great!
-                c = t._adaptor._container
-                m = t._method_type
+                c = task._adaptor._container
+                m = task._method_type
 
                 if not c in buckets['bound'] :
                     buckets['bound'][c] = {}
@@ -584,16 +649,18 @@ class Container (sbase.SimpleBase, satt.Attributes) :
                 if not m in buckets['bound'][c] :
                     buckets['bound'][c][m] = []
 
-                buckets['bound'][c][m].append (t)
+                buckets['bound'][c][m].append (task)
 
             else :
 
                 # we have no container to handle this task -- so
                 # put it into the fallback list
-                buckets['unbound'].append (t)
+                buckets['unbound'].append (task)
 
         return buckets
 
+
+# FIXME: add get_apiobject
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

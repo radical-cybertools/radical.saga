@@ -1,28 +1,37 @@
 
-__author__    = "Ole Weidner"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-""" Exception classes 
+
+""" Exception classes
 """
 
-
+import sys
 import weakref
 import operator
+import traceback
 
-import saga.utils.exception
+# We have the choice of doing signature checks in exceptions, or to raise saga
+# exceptions on signature checks -- we cannot do both.  At this point, we use
+# the saga.exceptions in signatures, thus can *not* have signature checks
+# here...
+#
+# import saga.utils.signatures as sus
+# import saga.base             as sb
 
 
-class SagaException(saga.utils.exception.ExceptionBase):
-    """ 
-    
+# ------------------------------------------------------------------------------
+#
+class SagaException (Exception) :
+    """
     The Exception class encapsulates information about error conditions
     encountered in SAGA.
 
     Additionally to the error message (e.message), the exception also provides
     a trace to the code location where the error condition got raised
     (e.traceback).
- 
+
     B{Example}::
 
       try :
@@ -45,52 +54,192 @@ class SagaException(saga.utils.exception.ExceptionBase):
     the rank, the better defined / known is the cause of the problem.
     """
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
-    def __init__ (self, message, api_object=None) :
+  # @sus.takes   ('SagaException', 
+  #               basestring, 
+  #               sus.optional (sb.Base))
+  # @sus.returns (sus.nothing)
+    def __init__(self, msg, parent=None, api_object=None):
         """ 
         Create a new exception object.
 
-        :param message: The exception message.
+        :param msg:     The exception message.
         :param object:  The object that has caused the exception, default is
                         None.
         """
-        saga.utils.exception.ExceptionBase.__init__ (self, message)
+        Exception.__init__(self, msg)
 
-        self._message       = message
-        self._messages      = [message]
+        self._plain_message = msg
         self._exceptions    = [self]
         self._top_exception = self
-        self._traceback     = saga.utils.exception.get_traceback (1)
+        self._ptype         = type(parent).__name__   # parent exception type
+        self._stype         = type(self  ).__name__   # own exception    type 
+
 
         if api_object : 
             self._object    = weakref.ref (api_object)
         else :
             self._object    = None
 
-    # ----------------------------------------------------------------
+
+        # did we get a parent exception?
+        if  parent :
+
+            # if so, then this exception is likely created in some 'except'
+            # clause, as a reaction on a previously catched exception (the
+            # parent).  Thus we append the message of the parent to our own
+            # message, but keep the parent's traceback (after all, the original
+            # exception location is what we are interested in).
+            #
+            if  isinstance (parent, SagaException) :
+                # that all works nicely when parent is our own exception type...
+                self._traceback = parent.traceback
+
+                frame           = traceback.extract_stack ()[-2]
+                line            = "%s +%s (%s)  :  %s" % frame 
+                self._message   = "  %-20s: %s (%s)\n%s" \
+                                % (self._stype, msg, line, parent.msg)
+
+            else :
+                # ... but if parent is a native (or any other) exception type,
+                # we don't have a traceback really -- so we dig it out of
+                # sys.exc_info. 
+                trace           = sys.exc_info ()[2]
+                stack           = traceback.extract_tb  (trace)
+                traceback_list  = traceback.format_list (stack)
+                self._traceback = "".join (traceback_list)
+
+                # the message composition is very similar -- we just inject the
+                # parent exception type inconspicuously somewhere (above that
+                # was part of 'parent.message' already).
+                frame           = traceback.extract_stack ()[-2]
+                line            = "%s +%s (%s)  :  %s" % frame 
+                self._message   = "  %-20s: %s (%s)\n  %-20s: %s" \
+                                % (self._stype, msg, line, self._ptype, parent)
+
+        else :
+
+            # if we don't have a parent, we are a 1st principle exception,
+            # i.e. a reaction to some genuine code error.  Thus we extract the
+            # traceback from exactly where we are in the code (the last stack
+            # frame will be the call to this exception constructor), and we
+            # create the original exception message from 'stype' and 'message'.
+            stack           = traceback.extract_stack ()
+            traceback_list  = traceback.format_list (stack)
+            self._traceback = "".join (traceback_list[:-1])
+            frame           = traceback.extract_stack ()[-3]
+            line            = "%s +%s (%s)  :  %s" % frame 
+            self._message   = "  %-20s: %s (%s)\n  %-20s: %s" \
+                            % (self._stype, msg, line, self._ptype, parent)
+
+        # we can't do that earlier as _msg was not set up before
+        self._messages = [self._message]
+
+
+    # --------------------------------------------------------------------------
     #
+  # @sus.takes   ('SagaException')
+  # @sus.returns (basestring)
+    def __str__ (self) :
+        return self.get_message ()
+
+
+    # --------------------------------------------------------------------------
+    #
+  # @sus.takes   ('SagaException')
+  # @sus.returns (basestring)
+    def __repr__ (self) :
+        return "%s\n%s" % (self._message, self._traceback)
+
+
+    # --------------------------------------------------------------------------
+    #
+  # @sus.takes   ('SagaException')
+  # @sus.returns ('SagaException')
     def _clone (self) :
         """ This method is used internally -- see :func:`_get_exception_stack`."""
 
-        clone = self.__class__ (self._message, self._object)
+        clone = self.__class__ ("")
+
+        clone._parent    = self._parent
+        clone._object    = self._object
+        clone._message   = self._message
         clone._messages  = self._messages
         clone._exception = self._exceptions
         clone._traceback = self._traceback
+        clone._stype     = self._stype
+        clone._ptype     = self._ptype
 
         return clone
 
-
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+    @classmethod
+    def _log (cls, logger, msg, parent=None, api_object=None, level='error'):
+        """ this class method allows to log the exception message while
+            constructing a SAGA exception, like::
+
+              # raise an exception, no logging
+              raise saga.IncorrectState ("File is not open")
+
+              # raise an exception, log as error event (error level is default)
+              raise saga.IncorrectState._log (self._logger, "File is not open")
+
+              # raise an exception, log as warning event
+              raise saga.IncorrectState._log (self._logger, "File is not open", level=warning)
+              raise saga.IncorrectState._log (self._logger, "File is not open", warning) # same
+
+            This way, the 'raise' remains clearly in the code, as that is the
+            dominating semantics of the call.
+        """
+
+        log_method = logger.error
+
+        try :
+            log_method = getattr (logger, level.lower())
+        except :
+            sys.stderr.write ("unknown log level '%s'"  %  level)
+
+        log_method ("%s: %s" % (cls.__name__, msg))
+
+        return cls (msg, parent=parent, api_object=api_object)
+
+
+
+    # --------------------------------------------------------------------------
+    #
+  # @sus.takes   ('SagaException')
+  # @sus.returns (basestring)
     def get_message (self) :
         """ Return the exception message as a string.  That message is also
         available via the 'message' property."""
         return self._message
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+  # @sus.takes   ('SagaException')
+  # @sus.returns (basestring)
+    def _get_plain_message (self) :
+        """ Return the plain error message as a string. """
+        return self._message
+
+
+    # --------------------------------------------------------------------------
+    #
+  # @sus.takes   ('SagaException')
+  # @sus.returns (basestring)
+    def get_type (self):
+        """ Return the type of the exception as string.
+        """
+        return self._stype
+
+
+    # --------------------------------------------------------------------------
+    #
+  # @sus.takes   ('SagaException')
+  # @sus.returns (sb.Base)
     def get_object (self) :
         """ Return the object that raised this exception. An object may not
         always be available -- for example, exceptions raised during object
@@ -98,21 +247,17 @@ class SagaException(saga.utils.exception.ExceptionBase):
         around.  In those cases, this method will return 'None'.  Either way,
         the object is also accessible via the 'object' property.
         """
-        o = None
 
-        if self._object :
-            o = self._object ()
-
-            if o is None:
-                # object has been garbage collected - we simply won't return
-                # anything then...
-                pass
-
-        return o
+        # object is a weak_ref, and may have been garbage collected - we simply
+        # return 'None' then
+        return self._object ()
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+  # @sus.takes   ('SagaException', 
+  #               'SagaException')
+  # @sus.returns (sb.Base)
     def _add_exception (self, e) :
         """
         Some sub-operation raised a SAGA exception, but other exceptions may
@@ -132,8 +277,10 @@ class SagaException(saga.utils.exception.ExceptionBase):
             self._top_exception = e
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+  # @sus.takes   ('SagaException')
+  # @sus.returns ('SagaException')
     def _get_exception_stack (self) :
         """ 
         This method is internally used by the saga-python engine, and is only
@@ -161,43 +308,45 @@ class SagaException(saga.utils.exception.ExceptionBase):
         return clone
 
                 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+  # @sus.takes   ('SagaException')
+  # @sus.returns (sus.list_of ('SagaException'))
     def get_all_exceptions (self) :
         return self._exceptions
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
+  # @sus.takes   ('SagaException')
+  # @sus.returns (sus.list_of (basestring))
     def get_all_messages (self) :
         return self._messages
 
 
-    # ----------------------------------------------------------------
-    #
-    def __str__ (self) :
-        return self._message
+    message        = property (get_message)         # string
+    object         = property (get_object)          # object type
+    type           = property (get_type)            # exception type
+    exceptions     = property (get_all_exceptions)  # list [Exception]
+    messages       = property (get_all_messages)    # list [string]
 
 
-    message    = property (get_message)         # string
-    object     = property (get_object)          # object type
-    exceptions = property (get_all_exceptions)  # list [Exception]
-    messages   = property (get_all_messages)    # list [string]
-
-
-
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 class NotImplemented(SagaException):
     """ SAGA-Python does not implement this method or class. (rank: 11)"""
 
     _rank = 11
 
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+  # @sus.takes   ('NotImplemented', 
+  #               basestring, 
+  #               sus.optional (sb.Base))
+  # @sus.returns (sus.nothing)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 class IncorrectURL(SagaException): 
     """ The given URL could not be interpreted, for example due to an incorrect
@@ -205,106 +354,146 @@ class IncorrectURL(SagaException):
 
     _rank = 10
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+  # @sus.takes   ('IncorrectUrl', 
+  #               basestring, 
+  #               sus.optional (sb.Base))
+  # @sus.returns (sus.nothing)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 class BadParameter(SagaException): 
     """ A given parameter is out of bound or ill formatted. (rank: 9)"""
 
     _rank = 9
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+  # @sus.takes   ('BadParameter', 
+  #               basestring, 
+  #               sus.optional (sb.Base))
+  # @sus.returns (sus.nothing)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 class AlreadyExists(SagaException): 
     """ The entity to be created already exists. (rank: 8)"""
 
     _rank = 8
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+  # @sus.takes   ('AlreadyExists', 
+  #               basestring, 
+  #               sus.optional (sb.Base))
+  # @sus.returns (sus.nothing)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 class DoesNotExist(SagaException):
     """ An operation tried to access a non-existing entity. (rank: 7)"""
 
     _rank = 7
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+  # @sus.takes   ('DoesNotExist', 
+  #               basestring, 
+  #               sus.optional (sb.Base))
+  # @sus.returns (sus.nothing)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 class IncorrectState(SagaException): 
     """ The operation is not allowed on the entity in its current state. (rank: 6)"""
 
     _rank = 6
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+  # @sus.takes   ('IncorrestState', 
+  #               basestring, 
+  #               sus.optional (sb.Base))
+  # @sus.returns (sus.nothing)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 class PermissionDenied(SagaException): 
     """ The used identity is not permitted to perform the requested operation. (rank: 5)"""
 
     _rank = 5
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+  # @sus.takes   ('PermissionDenied', 
+  #               basestring, 
+  #               sus.optional (sb.Base))
+  # @sus.returns (sus.nothing)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 class AuthorizationFailed(SagaException): 
     """ The backend could not establish a valid identity. (rank: 4)"""
     _rank = 4
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+  # @sus.takes   ('AuthorizationFailed', 
+  #               basestring, 
+  #               sus.optional (sb.Base))
+  # @sus.returns (sus.nothing)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 class AuthenticationFailed(SagaException): 
     """ The backend could not establish a valid identity. (rank: 3)"""
 
     _rank = 3
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+  # @sus.takes   ('AuthenticationFailed', 
+  #               basestring, 
+  #               sus.optional (sb.Base))
+  # @sus.returns (sus.nothing)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 class Timeout(SagaException): 
     """ The interaction with the backend times out. (rank: 2)"""
 
     _rank = 2
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+  # @sus.takes   ('Timeout', 
+  #               basestring, 
+  #               sus.optional (sb.Base))
+  # @sus.returns (sus.nothing)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 class NoSuccess(SagaException): 
     """ Some other error occurred. (rank: 1)"""
 
     _rank = 1
     
-    def __init__ (self, msg, obj=None) :
-        SagaException.__init__ (self, msg, obj)
+  # @sus.takes   ('NoSuccess', 
+  #               basestring, 
+  #               sus.optional (sb.Base))
+  # @sus.returns (sus.nothing)
+    def __init__ (self, msg, api_object=None) :
+        SagaException.__init__ (self, msg, api_object)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

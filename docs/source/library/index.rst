@@ -10,14 +10,16 @@ Intro library reference...
 .. toctree::
    :numbered:
 
-   exceptions.rst
+   job/index.rst
+   filesystem/index.rst
+   resource/index.rst
+   url.rst
    context.rst
    session.rst
    attribute.rst
-   url.rst
-   job/index.rst
-   filesystem/index.rst
-   replica/index.rst
-   advert/index.rst
-   resource/index.rst
+   exceptions.rst
+
+..   replica/index.rst
+..   advert/index.rst
+..   resource/index.rst
 

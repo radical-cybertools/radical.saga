@@ -1,7 +1,8 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ Provides the SAGA Job CPI """
 
@@ -21,8 +22,8 @@ class Job (cpi_base.CPIBase, cpi_async.Async) :
     #
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (Job, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (Job, self)
+        _cpi_base.__init__ (api, adaptor)
 
     @SYNC
     def init_instance             (self, info, ttype)    : pass

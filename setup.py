@@ -1,9 +1,8 @@
-#!/usr/bin/env python
-# encoding: utf-8
 
-__author__    = "Ole Weidner"
+__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ Setup script. Used by easy_install and pip.
 """
@@ -11,7 +10,7 @@ __license__   = "MIT"
 import os
 import sys
 
-from distutils.core import setup
+from setuptools import setup, Command
 from distutils.command.install_data import install_data
 from distutils.command.sdist import sdist
 
@@ -31,7 +30,7 @@ except IOError:
 
     try:
         p = Popen(['git', 'describe', '--tags', '--always'],
-            stdout=PIPE, stderr=STDOUT)
+                  stdout=PIPE, stderr=STDOUT)
         out = p.communicate()[0]
 
         if (not p.returncode) and out:
@@ -41,7 +40,8 @@ except IOError:
     except OSError:
         pass
 
-scripts = []  # ["bin/bliss-run"]
+scripts = []  # ["bin/saga-run"]
+
 
 # check python version. we need > 2.5
 if sys.hexversion < 0x02050000:
@@ -50,15 +50,14 @@ if sys.hexversion < 0x02050000:
 
 class our_install_data(install_data):
 
-    def finalize_options(self):
+    def finalize_options(self): 
         self.set_undefined_options('install',
-            ('install_lib', 'install_dir'),
-        )
+                                   ('install_lib', 'install_dir'))
         install_data.finalize_options(self)
 
     def run(self):
         install_data.run(self)
-        # ensure there's a bliss/VERSION file
+        # ensure there's a saga/VERSION file
         fn = os.path.join(self.install_dir, 'saga', 'VERSION')
         open(fn, 'w').write(version)
         self.outfiles.append(fn)
@@ -72,14 +71,33 @@ class our_sdist(sdist):
         fn = os.path.join(base_dir, 'saga', 'VERSION')
         open(fn, 'w').write(version)
 
+
+class our_test(Command):
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        import sys
+        import subprocess
+        testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
+        errno = subprocess.call([sys.executable, '%s/run_tests.py' % testdir,
+                                '--config=%s/configs/basetests.cfg' % testdir])
+        raise SystemExit(errno)
+
+
 setup_args = {
-    'name': "saga",
+    'name': "saga-python",
     'version': version,
-    'description': "A native Python implementation of the OGF SAGA standard (GFD.90).",
-    'long_description': "SAGA-Python (a.k.a bliss) is a pragmatic and light-weight implementation of the OGF GFD.90 SAGA standard. SAGA-Python is written 100% in Python and focuses on usability and ease of deployment.",
-    'author': "Ole Christian Weidner, et al.",
+    'description': "A light-weight access layer for distributed computing infrastructure",
+    'long_description': "An implementation of the OGF GFD.90 SAGA standard in Python",
+    'author': "Ole Weidner, et al.",
     'author_email': "ole.weidner@rutgers.edu",
-    'maintainer': "Ole Christian Weidner",
+    'maintainer': "Ole Weidner",
     'maintainer_email': "ole.weidner@rutgers.edu",
     'url': "http://saga-project.github.com/saga-python/",
     'license': "MIT",
@@ -107,13 +125,14 @@ setup_args = {
         'Operating System :: POSIX :: SCO',
         'Operating System :: POSIX :: SunOS/Solaris',
         'Operating System :: Unix'
-        ],
+    ],
     'packages': [
         "saga",
         "saga.job",
         "saga.namespace",
         "saga.filesystem",
         "saga.replica",
+        "saga.resource",
         "saga.advert",
         "saga.adaptors",
         "saga.adaptors.cpi",
@@ -121,40 +140,38 @@ setup_args = {
         "saga.adaptors.cpi.namespace",
         "saga.adaptors.cpi.filesystem",
         "saga.adaptors.cpi.replica",
+        "saga.adaptors.cpi.resource",
         "saga.adaptors.cpi.advert",
         "saga.adaptors.context",
         "saga.adaptors.local",
+        "saga.adaptors.shell",
+        "saga.adaptors.sge",
+        "saga.adaptors.pbs",
+        "saga.adaptors.condor",
+        "saga.adaptors.slurm",
         "saga.adaptors.redis",
-        "saga.adaptors.ssh",
-        "saga.adaptors.irods",
+        "saga.adaptors.aws",
+        "saga.adaptors.http",
         "saga.engine",
         "saga.utils",
         "saga.utils.contrib",
-        "saga.utils.cmdlinewrapper",
         "saga.utils.logger",
         "saga.utils.config",
         "saga.utils.job",
     ],
+    'package_data': {'': ['*.sh']},
+    'zip_safe': False,
     'scripts': scripts,
     # mention data_files, even if empty, so install_data is called and
     # VERSION gets copied
     'data_files': [("saga", [])],
     'cmdclass': {
         'install_data': our_install_data,
-        'sdist': our_sdist
-        }
-    }
-
-# set zip_safe to false to force Windows installs to always unpack eggs
-# into directories, which seems to work better --
-# see http://buildbot.net/trac/ticket/907
-if sys.platform == "win32":
-    setup_args['zip_safe'] = False
-
-else:
-    setup_args['install_requires'] = [
-        'colorama',
-        'pexpect'
-    ]
+        'sdist': our_sdist,
+        'test': our_test
+    },
+    'install_requires': ['setuptools', 'colorama', 'apache-libcloud'],
+    'tests_require': ['setuptools', 'nose']
+}
 
 setup(**setup_args)

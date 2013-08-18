@@ -1,9 +1,14 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 import os
 import subprocess
 
 import saga.context
-import saga.adaptors.cpi.base
+import saga.adaptors.base
 import saga.adaptors.cpi.decorators
 import saga.adaptors.cpi.context
 
@@ -30,8 +35,7 @@ _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
     'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
-    'description'      : 'The MyProxy context adaptor.',
-    'details'          : """This adaptor fetches an X509 proxy from
+    'description'      : """This adaptor fetches an X509 proxy from
                             MyProxy when it is added to a saga.Session.""",
     'schemas'          : {'myproxy' : 'this adaptor can only interact with myproxy backends'},
 }
@@ -51,7 +55,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
+class Adaptor (saga.adaptors.base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -60,7 +64,7 @@ class Adaptor (saga.adaptors.cpi.base.AdaptorBase):
 
     def __init__ (self) :
 
-        saga.adaptors.cpi.base.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # there are no default myproxy contexts
         self._default_contexts = []
@@ -84,8 +88,8 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
 
     def __init__ (self, api, adaptor) :
 
-        self._cpi_base = super  (ContextMyProxy, self)
-        self._cpi_base.__init__ (api, adaptor)
+        _cpi_base = super  (ContextMyProxy, self)
+        _cpi_base.__init__ (api, adaptor)
 
 
     @SYNC_CALL
@@ -97,7 +101,7 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
 
         self.get_api ().type = type
 
-        return self
+        return self.get_api ()
 
 
     @SYNC_CALL
@@ -116,11 +120,19 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
             cmd = "myproxy-logon --stdin_pass"
 
         if api.server :
-            (server, port) = api.server.split (':', 2)
+            if ':' in api.server:
+                (server, port) = api.server.split (':', 2)
+            else:
+                server = api.server
+                port = "7512"
             if server    : cmd += " --pshost %s"          %  server
             if port      : cmd += " --psport %s"          %  port
-        if api.user_id   : cmd += " --username %s"        %  api.user_id
-        if api.life_time : cmd += " --proxy_lifetime %s"  %  api.life_time
+
+        if  api.user_id : 
+            cmd += " --username %s"        %  api.user_id
+        
+        if  api.life_time and api.life_time > 0 : 
+            cmd += " --proxy_lifetime %s"  %  api.life_time
 
         # store the proxy in a private location
         proxy_store    = "%s/.saga/proxies/"   %  os.environ['HOME']

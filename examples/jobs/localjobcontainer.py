@@ -1,5 +1,8 @@
-#!/usr/bin/env python
-# encoding: utf-8
+
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 
 """ This examples shows how to run groups of jobs using the
     'local' file adaptor. This example uses job containers for
@@ -18,12 +21,9 @@
     generally much faster than iterating over and operating on individual jobs.
 """
 
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
-__license__   = "MIT"
-
 import sys
 import random
+import time
 import saga
 
 
@@ -37,9 +37,10 @@ def main():
     try:
         # all jobs in this example are running on the same job service
         # this is not a requirement though. s
-        service = saga.job.Service("fork://localhost")
+        service = saga.job.Service("ssh://localhost/")
         print service.url
 
+        t1 = time.time()
         # create and populate our containers
         containers = list()
         for c in range(0, num_job_groups):
@@ -49,7 +50,7 @@ def main():
                 # add jobs to container. to make things a bit more
                 # interesting, we give each job a random runtime (1-60s)
                 jd = saga.job.Description()
-                jd.environment = {'RUNTIME': random.randrange(1, 60, 1)}
+                jd.environment = {'RUNTIME': random.randrange(1000, 2000, 1)}
                 jd.executable  = '/bin/sleep'
                 jd.arguments   = ['$RUNTIME']
                 j = service.create_job(jd)
@@ -59,16 +60,20 @@ def main():
         for c in range(0, num_job_groups):
             print 'Starting container %s ... ' % c
             containers[c].run()
+
+            print containers[c].get_states ()
+            containers[c].cancel()
             containers[c].wait()
+            print containers[c].get_states ()
 
-            # print containers[c].get_states ()
-
-            # at this point, all jobs in the container
-            # have finished running. we can now print some statistics
-            for job in containers[c].jobs:
-                print "  * Job id=%s state=%s rc=%s exec_host=%s start_time=%s end_time=%s" \
-                  % (job.id, job.state, job.exit_code, job.execution_hosts,
-                     job.started, job.finished)
+            # # at this point, all jobs in the container
+            # # have finished running. we can now print some statistics
+            # for job in containers[c].jobs:
+            #     print "  * Job id=%s state=%s rc=%s exec_host=%s start_time=%s end_time=%s" \
+            #       % (job.id, job.state, job.exit_code, job.execution_hosts,
+            #          job.started, job.finished)
+        t2 = time.time()
+        print t2-t1
 
     except saga.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))
