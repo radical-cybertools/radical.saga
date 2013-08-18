@@ -242,9 +242,7 @@ class PTYShell (object) :
 
             # make sure this worked, and that we find the prompt. We use
             # a versatile prompt pattern to account for the custom shell case.
-            self.logger.error ("find  sh prompt")
             self.find (["^(.*[\$#%>])\s*$"])
-            self.logger.error ("found sh prompt")
 
             # make sure this worked, and that we find the prompt. We use
             # a versatile prompt pattern to account for the custom shell case.
@@ -400,9 +398,6 @@ class PTYShell (object) :
             while True :
 
                 try :
-                  # self.pty_shell.write ("\n")
-                  # self.logger.error  ("sent prompt trigger")
-
                     # make sure we have a non-zero waiting delay (default to
                     # 1 second)
                     delay = 10 * self.latency
@@ -412,8 +407,6 @@ class PTYShell (object) :
                     # FIXME: how do we know that _PTY_TIMOUT suffices?  In particular if
                     # we actually need to flush...
                     fret, match = self.pty_shell.find ([self.prompt], delay)
-
-                  # self.logger.error  ("got match (%s)" % match)
 
                     if  fret == None :
                     
