@@ -1,14 +1,17 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.task as stask
+import saga.task as st
 
 
+# ------------------------------------------------------------------------------
+#
 # 'forward' declaration of job.Container
-class Container (stask.Container):
+#
+class Container (st.Container):
     """ :todo: document me
 
         .. py:attribute:: jobs
@@ -31,7 +34,8 @@ class Container (stask.Container):
            :rtype: list
     """
 
-
+    # --------------------------------------------------------------------------
+    #
     def __init__ (self) :
 
         self._task_container = super  (Container, self)
@@ -43,6 +47,8 @@ class Container (stask.Container):
         self._attributes_set_getter ("Jobs",   self.get_jobs)
 
 
+    # --------------------------------------------------------------------------
+    #
     def get_jobs (self) :
         """ This is similar to get_tasks(), but returns only Job typed entries
         from the container.

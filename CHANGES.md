@@ -1,3 +1,105 @@
+Version 0.9.11 released 2013-08-12
+----------------------------------------------------------------------
+
+* Closed tickets:
+
+Version 0.9.10 released 2013-08-12
+----------------------------------------------------------------------
+
+* Better support for Amazon EC2
+* Fixed working directory handling for PBS
+* Closed tickets: 
+  - https://github.com/saga-project/saga-python/issues?milestone=3&page=1&state=closed
+
+Version 0.9.9 released 2013-07-19
+----------------------------------------------------------------------
+
+* Hotfix release: bug in Url.__str__ and SFTP copy
+  - https://github.com/saga-project/saga-python/issues?milestone=8&page=1&state=closed
+
+Version 0.9.8 released 2013-06-22
+----------------------------------------------------------------------
+
+* Hotfix release: critical bug in wait() signature
+  - https://github.com/saga-project/saga-python/issues?milestone=7&page=1&state=closed
+
+Version 0.9.7 released 2013-06-19
+----------------------------------------------------------------------
+
+* Added resource package
+* Added 'liblcoud' based adaptor to access Amazon EC2 clouds
+* Closed issues:
+  - https://github.com/saga-project/saga-python/issues?milestone=5&page=1&state=closed
+
+Version 0.9.6 released 2013-06-17
+----------------------------------------------------------------------
+
+* Hotfix release: critical PBS/TORQUE adaptor fixes
+  - https://github.com/saga-project/saga-python/issues?&milestone=6&page=1&state=closed
+
+Version 0.9.5 released 2013-06-06
+----------------------------------------------------------------------
+
+* Hotfix release: critical SLURM adaptor fixes
+  - https://github.com/saga-project/saga-python/issues?milestone=4&page=1&state=closed
+
+Version 0.9.4 released 2013-06-01
+----------------------------------------------------------------------
+
+* jd.working_directory now gets created if it doesn't exist
+* Support for older Cray systems running PBS Pro 10
+* Job state callback support for the PBS adaptor - others to follow 
+* A simple HTTP protocol file adaptor
+* Fixed some issues with user-pass and X.509 security contexts
+* Over 40 bugfixes and improvements: 
+  - https://github.com/saga-project/saga-python/issues?milestone=2&page=1&state=closed
+
+Version 0.9.3 released 2013-04-08
+----------------------------------------------------------------------
+
+* Added SFTP adaptor
+* Added tutorial examples
+* Closed issues:
+  - https://github.com/saga-project/saga-python/issues/78
+  - https://github.com/saga-project/saga-python/issues/73
+  - https://github.com/saga-project/saga-python/issues/72
+  - https://github.com/saga-project/saga-python/issues/71
+  - https://github.com/saga-project/saga-python/issues/69
+  - https://github.com/saga-project/saga-python/issues/66
+  - https://github.com/saga-project/saga-python/issues/63
+  - https://github.com/saga-project/saga-python/issues/62
+  - https://github.com/saga-project/saga-python/issues/61
+  - https://github.com/saga-project/saga-python/issues/60
+  - https://github.com/saga-project/saga-python/issues/58
+  - https://github.com/saga-project/saga-python/issues/57
+  - https://github.com/saga-project/saga-python/issues/56
+  - https://github.com/saga-project/saga-python/issues/55
+  - https://github.com/saga-project/saga-python/issues/22
+  - https://github.com/saga-project/saga-python/issues/51
+  - https://github.com/saga-project/saga-python/issues/53
+  - https://github.com/saga-project/saga-python/issues/26
+  - https://github.com/saga-project/saga-python/issues/49
+  - https://github.com/saga-project/saga-python/issues/50
+  - https://github.com/saga-project/saga-python/issues/47
+  - https://github.com/saga-project/saga-python/issues/45
+  - https://github.com/saga-project/saga-python/issues/46
+  - https://github.com/saga-project/saga-python/issues/43
+  - https://github.com/saga-project/saga-python/issues/27
+
+Version 0.9.2 released 2013-03-11
+----------------------------------------------------------------------
+
+* Hotfix release
+
+Version 0.9.1 released 2013-03-03
+----------------------------------------------------------------------
+
+* Major re-write of engine and adaptor interface
+* Support for asynchronous operations 
+* Improved PTYWrapper for ssh/gsissh remote execution
+* Added SLURM job adaptor 
+* Added Condor job adaptor
+
 Version 0.2.7 released 2012-11-09
 ----------------------------------------------------------------------
 

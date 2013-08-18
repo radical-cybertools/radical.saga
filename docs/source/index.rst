@@ -18,12 +18,11 @@ Contents:
 
 .. toctree::
    :numbered:
-   :maxdepth: 2
+   :maxdepth: 3
 
    usage/index.rst
-   library/index.rst
-   examples/index.rst
    tutorial/index.rst
+   library/index.rst
    adaptors/saga.adaptor.index.rst
    developers/index.rst
 

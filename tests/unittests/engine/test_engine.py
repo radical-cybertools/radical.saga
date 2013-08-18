@@ -1,20 +1,20 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ Unit tests for saga.engine.engine.py
 """
 
 import os, sys
-from   saga.engine.engine import Engine, getEngine
+from   saga.engine.engine import Engine
 
 def test_singleton():
     """ Test that the object behaves like a singleton
     """
     # make sure singleton works
-    assert(getEngine() == getEngine())
-    assert(getEngine() == Engine())
+    assert(Engine() == Engine())
 
     e1 = Engine()
     e2 = Engine()

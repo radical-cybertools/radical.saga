@@ -1,7 +1,8 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 """ Provides the SAGA runtime. """
 
@@ -9,7 +10,6 @@ import re
 import sys
 import pprint
 import string
-import signal
 import inspect
 
 import saga.exceptions      as se
@@ -25,15 +25,6 @@ import saga.engine.registry  # adaptors to load
 _config_options = [
     { 
     'category'      : 'saga.engine',
-    'name'          : 'enable_ctrl_c', 
-    'type'          : bool, 
-    'default'       : True,
-    'valid_options' : [True, False],
-    'documentation' : 'install SIGINT signal handler to abort application.',
-    'env_variable'  : None
-    },
-    { 
-    'category'      : 'saga.engine',
     'name'          : 'load_beta_adaptors', 
     'type'          : bool, 
     'default'       : False,
@@ -42,14 +33,6 @@ _config_options = [
     'env_variable'  : None
     }
 ]
-
-################################################################################
-##
-def getEngine():
-
-    """ Return a handle to the Engine singleton."""
-    return Engine() 
-
 
 ################################################################################
 ##
@@ -154,17 +137,6 @@ class Engine(sconf.Configurable):
         self._logger = slog.getLogger ('saga.engine')
 
 
-        # install signal handler, if requested
-        if self._cfg['enable_ctrl_c'].get_value () :
-
-            def signal_handler (signal, frame):
-                sys.stderr.write ("Ctrl+C caught. Exiting...")
-                sys.exit (0)
-
-            self._logger.debug ("installing signal handler for SIGKILL")
-            signal.signal (signal.SIGINT, signal_handler)
-
-
         # load adaptors
         self._load_adaptors ()
 
@@ -206,13 +178,12 @@ class Engine(sconf.Configurable):
 
             # first, import the module
             adaptor_module = None
-            # try :
-            adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
+            try :
+                adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
 
-            # except Exception as e:
-            #     self._logger.error ("Skipping adaptor %s: module loading failed: %s" % (module_name, e))
-            #     self._logger.trace ()
-            #     continue # skip to next adaptor
+            except Exception as e:
+                self._logger.error ("Skipping adaptor %s 1: module loading failed: %s" % (module_name, e))
+                continue # skip to next adaptor
 
 
             # we expect the module to have an 'Adaptor' class
@@ -226,12 +197,11 @@ class Engine(sconf.Configurable):
                 adaptor_info     = adaptor_instance.register ()
 
             except se.SagaException as e:
-                self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
-                self._logger.trace ()
+                self._logger.error ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
                 continue # skip to next adaptor
+
             except Exception as e:
-                self._logger.error ("Skipping adaptor %s: loading failed: %s" % (module_name, e))
-                self._logger.trace ()
+                self._logger.error ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
                 continue # skip to next adaptor
 
 
@@ -244,7 +214,6 @@ class Engine(sconf.Configurable):
 
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: failed self test: %s" % (module_name, e))
-              # self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -252,7 +221,6 @@ class Engine(sconf.Configurable):
             if adaptor_info is None :
                 self._logger.warning ("Skipping adaptor %s: adaptor meta data are invalid" \
                                    % module_name)
-                self._logger.trace ()
                 continue  # skip to next adaptor
 
 
@@ -262,7 +230,6 @@ class Engine(sconf.Configurable):
                 not 'schemas' in adaptor_info    :
                 self._logger.warning ("Skipping adaptor %s: adaptor meta data are incomplete" \
                                    % module_name)
-                self._logger.trace ()
                 continue  # skip to next adaptor
 
 
@@ -295,7 +262,6 @@ class Engine(sconf.Configurable):
 
             except se.SagaException as e:
                 self._logger.error ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
-                self._logger.trace ()
                 continue # skip to next adaptor
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
@@ -338,36 +304,85 @@ class Engine(sconf.Configurable):
 
                 except Exception as e:
                     # this exception likely means that the adaptor does
-                    # not call the cpi.AdaptorBase initializer (correctly)
+                    # not call the saga.adaptors.Base initializer (correctly)
                     self._logger.warning ("Skipping adaptor %s: adaptor class invalid %s: %s" \
                                        % (module_name, cpi_info['class'], str(e)))
                     continue # skip to next adaptor
 
                 # make sure the cpi class is a valid cpi for the given type.
-                # Note that saga.job.service.Service is the same as
-                # saga.job.Service -- so we also make sure the module name does
-                # not have duplicated last element.  Also, the last element
-                # needs to be translated from CamelCase to camel_case
-                cpi_last = re.sub (r'.*\.', '',                      cpi_type)
-                cpi_modn = re.sub (r'^saga\.', 'saga.adaptors.cpi.', cpi_type)
-                cpi_modn = re.sub (r'([^.]+)\.\1$', r'\1',           cpi_modn)
-                cpi_modn = re.sub (r'(.*)([a-z])([A-Z])([^\.]*)$', r'\1\2_\3\4', cpi_modn).lower ()
+                # We walk through the list of known modules, and try to find
+                # a modules which could have that class.  We do the following
+                # tests:
+                #
+                #   cpi_class: ShellJobService
+                #   cpi_type:  saga.job.Service
+                #   modules:   saga.adaptors.cpi.job
+                #   modules:   saga.adaptors.cpi.job.service
+                #   classes:   saga.adaptors.cpi.job.Service
+                #   classes:   saga.adaptors.cpi.job.service.Service
+                #
+                #   cpi_class: X509Context
+                #   cpi_type:  saga.Context
+                #   modules:   saga.adaptors.cpi.context
+                #   classes:   saga.adaptors.cpi.context.Context
+                #
+                # So, we add a 'adaptors.cpi' after the 'saga' namespace
+                # element, then append the rest of the given namespace.  If that
+                # gives a module which has the requested class, fine -- if not,
+                # we add a lower cased version of the class name as last
+                # namespace element, and check again.
 
-                # does that module exist?
-                if not cpi_modn in sys.modules :
+                # ->   saga .  job .  Service 
+                # <- ['saga', 'job', 'Service']
+                cpi_type_nselems = cpi_type.split ('.')
+
+                if  len(cpi_type_nselems) < 2 or \
+                    len(cpi_type_nselems) > 3    :
+                    self._logger.error ("Skipping adaptor %s: cpi type not valid: '%s'" \
+                                     % (module_name, cpi_type))
+                    continue # skip to next cpi info
+
+                if cpi_type_nselems[0] != 'saga' :
+                    self._logger.error ("Skipping adaptor %s: cpi namespace not valid: '%s'" \
+                                     % (module_name, cpi_type))
+                    continue # skip to next cpi info
+
+                # -> ['saga',                    'job', 'Service'] 
+                # <- ['saga', 'adaptors', 'cpi', 'job', 'Service']
+                cpi_type_nselems.insert (1, 'adaptors')
+                cpi_type_nselems.insert (2, 'cpi')
+
+                # -> ['saga', 'adaptors', 'cpi', 'job',  'Service']
+                # <- ['saga', 'adaptors', 'cpi', 'job'], 'Service'
+                cpi_type_cname = cpi_type_nselems.pop ()
+
+                # -> ['saga', 'adaptors', 'cpi', 'job'], 'Service'
+                # <-  'saga.adaptors.cpi.job
+                # <-  'saga.adaptors.cpi.job.service
+                cpi_type_modname_1 = '.'.join (cpi_type_nselems)
+                cpi_type_modname_2 = '.'.join (cpi_type_nselems + [cpi_type_cname.lower()])
+
+                # does either module exist?
+                cpi_type_modname = None
+                if  cpi_type_modname_1 in sys.modules :
+                    cpi_type_modname = cpi_type_modname_1 
+
+                if  cpi_type_modname_2 in sys.modules :
+                    cpi_type_modname = cpi_type_modname_2 
+
+                if  not cpi_type_modname :
                     self._logger.error ("Skipping adaptor %s: cpi type not known: '%s'" \
                                      % (module_name, cpi_type))
                     continue # skip to next cpi info
 
-
                 # so, make sure the given cpi is actually
                 # implemented by the adaptor class
                 cpi_ok = False
-                for name, cpi_obj in inspect.getmembers (sys.modules[cpi_modn]) :
-                    if name == cpi_last            and \
-                       inspect.isclass (cpi_obj)   and \
-                       issubclass (cpi_class, cpi_obj) :
-                           cpi_ok = True
+                for name, cpi_obj in inspect.getmembers (sys.modules[cpi_type_modname]) :
+                    if  name == cpi_type_cname      and \
+                        inspect.isclass (cpi_obj)       :
+                        if  issubclass (cpi_class, cpi_obj) :
+                            cpi_ok = True
 
                 if not cpi_ok :
                     self._logger.error ("Skipping adaptor %s: doesn't implement cpi '%s (%s)'" \
@@ -376,7 +391,8 @@ class Engine(sconf.Configurable):
 
 
                 # finally, register the cpi for all its schemas!
-                for adaptor_schema in adaptor_schemas :
+                registered_schemas = list()
+                for adaptor_schema in adaptor_schemas:
 
                     adaptor_schema = adaptor_schema.lower ()
 
@@ -403,12 +419,15 @@ class Engine(sconf.Configurable):
 
                         self._logger.error ("Skipping adaptor %s: already registered '%s - %s'" \
                                          % (module_name, cpi_class, adaptor_instance))
-                        continue # skip to next cpi info
+                        continue  # skip to next cpi info
 
+                    self._adaptor_registry[cpi_type][adaptor_schema].append(info)
+                    registered_schemas.append(str("%s://" % adaptor_schema))
 
-                    self._logger.info ("Loading  adaptor %s: '%s (%s : %s://)'" \
-                                    % (module_name, cpi_class, cpi_type, adaptor_schema))
-                    self._adaptor_registry[cpi_type][adaptor_schema].append (info)
+                self._logger.info("Register adaptor %s for %s API with URL scheme(s) %s" %
+                                      (module_name,
+                                       cpi_type,
+                                       registered_schemas))
 
 
 
@@ -453,8 +472,9 @@ class Engine(sconf.Configurable):
                     if ( info['adaptor_name'] == adaptor_name ) :
                         return info['adaptor_instance']
 
-        raise se.NoSuccess ("No adaptor named '%s' found"  %  adaptor_name)
-
+        error_msg = "No adaptor named '%s' found" % adaptor_name
+        self._logger.error(error_msg)
+        raise se.NoSuccess(error_msg)
 
 
     #-----------------------------------------------------------------
@@ -470,13 +490,17 @@ class Engine(sconf.Configurable):
         adaptor.
         '''
 
-        if not ctype in self._adaptor_registry :
-            raise se.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
-                                  % (ctype, schema))
+        if not ctype in self._adaptor_registry:
+            error_msg = "No adaptor found for '%s' and URL scheme %s://" \
+                                  % (ctype, schema)
+            self._logger.error(error_msg)
+            raise se.NotImplemented(error_msg)
 
-        if not schema in self._adaptor_registry[ctype] :
-            raise se.NotImplemented ("No adaptor class found for '%s' and URL scheme %s://" \
-                                  % (ctype, schema))
+        if not schema in self._adaptor_registry[ctype]:
+            error_msg = "No adaptor found for '%s' and URL scheme %s://" \
+                                  % (ctype, schema)
+            self._logger.error(error_msg)
+            raise se.NotImplemented(error_msg)
 
 
         # cycle through all applicable adaptors, and try to instantiate
@@ -504,8 +528,8 @@ class Engine(sconf.Configurable):
                 # instantiate cpi
                 cpi_instance = cpi_class (api_instance, adaptor_instance)
 
-                self._logger.debug ("BOUND bind_adaptor %s.%s -- success"
-                                 % (adaptor_name, cpi_cname))
+              # self._logger.debug("Successfully bound %s.%s to %s" \
+              #                  % (adaptor_name, cpi_cname, api_instance))
                 return cpi_instance
 
 
@@ -514,7 +538,6 @@ class Engine(sconf.Configurable):
                 exception._add_exception (e)
                 self._logger.info  ("bind_adaptor adaptor class ctor failed : %s.%s: %s" \
                                  % (adaptor_name, cpi_class, str(e)))
-                self._logger.trace ()
                 continue
             except Exception as e :
                 exception._add_exception (saga.NoSuccess (str(e), api_instance))

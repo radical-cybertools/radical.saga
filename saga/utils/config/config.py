@@ -1,7 +1,8 @@
 
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2012, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 ''' Provides API handles for SAGA's configuration system.
 '''
@@ -9,8 +10,6 @@ __license__   = "MIT"
 import os
 
 from saga.utils.singleton  import Singleton
-from saga.utils.exception  import ExceptionBase
-
 from configfile            import ConfigFileReader
 
 ################################################################################
@@ -51,8 +50,6 @@ class ConfigOption(object):
     def set_value(self, value):
         # make sure we got the right value type
         if type(value) != self._val_type:
-            print str(type(value))
-            print str(self._val_type)
             raise ValueTypeError(self._category, self._name, 
               type(value), self._val_type)
 
@@ -91,12 +88,15 @@ class Configuration(object):
         # and re-_initialize the configuration object.
         self._initialize()
 
-    def _initialize(self, inject_cfg_file=None):
+    def _initialize(self, inject_cfg_file=None, add_cfg_file=None):
         """ Initialize the global configuration.
 
             :param inject_cfg_file: is used *only* for testing purposes 
              and overwrites / ignores the regular config file locations 
              /etc/saga.cfg & $HOME/.saga.cfg
+
+            :param add_cfg_file: is used *only* for testing purposes 
+             and adds a specific config file to the list of evaluated files.  
         """
         cfg_files = list()
         if inject_cfg_file is not None:
@@ -109,6 +109,9 @@ class Configuration(object):
             usr_cfg = '%s/.saga.cfg' % os.path.expanduser("~")
             if os.path.exists(usr_cfg):
                 cfg_files.append(usr_cfg)
+
+        if add_cfg_file is not None:
+            cfg_files.append(add_cfg_file)
 
         cfr = ConfigFileReader(cfg_files)
     
@@ -148,7 +151,23 @@ class Configuration(object):
             elif ev is not None:
                 #getLogger('engine').debug("Using environment variable '%s' to set config option '%s.%s' to '%s'." \
                 #    % (option['env_variable'], option['category'], option['name'], ev))
-                value = ev
+                tmp_value = ev
+                if option['type'] == list:
+                    value = tmp_value.split(",")
+                elif option['type'] == bool:
+                    if tmp_value.lower() == 'true':
+                      value = True
+                    elif tmp_value.lower() == 'false':
+                      value = False 
+                    elif tmp_value == '1':
+                      value = True
+                    elif tmp_value == '0':
+                      value = False
+                    else:
+                      raise ValueTypeError(option['category'], option['name'],
+                          tmp_value, option['type'])
+                else:
+                    value = tmp_value
             else:
                 value = option['default']
 
@@ -236,6 +255,7 @@ class Configuration(object):
             else:
                 return True
 
+
     def get_option(self, category_name, option_name):
         if category_name not in self._master_config:
             raise CategoryNotFound(category_name)
@@ -244,6 +264,25 @@ class Configuration(object):
                 raise OptionNotFound(category_name, option_name)
             else:
                 return self._master_config[category_name][option_name]
+
+
+    def as_dict (self, cn = None) :
+
+        ret = {}
+
+        if  cn : 
+            for on in self._master_config[cn] :
+                ret[on] = self.get_option (cn, on).get_value ()
+
+        else :
+            for cn in self._master_config :
+                ret[cn] = {}
+  
+                for on in self._master_config[cn] :
+                    ret[cn][on] = self.get_option (cn, on).get_value ()
+
+        return ret
+
 
 
 ################################################################################
@@ -267,20 +306,23 @@ class Configurable(object):
 
 ################################################################################
 ##
-class CategoryNotFound(ExceptionBase):
+class CategoryNotFound(Exception):
     def __init__(self, name):
-        self.message = "A category with name '%s' could not be found." % name
+        msg = "A category with name '%s' could not be found." % name
+        Exception.__init__(self, msg)
 
-class OptionNotFound(ExceptionBase):
+class OptionNotFound(Exception):
     def __init__(self, category_name, option_name):
         name = "%s.%s" % (category_name, option_name)
-        self.message = "An option with name '%s' could not be found." % (name)
+        msg  = "An option with name '%s' could not be found." % (name)
+        Exception.__init__(self, msg)
 
-class ValueTypeError(ExceptionBase):
+class ValueTypeError(Exception):
     def __init__(self, category_name, option_name, value_type, required_type):
         name = "%s.%s" % (category_name, option_name)
-        self.message = "Option %s requires value of type '%s' but got '%s'." % \
-            (name, required_type, value_type)
+        msg  = "Option %s requires value of type '%s' but got '%s'." \
+             % (name, required_type, value_type)
+        Exception.__init__ (self, msg)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
