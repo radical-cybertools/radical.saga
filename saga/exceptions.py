@@ -233,7 +233,7 @@ class SagaException (Exception) :
     def get_type (self):
         """ Return the type of the exception as string.
         """
-        return self._stype
+        return self._type
 
 
     # --------------------------------------------------------------------------
