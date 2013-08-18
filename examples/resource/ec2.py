@@ -182,7 +182,6 @@ c2 = saga.Context ('ec2_keypair')
 c2.token     = os.environ['EC2_KEYPAIR_ID']
 c2.user_cert = os.environ['EC2_KEYPAIR']
 c2.user_id   = 'ubuntu'         # the user id on the target VM
-c2.server    = server
 
 # we create a session for all SAGA interactions, and attach the respective
 # security contexts.  Those are now avail for all SAGA objects created in
