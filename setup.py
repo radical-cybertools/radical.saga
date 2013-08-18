@@ -150,6 +150,7 @@ setup_args = {
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
         "saga.adaptors.redis",
+        "saga.adaptors.irods",
         "saga.adaptors.aws",
         "saga.adaptors.http",
         "saga.engine",
