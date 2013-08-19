@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>2. Part 2: Local Job Submission &mdash; SAGA 0.9.10 documentation</title>
+    <title>2. Part 2: Local Job Submission &mdash; SAGA 0.9.11 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.10',
+        VERSION:     '0.9.11',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.10 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.11 documentation" href="../index.html" />
     <link rel="up" title="2. Tutorial" href="index.html" />
     <link rel="next" title="3. Part 3: Remote Job Submission" href="part3.html" />
     <link rel="prev" title="1. Part 1: Introduction" href="part1.html" /> 
@@ -52,7 +52,7 @@
         <li class="right" >
           <a href="part1.html" title="1. Part 1: Introduction"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">2. Tutorial</a> &raquo;</li> 
       </ul>
     </div>  
@@ -77,7 +77,11 @@ Discussion section further below.</p>
 <h2>2.1. Hands-On: Local Job Submission<a class="headerlink" href="#hands-on-local-job-submission" title="Permalink to this headline">¶</a></h2>
 <p>Before we discuss the individual API call in more detail, let&#8217;s get down and dirty and run our first example: creating and running a SAGA job on your local machine.</p>
 <p>Create a new file <tt class="docutils literal"><span class="pre">saga_example_local.py</span></tt> and paste the following code:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">sys</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Ole Weidner&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
+<span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">saga</span>
 
 <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
@@ -298,7 +302,7 @@ control (start, stop) and monitor the job:</p>
         <li class="right" >
           <a href="part1.html" title="1. Part 1: Introduction"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="index.html" >2. Tutorial</a> &raquo;</li> 
       </ul>
     </div>

@@ -14,6 +14,7 @@ Adaptors
    saga.adaptor.userpass
    saga.adaptor.shell_job
    saga.adaptor.shell_file
+   saga.adaptor.shell_resource
    saga.adaptor.sgejob
    saga.adaptor.pbsjob
    saga.adaptor.condorjob

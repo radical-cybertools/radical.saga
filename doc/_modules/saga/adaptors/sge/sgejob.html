@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.sge.sgejob &mdash; SAGA 0.9.10 documentation</title>
+    <title>saga.adaptors.sge.sgejob &mdash; SAGA 0.9.11 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.9.10',
+        VERSION:     '0.9.11',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.10 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.9.11 documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -119,12 +119,41 @@
 
 
 <span class="c"># --------------------------------------------------------------------</span>
+<span class="c"># simple parser for getting memory requirements flags and multipliers from the memreqs part of the job.Service url</span>
 <span class="c">#</span>
-<span class="k">def</span> <span class="nf">_sgescript_generator</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">jd</span><span class="p">,</span> <span class="n">pe_list</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_parse_memreqs</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="n">flags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">multipliers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">s</span><span class="o">==</span><span class="s">&#39;&#39;</span><span class="p">:</span>
+        <span class="c"># find multiplier</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">r&#39;\d+\.?\d*|\d*\.?\d+&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+            <span class="n">multipliers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">start</span><span class="p">():</span><span class="n">m</span><span class="o">.</span><span class="n">end</span><span class="p">()]))</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">end</span><span class="p">():]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">multipliers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>        
+        <span class="c"># find flag</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;~&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>                
+            <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">[:</span><span class="n">pos</span><span class="p">])</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">pos</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">return</span> <span class="n">flags</span><span class="p">,</span> <span class="n">multipliers</span>
+
+<span class="c"># --------------------------------------------------------------------</span>
+<span class="c">#</span>
+<span class="c">#</span>
+<span class="k">def</span> <span class="nf">_sgescript_generator</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">jd</span><span class="p">,</span> <span class="n">pe_list</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">memreqs</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; generates an SGE script from a SAGA job description</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">sge_params</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
     <span class="n">exec_n_args</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
+
+    <span class="c"># if no cores are requested at all, we default to one</span>
+    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="o">=</span> <span class="mi">1</span>
 
     <span class="c"># check spmd variation. this translates to the SGE qsub -pe flag.</span>
     <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">spmd_variation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
@@ -132,8 +161,8 @@
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;&#39;</span><span class="si">%s</span><span class="s">&#39; is not a valid option for jd.spmd_variation. </span><span class="se">\</span>
 <span class="s">Valid options are: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">spmd_variation</span><span class="p">,</span> <span class="n">pe_list</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;jd.spmd_variation needs to be set to one of the </span><span class="se">\</span>
-<span class="s">following values: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">pe_list</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;jd.spmd_variation need to be set in order for jd.total_cpu_count to be greater than 1. Valid options for jd.spmd_variation are: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pe_list</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">exec_n_args</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">executable</span><span class="p">)</span>
@@ -178,6 +207,21 @@
         <span class="n">sge_params</span> <span class="o">+=</span> <span class="s">&quot;#$ -m be </span><span class="se">\n</span><span class="s">&quot;</span>
         <span class="n">sge_params</span> <span class="o">+=</span> <span class="s">&quot;#$ -M </span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">contact</span>
 
+    <span class="c"># memory requirements - TOTAL_PHYSICAL_MEMORY</span>
+    <span class="c"># it is assumed that the value passed through jd is always in Megabyte</span>
+    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_physical_memory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="c"># this is (of course) not the same for all SGE installations. some </span>
+        <span class="c"># use virtual_free, some use a combination of mem_req / h_vmem. </span>
+        <span class="c"># It is very annoying. We need some sort of configuration variable </span>
+        <span class="c"># that can control this. Yes, ugly and not very saga-ish, but </span>
+        <span class="c"># the only way to do this, IMHO...</span>
+        <span class="k">if</span> <span class="n">memreqs</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;When using &#39;total_physical_memory&#39; with the SGE adaptor, the query parameters of the job.Service URL must define the attributes used by your particular instance of SGE to control memory allocation.</span><span class="se">\n</span><span class="s"> &#39;virtual_free&#39;, &#39;h_vmem&#39; or &#39;mem_req&#39; are commonly encountered examples of such attributes.</span><span class="se">\n</span><span class="s"> A valid job.Service URL could be for instance:</span><span class="se">\n</span><span class="s"> &#39;sge+ssh://myserver.edu?memreqs=virtual_free~1.5h_vmem&#39;</span><span class="se">\n</span><span class="s"> here the attribute &#39;virtual_free&#39; would be set to &#39;total_physical_memory&#39; and the attribute &#39;h_vmem&#39; would be set to 1.5*&#39;total_physical_memory&#39;, &#39;~&#39; is used as a separator.&quot;</span><span class="p">)</span>            
+        
+        <span class="n">flags</span><span class="p">,</span> <span class="n">multipliers</span> <span class="o">=</span> <span class="n">_parse_memreqs</span><span class="p">(</span><span class="n">memreqs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">flag</span><span class="p">,</span><span class="n">mult</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">flags</span><span class="p">,</span> <span class="n">multipliers</span><span class="p">):</span>
+            <span class="n">sge_params</span> <span class="o">+=</span> <span class="s">&quot;#$ -l </span><span class="si">%s</span><span class="s">=</span><span class="si">%s</span><span class="s">m </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">int</span> <span class="p">(</span><span class="nb">round</span> <span class="p">(</span><span class="n">mult</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">total_physical_memory</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
+
     <span class="c"># if no cores are requested at all, we default to one</span>
     <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="o">=</span> <span class="mi">1</span>
@@ -198,8 +242,8 @@
     <span class="c"># only escape &#39;$&#39; in args and exe. not in the params</span>
     <span class="n">exec_n_args</span> <span class="o">=</span> <span class="n">exec_n_args</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;$&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">$&#39;</span><span class="p">)</span>
 
-
-    <span class="n">sge_params</span> <span class="o">+=</span> <span class="s">&quot;#$ -pe </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">spmd_variation</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">spmd_variation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">sge_params</span> <span class="o">+=</span> <span class="s">&quot;#$ -pe </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">spmd_variation</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span><span class="p">)</span>       
 
     <span class="n">sgescript</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">#!/bin/bash </span><span class="se">\n</span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sge_params</span><span class="p">,</span> <span class="n">exec_n_args</span><span class="p">)</span>
 
@@ -234,7 +278,8 @@
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">WALL_TIME_LIMIT</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">WORKING_DIRECTORY</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">SPMD_VARIATION</span><span class="p">,</span>
-                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">TOTAL_CPU_COUNT</span><span class="p">],</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">TOTAL_CPU_COUNT</span><span class="p">,</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">TOTAL_PHYSICAL_MEMORY</span><span class="p">],</span>
     <span class="s">&quot;job_attributes&quot;</span><span class="p">:</span>    <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXIT_CODE</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXECUTION_HOSTS</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CREATED</span><span class="p">,</span>
@@ -336,6 +381,9 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span> <span class="o">=</span> <span class="n">adaptor</span>
 
+
+
+
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -354,7 +402,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">pe_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span>    <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">queue</span>   <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memreqs</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shell</span>   <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mandatory_memreqs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+
 
         <span class="n">rm_scheme</span> <span class="o">=</span> <span class="n">rm_url</span><span class="o">.</span><span class="n">scheme</span>
         <span class="n">pty_url</span>   <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">rm_url</span><span class="p">)</span>
@@ -365,6 +417,8 @@
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">parse_qs</span><span class="p">(</span><span class="n">rm_url</span><span class="o">.</span><span class="n">query</span><span class="p">)</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;queue&#39;</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;memreqs&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">memreqs</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="c"># we need to extrac the scheme for PTYShell. That&#39;s basically the</span>
         <span class="c"># job.Serivce Url withou the sge+ part. We use the PTYShell to execute</span>
@@ -415,9 +469,15 @@
 
                 <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> -help&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error finding SGE tools: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
-                    <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span>
-                                        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+                    <span class="c"># fix for a bug in certain qstat versions that return</span>
+                    <span class="c"># &#39;1&#39; after a successfull qstat -help:</span>
+                    <span class="c"># https://github.com/saga-project/saga-python/issues/163</span>
+                    <span class="k">if</span> <span class="n">cmd</span> <span class="o">==</span> <span class="s">&#39;qstat&#39;</span><span class="p">:</span>
+                        <span class="n">version</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error finding SGE tools: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
+                        <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span>
+                                            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c"># version is reported in the first row of the</span>
                     <span class="c"># help screen, e.g., GE 6.2u5_1</span>
@@ -441,6 +501,48 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">pe_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pe</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Available processing elements: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
                 <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pe_list</span><span class="p">))</span>
+         
+        <span class="c"># find out mandatory and optional memory attributes </span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> -sc&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qconf&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error running &#39;qconf&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
+            <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span> 
+            <span class="n">mandatory_attrs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">optional_attrs</span> <span class="o">=</span> <span class="p">[]</span>           
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">line</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;#&#39;</span><span class="p">):</span>
+                    <span class="p">[</span><span class="n">name</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">att_type</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">requestable</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">att_type</span> <span class="o">==</span> <span class="s">&#39;MEMORY&#39;</span> <span class="ow">and</span> <span class="n">requestable</span> <span class="o">==</span> <span class="s">&#39;YES&#39;</span><span class="p">:</span>
+                        <span class="n">optional_attrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">att_type</span> <span class="o">==</span> <span class="s">&#39;MEMORY&#39;</span> <span class="ow">and</span> <span class="n">requestable</span> <span class="o">==</span> <span class="s">&#39;FORCED&#39;</span><span class="p">:</span>
+                        <span class="n">mandatory_attrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Optional memory attributes: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">mandatory_attrs</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Mandatory memory attributes: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">optional_attrs</span><span class="p">))</span>       
+        <span class="c"># find out user specified memory attributes in job.Service URL</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">memreqs</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">flags</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">flags</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_parse_memreqs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memreqs</span><span class="p">)</span> 
+        <span class="c"># if there are mandatory memory attributes store them and check that they were specified in the job.Service URL</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">mandatory_attrs</span> <span class="o">==</span> <span class="p">[]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mandatory_memreqs</span> <span class="o">=</span> <span class="n">mandatory_attrs</span>
+            <span class="n">missing_flags</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">mandatory_attrs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
+                    <span class="n">missing_flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">missing_flags</span> <span class="o">==</span> <span class="p">[]):</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;The following memory attribute(s) are mandatory in your SGE environment and thus must be specified in the job service URL: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing_flags</span><span class="p">)</span>
+                <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span> 
+        <span class="c"># if memory attributes were specified in the job.Service URL, check that they correspond to existing optional or mandatory memory attributes</span>
+        <span class="n">invalid_attrs</span> <span class="o">=</span> <span class="p">[]</span>              
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">f</span> <span class="ow">in</span> <span class="n">optional_attrs</span> <span class="ow">or</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">mandatory_attrs</span><span class="p">):</span>
+                <span class="n">invalid_attrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">invalid_attrs</span> <span class="o">==</span> <span class="p">[]):</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;The following memory attribute(s) were specified in the job.Service URL but are not valid memory attributes in your SGE environment: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">invalid_attrs</span><span class="p">)</span>
+            <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+                    
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -470,14 +572,17 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Job service was instantiated explicitly with </span><span class="se">\</span>
 <span class="s">&#39;queue=</span><span class="si">%s</span><span class="s">&#39;, but job description tries to a differnt queue: &#39;</span><span class="si">%s</span><span class="s">&#39;. Using &#39;</span><span class="si">%s</span><span class="s">&#39;.&quot;</span> <span class="o">%</span>
                 <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">))</span>
-
+        <span class="c"># In SGE environments with mandatory memory attributes, &#39;total_physical_memory&#39; must be specified        </span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mandatory_memreqs</span> <span class="o">==</span> <span class="p">[]))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">total_physical_memory</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="n">log_error_and_raise</span><span class="p">(</span><span class="s">&quot;Your SGE environments has mandatory memory attributes, so &#39;total_physical_memory&#39; must be specified in your job descriptor&quot;</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>            
         <span class="k">try</span><span class="p">:</span>
             <span class="c"># create a SGE job script from SAGA job description</span>
             <span class="n">script</span> <span class="o">=</span> <span class="n">_sgescript_generator</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span>
                                           <span class="n">jd</span><span class="o">=</span><span class="n">jd</span><span class="p">,</span> <span class="n">pe_list</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pe_list</span><span class="p">,</span>
-                                          <span class="n">queue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span>
+                                          <span class="n">queue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span>
+                                          <span class="n">memreqs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">memreqs</span><span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Generated SGE script: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">script</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Generated SGE script: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">script</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">),</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
 
@@ -655,7 +760,11 @@
         <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_info</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="n">job_id</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;returncode&#39;</span><span class="p">])</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span>
+
+        <span class="c"># FIXME: &#39;None&#39; should cause an exception</span>
+        <span class="k">if</span> <span class="n">ret</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span> <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">else</span>           <span class="p">:</span> <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -1022,7 +1131,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>

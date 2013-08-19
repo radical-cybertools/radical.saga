@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.context &mdash; SAGA 0.9.10 documentation</title>
+    <title>saga.context &mdash; SAGA 0.9.11 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.10',
+        VERSION:     '0.9.11',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.10 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.11 documentation" href="../../index.html" />
     <link rel="up" title="saga" href="../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -74,48 +74,34 @@
 <span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">Context</span> <span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">Base</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">Attributes</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="Context"><a class="viewcode-back" href="../../library/context.html#saga.context.Context">[docs]</a>    <span class="sd">&#39;&#39;&#39;A SAGA Context object as defined in GFD.90.</span>
+<div class="viewcode-block" id="Context"><a class="viewcode-back" href="../../library/context.html#saga.context.Context">[docs]</a>    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    A SAGA Context is a description of a security token. A context </span>
+<span class="sd">    can point for example to a X.509 certificate, an SSH key-pair or </span>
+<span class="sd">    an entry in a MyProxy key-server.</span>
+<span class="sd">     </span>
+<span class="sd">    It is important to understand that a Context only points to a security </span>
+<span class="sd">    token but it will not hold the certificate contents itself.</span>
 
-<span class="sd">    A security context is a description of a security token.  It is important to</span>
-<span class="sd">    understand that, in general, a context really just *describes* a token, but</span>
-<span class="sd">    that a context *is not* a token (*). For example, a context may point to</span>
-<span class="sd">    a X509 certificate -- but it will in general not hold the certificate</span>
-<span class="sd">    contents.</span>
+<span class="sd">    Contexts are used to tell the adaptors which security tokens are </span>
+<span class="sd">    supposed to be used.  By default, most SAGA adaptors will try to</span>
+<span class="sd">    pick up such tokens from their default location, but in some cases </span>
+<span class="sd">    it might be necessary to explicitly define them. An non-default</span>
+<span class="sd">    SSH Context for example can be defined like this::</span>
 
-<span class="sd">    Context classes are used to inform the backends used by SAGA on what</span>
-<span class="sd">    security tokens are expected to be used.  By default, SAGA will be able to</span>
-<span class="sd">    pick up such tokens from their default location, but in some cases it might</span>
-<span class="sd">    be necessary to explicitly point to them - then use Session with</span>
-<span class="sd">    context instances to do so.</span>
-
-<span class="sd">    The usage example for contexts is below::</span>
-
-<span class="sd">        # define an ssh context</span>
 <span class="sd">        ctx = saga.Context(&quot;SSH&quot;)</span>
-<span class="sd">        ctx.user_cert = &#39;$HOME/.ssh/special_id_rsa&#39;</span>
-<span class="sd">        ctx.user_key  = &#39;$HOME/.ssh/special_id_rsa.pub&#39;</span>
 
-<span class="sd">        # add the context to a session</span>
+<span class="sd">        ctx.user_id   = &quot;johndoe&quot;</span>
+<span class="sd">        ctx.user_key  = &quot;/home/johndoe/.ssh/key_for_machine_x&quot;</span>
+<span class="sd">        ctx.user_pass = &quot;XXXX&quot;  # password to decrypt &#39;user_key&#39; (if required)</span>
+
 <span class="sd">        session = saga.Session()</span>
 <span class="sd">        session.add_context(ctx)</span>
 
-<span class="sd">        # create a job service in this session -- that job service can now</span>
-<span class="sd">        # *only* use that ssh context. </span>
-<span class="sd">        j = saga.job.Service(&#39;ssh://remote.host.net/&#39;, session=session)</span>
+<span class="sd">        js = saga.job.Service(&quot;ssh://machine_x.futuregrid.org&quot;,</span>
+<span class="sd">                              session=session)</span>
 
-
-<span class="sd">    The Session argument to the job.Service constructor is fully optional</span>
-<span class="sd">    -- if left out, SAGA will use default session, which picks up some default</span>
-<span class="sd">    contexts as described above -- that will suffice for the majority of use</span>
-<span class="sd">    cases.</span>
-
-<span class="sd">    ----</span>
-
-<span class="sd">    (*) The only exception to this rule is the &#39;UserPass&#39; key, which is used to</span>
-<span class="sd">    hold plain-text passwords.  Use this key with care -- it is not good</span>
-<span class="sd">    practice to hard-code passwords in the code base, or in config files.</span>
-<span class="sd">    Also, be aware that the password may show up in log files, when debugging or</span>
-<span class="sd">    analyzing your application.</span>
+<span class="sd">    Contexts in SAGA are extensible and implemented similar to the adaptor </span>
+<span class="sd">    mechanism. Currently, the following Context types are supported:</span>
 
 <span class="sd">    &#39;&#39;&#39;</span>
 
@@ -234,7 +220,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" >saga</a> &raquo;</li> 
       </ul>

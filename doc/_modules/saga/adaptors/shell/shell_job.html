@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.shell.shell_job &mdash; SAGA 0.9.10 documentation</title>
+    <title>saga.adaptors.shell.shell_job &mdash; SAGA 0.9.11 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.9.10',
+        VERSION:     '0.9.11',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.10 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.9.11 documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -72,10 +72,7 @@
 <span class="kn">from</span>   <span class="nn">saga.job.constants</span> <span class="kn">import</span> <span class="o">*</span>
 
 <span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">threading</span>
-<span class="kn">import</span> <span class="nn">subprocess</span>
 
 <span class="kn">import</span> <span class="nn">shell_wrapper</span>
 
@@ -422,21 +419,19 @@
         <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;host setup failed (</span><span class="si">%s</span><span class="s">): (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
 
-        <span class="c"># FIXME: this is a race condition is multiple job services stage the</span>
-        <span class="c"># script at the same time.  We should make that atomic by</span>
-        <span class="c">#</span>
-        <span class="c">#   cat &gt; .../wrapper.sh.$$ ... ; mv .../wrapper.sh.$$ .../wrapper.sh</span>
-        <span class="c">#</span>
-        <span class="c"># which should work nicely as long as compatible versions of the script</span>
-        <span class="c"># are staged.  Oh well...</span>
-        <span class="c">#</span>
         <span class="c"># TODO: replace some constants in the script with values from config</span>
         <span class="c"># files, such as &#39;timeout&#39; or &#39;purge_on_quit&#39; ...</span>
-        <span class="c">#</span>
         <span class="n">src</span> <span class="o">=</span> <span class="n">shell_wrapper</span><span class="o">.</span><span class="n">_WRAPPER_SCRIPT</span> <span class="o">%</span> <span class="p">({</span> <span class="s">&#39;PURGE_ON_START&#39;</span> <span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">purge_on_start</span><span class="p">)</span> <span class="p">})</span>
         <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;.saga/adaptors/shell_job/wrapper.sh&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">write_to_remote</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+        <span class="c"># lets check if we actually need to stage the wrapper script.  We need</span>
+        <span class="c"># an adaptor lock on this one.</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">_lock</span> <span class="p">:</span>
+
+            <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;test -f </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">tgt</span><span class="p">)</span>
+            <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+                <span class="c"># yep, need to stage...</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">write_to_remote</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
 
         <span class="c"># we run the script.  In principle, we should set a new / different</span>
         <span class="c"># prompt -- but, due to some strange and very unlikely coincidence, the</span>
@@ -451,20 +446,25 @@
         <span class="c"># Well, actually, we do not use exec, as that does not give us good</span>
         <span class="c"># feedback on failures (the shell just quits) -- so we replace it with</span>
         <span class="c"># this poor-man&#39;s version...</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_async</span> <span class="p">(</span><span class="s">&quot;/bin/sh -c &#39;/bin/sh </span><span class="si">%s</span><span class="s">/wrapper.sh $$ &amp;&amp; kill -9 $PPID&#39; || false&quot;</span> \
-                           <span class="o">%</span> <span class="p">(</span><span class="n">base</span><span class="p">))</span>
+      <span class="c"># self.shell.pty_shell._debug = True</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;/bin/sh </span><span class="si">%s</span><span class="s">/wrapper.sh $$&quot;</span> <span class="o">%</span> <span class="n">base</span><span class="p">)</span>
 
         <span class="c"># shell_wrapper.sh will report its own PID -- we use that to sync prompt</span>
-        <span class="c"># detection, too.  Wait for 1sec max.</span>
-        <span class="n">pid_match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&#39;PID: \d+&#39;</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">)</span>
-        <span class="k">if</span>  <span class="n">pid_match</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;host bootstrap failed (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pid_match</span><span class="p">))</span>
-
-        <span class="c"># now we can be sure to expect the valid prompt instance</span>
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">find_prompt</span> <span class="p">()</span>
+        <span class="c"># detection, too.  Wait for 3sec max.</span>
         <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to run bootstrap: (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+
+        <span class="n">id_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span> <span class="p">(</span><span class="s">&quot;\s*PID:\s+(\d+)\s*$&quot;</span><span class="p">)</span>
+        <span class="n">id_match</span>   <span class="o">=</span> <span class="n">id_pattern</span><span class="o">.</span><span class="n">search</span> <span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">id_match</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_async</span> <span class="p">(</span><span class="s">&quot;exit&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span>   <span class="p">(</span><span class="s">&quot;host bootstrap failed (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">id_match</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;host bootstrap failed (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">id_match</span><span class="p">)</span>
+
+        <span class="c"># we actually don&#39;t care much about the PID :-P</span>
         
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">_debug</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got cmd prompt (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">strip</span> <span class="p">()))</span>
 
 
@@ -1323,7 +1323,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>

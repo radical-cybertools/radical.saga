@@ -1,0 +1,390 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>3. saga.adaptor.shell_resource &mdash; SAGA 0.9.11 documentation</title>
+
+<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
+
+
+    
+    <link rel="stylesheet" href="../_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.11',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../_static/searchtools.js"></script>
+    <link rel="top" title="SAGA 0.9.11 documentation" href="../index.html" />
+    <link rel="up" title="4. Adaptors" href="saga.adaptor.index.html" />
+    <link rel="next" title="4. saga.adaptor.sgejob" href="saga.adaptor.sgejob.html" />
+    <link rel="prev" title="2. saga.adaptor.shell_file" href="saga.adaptor.shell_file.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.sgejob.html" title="4. saga.adaptor.sgejob"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.shell_file.html" title="2. saga.adaptor.shell_file"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" accesskey="U">4. Adaptors</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="saga-adaptor-shell-resource">
+<h1>3. saga.adaptor.shell_resource<a class="headerlink" href="#saga-adaptor-shell-resource" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>3.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>The Shell resource adaptor. This adaptor attempts to determine what job
+submission endpoint and file system resources are available for a given
+host, and provides the respective access URLs.</p>
+</div>
+<div class="section" id="supported-schemas">
+<h2>3.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<p>This adaptor is triggered by the following URL schemes:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="29%" />
+<col width="71%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">schema</th>
+<th class="head">description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><strong>shell://</strong></td>
+<td>find access URLs for shell-job/file adaptors</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="example">
+<h2>3.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="configuration-options">
+<h2>3.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<p>Configuration options can be used to control the adaptor&#8217;s runt    ime behavior. Most adaptors don&#8217;t need any configuration options to b    e set in order to work. They are mostly for controlling experimental feat    ures and properties of the adaptors.</p>
+<blockquote>
+<div></div></blockquote>
+<div class="section" id="enabled">
+<h3>3.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<p>enable / disable saga.adaptor.shell_resource adaptor</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>type</strong> : &lt;type &#8216;bool&#8217;&gt;</li>
+<li><strong>default</strong> : True</li>
+<li><strong>environment</strong> : None</li>
+<li><strong>valid options</strong> : [True, False]</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="capabilities">
+<h2>3.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="supported-monitorable-metrics">
+<h3>3.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>State</li>
+<li>StateDetail</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="supported-context-types">
+<h3>3.5.2. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Attribute</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference internal" href="../library/context.html#security-contexts"><em>Security Contexts</em></a> : x509</td>
+<td>X509 proxy for gsissh</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="../library/context.html#security-contexts"><em>Security Contexts</em></a> : userpass</td>
+<td>username/password pair for ssh</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="../library/context.html#security-contexts"><em>Security Contexts</em></a> : ssh</td>
+<td>public/private keypair</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="res-attributes">
+<h3>3.5.3. res_attributes<a class="headerlink" href="#res-attributes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>Rtype</li>
+<li>MachineOS</li>
+<li>MachineArch</li>
+<li>Size</li>
+<li>Memory</li>
+<li>Access</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="rdes-attributes">
+<h3>3.5.4. rdes_attributes<a class="headerlink" href="#rdes-attributes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>Rtype</li>
+<li>MachineOS</li>
+<li>MachineArch</li>
+<li>Size</li>
+<li>Memory</li>
+<li>Access</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="supported-api-classes">
+<h2>3.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>This adaptor supports the following API classes:</dt>
+<dd><ul class="first last simple">
+<li><a class="reference internal" href="../library/resource/index.html#saga.resource.Manager" title="saga.resource.Manager"><tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Manager</span></tt></a></li>
+<li><tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Compute</span></tt></li>
+</ul>
+</dd>
+</dl>
+<p>Method implementation details are listed below.</p>
+<div class="section" id="saga-resource-manager">
+<h3>3.6.1. saga.resource.Manager<a class="headerlink" href="#saga-resource-manager" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceManager">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.shell.shell_resource.</tt><tt class="descname">ShellResourceManager</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.resource.manager.Manager</span></tt></p>
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceManager.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceManager.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceManager.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceManager.acquire">
+<tt class="descname">acquire</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceManager.acquire"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceManager.acquire" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceManager.get_url">
+<tt class="descname">get_url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceManager.get_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceManager.get_url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceManager.list">
+<tt class="descname">list</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceManager.list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceManager.list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceManager.release">
+<tt class="descname">release</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceManager.release"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceManager.release" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceManager.list_templates">
+<tt class="descname">list_templates</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceManager.list_templates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceManager.list_templates" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceManager.get_template">
+<tt class="descname">get_template</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceManager.get_template"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceManager.get_template" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="saga-resource-compute">
+<h3>3.6.2. saga.resource.Compute<a class="headerlink" href="#saga-resource-compute" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceCompute">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.shell.shell_resource.</tt><tt class="descname">ShellResourceCompute</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceCompute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceCompute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.resource.resource.Compute</span></tt></p>
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceCompute.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceCompute.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceCompute.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceCompute.get_id">
+<tt class="descname">get_id</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceCompute.get_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceCompute.get_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceCompute.get_rtype">
+<tt class="descname">get_rtype</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceCompute.get_rtype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceCompute.get_rtype" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceCompute.get_state">
+<tt class="descname">get_state</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceCompute.get_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceCompute.get_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceCompute.get_state_detail">
+<tt class="descname">get_state_detail</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceCompute.get_state_detail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceCompute.get_state_detail" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceCompute.get_access">
+<tt class="descname">get_access</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceCompute.get_access"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceCompute.get_access" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceCompute.get_manager">
+<tt class="descname">get_manager</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceCompute.get_manager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceCompute.get_manager" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceCompute.get_description">
+<tt class="descname">get_description</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceCompute.get_description"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceCompute.get_description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceCompute.reconfig">
+<tt class="descname">reconfig</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceCompute.reconfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceCompute.reconfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceCompute.release">
+<tt class="descname">release</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceCompute.release"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceCompute.release" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.shell.shell_resource.ShellResourceCompute.wait">
+<tt class="descname">wait</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_resource.html#ShellResourceCompute.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_resource.ShellResourceCompute.wait" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">3. saga.adaptor.shell_resource</a><ul>
+<li><a class="reference internal" href="#description">3.1. Description</a></li>
+<li><a class="reference internal" href="#supported-schemas">3.2. Supported Schemas</a></li>
+<li><a class="reference internal" href="#example">3.3. Example</a></li>
+<li><a class="reference internal" href="#configuration-options">3.4. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">3.4.1. enabled</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#capabilities">3.5. Capabilities</a><ul>
+<li><a class="reference internal" href="#supported-monitorable-metrics">3.5.1. Supported Monitorable Metrics</a></li>
+<li><a class="reference internal" href="#supported-context-types">3.5.2. Supported Context Types</a></li>
+<li><a class="reference internal" href="#res-attributes">3.5.3. res_attributes</a></li>
+<li><a class="reference internal" href="#rdes-attributes">3.5.4. rdes_attributes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#supported-api-classes">3.6. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-resource-manager">3.6.1. saga.resource.Manager</a></li>
+<li><a class="reference internal" href="#saga-resource-compute">3.6.2. saga.resource.Compute</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="saga.adaptor.shell_file.html"
+                        title="previous chapter">2. saga.adaptor.shell_file</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="saga.adaptor.sgejob.html"
+                        title="next chapter">4. saga.adaptor.sgejob</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/adaptors/saga.adaptor.shell_resource.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.sgejob.html" title="4. saga.adaptor.sgejob"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.shell_file.html" title="2. saga.adaptor.shell_file"
+             >previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" >4. Adaptors</a> &raquo;</li> 
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2012, The SAGA Project.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+
+
+
+  </body>
+</html>

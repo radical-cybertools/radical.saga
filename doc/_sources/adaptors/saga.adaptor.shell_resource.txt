@@ -1,13 +1,15 @@
 
-###################
-saga.adaptor.sgejob
-###################
+###########################
+saga.adaptor.shell_resource
+###########################
 
 Description
 -----------
+ 
+The Shell resource adaptor. This adaptor attempts to determine what job
+submission endpoint and file system resources are available for a given
+host, and provides the respective access URLs.
 
-The SGE (Sun/Oracle Grid Engine) adaptor allows to run and manage jobs on
-`SGE <http://en.wikipedia.org/wiki/Oracle_Grid_Engine>`_ controlled HPC clusters.
 
 
 
@@ -19,9 +21,7 @@ This adaptor is triggered by the following URL schemes:
 ======================== ============================================================
 schema                   description                                                 
 ======================== ============================================================
-**sge://**               connect to a local cluster                                  
-**sge+ssh://**           conenct to a remote cluster via SSH                         
-**sge+gsissh://**        connect to a remote cluster via GSISSH                      
+**shell://**             find access URLs for shell-job/file adaptors                
 ======================== ============================================================
 
 
@@ -29,7 +29,7 @@ schema                   description
 Example
 -------
 
-.. literalinclude:: ../../../examples/jobs/sgejob.py
+.. literalinclude:: ../../../examples/jobs/localresource.py
 
 
 Configuration Options
@@ -41,7 +41,7 @@ Configuration options can be used to control the adaptor's runt    ime behavior.
 enabled
 *******
 
-enable / disable saga.adaptor.sgejob adaptor
+enable / disable saga.adaptor.shell_resource adaptor
 
   - **type** : <type 'bool'>
   - **default** : True
@@ -56,15 +56,7 @@ Supported Monitorable Metrics
 *****************************
 
   - State
-
-Supported Job Attributes
-************************
-
-  - ExitCode
-  - ExecutionHosts
-  - Created
-  - Started
-  - Finished
+  - StateDetail
 
 Supported Context Types
 ***********************
@@ -72,28 +64,30 @@ Supported Context Types
 ============================================================ ============================================================
                                                    Attribute Description
 ============================================================ ============================================================
-                             :ref:`security_contexts` : x509 GSISSH X509 proxy context
-                         :ref:`security_contexts` : userpass username/password pair (ssh)
-                              :ref:`security_contexts` : ssh SSH public/private keypair
+                             :ref:`security_contexts` : x509 X509 proxy for gsissh
+                         :ref:`security_contexts` : userpass username/password pair for ssh
+                              :ref:`security_contexts` : ssh public/private keypair
 ============================================================ ============================================================
 
-Supported Job Description Attributes
-************************************
+res_attributes
+**************
 
-  - Name
-  - Executable
-  - Arguments
-  - Environment
-  - Input
-  - Output
-  - Error
-  - Queue
-  - Project
-  - WallTimeLimit
-  - WorkingDirectory
-  - SPMDVariation
-  - TotalCPUCount
-  - TotalPhysicalMemory
+  - Rtype
+  - MachineOS
+  - MachineArch
+  - Size
+  - Memory
+  - Access
+
+rdes_attributes
+***************
+
+  - Rtype
+  - MachineOS
+  - MachineArch
+  - Size
+  - Memory
+  - Access
 
 
 
@@ -101,22 +95,22 @@ Supported API Classes
 ---------------------
 
 This adaptor supports the following API classes:
-  - :class:`saga.job.Service`
-  - :class:`saga.job.Job`
+  - :class:`saga.resource.Manager`
+  - :class:`saga.resource.Compute`
 
 Method implementation details are listed below.
 
-saga.job.Service
-****************
+saga.resource.Manager
+*********************
 
-.. autoclass:: saga.adaptors.sge.sgejob.SGEJobService
+.. autoclass:: saga.adaptors.shell.shell_resource.ShellResourceManager
    :members:
 
 
-saga.job.Job
-************
+saga.resource.Compute
+*********************
 
-.. autoclass:: saga.adaptors.sge.sgejob.SGEJob
+.. autoclass:: saga.adaptors.shell.shell_resource.ShellResourceCompute
    :members:
 
 

@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.utils.pty_shell &mdash; SAGA 0.9.10 documentation</title>
+    <title>saga.utils.pty_shell &mdash; SAGA 0.9.11 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '0.9.10',
+        VERSION:     '0.9.11',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.10 documentation" href="../../../index.html" />
+    <link rel="top" title="SAGA 0.9.11 documentation" href="../../../index.html" />
     <link rel="up" title="saga" href="../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -299,18 +299,19 @@
 
             <span class="c"># make sure this worked, and that we find the prompt. We use</span>
             <span class="c"># a versatile prompt pattern to account for the custom shell case.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&quot;^(.*[\$#%&gt;])\s*$&quot;</span><span class="p">])</span>
+
+            <span class="c"># make sure this worked, and that we find the prompt. We use</span>
+            <span class="c"># a versatile prompt pattern to account for the custom shell case.</span>
             <span class="k">try</span> <span class="p">:</span>
                 <span class="c"># set and register new prompt</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">run_async</span>  <span class="p">(</span><span class="s">&quot;unset PROMPT_COMMAND ; &quot;</span>
                                      <span class="o">+</span> <span class="s">&quot;PS1=&#39;PROMPT-$?-&gt;&#39;; &quot;</span>
                                      <span class="o">+</span> <span class="s">&quot;PS2=&#39;&#39;; &quot;</span>
-                                     <span class="o">+</span> <span class="s">&quot;export PS1 PS2 2&gt;&amp;1 &gt;/dev/null; true</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+                                     <span class="o">+</span> <span class="s">&quot;export PS1 PS2 2&gt;&amp;1 &gt;/dev/null</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">set_prompt</span> <span class="p">(</span><span class="n">new_prompt</span><span class="o">=</span><span class="s">&quot;PROMPT-(\d+)-&gt;$&quot;</span><span class="p">)</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;got new shell prompt&quot;</span><span class="p">)</span>
-
-            <span class="k">except</span> <span class="n">se</span><span class="o">.</span><span class="n">SagaException</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
-                <span class="k">raise</span>
 
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
                 <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Shell startup on target host failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
@@ -367,10 +368,12 @@
             <span class="k">try</span> <span class="p">:</span>
 
                 <span class="n">match</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="n">fret</span>  <span class="o">=</span> <span class="bp">None</span>
 
-                <span class="k">while</span> <span class="ow">not</span> <span class="n">match</span> <span class="p">:</span>
-                    <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
-
+                <span class="k">while</span> <span class="n">fret</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
+                    <span class="n">fret</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">],</span> <span class="n">_PTY_TIMEOUT</span><span class="p">)</span>
+                
+              <span class="c"># self.logger.debug  (&quot;find prompt &#39;%s&#39; in &#39;%s&#39;&quot; % (self.prompt, match))</span>
                 <span class="n">ret</span><span class="p">,</span> <span class="n">txt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_prompt</span> <span class="p">(</span><span class="n">match</span><span class="p">)</span>
 
                 <span class="k">return</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">txt</span><span class="p">)</span>
@@ -463,11 +466,11 @@
 
                     <span class="c"># FIXME: how do we know that _PTY_TIMOUT suffices?  In particular if</span>
                     <span class="c"># we actually need to flush...</span>
-                    <span class="n">_</span><span class="p">,</span> <span class="n">match</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">],</span> <span class="n">delay</span><span class="p">)</span>
+                    <span class="n">fret</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">],</span> <span class="n">delay</span><span class="p">)</span>
 
                   <span class="c"># self.logger.error  (&quot;got match (%s)&quot; % match)</span>
 
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span> <span class="p">:</span>
+                    <span class="k">if</span>  <span class="n">fret</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
                     
                         <span class="n">retries</span> <span class="o">+=</span> <span class="mi">1</span>
                         <span class="k">if</span>  <span class="n">retries</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="p">:</span>
@@ -503,9 +506,9 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">run_async</span> <span class="p">(</span><span class="s">&#39;printf &quot;SYNCHRONIZE_PROMPT</span><span class="se">\n</span><span class="s">&quot;&#39;</span><span class="p">)</span>
 
                 <span class="c"># FIXME: better timout value?</span>
-                <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&quot;SYNCHRONIZE_PROMPT&quot;</span><span class="p">],</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>  
+                <span class="n">fret</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="s">&quot;SYNCHRONIZE_PROMPT&quot;</span><span class="p">],</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>  
 
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span> <span class="p">:</span>
+                <span class="k">if</span>  <span class="n">fret</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
                     <span class="c"># not find prompt after blocking?  BAD!  Restart the shell</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">kill_pty</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
                     <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Could not synchronize prompt detection&quot;</span><span class="p">)</span>
@@ -662,9 +665,9 @@
                     <span class="n">prompt</span> <span class="o">=</span> <span class="n">new_prompt</span>
 
                 <span class="c"># command has been started - now find prompt again.  </span>
-                <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="n">prompt</span><span class="p">],</span> <span class="n">timeout</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c"># blocks</span>
+                <span class="n">fret</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="n">prompt</span><span class="p">],</span> <span class="n">timeout</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c"># blocks</span>
 
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span> <span class="p">:</span>
+                <span class="k">if</span>  <span class="n">fret</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
                     <span class="c"># not find prompt after blocking?  BAD!  Restart the shell</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">kill_pty</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
                     <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;run_sync failed, no prompt (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
@@ -685,9 +688,9 @@
                     <span class="n">stdout</span> <span class="o">=</span>  <span class="n">txt</span>
 
                     <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;cat </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">_err</span><span class="p">)</span>
-                    <span class="n">_</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">],</span> <span class="n">timeout</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c"># blocks</span>
+                    <span class="n">fret</span><span class="p">,</span> <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">find</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">],</span> <span class="n">timeout</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c"># blocks</span>
 
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span> <span class="p">:</span>
+                    <span class="k">if</span>  <span class="n">fret</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
                         <span class="c"># not find prompt after blocking?  BAD!  Restart the shell</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">kill_pty</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
                         <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;run_sync failed, no prompt (</span><span class="si">%s</span><span class="s">)&quot;</span> \
@@ -967,7 +970,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../saga.html" >saga</a> &raquo;</li> 
       </ul>

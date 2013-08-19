@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>8. Exception Handling &mdash; SAGA 0.9.10 documentation</title>
+    <title>8. Exception Handling &mdash; SAGA 0.9.11 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.10',
+        VERSION:     '0.9.11',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.10 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.11 documentation" href="../index.html" />
     <link rel="up" title="3. Library Reference" href="index.html" />
     <link rel="next" title="4. Adaptors" href="../adaptors/saga.adaptor.index.html" />
     <link rel="prev" title="7. Attributes and Callbacks" href="attribute.html" /> 
@@ -52,7 +52,7 @@
         <li class="right" >
           <a href="attribute.html" title="7. Attributes and Callbacks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">3. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -72,8 +72,8 @@
 <span id="exceptions-saga-exceptions"></span><h2>8.1. Exceptions &#8211; <a class="reference internal" href="#module-saga.exceptions" title="saga.exceptions"><tt class="xref py py-mod docutils literal"><span class="pre">saga.exceptions</span></tt></a><a class="headerlink" href="#module-saga.exceptions" title="Permalink to this headline">¶</a></h2>
 <dl class="exception">
 <dt id="saga.exceptions.SagaException">
-<em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">SagaException</tt><big>(</big><em>message</em>, <em>api_object=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#SagaException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.SagaException" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.utils.exception.ExceptionBase</span></tt></p>
+<em class="property">exception </em><tt class="descclassname">saga.exceptions.</tt><tt class="descname">SagaException</tt><big>(</big><em>msg</em>, <em>parent=None</em>, <em>api_object=None</em><big>)</big><a class="reference internal" href="../_modules/saga/exceptions.html#SagaException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.exceptions.SagaException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></tt></p>
 <p>The Exception class encapsulates information about error conditions
 encountered in SAGA.</p>
 <p>Additionally to the error message (e.message), the exception also provides
@@ -304,7 +304,7 @@ the object is also accessible via the &#8216;object&#8217; property.</p>
         <li class="right" >
           <a href="attribute.html" title="7. Attributes and Callbacks"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="index.html" >3. Library Reference</a> &raquo;</li> 
       </ul>
     </div>

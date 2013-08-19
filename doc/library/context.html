@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>5. Security Contexts &mdash; SAGA 0.9.10 documentation</title>
+    <title>5. Security Contexts &mdash; SAGA 0.9.11 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.10',
+        VERSION:     '0.9.11',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.10 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.11 documentation" href="../index.html" />
     <link rel="up" title="3. Library Reference" href="index.html" />
     <link rel="next" title="6. Sessions" href="session.html" />
     <link rel="prev" title="4. Using URLs" href="url.html" /> 
@@ -52,7 +52,7 @@
         <li class="right" >
           <a href="url.html" title="4. Using URLs"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">3. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -70,41 +70,31 @@
 <dt id="saga.context.Context">
 <em class="property">class </em><tt class="descclassname">saga.context.</tt><tt class="descname">Context</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/context.html#Context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.context.Context" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.Base</span></tt>, <a class="reference internal" href="attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a></p>
-<p>A SAGA Context object as defined in GFD.90.</p>
-<p>A security context is a description of a security token.  It is important to
-understand that, in general, a context really just <em>describes</em> a token, but
-that a context <em>is not</em> a token (*). For example, a context may point to
-a X509 certificate &#8211; but it will in general not hold the certificate
-contents.</p>
-<p>Context classes are used to inform the backends used by SAGA on what
-security tokens are expected to be used.  By default, SAGA will be able to
-pick up such tokens from their default location, but in some cases it might
-be necessary to explicitly point to them - then use Session with
-context instances to do so.</p>
-<p>The usage example for contexts is below:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># define an ssh context</span>
-<span class="n">ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&quot;SSH&quot;</span><span class="p">)</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">user_cert</span> <span class="o">=</span> <span class="s">&#39;$HOME/.ssh/special_id_rsa&#39;</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">user_key</span>  <span class="o">=</span> <span class="s">&#39;$HOME/.ssh/special_id_rsa.pub&#39;</span>
+<p>A SAGA Context is a description of a security token. A context 
+can point for example to a X.509 certificate, an SSH key-pair or 
+an entry in a MyProxy key-server.</p>
+<p>It is important to understand that a Context only points to a security 
+token but it will not hold the certificate contents itself.</p>
+<p>Contexts are used to tell the adaptors which security tokens are 
+supposed to be used.  By default, most SAGA adaptors will try to
+pick up such tokens from their default location, but in some cases 
+it might be necessary to explicitly define them. An non-default
+SSH Context for example can be defined like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">ctx</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s">&quot;SSH&quot;</span><span class="p">)</span>
 
-<span class="c"># add the context to a session</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">user_id</span>   <span class="o">=</span> <span class="s">&quot;johndoe&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">user_key</span>  <span class="o">=</span> <span class="s">&quot;/home/johndoe/.ssh/key_for_machine_x&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">user_pass</span> <span class="o">=</span> <span class="s">&quot;XXXX&quot;</span>  <span class="c"># password to decrypt &#39;user_key&#39; (if required)</span>
+
 <span class="n">session</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
 <span class="n">session</span><span class="o">.</span><span class="n">add_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
 
-<span class="c"># create a job service in this session -- that job service can now</span>
-<span class="c"># *only* use that ssh context. </span>
-<span class="n">j</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&#39;ssh://remote.host.net/&#39;</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+<span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;ssh://machine_x.futuregrid.org&quot;</span><span class="p">,</span>
+                      <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The Session argument to the job.Service constructor is fully optional
-&#8211; if left out, SAGA will use default session, which picks up some default
-contexts as described above &#8211; that will suffice for the majority of use
-cases.</p>
-<p>(*) The only exception to this rule is the &#8216;UserPass&#8217; key, which is used to
-hold plain-text passwords.  Use this key with care &#8211; it is not good
-practice to hard-code passwords in the code base, or in config files.
-Also, be aware that the password may show up in log files, when debugging or
-analyzing your application.</p>
+<p>Contexts in SAGA are extensible and implemented similar to the adaptor 
+mechanism. Currently, the following Context types are supported:</p>
 </dd></dl>
 
 </div>
@@ -448,7 +438,7 @@ if an SSH key-pair other than the default one (in $HOME/.ssh/) is required to es
         <li class="right" >
           <a href="url.html" title="4. Using URLs"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="index.html" >3. Library Reference</a> &raquo;</li> 
       </ul>
     </div>

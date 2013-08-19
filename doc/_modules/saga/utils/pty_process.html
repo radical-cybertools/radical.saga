@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.utils.pty_process &mdash; SAGA 0.9.10 documentation</title>
+    <title>saga.utils.pty_process &mdash; SAGA 0.9.11 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '0.9.10',
+        VERSION:     '0.9.11',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.10 documentation" href="../../../index.html" />
+    <link rel="top" title="SAGA 0.9.11 documentation" href="../../../index.html" />
     <link rel="up" title="saga" href="../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -72,10 +72,10 @@
 <span class="kn">import</span> <span class="nn">select</span>
 <span class="kn">import</span> <span class="nn">signal</span>
 <span class="kn">import</span> <span class="nn">termios</span>
-<span class="kn">import</span> <span class="nn">threading</span>
 
-<span class="kn">import</span> <span class="nn">saga.utils.logger</span> <span class="kn">as</span> <span class="nn">sul</span>
-<span class="kn">import</span> <span class="nn">saga.exceptions</span>   <span class="kn">as</span> <span class="nn">se</span>
+<span class="kn">import</span> <span class="nn">saga.utils.threads</span>   <span class="kn">as</span> <span class="nn">sut</span>
+<span class="kn">import</span> <span class="nn">saga.utils.logger</span>    <span class="kn">as</span> <span class="nn">sul</span>
+<span class="kn">import</span> <span class="nn">saga.exceptions</span>      <span class="kn">as</span> <span class="nn">se</span>
 
 <span class="c"># --------------------------------------------------------------------</span>
 <span class="c">#</span>
@@ -153,6 +153,8 @@
 <span class="sd">        :param logger:  logger stream to send status messages to.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_debug</span> <span class="o">=</span> <span class="bp">False</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span>
         <span class="k">if</span>  <span class="ow">not</span>  <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">sul</span><span class="o">.</span><span class="n">getLogger</span> <span class="p">(</span><span class="s">&#39;PTYProcess&#39;</span><span class="p">)</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;PTYProcess init </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">)</span>
@@ -167,7 +169,7 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;PTYProcess expects non-empty command&quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">rlock</span>   <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span> <span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rlock</span>   <span class="o">=</span> <span class="n">sut</span><span class="o">.</span><span class="n">RLock</span> <span class="p">(</span><span class="s">&quot;pty process </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">command</span> <span class="c"># list of strings too run()</span>
 
@@ -674,13 +676,13 @@
                     <span class="c"># skip non-lines</span>
                     <span class="k">if</span>  <span class="bp">None</span> <span class="o">==</span> <span class="n">data</span> <span class="p">:</span>
                         <span class="n">data</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span> <span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">_POLLDELAY</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_debug</span> <span class="p">:</span> <span class="k">print</span> <span class="s">&quot;&gt;&gt;</span><span class="si">%s</span><span class="s">&lt;&lt;&quot;</span> <span class="o">%</span> <span class="n">data</span>
 
                     <span class="c"># check current data for any matching pattern</span>
-                  <span class="c"># print &quot;&gt;&gt;%s&lt;&lt;&quot; % data</span>
                     <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">patts</span><span class="p">))</span> <span class="p">:</span>
 
                         <span class="n">match</span> <span class="o">=</span> <span class="n">patts</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">search</span> <span class="p">(</span><span class="n">data</span><span class="p">)</span>
-                      <span class="c"># print &quot;==%s==&quot; % patterns[n]</span>
+                     <span class="c">#  if self._debug : print &quot;==%s==&quot; % patterns[n]</span>
 
                         <span class="k">if</span> <span class="n">match</span> <span class="p">:</span>
                             <span class="c"># a pattern matched the current data: return a tuple of</span>
@@ -689,22 +691,23 @@
                             <span class="n">ret</span>  <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">()]</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">():]</span> 
 
-                          <span class="c"># print &quot;~~match!~~ %s&quot; % data[match.start():match.end()]</span>
-                          <span class="c"># print &quot;~~match!~~ %s&quot; % (len(data))</span>
-                          <span class="c"># print &quot;~~match!~~ %s&quot; % (str(match.span()))</span>
-                          <span class="c"># print &quot;~~match!~~ %s&quot; % (ret)</span>
+                     <span class="c">#      if self._debug : print &quot;~~match!~~ %s&quot; % data[match.start():match.end()]</span>
+                     <span class="c">#      if self._debug : print &quot;~~match!~~ %s&quot; % (len(data))</span>
+                     <span class="c">#      if self._debug : print &quot;~~match!~~ %s&quot; % (str(match.span()))</span>
+                     <span class="c">#      if self._debug : print &quot;~~match!~~ %s&quot; % (ret)</span>
 
                             <span class="k">return</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">ret</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
 
-                    <span class="c"># if a timeout is given, and actually passed, return a non-match</span>
+                    <span class="c"># if a timeout is given, and actually passed, return</span>
+                    <span class="c"># a non-match and a copy of the data we looked at</span>
                     <span class="k">if</span> <span class="n">timeout</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span>
-                        <span class="k">return</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
 
                     <span class="k">if</span> <span class="n">timeout</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">:</span>
                         <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="p">()</span>
                         <span class="k">if</span> <span class="p">(</span><span class="n">now</span><span class="o">-</span><span class="n">start</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">timeout</span> <span class="p">:</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">data</span>
-                            <span class="k">return</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+                            <span class="k">return</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
 
                     <span class="c"># no match yet, still time -- read more data</span>
                     <span class="n">data</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span> <span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">_POLLDELAY</span><span class="p">)</span>
@@ -797,7 +800,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../index.html">SAGA 0.9.10 documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../saga.html" >saga</a> &raquo;</li> 
       </ul>
