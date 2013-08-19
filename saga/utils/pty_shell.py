@@ -242,9 +242,7 @@ class PTYShell (object) :
 
             # make sure this worked, and that we find the prompt. We use
             # a versatile prompt pattern to account for the custom shell case.
-            self.logger.error ("find  sh prompt")
             self.find (["^(.*[\$#%>])\s*$"])
-            self.logger.error ("found sh prompt")
 
             # make sure this worked, and that we find the prompt. We use
             # a versatile prompt pattern to account for the custom shell case.
