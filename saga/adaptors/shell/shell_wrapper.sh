@@ -403,13 +403,13 @@ cmd_stats () {
   then
     N=100
   fi
-  STDERR=`test -f "$DIR/err" && tail -$N "$DIR/err"`
+  STDERR=`test -f "$DIR/err" && tail -$1 "$DIR/err"`
   RETVAL="$RETVAL\nSTART_STDERR\n$STDERR\nEND_STDERR\n"
 
   # same procedure for stdout -- this will not be returned to the end user, but
   # is mostly for debugging
-  STDERR=`test -f "$DIR/err" && tail -$1 "$DIR/err"`
-  RETVAL="$RETVAL\nSTART_STDOUT\n$STDERR\nEND_STDOUT\n"
+  STDOUT=`test -f "$DIR/out" && tail -$N "$DIR/out"`
+  RETVAL="$RETVAL\nSTART_STDOUT\n$STDOUT\nEND_STDOUT\n"
 }
 
 

@@ -427,15 +427,67 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     #
     def _jd2cmd (self, jd) :
 
-        exe = jd.executable
-        arg = ""
-        env = ""
-        cwd = ""
-        io  = ""
+        # this is what we want to end up with:  
+        #
+        # with I/O redirection for stdin, stdout and stderr:
+        #
+        #   ( export ENV ; CWD ( ( ( ( EXE ARGS ) < IN ; $RET=!? ) OUT ) ERR ; exit $RET )
+        #
+        # i.e., more explicitly, with 
+        #   PWD    : $HOME/data
+        #   ENV    : SCRATCH=/tmp
+        #   EXE    : ls
+        #   ARGS   : -la $SCRATCH
+        #   STDIN  : in
+        #   STDOUT : out
+        #   STDERR : err 
+        #
+        #   ( export SCRATCH=/tmp ; 
+        #     mkdir -p $HOME/data 
+        #       && cd $HOME/data 
+        #       && ( ( ( ( ls -la $SCRATCH ) 
+        #         <        in      ; EXIT_CODE=$? ) 
+        #       |          tee out | tail -c 1024 ) 3>&1 1>&2 2>&3 
+        #     |            tee err | tail -c 1024 ) 3>&1 1>&2 2>&3
+        #   ;              exit $EXIT_CODE )
+        #
+        # This looks relatively complex, but achieves the following:
+        #
+        #   - sets environment before any other activities (e.g. mkdir)
+        #   - creates / changes to working directory before I/O redirection
+        #   - input redirection also works for shell pipelines
+        #   - output redirection works for stdout and stderr
+        #   - for stdout/stderr, the last 1024 chars will remain on the standard
+        #     I/O channels, for evaluation of any shell which runs the command
+        #     (i.e. shell_wrapper.sh, and more importantly monitor.sh)
+        #   - exit value of command pipe is preserved over all I/O redirection.
+        #
+        # The constructs '3>&1 1>&2 2>&3' switch stdout and stderr, to enable
+        # catching of the respective channels.  
+        #
+        # The 'tee <name> | tail -c 1024' parts store the channel I/O in the
+        # respective target locations, while preserving the last 1k characters
+        # on the streams.
+        #
+        # The $EXIT_CODE assignment / exit directives preserves the return value
+        # (aka exit code) for the command proper.
+        #
+        # For those cases where no I/O redirection is required (for any one of
+        # the in/out/err channels), the respective directives remain empty --
+        # but the channel switching remains in place, for coding simplicity (aka
+        # laziness)
+
+        exe    = jd.executable
+        args   = ""
+        env    = ""
+        cwd    = ""
+        io_in  = ""
+        io_out = ""
+        io_err = ""
 
         if  jd.attribute_exists (ARGUMENTS) :
             for a in jd.arguments :
-                arg += "%s " % a
+                args += "%s " % a
 
         if  jd.attribute_exists (ENVIRONMENT) :
             for e in jd.environment :
@@ -445,15 +497,19 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             cwd = "mkdir -p %s && cd %s && " % (jd.working_directory, jd.working_directory)
 
         if  jd.attribute_exists (INPUT) :
-            io += "<%s " % jd.input
+            io_in += "<%s " % jd.input
 
         if  jd.attribute_exists (OUTPUT) :
-            io += "1>%s " % jd.output
+            io_out = " | tee %s | tail -c 1024 " % jd.output
 
         if  jd.attribute_exists (ERROR) :
-            io += "2>%s " % jd.error
+            io_err = " | tee %s | tail -c 1024 " % jd.error
 
-        cmd = "( %s%s( %s %s) %s)" % (env, cwd, exe, arg, io)
+        cmd = " ( %s %s ( ( ( ( %s %s )"  % (env, cwd, exe, args) \
+            + " %s ; EXIT_CODE=$? )"      % io_in                 \
+            + " %s ) 3>&1 1>&2 2>&3"      % io_out                \
+            + " %s ) 3>&1 1>&2 2>&3"      % io_err                \
+            + " ; exit $EXIT_CODE )"
 
         return cmd
 
@@ -570,8 +626,8 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 in_stdout = False
                 continue
 
-            import pprint
-            pprint.pprint (ret)
+        import pprint
+        pprint.pprint (ret)
 
         return ret
 
