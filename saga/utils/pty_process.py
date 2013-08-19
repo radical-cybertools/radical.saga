@@ -658,8 +658,8 @@ class PTYProcess (object) :
 
             except Exception as e :
                 if  issubclass (e.__class__, se.SagaException) :
-                    raise se.NoSuccess ("output parsing failed (%s): %s" % (e._plain_message, data))
-                raise se.NoSuccess ("output parsing failed (%s): %s" % (e, data))
+                    raise se.NoSuccess ("error (%s): %s" % (e._plain_message, data))
+                raise se.NoSuccess ("error (%s): %s" % (e, data))
 
 
     # ----------------------------------------------------------------
