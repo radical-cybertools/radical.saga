@@ -93,9 +93,9 @@ class _DefaultSession (object) :
         for schema in   _engine._adaptor_registry['saga.Context'] :
             for info in _engine._adaptor_registry['saga.Context'][schema] :
 
-                default_ctxs = info['adaptor_instance']._get_default_contexts()
+                default_ctxs = info['adaptor_instance']._get_default_contexts ()
                 # FIXME:
-                default_ctxs = []
+              # default_ctxs = []
                 for default_ctx in default_ctxs :
 
                     self.contexts.append (default_ctx)

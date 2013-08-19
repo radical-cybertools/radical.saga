@@ -650,7 +650,6 @@ class PTYShellFactory (object) :
         elif 'Connection to master closed' in lmsg :
             e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
 
-        e.traceback = sumisc.get_trace ()
         return e
 
 
