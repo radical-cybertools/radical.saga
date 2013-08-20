@@ -103,21 +103,22 @@ class SagaException (Exception) :
                                 % (self._stype, msg, line, parent.msg)
 
             else :
-                # ... but if parent is a native (or any other) exception type,
-                # we don't have a traceback really -- so we dig it out of
-                # sys.exc_info. 
-                trace           = sys.exc_info ()[2]
-                stack           = traceback.extract_tb  (trace)
-                traceback_list  = traceback.format_list (stack)
-                self._traceback = "".join (traceback_list)
+                if self._stype != "NoneType" :
+                    # ... but if parent is a native (or any other) exception type,
+                    # we don't have a traceback really -- so we dig it out of
+                    # sys.exc_info. 
+                    trace           = sys.exc_info ()[2]
+                    stack           = traceback.extract_tb  (trace)
+                    traceback_list  = traceback.format_list (stack)
+                    self._traceback = "".join (traceback_list)
 
-                # the message composition is very similar -- we just inject the
-                # parent exception type inconspicuously somewhere (above that
-                # was part of 'parent.message' already).
-                frame           = traceback.extract_stack ()[-2]
-                line            = "%s +%s (%s)  :  %s" % frame 
-                self._message   = "  %-20s: %s (%s)\n  %-20s: %s" \
-                                % (self._stype, msg, line, self._ptype, parent)
+                    # the message composition is very similar -- we just inject the
+                    # parent exception type inconspicuously somewhere (above that
+                    # was part of 'parent.message' already).
+                    frame           = traceback.extract_stack ()[-2]
+                    line            = "%s +%s (%s)  :  %s" % frame 
+                    self._message   = "  %-20s: %s (%s)\n  %-20s: %s" \
+                                    % (self._stype, msg, line, self._ptype, parent)
 
         else :
 
@@ -131,8 +132,7 @@ class SagaException (Exception) :
             self._traceback = "".join (traceback_list[:-1])
             frame           = traceback.extract_stack ()[-3]
             line            = "%s +%s (%s)  :  %s" % frame 
-            self._message   = "  %-20s: %s (%s)\n  %-20s: %s" \
-                            % (self._stype, msg, line, self._ptype, parent)
+            self._message   = "  %-20s: %s (%s)" % (self._stype, msg, line)
 
         # we can't do that earlier as _msg was not set up before
         self._messages = [self._message]
