@@ -535,13 +535,13 @@ class PTYShellFactory (object) :
                             if  context.attribute_exists ("user_id") and context.user_id :
                                 info['user']  = context.user_id
 
-                            if  context.attribute_exists ("user_cert")  and  context.user_cert  :
-                                info['ssh_args']  += "-o IdentityFile=%s " % context.user_cert 
-                                info['scp_args']  += "-o IdentityFile=%s " % context.user_cert 
-                                info['sftp_args'] += "-o IdentityFile=%s " % context.user_cert 
+                            if  context.attribute_exists ("user_key")   and  context.user_key :
+                                info['ssh_args']  += "-o IdentityFile=%s " % context.user_key
+                                info['scp_args']  += "-o IdentityFile=%s " % context.user_key
+                                info['sftp_args'] += "-o IdentityFile=%s " % context.user_key
 
                                 if  context.attribute_exists ("user_pass") and context.user_pass :
-                                    info['key_pass'][context.user_cert] = context.user_pass
+                                    info['key_pass'][context.user_key] = context.user_pass
 
                     if  context.type.lower () == "userpass" :
                         if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
@@ -558,10 +558,10 @@ class PTYShellFactory (object) :
                                 info['scp_env']   += "X509_USER_PROXY='%s' " % context.user_proxy
                                 info['sftp_env']  += "X509_USER_PROXY='%s' " % context.user_proxy
                    
-                            if  context.attribute_exists ("user_cert")   and  context.user_cert :
-                                info['ssh_env']   += "X509_USER_CERT='%s' " % context.user_cert
-                                info['scp_env']   += "X509_USER_CERT='%s' " % context.user_cert
-                                info['sftp_env']  += "X509_USER_CERT='%s' " % context.user_cert
+                            if  context.attribute_exists ("user_key")    and  context.user_key :
+                                info['ssh_env']   += "X509_USER_CERT='%s' " % context.user_key
+                                info['scp_env']   += "X509_USER_CERT='%s' " % context.user_key
+                                info['sftp_env']  += "X509_USER_CERT='%s' " % context.user_key
                    
                             if  context.attribute_exists ("user_key")    and  context.user_key :
                                 info['ssh_env']   += "X509_USER_key='%s' "  % context.user_key
