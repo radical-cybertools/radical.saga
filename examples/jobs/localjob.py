@@ -75,7 +75,7 @@ def main():
 
     except saga.SagaException, ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print "An exception occured: %s " % ex
         # Trace back the exception. That can be helpful for debugging.
         print " \n*** Backtrace:\n %s" % ex.traceback
         return -1
