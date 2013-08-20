@@ -248,7 +248,7 @@ class Adaptor (saga.adaptors.base.Base):
                     driver  = self.lccp.get_driver (self.lcct.Provider.EUCALYPTUS)
                     backend = 'euca'
                 else :
-                    error = saga.BadParameter ( "URL schema not supported by aws adaptor(%s)" % ec2_url)
+                    error = "URL schema not supported by aws adaptor(%s)" % ec2_url
                     next
 
 
@@ -265,7 +265,7 @@ class Adaptor (saga.adaptors.base.Base):
                                         port   = ctx_url.port,
                                         path   = ctx_url.path)
                 else :
-                    error = saga.BadParameter ( "only EC2 supported (not %s)" % ec2_url)
+                    error = "only EC2 supported (not %s)" % ec2_url
                     next
 
                 print "got connection: %s (%s, %s)" % (conn, ctx_id, ctx_key)
@@ -273,7 +273,7 @@ class Adaptor (saga.adaptors.base.Base):
 
         # no luck, didn't get a valid connection...
         if  error :
-            raise error
+            raise saga.BadParameter (error)
 
         # no particular context failed -- raise generic exception
         raise saga.BadParameter ("no valid EC2 credentials found (ec2 url='%s')" % ec2_url)

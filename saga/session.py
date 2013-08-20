@@ -10,6 +10,7 @@ import saga.engine.engine
 import saga.context
 import saga.base
 
+import saga.exceptions       as se
 import saga.utils.signatures as sus
 
 
@@ -53,9 +54,9 @@ class _ContextList (list) :
                             % (ctx_clone))
         try :
             ctx_clone._initialize (session)
-        except saga.exceptions.SagaException as e :
+        except se.SagaException as e :
             msg = "Cannot add context, initialization failed (%s)"  %  str(e)
-            raise saga.exceptions.BadParameter (msg)
+            raise se.BadParameter (msg)
 
         # context initialized ok, add it to the list of known contexts
         super (_ContextList, self).append (ctx_clone)
@@ -88,16 +89,31 @@ class _DefaultSession (object) :
             self._logger.warn ("no context adaptors found")
             return
 
-        for schema in   _engine._adaptor_registry['saga.Context'] :
+        for schema   in _engine._adaptor_registry['saga.Context'] :
             for info in _engine._adaptor_registry['saga.Context'][schema] :
 
-                default_ctxs = info['adaptor_instance']._get_default_contexts ()
+                default_ctxs = []
+
+                try : 
+                    default_ctxs = info['adaptor_instance']._get_default_contexts ()
+
+                except se.SagaException as e :
+                    self._logger.debug   ("adaptor %s failed to provide default" \
+                                          "contexts: %s" % (info['adaptor_name'], e))
+                    continue
+                    
 
                 for default_ctx in default_ctxs :
 
-                    self.contexts.append (session=self, ctx=default_ctx)
-                    self._logger.debug   ("default context [%-20s] : %s" \
-                                     %   (info['adaptor_name'], default_ctx))
+                    try :
+                        self.contexts.append (session=self, ctx=default_ctx)
+                        self._logger.debug   ("default context [%-20s] : %s" \
+                                         %   (info['adaptor_name'], default_ctx))
+
+                    except se.SagaException as e :
+                        self._logger.debug   ("skip default context [%-20s] : %s : %s" \
+                                         %   (info['adaptor_name'], default_ctx, e))
+                        continue
 
 
 # ------------------------------------------------------------------------------
@@ -171,7 +187,7 @@ class Session (saga.base.SimpleBase) :
             default_session  = _DefaultSession ()
             self.contexts    = default_session.contexts 
         else :
-            self.contexts    = _ContextList (session = self)
+            self.contexts    = _ContextList ()
 
 
     # ----------------------------------------------------------------
