@@ -34,7 +34,7 @@ def main():
 
         ctx.server    = "myproxy.teragrid.org"
         ctx.user_id   = "weidner"
-        ctx.user_pass = "XXXXXXX"
+        ctx.user_pass = "Ho!Xq?sFR!?!"
 
         # Change e.g., if you have a differnent username on the remote machine
         #ctx.user_id = "your_ssh_username"
