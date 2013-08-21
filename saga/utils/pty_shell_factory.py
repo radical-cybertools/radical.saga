@@ -220,11 +220,11 @@ class PTYShellFactory (object) :
             delay = min (1.0, max (0.1, 50 * latency))
 
             try :
-                prompt_patterns = ["[Pp]assword:\s*$",                   # password   prompt
-                                   "Enter passphrase for key '.*':\s*$", # passphrase prompt
-                                   "want to continue connecting",        # hostkey confirmation
-                                   ".*HELLO_\\d+_SAGA$",                 # prompt detection helper
-                                   "^(.*[\$#%>])\s*$"]                   # greedy native shell prompt 
+                prompt_patterns = ["[Pp]assword:\s*$",             # password   prompt
+                                   "Enter passphrase for .*:\s*$", # passphrase prompt
+                                   "want to continue connecting",  # hostkey confirmation
+                                   ".*HELLO_\\d+_SAGA$",           # prompt detection helper
+                                   "^(.*[\$#%>])\s*$"]             # greedy native shell prompt 
 
                 # find a prompt
                 n, match = pty_shell.find (prompt_patterns, delay)
