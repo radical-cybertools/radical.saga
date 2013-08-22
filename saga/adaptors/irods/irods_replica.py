@@ -173,8 +173,6 @@ class Adaptor (saga.adaptors.base.Base):
 
 
     def sanity_check (self) :
-
-
         try:
             # temporarily silence logger
             lvl = self._logger.getEffectiveLevel ()
