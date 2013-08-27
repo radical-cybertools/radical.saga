@@ -785,8 +785,11 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
     # ----------------------------------------------------------------
     #
     #
-    # def add_location (self, location) :
-    #     '''This method is called upon logicaldir.add_location() '''
+    def add_location (self, name, ttype) :
+        '''This method is called upon logicaldir.add_location() '''
+        # TODO: REMOVE UPLOAD CALL/MERGE INTO HERE IF SUPERFLUOUS
+        self.upload(name, None, None)
+
 
     ######################################################################
     ##
