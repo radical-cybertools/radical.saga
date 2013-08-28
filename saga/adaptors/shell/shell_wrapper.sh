@@ -16,6 +16,9 @@ then
   KILL_DASHES=""
 fi
 
+# we always start in the user's home dir
+\cd $HOME 2>&1 > /dev/null
+
 
 # --------------------------------------------------------------------
 #
