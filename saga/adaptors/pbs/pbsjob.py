@@ -53,8 +53,8 @@ class _job_state_monitor(threading.Thread):
         return self._stop.isSet()
 
     def run(self):
-        try:
-            while self.stopped() is False:
+        while self.stopped() is False:
+            try:
                 # do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
                 jobs = self.js.jobs
@@ -85,10 +85,8 @@ class _job_state_monitor(threading.Thread):
                             self.js.jobs[job] = job_info
 
                 time.sleep(MONITOR_UPDATE_INTERVAL)
-
-        except Exception as e:
-            self.logger.critical("Job monitoring thread crashed: %s" % e)
-            raise e
+            except Exception as e:
+                self.logger.warning("Exception caught in job monitoring thread: %s" % e)
 
 
 # --------------------------------------------------------------------
