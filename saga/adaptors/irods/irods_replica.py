@@ -912,7 +912,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
             
             #mark that this is experimental/may not be part of official API
             self._logger.debug("Beginning download operation " +\
-                           "will download logical file: %s, specified local directory is %s" %
+                           "will download logical file: %s, specified local target is %s" %
                            (logical_path, target) )
 
             # was no local target selected?

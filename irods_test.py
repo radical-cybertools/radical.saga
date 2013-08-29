@@ -62,10 +62,10 @@ def main():
             print entry
 
         print "Creating iRODS file object"
-        myfile = saga.logicalfile.LogicalFile('irods://' + IRODS_DIRECTORY+TEMP_FILENAME)
+        myfile = saga.replica.LogicalFile('irods://' + IRODS_DIRECTORY+TEMP_FILENAME)
         
         print "Size of test file %s on iRODS in bytes:" % (IRODS_DIRECTORY + TEMP_FILENAME)
-        print myfile.get_size()
+        #print myfile.get_size()
 
         print "Creating",NUM_REPLICAS,"replicas for",IRODS_DIRECTORY+TEMP_FILENAME
         for i in range(NUM_REPLICAS):
@@ -77,17 +77,22 @@ def main():
 
         print "Downloading logical file %s to current/default directory" % \
             (IRODS_DIRECTORY + TEMP_FILENAME) 
-        myfile.download()
+        myfile.download("andre-m.txt")
+        exit(0)
+        myfile.download(TEMP_FILENAME)
+        import time
 
         print "Downloading logical file %s to /tmp/" % \
             (IRODS_DIRECTORY + TEMP_FILENAME) 
         myfile.download("/tmp/")
 
+        #exit(0)
+
         print "Deleting downloaded file locally : %s" % (os.getcwd() + TEMP_FILENAME)
-        os.remove(os.getcwd() +"/" + TEMP_FILENAME)
+        #os.remove(os.getcwd() +"/" + TEMP_FILENAME)
 
         print "Deleting downloaded file locally : %s" % ("/tmp" + TEMP_FILENAME)
-        os.remove("/tmp/" + TEMP_FILENAME)
+        #os.remove("/tmp/" + TEMP_FILENAME)
 
         print "Making test dir %s on iRODS" % (IRODS_DIRECTORY+TEMP_DIR)
         mydir.make_dir("irods://"+IRODS_DIRECTORY+TEMP_DIR)
