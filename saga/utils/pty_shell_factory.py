@@ -337,7 +337,9 @@ class PTYShellFactory (object) :
                                                % (trigger, n, match))
                                     # but more retries won't help...
                                     retry_trigger = False
-                                    n, match = pty_shell.find (prompt_patterns, delay)
+                                    n = None
+                                    while not n :
+                                        n, match = pty_shell.find (prompt_patterns, delay)
                                     continue
 
 

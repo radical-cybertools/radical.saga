@@ -53,7 +53,6 @@ class _ContextList (list) :
         ctx_clone = saga.Context  (ctx.type)
         ctx._attributes_deep_copy (ctx_clone)
 
-        # from pudb import set_trace; set_trace()
         if  not session :
             session = self._session
             logger  = self._logger
