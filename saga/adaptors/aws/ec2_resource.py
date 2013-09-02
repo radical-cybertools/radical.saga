@@ -2,6 +2,7 @@
 """ libcloud based EC2 resource adaptor """
 
 import saga.adaptors.cpi.base
+import saga.adaptors.cpi.context
 import saga.adaptors.cpi.resource
 
 from   saga.resource.constants import *
