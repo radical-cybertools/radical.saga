@@ -33,7 +33,6 @@
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <link rel="top" title="SAGA 0.9.11 documentation" href="../index.html" />
     <link rel="up" title="5. Developer Documentation" href="index.html" />
-    <link rel="next" title="2. Timout Garbage Collection" href="timeout_gc.html" />
     <link rel="prev" title="5. Developer Documentation" href="index.html" /> 
   </head>
   <body>
@@ -46,9 +45,6 @@
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="right" >
-          <a href="timeout_gc.html" title="2. Timout Garbage Collection"
-             accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="5. Developer Documentation"
              accesskey="P">previous</a> |</li>
@@ -651,28 +647,32 @@ to simplify output parsing.  <tt class="docutils literal"><span class="pre">PS2<
 last command, saving an extra roundtrip.  Users of this class should be
 careful when setting other prompts &#8211; see <tt class="xref py py-func docutils literal"><span class="pre">set_prompt()</span></tt> for more
 details.</p>
-<blockquote>
-<div><p># start the shell, find its prompt.  
-self.shell = saga.utils.pty_shell.PTYShell (&#8220;<a class="reference external" href="ssh://user&#64;remote.host.net/">ssh://user&#64;remote.host.net/</a>&#8221;, contexts, self._logger)</p>
-<p># run a simple shell command, merge stderr with stdout.  $$ is the pid
-# of the shell instance.
-ret, out, _ = self.shell.run_sync (&#8220;mkdir -p /tmp/data.$$/&#8221; )</p>
-<p># check if mkdir reported success
-if  ret != 0 :</p>
-<blockquote>
-<div>raise saga.NoSuccess (&#8220;failed to prepare base dir (%s)(%s)&#8221; % (ret, out))</div></blockquote>
-<p># stage some data from a local string variable into a file on the remote system
-self.shell.stage_to_remote (src = pbs_job_script,</p>
-<blockquote>
-<div>tgt = &#8220;/tmp/data.$$/job_1.pbs&#8221;)</div></blockquote>
-<p># check size of staged script (this is actually done on PTYShell level
-# already, with no extra hop):
-ret, out, _ = self.shell.run_sync (&#8220;stat -c &#8216;%s&#8217; /tmp/data.$$/job_1.pbs&#8221; )
-if  ret != 0 :</p>
-<blockquote>
-<div>raise saga.NoSuccess (&#8220;failed to check size (%s)(%s)&#8221; % (ret, out))</div></blockquote>
-<p>assert (len(pbs_job_script) == int(out))</p>
-</div></blockquote>
+<p>Usage Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># start the shell, find its prompt.  </span>
+<span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="s">&quot;ssh://user@remote.host.net/&quot;</span><span class="p">,</span> <span class="n">contexts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+
+<span class="c"># run a simple shell command, merge stderr with stdout.  $$ is the pid</span>
+<span class="c"># of the shell instance.</span>
+<span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;mkdir -p /tmp/data.$$/&quot;</span> <span class="p">)</span>
+
+<span class="c"># check if mkdir reported success</span>
+<span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to prepare base dir (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+
+<span class="c"># stage some data from a local string variable into a file on the remote system</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_to_remote</span> <span class="p">(</span><span class="n">src</span> <span class="o">=</span> <span class="n">pbs_job_script</span><span class="p">,</span> 
+                            <span class="n">tgt</span> <span class="o">=</span> <span class="s">&quot;/tmp/data.$$/job_1.pbs&quot;</span><span class="p">)</span>
+
+<span class="c"># check size of staged script (this is actually done on PTYShell level</span>
+<span class="c"># already, with no extra hop):</span>
+<span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;stat -c &#39;</span><span class="si">%s</span><span class="s">&#39; /tmp/data.$$/job_1.pbs&quot;</span> <span class="p">)</span>
+<span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+    <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to check size (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+
+<span class="k">assert</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pbs_job_script</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">out</span><span class="p">))</span>
+</pre></div>
+</div>
+<p><strong>Data Staging and Data Management:</strong></p>
 <p>The PTYShell class does not only support command execution, but also basic
 data management: for SSH based shells, it will create a tunneled scp/sftp
 connection for file staging.  Other data management operations (mkdir, size,
@@ -682,6 +682,7 @@ command execution).  Ssh tunneling is implemented via ssh.v2 &#8216;ControlMaste
 capabilities (see <cite>ssh_config(5)</cite>).</p>
 <p>For local shells, PTYShell will create an additional shell pty for data
 management operations.</p>
+<p><strong>Asynchronous Notifications:</strong></p>
 <p>A third pty process will be created for asynchronous notifications.  For
 that purpose, the shell started on the first channel will create a named
 pipe, at:</p>
@@ -716,6 +717,7 @@ requires that writes of {PIPE_BUF} or fewer bytes shall be atomic.`</p>
 <p>Thus the user is responsible for ensuring that either messages are smaller
 than <em>PIPE_BUF</em> bytes on the remote system (usually at least 1024, on Linux
 usually 4096), or to lock the pipe on larger writes.</p>
+<p><strong>Automated Restart, Timeouts:</strong></p>
 <p>For timeout and restart semantics, please see the documentation to the
 underlying <a class="reference internal" href="#saga.utils.pty_process.PTYProcess" title="saga.utils.pty_process.PTYProcess"><tt class="xref py py-class docutils literal"><span class="pre">saga.utils.pty_process.PTYProcess</span></tt></a> class.</p>
 <dl class="method">
@@ -1133,9 +1135,6 @@ child&#8217;s stdin pipe, until it succeeds to write all data.</p>
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
                         title="previous chapter">5. Developer Documentation</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="timeout_gc.html"
-                        title="next chapter">2. Timout Garbage Collection</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/developers/adaptorwriting.txt"
@@ -1167,9 +1166,6 @@ child&#8217;s stdin pipe, until it succeeds to write all data.</p>
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="right" >
-          <a href="timeout_gc.html" title="2. Timout Garbage Collection"
-             >next</a> |</li>
         <li class="right" >
           <a href="index.html" title="5. Developer Documentation"
              >previous</a> |</li>

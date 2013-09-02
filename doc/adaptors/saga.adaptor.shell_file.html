@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>2. saga.adaptor.shell_file &mdash; SAGA 0.9.11 documentation</title>
+    <title>6. saga.adaptor.shell_file &mdash; SAGA 0.9.11 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -32,9 +32,9 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <link rel="top" title="SAGA 0.9.11 documentation" href="../index.html" />
-    <link rel="up" title="4. Adaptors" href="saga.adaptor.index.html" />
-    <link rel="next" title="3. saga.adaptor.shell_resource" href="saga.adaptor.shell_resource.html" />
-    <link rel="prev" title="1. saga.adaptor.shell_job" href="saga.adaptor.shell_job.html" /> 
+    <link rel="up" title="3. Adaptors" href="saga.adaptor.index.html" />
+    <link rel="next" title="7. saga.adaptor.shell_resource" href="saga.adaptor.shell_resource.html" />
+    <link rel="prev" title="5. saga.adaptor.shell_job" href="saga.adaptor.shell_job.html" /> 
   </head>
   <body>
     <div class="related">
@@ -47,13 +47,13 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.shell_resource.html" title="3. saga.adaptor.shell_resource"
+          <a href="saga.adaptor.shell_resource.html" title="7. saga.adaptor.shell_resource"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.shell_job.html" title="1. saga.adaptor.shell_job"
+          <a href="saga.adaptor.shell_job.html" title="5. saga.adaptor.shell_job"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
-          <li><a href="saga.adaptor.index.html" accesskey="U">4. Adaptors</a> &raquo;</li> 
+          <li><a href="saga.adaptor.index.html" accesskey="U">3. Adaptors</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -63,14 +63,14 @@
           <div class="body">
             
   <div class="section" id="saga-adaptor-shell-file">
-<h1>2. saga.adaptor.shell_file<a class="headerlink" href="#saga-adaptor-shell-file" title="Permalink to this headline">¶</a></h1>
+<h1>6. saga.adaptor.shell_file<a class="headerlink" href="#saga-adaptor-shell-file" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
-<h2>2.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<h2>6.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>The shell file adaptor. This adaptor uses the sh command line tools (sh,
 ssh, gsissh) to access remote filesystems.</p>
 </div>
 <div class="section" id="supported-schemas">
-<h2>2.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<h2>6.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
 <p>This adaptor is triggered by the following URL schemes:</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -105,15 +105,20 @@ ssh, gsissh) to access remote filesystems.</p>
 </table>
 </div>
 <div class="section" id="example">
-<h2>2.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<h2>6.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>NO EXAMPLE AVAILABLE</p>
 </div>
 <div class="section" id="configuration-options">
-<h2>2.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
-<p>Configuration options can be used to control the adaptor&#8217;s runt    ime behavior. Most adaptors don&#8217;t need any configuration options to b    e set in order to work. They are mostly for controlling experimental feat    ures and properties of the adaptors.</p>
+<h2>6.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<p>Configuration options can be used to control the adaptor&#8217;s runtime behavior. Most adaptors don&#8217;t need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.</p>
 <blockquote>
-<div></div></blockquote>
+<div><div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">More information about configuration options can be found in the <a class="reference internal" href="../usage/config.html#conf-file"><em>Configuration Files</em></a> section.</p>
+</div>
+</div></blockquote>
 <div class="section" id="enabled">
-<h3>2.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<h3>6.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
 <p>enable / disable saga.adaptor.shell_file adaptor</p>
 <blockquote>
 <div><ul class="simple">
@@ -125,7 +130,7 @@ ssh, gsissh) to access remote filesystems.</p>
 </div></blockquote>
 </div>
 <div class="section" id="enable-notifications">
-<h3>2.4.2. enable_notifications<a class="headerlink" href="#enable-notifications" title="Permalink to this headline">¶</a></h3>
+<h3>6.4.2. enable_notifications<a class="headerlink" href="#enable-notifications" title="Permalink to this headline">¶</a></h3>
 <p>Enable support for filesystem notifications.  Note that
 enabling this option will create a local thread and a remote
 shell process.</p>
@@ -140,12 +145,12 @@ shell process.</p>
 </div>
 </div>
 <div class="section" id="capabilities">
-<h2>2.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<h2>6.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="supported-monitorable-metrics">
-<h3>2.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
+<h3>6.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="supported-context-types">
-<h3>2.5.2. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
+<h3>6.5.2. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="50%" />
@@ -171,7 +176,7 @@ shell process.</p>
 </div>
 </div>
 <div class="section" id="supported-api-classes">
-<h2>2.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<h2>6.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt>This adaptor supports the following API classes:</dt>
 <dd><ul class="first last simple">
@@ -184,7 +189,7 @@ shell process.</p>
 </dl>
 <p>Method implementation details are listed below.</p>
 <div class="section" id="saga-namespace-directory">
-<h3>2.6.1. saga.namespace.Directory<a class="headerlink" href="#saga-namespace-directory" title="Permalink to this headline">¶</a></h3>
+<h3>6.6.1. saga.namespace.Directory<a class="headerlink" href="#saga-namespace-directory" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.shell.shell_file.ShellDirectory">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.shell.shell_file.</tt><tt class="descname">ShellDirectory</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_file.html#ShellDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_file.ShellDirectory" title="Permalink to this definition">¶</a></dt>
@@ -309,7 +314,7 @@ shell process.</p>
 
 </div>
 <div class="section" id="saga-namespace-entry">
-<h3>2.6.2. saga.namespace.Entry<a class="headerlink" href="#saga-namespace-entry" title="Permalink to this headline">¶</a></h3>
+<h3>6.6.2. saga.namespace.Entry<a class="headerlink" href="#saga-namespace-entry" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.shell.shell_file.ShellFile">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.shell.shell_file.</tt><tt class="descname">ShellFile</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_file.html#ShellFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.shell.shell_file.ShellFile" title="Permalink to this definition">¶</a></dt>
@@ -379,7 +384,7 @@ shell process.</p>
 
 </div>
 <div class="section" id="saga-filesystem-directory">
-<h3>2.6.3. saga.filesystem.Directory<a class="headerlink" href="#saga-filesystem-directory" title="Permalink to this headline">¶</a></h3>
+<h3>6.6.3. saga.filesystem.Directory<a class="headerlink" href="#saga-filesystem-directory" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt>
 <em class="property">class </em><tt class="descclassname">saga.adaptors.shell.shell_file.</tt><tt class="descname">ShellDirectory</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_file.html#ShellDirectory"><span class="viewcode-link">[source]</span></a></dt>
@@ -504,7 +509,7 @@ shell process.</p>
 
 </div>
 <div class="section" id="saga-filesystem-file">
-<h3>2.6.4. saga.filesystem.File<a class="headerlink" href="#saga-filesystem-file" title="Permalink to this headline">¶</a></h3>
+<h3>6.6.4. saga.filesystem.File<a class="headerlink" href="#saga-filesystem-file" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt>
 <em class="property">class </em><tt class="descclassname">saga.adaptors.shell.shell_file.</tt><tt class="descname">ShellFile</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/shell/shell_file.html#ShellFile"><span class="viewcode-link">[source]</span></a></dt>
@@ -584,25 +589,25 @@ shell process.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">2. saga.adaptor.shell_file</a><ul>
-<li><a class="reference internal" href="#description">2.1. Description</a></li>
-<li><a class="reference internal" href="#supported-schemas">2.2. Supported Schemas</a></li>
-<li><a class="reference internal" href="#example">2.3. Example</a></li>
-<li><a class="reference internal" href="#configuration-options">2.4. Configuration Options</a><ul>
-<li><a class="reference internal" href="#enabled">2.4.1. enabled</a></li>
-<li><a class="reference internal" href="#enable-notifications">2.4.2. enable_notifications</a></li>
+<li><a class="reference internal" href="#">6. saga.adaptor.shell_file</a><ul>
+<li><a class="reference internal" href="#description">6.1. Description</a></li>
+<li><a class="reference internal" href="#supported-schemas">6.2. Supported Schemas</a></li>
+<li><a class="reference internal" href="#example">6.3. Example</a></li>
+<li><a class="reference internal" href="#configuration-options">6.4. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">6.4.1. enabled</a></li>
+<li><a class="reference internal" href="#enable-notifications">6.4.2. enable_notifications</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#capabilities">2.5. Capabilities</a><ul>
-<li><a class="reference internal" href="#supported-monitorable-metrics">2.5.1. Supported Monitorable Metrics</a></li>
-<li><a class="reference internal" href="#supported-context-types">2.5.2. Supported Context Types</a></li>
+<li><a class="reference internal" href="#capabilities">6.5. Capabilities</a><ul>
+<li><a class="reference internal" href="#supported-monitorable-metrics">6.5.1. Supported Monitorable Metrics</a></li>
+<li><a class="reference internal" href="#supported-context-types">6.5.2. Supported Context Types</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#supported-api-classes">2.6. Supported API Classes</a><ul>
-<li><a class="reference internal" href="#saga-namespace-directory">2.6.1. saga.namespace.Directory</a></li>
-<li><a class="reference internal" href="#saga-namespace-entry">2.6.2. saga.namespace.Entry</a></li>
-<li><a class="reference internal" href="#saga-filesystem-directory">2.6.3. saga.filesystem.Directory</a></li>
-<li><a class="reference internal" href="#saga-filesystem-file">2.6.4. saga.filesystem.File</a></li>
+<li><a class="reference internal" href="#supported-api-classes">6.6. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-namespace-directory">6.6.1. saga.namespace.Directory</a></li>
+<li><a class="reference internal" href="#saga-namespace-entry">6.6.2. saga.namespace.Entry</a></li>
+<li><a class="reference internal" href="#saga-filesystem-directory">6.6.3. saga.filesystem.Directory</a></li>
+<li><a class="reference internal" href="#saga-filesystem-file">6.6.4. saga.filesystem.File</a></li>
 </ul>
 </li>
 </ul>
@@ -611,10 +616,10 @@ shell process.</p>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="saga.adaptor.shell_job.html"
-                        title="previous chapter">1. saga.adaptor.shell_job</a></p>
+                        title="previous chapter">5. saga.adaptor.shell_job</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="saga.adaptor.shell_resource.html"
-                        title="next chapter">3. saga.adaptor.shell_resource</a></p>
+                        title="next chapter">7. saga.adaptor.shell_resource</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/adaptors/saga.adaptor.shell_file.txt"
@@ -647,13 +652,13 @@ shell process.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.shell_resource.html" title="3. saga.adaptor.shell_resource"
+          <a href="saga.adaptor.shell_resource.html" title="7. saga.adaptor.shell_resource"
              >next</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.shell_job.html" title="1. saga.adaptor.shell_job"
+          <a href="saga.adaptor.shell_job.html" title="5. saga.adaptor.shell_job"
              >previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
-          <li><a href="saga.adaptor.index.html" >4. Adaptors</a> &raquo;</li> 
+          <li><a href="saga.adaptor.index.html" >3. Adaptors</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">

@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>9. saga.adaptor.ec2_resource &mdash; SAGA 0.9.11 documentation</title>
+    <title>13. saga.adaptor.ec2_resource &mdash; SAGA 0.9.11 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -32,9 +32,9 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
     <link rel="top" title="SAGA 0.9.11 documentation" href="../index.html" />
-    <link rel="up" title="4. Adaptors" href="saga.adaptor.index.html" />
-    <link rel="next" title="5. Developer Documentation" href="../developers/index.html" />
-    <link rel="prev" title="8. saga.adaptor.http_file" href="saga.adaptor.http_file.html" /> 
+    <link rel="up" title="3. Adaptors" href="saga.adaptor.index.html" />
+    <link rel="next" title="4. Tutorial" href="../tutorial/index.html" />
+    <link rel="prev" title="12. saga.adaptor.http_file" href="saga.adaptor.http_file.html" /> 
   </head>
   <body>
     <div class="related">
@@ -47,13 +47,13 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../developers/index.html" title="5. Developer Documentation"
+          <a href="../tutorial/index.html" title="4. Tutorial"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.http_file.html" title="8. saga.adaptor.http_file"
+          <a href="saga.adaptor.http_file.html" title="12. saga.adaptor.http_file"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
-          <li><a href="saga.adaptor.index.html" accesskey="U">4. Adaptors</a> &raquo;</li> 
+          <li><a href="saga.adaptor.index.html" accesskey="U">3. Adaptors</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -63,15 +63,15 @@
           <div class="body">
             
   <div class="section" id="saga-adaptor-ec2-resource">
-<h1>9. saga.adaptor.ec2_resource<a class="headerlink" href="#saga-adaptor-ec2-resource" title="Permalink to this headline">¶</a></h1>
+<h1>13. saga.adaptor.ec2_resource<a class="headerlink" href="#saga-adaptor-ec2-resource" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
-<h2>9.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<h2>13.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>The EC2 resource adaptor. This adaptor interacts with a variety of
 IaaS backends via the Apache LibCloud.  It also provides EC2 related
 context types.</p>
 </div>
 <div class="section" id="supported-schemas">
-<h2>9.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<h2>13.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
 <p>This adaptor is triggered by the following URL schemes:</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -94,7 +94,7 @@ context types.</p>
 </table>
 </div>
 <div class="section" id="example">
-<h2>9.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<h2>13.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Ole Weidner&quot;</span>
 <span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
@@ -218,12 +218,16 @@ context types.</p>
 </div>
 </div>
 <div class="section" id="configuration-options">
-<h2>9.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
-<p>Configuration options can be used to control the adaptor&#8217;s runt    ime behavior. Most adaptors don&#8217;t need any configuration options to b    e set in order to work. They are mostly for controlling experimental feat    ures and properties of the adaptors.</p>
+<h2>13.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<p>Configuration options can be used to control the adaptor&#8217;s runtime behavior. Most adaptors don&#8217;t need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.</p>
 <blockquote>
-<div></div></blockquote>
+<div><div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">More information about configuration options can be found in the <a class="reference internal" href="../usage/config.html#conf-file"><em>Configuration Files</em></a> section.</p>
+</div>
+</div></blockquote>
 <div class="section" id="enabled">
-<h3>9.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<h3>13.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
 <p>enable / disable saga.adaptor.ec2_resource adaptor</p>
 <blockquote>
 <div><ul class="simple">
@@ -236,9 +240,9 @@ context types.</p>
 </div>
 </div>
 <div class="section" id="capabilities">
-<h2>9.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<h2>13.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="supported-monitorable-metrics">
-<h3>9.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
+<h3>13.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>State</li>
@@ -247,7 +251,7 @@ context types.</p>
 </div></blockquote>
 </div>
 <div class="section" id="supported-context-types">
-<h3>9.5.2. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
+<h3>13.5.2. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="50%" />
@@ -269,7 +273,7 @@ context types.</p>
 </table>
 </div>
 <div class="section" id="res-attributes">
-<h3>9.5.3. res_attributes<a class="headerlink" href="#res-attributes" title="Permalink to this headline">¶</a></h3>
+<h3>13.5.3. res_attributes<a class="headerlink" href="#res-attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>Rtype</li>
@@ -284,7 +288,7 @@ context types.</p>
 </div></blockquote>
 </div>
 <div class="section" id="rdes-attributes">
-<h3>9.5.4. rdes_attributes<a class="headerlink" href="#rdes-attributes" title="Permalink to this headline">¶</a></h3>
+<h3>13.5.4. rdes_attributes<a class="headerlink" href="#rdes-attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>Rtype</li>
@@ -300,25 +304,169 @@ context types.</p>
 </div>
 </div>
 <div class="section" id="supported-api-classes">
-<h2>9.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<h2>13.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt>This adaptor supports the following API classes:</dt>
 <dd><ul class="first last simple">
-<li><tt class="xref py py-class docutils literal"><span class="pre">saga.Context</span></tt></li>
 <li><a class="reference internal" href="../library/resource/index.html#saga.resource.Manager" title="saga.resource.Manager"><tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Manager</span></tt></a></li>
 <li><tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Compute</span></tt></li>
 </ul>
 </dd>
 </dl>
 <p>Method implementation details are listed below.</p>
-<div class="section" id="saga-context">
-<h3>9.6.1. saga.Context<a class="headerlink" href="#saga-context" title="Permalink to this headline">¶</a></h3>
-</div>
 <div class="section" id="saga-resource-manager">
-<h3>9.6.2. saga.resource.Manager<a class="headerlink" href="#saga-resource-manager" title="Permalink to this headline">¶</a></h3>
+<h3>13.6.1. saga.resource.Manager<a class="headerlink" href="#saga-resource-manager" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceManager">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.aws.ec2_resource.</tt><tt class="descname">EC2ResourceManager</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.resource.manager.Manager</span></tt></p>
+<p><strong>EC2_URLs:</strong></p>
+<p>AWS Generic access point           <a class="reference external" href="https://ec2.amazonaws.com/">https://ec2.amazonaws.com/</a>
+AWS US East (Northern Virginia)    <a class="reference external" href="https://ec2.us-east-1.amazonaws.com/">https://ec2.us-east-1.amazonaws.com/</a>
+AWS US West (Oregon)               <a class="reference external" href="https://ec2.us-west-2.amazonaws.com/">https://ec2.us-west-2.amazonaws.com/</a>
+AWS US West (Northern California)  <a class="reference external" href="https://ec2.us-west-1.amazonaws.com/">https://ec2.us-west-1.amazonaws.com/</a>
+AWS EU (Ireland)                   <a class="reference external" href="https://ec2.eu-west-1.amazonaws.com/">https://ec2.eu-west-1.amazonaws.com/</a>
+AWS Asia Pacific (Singapore)       <a class="reference external" href="https://ec2.ap-southeast-1.amazonaws.com/">https://ec2.ap-southeast-1.amazonaws.com/</a>
+AWS Asia Pacific (Tokyo)           <a class="reference external" href="https://ec2.ap-northeast-1.amazonaws.com/">https://ec2.ap-northeast-1.amazonaws.com/</a>
+AWS South America (Sao Paulo)      <a class="reference external" href="https://ec2.sa-east-1.amazonaws.com/">https://ec2.sa-east-1.amazonaws.com/</a></p>
+<p>OSDC                               euca://api.opensciencedatacloud.org:8773/sullivan/services/Cloud</p>
+<p><strong>Known Limitations</strong></p>
+<ol class="arabic">
+<li><p class="first">the EC2 backend reports a VM to be in <cite>ACTIVE</cite> state as soon as it begins
+to boot up (From that point in time on, the VM indeed consumes resources,
+and is billed against the user&#8217;s account).  The VM is at that point,
+however, not yet reachable, as the boot process needs to be completed
+bevore the ssh daemon (or any other service) can operate correctly.
+Furthermore, the VM&#8217;s IP address may not yet be registered in DNS,
+further limiting reachability of the machine.  Finally, it seems that
+also the VM contextualization is at this point not completed, so that for
+example an ssh connection may fail due to unregistered keys.</p>
+<p>There does not seem to exist and universal way to wait for the boot,
+registration and contextualization completion.  Retrying to connect is
+one option, but (a) the connection mechanism depends on the VM&#8217;s OS image
+configuration, and (b) a connection failure due to incomplete system
+startup is indistinguishable from any &#8216;real&#8217; system error.</p>
+<p>For the time being it is left to the application level on how to handle
+that problem, and this adaptor will simply report the state as returned
+by EC2.</p>
+</li>
+</ol>
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceManager.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceManager.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceManager.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceManager.acquire">
+<tt class="descname">acquire</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceManager.acquire"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceManager.acquire" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceManager.acquire_by_id">
+<tt class="descname">acquire_by_id</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceManager.acquire_by_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceManager.acquire_by_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceManager.get_url">
+<tt class="descname">get_url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceManager.get_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceManager.get_url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceManager.list">
+<tt class="descname">list</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceManager.list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceManager.list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceManager.destroy">
+<tt class="descname">destroy</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceManager.destroy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceManager.destroy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceManager.list_templates">
+<tt class="descname">list_templates</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceManager.list_templates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceManager.list_templates" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceManager.get_template">
+<tt class="descname">get_template</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceManager.get_template"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceManager.get_template" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceManager.list_images">
+<tt class="descname">list_images</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceManager.list_images"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceManager.list_images" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceManager.get_image">
+<tt class="descname">get_image</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceManager.get_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceManager.get_image" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="saga-resource-compute">
-<h3>9.6.3. saga.resource.Compute<a class="headerlink" href="#saga-resource-compute" title="Permalink to this headline">¶</a></h3>
+<h3>13.6.2. saga.resource.Compute<a class="headerlink" href="#saga-resource-compute" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceCompute">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.aws.ec2_resource.</tt><tt class="descname">EC2ResourceCompute</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceCompute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceCompute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.resource.resource.Compute</span></tt></p>
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceCompute.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceCompute.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceCompute.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceCompute.get_id">
+<tt class="descname">get_id</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceCompute.get_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceCompute.get_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceCompute.get_rtype">
+<tt class="descname">get_rtype</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceCompute.get_rtype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceCompute.get_rtype" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceCompute.get_state">
+<tt class="descname">get_state</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceCompute.get_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceCompute.get_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceCompute.get_state_detail">
+<tt class="descname">get_state_detail</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceCompute.get_state_detail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceCompute.get_state_detail" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceCompute.get_access">
+<tt class="descname">get_access</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceCompute.get_access"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceCompute.get_access" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceCompute.get_manager">
+<tt class="descname">get_manager</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceCompute.get_manager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceCompute.get_manager" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceCompute.get_description">
+<tt class="descname">get_description</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceCompute.get_description"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceCompute.get_description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceCompute.reconfig">
+<tt class="descname">reconfig</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceCompute.reconfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceCompute.reconfig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceCompute.destroy">
+<tt class="descname">destroy</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceCompute.destroy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceCompute.destroy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.aws.ec2_resource.EC2ResourceCompute.wait">
+<tt class="descname">wait</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/aws/ec2_resource.html#EC2ResourceCompute.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.aws.ec2_resource.EC2ResourceCompute.wait" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 </div>
@@ -331,25 +479,24 @@ context types.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">9. saga.adaptor.ec2_resource</a><ul>
-<li><a class="reference internal" href="#description">9.1. Description</a></li>
-<li><a class="reference internal" href="#supported-schemas">9.2. Supported Schemas</a></li>
-<li><a class="reference internal" href="#example">9.3. Example</a></li>
-<li><a class="reference internal" href="#configuration-options">9.4. Configuration Options</a><ul>
-<li><a class="reference internal" href="#enabled">9.4.1. enabled</a></li>
+<li><a class="reference internal" href="#">13. saga.adaptor.ec2_resource</a><ul>
+<li><a class="reference internal" href="#description">13.1. Description</a></li>
+<li><a class="reference internal" href="#supported-schemas">13.2. Supported Schemas</a></li>
+<li><a class="reference internal" href="#example">13.3. Example</a></li>
+<li><a class="reference internal" href="#configuration-options">13.4. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">13.4.1. enabled</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#capabilities">9.5. Capabilities</a><ul>
-<li><a class="reference internal" href="#supported-monitorable-metrics">9.5.1. Supported Monitorable Metrics</a></li>
-<li><a class="reference internal" href="#supported-context-types">9.5.2. Supported Context Types</a></li>
-<li><a class="reference internal" href="#res-attributes">9.5.3. res_attributes</a></li>
-<li><a class="reference internal" href="#rdes-attributes">9.5.4. rdes_attributes</a></li>
+<li><a class="reference internal" href="#capabilities">13.5. Capabilities</a><ul>
+<li><a class="reference internal" href="#supported-monitorable-metrics">13.5.1. Supported Monitorable Metrics</a></li>
+<li><a class="reference internal" href="#supported-context-types">13.5.2. Supported Context Types</a></li>
+<li><a class="reference internal" href="#res-attributes">13.5.3. res_attributes</a></li>
+<li><a class="reference internal" href="#rdes-attributes">13.5.4. rdes_attributes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#supported-api-classes">9.6. Supported API Classes</a><ul>
-<li><a class="reference internal" href="#saga-context">9.6.1. saga.Context</a></li>
-<li><a class="reference internal" href="#saga-resource-manager">9.6.2. saga.resource.Manager</a></li>
-<li><a class="reference internal" href="#saga-resource-compute">9.6.3. saga.resource.Compute</a></li>
+<li><a class="reference internal" href="#supported-api-classes">13.6. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-resource-manager">13.6.1. saga.resource.Manager</a></li>
+<li><a class="reference internal" href="#saga-resource-compute">13.6.2. saga.resource.Compute</a></li>
 </ul>
 </li>
 </ul>
@@ -358,10 +505,10 @@ context types.</p>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="saga.adaptor.http_file.html"
-                        title="previous chapter">8. saga.adaptor.http_file</a></p>
+                        title="previous chapter">12. saga.adaptor.http_file</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="../developers/index.html"
-                        title="next chapter">5. Developer Documentation</a></p>
+  <p class="topless"><a href="../tutorial/index.html"
+                        title="next chapter">4. Tutorial</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/adaptors/saga.adaptor.ec2_resource.txt"
@@ -394,13 +541,13 @@ context types.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../developers/index.html" title="5. Developer Documentation"
+          <a href="../tutorial/index.html" title="4. Tutorial"
              >next</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.http_file.html" title="8. saga.adaptor.http_file"
+          <a href="saga.adaptor.http_file.html" title="12. saga.adaptor.http_file"
              >previous</a> |</li>
         <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
-          <li><a href="saga.adaptor.index.html" >4. Adaptors</a> &raquo;</li> 
+          <li><a href="saga.adaptor.index.html" >3. Adaptors</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">

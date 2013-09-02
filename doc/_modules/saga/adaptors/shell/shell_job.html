@@ -459,8 +459,8 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">id_match</span> <span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_async</span> <span class="p">(</span><span class="s">&quot;exit&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span>   <span class="p">(</span><span class="s">&quot;host bootstrap failed (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">id_match</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;host bootstrap failed (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">id_match</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span>   <span class="p">(</span><span class="s">&quot;host bootstrap failed - no pid (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">out</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;host bootstrap failed - no pid (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">out</span><span class="p">)</span>
 
         <span class="c"># we actually don&#39;t care much about the PID :-P</span>
         
