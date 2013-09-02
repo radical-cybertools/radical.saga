@@ -192,6 +192,8 @@ for a in saga.engine.registry.adaptor_registry :
             if len (oval) :
                 options += "  - **valid options** : %s\n" % str(oval)
 
+            options += "\n"
+
 
     if 'capabilities' in m._ADAPTOR_DOC :
         capabs   = m._ADAPTOR_DOC['capabilities']
@@ -296,12 +298,11 @@ for a in saga.engine.registry.adaptor_registry :
         f.write ("Configuration Options\n")
         f.write ("---------------------\n")
         f.write ("Configuration options can be used to control the adaptor's \
-runt    ime behavior. Most adaptors don't need any configuration options \
-to b    e set in order to work. They are mostly for controlling experimental \
-feat    ures and properties of the adaptors.\
-\n\n     \
-.. s    eealso:: More information about configuration options can be found in \
-the     :ref:`conf_file` section.\n")
+runtime behavior. Most adaptors don't need any configuration options \
+to be set in order to work. They are mostly for controlling experimental \
+features and properties of the adaptors.\n\n \
+.. seealso:: More information about configuration options can be found in \
+the :ref:`conf_file` section.\n")
         f.write ("\n")
         f.write ("%s\n" % options)
         f.write ("\n")
