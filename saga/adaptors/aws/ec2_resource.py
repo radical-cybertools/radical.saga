@@ -212,10 +212,7 @@ class Adaptor (saga.adaptors.base.Base):
         ctx_url = None
         error   = None
 
-        print session
         for ctx in session.contexts :
-
-            print ctx
 
             if  ctx.type.lower () == 'ec2' :
                 ctx_id  = ctx.user_id
@@ -233,7 +230,6 @@ class Adaptor (saga.adaptors.base.Base):
                 # ec2_url may still be empty!
 
                 driver = None
-                print "url: %s" % ec2_url
                 if  not ec2_url                     or \
                     ec2_url.scheme  == 'ec2'        or \
                     ec2_url.scheme  == 'aws'        or \
@@ -268,7 +264,6 @@ class Adaptor (saga.adaptors.base.Base):
                     error = "only EC2 supported (not %s)" % ec2_url
                     next
 
-                print "got connection: %s (%s, %s)" % (conn, ctx_id, ctx_key)
                 return conn, backend
 
         # no luck, didn't get a valid connection...
@@ -492,7 +487,6 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
             self._logger.info ("import new keypair %s : %s" % (token, key))
 
             try :
-                print "keypair = conn.ex_import_keypair (%s, %s)" % (token, key)
                 keypair = conn.ex_import_keypair (token, key)
                 self._logger.info ("keypair upload gave %s" % keypair)
 
