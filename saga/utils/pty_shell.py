@@ -67,7 +67,6 @@ class PTYShell (object) :
     details.
 
     Usage Example::
-    ^^^^^^^^^^^^^^^
 
         # start the shell, find its prompt.  
         self.shell = saga.utils.pty_shell.PTYShell ("ssh://user@remote.host.net/", contexts, self._logger)
@@ -93,8 +92,8 @@ class PTYShell (object) :
         assert (len(pbs_job_script) == int(out))
 
 
-    Data Staging and Data Management:
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    **Data Staging and Data Management:**
+    
 
     The PTYShell class does not only support command execution, but also basic
     data management: for SSH based shells, it will create a tunneled scp/sftp
@@ -108,8 +107,7 @@ class PTYShell (object) :
     management operations.  
 
 
-    Asynchronous Notifications:
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    **Asynchronous Notifications:**
 
     A third pty process will be created for asynchronous notifications.  For
     that purpose, the shell started on the first channel will create a named
@@ -155,8 +153,7 @@ class PTYShell (object) :
     usually 4096), or to lock the pipe on larger writes.
 
 
-    Automated Restart, Timeouts:
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    **Automated Restart, Timeouts:**
 
     For timeout and restart semantics, please see the documentation to the
     underlying :class:`saga.utils.pty_process.PTYProcess` class.
