@@ -4,9 +4,12 @@
 Resource Management
 ===================
 
-The basic usage of the resource module is as follows::
+Let's start with a basic example. We start a VM on Amazon EC2 using the
+SAGA resource API, submit a job to the newly instantiated VM using the
+SAGA job API and finally shut down the VM:
 
-.. literalinclude:: ../../../examples/resource/amazon_ec2.py
+.. literalinclude:: ../../../../examples/resource/amazon_ec2.py
+
 
 .. seealso:: More examples on how to use the SAGA resource module can be found in 
              the :ref:`code_examples_resource` section of the 
