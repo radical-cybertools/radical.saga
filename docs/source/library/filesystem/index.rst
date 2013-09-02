@@ -1,8 +1,8 @@
 
 .. _file_managemen:
 
-Working with Files and Directories
-==================================
+Files and Directories
+=====================
 
 Introduction
 ------------

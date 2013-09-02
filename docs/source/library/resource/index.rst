@@ -6,37 +6,43 @@ Resource Management
 
 Let's start with a basic example. We start a VM on Amazon EC2 using the
 SAGA resource API, submit a job to the newly instantiated VM using the
-SAGA job API and finally shut down the VM:
+SAGA job API and finally shut down the VM.
+
+.. note:: In order to run this example, you need an account with Amazon EC2. You 
+          also need your Amazon EC2 id and key. 
 
 .. literalinclude:: ../../../../examples/resource/amazon_ec2.py
-
-
-.. seealso:: More examples on how to use the SAGA resource module can be found in 
-             the :ref:`code_examples_resource` section of the 
-             :ref:`chapter_code_examples` chapter.
-
-Like all SAGA modules, the resource module relies on  middleware adaptors 
-to provide bindings to a specific resource manager. Adaptors are implicitly 
-selected via the `scheme` part of the URL, e.g., ``local://`` in the example 
-above selects the `local` resource adaptor. 
-
-.. note:: A list of available adaptors and supported resource managers can be 
-          found in the :ref:`chapter_middleware_adaptors` part of this 
-          documentation.
 
 
 .. contents:: Table of Contents
    :local:
 
-.. #############################################################################
+
 .. _resource_manager:
 
-Resource manager -- :class:`saga.resource.Manager`
+Resource Manager -- :class:`saga.resource.Manager`
 --------------------------------------------------
-
-:todo: Describe how to work with resource managers.
 
 .. autoclass:: saga.resource.Manager
    :members:
    :undoc-members:
 
+.. _resource_manager:
+
+
+Resource Description -- :class:`saga.resource.Description`
+----------------------------------------------------------
+
+.. autoclass:: saga.resource.Description
+   :members:
+   :undoc-members:
+
+
+.. _resource_resource:
+
+Resource -- :class:`saga.resource.Resource`
+-------------------------------------------
+
+.. autoclass:: saga.resource.Resource
+   :members:
+   :undoc-members:
