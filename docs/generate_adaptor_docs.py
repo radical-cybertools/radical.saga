@@ -244,20 +244,20 @@ for a in saga.engine.registry.adaptor_registry :
             if cpi['type'] != 'saga.Context' :
                 is_context = False
 
-            classes      += "  - :class:`%s`\n" % cpi['type']
-            classes_long += "\n"
-            classes_long += "%s\n" % cpi['type']
-            classes_long += "%s\n" % ('*' * len(cpi['type']))
-            classes_long += "\n"
-            classes_long += ".. autoclass:: %s.%s\n"  % (a, cpi['class'])
-            classes_long += "   :members:\n"
-          # classes_long += "   :undoc-members:\n"
-            classes_long += "\n"
-
-    if is_context :
-        # do not auto-document context adaptors -- those are done manually
-        print "skip   %s (context)" % fn
-        continue
+            if is_context :
+                # do not auto-document context adaptors -- those are done manually
+                print "skip   %s (context)" % fn
+                continue
+            else:
+                classes      += "  - :class:`%s`\n" % cpi['type']
+                classes_long += "\n"
+                classes_long += "%s\n" % cpi['type']
+                classes_long += "%s\n" % ('*' * len(cpi['type']))
+                classes_long += "\n"
+                classes_long += ".. autoclass:: %s.%s\n"  % (a, cpi['class'])
+                classes_long += "   :members:\n"
+              # classes_long += "   :undoc-members:\n"
+                classes_long += "\n"
 
 
 
@@ -285,7 +285,10 @@ for a in saga.engine.registry.adaptor_registry :
     f.write ("Example\n")
     f.write ("-------\n")
     f.write ("\n")
-    f.write (".. literalinclude:: ../../../%s\n" % example)
+    if example == "NO EXAMPLE AVAILABLE":
+        f.write("%s\n" % example)
+    else:
+        f.write (".. literalinclude:: ../../../%s\n" % example)
     f.write ("\n")
     f.write ("\n")
 

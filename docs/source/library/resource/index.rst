@@ -26,9 +26,10 @@ Resource Manager -- :class:`saga.resource.Manager`
 .. autoclass:: saga.resource.Manager
    :members:
    :undoc-members:
+   :show-inheritance:
 
-.. _resource_manager:
 
+.. _resource_description:
 
 Resource Description -- :class:`saga.resource.Description`
 ----------------------------------------------------------
