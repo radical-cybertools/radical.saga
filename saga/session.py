@@ -29,7 +29,14 @@ class _ContextList (list) :
 
     # --------------------------------------------------------------------------
     #
-    def __init__ (self, *args, **kwargs) :
+    def __init__ (self, session=None, *args, **kwargs) :
+
+        self._session = session
+
+        if  session : 
+            self._logger  = session._logger
+        else :
+            self._logger  = saga.utils.logger.getLogger ('ContextList')
 
         base_list = super  (_ContextList, self)
         base_list.__init__ (*args, **kwargs)
@@ -37,7 +44,7 @@ class _ContextList (list) :
 
     # --------------------------------------------------------------------------
     #
-    def append (self, session, ctx) :
+    def append (self, ctx, session=None) :
 
         if  not isinstance (ctx, saga.Context) :
             raise TypeError, "appended item is not a saga.Context instance"
@@ -47,16 +54,27 @@ class _ContextList (list) :
         ctx._attributes_deep_copy (ctx_clone)
 
         # from pudb import set_trace; set_trace()
+        if  not session :
+            session = self._session
+            logger  = self._logger
+        else :
+            logger  = session._logger
+
 
         # try to initialize that context, i.e. evaluate its attributes and
         # infer additional runtime information as needed
-        session._logger.debug ("adding  context : %s" \
-                            % (ctx_clone))
-        try :
-            ctx_clone._initialize (session)
-        except se.SagaException as e :
-            msg = "Cannot add context, initialization failed (%s)"  %  str(e)
-            raise se.BadParameter (msg)
+        logger.debug ("adding  context : %s" \
+                   % (ctx_clone))
+
+        if  not session :
+            logger.warning ("cannot initialize context - no session: %s" \
+                       % (ctx_clone))
+        else :
+            try :
+                ctx_clone._initialize (session)
+            except se.SagaException as e :
+                msg = "Cannot add context, initialization failed (%s)"  %  str(e)
+                raise se.BadParameter (msg)
 
         # context initialized ok, add it to the list of known contexts
         super (_ContextList, self).append (ctx_clone)
@@ -106,7 +124,7 @@ class _DefaultSession (object) :
                 for default_ctx in default_ctxs :
 
                     try :
-                        self.contexts.append (session=self, ctx=default_ctx)
+                        self.contexts.append (ctx=default_ctx, session=self)
                         self._logger.debug   ("default context [%-20s] : %s" \
                                          %   (info['adaptor_name'], default_ctx))
 
@@ -187,7 +205,7 @@ class Session (saga.base.SimpleBase) :
             default_session  = _DefaultSession ()
             self.contexts    = default_session.contexts 
         else :
-            self.contexts    = _ContextList ()
+            self.contexts    = _ContextList (session=self)
 
 
     # ----------------------------------------------------------------
@@ -214,7 +232,7 @@ class Session (saga.base.SimpleBase) :
         It is encouraged to use the L{contexts} property instead. 
         """
 
-        return self.contexts.append (session=self, ctx=ctx)
+        return self.contexts.append (ctx=ctx, session=self)
 
 
     # ----------------------------------------------------------------
