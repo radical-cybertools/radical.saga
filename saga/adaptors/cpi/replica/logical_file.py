@@ -42,6 +42,11 @@ class LogicalFile (cpi_ns.entry.Entry,
     def is_file_self_async    (self, ttype)                    : pass
 
     @SYNC
+    def get_size_self         (self, ttype)                    : pass
+    @ASYNC
+    def get_size_self_async   (self, ttype)                    : pass
+
+    @SYNC
     def add_location          (self, name, ttype)              : pass
     @ASYNC
     def add_location_async    (self, name, ttype)              : pass

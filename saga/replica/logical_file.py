@@ -88,6 +88,30 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # replica methods
     #
     @sus.takes   ('LogicalFile', 
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((int, st.Task))
+    def get_size (self, ttype=None) :
+        '''
+        ttype:    saga.task.type enum
+        ret:      int / saga.Task
+        
+        Returns the size of the physical file represented by this logical file (in bytes)
+
+           Example::
+
+               # get a file handle
+               lf = saga.replica.LogicalFile("irods://localhost/tmp/data/data.bin")
+    
+               # print the logical file's size
+               print lf.get_size ()
+
+        '''
+        return self._adaptor.get_size_self (ttype=ttype)
+
+  
+    # --------------------------------------------------------------------------
+    #
+    @sus.takes   ('LogicalFile', 
                   sus.optional ((surl.Url, basestring)), 
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
