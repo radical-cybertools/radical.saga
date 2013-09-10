@@ -14,8 +14,8 @@ from setuptools import setup, Command
 from distutils.command.install_data import install_data
 from distutils.command.sdist import sdist
 
-# figure out the current version. saga-python's
-# version is defined in saga/VERSION
+#-----------------------------------------------------------------------------
+# figure out the current version
 def update_version():
 
     version = "latest"
@@ -34,7 +34,6 @@ def update_version():
             p = Popen(['git', 'describe', '--tags', '--always'],
                       stdout=PIPE, stderr=STDOUT)
             out = p.communicate()[0]
-            print out 
 
             if (not p.returncode) and out:
                 v = VERSION_MATCH.search(out)
@@ -43,12 +42,7 @@ def update_version():
         except OSError:
             pass
 
-    print "VERSION:::: " + version
     return version
-
-scripts = []  # ["bin/saga-run"]
-
-
 
 #-----------------------------------------------------------------------------
 # check python version. we need > 2.5
@@ -171,7 +165,7 @@ setup_args = {
     ],
     'package_data': {'': ['*.sh']},
     'zip_safe': False,
-    'scripts': scripts,
+    'scripts': [],
     # mention data_files, even if empty, so install_data is called and
     # VERSION gets copied
     'data_files': [("saga", [])],
