@@ -12,6 +12,8 @@ from copy import deepcopy
 
 FILE_SIZE = 1 # in megs, approx                                                                                                         
 NUM_REPLICAS = 5 # num replicas to create
+TEMP_FILENAME = "temp.txt"
+IRODS_RESOURCE = "osgGridFtpGroup"
 
 # ------------------------------------------------------------------------------
 #
@@ -77,6 +79,7 @@ def test_upload_and_download():
     try:
         tc = sutc.TestConfig()
         home_dir = os.path.expanduser("~"+"/")
+        irods_url = tc.replica_url
         print "Creating temporary file of size %dM : %s" % \
             (FILE_SIZE, home_dir+TEMP_FILENAME)
 
@@ -85,15 +88,19 @@ def test_upload_and_download():
             f.write ("x" * (FILE_SIZE * pow(2,20)) )
 
         print "Creating iRODS directory object"
-        mydir = saga.replica.LogicalDirectory("irods://localhost/" + IRODS_DIRECTORY)
+        mydir = saga.replica.LogicalDirectory(irods_url)
 
+        print "Making sure there is no file existing remotely"
         import subprocess
-        subprocess.call(["irm", IRODS_DIRECTORY+TEMP_FILENAME])
+        subprocess.call(["irm", TEMP_FILENAME])
 
-        print "Uploading file to iRODS"
-        myfile = saga.replica.LogicalFile('irods://'+IRODS_DIRECTORY+TEMP_FILENAME)
+        print "Uploading file to iRODS: %s" %  home_dir+TEMP_FILENAME
+        myfile = saga.replica.LogicalFile(irods_url+TEMP_FILENAME)
         myfile.upload(home_dir + TEMP_FILENAME, \
-                     "irods:///this/path/is/ignored/?resource="+IRODS_RESOURCE)
+                          "irods:///this/path/is/ignored/?resource="+IRODS_RESOURCE)
+
+        #myfile.upload(home_dir + TEMP_FILENAME, \
+        #                  "irods:///this/path/is/ignored")
 
         print "Deleting file locally : %s" % (home_dir + TEMP_FILENAME)                                                   
         os.remove(home_dir + TEMP_FILENAME)
