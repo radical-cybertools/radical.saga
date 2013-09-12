@@ -77,8 +77,7 @@ def main():
 
         print "Downloading logical file %s to current/default directory" % \
             (IRODS_DIRECTORY + TEMP_FILENAME) 
-        myfile.download("andre-m.txt")
-        exit(0)
+        
         myfile.download(TEMP_FILENAME)
         import time
 
