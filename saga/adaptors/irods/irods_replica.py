@@ -842,7 +842,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
 
         #TODO: Make sure that the source URL is a local/file:// URL
         complete_path = saga.Url(source).get_path()
-        
+
         # extract the path from the LogicalFile object, excluding
         # the filename
         destination_path=self._url.get_path()[0:string.rfind(
@@ -857,8 +857,10 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
                            "will register file in logical dir: %s" %
                            destination_path)
 
+            # the query holds our target resource
+            query = saga.Url(target).get_query()
             # was no resource selected?
-            if target==None:
+            if query==None:
                 self._logger.debug("Attempting to upload to default resource")
                 returncode, out, _ = self.shell.run_sync("iput %s %s" %
                                          (complete_path, destination_path))
@@ -866,9 +868,8 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
             # resource was selected, have to parse it and supply to iput -R
             else:
                 #TODO: Verify correctness
-                query = saga.Url(target).get_query()
                 resource = query.split("=")[1]
-                self._logger.debug("Attempting to upload to resource %s" % resource)
+                self._logger.debug("Attempting to upload to query-specified resource %s" % resource)
                 returncode, out, _ = self.shell.run_sync("iput -R %s %s %s" %
                                          (resource, complete_path, destination_path))
 
