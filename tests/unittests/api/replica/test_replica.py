@@ -10,9 +10,10 @@ import os
 
 from copy import deepcopy
 
-FILE_SIZE = 1 # in megs, approx                                                                                                         
-NUM_REPLICAS = 5 # num replicas to create
-TEMP_FILENAME = "temp.txt"
+FILE_SIZE      = 1 # in megs, approx                                                                                                         
+NUM_REPLICAS   = 5 # num replicas to create
+TEMP_FILENAME  = "temp.txt"
+TEMP_DIRECTORY = "foozlefuzz"
 IRODS_RESOURCE = "osgGridFtpGroup"
 
 # ------------------------------------------------------------------------------
@@ -104,8 +105,106 @@ def test_upload_and_download():
 
         print "Deleting file locally : %s" % (home_dir + TEMP_FILENAME)                                                   
         os.remove(home_dir + TEMP_FILENAME)
+
+        print "Downloading logical file %s to current/default directory" % \
+            (irods_url + TEMP_FILENAME)
+        myfile.download(TEMP_FILENAME)
+
+        print "Deleting downloaded file locally : %s" % (home_dir + TEMP_FILENAME)                                                   
+        os.remove(home_dir + TEMP_FILENAME)
+        
         assert True
 
     except saga.SagaException as ex:
         assert False, "unexpected exception %s" % ex
 
+
+# ------------------------------------------------------------------------------
+#
+def test_replica_get_size():
+    """ Test logical file get_size()
+    """
+    try:
+        assert False
+        tc = sutc.TestConfig()
+        the_url = tc.js_url # from test config file
+        the_session = tc.session # from test config file
+        irods_url = tc.replica_url
+        print "Testing iRODS entry with URL: %s" % irods_url
+        print " *** NOTE: only localhost is supported, which makes use "\
+              "of the current iRODS installion/environment variables."
+        irods_directory = saga.replica.LogicalDirectory(irods_url)
+        assert True
+
+    except saga.SagaException as ex:
+        assert False, "unexpected exception %s" % ex
+
+# ------------------------------------------------------------------------------
+#
+def test_replica_remove():
+    """ Test logical file remove, which should remove the file from iRODS
+    """
+    try:
+        assert False
+        tc = sutc.TestConfig()
+        the_url = tc.js_url # from test config file
+        the_session = tc.session # from test config file
+        irods_url = tc.replica_url
+        print "Testing iRODS entry with URL: %s" % irods_url
+        print " *** NOTE: only localhost is supported, which makes use "\
+              "of the current iRODS installion/environment variables."
+        irods_directory = saga.replica.LogicalDirectory(irods_url)
+        assert True
+
+    except saga.SagaException as ex:
+        assert False, "unexpected exception %s" % ex
+
+# ------------------------------------------------------------------------------
+#
+def test_replica_make_dir():
+    """ Test logical file make_dir, which makes a file on iRODS
+    """
+    try:
+        tc = sutc.TestConfig()
+        the_url = tc.js_url # from test config file
+        the_session = tc.session # from test config file
+        irods_url = tc.replica_url
+        print "Testing iRODS entry with URL: %s" % irods_url
+        print " *** NOTE: only localhost is supported, which makes use "\
+              "of the current iRODS installion/environment variables."
+        irods_directory = saga.replica.LogicalDirectory(irods_url)
+
+        print "Making test dir %s on iRODS" % (irods_url+TEMP_DIRECTORY)
+        mydir.make_dir(irods_url+TEMP_DIRECTORY)
+
+        #commented because iRODS install on gw68 doesn't support move                                                                   
+        #print "Moving file to %s test dir on iRODS" % (IRODS_DIRECTORY+TEMP_DIR)                                                       
+        #myfile.move("irods://"+IRODS_DIRECTORY+TEMP_DIR)                                                                               
+
+        print "Deleting test dir %s from iRODS" % (IRODS_DIRECTORY+TEMP_DIR)
+        mydir.remove(irods_url+TEMP_DIRECTORY)
+
+        assert True
+
+    except saga.SagaException as ex:
+        assert False, "unexpected exception %s" % ex
+
+# ------------------------------------------------------------------------------
+#
+def test_replica_replicate():
+    """ Test logical file replicate()
+    """
+    try:
+        assert False
+        tc = sutc.TestConfig()
+        the_url = tc.js_url # from test config file
+        the_session = tc.session # from test config file
+        irods_url = tc.replica_url
+        print "Testing iRODS entry with URL: %s" % irods_url
+        print " *** NOTE: only localhost is supported, which makes use "\
+              "of the current iRODS installion/environment variables."
+        irods_directory = saga.replica.LogicalDirectory(irods_url)
+        assert True
+
+    except saga.SagaException as ex:
+        assert False, "unexpected exception %s" % ex
