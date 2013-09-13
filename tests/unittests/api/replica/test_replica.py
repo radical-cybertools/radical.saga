@@ -148,7 +148,9 @@ def test_replica_get_size():
         mydir = saga.replica.LogicalDirectory(replica_url)
 
         print "Uploading file to check size"
-        mydir.upload(home_dir+TEMP_FILENAME)
+        myfile = saga.replica.LogicalFile(replica_url+TEMP_FILENAME)
+        myfile.upload(home_dir + TEMP_FILENAME, \
+                          "irods:///this/path/is/ignored/?resource="+IRODS_RESOURCE, saga.replica.OVERWRITE)
 
         print "Checking size"
         myfile = saga.replica.LogicalFile(replica_url+TEMP_FILENAME)
@@ -157,7 +159,8 @@ def test_replica_get_size():
         assert True
 
     except saga.SagaException as ex:
-        assert False, "unexpected exception %s" % ex
+#        print ex.traceback
+        assert False, "unexpected exception %s\n%s" % (ex.traceback, ex)
 
 # ------------------------------------------------------------------------------
 #
