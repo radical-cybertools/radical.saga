@@ -65,7 +65,7 @@ def main():
         myfile = saga.replica.LogicalFile('irods://' + IRODS_DIRECTORY+TEMP_FILENAME)
         
         print "Size of test file %s on iRODS in bytes:" % (IRODS_DIRECTORY + TEMP_FILENAME)
-        #print myfile.get_size()
+        print myfile.get_size()
 
         print "Creating",NUM_REPLICAS,"replicas for",IRODS_DIRECTORY+TEMP_FILENAME
         for i in range(NUM_REPLICAS):
