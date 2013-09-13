@@ -64,6 +64,9 @@ def test_replica_directory_listing():
         the_session = tc.session # from test config file
         replica_url = tc.replica_url
         replica_directory = saga.replica.LogicalDirectory(replica_url)
+
+        print "Printing directory listing: please verify."\
+              "\n%s" % replica_url 
         
         for entry in replica_directory.list():
             print entry
@@ -90,14 +93,14 @@ def test_upload_and_download():
         with open(home_dir+TEMP_FILENAME, "wb") as f:
             f.write ("x" * (FILE_SIZE * pow(2,20)) )
 
-        print "Creating iRODS directory object"
+        print "Creating logical directory object"
         mydir = saga.replica.LogicalDirectory(replica_url)
 
         print "Making sure there is no file existing remotely"
         import subprocess
         subprocess.call(["irm", TEMP_FILENAME])
 
-        print "Uploading file to iRODS: %s" %  home_dir+TEMP_FILENAME
+        print "Uploading file to remote host: %s" %  home_dir+TEMP_FILENAME
         myfile = saga.replica.LogicalFile(replica_url+TEMP_FILENAME)
         myfile.upload(home_dir + TEMP_FILENAME, \
                           "irods:///this/path/is/ignored/?resource="+IRODS_RESOURCE)
@@ -149,9 +152,6 @@ def test_replica_remove():
         the_url = tc.js_url # from test config file
         the_session = tc.session # from test config file
         replica_url = tc.replica_url
-        print "Testing iRODS entry with URL: %s" % replica_url
-        print " *** NOTE: only localhost is supported, which makes use "\
-              "of the current iRODS installion/environment variables."
         replica_directory = saga.replica.LogicalDirectory(replica_url)
         assert True
 
@@ -170,14 +170,14 @@ def test_replica_make_dir():
         replica_url = tc.replica_url
         replica_directory = saga.replica.LogicalDirectory(replica_url)
 
-        print "Making test dir %s on iRODS" % (replica_url+TEMP_DIRECTORY)
+        print "Making test dir %s on " % (replica_url+TEMP_DIRECTORY)
         mydir.make_dir(replica_url+TEMP_DIRECTORY)
 
         #commented because iRODS install on gw68 doesn't support move                                                                   
         #print "Moving file to %s test dir on iRODS" % (REPLICA_DIRECTORY+TEMP_DIR)                                                       
         #myfile.move("irods://"+REPLICA_DIRECTORY+TEMP_DIR)                                                                               
 
-        print "Deleting test dir %s from iRODS" % (REPLICA_DIRECTORY+TEMP_DIR)
+        print "Deleting test dir %s from " % (REPLICA_DIRECTORY+TEMP_DIR)
         mydir.remove(replica_url+TEMP_DIRECTORY)
 
         assert True
