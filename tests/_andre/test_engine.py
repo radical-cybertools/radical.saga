@@ -14,15 +14,14 @@ from   saga.engine.engine import Engine
 
 try :
 
-  time.sleep (2)
   print " ----------------------------------------------------------- "
   t1 = time.time ()
   js = saga.job.Service ("fork://localhost")
   # tc = saga.task.Container ()
-  for i in range (1, 1000) :
-      jd = saga.job.Description()
-      jd.executable  = '/bin/sleep'
-      jd.arguments   = ["1"]
+  jd = saga.job.Description()
+  jd.executable  = '/bin/sleep'
+  jd.arguments   = ["1"]
+  for i in range (1, 10) :
       j = js.create_job (jd)
       j.run ()
 
@@ -38,7 +37,6 @@ try :
   print (t2-t1)
   print " =========================================================== "
 
-  time.sleep (10)
   sys.exit (0)
 
 
