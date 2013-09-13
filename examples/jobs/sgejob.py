@@ -47,7 +47,7 @@ def main():
         #jd.total_physical_memory = 1024 # Memory requirements in Megabyte
 
         jd.queue             = "development"
-        jd.project           = "TG-SEE100004"
+        jd.project           = "TG-MCB090174"
 
         jd.working_directory = "$SCRATCH/A/B/C"
         jd.output            = "examplejob.out"
