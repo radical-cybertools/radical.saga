@@ -879,7 +879,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
                 resource = query.split("=")[1]
                 self._logger.debug("Attempting to upload to query-specified resource %s" % resource)
                 returncode, out, _ = self.shell.run_sync("iput -R %s %s %s %s" %
-                                         (resource, arg_list complete_path, destination_path))
+                                         (resource, arg_list, complete_path, destination_path))
 
             # check our result
             if returncode != 0:

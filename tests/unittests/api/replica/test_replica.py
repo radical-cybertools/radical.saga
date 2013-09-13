@@ -80,7 +80,7 @@ def test_replica_directory_listing():
 # ------------------------------------------------------------------------------
 #
 def test_upload_and_download():
-    """ Test iRODS file upload and download 
+    """ Test file upload and download"
     """
     try:
         tc = sutc.TestConfig()
@@ -130,12 +130,30 @@ def test_replica_get_size():
     """ Test logical file get_size()
     """
     try:
-        assert False
         tc = sutc.TestConfig()
         the_url = tc.js_url # from test config file
         the_session = tc.session # from test config file
         replica_url = tc.replica_url
         replica_directory = saga.replica.LogicalDirectory(replica_url)
+
+        home_dir = os.path.expanduser("~"+"/")
+        print "Creating temporary file of size %dM : %s" % \
+            (FILE_SIZE, home_dir+TEMP_FILENAME)
+
+        # create a file for us to use
+        with open(home_dir+TEMP_FILENAME, "wb") as f:
+            f.write ("x" * (FILE_SIZE * pow(2,20)) )
+
+        print "Creating logical directory object"
+        mydir = saga.replica.LogicalDirectory(replica_url)
+
+        print "Uploading file to check size"
+        mydir.upload(home_dir+TEMP_FILENAME)
+
+        print "Checking size"
+        myfile = saga.replica.LogicalFile(replica_url+TEMP_FILENAME)
+        print myfile.get_size()
+
         assert True
 
     except saga.SagaException as ex:
@@ -161,7 +179,7 @@ def test_replica_remove():
 # ------------------------------------------------------------------------------
 #
 def test_replica_make_dir():
-    """ Test logical file make_dir, which makes a file on iRODS
+    """ Test logical file make_dir, which makes a directory on the logical service
     """
     try:
         tc = sutc.TestConfig()
@@ -191,7 +209,6 @@ def test_replica_replicate():
     """ Test logical file replicate()
     """
     try:
-        assert False
         tc = sutc.TestConfig()
         the_url = tc.js_url # from test config file
         the_session = tc.session # from test config file
