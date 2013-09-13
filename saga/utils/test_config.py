@@ -95,6 +95,14 @@ _config_options = [
     },
     { 
     'category'      : 'saga.tests',
+    'name'          : 'replica_resource', 
+    'type'          : str, 
+    'default'       : "",
+    'documentation' : "replica resource to be used for remote unit tests",
+    'env_variable'  : "SAGA_TEST_REPLICA_RESOURCE"
+    },
+    { 
+    'category'      : 'saga.tests',
     'name'          : 'advert_url', 
     'type'          : str, 
     'default'       : "",
@@ -318,6 +326,14 @@ class TestConfig (sconf.Configurable):
     def replica_url (self):
 
         return self._tcfg['job_replica_url'].get_value ()
+
+
+    #-----------------------------------------------------------------
+    # 
+    @property
+    def replica_resource (self):
+
+        return self._tcfg['job_replica_resource'].get_value ()
 
 
     #-----------------------------------------------------------------
