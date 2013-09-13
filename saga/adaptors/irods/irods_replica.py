@@ -859,19 +859,27 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
 
             # the query holds our target resource
             query = saga.Url(target).get_query()
+
+            # list of args we will generate
+            arg_list = ""
+
+            # parse flags + generate args
+            if flags & saga.ns.OVERWRITE:
+                arg_list += "-f "
+
             # was no resource selected?
             if query==None:
                 self._logger.debug("Attempting to upload to default resource")
-                returncode, out, _ = self.shell.run_sync("iput %s %s" %
-                                         (complete_path, destination_path))
+                returncode, out, _ = self.shell.run_sync("iput %s %s %s" %
+                                         (arg_list, complete_path, destination_path))
 
             # resource was selected, have to parse it and supply to iput -R
             else:
                 #TODO: Verify correctness
                 resource = query.split("=")[1]
                 self._logger.debug("Attempting to upload to query-specified resource %s" % resource)
-                returncode, out, _ = self.shell.run_sync("iput -R %s %s %s" %
-                                         (resource, complete_path, destination_path))
+                returncode, out, _ = self.shell.run_sync("iput -R %s %s %s %s" %
+                                         (resource, arg_list complete_path, destination_path))
 
             # check our result
             if returncode != 0:

@@ -144,7 +144,7 @@ def test_replica_get_size():
 # ------------------------------------------------------------------------------
 #
 def test_replica_remove():
-    """ Test logical file remove, which should remove the file from iRODS
+    """ Test logical file remove, which should remove the file from the remote resource
     """
     try:
         assert False
