@@ -125,16 +125,19 @@ class Adaptor (saga.adaptors.base.Base):
                 if  not os.path.exists (key ) or \
                     not os.path.isfile (key )    :
                     self._logger.info ("ignore ssh key at %s (no private key: %s)" %  (key, key))
+                    continue
 
                 if  not os.path.exists (pub) or \
                     not os.path.isfile (pub)    :
                     self._logger.info ("ignore ssh key at %s (no public key: %s)" %  (key, pub))
+                    continue
 
 
                 try :
                     fh_key  = open (key )
                 except Exception as e:
                     self._logger.info ("ignore ssh key at %s (key not readable: %s)" %  (key, e))
+                    continue
                 else :
                     fh_key .close ()
 
@@ -143,6 +146,7 @@ class Adaptor (saga.adaptors.base.Base):
                     fh_pub  = open (pub )
                 except Exception as e:
                     self._logger.info ("ignore ssh key at %s (public key %s not readable: %s)" %  (key, pub, e))
+                    continue
                 else :
                     fh_pub .close ()
 

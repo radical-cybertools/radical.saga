@@ -232,13 +232,13 @@ if  '-l' in args :
     for osi in rm.list_images () :
         descr = rm.get_image (osi)
 
-	if descr['ispublic'] == 'true' :
-	    ispublic = 'public'
-	else:
-	    ispublic = 'private'
+        if descr['ispublic'] == 'true' :
+            ispublic = 'public'
+        else:
+            ispublic = 'private'
 
         print "  %s - %s, %s, %s" % (osi, descr['name'], ispublic,
-				     descr['state'])
+                                     descr['state'])
 
     print
     sys.exit (0)
@@ -249,25 +249,25 @@ elif  '-c' in args :
 
     args.remove ('-c')
     if  len (args) == 0 :
-	usage ("additional args required on '-c'")
+        usage ("additional args required on '-c'")
 
     for image in args :
 
-	print"\ncreating an instance from image %s" % image
+        print"\ncreating an instance from image %s" % image
 
         # create a resource description with an image and an OS template, out of
-	# the ones listed above.  We pick a small VM and a plain Ubuntu image...
+        # the ones listed above.  We pick a small VM and a plain Ubuntu image...
         cd = saga.resource.ComputeDescription ()
-	cd.image    = image
-	cd.template = 'Small Instance'
+        cd.image    = image
+        cd.template = 'Small Instance'
 
-	# create a VM instance with that description, and inspect it for some
-	# detailes
-	cr = rm.acquire (cd)
-	print "\nCreated VM"
-	print "  id           : %s"       %  cr.id
-	print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
-	print "  access       : %s"       %  cr.access
+        # create a VM instance with that description, and inspect it for some
+        # detailes
+        cr = rm.acquire (cd)
+        print "\nCreated VM"
+        print "  id           : %s"       %  cr.id
+        print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
+        print "  access       : %s"       %  cr.access
 
     sys.exit (0)
 
