@@ -402,8 +402,8 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         if not id_match :
             self.shell.run_async ("exit")
-            self._logger.error   ("host bootstrap failed (%s)" % id_match)
-            raise saga.NoSuccess ("host bootstrap failed (%s)" % id_match)
+            self._logger.error   ("host bootstrap failed - no pid (%s)" % out)
+            raise saga.NoSuccess ("host bootstrap failed - no pid (%s)" % out)
 
         # we actually don't care much about the PID :-P
         

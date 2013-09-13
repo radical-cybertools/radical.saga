@@ -12,6 +12,7 @@ import weakref
 import operator
 import traceback
 
+
 # We have the choice of doing signature checks in exceptions, or to raise saga
 # exceptions on signature checks -- we cannot do both.  At this point, we use
 # the saga.exceptions in signatures, thus can *not* have signature checks
@@ -60,13 +61,16 @@ class SagaException (Exception) :
   #               basestring, 
   #               sus.optional (sb.Base))
   # @sus.returns (sus.nothing)
-    def __init__(self, msg, parent=None, api_object=None):
+    def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
         """ 
         Create a new exception object.
 
-        :param msg:     The exception message.
-        :param object:  The object that has caused the exception, default is
-                        None.
+        :param msg:         The exception message.
+        :param parent:      Original exception
+        :param api_object:  The object that has caused the exception, default is
+                            None.
+        :param from_log:    Exception c'tor originates from the staic log_
+                            member method (ignore in exception stack!)
         """
         Exception.__init__(self, msg)
 
@@ -75,6 +79,10 @@ class SagaException (Exception) :
         self._top_exception = self
         self._ptype         = type(parent).__name__   # parent exception type
         self._stype         = type(self  ).__name__   # own exception    type 
+
+        ignore_stack = 2
+        if  from_log : 
+            ignore_stack += 1
 
 
         if api_object : 
@@ -96,27 +104,28 @@ class SagaException (Exception) :
                 # that all works nicely when parent is our own exception type...
                 self._traceback = parent.traceback
 
-                frame           = traceback.extract_stack ()[-2]
+                frame           = traceback.extract_stack ()[- ignore_stack]
                 line            = "%s +%s (%s)  :  %s" % frame 
                 self._message   = "  %-20s: %s (%s)\n%s" \
                                 % (self._stype, msg, line, parent.msg)
 
             else :
-                # ... but if parent is a native (or any other) exception type,
-                # we don't have a traceback really -- so we dig it out of
-                # sys.exc_info. 
-                trace           = sys.exc_info ()[2]
-                stack           = traceback.extract_tb  (trace)
-                traceback_list  = traceback.format_list (stack)
-                self._traceback = "".join (traceback_list)
+                if self._stype != "NoneType" :
+                    # ... but if parent is a native (or any other) exception type,
+                    # we don't have a traceback really -- so we dig it out of
+                    # sys.exc_info. 
+                    trace           = sys.exc_info ()[2]
+                    stack           = traceback.extract_tb  (trace)
+                    traceback_list  = traceback.format_list (stack)
+                    self._traceback = "".join (traceback_list)
 
-                # the message composition is very similar -- we just inject the
-                # parent exception type inconspicuously somewhere (above that
-                # was part of 'parent.message' already).
-                frame           = traceback.extract_stack ()[-2]
-                line            = "%s +%s (%s)  :  %s" % frame 
-                self._message   = "  %-20s: %s (%s)\n  %-20s: %s" \
-                                % (self._stype, msg, line, self._ptype, parent)
+                    # the message composition is very similar -- we just inject the
+                    # parent exception type inconspicuously somewhere (above that
+                    # was part of 'parent.message' already).
+                    frame           = traceback.extract_stack ()[- ignore_stack]
+                    line            = "%s +%s (%s)  :  %s" % frame 
+                    self._message   = "  %-20s: %s (%s)\n  %-20s: %s" \
+                                    % (self._stype, msg, line, self._ptype, parent)
 
         else :
 
@@ -128,10 +137,9 @@ class SagaException (Exception) :
             stack           = traceback.extract_stack ()
             traceback_list  = traceback.format_list (stack)
             self._traceback = "".join (traceback_list[:-1])
-            frame           = traceback.extract_stack ()[-3]
+            frame           = traceback.extract_stack ()[- ignore_stack -1]
             line            = "%s +%s (%s)  :  %s" % frame 
-            self._message   = "  %-20s: %s (%s)\n  %-20s: %s" \
-                            % (self._stype, msg, line, self._ptype, parent)
+            self._message   = "%s (%s)" % (msg, line)
 
         # we can't do that earlier as _msg was not set up before
         self._messages = [self._message]
@@ -162,7 +170,6 @@ class SagaException (Exception) :
 
         clone = self.__class__ ("")
 
-        clone._parent    = self._parent
         clone._object    = self._object
         clone._message   = self._message
         clone._messages  = self._messages
@@ -203,7 +210,7 @@ class SagaException (Exception) :
 
         log_method ("%s: %s" % (cls.__name__, msg))
 
-        return cls (msg, parent=parent, api_object=api_object)
+        return cls (msg, parent=parent, api_object=api_object, from_log=True)
 
 
 
@@ -324,11 +331,22 @@ class SagaException (Exception) :
         return self._messages
 
 
+    # --------------------------------------------------------------------------
+    #
+  # @sus.takes   ('SagaException')
+  # @sus.returns (basestring)
+    def get_traceback (self) :
+        return self._traceback
+
+
+    # --------------------------------------------------------------------------
+    #
     message        = property (get_message)         # string
     object         = property (get_object)          # object type
     type           = property (get_type)            # exception type
     exceptions     = property (get_all_exceptions)  # list [Exception]
     messages       = property (get_all_messages)    # list [string]
+    traceback      = property (get_traceback)       # string
 
 
 # ------------------------------------------------------------------------------
@@ -342,8 +360,8 @@ class NotImplemented(SagaException):
   #               basestring, 
   #               sus.optional (sb.Base))
   # @sus.returns (sus.nothing)
-    def __init__ (self, msg, api_object=None) :
-        SagaException.__init__ (self, msg, api_object)
+    def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
+        SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
@@ -358,8 +376,8 @@ class IncorrectURL(SagaException):
   #               basestring, 
   #               sus.optional (sb.Base))
   # @sus.returns (sus.nothing)
-    def __init__ (self, msg, api_object=None) :
-        SagaException.__init__ (self, msg, api_object)
+    def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
+        SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
@@ -373,8 +391,8 @@ class BadParameter(SagaException):
   #               basestring, 
   #               sus.optional (sb.Base))
   # @sus.returns (sus.nothing)
-    def __init__ (self, msg, api_object=None) :
-        SagaException.__init__ (self, msg, api_object)
+    def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
+        SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
@@ -388,8 +406,8 @@ class AlreadyExists(SagaException):
   #               basestring, 
   #               sus.optional (sb.Base))
   # @sus.returns (sus.nothing)
-    def __init__ (self, msg, api_object=None) :
-        SagaException.__init__ (self, msg, api_object)
+    def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
+        SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
@@ -403,8 +421,8 @@ class DoesNotExist(SagaException):
   #               basestring, 
   #               sus.optional (sb.Base))
   # @sus.returns (sus.nothing)
-    def __init__ (self, msg, api_object=None) :
-        SagaException.__init__ (self, msg, api_object)
+    def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
+        SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
@@ -418,8 +436,8 @@ class IncorrectState(SagaException):
   #               basestring, 
   #               sus.optional (sb.Base))
   # @sus.returns (sus.nothing)
-    def __init__ (self, msg, api_object=None) :
-        SagaException.__init__ (self, msg, api_object)
+    def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
+        SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
@@ -433,8 +451,8 @@ class PermissionDenied(SagaException):
   #               basestring, 
   #               sus.optional (sb.Base))
   # @sus.returns (sus.nothing)
-    def __init__ (self, msg, api_object=None) :
-        SagaException.__init__ (self, msg, api_object)
+    def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
+        SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
@@ -447,8 +465,8 @@ class AuthorizationFailed(SagaException):
   #               basestring, 
   #               sus.optional (sb.Base))
   # @sus.returns (sus.nothing)
-    def __init__ (self, msg, api_object=None) :
-        SagaException.__init__ (self, msg, api_object)
+    def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
+        SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
@@ -462,8 +480,8 @@ class AuthenticationFailed(SagaException):
   #               basestring, 
   #               sus.optional (sb.Base))
   # @sus.returns (sus.nothing)
-    def __init__ (self, msg, api_object=None) :
-        SagaException.__init__ (self, msg, api_object)
+    def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
+        SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
@@ -477,8 +495,8 @@ class Timeout(SagaException):
   #               basestring, 
   #               sus.optional (sb.Base))
   # @sus.returns (sus.nothing)
-    def __init__ (self, msg, api_object=None) :
-        SagaException.__init__ (self, msg, api_object)
+    def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
+        SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
@@ -492,8 +510,8 @@ class NoSuccess(SagaException):
   #               basestring, 
   #               sus.optional (sb.Base))
   # @sus.returns (sus.nothing)
-    def __init__ (self, msg, api_object=None) :
-        SagaException.__init__ (self, msg, api_object)
+    def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
+        SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

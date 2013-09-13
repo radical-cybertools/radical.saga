@@ -21,9 +21,6 @@ def main():
         js = saga.job.Service("ssh://localhost")
         l  = js.list ()
 
-       
-        sys.exit (0)
-
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
@@ -78,7 +75,7 @@ def main():
 
     except saga.SagaException, ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print "An exception occured: %s " % ex
         # Trace back the exception. That can be helpful for debugging.
         print " \n*** Backtrace:\n %s" % ex.traceback
         return -1
