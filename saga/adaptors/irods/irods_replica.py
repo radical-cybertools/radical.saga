@@ -35,7 +35,7 @@ import saga.adaptors.cpi.replica
 import saga.utils.pty_shell
 import saga.utils.misc
 import shutil
-
+import saga.namespace as ns
 #from saga.utils.cmdlinewrapper import CommandLineWrapper
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
@@ -709,6 +709,15 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
          listing = self._adaptor.irods_get_directory_listing(path, self.shell)
          return listing[0].locations
 
+    # ----------------------------------------------------------------
+    #
+    #
+    @SYNC_CALL
+    def get_size_self (self) :
+         '''This method is called upon logicaldir.get_size()
+         '''
+         return self.size
+
 
     # ----------------------------------------------------------------
     #
@@ -864,8 +873,9 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
             arg_list = ""
 
             # parse flags + generate args
-            if flags & saga.ns.OVERWRITE:
-                arg_list += "-f "
+            if flags:
+                if flags & saga.namespace.OVERWRITE:
+                    arg_list += "-f "
 
             # was no resource selected?
             if query==None:
@@ -878,7 +888,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
                 #TODO: Verify correctness
                 resource = query.split("=")[1]
                 self._logger.debug("Attempting to upload to query-specified resource %s" % resource)
-                returncode, out, _ = self.shell.run_sync("iput -R %s %s %s %s" % \
+                returncode, out, _ = self.shell.run_sync("iput -R %s %s %s %s" %
                                          (resource, arg_list, complete_path, destination_path))
 
             # check our result
