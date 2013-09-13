@@ -168,16 +168,36 @@ def test_replica_remove():
     """ Test logical file remove, which should remove the file from the remote resource
     """
     try:
-        assert False
         tc = sutc.TestConfig()
         the_url = tc.js_url # from test config file
         the_session = tc.session # from test config file
         replica_url = tc.replica_url
         replica_directory = saga.replica.LogicalDirectory(replica_url)
+
+        home_dir = os.path.expanduser("~"+"/")
+        print "Creating temporary file of size %dM : %s" % \
+            (FILE_SIZE, home_dir+TEMP_FILENAME)
+
+        # create a file for us to use
+        with open(home_dir+TEMP_FILENAME, "wb") as f:
+            f.write ("x" * (FILE_SIZE * pow(2,20)) )
+
+        print "Creating logical directory object"
+        mydir = saga.replica.LogicalDirectory(replica_url)
+
+        print "Uploading temporary"
+        myfile = saga.replica.LogicalFile(replica_url+TEMP_FILENAME)
+        myfile.upload(home_dir + TEMP_FILENAME, \
+                          "irods:///this/path/is/ignored/?resource="+IRODS_RESOURCE, saga.replica.OVERWRITE)
+
+        print "Removing temporary file."
+        myfile.remove()
         assert True
 
     except saga.SagaException as ex:
-        assert False, "unexpected exception %s" % ex
+#        print ex.traceback
+        assert False, "unexpected exception %s\n%s" % (ex.traceback, ex)
+
 
 # ------------------------------------------------------------------------------
 #
@@ -192,14 +212,14 @@ def test_replica_make_dir():
         replica_directory = saga.replica.LogicalDirectory(replica_url)
 
         print "Making test dir %s on " % (replica_url+TEMP_DIRECTORY)
-        mydir.make_dir(replica_url+TEMP_DIRECTORY)
+        replica_directory.make_dir(replica_url+TEMP_DIRECTORY)
 
         #commented because iRODS install on gw68 doesn't support move                                                                   
         #print "Moving file to %s test dir on iRODS" % (REPLICA_DIRECTORY+TEMP_DIR)                                                       
         #myfile.move("irods://"+REPLICA_DIRECTORY+TEMP_DIR)                                                                               
 
-        print "Deleting test dir %s from " % (REPLICA_DIRECTORY+TEMP_DIR)
-        mydir.remove(replica_url+TEMP_DIRECTORY)
+        print "Deleting test dir %s from " % (replica_url+TEMP_DIRECTORY)
+        replica_directory.remove(replica_url+TEMP_DIRECTORY)
 
         assert True
 
