@@ -2,6 +2,7 @@
 """ libcloud based EC2 resource adaptor """
 
 import saga.adaptors.cpi.base
+import saga.adaptors.cpi.context
 import saga.adaptors.cpi.resource
 
 from   saga.resource.constants import *
@@ -94,8 +95,7 @@ _ADAPTOR_INFO          = {
 class Adaptor (saga.adaptors.base.Base):
     """
 
-    Known Limitations, Notes
-    ========================
+    **Known Limitations, Notes**
 
     1) EC2 reports the VM instance to be 'Running' when it starts booting -- at
     that point the ssh login is not yet functional, and job service instance
@@ -212,10 +212,7 @@ class Adaptor (saga.adaptors.base.Base):
         ctx_url = None
         error   = None
 
-        print session
         for ctx in session.contexts :
-
-            print ctx
 
             if  ctx.type.lower () == 'ec2' :
                 ctx_id  = ctx.user_id
@@ -233,7 +230,6 @@ class Adaptor (saga.adaptors.base.Base):
                 # ec2_url may still be empty!
 
                 driver = None
-                print "url: %s" % ec2_url
                 if  not ec2_url                     or \
                     ec2_url.scheme  == 'ec2'        or \
                     ec2_url.scheme  == 'aws'        or \
@@ -248,7 +244,7 @@ class Adaptor (saga.adaptors.base.Base):
                     driver  = self.lccp.get_driver (self.lcct.Provider.EUCALYPTUS)
                     backend = 'euca'
                 else :
-                    error = saga.BadParameter ( "URL schema not supported by aws adaptor(%s)" % ec2_url)
+                    error = "URL schema not supported by aws adaptor(%s)" % ec2_url
                     next
 
 
@@ -265,15 +261,14 @@ class Adaptor (saga.adaptors.base.Base):
                                         port   = ctx_url.port,
                                         path   = ctx_url.path)
                 else :
-                    error = saga.BadParameter ( "only EC2 supported (not %s)" % ec2_url)
+                    error = "only EC2 supported (not %s)" % ec2_url
                     next
 
-                print "got connection: %s (%s, %s)" % (conn, ctx_id, ctx_key)
                 return conn, backend
 
         # no luck, didn't get a valid connection...
         if  error :
-            raise error
+            raise saga.BadParameter (error)
 
         # no particular context failed -- raise generic exception
         raise saga.BadParameter ("no valid EC2 credentials found (ec2 url='%s')" % ec2_url)
@@ -291,7 +286,7 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
     The context can be used in two ways, depending on the specified keys:
 
-    *Version 1:* reference an existing (uploaded) keypair:
+    Version 1: reference an existing (uploaded) keypair:
       - `Token`  : name of keypair to be used  (required)
       - `UserID` : username on VM instance     (optional, default 'root')
       - `Server` : authentication server host  (optional, default for Amazon)
@@ -303,7 +298,7 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
     'AuthorizationDenied' exception.
 
 
-    *Version 2:* create (upload) a new keypair, and the use it
+    Version 2: create (upload) a new keypair, and the use it
       - `Token`  : name of keypair to create   (required)
       - `UserKey`: private or public  ssh key  (required)
       - `UserID` : username on VM instance     (optional, default 'root') 
@@ -328,8 +323,7 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
     list of context attributes at some point.
 
 
-    Known Limitations
-    =================
+    Known Limitations:
 
     1) For a given EC2 keypair name, we should fetch the respective key footprint
     with `conn.ex_describe_keypairs('self.api.target')`, then sift through all
@@ -492,7 +486,6 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
             self._logger.info ("import new keypair %s : %s" % (token, key))
 
             try :
-                print "keypair = conn.ex_import_keypair (%s, %s)" % (token, key)
                 keypair = conn.ex_import_keypair (token, key)
                 self._logger.info ("keypair upload gave %s" % keypair)
 
@@ -527,8 +520,8 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
     """
 
-    EC2_URLs
-    ========
+    **EC2_URLs:**
+    
 
     AWS Generic access point           https://ec2.amazonaws.com/
     AWS US East (Northern Virginia)    https://ec2.us-east-1.amazonaws.com/
@@ -541,8 +534,7 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
 
     OSDC                               euca://api.opensciencedatacloud.org:8773/sullivan/services/Cloud
 
-    Known Limitations
-    =================
+    **Known Limitations**
 
     1) the EC2 backend reports a VM to be in `ACTIVE` state as soon as it begins
        to boot up (From that point in time on, the VM indeed consumes resources,
