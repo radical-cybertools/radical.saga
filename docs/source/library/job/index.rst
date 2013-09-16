@@ -32,6 +32,8 @@ The basic usage of the job module is as follows::
    print "Job State : %s" % (job.state)
    print "Exitcode  : %s" % (job.exit_code)
 
+   service.close()
+
 .. seealso:: More examples can be found in the individual adaptor sections!
 
 Like all SAGA modules, the job module relies on  middleware adaptors 
@@ -55,16 +57,12 @@ The rest of this section is structured as follows:
 Job Service -- :class:`saga.job.Service`
 ----------------------------------------
 
-:todo: Describe how to work with services.
-
 .. autoclass:: saga.job.Service
    :members:
    :undoc-members:
 
 Job Description -- :class:`saga.job.Description`
 ------------------------------------------------
-
-:todo: Describe how to work with description.
 
 **Warning:** There is no guarantee that all middleware adaptors implement all job
 description attributes. In case a specific attribute is not supported, the
@@ -318,8 +316,6 @@ Jobs -- :class:`saga.job.Job`
 Attributes 
 ^^^^^^^^^^
 
-:todo: Explain how to use job attributes
-
 .. currentmodule:: saga.job
 .. autodata:: ID
 .. autodata:: EXECUTION_HOSTS
@@ -404,8 +400,6 @@ SAGA defines the following constants as job metrics:
 
 Job Containers -- :class:`saga.job.Container`
 ---------------------------------------------
-
-:todo: Describe how to work with job containers.
 
 .. seealso:: More examples on how to use job containers can be found in 
              the :ref:`code_examples_job` section of the 
