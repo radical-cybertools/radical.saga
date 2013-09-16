@@ -71,6 +71,7 @@ def main():
         print "Start time  : %s" % (touchjob_clone.started)
         print "End time    : %s" % (touchjob_clone.finished)
 
+        js.close()
         return 0
 
     except saga.SagaException, ex:
@@ -81,6 +82,5 @@ def main():
         return -1
 
 if __name__ == "__main__":
-    main ()
-    sys.exit (0)
+    sys.exit (main())
 

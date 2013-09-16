@@ -45,18 +45,22 @@ class Service (sb.Base, sasync.Async) :
 
     Example::
 
-        my_job_id = "[fork://localhost]-[12345]"
-        js  = saga.job.Service("fork://localhost")
-        ids = js.list()
+        service  = saga.job.Service("fork://localhost")
+        ids = service.list()
 
-        if my_job_id in ids :
-          print "found my job again, wohhooo!"
+        for job_id in ids :
+            print job_id 
 
-          j = js.get_job(my_job_id)
+            j = service.get_job(job_id)
 
-          if   j.get_state() == saga.job.Job.Pending  : print "pending"
-          elif j.get_state() == saga.job.Job.Running  : print "running"
-          else                                        : print "job is already final!"
+            if j.get_state() == saga.job.Job.Pending: 
+                print "pending"
+            elif j.get_state() == saga.job.Job.Running: 
+                print "running"
+            else: 
+                print "job is already final!"
+
+        service.close()
     """
 
     # --------------------------------------------------------------------------
@@ -151,6 +155,29 @@ class Service (sb.Base, sasync.Async) :
     @sus.takes     ('Service')
     @sus.returns   (sus.nothing)
     def close (self) :
+        """
+        Close the job service instance and disconnect from the (remote) 
+        job service if necessary. Any subsequent calls to a job service 
+        instance after `close()` was called will fail. 
+
+        Example::
+
+            service = saga.job.Service("fork://localhost")
+            
+            # do something with the 'service' object, create jobs, etc...                 
+            
+            service.close()
+
+            service.list() # this call will throw an exception
+
+
+        .. warning:: While in principle the job service destructor calls
+            `close()` automatically when a job service instance goes out of scope,
+            you **shouldn't rely on it**. Python's garbage collection can be a 
+            bit odd at times, so you should always call `close()` explicitly.
+            Especially in a **multi-threaded program** this will help to avoid 
+            random errors. 
+        """
 
         if not self.valid :
             raise se.IncorrectState ("This instance was already closed.")
@@ -186,19 +213,27 @@ class Service (sb.Base, sasync.Async) :
 
         Example::
 
-          js = saga.job.Service("fork://localhost")
-          jd = saga.job.Description ()
-          jd.executable = '/bin/date'
-          j  = js.create_job(jd)
+            # A job.Description object describes the executable/application and its requirements
+            job_desc = saga.job.Description()
+            job_desc.executable  = '/bin/sleep'
+            job_desc.arguments   = ['10']
+            job_desc.output      = 'myjob.out'
+            job_desc.error       = 'myjob.err'
 
-          if   j.get_state() == saga.job.Job.New      : print "new"
-          else                                        : print "oops!"
+            service = saga.job.Service('local://localhost')
 
-          j.run()
+            job = service.create_job(job_desc)
 
-          if   j.get_state() == saga.job.Job.Pending  : print "pending"
-          elif j.get_state() == saga.job.Job.Running  : print "running"
-          else                                        : print "oops!"
+            # Run the job and wait for it to finish
+            job.run()
+            print "Job ID    : %s" % (job.job_id)
+            job.wait()
+
+            # Get some info about the job
+            print "Job State : %s" % (job.state)
+            print "Exitcode  : %s" % (job.exit_code)
+
+            service.close()
         """
 
 
@@ -305,17 +340,13 @@ class Service (sb.Base, sasync.Async) :
 
         Example::
 
-          js  = saga.job.Service("fork://localhost")
-          ids = js.list()
+            service  = saga.job.Service("fork://localhost")
+            ids = service.list()
 
-          if my_job_id in ids :
-            print "found my job again, wohhooo!"
+            for job_id in ids :
+                print job_id
 
-            j = js.get_job(my_job_id)
-
-            if   j.get_state() == saga.job.Job.Pending  : print "pending"
-            elif j.get_state() == saga.job.Job.Running  : print "running"
-            else                                        : print "job is already final!"
+            service.close()
         """
 
         if not self.valid :
@@ -371,12 +402,17 @@ class Service (sb.Base, sasync.Async) :
         Job objects are a local representation of a remote stateful entity.
         The job.Service supports to reconnect to those remote entities::
 
-          js = saga.job.Service("fork://localhost")
-          j  = js.get_job(my_job_id)
+          service = saga.job.Service("fork://localhost")
+          j  = service.get_job(my_job_id)
 
-          if   j.get_state() == saga.job.Job.Pending  : print "pending"
-          elif j.get_state() == saga.job.Job.Running  : print "running"
-          else                                        : print "job is already final!"
+          if   j.get_state() == saga.job.Job.Pending: 
+              print "pending"
+          elif j.get_state() == saga.job.Job.Running:
+              print "running"
+          else: 
+              print "job is already final!"
+
+          service.close()
         """
 
         if not self.valid :

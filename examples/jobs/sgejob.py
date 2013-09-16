@@ -91,6 +91,7 @@ def main():
         print "Start time  : %s" % (sleebjob_clone.started)
         print "End time    : %s" % (sleebjob_clone.finished)
 
+        js.close()
         return 0
 
     except saga.SagaException, ex:

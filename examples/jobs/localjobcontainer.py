@@ -75,12 +75,15 @@ def main():
         t2 = time.time()
         print t2-t1
 
+        service.close()
+        return 0
+
     except saga.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))
         # get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
         print " *** %s" % ex.traceback
-        sys.exit(-1)
+        return -1
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
