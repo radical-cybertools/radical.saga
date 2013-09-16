@@ -152,8 +152,7 @@
 <span class="k">class</span> <span class="nc">Adaptor</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="sd">    Known Limitations, Notes</span>
-<span class="sd">    ========================</span>
+<span class="sd">    **Known Limitations, Notes**</span>
 
 <span class="sd">    1) EC2 reports the VM instance to be &#39;Running&#39; when it starts booting -- at</span>
 <span class="sd">    that point the ssh login is not yet functional, and job service instance</span>
@@ -270,10 +269,7 @@
         <span class="n">ctx_url</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="n">error</span>   <span class="o">=</span> <span class="bp">None</span>
 
-        <span class="k">print</span> <span class="n">session</span>
         <span class="k">for</span> <span class="n">ctx</span> <span class="ow">in</span> <span class="n">session</span><span class="o">.</span><span class="n">contexts</span> <span class="p">:</span>
-
-            <span class="k">print</span> <span class="n">ctx</span>
 
             <span class="k">if</span>  <span class="n">ctx</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="o">==</span> <span class="s">&#39;ec2&#39;</span> <span class="p">:</span>
                 <span class="n">ctx_id</span>  <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">user_id</span>
@@ -291,7 +287,6 @@
                 <span class="c"># ec2_url may still be empty!</span>
 
                 <span class="n">driver</span> <span class="o">=</span> <span class="bp">None</span>
-                <span class="k">print</span> <span class="s">&quot;url: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ec2_url</span>
                 <span class="k">if</span>  <span class="ow">not</span> <span class="n">ec2_url</span>                     <span class="ow">or</span> \
                     <span class="n">ec2_url</span><span class="o">.</span><span class="n">scheme</span>  <span class="o">==</span> <span class="s">&#39;ec2&#39;</span>        <span class="ow">or</span> \
                     <span class="n">ec2_url</span><span class="o">.</span><span class="n">scheme</span>  <span class="o">==</span> <span class="s">&#39;aws&#39;</span>        <span class="ow">or</span> \
@@ -326,7 +321,6 @@
                     <span class="n">error</span> <span class="o">=</span> <span class="s">&quot;only EC2 supported (not </span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">ec2_url</span>
                     <span class="nb">next</span>
 
-                <span class="k">print</span> <span class="s">&quot;got connection: </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">ctx_id</span><span class="p">,</span> <span class="n">ctx_key</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">conn</span><span class="p">,</span> <span class="n">backend</span>
 
         <span class="c"># no luck, didn&#39;t get a valid connection...</span>
@@ -342,14 +336,14 @@
 <span class="c">###############################################################################</span>
 <span class="c">#</span>
 <span class="k">class</span> <span class="nc">EC2Keypair</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">Context</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="EC2Keypair"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.ec2_resource.html#saga.adaptors.aws.ec2_resource.EC2Keypair">[docs]</a>
+
     <span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">    This context points to an EC2 keypair which is used to contextualize VM</span>
 <span class="sd">    instances.</span>
 
 <span class="sd">    The context can be used in two ways, depending on the specified keys:</span>
 
-<span class="sd">    *Version 1:* reference an existing (uploaded) keypair:</span>
+<span class="sd">    Version 1: reference an existing (uploaded) keypair:</span>
 <span class="sd">      - `Token`  : name of keypair to be used  (required)</span>
 <span class="sd">      - `UserID` : username on VM instance     (optional, default &#39;root&#39;)</span>
 <span class="sd">      - `Server` : authentication server host  (optional, default for Amazon)</span>
@@ -361,7 +355,7 @@
 <span class="sd">    &#39;AuthorizationDenied&#39; exception.</span>
 
 
-<span class="sd">    *Version 2:* create (upload) a new keypair, and the use it</span>
+<span class="sd">    Version 2: create (upload) a new keypair, and the use it</span>
 <span class="sd">      - `Token`  : name of keypair to create   (required)</span>
 <span class="sd">      - `UserKey`: private or public  ssh key  (required)</span>
 <span class="sd">      - `UserID` : username on VM instance     (optional, default &#39;root&#39;) </span>
@@ -386,8 +380,7 @@
 <span class="sd">    list of context attributes at some point.</span>
 
 
-<span class="sd">    Known Limitations</span>
-<span class="sd">    =================</span>
+<span class="sd">    Known Limitations:</span>
 
 <span class="sd">    1) For a given EC2 keypair name, we should fetch the respective key footprint</span>
 <span class="sd">    with `conn.ex_describe_keypairs(&#39;self.api.target&#39;)`, then sift through all</span>
@@ -434,7 +427,7 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
     <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="p">:</span>
-<div class="viewcode-block" id="EC2Keypair.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.ec2_resource.html#saga.adaptors.aws.ec2_resource.EC2Keypair.init_instance">[docs]</a>        
+        
         <span class="k">if</span>  <span class="ow">not</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="o">==</span> <span class="s">&#39;ec2&#39;</span>         <span class="ow">and</span> \
             <span class="ow">not</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="o">==</span> <span class="s">&#39;ec2_keypair&#39;</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">BadParameter</span> \
@@ -447,7 +440,7 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@SYNC_CALL</span></div>
+    <span class="nd">@SYNC_CALL</span>
     <span class="k">def</span> <span class="nf">_initialize</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
 
         <span class="c"># nothing to do for simple ec2 id/secret containers</span>
@@ -550,7 +543,6 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;import new keypair </span><span class="si">%s</span><span class="s"> : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
 
             <span class="k">try</span> <span class="p">:</span>
-                <span class="k">print</span> <span class="s">&quot;keypair = conn.ex_import_keypair (</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
                 <span class="n">keypair</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">ex_import_keypair</span> <span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span> <span class="p">(</span><span class="s">&quot;keypair upload gave </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">keypair</span><span class="p">)</span>
 
@@ -582,11 +574,11 @@
 
 <span class="c">###############################################################################</span>
 <span class="c">#</span>
-<span class="k">class</span> <span class="nc">EC2ResourceManager</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">Manager</span><span class="p">)</span> <span class="p">:</span></div>
+<span class="k">class</span> <span class="nc">EC2ResourceManager</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">Manager</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="EC2ResourceManager"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.ec2_resource.html#saga.adaptors.aws.ec2_resource.EC2ResourceManager">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="sd">    EC2_URLs</span>
-<span class="sd">    ========</span>
+<span class="sd">    **EC2_URLs:**</span>
+<span class="sd">    </span>
 
 <span class="sd">    AWS Generic access point           https://ec2.amazonaws.com/</span>
 <span class="sd">    AWS US East (Northern Virginia)    https://ec2.us-east-1.amazonaws.com/</span>
@@ -599,8 +591,7 @@
 
 <span class="sd">    OSDC                               euca://api.opensciencedatacloud.org:8773/sullivan/services/Cloud</span>
 
-<span class="sd">    Known Limitations</span>
-<span class="sd">    =================</span>
+<span class="sd">    **Known Limitations**</span>
 
 <span class="sd">    1) the EC2 backend reports a VM to be in `ACTIVE` state as soon as it begins</span>
 <span class="sd">       to boot up (From that point in time on, the VM indeed consumes resources,</span>

@@ -121,82 +121,156 @@ a number of operations on that file, such as copy, move and remove:</p>
 <dl class="classmethod">
 <dt id="saga.filesystem.File.create">
 <em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.create" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>url:       saga.Url
+flags:     saga.replica.flags enum
+session:   saga.Session
+ttype:     saga.task.type enum
+ret:       saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.File.is_file">
 <tt class="descname">is_file</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.is_file" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>ttype:    saga.task.type enum
+ret:      bool / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.File.get_size">
 <tt class="descname">get_size</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.get_size" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+<p>Returns the size of a file (in bytes)</p>
+<blockquote>
+<div><p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># get a file handle</span>
+<span class="nb">file</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/data/data.bin&quot;</span><span class="p">)</span>
+
+<span class="c"># print the file&#39;s size</span>
+<span class="k">print</span> <span class="nb">file</span><span class="o">.</span><span class="n">get_size</span> <span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.File.read">
 <tt class="descname">read</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.read" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>size :    int
+ttype:    saga.task.type enum
+ret:      string / bytearray / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.File.write">
 <tt class="descname">write</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.write" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>data :    string / bytearray
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.File.seek">
 <tt class="descname">seek</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.seek" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>offset:   int
+whence:   seek_mode enum
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.File.read_v">
 <tt class="descname">read_v</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.read_v" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>iovecs:   list [tuple (int, int)]
+ttype:    saga.task.type enum
+ret:      list [bytearray] / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.File.write_v">
 <tt class="descname">write_v</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.write_v" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>data:     list [tuple (int, string / bytearray)]
+ttype:    saga.task.type enum
+ret:      list [int] / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.File.size_p">
 <tt class="descname">size_p</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.size_p" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>pattern:  string 
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.File.read_p">
 <tt class="descname">read_p</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.read_p" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>pattern:  string
+ttype:    saga.task.type enum
+ret:      string / bytearray / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.File.write_p">
 <tt class="descname">write_p</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.write_p" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>pattern:  string
+data:     string / bytearray
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.File.size_e">
 <tt class="descname">size_e</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.size_e" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>emode:    string
+spec:     string
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.File.read_e">
 <tt class="descname">read_e</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.read_e" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>emode:    string
+spec:     string
+ttype:    saga.task.type enum
+ret:      bytearray / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.File.write_e">
 <tt class="descname">write_e</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.write_e" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>emode:    string
+spec:     string
+data:     string / bytearray
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="saga.filesystem.File.size">
 <tt class="descname">size</tt><a class="headerlink" href="#saga.filesystem.File.size" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+<p>Returns the size of a file (in bytes)</p>
+<blockquote>
+<div><p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># get a file handle</span>
+<span class="nb">file</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/data/data.bin&quot;</span><span class="p">)</span>
+
+<span class="c"># print the file&#39;s size</span>
+<span class="k">print</span> <span class="nb">file</span><span class="o">.</span><span class="n">get_size</span> <span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="saga.filesystem.File.modes_e">
 <tt class="descname">modes_e</tt><a class="headerlink" href="#saga.filesystem.File.modes_e" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>ttype:    saga.task.type enum
+ret:      list [string] / saga.Task</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -238,32 +312,106 @@ copying files, or creating subdirectories:</p>
 <dl class="classmethod">
 <dt id="saga.filesystem.Directory.create">
 <em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.create" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>url:       saga.Url
+flags:     saga.replica.flags enum
+session:   saga.Session
+ttype:     saga.task.type enum
+ret:       saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.Directory.open">
 <tt class="descname">open</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.open" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>path:     saga.Url
+flags:    saga.namespace.flags enum
+ttype:    saga.task.type enum
+ret:      saga.namespace.Entry / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.Directory.open_dir">
 <tt class="descname">open_dir</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.open_dir" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>path</strong> &#8211; name/path of the directory to open</li>
+<li><strong>flags</strong> &#8211; directory creation flags</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>ttype:    saga.task.type enum
+ret:      saga.namespace.Directory / saga.Task</p>
+<p>Open and return a new directoy</p>
+<blockquote>
+<div><p>The call opens and returns a directory at the given location.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># create a subdir &#39;data&#39; in /tmp</span>
+<span class="nb">dir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/&quot;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="nb">dir</span><span class="o">.</span><span class="n">open_dir</span> <span class="p">(</span><span class="s">&#39;data/&#39;</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">Create</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.Directory.get_size">
 <tt class="descname">get_size</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.get_size" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tgt</strong> &#8211; path of the file or directory</td>
+</tr>
+</tbody>
+</table>
+<p>flags:    saga.namespace.flags enum
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+<p>Returns the size of a file or directory (in bytes)</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># inspect a file for its size</span>
+<span class="nb">dir</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/&quot;</span><span class="p">)</span>
+<span class="n">size</span> <span class="o">=</span> <span class="nb">dir</span><span class="o">.</span><span class="n">get_size</span> <span class="p">(</span><span class="s">&#39;data/data.bin&#39;</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">size</span>
+</pre></div>
+</div>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.filesystem.Directory.is_file">
 <tt class="descname">is_file</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.is_file" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>tgt:      saga.Url
+ttype:    saga.task.type enum
+ret:      bool / saga.Task</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="saga.filesystem.Directory.size">
 <tt class="descname">size</tt><a class="headerlink" href="#saga.filesystem.Directory.size" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tgt</strong> &#8211; path of the file or directory</td>
+</tr>
+</tbody>
+</table>
+<p>flags:    saga.namespace.flags enum
+ttype:    saga.task.type enum
+ret:      int / saga.Task</p>
+<p>Returns the size of a file or directory (in bytes)</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># inspect a file for its size</span>
+<span class="nb">dir</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span><span class="p">(</span><span class="s">&quot;sftp://localhost/tmp/&quot;</span><span class="p">)</span>
+<span class="n">size</span> <span class="o">=</span> <span class="nb">dir</span><span class="o">.</span><span class="n">get_size</span> <span class="p">(</span><span class="s">&#39;data/data.bin&#39;</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">size</span>
+</pre></div>
+</div>
+</dd></dl>
 
 </dd></dl>
 

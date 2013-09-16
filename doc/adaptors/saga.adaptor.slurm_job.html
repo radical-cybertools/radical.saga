@@ -254,6 +254,7 @@ not gone over theis extensively...</li>
         <span class="c"># print &quot;Start time  : %s&quot; % (touchjob_clone.started)</span>
         <span class="c"># print &quot;End time    : %s&quot; % (touchjob_clone.finished)</span>
 
+        <span class="n">js</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">return</span> <span class="mi">0</span>
 
     <span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">SagaException</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>

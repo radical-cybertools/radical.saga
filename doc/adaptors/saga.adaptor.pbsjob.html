@@ -196,6 +196,7 @@ controlled HPC clusters.</p>
         <span class="k">print</span> <span class="s">&quot;Start time  : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">started</span><span class="p">)</span>
         <span class="k">print</span> <span class="s">&quot;End time    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">finished</span><span class="p">)</span>
 
+        <span class="n">js</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">return</span> <span class="mi">0</span>
 
     <span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">SagaException</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>

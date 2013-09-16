@@ -111,17 +111,28 @@ session are stateless, it is safe to modify this list as needed.</p>
 <dl class="method">
 <dt id="saga.session.Session.add_context">
 <tt class="descname">add_context</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/session.html#Session.add_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.session.Session.add_context" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>ctx:     saga.Context
+ret:     None</p>
+<p>Add a security L{Context} to the session.
+It is encouraged to use the L{contexts} property instead.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.session.Session.remove_context">
 <tt class="descname">remove_context</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/session.html#Session.remove_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.session.Session.remove_context" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>ctx:     saga.Context
+ret:     None</p>
+<p>Remove a security L{Context} from the session.
+It is encouraged to use the L{contexts} property instead.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.session.Session.list_contexts">
 <tt class="descname">list_contexts</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/session.html#Session.list_contexts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.session.Session.list_contexts" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>ret:     list[saga.Context]</p>
+<p>Retrieve all L{Context} objects attached to the session.
+It is encouraged to use the L{contexts} property instead.</p>
+</dd></dl>
 
 </dd></dl>
 

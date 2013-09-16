@@ -110,47 +110,80 @@ documentation.</p>
 <dl class="classmethod">
 <dt id="saga.replica.LogicalFile.create">
 <em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.create" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>url:       saga.Url
+flags:     saga.replica.flags enum
+session:   saga.Session
+ttype:     saga.task.type enum
+ret:       saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.is_file">
 <tt class="descname">is_file</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.is_file" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>ttype:          saga.task.type enum
+ret:            bool / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.add_location">
 <tt class="descname">add_location</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.add_location" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>name:           saga.Url
+ttype:          saga.task.type enum
+ret:            None / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.remove_location">
 <tt class="descname">remove_location</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.remove_location" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>name:           saga.Url
+ttype:          saga.task.type enum
+ret:            None / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.update_location">
 <tt class="descname">update_location</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.update_location" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>old:            saga.Url
+new:            saga.Url 
+ttype:          saga.task.type enum
+ret:            None / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.list_locations">
 <tt class="descname">list_locations</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.list_locations" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>ttype:          saga.task.type enum
+ret:            list [saga.Url] / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.replicate">
 <tt class="descname">replicate</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.replicate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>name:           saga.Url
+flags:          flags enum
+ttype:          saga.task.type enum
+ret:            None / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.upload">
 <tt class="descname">upload</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.upload" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>name:           saga.Url
+tgt:            saga.Url
+flags:          flags enum
+ttype:          saga.task.type enum
+ret:            None / saga.Task</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.replica.LogicalFile.download">
 <tt class="descname">download</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile.download" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>name:           saga.Url
+src:            saga.Url
+flags:          flags enum
+ttype:          saga.task.type enum
+ret:            None / saga.Task</p>
+</dd></dl>
 
 </dd></dl>
 

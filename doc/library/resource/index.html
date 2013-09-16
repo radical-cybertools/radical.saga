@@ -217,47 +217,134 @@ or unbound amount of time.</p>
 <dl class="classmethod">
 <dt id="saga.resource.Manager.create">
 <em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.create" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>This is the asynchronous class constructor, returning
+a <tt class="xref py py-class docutils literal"><span class="pre">saga:Task</span></tt> instance.  For details on the accepted parameters,
+please see the description of <tt class="xref py py-func docutils literal"><span class="pre">__init__()</span></tt>.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.list">
 <tt class="descname">list</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.list" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rtype</strong> (<em>None or enum (COMPUTE | STORAGE | NETWORK)</em>) &#8211; specifies a filter of resource types to list.</td>
+</tr>
+</tbody>
+</table>
+<p>List known resource instances (which can be acquired). 
+Returns a list of IDs.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.get_description">
 <tt class="descname">get_description</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.get_description" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rid</strong> (<a class="reference external" href="http://docs.python.org/library/string.html#string" title="(in Python v2.7)"><em>string</em></a>) &#8211; identifies the resource to be described.</td>
+</tr>
+</tbody>
+</table>
+<p>Get a resource <tt class="xref py py-class docutils literal"><span class="pre">Description</span></tt> for the specified resource.</p>
+<p>NOTE: see drmaav2::machine_info?  Add GLUE inspection as
+read-only attribs?  link to SD or ISN?</p>
+<p>NOTE: if rid is None, should we return a description of the managed
+resources?</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.list_templates">
 <tt class="descname">list_templates</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.list_templates" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rtype</strong> (<em>None or enum (COMPUTE | STORAGE | NETWORK)</em>) &#8211; specifies a filter of resource types to list.</td>
+</tr>
+</tbody>
+</table>
+<p>List template names available for the specified resource type(s).
+Returns a list of strings.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.get_template">
 <tt class="descname">get_template</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.get_template" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<a class="reference external" href="http://docs.python.org/library/string.html#string" title="(in Python v2.7)"><em>string</em></a>) &#8211; specifies the template to be queried for a description.</td>
+</tr>
+</tbody>
+</table>
+<p>Get a resource <tt class="xref py py-class docutils literal"><span class="pre">Description</span></tt> for the specified template.</p>
+<p>The returned resource description instance may not have all attributes
+filled, and may in fact not sufficiently complete to allow for
+successful resource acquisition.  The only guaranteed attribute in the
+returned description is <cite>TEMPLATE</cite>, containing the very template id
+specified in the call parameters.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.list_images">
 <tt class="descname">list_images</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.list_images" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rtype</strong> (<em>None or enum (COMPUTE | STORAGE | NETWORK)</em>) &#8211; specifies a filter of resource types to list.</td>
+</tr>
+</tbody>
+</table>
+<p>List image names available for the specified resource type(s).
+Returns a list of strings.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.get_image">
 <tt class="descname">get_image</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.get_image" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<a class="reference external" href="http://docs.python.org/library/string.html#string" title="(in Python v2.7)"><em>string</em></a>) &#8211; specifies the image to be queried for a description.</td>
+</tr>
+</tbody>
+</table>
+<p>Get a description string for the specified image.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.acquire">
 <tt class="descname">acquire</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.acquire" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>spec</strong> (<tt class="xref py py-class docutils literal"><span class="pre">Description</span></tt>) &#8211; specifies the resource to be acquired.</td>
+</tr>
+</tbody>
+</table>
+<p>Get a <a class="reference internal" href="#saga.resource.Resource" title="saga.resource.Resource"><tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Resource</span></tt></a> handle for the specified
+description.  Depending on the <cite>RTYPE</cite> attribute in the description, the
+returned resource may be a <tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Compute</span></tt>,
+<tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Storage</span></tt> or <tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Network</span></tt>
+instance.  The returned resource will be in NEW, PENDING or ACTIVE
+state.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Manager.destroy">
 <tt class="descname">destroy</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager.destroy" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>:type  id   : string
+:param id   : identifies the resource to be released.</p>
+<p>This call requests to move a resource from any non-final state to the
+<cite>CANCELED</cite> state.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -376,7 +463,10 @@ interface.</p>
 <dl class="method">
 <dt id="saga.resource.Description.clone">
 <tt class="descname">clone</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Description.clone" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>deep copy: unlike the default python assignment (copy object reference),
+a deep copy will create a new object instance with the same state &#8211;
+after a deep copy, a change on one instance will not affect the other.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -432,22 +522,56 @@ state.</p>
 <dl class="classmethod">
 <dt id="saga.resource.Resource.create">
 <em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Resource.create" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>This is the asynchronous class constructor, returning
+a <tt class="xref py py-class docutils literal"><span class="pre">saga:Task</span></tt> instance.  For details on the accepted parameters,
+please see the description of <tt class="xref py py-func docutils literal"><span class="pre">__init__()</span></tt>.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Resource.reconfig">
 <tt class="descname">reconfig</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Resource.reconfig" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>A resource is acquired according to a resource description, i.e. to
+a specific set of attributes.  At some point in time, while the
+resource is running, the application requirements on the resource may
+have changed &#8211; in that case, the application can request to change the
+resource&#8217;s configuration on the fly.</p>
+<p>This method cannot be used to change the type of the resource.  Backends
+may or may not support this operation &#8211; if not,
+a <tt class="xref py py-class docutils literal"><span class="pre">saga.NotImplemented</span></tt> exception is raised.  If the method is
+supported, , then the semantics of the method is equivalent to the
+semantics of the <tt class="xref py py-func docutils literal"><span class="pre">acquire()</span></tt> call on the
+<a class="reference internal" href="#saga.resource.Manager" title="saga.resource.Manager"><tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Manager</span></tt></a> class.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Resource.destroy">
 <tt class="descname">destroy</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Resource.destroy" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>The semantics of this method is equivalent to the semantics of the
+<tt class="xref py py-func docutils literal"><span class="pre">destroy()</span></tt> call on the <a class="reference internal" href="#saga.resource.Manager" title="saga.resource.Manager"><tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Manager</span></tt></a> class.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Resource.wait">
 <tt class="descname">wait</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Resource.wait" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>state</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; state to wait for</li>
+<li><strong>state</strong> &#8211; time to block while waiting.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>This method will block until the resource entered the specified state,
+or until <cite>timeout</cite> seconds have passed &#8211; whichever occurs earlier.  If
+the resource is in a final state, the call will raise and
+<tt class="xref py py-class docutils literal"><span class="pre">saga.IncorrectState</span></tt> exception when asked to wait for any
+non-final state.</p>
+<p>A negative <cite>timeout</cite> value represents an indefinit timeout.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="saga.resource.Resource.get_id">

@@ -213,6 +213,7 @@
         <span class="k">print</span> <span class="s">&quot;Start time  : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob_clone</span><span class="o">.</span><span class="n">started</span><span class="p">)</span>
         <span class="k">print</span> <span class="s">&quot;End time    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob_clone</span><span class="o">.</span><span class="n">finished</span><span class="p">)</span>
 
+        <span class="n">js</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">return</span> <span class="mi">0</span>
 
     <span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">SagaException</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
@@ -223,8 +224,7 @@
         <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
 
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="n">main</span> <span class="p">()</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span> <span class="p">(</span><span class="n">main</span><span class="p">())</span>
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -316,7 +316,10 @@
 82
 83
 84
-85</pre></div></td><td class="code"><div class="highlight"><pre><span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Ole Weidner&quot;</span>
+85
+86
+87
+88</pre></div></td><td class="code"><div class="highlight"><pre><span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Ole Weidner&quot;</span>
 <span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
 
@@ -392,15 +395,18 @@
         <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="k">print</span> <span class="n">t2</span><span class="o">-</span><span class="n">t1</span>
 
+        <span class="n">service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
     <span class="k">except</span> <span class="n">saga</span><span class="o">.</span><span class="n">SagaException</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
         <span class="k">print</span> <span class="s">&quot;An exception occured: </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">((</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)))</span>
         <span class="c"># get the whole traceback in case of an exception -</span>
         <span class="c"># this can be helpful for debugging the problem</span>
         <span class="k">print</span> <span class="s">&quot; *** </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ex</span><span class="o">.</span><span class="n">traceback</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
 
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="n">main</span><span class="p">()</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
 </pre></div>
 </td></tr></table></div>
 </div>
