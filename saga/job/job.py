@@ -60,11 +60,6 @@ class Job (sb.Base, st.Task, sasync.Async) :
     @sus.returns (sus.nothing)
     def __init__ (self, _method_type='run', _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
-        url:       saga.Url
-        flags:     flags enum
-        session:   saga.Session
-        ret:       obj
-
         _adaptor`` references the adaptor class instance which created this task
         instance.
 
@@ -132,6 +127,11 @@ class Job (sb.Base, st.Task, sasync.Async) :
     @sus.takes   ('Job')
     @sus.returns (basestring)
     def __str__  (self) :
+        """
+        __str__()
+
+        String representation. Returns the job's ID.
+        """
 
         if  not self._valid :
             return 'no job id'
@@ -145,10 +145,11 @@ class Job (sb.Base, st.Task, sasync.Async) :
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, basestring, st.Task))
     def get_id   (self, ttype=None) :
-        '''
-        ttype:     saga.task.type enum
-        ret:       String / saga.Task  
-        '''
+        """
+        get_id()
+
+        Return the job ID. 
+        """
         id = self._adaptor.get_id (ttype=ttype)
         return id
 
@@ -159,10 +160,9 @@ class Job (sb.Base, st.Task, sasync.Async) :
                          sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns        ((basestring, st.Task))
     def get_description (self, ttype=None) :
-        '''
-        ttype:     saga.task.type enum
-        ret:       saga.job.Description / saga.Task  
-        
+        """
+        get_description()
+          
         Return the job description this job was created from.
         
         The returned description can be used to inspect job properties
@@ -179,32 +179,36 @@ class Job (sb.Base, st.Task, sasync.Async) :
         **Example**::
 
 
-          js = saga.job.Service("fork://localhost")
+          service = saga.job.Service("fork://localhost")
           jd = saga.job.Description ()
           jd.executable = '/bin/date'
 
-          j1 = js.create_job(jd)
+          j1 = service.create_job(jd)
           j1.run()
 
-          j2 = js.create_job(j1.get_description())
+          j2 = service.create_job(j1.get_description())
           j2.run()
 
-
-        '''
+          service.close()
+        """
         return self._adaptor.get_description (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes    ('Job',
-                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns  ((file, st.Task))
-    def get_stdin (self, ttype=None) :
-        '''
-        ttype:     saga.task.type enum
-        ret:       File / saga.Task
-        '''
-        return self._adaptor.get_stdin (ttype=ttype)
+    #@sus.takes    ('Job',
+    #               sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    #@sus.returns  ((file, st.Task))
+    #def get_stdin (self, ttype=None) :
+    #    """
+    #    get_stdin()
+    #
+    #    Return the job's STDIN handle. 
+    #
+    #    ttype:     saga.task.type enum
+    #    ret:       File / saga.Task
+    #    """
+    #    return self._adaptor.get_stdin (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -213,10 +217,14 @@ class Job (sb.Base, st.Task, sasync.Async) :
                     sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns   ((file, st.Task))
     def get_stdout (self, ttype=None) :
-        '''
+        """
+        get_stdout()
+
+        Return the job's STDOUT handle. 
+
         ttype:     saga.task.type enum
         ret:       File / saga.Task
-        '''
+        """
         return self._adaptor.get_stdout (ttype=ttype)
 
 
@@ -226,10 +234,14 @@ class Job (sb.Base, st.Task, sasync.Async) :
                     sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns   ((file, st.Task))
     def get_stderr (self, ttype=None) :
-        '''
+        """
+        get_stderr()
+
+        Return the job's STDERR handle.
+
         ttype:     saga.task.type enum
         ret:       File / saga.Task
-        '''
+        """
         return self._adaptor.get_stderr (ttype=ttype)
 
 
@@ -239,10 +251,14 @@ class Job (sb.Base, st.Task, sasync.Async) :
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def suspend  (self, ttype=None) :
-        '''
+        """
+        suspend()
+
+        Suspend the job.
+
         ttype:     saga.task.type enum
         ret:       None / saga.Task
-        '''
+        """
         return self._adaptor.suspend (ttype=ttype)
 
 
@@ -252,39 +268,47 @@ class Job (sb.Base, st.Task, sasync.Async) :
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def resume   (self, ttype=None) :
-        '''
+        """
+        resume()
+
+        Resume the job.
+
         ttype:     saga.task.type enum
         ret:       None / saga.Task
-        '''
+        """
         return self._adaptor.resume (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes     ('Job',
-                    sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns   ((sus.nothing, st.Task))
-    def checkpoint (self, ttype=None) :
-        '''
-        ttype:     saga.task.type enum
-        ret:       None / saga.Task
-        '''
-        return self._adaptor.checkpoint (ttype=ttype)
+    #@sus.takes     ('Job',
+    #                sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    #@sus.returns   ((sus.nothing, st.Task))
+    #def checkpoint (self, ttype=None) :
+    #    """
+    #    checkpoint()
+    #
+    #    Checkpoint the job.
+    #
+    #    ttype:     saga.task.type enum
+    #    ret:       None / saga.Task
+    #    """
+    #    return self._adaptor.checkpoint (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Job',
-                  descr.Description,
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((sus.nothing, st.Task))
-    def migrate  (self, jd, ttype=None) :
-        '''
-        jd:        saga.job.Description  
-        ttype:     saga.task.type enum
-        ret:       None / saga.Task
-        '''
-        return self._adaptor.migrate (jd, ttype=ttype)
+    #@sus.takes   ('Job',
+    #              descr.Description,
+    #              sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    #@sus.returns ((sus.nothing, st.Task))
+    #def migrate  (self, jd, ttype=None) :
+    #    '''
+    #    jd:        saga.job.Description  
+    #    ttype:     saga.task.type enum
+    #    ret:       None / saga.Task
+    #    '''
+    #    return self._adaptor.migrate (jd, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -294,17 +318,20 @@ class Job (sb.Base, st.Task, sasync.Async) :
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def signal   (self, signum, ttype=None) :
-        '''
-        signum:    int
-        ttype:     saga.task.type enum
-        ret:       None / saga.Task
-        '''
+        """
+        signal(signum)
+
+        Send a signal to the job.
+
+        :param signum: signal to send
+        :type  signum: int
+        """
         return self._adaptor.signal (signum, ttype=ttype)
 
 
     id          = property (get_id)           # string
     description = property (get_description)  # Description
-    stdin       = property (get_stdin)        # File
+    #stdin       = property (get_stdin)        # File
     stdout      = property (get_stdout)       # File
     stderr      = property (get_stderr)       # File
 
@@ -317,10 +344,10 @@ class Job (sb.Base, st.Task, sasync.Async) :
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def run      (self, ttype=None) :
-        '''
-        ret:        None
-        
-        Execute the job via the associated job service.
+        """
+        run()
+
+        Run (start) the job. 
         
         Request that the job is being executed by the backend.  If the backend
         is accepting this run request, the job will move to the 'Pending' or
@@ -330,25 +357,25 @@ class Job (sb.Base, st.Task, sasync.Async) :
 
         **Example**::
 
-          js = saga.job.Service("fork://localhost")
-          jd = saga.job.Description ()
-          jd.executable = '/bin/date'
-          j  = js.create_job(jd)
+            js = saga.job.Service("fork://localhost")
+            jd = saga.job.Description ()
+            jd.executable = '/bin/date'
+            j  = js.create_job(jd)
 
-          if j.get_state() == saga.job.NEW : 
-              print "new"
-          else : 
-              print "oops!"
+            if j.get_state() == saga.job.NEW : 
+                print "new"
+            else : 
+                print "oops!"
 
-          j.run()
+            j.run()
 
-          if   j.get_state() == saga.job.PENDING :
-              print "pending"
-          elif j.get_state() == saga.job.RUNNING :
-              print "running"
-          else :
-              print "oops!"
-        '''
+            if   j.get_state() == saga.job.PENDING :
+                print "pending"
+            elif j.get_state() == saga.job.RUNNING :
+                print "running"
+            else :
+                print "oops!"
+          """
 
         return self._adaptor.run (ttype=ttype)
 
@@ -360,12 +387,13 @@ class Job (sb.Base, st.Task, sasync.Async) :
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
     def cancel   (self, timeout=None, ttype=None) :
-        '''
-        timeout:    float
-        ret:        None
+        """
+        cancel(timeout)
 
         Cancel the execution of the job.
 
+        :param timeout: `cancel` will return after timeout
+        :type  timeout: float
 
         **Example**::
 
@@ -394,8 +422,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
               print "canceled"
           else :
               print "oops!"
-        '''
-
+        """
         return self._adaptor.cancel (timeout, ttype=ttype)
 
 
@@ -406,9 +433,11 @@ class Job (sb.Base, st.Task, sasync.Async) :
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((bool, st.Task))
     def wait     (self, timeout=None, ttype=None) :
-        '''
-        timeout:    float 
-        ret:        None
+        """
+        wait(timeout)
+
+        :param timeout: `wait` will return after timeout
+        :type  timeout: float
         
         Wait for a running job to finish execution.
 
@@ -453,7 +482,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
               print "failed"
           else :
               print "oops!"
-        '''
+        """
 
         if  None == timeout :
             timeout = -1.0 # FIXME
@@ -467,8 +496,8 @@ class Job (sb.Base, st.Task, sasync.Async) :
                    sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns  ((sus.one_of (UNKNOWN, NEW, PENDING, RUNNING, SUSPENDED, DONE, FAILED, CANCELED), st.Task))
     def get_state (self, ttype=None) :
-        '''
-        ret:        Task/Job state enum
+        """
+        get_state()
         
         Return the current state of the job.
     
@@ -492,8 +521,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
               print "running"
           else :
               print "oops!"
-        '''
-
+        """
         return self._adaptor.get_state (ttype=ttype)
 
 
@@ -503,10 +531,12 @@ class Job (sb.Base, st.Task, sasync.Async) :
                     sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns   ((sus.anything, st.Task))
     def get_result (self, ttype=None) :
-        '''
+        """
+        get_result()
+
         ret:        <result type>
         note:       this will always return None for a job.
-        '''
+        """
         return self._adaptor.get_result (ttype=ttype)
 
 

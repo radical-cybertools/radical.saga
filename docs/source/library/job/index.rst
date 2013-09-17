@@ -60,6 +60,7 @@ Job Service -- :class:`saga.job.Service`
 .. autoclass:: saga.job.Service
    :members:
    :undoc-members:
+   :special-members: __init__
 
 Job Description -- :class:`saga.job.Description`
 ------------------------------------------------
@@ -304,12 +305,11 @@ SAGA defines the following constants as valid job description attributes:
 Jobs -- :class:`saga.job.Job`
 -----------------------------
 
-:todo: Describe how to work with jobs.
-
 .. autoclass:: saga.job.Job
    :members:
    :undoc-members:
    :show-inheritance:
+
 
 .. _job_attributes:
 
