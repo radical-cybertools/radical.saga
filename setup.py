@@ -154,6 +154,7 @@ setup_args = {
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
         "saga.adaptors.redis",
+        "saga.adaptors.irods",
         "saga.adaptors.aws",
         "saga.adaptors.http",
         "saga.engine",
@@ -161,7 +162,7 @@ setup_args = {
         "saga.utils.contrib",
         "saga.utils.logger",
         "saga.utils.config",
-        "saga.utils.job"
+        "saga.utils.job",
     ],
     'package_data': {'': ['*.sh']},
     'zip_safe': False,
