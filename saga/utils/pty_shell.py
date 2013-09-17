@@ -12,6 +12,7 @@ import errno
 import saga.utils.logger            as sul
 import saga.utils.pty_shell_factory as supsf
 import saga.exceptions              as se
+import saga.session                 as ss
 
 _PTY_TIMEOUT = 2.0
 
@@ -168,10 +169,11 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, url, session, logger=None, init=None, opts={}) :
+    def __init__ (self, url, session=None, logger=None, init=None, opts={}) :
 
-        self.logger = logger
-        if  not  self.logger : self.logger = sul.getLogger ('PTYShell') 
+        if  None != logger  : self.logger  = logger
+        else                : self.logger  = sul.getLogger ('PTYShell') 
+
         self.logger.debug ("PTYShell init %s" % self)
 
         self.url         = url      # describes the shell to run
@@ -395,9 +397,6 @@ class PTYShell (object) :
             while True :
 
                 try :
-                  # self.pty_shell.write ("\n")
-                  # self.logger.error  ("sent prompt trigger")
-
                     # make sure we have a non-zero waiting delay (default to
                     # 1 second)
                     delay = 10 * self.latency
@@ -407,8 +406,6 @@ class PTYShell (object) :
                     # FIXME: how do we know that _PTY_TIMOUT suffices?  In particular if
                     # we actually need to flush...
                     fret, match = self.pty_shell.find ([self.prompt], delay)
-
-                  # self.logger.error  ("got match (%s)" % match)
 
                     if  fret == None :
                     
