@@ -60,6 +60,8 @@ Job Service -- :class:`saga.job.Service`
 .. autoclass:: saga.job.Service
    :members:
    :undoc-members:
+   :special-members: __init__
+   :exclude-members: create, __module__
 
 Job Description -- :class:`saga.job.Description`
 ------------------------------------------------
@@ -304,12 +306,12 @@ SAGA defines the following constants as valid job description attributes:
 Jobs -- :class:`saga.job.Job`
 -----------------------------
 
-:todo: Describe how to work with jobs.
-
 .. autoclass:: saga.job.Job
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: get_result, get_object, get_exception, re_raise ,result, object, exception, get_stdin, get_stdout, get_stderr, suspend, resume, migrate, checkpoint, stdout, stderr, __module__
+
 
 .. _job_attributes:
 

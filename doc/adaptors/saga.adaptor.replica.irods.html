@@ -1,0 +1,343 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+    <title>10. saga.adaptor.replica.irods &mdash; SAGA 0.9.11 documentation</title>
+
+<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
+
+
+    
+    <link rel="stylesheet" href="../_static/rtd.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.11',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../_static/searchtools.js"></script>
+    <link rel="top" title="SAGA 0.9.11 documentation" href="../index.html" />
+    <link rel="up" title="3. Adaptors" href="saga.adaptor.index.html" />
+    <link rel="next" title="11. saga.adaptor.condorjob" href="saga.adaptor.condorjob.html" />
+    <link rel="prev" title="9. saga.adaptor.pbsjob" href="saga.adaptor.pbsjob.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.condorjob.html" title="11. saga.adaptor.condorjob"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.pbsjob.html" title="9. saga.adaptor.pbsjob"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" accesskey="U">3. Adaptors</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="saga-adaptor-replica-irods">
+<h1>10. saga.adaptor.replica.irods<a class="headerlink" href="#saga-adaptor-replica-irods" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>10.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>The iRODS replica adaptor.</p>
+</div>
+<div class="section" id="supported-schemas">
+<h2>10.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<p>This adaptor is triggered by the following URL schemes:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="29%" />
+<col width="71%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">schema</th>
+<th class="head">description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><strong>irods://</strong></td>
+<td>irods schema</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="example">
+<h2>10.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>NO EXAMPLE AVAILABLE</p>
+</div>
+<div class="section" id="configuration-options">
+<h2>10.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<p>Configuration options can be used to control the adaptor&#8217;s runtime behavior. Most adaptors don&#8217;t need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.</p>
+<blockquote>
+<div><div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">More information about configuration options can be found in the <a class="reference internal" href="../usage/config.html#conf-file"><em>Configuration Files</em></a> section.</p>
+</div>
+</div></blockquote>
+<div class="section" id="enabled">
+<h3>10.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<p>enable / disable saga.adaptor.replica.irods adaptor</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>type</strong> : &lt;type &#8216;bool&#8217;&gt;</li>
+<li><strong>default</strong> : True</li>
+<li><strong>environment</strong> : None</li>
+<li><strong>valid options</strong> : [True, False]</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="capabilities">
+<h2>10.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="supported-api-classes">
+<h2>10.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>This adaptor supports the following API classes:</dt>
+<dd><ul class="first last simple">
+<li><a class="reference internal" href="../library/replica/index.html#saga.replica.LogicalDirectory" title="saga.replica.LogicalDirectory"><tt class="xref py py-class docutils literal"><span class="pre">saga.replica.LogicalDirectory</span></tt></a></li>
+<li><a class="reference internal" href="../library/replica/index.html#saga.replica.LogicalFile" title="saga.replica.LogicalFile"><tt class="xref py py-class docutils literal"><span class="pre">saga.replica.LogicalFile</span></tt></a></li>
+</ul>
+</dd>
+</dl>
+<p>Method implementation details are listed below.</p>
+<div class="section" id="saga-replica-logicaldirectory">
+<h3>10.6.1. saga.replica.LogicalDirectory<a class="headerlink" href="#saga-replica-logicaldirectory" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.irods.irods_replica.IRODSDirectory">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.irods.irods_replica.</tt><tt class="descname">IRODSDirectory</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.replica.logical_directory.LogicalDirectory</span></tt></p>
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance_async">
+<tt class="descname">init_instance_async</tt><big>(</big><em>adaptor_state</em>, <em>url</em>, <em>flags</em>, <em>session</em>, <em>ttype</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory.init_instance_async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance_async" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSDirectory.get_url">
+<tt class="descname">get_url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory.get_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory.get_url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSDirectory.open">
+<tt class="descname">open</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSDirectory.make_dir">
+<tt class="descname">make_dir</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory.make_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory.make_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSDirectory.remove">
+<tt class="descname">remove</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory.remove"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory.remove" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSDirectory.list">
+<tt class="descname">list</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSDirectory.list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSDirectory.list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="saga-replica-logicalfile">
+<h3>10.6.2. saga.replica.LogicalFile<a class="headerlink" href="#saga-replica-logicalfile" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile">
+<em class="property">class </em><tt class="descclassname">saga.adaptors.irods.irods_replica.</tt><tt class="descname">IRODSFile</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.adaptors.cpi.replica.logical_file.LogicalFile</span></tt></p>
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.init_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.init_instance_async">
+<tt class="descname">init_instance_async</tt><big>(</big><em>adaptor_state</em>, <em>url</em>, <em>flags</em>, <em>session</em>, <em>ttype</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.init_instance_async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.init_instance_async" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.get_url">
+<tt class="descname">get_url</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.get_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.get_url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.get_url_async">
+<tt class="descname">get_url_async</tt><big>(</big><em>ttype</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.get_url_async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.get_url_async" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.copy_self">
+<tt class="descname">copy_self</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.copy_self"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.copy_self" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.list_locations">
+<tt class="descname">list_locations</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.list_locations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.list_locations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.get_size_self">
+<tt class="descname">get_size_self</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.get_size_self"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.get_size_self" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.remove_location">
+<tt class="descname">remove_location</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.remove_location"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.remove_location" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.replicate">
+<tt class="descname">replicate</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.replicate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.replicate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.move_self">
+<tt class="descname">move_self</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.move_self"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.move_self" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.add_location">
+<tt class="descname">add_location</tt><big>(</big><em>name</em>, <em>ttype</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.add_location"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.add_location" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is called upon logicaldir.add_location()</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.remove_self">
+<tt class="descname">remove_self</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.remove_self"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.remove_self" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.upload">
+<tt class="descname">upload</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.upload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.upload" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.adaptors.irods.irods_replica.IRODSFile.download">
+<tt class="descname">download</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/irods/irods_replica.html#IRODSFile.download"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.irods.irods_replica.IRODSFile.download" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">10. saga.adaptor.replica.irods</a><ul>
+<li><a class="reference internal" href="#description">10.1. Description</a></li>
+<li><a class="reference internal" href="#supported-schemas">10.2. Supported Schemas</a></li>
+<li><a class="reference internal" href="#example">10.3. Example</a></li>
+<li><a class="reference internal" href="#configuration-options">10.4. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">10.4.1. enabled</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#capabilities">10.5. Capabilities</a></li>
+<li><a class="reference internal" href="#supported-api-classes">10.6. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-replica-logicaldirectory">10.6.1. saga.replica.LogicalDirectory</a></li>
+<li><a class="reference internal" href="#saga-replica-logicalfile">10.6.2. saga.replica.LogicalFile</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="saga.adaptor.pbsjob.html"
+                        title="previous chapter">9. saga.adaptor.pbsjob</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="saga.adaptor.condorjob.html"
+                        title="next chapter">11. saga.adaptor.condorjob</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/adaptors/saga.adaptor.replica.irods.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.condorjob.html" title="11. saga.adaptor.condorjob"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="saga.adaptor.pbsjob.html" title="9. saga.adaptor.pbsjob"
+             >previous</a> |</li>
+        <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
+          <li><a href="saga.adaptor.index.html" >3. Adaptors</a> &raquo;</li> 
+      </ul>
+    </div>
+<div class="footer">
+    &copy; Copyright 2012, The SAGA Project.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
+
+</div>
+
+
+
+
+
+  </body>
+</html>

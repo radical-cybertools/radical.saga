@@ -17,6 +17,7 @@ Adaptors
    saga.adaptor.shell_resource
    saga.adaptor.sgejob
    saga.adaptor.pbsjob
+   saga.adaptor.replica.irods
    saga.adaptor.condorjob
    saga.adaptor.slurm_job
    saga.adaptor.http_file
