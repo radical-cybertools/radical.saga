@@ -196,19 +196,16 @@ class Job (sb.Base, st.Task, sasync.Async) :
 
     # --------------------------------------------------------------------------
     #
-    #@sus.takes    ('Job',
-    #               sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    #@sus.returns  ((file, st.Task))
-    #def get_stdin (self, ttype=None) :
-    #    """
-    #    get_stdin()
-    #
-    #    Return the job's STDIN handle. 
-    #
-    #    ttype:     saga.task.type enum
-    #    ret:       File / saga.Task
-    #    """
-    #    return self._adaptor.get_stdin (ttype=ttype)
+    @sus.takes    ('Job',
+                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns  ((file, st.Task))
+    def get_stdin (self, ttype=None) :
+        """
+        get_stdin()
+    
+        Return the job's STDIN handle. 
+        """
+        return self._adaptor.get_stdin (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -221,9 +218,6 @@ class Job (sb.Base, st.Task, sasync.Async) :
         get_stdout()
 
         Return the job's STDOUT handle. 
-
-        ttype:     saga.task.type enum
-        ret:       File / saga.Task
         """
         return self._adaptor.get_stdout (ttype=ttype)
 
@@ -255,9 +249,6 @@ class Job (sb.Base, st.Task, sasync.Async) :
         suspend()
 
         Suspend the job.
-
-        ttype:     saga.task.type enum
-        ret:       None / saga.Task
         """
         return self._adaptor.suspend (ttype=ttype)
 
@@ -272,43 +263,37 @@ class Job (sb.Base, st.Task, sasync.Async) :
         resume()
 
         Resume the job.
-
-        ttype:     saga.task.type enum
-        ret:       None / saga.Task
         """
         return self._adaptor.resume (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    #@sus.takes     ('Job',
-    #                sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    #@sus.returns   ((sus.nothing, st.Task))
-    #def checkpoint (self, ttype=None) :
-    #    """
-    #    checkpoint()
-    #
-    #    Checkpoint the job.
-    #
-    #    ttype:     saga.task.type enum
-    #    ret:       None / saga.Task
-    #    """
-    #    return self._adaptor.checkpoint (ttype=ttype)
+    @sus.takes     ('Job',
+                    sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns   ((sus.nothing, st.Task))
+    def checkpoint (self, ttype=None) :
+        """
+        checkpoint()
+    
+        Checkpoint the job.
+        """
+        return self._adaptor.checkpoint (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    #@sus.takes   ('Job',
-    #              descr.Description,
-    #              sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    #@sus.returns ((sus.nothing, st.Task))
-    #def migrate  (self, jd, ttype=None) :
-    #    '''
-    #    jd:        saga.job.Description  
-    #    ttype:     saga.task.type enum
-    #    ret:       None / saga.Task
-    #    '''
-    #    return self._adaptor.migrate (jd, ttype=ttype)
+    @sus.takes   ('Job',
+                  descr.Description,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((sus.nothing, st.Task))
+    def migrate  (self, jd, ttype=None) :
+        """
+        jd:        saga.job.Description  
+        ttype:     saga.task.type enum
+        ret:       None / saga.Task
+        """
+        return self._adaptor.migrate (jd, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -533,9 +518,6 @@ class Job (sb.Base, st.Task, sasync.Async) :
     def get_result (self, ttype=None) :
         """
         get_result()
-
-        ret:        <result type>
-        note:       this will always return None for a job.
         """
         return self._adaptor.get_result (ttype=ttype)
 
@@ -644,8 +626,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
 
     # ----------------------------------------------------------------
     #
-    ExitCode = property (doc = '''
-    ExitCode:
+    ExitCode = property (doc = """
     The job's exitcode.
 
     this attribute is only meaningful if the job is in 'Done' or 'Final'
@@ -668,23 +649,21 @@ class Job (sb.Base, st.Task, sasync.Async) :
         else :
             print "oops!"
 
-    ''')
+    """)
 
 
     # ----------------------------------------------------------------
     #
-    JobID = property (doc = '''
-    JobID:
+    JobID = property (doc = """
     The job's identifier.
 
     This attribute is equivalent to the value returned by job.get_job_id()
-    ''')
+    """)
 
 
     # ----------------------------------------------------------------
     #
-    ServiceURL = property (doc = '''
-    ServiceURL:
+    ServiceURL = property (doc = """
     The URL of the :class:`saga.job.Service` instance managing this job.
 
     This attribute is represents the URL under where the job management
@@ -704,7 +683,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
       else :
           print "oops!"
 
-    ''')
+    """)
 
 
 # ------------------------------------------------------------------------------

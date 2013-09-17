@@ -96,7 +96,11 @@ class Description (saga.Attributes) :
     @sus.returns ('Description')
     def clone (self, other=None) :
         """ 
-        deep copy: unlike the default python assignment (copy object reference),
+        clone()
+
+        Implements deep copy. u
+
+        Unlike the default python assignment (copy object reference),
         a deep copy will create a new object instance with the same state --
         after a deep copy, a change on one instance will not affect the other.
         """
