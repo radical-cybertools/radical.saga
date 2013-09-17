@@ -15,7 +15,6 @@ Intro library reference...
    filesystem/index.rst
    resource/index.rst
    replica/index.rst
-   advert/index.rst
    exceptions.rst
    context.rst
    session.rst
