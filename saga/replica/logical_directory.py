@@ -33,6 +33,10 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     def __init__ (self, url=None, flags=READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
+        __init__(url, flags=READ, session=None)
+
+        Create a new Logical Directory instance.
+
         url:       saga.Url
         flags:     flags enum
         session:   saga.Session
@@ -75,6 +79,8 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     @sus.returns ((bool, st.Task))
     def is_file (self, tgt=None, ttype=None) :
         '''
+        is_file(tgt=None)
+
         tgt:           saga.Url / string
         ttype:          saga.task.type enum
         ret:            bool / saga.Task
@@ -90,6 +96,8 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     @sus.returns (('LogicalFile', st.Task))
     def open (self, tgt, flags=READ, ttype=None) :
         '''
+        open(tgt, flags=READ)
+
         tgt:      saga.Url
         flags:    saga.namespace.flags enum
         ttype:    saga.task.type enum
@@ -106,6 +114,8 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     @sus.returns (('LogicalDirectory', st.Task))
     def open_dir (self, tgt, flags=READ, ttype=None) :
         '''
+        open_dir(tgt, flags=READ)
+
         :param tgt:   name/path of the directory to open
         :param flags: directory creation flags
 
@@ -138,6 +148,8 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     @sus.returns ((int, st.Task))
     def get_size (self, tgt, ttype=None) :
         '''
+        get_size(tgt)
+
         tgt:     logical file to get size for
         ttype:    saga.task.type enum
         ret:      int / saga.Task
@@ -165,6 +177,8 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     @sus.returns ((sus.list_of (surl.Url), st.Task))
     def find (self, name_pattern, attr_pattern=None, flags=RECURSIVE, ttype=None) :
         '''
+        find(name_pattern, attr_pattern=None, flags=RECURSIVE)
+
         name_pattern:   string 
         attr_pattern:   string
         flags:          flags enum
