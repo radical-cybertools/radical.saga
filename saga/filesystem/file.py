@@ -17,8 +17,8 @@ from   saga.constants            import SYNC, ASYNC, TASK
 # ------------------------------------------------------------------------------
 #
 class File (nsentry.Entry) :
-    '''
-    Represents a SAGA file as defined in GFD.90
+    """
+    Represents a local or remote file.
 
     The saga.filesystem.File class represents, as the name indicates,
     a file on some (local or remote) filesystem.  That class offers
@@ -32,7 +32,7 @@ class File (nsentry.Entry) :
 
         # move the file
         file.move ("sftp://localhost/tmp/data/data.new")
-    '''
+    """
 
     # --------------------------------------------------------------------------
     #
@@ -46,15 +46,16 @@ class File (nsentry.Entry) :
     @sus.returns (sus.nothing)
     def __init__ (self, url=None, flags=READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
-        '''
-        :param url: Url of the (remote) file
-        :type  url: :class:`saga.Url` 
-
-        flags:     flags enum
-        session:   saga.Session
-        ret:       obj
+        """
+        __init__(url, flags=READ, session)
 
         Construct a new file object
+
+        :param url:     Url of the (remote) file
+        :type  url:     :class:`saga.Url` 
+
+        :param flags:    Open flags (POSIX)
+        :param session: :class:`saga.Session`
 
         The specified file is expected to exist -- otherwise a DoesNotExist
         exception is raised.  Also, the URL must point to a file (not to
@@ -67,7 +68,7 @@ class File (nsentry.Entry) :
     
             # print the file's size
             print file.get_size ()
-        '''
+        """
 
         # param checks
         url = surl.Url (url)
@@ -86,14 +87,15 @@ class File (nsentry.Entry) :
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (st.Task)
     def create (cls, url=None, flags=READ, session=None, ttype=None) :
-        '''
+        """
+        create(url, flags, session)
+
         url:       saga.Url
         flags:     saga.replica.flags enum
         session:   saga.Session
         ttype:     saga.task.type enum
         ret:       saga.Task
-        '''
-
+        """
         _nsentry = super (File, cls)
         return _nsentry.create (url, flags, session, ttype=ttype)
 
@@ -108,10 +110,11 @@ class File (nsentry.Entry) :
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((bool, st.Task))
     def is_file (self, ttype=None) :
-        '''
-        ttype:    saga.task.type enum
-        ret:      bool / saga.Task
-        '''
+        """
+        is_file()
+
+        Returns `True` if instance points to a file, `False` otherwise. 
+        """
         return self._adaptor.is_file_self (ttype=ttype)
 
   
@@ -122,10 +125,9 @@ class File (nsentry.Entry) :
     @sus.returns ((int, st.Task))
     def get_size (self, ttype=None) :
         '''
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
+        get_size()
         
-        Returns the size of a file (in bytes)
+        Returns the size (in bytes) of a file.
 
            Example::
 
