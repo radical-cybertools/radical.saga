@@ -388,11 +388,6 @@ class Service (sb.Base, sasync.Async) :
            The :data:`~saga.job.Service.url` property and the
            :meth:`~saga.job.Service.get_url` method are semantically 
            equivalent and only duplicated for convenience.
-
-
-
-        :ttype: |param_ttype|
-        :rtype: list of :class:`saga.job.Url`
         """
 
         if not self.valid :

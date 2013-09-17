@@ -309,6 +309,7 @@ Jobs -- :class:`saga.job.Job`
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: get_result, get_object, get_exception, re_raise ,result, object, exception, get_stdin, get_stdout, get_stderr, suspend, resume, migrate, checkpoint, stdout, stderr
 
 
 .. _job_attributes:
