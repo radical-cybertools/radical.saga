@@ -33,6 +33,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     def __init__ (self, url=None, flags=READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
+        __init__(url=None, flags=READ, session=None)
+
         url:       saga.Url
         flags:     flags enum
         session:   saga.Session
@@ -77,6 +79,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     @sus.returns ((bool, st.Task))
     def is_file (self, ttype=None) :
         '''
+        is_file()
+
         ttype:          saga.task.type enum
         ret:            bool / saga.Task
         '''
@@ -92,6 +96,10 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     @sus.returns ((int, st.Task))
     def get_size (self, ttype=None) :
         '''
+        get_size()
+
+        Return the size of the file.
+
         ttype:    saga.task.type enum
         ret:      int / saga.Task
         
@@ -117,6 +125,10 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     @sus.returns ((sus.nothing, st.Task))
     def add_location (self, name, ttype=None) :
         '''
+        add_location(name)
+
+        Add a physical location.
+
         name:           saga.Url
         ttype:          saga.task.type enum
         ret:            None / saga.Task
@@ -132,6 +144,10 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     @sus.returns ((sus.nothing, st.Task))
     def remove_location (self, name, ttype=None) :
         '''
+        remove_location(name)
+
+        Remove a physical location.
+
         name:           saga.Url
         ttype:          saga.task.type enum
         ret:            None / saga.Task
@@ -148,6 +164,10 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     @sus.returns ((sus.nothing, st.Task))
     def update_location (self, old, new, ttype=None) :
         '''
+        update_location(old, new)
+
+        Updates a physical location.
+
         old:            saga.Url
         new:            saga.Url 
         ttype:          saga.task.type enum
@@ -163,6 +183,10 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     @sus.returns ((sus.list_of (surl.Url), st.Task))
     def list_locations (self, ttype=None) :
         '''
+        list_locations()
+
+        List all physical locations of a logical file.
+
         ttype:          saga.task.type enum
         ret:            list [saga.Url] / saga.Task
         '''
@@ -178,6 +202,10 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     @sus.returns ((sus.nothing, st.Task))
     def replicate (self, name, flags=None, ttype=None) :
         '''
+        replicate(name)
+
+        Replicate a logical file.
+
         name:           saga.Url
         flags:          flags enum
         ttype:          saga.task.type enum
@@ -197,6 +225,10 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     @sus.returns ((sus.nothing, st.Task))
     def upload (self, name, tgt=None, flags=None, ttype=None) :
         '''
+        upload(name, tgt=None, flags=None)
+
+        Upload a physical file.
+
         name:           saga.Url
         tgt:            saga.Url
         flags:          flags enum
@@ -217,6 +249,10 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     @sus.returns ((sus.nothing, st.Task))
     def download (self, name, src=None, flags=None, ttype=None) :
         '''
+        download(name, src=None, flags=None)
+
+        Download a physical file.
+
         name:           saga.Url
         src:            saga.Url
         flags:          flags enum
