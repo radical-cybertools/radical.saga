@@ -43,12 +43,13 @@ individual class documentations.
 File -- :class:`saga.filesystem.File`
 ----------------------------------------
 
-:todo: ...
-
 .. autoclass:: saga.filesystem.File
    :members:
    :undoc-members:
    :show-inheritance:
+   :special-members: __init__
+   :exclude-members: create, read, write, seek, read_v, write_v, size_p, read_p, write_p, size_e, read_e, write_e, modes_e, __module__
+
 
 
 .. contents:: Table of Contents
@@ -61,11 +62,11 @@ File -- :class:`saga.filesystem.File`
 Directory -- :class:`saga.filesystem.Directory`
 -----------------------------------------------
 
-:todo: ...
-
 .. autoclass:: saga.filesystem.Directory
    :members:
    :undoc-members:
    :show-inheritance:
+   :special-members: __init__
+   :exclude-members: create, __module__
 
 

@@ -61,6 +61,7 @@ Job Service -- :class:`saga.job.Service`
    :members:
    :undoc-members:
    :special-members: __init__
+   :exclude-members: create, __module__
 
 Job Description -- :class:`saga.job.Description`
 ------------------------------------------------
@@ -309,7 +310,7 @@ Jobs -- :class:`saga.job.Job`
    :members:
    :undoc-members:
    :show-inheritance:
-   :exclude-members: get_result, get_object, get_exception, re_raise ,result, object, exception, get_stdin, get_stdout, get_stderr, suspend, resume, migrate, checkpoint, stdout, stderr
+   :exclude-members: get_result, get_object, get_exception, re_raise ,result, object, exception, get_stdin, get_stdout, get_stderr, suspend, resume, migrate, checkpoint, stdout, stderr, __module__
 
 
 .. _job_attributes:
