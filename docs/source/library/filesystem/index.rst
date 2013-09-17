@@ -33,9 +33,21 @@ additional capabilities, such get_size() or move(), can be found in the
 individual class documentations.
 
 
-.. contents:: Table of Contents
-   :local:
+.. _filesystemflags:
 
+Flags
+-----
+
+The following constants are defined as valid flags for file and directory methods:
+
+.. currentmodule:: saga.filesystem
+.. data:: OVERWRITE
+.. data:: RECURSIVE
+.. data:: CREATE
+.. data:: CREATE_PARENTS
+.. data:: LOCK
+.. data:: EXCLUSIVE 
+.. data:: DEREFERENCE
 
 .. #############################################################################
 .. _file:
@@ -49,11 +61,6 @@ File -- :class:`saga.filesystem.File`
    :show-inheritance:
    :special-members: __init__
    :exclude-members: create, read, write, seek, read_v, write_v, size_p, read_p, write_p, size_e, read_e, write_e, modes_e, __module__
-
-
-
-.. contents:: Table of Contents
-   :local:
 
 
 .. #############################################################################

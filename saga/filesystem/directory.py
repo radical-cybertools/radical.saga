@@ -61,7 +61,7 @@ class Directory (nsdir.Directory) :
         :param url:     Url of the (remote) directory
         :type  url:     :class:`saga.Url` 
 
-        :param flags:    Open flags (POSIX)
+        :param flags:   :ref:`filesystemflags`
         :param session: :class:`saga.Session`
         
         The specified directory is expected to exist -- otherwise
@@ -126,8 +126,7 @@ class Directory (nsdir.Directory) :
 
         :param path:     The name/path of the file to open
         :type path:      str()
-        :param flags:    Open flags
-        :type flags:     enum
+        :param flags:    :ref:`filesystemflags`
         """
         url = surl.Url(path)
         return self._adaptor.open (url, flags, ttype=ttype)
@@ -149,9 +148,7 @@ class Directory (nsdir.Directory) :
 
         :param path:     The name/path of the directory to open
         :type path:      str()
-        :param flags:    Open flags
-        :type flags:     enum
-        
+        :param flags:    :ref:`filesystemflags`        
 
         Example::
 

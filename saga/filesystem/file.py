@@ -54,7 +54,7 @@ class File (nsentry.Entry) :
         :param url:     Url of the (remote) file
         :type  url:     :class:`saga.Url` 
 
-        :param flags:    Open flags (POSIX)
+        :fgs:   :ref:`filesystemflags`
         :param session: :class:`saga.Session`
 
         The specified file is expected to exist -- otherwise a DoesNotExist
