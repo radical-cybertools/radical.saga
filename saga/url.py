@@ -53,7 +53,10 @@ class Url (object):
                   sus.optional (basestring, 'Url'))
     @sus.returns (sus.nothing)
     def __init__(self, url_string=''):
-        """ Create a new Url object from a string or another Url object.
+        """ 
+        __init__(url_string='')
+
+        Create a new Url object from a string or another Url object.
         """
 
         if type(url_string) == type(None):
@@ -72,7 +75,10 @@ class Url (object):
     @sus.takes   ('Url')
     @sus.returns ((sus.nothing, basestring))
     def __str__  (self):
-        """ String representation
+        """
+        __str__()
+
+        String representation.
         """
         return self._urlobj.geturl()
 
@@ -82,7 +88,10 @@ class Url (object):
     @sus.takes   ('Url')
     @sus.returns (basestring)
     def __unicode__(self):
-        """ Unicode representation.
+        """ 
+        __unicode__()
+
+        Unicode representation.
         """
         ucstring = u'%s' % unicode(self._urlobj.geturl())
         return ucstring
@@ -131,7 +140,14 @@ class Url (object):
                   basestring)
     @sus.returns (sus.nothing)
     def set_scheme(self, scheme):
-        """ Set the 'scheme' component.
+        """ 
+        set_scheme(scheme)
+
+        Set the URL 'scheme' component.
+
+        :param scheme: The new scheme
+        :type host:  str
+
         """
         newurl = urlparse.urlunparse((scheme,
                                      self._urlobj.netloc,
@@ -144,7 +160,10 @@ class Url (object):
     @sus.takes   ('Url')
     @sus.returns ((sus.nothing, basestring))
     def get_scheme(self):
-        """R eturn the 'scheme' component.
+        """
+        get_scheme()
+
+        Return the URL 'scheme' component.
         """
         return self._urlobj.scheme
 
@@ -161,7 +180,13 @@ class Url (object):
                   basestring)
     @sus.returns (sus.nothing)
     def set_host(self, host):
-        """ Set the 'host' component.
+        """ 
+        set_host(host)
+
+        Set the 'host' component.
+
+        :param host: The new hostname
+        :type host:  str
         """
         netloc = self._make_netloc(self._urlobj.username,
                                    self._urlobj.password,
@@ -178,7 +203,10 @@ class Url (object):
     @sus.takes   ('Url')
     @sus.returns ((sus.nothing, basestring))
     def get_host(self):
-        """ Return the 'host' component.
+        """ 
+        get_host()
+
+        Return the URL 'host' component.
         """
         return self._urlobj.hostname
 
@@ -194,7 +222,14 @@ class Url (object):
                   (basestring, int))
     @sus.returns (sus.nothing)
     def set_port(self, port):
-        """ Set the 'port' component.
+        """ 
+        set_port(port)
+
+        Set the URL 'port' component.
+
+
+        :param port: The new port
+        :type port:  int
         """
         netloc = self._make_netloc(self._urlobj.username,
                                    self._urlobj.password,
@@ -211,7 +246,10 @@ class Url (object):
     @sus.takes   ('Url')
     @sus.returns ((sus.nothing, int))
     def get_port(self):
-        """ Return the 'port' component.
+        """ 
+        get_port()
+
+        Return the URL 'port' component.
         """
         if self._urlobj.port is not None:
             return int(self._urlobj.port)
@@ -230,7 +268,13 @@ class Url (object):
                   basestring)
     @sus.returns (sus.nothing)
     def set_username(self, username):
-        """ Set the 'username' component.
+        """ 
+        set_username(username)
+
+        Set the URL 'username' component.
+
+        :param username: The new username
+        :type host:  str
         """
         netloc = self._make_netloc(username, self._urlobj.password,
                                    self._urlobj.hostname, self._urlobj.port)
@@ -246,7 +290,10 @@ class Url (object):
     @sus.takes   ('Url')
     @sus.returns ((sus.nothing, basestring))
     def get_username(self):
-        """ Return the 'username' component.
+        """ 
+        get_username()
+
+        Return the URL 'username' component.
         """
         return self._urlobj.username
 
@@ -262,7 +309,13 @@ class Url (object):
                   basestring)
     @sus.returns (sus.nothing)
     def set_password(self, password):
-        """ Set the 'password' component.
+        """ 
+        set_password(password)
+
+        Set the URL 'password' component.
+
+        :param password: The new password
+        :type password:  str
         """
         netloc = self._make_netloc(self._urlobj.username, password,
                                    self._urlobj.hostname, self._urlobj.port)
@@ -278,7 +331,10 @@ class Url (object):
     @sus.takes   ('Url')
     @sus.returns ((sus.nothing, basestring))
     def get_password(self):
-        """ Return the 'username' component.
+        """ 
+        get_password()
+
+        Return the URL 'username' component.
         """
         return self._urlobj.password
 
@@ -294,7 +350,13 @@ class Url (object):
                   basestring)
     @sus.returns (sus.nothing)
     def set_fragment(self, fragment):
-        """ Set the 'fragment' component.
+        """ 
+        set_fragment(fragment)
+
+        Set the URL 'fragment' component.
+
+        :param fragment: The new fragment
+        :type fragment:  str
         """
         newurl = urlparse.urlunparse((self._urlobj.scheme,
                                      self._urlobj.netloc,
@@ -307,7 +369,10 @@ class Url (object):
     @sus.takes   ('Url')
     @sus.returns ((sus.nothing, basestring))
     def get_fragment(self):
-        """ Return the 'fragment' component.
+        """ 
+        get_fragment()
+
+        Return the URL 'fragment' component.
         """
         return self._urlobj.fragment
 
@@ -323,7 +388,13 @@ class Url (object):
                   basestring)
     @sus.returns (sus.nothing)
     def set_path(self, path):
-        """ Set the 'path' component.
+        """ 
+        set_path(path)
+
+        Set the URL 'path' component.
+
+        :param path: The new path
+        :type path:  str
         """
         newurl = urlparse.urlunparse((self._urlobj.scheme,
                                      self._urlobj.netloc,
@@ -336,7 +407,10 @@ class Url (object):
     @sus.takes   ('Url')
     @sus.returns ((sus.nothing, basestring))
     def get_path(self):
-        """ Return the 'path' component.
+        """ 
+        get_path()
+
+        Return the URL 'path' component.
         """
         if '?' in self._urlobj.path:
             (path, query) = self._urlobj.path.split('?')
@@ -356,7 +430,13 @@ class Url (object):
                   basestring)
     @sus.returns (sus.nothing)
     def set_query(self, query):
-        """ Set the 'query' component.
+        """ 
+        set_query(query)
+
+        Set the URL 'query' component.
+
+        :param query: The new query
+        :type query:  str
         """
         newurl = urlparse.urlunparse((self._urlobj.scheme,
                                      self._urlobj.netloc,
@@ -369,7 +449,10 @@ class Url (object):
     @sus.takes   ('Url')
     @sus.returns ((sus.nothing, basestring))
     def get_query(self):
-        """ Return the 'query' component.
+        """
+        get_query()
+
+        Return the URL 'query' component.
         """
         if self._urlobj.query == '':
             if '?' in self._urlobj.path:
