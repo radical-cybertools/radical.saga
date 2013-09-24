@@ -68,7 +68,6 @@ def main(args):
 
     try:
         myfile = saga.replica.LogicalFile('irods://' + IRODS_DIRECTORY+TEMP_FILENAME)
-        #myfile.add_location("irods:////data/cache/AGLT2_CE_2_FTPplaceholder/whatever?resource=AGLT2_CE_2_FTP")
 
         # grab our home directory (tested on Linux)
         home_dir = os.path.expanduser("~"+"/")
@@ -97,13 +96,6 @@ def main(args):
         print "Creating iRODS file object"
         myfile = saga.replica.LogicalFile('irods://localhost/' + IRODS_DIRECTORY+TEMP_FILENAME)
         
-        # TODO: Re-implement this test
-        # [11:49:05 AM] Andre M: To get the size, you will first need to dig out a location, open a filesystem.File on it, and then check the size...
-        # [11:50:18 AM] Ashley Z: and by location, that's a physical location, not a logical location, right?
-        # [11:50:34 AM] Andre M: correct!  size is a property of a physical file...
-        # print "Size of test file %s on iRODS in bytes:" % (IRODS_DIRECTORY + TEMP_FILENAME)
-        # print myfile.get_size()
-
         print "Creating",NUM_REPLICAS,"replicas for",IRODS_DIRECTORY+TEMP_FILENAME
         for i in range(NUM_REPLICAS):
             myfile.replicate("irods://localhost/this/path/is/ignored/?resource="+IRODS_RESOURCE)
@@ -112,16 +104,9 @@ def main(args):
         for entry in myfile.list_locations():
             print entry
 
-        #print "Downloading logical file %s to current/default directory" % \
-        #    (IRODS_DIRECTORY + TEMP_FILENAME) 
-        #myfile.download("."/)
-
         print "Downloading logical file %s to /tmp/" % \
             (IRODS_DIRECTORY + TEMP_FILENAME) 
         myfile.download("/tmp/")
-
-        #print "Deleting downloaded file locally : %s" % (os.getcwd() + TEMP_FILENAME)
-        #os.remove(os.getcwd() +"/" + TEMP_FILENAME)
 
         print "Deleting downloaded file locally: %s" % ("/tmp" + TEMP_FILENAME)
         os.remove("/tmp/" + TEMP_FILENAME)
@@ -129,12 +114,6 @@ def main(args):
         print "Making test dir %s on iRODS" % (IRODS_DIRECTORY+TEMP_DIR)
         mydir.make_dir("irods://localhost/"+IRODS_DIRECTORY+TEMP_DIR)
         
-        # test moving the logical file
-        # TODO: bug andre to make sure I am doing this right :)
-        #print "Moving file to %s test dir on iRODS"  \
-            # % (IRODS_DIRECTORY+TEMP_DIR)
-        #myfile.move_self("irods://"+IRODS_DIRECTORY+TEMP_DIR)
-
         print "Deleting test dir %s from iRODS" % (IRODS_DIRECTORY+TEMP_DIR)
         mydir.remove("irods://localhost/"+IRODS_DIRECTORY+TEMP_DIR)
 
