@@ -1063,6 +1063,10 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         while True:
             state = self._job_get_state(self._id)
             self._logger.debug("wait() state for job id %s:%s"%(self._id, state))
+
+            if state == saga.job.UNKNOWN :
+                log_error_and_raise("cannot get job state", saga.IncorrectState, self._logger)
+
             if state == saga.job.DONE or \
                state == saga.job.FAILED or \
                state == saga.job.CANCELED:
