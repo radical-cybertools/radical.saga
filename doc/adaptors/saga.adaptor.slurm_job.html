@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>12. saga.adaptor.slurm_job &mdash; SAGA 0.9.11 documentation</title>
+    <title>12. saga.adaptor.slurm_job &mdash; SAGA 0.1.1-85-g8db36a4 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.11',
+        VERSION:     '0.1.1-85-g8db36a4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.11 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.1.1-85-g8db36a4 documentation" href="../index.html" />
     <link rel="up" title="3. Adaptors" href="saga.adaptor.index.html" />
     <link rel="next" title="13. saga.adaptor.http_file" href="saga.adaptor.http_file.html" />
     <link rel="prev" title="11. saga.adaptor.condorjob" href="saga.adaptor.condorjob.html" /> 
@@ -52,7 +52,7 @@
         <li class="right" >
           <a href="saga.adaptor.condorjob.html" title="11. saga.adaptor.condorjob"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.1.1-85-g8db36a4 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" accesskey="U">3. Adaptors</a> &raquo;</li> 
       </ul>
     </div>  
@@ -68,59 +68,8 @@
 <h2>12.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>The SLURM adaptor allows to run and manage jobs on a
 <a class="reference external" href="https://computing.llnl.gov/linux/slurm/slurm.html">SLURM</a> HPC cluster.</p>
-<div class="section" id="general-notes">
-<h3>12.1.1. General Notes<a class="headerlink" href="#general-notes" title="Permalink to this headline">¶</a></h3>
-<p>On Stampede, returning a non-zero exit code results in the scheduler
-putting the job into a FAILED state and assigning it an exit code of 127.</p>
-<p><strong>Example:</strong></p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">js</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="s">&quot;slurm+ssh://stampede&quot;</span><span class="p">)</span>
-<span class="n">jd</span><span class="o">.</span><span class="n">executable</span>  <span class="o">=</span> <span class="s">&#39;/bin/exit&#39;</span>
-<span class="n">jd</span><span class="o">.</span><span class="n">arguments</span>   <span class="o">=</span> <span class="p">[</span><span class="s">&#39;3&#39;</span><span class="p">]</span>
-<span class="n">job</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">jd</span><span class="p">)</span>
-<span class="n">job</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>Will return something similar to (personal account information
-removed):</p>
-<div class="highlight-python"><pre>(saga-python-env)ashleyz@login1:~$ scontrol show job 309684
-JobId=309684 Name=SlurmJob
-   UserId=_____ GroupId=__________
-   Priority=3000 Account=_____ QOS=normal
-   JobState=FAILED Reason=NonZeroExitCode Dependency=(null)
-   Requeue=0 Restarts=0 BatchFlag=1 ExitCode=127:0
-   RunTime=00:00:05 TimeLimit=00:01:00 TimeMin=N/A
-   SubmitTime=2013-02-22T20:26:50 EligibleTime=2013-02-22T20:26:50
-   StartTime=2013-02-22T20:26:50 EndTime=2013-02-22T20:26:55
-   PreemptTime=None SuspendTime=None SecsPreSuspend=0
-   Partition=development AllocNode:Sid=login1:12070
-   ReqNodeList=(null) ExcNodeList=(null)
-   NodeList=c557-401
-   BatchHost=c557-401
-   NumNodes=1 NumCPUs=16 CPUs/Task=1 ReqS:C:T=*:*:*
-   MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0
-   Features=(null) Gres=(null) Reservation=(null)
-   Shared=0 Contiguous=0 Licenses=(null) Network=(null)
-   Command=/home1/01414/_______/.saga/adaptors/slurm_job/wrapper.sh
-   WorkDir=/home1/01414/_______/</pre>
-</div>
-<p>I&#8217;m not sure how to fix this for the time being.</p>
-<p>Suspend/resume do not appear to be supported for regular
-users on Stampede.</p>
-<p>run_job is not supported, as there are many attributed (queues,
-projects, etc) which need to be passed to the adaptor.  I could
-add URL parsing so that you could pile on queue/project/jobname
-information if this has any strong usecases, but I avoided doing
-so for now to decrease complexity/possible confusion.</p>
-<p>Cancelling a job with scontrol, puts it into a COMPLETING state, which
-is parsed by the SLURM status parser as saga.job.RUNNING (see the
-SLURM docs, COMPLETING is a state a job goes into when it is done
-running but still flushing IO/etc).  Anyhow, I put some code in to
-manually put the job into CANCELED state when the job is canceled,
-but I&#8217;m not sure that this is reported correctly everywhere yet.</p>
-<p>What exit code should be returned for a CANCELED job?</p>
-</div>
 <div class="section" id="implementation-notes">
-<h3>12.1.2. Implementation Notes<a class="headerlink" href="#implementation-notes" title="Permalink to this headline">¶</a></h3>
+<h3>12.1.1. Implementation Notes<a class="headerlink" href="#implementation-notes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>If scontrol can&#8217;t find an exit code, it returns None
@@ -523,8 +472,7 @@ not gone over theis extensively...</li>
   <ul>
 <li><a class="reference internal" href="#">12. saga.adaptor.slurm_job</a><ul>
 <li><a class="reference internal" href="#description">12.1. Description</a><ul>
-<li><a class="reference internal" href="#general-notes">12.1.1. General Notes</a></li>
-<li><a class="reference internal" href="#implementation-notes">12.1.2. Implementation Notes</a></li>
+<li><a class="reference internal" href="#implementation-notes">12.1.1. Implementation Notes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#supported-schemas">12.2. Supported Schemas</a></li>
@@ -592,7 +540,7 @@ not gone over theis extensively...</li>
         <li class="right" >
           <a href="saga.adaptor.condorjob.html" title="11. saga.adaptor.condorjob"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.11 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.1.1-85-g8db36a4 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" >3. Adaptors</a> &raquo;</li> 
       </ul>
     </div>
