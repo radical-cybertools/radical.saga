@@ -787,6 +787,9 @@ about finished jobs. Setting state to 'DONE'.")
         while True:
             state = self._job_get_state(job_id=job_id)
 
+            if state == saga.job.UNKNOWN :
+                log_error_and_raise("cannot get job state", saga.IncorrectState, self._logger)
+
             if state == saga.job.DONE or \
                state == saga.job.FAILED or \
                state == saga.job.CANCELED:
