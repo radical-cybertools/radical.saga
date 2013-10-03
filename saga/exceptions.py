@@ -69,7 +69,7 @@ class SagaException (Exception) :
         :param parent:      Original exception
         :param api_object:  The object that has caused the exception, default is
                             None.
-        :param from_log:    Exception c'tor originates from the staic log_
+        :param from_log:    Exception c'tor originates from the static log_
                             member method (ignore in exception stack!)
         """
         Exception.__init__(self, msg)
