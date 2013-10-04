@@ -16,7 +16,9 @@ class PluginManager (object) :
 
     Example::
 
-       pm = saga.utils.PluginManager ('scheduler')
+       module_name = 'saga'
+       plugin_type = 'hello'
+       pm = saga.utils.PluginManager (module_name, plugin_type)
 
        for plugin_name in pm.list () :
            print plugin_name
@@ -24,15 +26,17 @@ class PluginManager (object) :
 
         default_plugin = pm.load ('default')
 
-        default_plugin.init (app_description)
-        (overlay_description, workload_description) = default_plugin.run ()
+        default_plugin.init ("world")
+        greeting = default_plugin.run ()
+
+        print greeting   # prints "hello default world"
 
     The plugins are expected to follow a specific naming and coding schema to be
     recognized by the plugin manager.  The naming schema is:
 
         [mname].plugins.[type].plugin_[type]_[name].py
 
-    i.e. for the code example above: `saga.plugins.scheduler.plugin_planner_default.py`
+    i.e. for the code example above: `saga.plugins.scheduler.plugin_hello_default.py`
 
     The plugin code consists of two parts:  a plugin description, and a plugin
     class.  The description is a module level dictionary named
