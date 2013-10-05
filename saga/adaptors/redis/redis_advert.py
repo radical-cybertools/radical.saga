@@ -6,7 +6,8 @@ import traceback
 import saga.url
 import saga.adaptors.base
 import saga.adaptors.cpi.advert
-import saga.utils.misc
+import saga.exceptions as se
+import saga.utils.misc as sumisc
 
 import redis_namespace as rns
 
@@ -132,7 +133,7 @@ class BulkDirectory (saga.adaptors.cpi.advert.Directory) :
     def container_wait (self, tasks, mode, timeout) :
 
         if timeout >= 0 :
-            raise saga.exceptions.BadParameter ("Cannot handle timeouts > 0")
+            raise se.BadParameter ("Cannot handle timeouts > 0")
         for task in tasks :
             task.wait ()
 
@@ -181,7 +182,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
     @SYNC_CALL
     def init_instance (self, adaptor_state, url, flags, session) :
 
-        self._url       = url
+        self._url       = sumisc.url_normalize (url)
         self._flags     = flags
         self._container = self._adaptor._bulk
 
@@ -196,7 +197,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
     @ASYNC_CALL
     def init_instance_async (self, adaptor_state, url, flags, session, ttype) :
 
-        self._url     = url
+        self._url     = sumisc.url_normalize (url)
         self._flags   = flags
         
         self._set_session (session)
@@ -246,7 +247,10 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
     @SYNC_CALL
     def attribute_lister (self) :
 
-        return self._nsdir.get_data ().keys ()
+        data = self._nsentry.get_data ()
+
+        for key in data.keys () :
+            self._api ()._attributes_i_set (key, data[key], self._api ()._UP)
 
 
     # ----------------------------------------------------------------
@@ -263,6 +267,86 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
     def get_url (self) :
 
         return self._url
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def is_dir (self, name) :
+
+        try :
+            saga.advert.Directory (sumisc.url_make_absolute (self._url, name))
+        except Exception as e:
+            return False
+
+        return True
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def list (self, pattern, flags) :
+
+        if  pattern :
+            raise se.BadParameter ("pattern for list() not supported")
+
+
+        ret = []
+
+        if  not flags :
+
+            ret = self._nsdir.list ()
+
+
+        elif flags == saga.advert.RECURSIVE :
+
+            # ------------------------------------------------------------------
+            def get_kids (path) :
+
+                d    = saga.advert.Directory (path)
+                kids = d.list ()
+
+                for kid in kids :
+
+                    kid_url      = self._url
+                    kid_url.path = kid
+
+                    if  d.is_dir (kid_url) :
+                        get_kids (kid_url)
+
+                    ret.append (kid)
+            # ------------------------------------------------------------------
+
+            get_kids (self._url)
+
+
+        else :
+            raise se.BadParameter ("list() only supports the RECURSIVE flag")
+
+
+        return ret
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def change_dir (self, tgt) :
+
+        # backup state
+        orig_url = self._url
+
+        try :
+            if  not sumisc.url_is_compatible (tgt, self._url) :
+                raise se.BadParameter ("cannot chdir to %s, leaves namespace" % tgt)
+
+            self._url = sumisc.url_make_absolute (tgt, self_url)
+            self._init_check ()
+
+
+        finally :
+            # restore state on error
+            self._url = orig_url
+
 
 
     # ----------------------------------------------------------------
@@ -290,11 +374,11 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
   # 
   #     if src_url.schema :
   #         if not src_url.schema.lower () in _ADAPTOR_SCHEMAS :
-  #             raise saga.exceptions.BadParameter ("Cannot handle url %s (not redis)" %  source)
+  #             raise se.BadParameter ("Cannot handle url %s (not redis)" %  source)
   # 
   #     if tgt_url.schema :
   #         if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :
-  #             raise saga.exceptions.BadParameter ("Cannot handle url %s (not redis)" %  target)
+  #             raise se.BadParameter ("Cannot handle url %s (not redis)" %  target)
   # 
   # 
   #     # make paths absolute
@@ -386,7 +470,10 @@ class RedisEntry (saga.adaptors.cpi.advert.Entry) :
     @SYNC_CALL
     def attribute_lister (self) :
 
-        return self._nsentry.get_data ().keys ()
+        data = self._nsentry.get_data ()
+
+        for key in data.keys () :
+            self._api ()._attributes_i_set (key, data[key], self._api ()._UP)
 
 
     # ----------------------------------------------------------------
@@ -416,10 +503,10 @@ class RedisEntry (saga.adaptors.cpi.advert.Entry) :
   # 
   #     if tgt_url.schema :
   #         if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :
-  #             raise saga.exceptions.BadParameter ("Cannot handle url %s (not redis)" %  target)
+  #             raise se.BadParameter ("Cannot handle url %s (not redis)" %  target)
   # 
-  #     if not saga.utils.misc.url_is_redis (tgt_url) :
-  #         raise saga.exceptions.BadParameter ("Cannot handle url %s (not redis)"     %  target)
+  #     if not sumisc.url_is_redis (tgt_url) :
+  #         raise se.BadParameter ("Cannot handle url %s (not redis)"     %  target)
   # 
   #     # make path absolute
   #     if tgt[0] != '/'  :  tgt = "%s/%s"   % (os.path.dirname (src), tgt)
