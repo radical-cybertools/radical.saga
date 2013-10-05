@@ -5,6 +5,7 @@ __license__   = "MIT"
 
 
 import re
+import os
 import sys
 import time
 import socket
@@ -190,6 +191,19 @@ def url_get_filename (url_1) :
 
 # --------------------------------------------------------------------
 #
+def url_normalize (url_1) :
+    """ 
+    The path element of the URL is normalized
+    """
+
+    ret      = saga.Url (url_1)
+    ret.path = os.path.normpath (ret.path)
+
+    return ret
+
+
+# --------------------------------------------------------------------
+#
 def url_make_absolute (url_1, url_2) :
     """ 
     URL1 is expected to only have a path
@@ -215,7 +229,7 @@ def url_make_absolute (url_1, url_2) :
         # absolute path, replace url path...
         ret.path = url_2.path
 
-    # FIXME: normalize, to get rid of double slashes etc.
+
     return ret
 
 
@@ -233,6 +247,7 @@ def url_is_compatible (url_1, url_2) :
 
 
     # if either one url only contains a path, it is compatible to anything.
+
     if u1.path == str(u1) : return True
     if u2.path == str(u2) : return True
 

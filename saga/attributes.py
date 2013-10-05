@@ -662,11 +662,9 @@ class Attributes (_AttributesBase) :
             # always raise and lower the recursion shield
             try :
                 d['recursion'] = True
-                return lister ()
+                lister ()
             finally :
                 d['recursion'] = False
-
-        return []
 
 
 
@@ -2646,7 +2644,6 @@ class Attributes (_AttributesBase) :
 # ------------------------------------------------------------------------------
 
 # FIXME: add 
-#   - as_dict()
 #   - class metric()
 #   - add_metric()
 #   - remove_metric()
