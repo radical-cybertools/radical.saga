@@ -334,11 +334,20 @@ class Attributes (_AttributesBase) :
         # initialize state
         d = self._attributes_t_init ()
 
-        # # call to update and the args/kwargs handling seems to be part of the
-        # # dict interface conventions *shrug*
-        #
-        # # FIXME: use similar mechanism to initialize attribs
-        # self.update (*args, **kwargs)
+        # call to update and the args/kwargs handling seems to be part of the
+        # dict interface conventions *shrug*
+        # we use similar mechanism to initialize attribs here:
+
+        for arg in args :
+            if  isinstance (arg, dict) :
+                for key in arg.keys () :
+                    self.set_attribute (key, arg[key])
+            else :
+                raise se.BadParameter ("initialization expects dictionary")
+
+        for key in kwargs.keys () :
+            self.set_attribute (key, kwargs[key])
+
 
 
     # --------------------------------------------------------------------------
@@ -1164,7 +1173,7 @@ class Attributes (_AttributesBase) :
                     e = d['attributes'][key]['extended'] 
                     p = d['attributes'][key]['private'] 
                     k = key
-
+                    
                     if CamelCase :
                         k = d['attributes'][key]['camelcase']
 
@@ -1258,9 +1267,10 @@ class Attributes (_AttributesBase) :
         d = self._attributes_t_init ()
 
         # check if we know about that attribute
-        if 'exists' in d['attributes'][key] :
-            if  d['attributes'][key]['exists'] :
-                return True
+        if key in d['attributes'] :
+            if 'exists' in d['attributes'][key] :
+                if  d['attributes'][key]['exists'] :
+                    return True
 
         return False
 
@@ -1538,16 +1548,19 @@ class Attributes (_AttributesBase) :
         # that matters).  But we store attributes in 'under_score' version.
         us_key = self._attributes_t_underscore (key)
 
-        # remove any old instance of this attribute
+        # retain old values
+        val    = default
+        exists = False
         if us_key in  d['attributes'] :
-            self._attributes_unregister (us_key, flow=flow)
+            val    = d['attributes'][us_key]['value']
+            exists = True
 
         # register the attribute and properties
         d['attributes'][us_key]                 = {}
-        d['attributes'][us_key]['value']        = default # initial value
+        d['attributes'][us_key]['value']        = val     # initial value
         d['attributes'][us_key]['default']      = default # default value
         d['attributes'][us_key]['type']         = typ     # int, float, enum, ...
-        d['attributes'][us_key]['exists']       = False   # no value set, yet
+        d['attributes'][us_key]['exists']       = exists  # no value set, yet?
         d['attributes'][us_key]['flavor']       = flavor  # scalar / vector
         d['attributes'][us_key]['mode']         = mode    # readonly / writeable / final
         d['attributes'][us_key]['extended']     = ext     # is an extended attribute 
@@ -1918,7 +1931,6 @@ class Attributes (_AttributesBase) :
 
 
         keys_all   = sorted (d['attributes'].iterkeys ())
-        keys_exist = (key.lower for key in sorted (self._attributes_i_list (flow)))
 
         print "---------------------------------------"
         print str (type (self))
@@ -1932,6 +1944,11 @@ class Attributes (_AttributesBase) :
         print " %-30s : %s"  %  ("Private"     , d['private'])
         print " %-30s : %s"  %  ("CamelCasing" , d['camelcasing'])
         print "---------------------------------------"
+
+        keys_exist = []
+        for key in keys_all :
+            if  d['attributes'][key]['exists'] :
+                keys_exist.append (key)
 
         print "'Registered' attributes"
         for key in keys_all :
@@ -1950,6 +1967,7 @@ class Attributes (_AttributesBase) :
         print "---------------------------------------"
 
         print "'Existing' attributes"
+        keys_exist.sort ()
         for key in keys_exist :
             if not  d['attributes'][key]['mode'] == ALIAS :
                 print " %-30s [%6s, %6s, %9s, %3d]: %s"  % \

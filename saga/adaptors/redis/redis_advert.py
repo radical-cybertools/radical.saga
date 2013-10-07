@@ -360,6 +360,17 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
         return saga.advert.Entry (url, flags, self._session, _adaptor=self._adaptor)
 
 
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def open_dir (self, url, flags) :
+
+        if not url.scheme and not url.host : 
+            url = saga.url.Url (str(self._url) + '/' + str(url))
+
+        return saga.advert.Directory (url, flags, self._session, _adaptor=self._adaptor)
+
+
   # ##################################################################
   # # FIXME: all below
   # @SYNC_CALL
