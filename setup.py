@@ -151,6 +151,7 @@ setup_args = {
         "saga.adaptors.shell",
         "saga.adaptors.sge",
         "saga.adaptors.pbs",
+        "saga.adaptors.lsf",
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
         "saga.adaptors.redis",
