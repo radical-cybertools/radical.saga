@@ -9,7 +9,6 @@ __license__   = "MIT"
 #TODO: Throw errors if a user does not specify the MINIMUM number of
 #      attributes required for SLURM in a job description
 
-import saga.utils.which
 import saga.utils.pty_shell
 
 import saga.adaptors.base

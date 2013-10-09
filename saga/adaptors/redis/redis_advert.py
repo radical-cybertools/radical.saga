@@ -247,7 +247,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
     @SYNC_CALL
     def attribute_lister (self) :
 
-        data = self._nsentry.get_data ()
+        data = self._nsdir.get_data ()
 
         for key in data.keys () :
             self._api ()._attributes_i_set (key, data[key], self._api ()._UP)
@@ -339,7 +339,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
             if  not sumisc.url_is_compatible (tgt, self._url) :
                 raise se.BadParameter ("cannot chdir to %s, leaves namespace" % tgt)
 
-            self._url = sumisc.url_make_absolute (tgt, self_url)
+            self._url = sumisc.url_make_absolute (tgt, self._url)
             self._init_check ()
 
 

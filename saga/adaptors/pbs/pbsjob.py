@@ -7,7 +7,6 @@ __license__   = "MIT"
 """ PBS job adaptor implementation
 """
 
-import saga.utils.which
 import saga.utils.pty_shell
 import saga.utils.threads   as sut
 

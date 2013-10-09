@@ -8,9 +8,9 @@ __license__   = "MIT"
 '''
 
 import os
-from radical.utils as ru
+import radical.utils as ru
 
-from configfile import ConfigFileReader
+from   configfile import ConfigFileReader
 
 ################################################################################
 ##

@@ -7,7 +7,6 @@ __license__   = "MIT"
 """ SGE job adaptor implementation
 """
 
-import saga.utils.which
 import saga.utils.pty_shell
 
 import saga.adaptors.base
