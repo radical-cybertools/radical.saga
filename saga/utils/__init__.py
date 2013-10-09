@@ -10,12 +10,9 @@ __license__   = "MIT"
 # import contrib
 # 
 # from   pty_process import *
-# from   singleton   import *
 # from   exception   import *
 # from   misc        import *
-# from   which       import *
 
-from plugin_manager import PluginManager
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+# vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 

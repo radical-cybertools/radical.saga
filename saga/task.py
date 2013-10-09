@@ -10,11 +10,12 @@ __license__   = "MIT"
 import inspect
 import Queue
 
+import radical.utils.signatures as rus
+
 import saga.base             as sbase
 import saga.exceptions       as se
 import saga.attributes       as satt
 import saga.adaptors.base    as sab
-import saga.utils.signatures as sus
 
 from   saga.constants     import SYNC, ASYNC, TASK, ALL, ANY, UNKNOWN, CANCELED
 from   saga.constants     import RESULT, EXCEPTION, STATE, SIZE, TASKS, STATES
@@ -27,12 +28,12 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Task', 
+    @rus.takes   ('Task', 
                   sab.Base, 
                   basestring,
                   dict, 
-                  sus.one_of (SYNC, ASYNC, TASK))
-    @sus.returns (sus.nothing)
+                  rus.one_of (SYNC, ASYNC, TASK))
+    @rus.returns (rus.nothing)
     def __init__ (self, _adaptor, _method_type, _method_context, _ttype) :
         """ 
         This saga.Task constructor is private.
@@ -128,8 +129,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Task')
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Task')
+    @rus.returns (rus.nothing)
     def run (self) :
 
         if self._thread :
@@ -142,9 +143,9 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Task', 
-                  sus.optional (float))
-    @sus.returns (bool)
+    @rus.takes   ('Task', 
+                  rus.optional (float))
+    @rus.returns (bool)
     def wait (self, timeout=None) :
 
         if  None == timeout :
@@ -161,9 +162,9 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Task', 
+    @rus.takes   ('Task', 
                   float)
-    @sus.returns (sus.nothing)
+    @rus.returns (rus.nothing)
     def cancel (self) :
 
         if self._thread :
@@ -177,9 +178,9 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Task', 
-                  sus.one_of (UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Task', 
+                  rus.one_of (UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED))
+    @rus.returns (rus.nothing)
     def _set_state (self, state) :
 
         if not state in [UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED] :
@@ -190,8 +191,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Task')
-    @sus.returns (sus.one_of (UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED))
+    @rus.takes   ('Task')
+    @rus.returns (rus.one_of (UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED))
     def get_state (self) :
 
         if self._thread :
@@ -202,9 +203,9 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Task', 
-                  sus.anything)
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Task', 
+                  rus.anything)
+    @rus.returns (rus.nothing)
     def _set_result (self, result) :
 
         self._attributes_i_set (self._attributes_t_underscore (RESULT), result, force=True)
@@ -213,8 +214,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Task')
-    @sus.returns (sus.anything)
+    @rus.takes   ('Task')
+    @rus.returns (rus.anything)
     def get_result (self) :
         
         if not self.state in [DONE, FAILED, CANCELED] :
@@ -239,16 +240,16 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Task', 
+    @rus.takes   ('Task', 
                   se.SagaException)
-    @sus.returns (sus.nothing)
+    @rus.returns (rus.nothing)
     def _set_exception (self, e) :
         self._attributes_i_set (self._attributes_t_underscore (EXCEPTION), e, force=True)
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Task')
-    @sus.returns (se.SagaException)
+    @rus.takes   ('Task')
+    @rus.returns (se.SagaException)
     def get_exception (self) :
 
         if self._thread :
@@ -258,8 +259,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Task')
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Task')
+    @rus.returns (rus.nothing)
     def re_raise (self) :
 
         if self.exception :
@@ -275,8 +276,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Container')
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Container')
+    @rus.returns (rus.nothing)
     def __init__ (self) :
 
 
@@ -318,9 +319,9 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Container', 
+    @rus.takes   ('Container', 
                   Task)
-    @sus.returns (sus.nothing)
+    @rus.returns (rus.nothing)
     def add      (self, task) :
 
         import saga.job as sjob
@@ -337,9 +338,9 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Container', 
+    @rus.takes   ('Container', 
                   Task)
-    @sus.returns (sus.nothing)
+    @rus.returns (rus.nothing)
     def remove   (self, task) :
 
         if task in self.tasks :
@@ -348,8 +349,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Container')
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Container')
+    @rus.returns (rus.nothing)
     def run      (self) :
 
         if not len (self.tasks) :
@@ -407,10 +408,10 @@ class Container (sbase.SimpleBase, satt.Attributes) :
     #
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Container', 
-                  sus.one_of   (ANY, ALL),
-                  sus.optional (float))
-    @sus.returns (sus.list_of (Task))
+    @rus.takes   ('Container', 
+                  rus.one_of   (ANY, ALL),
+                  rus.optional (float))
+    @rus.returns (rus.list_of (Task))
     def wait (self, mode=ALL, timeout=None) :
 
         if  None == timeout :
@@ -435,9 +436,9 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Container', 
+    @rus.takes   ('Container', 
                   float)
-    @sus.returns (sus.list_of (Task))
+    @rus.returns (rus.list_of (Task))
     def _wait_any (self, timeout) :
 
         buckets = self._get_buckets ()
@@ -487,9 +488,9 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Container', 
+    @rus.takes   ('Container', 
                   float)
-    @sus.returns (sus.list_of (Task))
+    @rus.returns (rus.list_of (Task))
     def _wait_all (self, timeout) :
         # this method should actually be symmetric to _wait_any, and could
         # almost be mapped to it, but the code below is a kind of optimization
@@ -523,9 +524,9 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Container', 
-                  sus.optional (float))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Container', 
+                  rus.optional (float))
+    @rus.returns (rus.nothing)
     def cancel   (self, timeout=None) :
 
         if  None == timeout :
@@ -558,8 +559,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Container')
-    @sus.returns (int)
+    @rus.takes   ('Container')
+    @rus.returns (int)
     def get_size (self) :
 
         return len (self.tasks)
@@ -567,8 +568,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Container')
-    @sus.returns (sus.list_of (Task))
+    @rus.takes   ('Container')
+    @rus.returns (rus.list_of (Task))
     def get_tasks (self) :
 
         return self.tasks
@@ -576,8 +577,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Container')
-    @sus.returns (sus.list_of (sus.one_of (UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED)))
+    @rus.takes   ('Container')
+    @rus.returns (rus.list_of (rus.one_of (UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED)))
     def get_states (self) :
 
         buckets = self._get_buckets ()
@@ -622,8 +623,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Container')
-    @sus.returns (dict)
+    @rus.takes   ('Container')
+    @rus.returns (dict)
     def _get_buckets (self) :
         # collective container ops: walk through the task list, and sort into
         # buckets of tasks which have (a) the same task._container, or if that

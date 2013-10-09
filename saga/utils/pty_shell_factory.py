@@ -14,7 +14,6 @@ import radical.utils as ru
 import saga
 import saga.exceptions         as se
 import saga.utils.threads      as sut
-import saga.utils.which        as suw
 import saga.utils.misc         as sumisc
 import saga.utils.logger       as sul
 import saga.utils.pty_process  as supp
@@ -457,15 +456,15 @@ class PTYShellFactory (object) :
             # find out what type of shell we have to deal with
             if  info['schema']   in _SCHEMAS_SSH :
                 info['type']     = "ssh"
-                info['ssh_exe']  = suw.which ("ssh")
-                info['scp_exe']  = suw.which ("scp")
-                info['sftp_exe'] = suw.which ("sftp")
+                info['ssh_exe']  = ru.which ("ssh")
+                info['scp_exe']  = ru.which ("scp")
+                info['sftp_exe'] = ru.which ("sftp")
 
             elif info['schema']  in _SCHEMAS_GSI :
                 info['type']     = "ssh"
-                info['ssh_exe']  = suw.which ("gsissh")
-                info['scp_exe']  = suw.which ("gsiscp")
-                info['sftp_exe'] = suw.which ("gsisftp")
+                info['ssh_exe']  = ru.which ("gsissh")
+                info['scp_exe']  = ru.which ("gsiscp")
+                info['sftp_exe'] = ru.which ("gsisftp")
 
             elif info['schema']  in _SCHEMAS_SH :
                 info['type']     = "sh"
@@ -475,11 +474,11 @@ class PTYShellFactory (object) :
                 info['fs_root']  = "/"
 
                 if  "SHELL" in os.environ :
-                    info['sh_exe'] =  suw.which (os.environ["SHELL"])
-                    info['cp_exe'] =  suw.which ("cp")
+                    info['sh_exe'] =  ru.which (os.environ["SHELL"])
+                    info['cp_exe'] =  ru.which ("cp")
                 else :
-                    info['sh_exe'] =  suw.which ("sh")
-                    info['cp_exe'] =  suw.which ("cp")
+                    info['sh_exe'] =  ru.which ("sh")
+                    info['cp_exe'] =  ru.which ("cp")
 
             else :
                 raise se.BadParameter._log (self.logger, \

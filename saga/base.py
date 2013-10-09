@@ -8,10 +8,11 @@ import sys
 import string
 import inspect
 
+import radical.utils.signatures   as rus
+
 import saga.utils.logger
 import saga.engine.engine
 import saga.adaptors.base      as sab
-import saga.utils.signatures   as sus
 
 # ------------------------------------------------------------------------------
 #
@@ -24,8 +25,8 @@ class SimpleBase (object) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('SimpleBase')
-    @sus.returns (sus.nothing)
+    @rus.takes   ('SimpleBase')
+    @rus.returns (rus.nothing)
     def __init__  (self) :
 
         self._apitype   = self._get_apitype ()
@@ -36,8 +37,8 @@ class SimpleBase (object) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('SimpleBase')
-    @sus.returns (basestring)
+    @rus.takes   ('SimpleBase')
+    @rus.returns (basestring)
     def _get_apitype (self) :
 
         # apitype for saga.job.service.Service should be saga.job.Service --
@@ -68,13 +69,13 @@ class Base (SimpleBase) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Base',
+    @rus.takes   ('Base',
                   basestring, 
-                  sus.optional (sab.Base), 
-                  sus.optional (dict), 
-                  sus.optional (sus.anything),
-                  sus.optional (sus.anything))
-    @sus.returns (sus.nothing)
+                  rus.optional (sab.Base), 
+                  rus.optional (dict), 
+                  rus.optional (rus.anything),
+                  rus.optional (rus.anything))
+    @rus.returns (rus.nothing)
     def __init__  (self, schema, adaptor, adaptor_state, *args, **kwargs) :
 
         SimpleBase.__init__ (self)
@@ -107,8 +108,8 @@ class Base (SimpleBase) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Base')
-    @sus.returns ('saga.Session')
+    @rus.takes   ('Base')
+    @rus.returns ('saga.Session')
     def get_session (self) :
         """ 
         Returns the session which is managing the object instance.  For objects

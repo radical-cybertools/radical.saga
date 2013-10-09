@@ -4,7 +4,8 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import radical.utils as ru
+import radical.utils            as ru
+import radical.utils.signatures as rus
 
 import saga.utils.logger
 import saga.engine.engine
@@ -12,7 +13,6 @@ import saga.context
 import saga.base
 
 import saga.exceptions       as se
-import saga.utils.signatures as sus
 
 
 # ------------------------------------------------------------------------------
@@ -89,8 +89,8 @@ class _DefaultSession (object) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('_DefaultSession')
-    @sus.returns (sus.nothing)
+    @rus.takes   ('_DefaultSession')
+    @rus.returns (rus.nothing)
     def __init__ (self) :
 
         # the default session picks up default contexts, from all context
@@ -185,9 +185,9 @@ class Session (saga.base.SimpleBase) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Session', 
-                  sus.optional(bool))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Session', 
+                  rus.optional(bool))
+    @rus.returns (rus.nothing)
     def __init__ (self, default=True) :
         """
         default: bool
@@ -210,8 +210,8 @@ class Session (saga.base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Session')
-    @sus.returns (basestring)
+    @rus.takes   ('Session')
+    @rus.returns (basestring)
     def __str__  (self):
         """String represenation."""
 
@@ -220,9 +220,9 @@ class Session (saga.base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes      ('Session', 
+    @rus.takes      ('Session', 
                      saga.context.Context)
-    @sus.returns    (sus.nothing)
+    @rus.returns    (rus.nothing)
     def add_context (self, ctx) :
         """
         ctx:     saga.Context
@@ -237,9 +237,9 @@ class Session (saga.base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Session', 
+    @rus.takes   ('Session', 
                   saga.context.Context)
-    @sus.returns (sus.nothing)
+    @rus.returns (rus.nothing)
     def remove_context (self, ctx) :
         """
         ctx:     saga.Context
@@ -255,8 +255,8 @@ class Session (saga.base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Session')
-    @sus.returns (sus.list_of (saga.context.Context))
+    @rus.takes   ('Session')
+    @rus.returns (rus.list_of (saga.context.Context))
     def list_contexts  (self) :
         """
         ret:     list[saga.Context]
