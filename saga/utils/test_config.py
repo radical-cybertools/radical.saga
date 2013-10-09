@@ -5,9 +5,9 @@ __license__   = "MIT"
 
 
 import copy
+import radical.utils as ru
 
 import saga.exceptions      as se
-import saga.utils.singleton as single
 import saga.utils.logger    as slog
 import saga.utils.config    as sconf
 
@@ -163,7 +163,7 @@ _config_options = [
 ##
 class TestConfig (sconf.Configurable): 
 
-    __metaclass__ = single.Singleton
+    __metaclass__ = ru.Singleton
 
 
     #-----------------------------------------------------------------

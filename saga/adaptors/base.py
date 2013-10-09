@@ -6,10 +6,11 @@ __license__   = "MIT"
 
 """ the adaptor base class. """
 
-import saga.utils.singleton  as sing
-import saga.utils.logger     as sul
-import saga.utils.config     as suc
-import saga.utils.threads    as sut
+import radical.utils as ru
+
+import saga.utils.logger        as sul
+import saga.utils.config        as suc
+import saga.utils.threads       as sut
 
 from   saga.exceptions import *
 
@@ -23,7 +24,7 @@ class Base (suc.Configurable) :
     # engine, but engine is a singleton, too...) -- the engine will though
     # create new CPI implementation instances as needed (one per SAGA API
     # object).
-    __metaclass__ = sing.Singleton
+    __metaclass__ = ru.Singleton
 
     
     # --------------------------------------------------------------------------

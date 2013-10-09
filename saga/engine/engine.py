@@ -12,8 +12,9 @@ import pprint
 import string
 import inspect
 
+import radical.utils as ru
+
 import saga.exceptions      as se
-import saga.utils.singleton as single
 import saga.utils.logger    as slog
 import saga.utils.config    as sconf
 
@@ -116,7 +117,7 @@ class Engine(sconf.Configurable):
                       return
     """
 
-    __metaclass__ = single.Singleton
+    __metaclass__ = ru.Singleton
 
 
 
