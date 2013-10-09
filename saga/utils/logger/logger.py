@@ -4,8 +4,9 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-''' Provides log handler management for SAGA.
-'''
+''' Provides log handler management for SAGA. '''
+
+import radical.utils as ru
 
 import logging
 import saga.exceptions as se
@@ -14,7 +15,6 @@ from   saga.utils.config                    import Configurable
 from   saga.utils.logger.colorstreamhandler import *
 from   saga.utils.logger.filehandler        import FileHandler
 from   saga.utils.logger.defaultformatter   import DefaultFormatter
-from   saga.utils.singleton                 import Singleton
 
 
 ############# These are all supported options for saga.logging #################
@@ -68,7 +68,7 @@ class _Logger(Configurable):
     This class is not to be directly used by applications.
     """
 
-    __metaclass__ = Singleton
+    __metaclass__ = ru.Singleton
 
     class _MultiNameFilter(logging.Filter):
         def __init__(self, pos_filters, neg_filters=[]):

@@ -4,7 +4,8 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.utils.singleton
+import radical.utils as ru
+
 import saga.utils.logger
 import saga.engine.engine
 import saga.context
@@ -84,7 +85,7 @@ class _ContextList (list) :
 #
 class _DefaultSession (object) :
 
-    __metaclass__ = saga.utils.singleton.Singleton
+    __metaclass__ = ru.Singleton
 
     # --------------------------------------------------------------------------
     #

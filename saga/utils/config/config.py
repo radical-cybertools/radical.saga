@@ -8,9 +8,9 @@ __license__   = "MIT"
 '''
 
 import os
+from radical.utils as ru
 
-from saga.utils.singleton  import Singleton
-from configfile            import ConfigFileReader
+from configfile import ConfigFileReader
 
 ################################################################################
 ##
@@ -68,7 +68,7 @@ class Configuration(object):
         It is a 'Singleton' object, which means that  multiple instances all 
         point to the same object which holds the global configuration.
     """    
-    __metaclass__ = Singleton
+    __metaclass__ = ru.Singleton
 
     def __init__(self):
 
