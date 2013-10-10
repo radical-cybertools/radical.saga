@@ -11,15 +11,14 @@ import inspect
 import Queue
 
 import radical.utils.signatures as rus
+import radical.utils            as ru
 
-import saga.base             as sbase
-import saga.exceptions       as se
-import saga.attributes       as satt
-import saga.adaptors.base    as sab
+import base                     as sbase
+import exceptions               as se
+import attributes               as satt
+import adaptors.base            as sab
 
-from   saga.constants     import SYNC, ASYNC, TASK, ALL, ANY, UNKNOWN, CANCELED
-from   saga.constants     import RESULT, EXCEPTION, STATE, SIZE, TASKS, STATES
-from   saga.utils.threads import SagaThread, NEW, RUNNING, DONE, FAILED
+from   saga.constants       import *
 
 
 # ------------------------------------------------------------------------------
@@ -64,7 +63,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
         If the ``_method_context`` has *exactly* two elements, names ``_call``
         and ``args``, then the created task will wrap
-        a :class:`saga.util.threads.SagaThread` with that ``_call (_args)``.
+        a :class:`ru.Thread` with that ``_call (_args)``.
         """
         
         self._base = super  (Task, self)
@@ -113,7 +112,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
             args   = self._method_context['_args']
             kwargs = self._method_context['_kwargs']
 
-            self._thread = SagaThread (call, *args, **kwargs)
+            self._thread = ru.Thread (call, *args, **kwargs)
 
 
         # ensure task goes into the correct state
@@ -385,13 +384,13 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
                 else :
                     # hand off to the container function, in a separate task
-                    threads.append (SagaThread.Run (m_handle, tasks))
+                    threads.append (ru.Thread.Run (m_handle, tasks))
 
 
         # handle tasks not bound to a container
         for task in buckets['unbound'] :
 
-            threads.append (SagaThread.Run (task.run))
+            threads.append (ru.Thread.Run (task.run))
             
 
         # wait for all threads to finish
@@ -453,13 +452,13 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
-            threads.append (SagaThread.Run (c.container_wait, tasks, ANY, timeout))
+            threads.append (ru.Thread.Run (c.container_wait, tasks, ANY, timeout))
 
         
         # handle all tasks not bound to containers
         for task in buckets['unbound'] :
 
-            threads.append (SagaThread.Run (task.wait, timeout))
+            threads.append (ru.Thread.Run (task.wait, timeout))
             
 
         # mode == ANY: we need to watch our threads, and whenever one
@@ -544,13 +543,13 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
-            threads.append (SagaThread.Run (c.container_cancel, tasks, timeout))
+            threads.append (ru.Thread.Run (c.container_cancel, tasks, timeout))
 
         
         # handle all tasks not bound to containers
         for task in buckets['unbound'] :
 
-            threads.append (SagaThread.Run (task.cancel, timeout))
+            threads.append (ru.Thread.Run (task.cancel, timeout))
             
 
         for thread in threads :
@@ -593,13 +592,13 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
-            threads.append (SagaThread.Run (c.container_get_states, tasks))
+            threads.append (ru.Thread.Run (c.container_get_states, tasks))
 
         
         # handle all tasks not bound to containers
         for task in buckets['unbound'] :
 
-            threads.append (SagaThread.Run (task.get_state))
+            threads.append (ru.Thread.Run (task.get_state))
             
 
         # We still need to get the states from all threads.
