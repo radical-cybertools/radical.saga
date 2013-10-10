@@ -160,7 +160,6 @@ setup_args = {
         "saga.engine",
         "saga.utils",
         "saga.utils.logger",
-        "saga.utils.config",
         "saga.utils.job",
     ],
     'package_data': {'': ['*.sh']},

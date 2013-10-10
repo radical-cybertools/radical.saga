@@ -6,10 +6,10 @@ __license__   = "MIT"
 
 """ the adaptor base class. """
 
-import radical.utils      as ru
+import radical.utils         as ru
+import radical.utils.config  as ruc
 
-import saga.utils.logger  as sul
-import saga.utils.config  as suc
+import saga.utils.logger     as sul
 
 
 from   saga.exceptions import *
@@ -18,7 +18,7 @@ from   saga.exceptions import *
 # ------------------------------------------------------------------------------
 # adaptor base class
 #
-class Base (suc.Configurable) :
+class Base (ruc.Configurable) :
 
     # We only need one instance of this adaptor per process (actually per
     # engine, but engine is a singleton, too...) -- the engine will though
@@ -60,7 +60,7 @@ class Base (suc.Configurable) :
             )
 
 
-        suc.Configurable.__init__ (self, self._name, self._opts)
+        ruc.Configurable.__init__ (self, 'saga', self._name, self._opts)
 
 
     # --------------------------------------------------------------------------

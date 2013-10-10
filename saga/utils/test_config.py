@@ -5,11 +5,12 @@ __license__   = "MIT"
 
 
 import copy
-import radical.utils as ru
+
+import radical.utils         as ru
+import radical.utils.config  as ruc
 
 import saga.exceptions      as se
 import saga.utils.logger    as slog
-import saga.utils.config    as sconf
 
 import saga
 
@@ -161,7 +162,7 @@ _config_options = [
 
 ################################################################################
 ##
-class TestConfig (sconf.Configurable): 
+class TestConfig (ruc.Configurable): 
 
     __metaclass__ = ru.Singleton
 
@@ -171,9 +172,9 @@ class TestConfig (sconf.Configurable):
     def __init__ (self):
 
         # set the default configuration options for this object
-        sconf.Configurable.__init__(self, 'saga.tests', _config_options)
+        ruc.Configurable.__init__(self, 'saga', 'saga.tests', _config_options)
 
-        self._global_cfg = sconf.Configuration ()
+        self._global_cfg = ruc.Configuration ('saga')
 
         self.read_config ()
 
