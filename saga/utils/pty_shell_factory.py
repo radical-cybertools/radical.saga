@@ -18,6 +18,9 @@ import saga.utils.misc         as sumisc
 import saga.utils.logger       as sul
 import saga.utils.pty_process  as supp
 
+import pty_exceptions               as ptye
+
+
 # ------------------------------------------------------------------------------
 #
 # ssh options:
@@ -214,7 +217,8 @@ class PTYShellFactory (object) :
             # most one second.  We try to get within that range with 100*latency.
             delay = min (1.0, max (0.1, 50 * latency))
 
-            try :
+            if True :
+          # try :
                 prompt_patterns = ["[Pp]assword:\s*$",             # password   prompt
                                    "Enter passphrase for .*:\s*$", # passphrase prompt
                                    "want to continue connecting",  # hostkey confirmation
@@ -345,8 +349,8 @@ class PTYShellFactory (object) :
                         break
                 
                 
-            except Exception as e :
-                raise self._translate_exception (e)
+          # except Exception as e :
+          #     raise ptye.translate_exception (e)
 
 
     # --------------------------------------------------------------------------
@@ -605,51 +609,6 @@ class PTYShellFactory (object) :
             # keep all collected info in the master dict, and return it for
             # registration
             return info
-
-
-    # ----------------------------------------------------------------
-    #
-    def _translate_exception (self, e) :
-        """
-        In many cases, we should be able to roughly infer the exception cause
-        from the error message -- this is centrally done in this method.  If
-        possible, it will return a new exception with a more concise error
-        message and appropriate exception type.
-        """
-
-        if  not issubclass (e.__class__, se.SagaException) :
-            # we do not touch non-saga exceptions
-            return e
-
-        if  not issubclass (e.__class__, se.NoSuccess) :
-            # this seems to have a specific cause already, leave it alone
-            return e
-
-        cmsg = e._plain_message
-        lmsg = cmsg.lower ()
-
-        if 'auth' in lmsg :
-            e = se.AuthorizationFailed (cmsg)
-
-        elif 'pass' in lmsg :
-            e = se.AuthenticationFailed (cmsg)
-
-        elif 'ssh_exchange_identification' in lmsg :
-            e = se.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
-
-        elif 'denied' in lmsg :
-            e = se.PermissionDenied (cmsg)
-
-        elif 'shared connection' in lmsg :
-            e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
-
-        elif 'pty allocation' in lmsg :
-            e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
-
-        elif 'Connection to master closed' in lmsg :
-            e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
-
-        return e
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

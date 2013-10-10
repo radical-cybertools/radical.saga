@@ -4,7 +4,8 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import radical.utils as ru
+import radical.utils            as ru
+import radical.utils.signatures as rus
 
 
 # ------------------------------------------------------------------------------
@@ -41,7 +42,34 @@ class Url (ru.Url) :
       # above is equivalent with
       url.set_scheme("anotherscheme")
     """
-    pass
+
+    @rus.takes   ('Url', 
+                  rus.optional (basestring, 'Url'))
+    @rus.returns (rus.nothing)
+    def __init__ (self, url_in=''):
+        """ 
+        __init__(url_string='')
+
+        Create a new Url object from a string or another Url object.
+        """
+
+        self._super = super (Url, self)
+        self._super.__init__ (url_in)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes   ('Url', 
+                 ('Url', dict))
+    @rus.returns ('Url')
+    def __deepcopy__ (self, memo) :
+        """ 
+        __deepcopy__(self, memo)
+
+        Deep copy of a Url
+        """
+
+        return Url (self)
 
 
 # ------------------------------------------------------------------------------
