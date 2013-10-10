@@ -13,7 +13,6 @@ ANY = COMPUTE | STORAGE
 import re
 import os
 import time
-import threading
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -70,7 +69,7 @@ _ADAPTOR_DOC           = {
 
 _ADAPTOR_INFO          = {
     "name"             : _ADAPTOR_NAME,
-    "version"          : "v0.1",
+    "version"          : "v0.1.beta",
     "schemas"          : _ADAPTOR_SCHEMAS,
     "cpis"             : [
         { 

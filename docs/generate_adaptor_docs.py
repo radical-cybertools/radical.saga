@@ -192,6 +192,8 @@ for a in saga.engine.registry.adaptor_registry :
             if len (oval) :
                 options += "  - **valid options** : %s\n" % str(oval)
 
+            options += "\n"
+
 
     if 'capabilities' in m._ADAPTOR_DOC :
         capabs   = m._ADAPTOR_DOC['capabilities']
@@ -244,20 +246,20 @@ for a in saga.engine.registry.adaptor_registry :
             if cpi['type'] != 'saga.Context' :
                 is_context = False
 
-            classes      += "  - :class:`%s`\n" % cpi['type']
-            classes_long += "\n"
-            classes_long += "%s\n" % cpi['type']
-            classes_long += "%s\n" % ('*' * len(cpi['type']))
-            classes_long += "\n"
-            classes_long += ".. autoclass:: %s.%s\n"  % (a, cpi['class'])
-            classes_long += "   :members:\n"
-          # classes_long += "   :undoc-members:\n"
-            classes_long += "\n"
-
-    if is_context :
-        # do not auto-document context adaptors -- those are done manually
-        print "skip   %s (context)" % fn
-        continue
+            if is_context :
+                # do not auto-document context adaptors -- those are done manually
+                print "skip   %s (context)" % fn
+                continue
+            else:
+                classes      += "  - :class:`%s`\n" % cpi['type']
+                classes_long += "\n"
+                classes_long += "%s\n" % cpi['type']
+                classes_long += "%s\n" % ('*' * len(cpi['type']))
+                classes_long += "\n"
+                classes_long += ".. autoclass:: %s.%s\n"  % (a, cpi['class'])
+                classes_long += "   :members:\n"
+              # classes_long += "   :undoc-members:\n"
+                classes_long += "\n"
 
 
 
@@ -285,7 +287,10 @@ for a in saga.engine.registry.adaptor_registry :
     f.write ("Example\n")
     f.write ("-------\n")
     f.write ("\n")
-    f.write (".. literalinclude:: ../../../%s\n" % example)
+    if example == "NO EXAMPLE AVAILABLE":
+        f.write("%s\n" % example)
+    else:
+        f.write (".. literalinclude:: ../../../%s\n" % example)
     f.write ("\n")
     f.write ("\n")
 
@@ -293,12 +298,11 @@ for a in saga.engine.registry.adaptor_registry :
         f.write ("Configuration Options\n")
         f.write ("---------------------\n")
         f.write ("Configuration options can be used to control the adaptor's \
-runt    ime behavior. Most adaptors don't need any configuration options \
-to b    e set in order to work. They are mostly for controlling experimental \
-feat    ures and properties of the adaptors.\
-\n\n     \
-.. s    eealso:: More information about configuration options can be found in \
-the     :ref:`conf_file` section.\n")
+runtime behavior. Most adaptors don't need any configuration options \
+to be set in order to work. They are mostly for controlling experimental \
+features and properties of the adaptors.\n\n \
+.. seealso:: More information about configuration options can be found in \
+the :ref:`conf_file` section.\n")
         f.write ("\n")
         f.write ("%s\n" % options)
         f.write ("\n")
