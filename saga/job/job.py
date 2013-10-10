@@ -22,7 +22,7 @@ import description           as descr
 
 # ------------------------------------------------------------------------------
 #
-class Job (sb.Base, sa.Attributes, sasync.Async) :
+class Job (sb.Base, st.Task, sasync.Async) :
     '''Represents a SAGA job as defined in GFD.90
     
     A 'Job' represents a running application instance, which may consist of one
@@ -80,6 +80,8 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
         if not _adaptor :
             raise se.IncorrectState ("saga.job.Job constructor is private")
 
+        self._valid = False
+
 
         # we need to keep _method_type around, for the task interface (see
         # :class:`saga.Task`)
@@ -122,6 +124,7 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
         self._attributes_set_getter (EXECUTION_HOSTS, self._get_execution_hosts)
         self._attributes_set_getter (SERVICE_URL    , self._get_service_url)
 
+        self._valid = True
  
 
     # --------------------------------------------------------------------------
@@ -129,6 +132,10 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
     @sus.takes   ('Job')
     @sus.returns (basestring)
     def __str__  (self) :
+
+        if  not self._valid :
+            return 'no job id'
+
         return str (self.id)
 
 
@@ -395,7 +402,7 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @sus.takes   ('Job',
-                  sus.optional (sus.anything),
+                  sus.optional (float),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((bool, st.Task))
     def wait     (self, timeout=None, ttype=None) :
@@ -494,7 +501,7 @@ class Job (sb.Base, sa.Attributes, sasync.Async) :
     #
     @sus.takes     ('Job',
                     sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns   ((sus.nothing, st.Task))
+    @sus.returns   ((sus.anything, st.Task))
     def get_result (self, ttype=None) :
         '''
         ret:        <result type>

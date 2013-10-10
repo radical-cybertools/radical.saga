@@ -1,0 +1,8 @@
+#     1        2        3        4        5        6        7        8         9        10         11   12                   13
+#  ping        n  threads     load     init      tot      min      max      mean   std-dev       rate   name                 url
+0.17625       32        1       32     4.22    99.89     2.41     5.12     3.042     0.556      0.320  job_run_bulk          ssh://india.futuregrid.org
+0.18025       32        2       32     4.89    75.84     3.07     6.47     4.543     0.790      0.422  job_run_bulk          ssh://india.futuregrid.org
+0.16971       32        4       32     6.22    60.13     2.91     8.22     6.082     1.718      0.532  job_run_bulk          ssh://india.futuregrid.org
+0.17280       32        8       32     8.97    58.01     6.81    14.96    11.793     2.542      0.552  job_run_bulk          ssh://india.futuregrid.org
+0.17794       32       16       32    28.09    71.95     3.91    32.04    22.940     8.147      0.445  job_run_bulk          ssh://india.futuregrid.org
+# 0.17758       32       32       32    81.91    97.70    35.90    44.06    40.532     2.707      0.328  job_run_bulk          ssh://india.futuregrid.org
