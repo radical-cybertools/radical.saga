@@ -48,6 +48,8 @@ import time
 import string
 import redis
 
+import radical.utils as ru
+
 import redis_cache
 
 from   saga.exceptions       import *
@@ -55,7 +57,6 @@ from   saga.advert.constants import *
 from   saga.utils.logger     import getLogger
 
 import saga.utils.misc       as sumisc
-import saga.utils.threads    as sut
 
 
 TYPE   = 'type'
@@ -88,7 +89,7 @@ def redis_ns_name (path) :
 
 # --------------------------------------------------------------------
 #
-class redis_ns_monitor (sut.SagaThread) :
+class redis_ns_monitor (ru.Thread) :
 
     # ----------------------------------------------------------------
     #
@@ -101,7 +102,7 @@ class redis_ns_monitor (sut.SagaThread) :
         self.pat = {}
         self.pat['ATTRIBUTE'] = re.compile ('\s*\[(?P<key>[^=]+)=(?P<val>.+)]\s*')
 
-        sut.SagaThread.__init__ (self, self.work)
+        rut.Thread.__init__ (self, self.work)
         self.setDaemon (True)
 
 

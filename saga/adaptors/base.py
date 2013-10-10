@@ -6,11 +6,11 @@ __license__   = "MIT"
 
 """ the adaptor base class. """
 
-import radical.utils as ru
+import radical.utils      as ru
 
-import saga.utils.logger        as sul
-import saga.utils.config        as suc
-import saga.utils.threads       as sut
+import saga.utils.logger  as sul
+import saga.utils.config  as suc
+
 
 from   saga.exceptions import *
 
@@ -38,7 +38,7 @@ class Base (suc.Configurable) :
         self._name    = adaptor_info['name']
         self._schemas = adaptor_info['schemas']
 
-        self._lock    = sut.RLock     (self._name)
+        self._lock    = ru.RLock      (self._name)
         self._logger  = sul.getLogger (self._name)
 
         has_enabled = False
