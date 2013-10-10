@@ -16,7 +16,6 @@ include saga/engine/*.py
 
 include saga/utils/*.py
 include saga/utils/job/*.py
-include saga/utils/config/*.py
 include saga/utils/logger/*.py
 
 include saga/adaptors/*.py

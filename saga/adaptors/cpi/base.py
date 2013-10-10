@@ -8,8 +8,9 @@ __license__   = "MIT"
 
 import weakref
 
+import radical.utils.config  as ruc
+
 import saga.utils.logger     as sul
-import saga.utils.config     as suc
 
 from   saga.exceptions import *
 
@@ -18,7 +19,7 @@ from   saga.exceptions import *
 #
 # CPI base class
 #
-class CPIBase (suc.Configurable) :
+class CPIBase (ruc.Configurable) :
 
     # --------------------------------------------------------------------------
     #

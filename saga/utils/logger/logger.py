@@ -6,19 +6,23 @@ __license__   = "MIT"
 
 ''' Provides log handler management for SAGA. '''
 
-import radical.utils as ru
-
 import logging
+
+import radical.utils         as ru
+import radical.utils.config  as ruc
+
 import saga.exceptions as se
 
-from   saga.utils.config                    import Configurable
+
 from   saga.utils.logger.colorstreamhandler import *
 from   saga.utils.logger.filehandler        import FileHandler
 from   saga.utils.logger.defaultformatter   import DefaultFormatter
 
 
-############# These are all supported options for saga.logging #################
-##
+# ------------------------------------------------------------------------------
+#
+# These are all supported options for saga.logging
+#
 _all_logging_options = [
     { 
     'category'      : 'saga.engine.logging',
@@ -58,9 +62,9 @@ _all_logging_options = [
     },
 ]
 
-################################################################################
-##
-class _Logger(Configurable):
+# ------------------------------------------------------------------------------
+#
+class _Logger(ruc.Configurable):
     """
     :todo: documentation.  Also, documentation of options are insufficient
     (like, what are valid options for 'target'?)
@@ -70,6 +74,9 @@ class _Logger(Configurable):
 
     __metaclass__ = ru.Singleton
 
+
+    # --------------------------------------------------------------------------
+    #
     class _MultiNameFilter(logging.Filter):
         def __init__(self, pos_filters, neg_filters=[]):
             self._pos_filters = pos_filters
@@ -91,9 +98,11 @@ class _Logger(Configurable):
 
             return print_it
 
+    # --------------------------------------------------------------------------
+    #
     def __init__(self):
 
-        Configurable.__init__(self, 'saga.engine.logging', _all_logging_options)    
+        ruc.Configurable.__init__(self, 'saga', 'saga.engine.logging', _all_logging_options)    
         cfg = self.get_config()
 
         self._loglevel = str(cfg['level'].get_value())
@@ -148,16 +157,20 @@ class _Logger(Configurable):
             self._handlers.append(handler)
 
 
+    # --------------------------------------------------------------------------
+    #
     @property
     def loglevel(self):
         return self._loglevel
 
+    # --------------------------------------------------------------------------
+    #
     @property
     def handlers(self):
         return self._handlers
 
 
-################################################################################
+# ------------------------------------------------------------------------------
 #
 # FIXME: strange pylint error
 #
@@ -190,5 +203,7 @@ def getLogger (name='saga-python'):
     return _logger
 
 
+# ------------------------------------------------------------------------------
+#
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
