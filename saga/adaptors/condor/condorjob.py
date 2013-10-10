@@ -210,7 +210,7 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
         hosts = ""
         for host in jd.candidate_hosts:
             hosts += "%s, " % host
-        sitelist = "+SiteList = \"%s\"" % hosts
+        sitelist = "+SiteList = \\\"%s\\\"" % hosts
         requirements += "(stringListMember(GLIDEIN_ResourceName,SiteList) == True)"
         condor_file += "\n%s" % sitelist
         condor_file += "\n%s" % requirements
