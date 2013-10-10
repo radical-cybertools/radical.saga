@@ -14,6 +14,11 @@ import saga.utils.pty_shell_factory as supsf
 import saga.exceptions              as se
 import saga.session                 as ss
 
+import pty_exceptions               as ptye
+
+
+# ------------------------------------------------------------------------------
+#
 _PTY_TIMEOUT = 2.0
 
 # ------------------------------------------------------------------------------
@@ -289,7 +294,7 @@ class PTYShell (object) :
                 return self.pty_shell.alive (recover)
 
             except Exception as e :
-                raise self._translate_exception (e)
+                raise ptye.translate_exception (e)
 
 
     # ----------------------------------------------------------------
@@ -321,7 +326,7 @@ class PTYShell (object) :
                 return (ret, txt)
 
             except Exception as e :
-                raise self._translate_exception (e)
+                raise ptye.translate_exception (e)
 
 
     # ----------------------------------------------------------------
@@ -337,7 +342,7 @@ class PTYShell (object) :
                 return self.pty_shell.find (patterns, timeout=timeout)
 
             except Exception as e :
-                raise self._translate_exception (e)
+                raise ptye.translate_exception (e)
 
 
     # ----------------------------------------------------------------
@@ -433,7 +438,7 @@ class PTYShell (object) :
 
                 except Exception as e :
                     self.prompt = old_prompt
-                    raise self._translate_exception (e, "Could not set shell prompt")
+                    raise ptye.translate_exception (e, "Could not set shell prompt")
 
 
             # got a valid prompt -- but we have to sync the output again in
@@ -501,7 +506,7 @@ class PTYShell (object) :
 
             except Exception as e :
                 
-                raise self._translate_exception (e, "Could not eval prompt")
+                raise ptye.translate_exception (e, "Could not eval prompt")
 
 
 
@@ -652,7 +657,7 @@ class PTYShell (object) :
                 return (ret, stdout, stderr)
 
             except Exception as e :
-                raise self._translate_exception (e)
+                raise ptye.translate_exception (e)
 
 
     # ----------------------------------------------------------------
@@ -684,7 +689,7 @@ class PTYShell (object) :
                 self.send ("%s\n" % command)
 
             except Exception as e :
-                raise self._translate_exception (e)
+                raise ptye.translate_exception (e)
 
 
     # ----------------------------------------------------------------
@@ -704,7 +709,7 @@ class PTYShell (object) :
                 self.pty_shell.write ("%s" % data)
 
             except Exception as e :
-                raise self._translate_exception (e)
+                raise ptye.translate_exception (e)
 
     # ----------------------------------------------------------------
     #
@@ -741,7 +746,7 @@ class PTYShell (object) :
             os.remove (fname)
 
         except Exception as e :
-            raise self._translate_exception (e)
+            raise ptye.translate_exception (e)
 
 
     # ----------------------------------------------------------------
@@ -772,7 +777,7 @@ class PTYShell (object) :
             return out
 
         except Exception as e :
-            raise self._translate_exception (e)
+            raise ptye.translate_exception (e)
 
 
     # ----------------------------------------------------------------
@@ -797,7 +802,7 @@ class PTYShell (object) :
             self.factory.run_copy_to (self.pty_info, src, tgt, cp_flags)
 
         except Exception as e :
-            raise self._translate_exception (e)
+            raise ptye.translate_exception (e)
 
     # ----------------------------------------------------------------
     #
@@ -821,56 +826,8 @@ class PTYShell (object) :
             self.factory.run_copy_from (self.pty_info, src, tgt, cp_flags)
 
         except Exception as e :
-            raise self._translate_exception (e)
+            raise ptye.translate_exception (e)
 
-
-    # ----------------------------------------------------------------
-    #
-    def _translate_exception (self, e, msg=None) :
-        """
-        In many cases, we should be able to roughly infer the exception cause
-        from the error message -- this is centrally done in this method.  If
-        possible, it will return a new exception with a more concise error
-        message and appropriate exception type.
-        """
-
-        if  not issubclass (e.__class__, se.SagaException) :
-            # we do not touch non-saga exceptions
-            return e
-
-        if  not issubclass (e.__class__, se.NoSuccess) :
-            # this seems to have a specific cause already, leave it alone
-            return e
-
-        cmsg = e._plain_message
-        lmsg = cmsg.lower ()
-
-        if  msg :
-            cmsg = "%s (%s)" % (cmsg, msg)
-
-        if 'auth' in lmsg :
-            e = se.AuthorizationFailed (cmsg)
-
-        elif 'pass' in lmsg :
-            e = se.AuthenticationFailed (cmsg)
-
-        elif 'ssh_exchange_identification' in lmsg :
-            e = se.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
-
-        elif 'denied' in lmsg :
-            e = se.PermissionDenied (cmsg)
-
-        elif 'shared connection' in lmsg :
-            e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
-
-        elif 'pty allocation' in lmsg :
-            e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
-
-        elif 'Connection to master closed' in lmsg :
-            e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
-
-        # print e.traceback
-        return e
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
