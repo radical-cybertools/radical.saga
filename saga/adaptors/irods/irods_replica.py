@@ -1,3 +1,9 @@
+
+__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 # TODO: Create function to check for all the iRODS error codes and give
 #       a better error readout?
 

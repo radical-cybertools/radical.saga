@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 """ A collection of utilities which maps a namespace structure to redis nosql
 keys.  It mirrors the Python ``os`` API, to some extent.
 
