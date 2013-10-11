@@ -130,8 +130,9 @@ class Engine(ruc.Configurable):
 
 
         # set the configuration options for this object
-        ruc.Configurable.__init__(self, 'saga', 'saga.engine', _config_options)
-        self._cfg = self.get_config()
+        ruc.Configurable.__init__       (self, 'saga')
+        ruc.Configurable.config_options (self, 'saga.engine', _config_options)
+        self._cfg = self.get_config('saga.engine')
 
 
         # Initialize the logging

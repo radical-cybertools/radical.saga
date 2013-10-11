@@ -59,7 +59,8 @@ class Base (ruc.Configurable) :
             )
 
 
-        ruc.Configurable.__init__ (self, 'saga', self._name, self._opts)
+        ruc.Configurable.__init__       (self, 'saga')
+        ruc.Configurable.config_options (self, self._name, self._opts)
 
 
     # --------------------------------------------------------------------------
