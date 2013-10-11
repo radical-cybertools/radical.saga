@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 """ libcloud based EC2 resource adaptor """
 
 import saga.adaptors.cpi.base
