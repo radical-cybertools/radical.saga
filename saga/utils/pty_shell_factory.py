@@ -9,13 +9,13 @@ import sys
 import pwd
 import string
 import getpass
-import radical.utils as ru
+
+import radical.utils           as ru
+import radical.utils.logger    as rul
 
 import saga
 import saga.exceptions         as se
-import saga.utils.threads      as sut
 import saga.utils.misc         as sumisc
-import saga.utils.logger       as sul
 import saga.utils.pty_process  as supp
 
 import pty_exceptions               as ptye
@@ -133,9 +133,9 @@ class PTYShellFactory (object) :
     #
     def __init__ (self) :
 
-        self.logger   = sul.getLogger ('PTYShellFactory')
+        self.logger   = rul.getLogger ('saga', 'PTYShellFactory')
         self.registry = {}
-        self.rlock    = sut.RLock ('pty shell factory')
+        self.rlock    = ru.RLock ('pty shell factory')
 
 
     # --------------------------------------------------------------------------
@@ -148,7 +148,7 @@ class PTYShellFactory (object) :
             url = saga.Url (url)
 
             if  not logger :
-                logger = sul.getLogger ('PTYShellFactory')
+                logger = rul.getLogger ('saga', 'PTYShellFactory')
 
             # collect all information we have/need about the requested master
             # connection

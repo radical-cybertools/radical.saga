@@ -8,9 +8,9 @@ import copy
 
 import radical.utils         as ru
 import radical.utils.config  as ruc
+import radical.utils.logger  as rul
 
-import saga.exceptions      as se
-import saga.utils.logger    as slog
+import saga.exceptions       as se
 
 import saga
 
@@ -179,7 +179,7 @@ class TestConfig (ruc.Configurable):
         self.read_config ()
 
         # Initialize the logging
-        self._logger = slog.getLogger ('saga.tests')
+        self._logger = rul.getLogger ('saga', 'tests')
 
         self._test_cfg_d  = {}
         self._bench_cfg_d = {}

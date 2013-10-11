@@ -48,13 +48,13 @@ import time
 import string
 import redis
 
-import radical.utils as ru
+import radical.utils        as ru
+import radical.utils.logger as rul
 
 import redis_cache
 
 from   saga.exceptions       import *
 from   saga.advert.constants import *
-from   saga.utils.logger     import getLogger
 
 import saga.utils.misc       as sumisc
 
@@ -202,7 +202,7 @@ class redis_ns_server (redis.Redis) :
         t2 = time.time ()
 
         # add a logger 
-        self.logger = getLogger ("redis-%s"  % self.host)
+        self.logger = rul.getLogger ('saga', "redis-%s"  % self.host)
 
         # create a cache dict and attach to redis client instance.  Cache
         # lifetime is set to 10 times the redis-connect latency.

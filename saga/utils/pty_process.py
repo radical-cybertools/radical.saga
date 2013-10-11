@@ -16,11 +16,12 @@ import select
 import signal
 import termios
 
-import saga.utils.threads   as sut
-import saga.utils.logger    as sul
-import saga.exceptions      as se
+import radical.utils         as ru
+import radical.utils.logger  as rul
 
-import pty_exceptions               as ptye
+import saga.exceptions       as se
+
+import pty_exceptions        as ptye
 
 # --------------------------------------------------------------------
 #
@@ -94,14 +95,14 @@ class PTYProcess (object) :
         fed/drained via pty pipes.  If given as string, command is split into an
         array of strings, using :func:`shlex.split`.
 
-        :type  logger:  :class:`saga.utils.logger.Logger` instance
+        :type  logger:  :class:`radical.utils.logger.Logger` instance
         :param logger:  logger stream to send status messages to.
         """
 
         self._debug = False
 
         self.logger = logger
-        if  not  self.logger : self.logger = sul.getLogger ('PTYProcess') 
+        if  not  self.logger : self.logger = rul.getLogger ('saga', 'PTYProcess') 
         self.logger.debug ("PTYProcess init %s" % self)
 
 
@@ -114,7 +115,7 @@ class PTYProcess (object) :
         if len(command) < 1 :
             raise se.BadParameter ("PTYProcess expects non-empty command")
 
-        self.rlock   = sut.RLock ("pty process %s" % command)
+        self.rlock   = ru.RLock ("pty process %s" % command)
 
         self.command = command # list of strings too run()
 
