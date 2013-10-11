@@ -9,8 +9,7 @@ __license__   = "MIT"
 import weakref
 
 import radical.utils.config  as ruc
-
-import saga.utils.logger     as sul
+import radical.utils.logger  as rul
 
 from   saga.exceptions import *
 
@@ -28,7 +27,7 @@ class CPIBase (ruc.Configurable) :
         self._session   = None
         self._adaptor   = adaptor
         self._cpi_cname = self.__class__.__name__
-        self._logger    = sul.getLogger (self._cpi_cname)
+        self._logger    = rul.getLogger ('saga', self._cpi_cname)
 
         # The API object must obviously keep an adaptor instance.  If we also
         # keep an API instance ref in this adaptor base, we create a ref cycle

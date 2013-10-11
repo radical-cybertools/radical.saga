@@ -9,10 +9,10 @@ import string
 import inspect
 
 import radical.utils.signatures   as rus
+import radical.utils.logger       as rul
 
-import saga.utils.logger
 import saga.engine.engine
-import saga.adaptors.base      as sab
+import saga.adaptors.base         as sab
 
 # ------------------------------------------------------------------------------
 #
@@ -30,7 +30,7 @@ class SimpleBase (object) :
     def __init__  (self) :
 
         self._apitype   = self._get_apitype ()
-        self._logger    = saga.utils.logger.getLogger (self._apitype)
+        self._logger    = rul.getLogger ('saga', self._apitype)
 
       # self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
 

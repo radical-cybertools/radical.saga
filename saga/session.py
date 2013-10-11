@@ -6,13 +6,14 @@ __license__   = "MIT"
 
 import radical.utils            as ru
 import radical.utils.signatures as rus
+import radical.utils.logger     as  rul
 
-import saga.utils.logger
+import saga.exceptions          as se
+
 import saga.engine.engine
 import saga.context
 import saga.base
 
-import saga.exceptions       as se
 
 
 # ------------------------------------------------------------------------------
@@ -37,7 +38,7 @@ class _ContextList (list) :
         if  session : 
             self._logger  = session._logger
         else :
-            self._logger  = saga.utils.logger.getLogger ('ContextList')
+            self._logger  = rul.getLogger ('saga', 'ContextList')
 
         base_list = super  (_ContextList, self)
         base_list.__init__ (*args, **kwargs)
@@ -99,7 +100,7 @@ class _DefaultSession (object) :
         # default contexts.
 
         self.contexts  = _ContextList ()
-        self._logger   = saga.utils.logger.getLogger ('saga.DefaultSession')
+        self._logger   = rul.getLogger ('saga', 'DefaultSession')
 
         _engine = saga.engine.engine.Engine ()
 

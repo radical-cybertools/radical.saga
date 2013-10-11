@@ -8,8 +8,7 @@ __license__   = "MIT"
 
 import radical.utils         as ru
 import radical.utils.config  as ruc
-
-import saga.utils.logger     as sul
+import radical.utils.logger  as rul
 
 
 from   saga.exceptions import *
@@ -39,7 +38,7 @@ class Base (ruc.Configurable) :
         self._schemas = adaptor_info['schemas']
 
         self._lock    = ru.RLock      (self._name)
-        self._logger  = sul.getLogger (self._name)
+        self._logger  = rul.getLogger ('saga', self._name)
 
         has_enabled = False
         for option in self._opts :

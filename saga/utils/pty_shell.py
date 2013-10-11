@@ -9,7 +9,8 @@ import os
 import sys
 import errno
 
-import saga.utils.logger            as sul
+import radical.utils.logger         as rul
+
 import saga.utils.pty_shell_factory as supsf
 import saga.exceptions              as se
 import saga.session                 as ss
@@ -177,7 +178,7 @@ class PTYShell (object) :
     def __init__ (self, url, session=None, logger=None, init=None, opts={}) :
 
         if  None != logger  : self.logger  = logger
-        else                : self.logger  = sul.getLogger ('PTYShell') 
+        else                : self.logger  = rul.getLogger ('saga', 'PTYShell') 
 
         self.logger.debug ("PTYShell init %s" % self)
 

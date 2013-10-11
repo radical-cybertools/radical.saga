@@ -159,7 +159,6 @@ setup_args = {
         "saga.adaptors.http",
         "saga.engine",
         "saga.utils",
-        "saga.utils.logger",
         "saga.utils.job",
     ],
     'package_data': {'': ['*.sh']},

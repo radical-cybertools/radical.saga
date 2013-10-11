@@ -14,9 +14,9 @@ import inspect
 
 import radical.utils         as ru
 import radical.utils.config  as ruc
+import radical.utils.logger  as rul
 
 import saga.exceptions      as se
-import saga.utils.logger    as slog
 
 import saga.engine.registry  # adaptors to load
 
@@ -135,7 +135,7 @@ class Engine(ruc.Configurable):
 
 
         # Initialize the logging
-        self._logger = slog.getLogger ('saga.engine')
+        self._logger = rul.getLogger ('saga', 'Engine')
 
 
         # load adaptors
