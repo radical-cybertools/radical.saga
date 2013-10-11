@@ -172,7 +172,7 @@ setup_args = {
         'sdist': our_sdist,
         'test': our_test
     },
-    'install_requires': ['setuptools', 'colorama', 'apache-libcloud'],
+    'install_requires': ['setuptools', 'colorama', 'apache-libcloud', 'radical.utils'],
     'tests_require': ['setuptools', 'nose']
 }
 
