@@ -172,7 +172,8 @@ class TestConfig (ruc.Configurable):
     def __init__ (self):
 
         # set the default configuration options for this object
-        ruc.Configurable.__init__(self, 'saga', 'saga.tests', _config_options)
+        ruc.Configurable.__init__       (self, 'saga')
+        ruc.Configurable.config_options (self, 'saga.tests', _config_options)
 
         self._global_cfg = ruc.Configuration ('saga')
 

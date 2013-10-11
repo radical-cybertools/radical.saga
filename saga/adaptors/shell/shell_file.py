@@ -168,7 +168,7 @@ class Adaptor (saga.adaptors.base.Base):
         saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
-        self.opts  = self.get_config ()
+        self.opts  = self.get_config (_ADAPTOR_NAME)
 
         self.notifications = self.opts['enable_notifications'].get_value ()
 
