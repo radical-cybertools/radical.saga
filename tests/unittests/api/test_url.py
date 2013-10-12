@@ -7,6 +7,9 @@ __license__   = "MIT"
 import saga.exceptions as se
 from   saga.url import Url
 
+import radical.utils as ru
+
+
 def test_wrong_type():
     """ Test that the right execption is thrown if Url is not initialized
         properly. 

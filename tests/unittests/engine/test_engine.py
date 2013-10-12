@@ -10,6 +10,9 @@ __license__   = "MIT"
 import os, sys
 from   saga.engine.engine import Engine
 
+import radical.utils as ru
+
+
 def test_singleton():
     """ Test that the object behaves like a singleton
     """

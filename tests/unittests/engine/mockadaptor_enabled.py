@@ -11,6 +11,9 @@ from saga.utils.singleton import Singleton
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
+import radical.utils as ru
+
+
 _ADAPTOR_NAME        = 'saga.adaptor.mock'
 _ADAPTOR_SCHEMAS     = ['mock']
 _ADAPTOR_DOC         = {}

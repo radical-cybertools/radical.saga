@@ -9,6 +9,9 @@ __license__   = "MIT"
 
 from saga.utils.config import *
 
+import radical.utils as ru
+
+
 ############################# BEGIN UNIT TESTS ################################
 ##
 
