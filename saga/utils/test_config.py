@@ -7,6 +7,7 @@ __license__   = "MIT"
 import copy
 
 import radical.utils          as ru
+import radical.utils.config   as ruc
 import radical.utils.logger   as rul
 
 import saga.exceptions        as se
