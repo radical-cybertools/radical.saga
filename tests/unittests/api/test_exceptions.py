@@ -6,6 +6,9 @@ __license__   = "MIT"
 
 import saga.exceptions as se
 
+import radical.utils as ru
+
+
 def test_SagaException():
     try:
         raise se.SagaException('SagaException')
