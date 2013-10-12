@@ -59,11 +59,10 @@ class Url (object):
         Create a new Url object from a string or another Url object.
         """
 
-        if type(url_string) == type(None):
+        if  not url_string :
             self._urlobj = urlparse.urlparse("")
-        if type(url_string) == str:
-            self._urlobj = urlparse.urlparse(url_string)
-        elif type(url_string) == Url:
+        elif isinstance (basestring, url_string) or \
+             isinstance (Url,        url_string) :
             self._urlobj = urlparse.urlparse(str(url_string))
         else:
             raise se.BadParameter ("Url expects str or Url type as parameter, not %s" \
