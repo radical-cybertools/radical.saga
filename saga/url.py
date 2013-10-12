@@ -61,8 +61,8 @@ class Url (object):
 
         if  not url_string :
             self._urlobj = urlparse.urlparse("")
-        elif isinstance (basestring, url_string) or \
-             isinstance (Url,        url_string) :
+        elif isinstance (url_string, basestring) or \
+             isinstance (url_string, Url       ) :
             self._urlobj = urlparse.urlparse(str(url_string))
         else:
             raise se.BadParameter ("Url expects str or Url type as parameter, not %s" \
