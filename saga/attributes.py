@@ -4,19 +4,9 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-# >>> class MyDict(dict):
-# >>>     def __missing__(self, key):
-#             self[key] = rv = []
-#             return rv
-#    
-# >>> m = MyDict()
-# >>> m["foo"].append(1)
-# >>> m["foo"].append(2)
-# >>> dict(m)
-# {'foo': [1, 2]}
-
 """ Attribute interface """
 
+import radical.utils            as ru
 import radical.utils.signatures as rus
 
 import saga.exceptions as se
@@ -175,7 +165,7 @@ class _AttributesBase (object) :
 
 # ------------------------------------------------------------------------------
 #
-class Attributes (_AttributesBase) :
+class Attributes (_AttributesBase, ru.DictMixin) :
     """
     Attribute Interface Class
 
@@ -1916,6 +1906,16 @@ class Attributes (_AttributesBase) :
 
     # --------------------------------------------------------------------------
     #
+    @rus.takes   ('Attributes',
+                  ('Attributes', dict))
+    @rus.returns ('Attributes')
+    def __deepcopy__ (self, memo) :
+        other = Attributes ()
+        return self._attributes_deep_copy (other, flow=_DOWN)
+    
+
+    # --------------------------------------------------------------------------
+    #
     @rus.takes   ('Attributes', 
                   rus.optional (basestring),
                   rus.optional (rus.one_of  (_UP, _DOWN)))
@@ -2649,7 +2649,10 @@ class Attributes (_AttributesBase) :
         return s
 
 
-    ####################################
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes   ('Attributes')
+    @rus.returns (dict)
     def as_dict (self) :
         """ return a dict representation of all set attributes """
 
@@ -2661,6 +2664,47 @@ class Attributes (_AttributesBase) :
         return d
 
 
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes   ('Attributes', 
+                  dict)
+    @rus.returns (rus.nothing)
+    def update (self, dictionary) :
+        """ transform a dict representation into attribute settings """
+
+        for key in dictionary.keys () :
+            self.set_attribute (key, dictionary[key])
+
+
+    # --------------------------------------------------------------------------
+    #
+    # Python dictionary interface, via the DictMixin
+    #
+    # we assume that keys are always used in under_score notation.
+    #
+    # --------------------------------------------------------------------------
+    #
+    def __getitem__ (self, key) :
+        return self.get_attribute (key)
+
+    # --------------------------------------------------------------------------
+    #
+    def __setitem__ (self, key, value) :
+        return self.set_attribute (key, value)
+
+    # --------------------------------------------------------------------------
+    #
+    def __delitem__ (self, key) :
+        return self.remove_attribute (keyvalue)
+
+    # --------------------------------------------------------------------------
+    #
+    def keys (self) :
+        return self.list_attributes ()
+
+
+
+
 # ------------------------------------------------------------------------------
 
 # FIXME: add 
@@ -2670,7 +2714,7 @@ class Attributes (_AttributesBase) :
 #   - fire_metric()
 #   - list_metrics()
 #   - get_metric()
-#   - list_calbacks()
+#   - list_callbacks()
 
 # ------------------------------------------------------------------------------
 
