@@ -2666,18 +2666,6 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Attributes', 
-                  dict)
-    @rus.returns (rus.nothing)
-    def update (self, dictionary) :
-        """ transform a dict representation into attribute settings """
-
-        for key in dictionary.keys () :
-            self.set_attribute (key, dictionary[key])
-
-
-    # --------------------------------------------------------------------------
-    #
     # Python dictionary interface, via the DictMixin
     #
     # we assume that keys are always used in under_score notation.
