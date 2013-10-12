@@ -1911,7 +1911,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     @rus.returns ('Attributes')
     def __deepcopy__ (self, memo) :
         other = Attributes ()
-        return self._attributes_deep_copy (other, flow=_DOWN)
+        return self._attributes_deep_copy (other)
     
 
     # --------------------------------------------------------------------------
