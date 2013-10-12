@@ -6,184 +6,39 @@ __license__   = "MIT"
 
 import copy
 
-import radical.utils         as ru
-import radical.utils.config  as ruc
-import radical.utils.logger  as rul
+import radical.utils          as ru
+import radical.utils.logger   as rul
 
-import saga.exceptions       as se
+import saga.exceptions        as se
 
 import saga
 
 # ------------------------------------------------------------------------------
 #
-def add_tc_params_to_jd(tc, jd):
+def add_tc_params_to_jd (tc, jd):
 
-    if tc.job_walltime_limit  : jd.wall_time_limit = tc.job_walltime_limit
-    if tc.job_project         : jd.project         = tc.job_project
-    if tc.job_queue           : jd.queue           = tc.job_queue
-    if tc.job_total_cpu_count : jd.total_cpu_count = tc.job_total_cpu_count
-    if tc.job_spmd_variation  : jd.spmd_variation  = tc.job_spmd_variation
+    if tc['job_walltime_limit']  : jd.wall_time_limit = tc['job_walltime_limit'] 
+    if tc['job_project']         : jd.project         = tc['job_project']        
+    if tc['job_queue']           : jd.queue           = tc['job_queue']          
+    if tc['job_total_cpu_count'] : jd.total_cpu_count = tc['job_total_cpu_count']
+    if tc['job_spmd_variation']  : jd.spmd_variation  = tc['job_spmd_variation'] 
 
     return jd
 
 
-############# These are all supported options for saga.engine ####################
-##
-_config_options = [
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'job_service_url', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "job submission url to be used for remote unit tests",
-    'env_variable'  : "SAGA_TEST_JOB_SERVICE_URL"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'job_project', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "project / allocation id to use with job scheduler",
-    'env_variable'  : "SAGA_TEST_JOB_PROJECT"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'job_queue', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "queue to use with job scheduler",
-    'env_variable'  : "SAGA_TEST_JOB_QUEUE"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'job_walltime_limit', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "walltime limit to pass to the job scheduler",
-    'env_variable'  : "SAGA_TEST_JOB_WALLTIME_LIMIT"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'job_total_cpu_count', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "number of processes to pass to the job scheduler",
-    'env_variable'  : "SAGA_TEST_NUMBER_OF_PROCESSES"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'job_spmd_variation', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "spmd variation to pass to the job scheduler",
-    'env_variable'  : "SAGA_TEST_SPMD_VARIATION"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'filesystem_url', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "filesystem root directory to be used for remote unit tests",
-    'env_variable'  : "SAGA_TEST_FILESYSTEM_URL"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'replica_url', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "replica root directory to be used for remote unit tests",
-    'env_variable'  : "SAGA_TEST_REPLICA_URL"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'replica_resource', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "replica resource to be used for remote unit tests",
-    'env_variable'  : "SAGA_TEST_REPLICA_RESOURCE"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'advert_url', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "advert root directory to be used for remote unit tests",
-    'env_variable'  : "SAGA_TEST_ADVERT_URL"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'context_type', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "context type to be used for remote unit tests",
-    'env_variable'  : "SAGA_TEST_CONTEXT_TYPE"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'context_user_id', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "context user id to be used for remote unit tests",
-    'env_variable'  : "SAGA_TEST_CONTEXT_USER_ID"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'context_user_pass', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "context user password to be used for remote unit tests",
-    'env_variable'  : "SAGA_TEST_CONTEXT_USER_PASS"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'context_user_proxy', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "context user proxy to be used for remote unit tests",
-    'env_variable'  : "SAGA_TEST_CONTEXT_USER_PROXY"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'context_user_cert', 
-    'type'          : str, 
-    'default'       : "",
-    'documentation' : "context user cert to be used for remote unit tests",
-    'env_variable'  : "SAGA_TEST_CONTEXT_USER_CERT"
-    },
-    { 
-    'category'      : 'saga.tests',
-    'name'          : 'test_suites', 
-    'type'          : list, 
-    'default'       : ['utils', 'engine', 'api'],
-    'documentation' : "a list of test suites to run (subdirs in tests/unittests/)",
-    'env_variable'  : "SAGA_TEST_SUITES"
-    },
-]
-
-################################################################################
-##
-class TestConfig (ruc.Configurable): 
-
-    __metaclass__ = ru.Singleton
-
+# ------------------------------------------------------------------------------
+#
+class TestConfig (ru.TestConfig): 
 
     #-----------------------------------------------------------------
     # 
-    def __init__ (self):
+    def __init__ (self, cfg_file):
 
-        # set the default configuration options for this object
-        ruc.Configurable.__init__       (self, 'saga')
-        ruc.Configurable.config_options (self, 'saga.tests', _config_options)
-
-        self._global_cfg = ruc.Configuration ('saga')
-
-        self.read_config ()
+        # initialize configuration
+        ru.TestConfig.__init__ (self, cfg_file)
 
         # Initialize the logging
         self._logger = rul.getLogger ('saga', 'tests')
-
-        self._test_cfg_d  = {}
-        self._bench_cfg_d = {}
 
 
     #-----------------------------------------------------------------
