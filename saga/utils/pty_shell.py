@@ -9,8 +9,10 @@ import os
 import sys
 import errno
 
+import saga.utils.misc              as sumisc
 import saga.utils.logger            as sul
 import saga.utils.pty_shell_factory as supsf
+import saga.url                     as surl
 import saga.exceptions              as se
 import saga.session                 as ss
 
@@ -257,6 +259,21 @@ class PTYShell (object) :
 
             except Exception as e :
                 raise se.NoSuccess ("Shell startup on target host failed: %s" % e)
+
+
+            try :
+                # got a command shell, finally!
+                # for local shells, we now change to the current working
+                # directory.  Remote shells will remain in the default pwd
+                # (usually $HOME).
+                if  sumisc.host_is_local (surl.Url(self.url).host) :
+                    pwd = os.getcwd ()
+                    self.run_sync ('cd %s' % pwd)
+            except Exception as e :
+                # We will ignore any errors.
+                self.logger.warning ("local cd to %s failed" % pwd)
+                
+                
 
             self.initialized = True
 
