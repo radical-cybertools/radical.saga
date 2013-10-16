@@ -12,17 +12,22 @@ test:
 copyright:
 
 pylint:
-	@for f in `find saga -name \*.py`; do \
-	  res=`pylint -r n -f text $$f 2>&1 | grep -e '^[FE]'` ;\
-		test -z "$$res" || ( \
-		     echo '----------------------------------------------------------------------' ;\
-		     echo $$f ;\
-		     echo '-----------------------------------'   ;\
-				 echo $$res | sed -e 's/ \([FEWRC]:\)/\n\1/g' ;\
-				 echo \
-		) \
-	done | tee pylint.out;\
-	test "`cat pylint.out | wc -c`" = 0 || false && true
+	@rm pylint.out ;\
+	for f in `find saga -name \*.py`; do \
+		echo "checking $$f"; \
+		( \
+	    res=`pylint -r n -f text $$f 2>&1 | grep -e '^[FE]'` ;\
+		  test -z "$$res" || ( \
+		       echo '----------------------------------------------------------------------' ;\
+		       echo $$f ;\
+		       echo '----------------------------------------------------------------------' ;\
+		  		 echo $$res | sed -e 's/ \([FEWRC]:\)/\n\1/g' ;\
+		  		 echo \
+		  ) \
+		) | tee -a pylint.out; \
+	done ; \
+	test "`cat pylint.out | wc -c`" = 0 || false && rm -f pylint.out
+
 
 viz:
 	gource -s 0.1 -i 0 --title saga-python --max-files 99999 --max-file-lag -1 --user-friction 0.3 --user-scale 0.5 --camera-mode overview --highlight-users --hide progress,filenames -r 25 -viewport 1024x1024
