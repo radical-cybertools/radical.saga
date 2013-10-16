@@ -57,6 +57,7 @@ _ADAPTOR_DOC           = {
     'details'          : """This adaptor interacts with the iRODS data
                             management system, by using the iRODS command line
                             tools.""",
+    "example"          : "examples/replica/irods/irods_test.py",
     'schemas'          : {'irods'  : 'irods schema'
     },
 }
