@@ -40,7 +40,7 @@ def get_trace () :
 def host_is_local (host) :
     """ Returns True if the given host is the localhost
     """
-    
+
     if  not host                   or \
         host == 'localhost'        or \
         host == socket.gethostname () :
