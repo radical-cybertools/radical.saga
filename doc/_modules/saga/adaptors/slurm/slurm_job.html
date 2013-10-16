@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.slurm.slurm_job &mdash; SAGA 0.1.1-85-g8db36a4 documentation</title>
+    <title>saga.adaptors.slurm.slurm_job &mdash; SAGA 0.1.1-97-g23a9de9 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.1.1-85-g8db36a4',
+        VERSION:     '0.1.1-97-g23a9de9',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.1.1-85-g8db36a4 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.1.1-97-g23a9de9 documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.1.1-85-g8db36a4 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.1.1-97-g23a9de9 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -146,6 +146,68 @@
 <span class="c"># --------------------------------------------------------------------</span>
 <span class="c"># the adaptor documentation</span>
 <span class="c">#</span>
+
+        <span class="c"># General Notes</span>
+        <span class="c"># *************</span>
+
+        <span class="c"># On Stampede, returning a non-zero exit code results in the scheduler</span>
+        <span class="c"># putting the job into a FAILED state and assigning it an exit code of 127.</span>
+
+        <span class="c"># **Example:**</span>
+
+        <span class="c"># ::</span>
+
+        <span class="c">#   js = saga.job.Service(&quot;slurm+ssh://stampede&quot;)</span>
+        <span class="c">#   jd.executable  = &#39;/bin/exit&#39;</span>
+        <span class="c">#   jd.arguments   = [&#39;3&#39;]</span>
+        <span class="c">#   job = js.create_job(jd)</span>
+        <span class="c">#   job.run()</span>
+
+        <span class="c"># Will return something similar to (personal account information</span>
+        <span class="c"># removed)::</span>
+
+        <span class="c">#   (saga-python-env)ashleyz@login1:~$ scontrol show job 309684</span>
+        <span class="c">#   JobId=309684 Name=SlurmJob</span>
+        <span class="c">#      UserId=_____ GroupId=__________</span>
+        <span class="c">#      Priority=3000 Account=_____ QOS=normal</span>
+        <span class="c">#      JobState=FAILED Reason=NonZeroExitCode Dependency=(null)</span>
+        <span class="c">#      Requeue=0 Restarts=0 BatchFlag=1 ExitCode=127:0</span>
+        <span class="c">#      RunTime=00:00:05 TimeLimit=00:01:00 TimeMin=N/A</span>
+        <span class="c">#      SubmitTime=2013-02-22T20:26:50 EligibleTime=2013-02-22T20:26:50</span>
+        <span class="c">#      StartTime=2013-02-22T20:26:50 EndTime=2013-02-22T20:26:55</span>
+        <span class="c">#      PreemptTime=None SuspendTime=None SecsPreSuspend=0</span>
+        <span class="c">#      Partition=development AllocNode:Sid=login1:12070</span>
+        <span class="c">#      ReqNodeList=(null) ExcNodeList=(null)</span>
+        <span class="c">#      NodeList=c557-401</span>
+        <span class="c">#      BatchHost=c557-401</span>
+        <span class="c">#      NumNodes=1 NumCPUs=16 CPUs/Task=1 ReqS:C:T=*:*:*</span>
+        <span class="c">#      MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0</span>
+        <span class="c">#      Features=(null) Gres=(null) Reservation=(null)</span>
+        <span class="c">#      Shared=0 Contiguous=0 Licenses=(null) Network=(null)</span>
+        <span class="c">#      Command=/home1/01414/_______/.saga/adaptors/slurm_job/wrapper.sh</span>
+        <span class="c">#      WorkDir=/home1/01414/_______/</span>
+
+        <span class="c"># I&#39;m not sure how to fix this for the time being.</span>
+
+        <span class="c"># Suspend/resume do not appear to be supported for regular</span>
+        <span class="c"># users on Stampede.</span>
+
+        <span class="c"># run_job is not supported, as there are many attributed (queues,</span>
+        <span class="c"># projects, etc) which need to be passed to the adaptor.  I could</span>
+        <span class="c"># add URL parsing so that you could pile on queue/project/jobname</span>
+        <span class="c"># information if this has any strong usecases, but I avoided doing</span>
+        <span class="c"># so for now to decrease complexity/possible confusion.</span>
+
+        <span class="c"># Cancelling a job with scontrol, puts it into a COMPLETING state, which</span>
+        <span class="c"># is parsed by the SLURM status parser as saga.job.RUNNING (see the</span>
+        <span class="c"># SLURM docs, COMPLETING is a state a job goes into when it is done</span>
+        <span class="c"># running but still flushing IO/etc).  Anyhow, I put some code in to</span>
+        <span class="c"># manually put the job into CANCELED state when the job is canceled,</span>
+        <span class="c"># but I&#39;m not sure that this is reported correctly everywhere yet.</span>
+
+        <span class="c"># What exit code should be returned for a CANCELED job?</span>
+        
+
 <span class="n">_ADAPTOR_DOC</span>           <span class="o">=</span> <span class="p">{</span>
     <span class="s">&quot;name&quot;</span>             <span class="p">:</span> <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
     <span class="s">&quot;cfg_options&quot;</span>      <span class="p">:</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">,</span> 
@@ -153,66 +215,6 @@
     <span class="s">&quot;description&quot;</span>      <span class="p">:</span> <span class="s">&quot;&quot;&quot; </span>
 <span class="s">        The SLURM adaptor allows to run and manage jobs on a </span>
 <span class="s">        `SLURM &lt;https://computing.llnl.gov/linux/slurm/slurm.html&gt;`_ HPC cluster.</span>
-
-<span class="s">        General Notes</span>
-<span class="s">        *************</span>
-
-<span class="s">        On Stampede, returning a non-zero exit code results in the scheduler</span>
-<span class="s">        putting the job into a FAILED state and assigning it an exit code of 127.</span>
-
-<span class="s">        **Example:**</span>
-
-<span class="s">        ::</span>
-
-<span class="s">          js = saga.job.Service(&quot;slurm+ssh://stampede&quot;)</span>
-<span class="s">          jd.executable  = &#39;/bin/exit&#39;</span>
-<span class="s">          jd.arguments   = [&#39;3&#39;]</span>
-<span class="s">          job = js.create_job(jd)</span>
-<span class="s">          job.run()</span>
-
-<span class="s">        Will return something similar to (personal account information</span>
-<span class="s">        removed)::</span>
-
-<span class="s">          (saga-python-env)ashleyz@login1:~$ scontrol show job 309684</span>
-<span class="s">          JobId=309684 Name=SlurmJob</span>
-<span class="s">             UserId=_____ GroupId=__________</span>
-<span class="s">             Priority=3000 Account=_____ QOS=normal</span>
-<span class="s">             JobState=FAILED Reason=NonZeroExitCode Dependency=(null)</span>
-<span class="s">             Requeue=0 Restarts=0 BatchFlag=1 ExitCode=127:0</span>
-<span class="s">             RunTime=00:00:05 TimeLimit=00:01:00 TimeMin=N/A</span>
-<span class="s">             SubmitTime=2013-02-22T20:26:50 EligibleTime=2013-02-22T20:26:50</span>
-<span class="s">             StartTime=2013-02-22T20:26:50 EndTime=2013-02-22T20:26:55</span>
-<span class="s">             PreemptTime=None SuspendTime=None SecsPreSuspend=0</span>
-<span class="s">             Partition=development AllocNode:Sid=login1:12070</span>
-<span class="s">             ReqNodeList=(null) ExcNodeList=(null)</span>
-<span class="s">             NodeList=c557-401</span>
-<span class="s">             BatchHost=c557-401</span>
-<span class="s">             NumNodes=1 NumCPUs=16 CPUs/Task=1 ReqS:C:T=*:*:*</span>
-<span class="s">             MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0</span>
-<span class="s">             Features=(null) Gres=(null) Reservation=(null)</span>
-<span class="s">             Shared=0 Contiguous=0 Licenses=(null) Network=(null)</span>
-<span class="s">             Command=/home1/01414/_______/.saga/adaptors/slurm_job/wrapper.sh</span>
-<span class="s">             WorkDir=/home1/01414/_______/</span>
-
-<span class="s">        I&#39;m not sure how to fix this for the time being.</span>
-
-<span class="s">        Suspend/resume do not appear to be supported for regular</span>
-<span class="s">        users on Stampede.</span>
-
-<span class="s">        run_job is not supported, as there are many attributed (queues,</span>
-<span class="s">        projects, etc) which need to be passed to the adaptor.  I could</span>
-<span class="s">        add URL parsing so that you could pile on queue/project/jobname</span>
-<span class="s">        information if this has any strong usecases, but I avoided doing</span>
-<span class="s">        so for now to decrease complexity/possible confusion.</span>
-
-<span class="s">        Cancelling a job with scontrol, puts it into a COMPLETING state, which</span>
-<span class="s">        is parsed by the SLURM status parser as saga.job.RUNNING (see the</span>
-<span class="s">        SLURM docs, COMPLETING is a state a job goes into when it is done</span>
-<span class="s">        running but still flushing IO/etc).  Anyhow, I put some code in to</span>
-<span class="s">        manually put the job into CANCELED state when the job is canceled,</span>
-<span class="s">        but I&#39;m not sure that this is reported correctly everywhere yet.</span>
-
-<span class="s">        What exit code should be returned for a CANCELED job?</span>
 
 <span class="s">        Implementation Notes</span>
 <span class="s">        ********************</span>
@@ -1120,6 +1122,10 @@
         <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
             <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;wait() state for job id </span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">&quot;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">,</span> <span class="n">state</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">UNKNOWN</span> <span class="p">:</span>
+                <span class="n">log_error_and_raise</span><span class="p">(</span><span class="s">&quot;cannot get job state&quot;</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span> <span class="ow">or</span> \
                <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span> <span class="ow">or</span> \
                <span class="n">state</span> <span class="o">==</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span><span class="p">:</span>
@@ -1266,7 +1272,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.1.1-85-g8db36a4 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.1.1-97-g23a9de9 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>

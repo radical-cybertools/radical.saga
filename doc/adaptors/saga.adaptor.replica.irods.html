@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>10. saga.adaptor.replica.irods &mdash; SAGA 0.1.1-85-g8db36a4 documentation</title>
+    <title>10. saga.adaptor.replica.irods &mdash; SAGA 0.1.1-97-g23a9de9 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.1.1-85-g8db36a4',
+        VERSION:     '0.1.1-97-g23a9de9',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.1.1-85-g8db36a4 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.1.1-97-g23a9de9 documentation" href="../index.html" />
     <link rel="up" title="3. Adaptors" href="saga.adaptor.index.html" />
     <link rel="next" title="11. saga.adaptor.condorjob" href="saga.adaptor.condorjob.html" />
     <link rel="prev" title="9. saga.adaptor.pbsjob" href="saga.adaptor.pbsjob.html" /> 
@@ -52,7 +52,7 @@
         <li class="right" >
           <a href="saga.adaptor.pbsjob.html" title="9. saga.adaptor.pbsjob"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.1.1-85-g8db36a4 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.1.1-97-g23a9de9 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" accesskey="U">3. Adaptors</a> &raquo;</li> 
       </ul>
     </div>  
@@ -90,7 +90,141 @@
 </div>
 <div class="section" id="example">
 <h2>10.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<p>NO EXAMPLE AVAILABLE</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#!/usr/bin/env python2.4</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
+
+<span class="sd">&#39;&#39;&#39;This example shows how to use the iRODS adaptor in </span>
+<span class="sd">   some basic ways.  If it executes successfully, the</span>
+<span class="sd">   iRODS adaptor should work OK on your setup.</span>
+
+<span class="sd">   If something doesn&#39;t work as expected, try to set </span>
+<span class="sd">   SAGA_VERBOSE=3 in your environment before you run the</span>
+<span class="sd">   script in order to get some debug output.</span>
+
+<span class="sd">   If you think you have encountered a defect, please </span>
+<span class="sd">   report it at: https://github.com/saga-project/saga-python/issues</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Ashley Zebrowski&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, Ashley Zebrowski&quot;</span>
+<span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">saga</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">saga.utils.pty_shell</span>
+
+<span class="n">FILE_SIZE</span> <span class="o">=</span> <span class="mi">1</span> <span class="c"># in megs, approx</span>
+<span class="n">NUM_REPLICAS</span> <span class="o">=</span> <span class="mi">1</span> <span class="c"># num replicas to create</span>
+<span class="n">TEMP_FILENAME</span> <span class="o">=</span> <span class="s">&quot;test.txt&quot;</span> <span class="c"># filename to create and use for testing</span>
+<span class="n">TEMP_DIR</span>      <span class="o">=</span> <span class="s">&quot;/irods_test_dir/&quot;</span> <span class="c">#directory to create and use for testing</span>
+
+<span class="k">def</span> <span class="nf">usage</span><span class="p">():</span>
+    <span class="k">print</span> <span class="s">&#39;Usage: python </span><span class="si">%s</span><span class="s"> &#39;</span> <span class="o">%</span> <span class="n">__file__</span>
+    <span class="k">print</span> <span class="s">&#39; &lt;IRODS_DIRECTORY&gt; (e.x. /osg/home/username/)&#39;</span>
+    <span class="k">print</span> <span class="s">&#39; &lt;IRODS_RESOURCE&gt;  (e.x. osgGridFtpGroup)&gt;&#39;</span>
+    <span class="k">print</span>
+    <span class="k">print</span> <span class="s">&quot;For example: python </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">__file__</span> <span class="o">+</span> <span class="s">&quot;/irods/mydir/ irodsResourceGroup&quot;</span>
+    <span class="k">print</span> <span class="s">&quot;Please specify an iRODS resource group for &lt;IRODS_RESOURCE&gt; &quot;</span> <span class="o">+</span>\
+          <span class="s">&quot;if possible in order to properly test replication.&quot;</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="c"># handle args</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">!=</span><span class="mi">3</span><span class="p">:</span>
+        <span class="n">usage</span><span class="p">()</span>
+        <span class="nb">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c"># directory to store our iRODS files in, don&#39;t forget trailing and leading /</span>
+    <span class="n">IRODS_DIRECTORY</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c"># iRODS resource or resource group to upload files to</span>
+    <span class="n">IRODS_RESOURCE</span>  <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="c"># remove any intermediary files that may have been created on iRODS </span>
+    <span class="c"># from an earlier, failed run of this script</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="s">&quot;irm&quot;</span><span class="p">,</span> <span class="n">IRODS_DIRECTORY</span><span class="o">+</span><span class="n">TEMP_FILENAME</span><span class="p">])</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="s">&quot;irm&quot;</span><span class="p">,</span> <span class="s">&#39;-r&#39;</span><span class="p">,</span> <span class="n">IRODS_DIRECTORY</span><span class="o">+</span><span class="n">TEMP_DIR</span><span class="p">])</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="s">&quot;rm&quot;</span><span class="p">,</span> <span class="s">&quot;/tmp/&quot;</span><span class="o">+</span><span class="n">TEMP_FILENAME</span><span class="p">])</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">myfile</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">LogicalFile</span><span class="p">(</span><span class="s">&#39;irods://&#39;</span> <span class="o">+</span> <span class="n">IRODS_DIRECTORY</span><span class="o">+</span><span class="n">TEMP_FILENAME</span><span class="p">)</span>
+
+        <span class="c"># grab our home directory (tested on Linux)</span>
+        <span class="n">home_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s">&quot;~&quot;</span><span class="o">+</span><span class="s">&quot;/&quot;</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Creating temporary file of size </span><span class="si">%d</span><span class="s">M : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> \
+            <span class="p">(</span><span class="n">FILE_SIZE</span><span class="p">,</span> <span class="n">home_dir</span><span class="o">+</span><span class="n">TEMP_FILENAME</span><span class="p">)</span>
+
+        <span class="c"># create a file for us to use with iRODS</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">home_dir</span><span class="o">+</span><span class="n">TEMP_FILENAME</span><span class="p">,</span> <span class="s">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;x&quot;</span> <span class="o">*</span> <span class="p">(</span><span class="n">FILE_SIZE</span> <span class="o">*</span> <span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">20</span><span class="p">))</span> <span class="p">)</span>
+
+        <span class="k">print</span> <span class="s">&quot;Creating iRODS directory object&quot;</span>
+        <span class="n">mydir</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">LogicalDirectory</span><span class="p">(</span><span class="s">&quot;irods://localhost/&quot;</span> <span class="o">+</span> <span class="n">IRODS_DIRECTORY</span><span class="p">)</span> 
+
+        <span class="k">print</span> <span class="s">&quot;Uploading file to iRODS&quot;</span>
+        <span class="n">myfile</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">LogicalFile</span><span class="p">(</span><span class="s">&#39;irods://localhost/&#39;</span><span class="o">+</span><span class="n">IRODS_DIRECTORY</span><span class="o">+</span><span class="n">TEMP_FILENAME</span><span class="p">)</span>
+        <span class="n">myfile</span><span class="o">.</span><span class="n">upload</span><span class="p">(</span><span class="n">home_dir</span> <span class="o">+</span> <span class="n">TEMP_FILENAME</span><span class="p">,</span> \
+                     <span class="s">&quot;irods:///this/path/is/ignored/?resource=&quot;</span><span class="o">+</span><span class="n">IRODS_RESOURCE</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="s">&quot;Deleting file locally : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">home_dir</span> <span class="o">+</span> <span class="n">TEMP_FILENAME</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">home_dir</span> <span class="o">+</span> <span class="n">TEMP_FILENAME</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="s">&quot;Printing iRODS directory listing for </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="s">&quot;irods://localhost/&quot;</span> <span class="o">+</span> <span class="n">IRODS_DIRECTORY</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">mydir</span><span class="o">.</span><span class="n">list</span><span class="p">():</span>
+            <span class="k">print</span> <span class="n">entry</span>
+
+        <span class="k">print</span> <span class="s">&quot;Creating iRODS file object&quot;</span>
+        <span class="n">myfile</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">LogicalFile</span><span class="p">(</span><span class="s">&#39;irods://localhost/&#39;</span> <span class="o">+</span> <span class="n">IRODS_DIRECTORY</span><span class="o">+</span><span class="n">TEMP_FILENAME</span><span class="p">)</span>
+        
+        <span class="k">print</span> <span class="s">&quot;Creating&quot;</span><span class="p">,</span><span class="n">NUM_REPLICAS</span><span class="p">,</span><span class="s">&quot;replicas for&quot;</span><span class="p">,</span><span class="n">IRODS_DIRECTORY</span><span class="o">+</span><span class="n">TEMP_FILENAME</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">NUM_REPLICAS</span><span class="p">):</span>
+            <span class="n">myfile</span><span class="o">.</span><span class="n">replicate</span><span class="p">(</span><span class="s">&quot;irods://localhost/this/path/is/ignored/?resource=&quot;</span><span class="o">+</span><span class="n">IRODS_RESOURCE</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="s">&quot;Locations the file is stored at on iRODS:&quot;</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">myfile</span><span class="o">.</span><span class="n">list_locations</span><span class="p">():</span>
+            <span class="k">print</span> <span class="n">entry</span>
+
+        <span class="k">print</span> <span class="s">&quot;Downloading logical file </span><span class="si">%s</span><span class="s"> to /tmp/&quot;</span> <span class="o">%</span> \
+            <span class="p">(</span><span class="n">IRODS_DIRECTORY</span> <span class="o">+</span> <span class="n">TEMP_FILENAME</span><span class="p">)</span> 
+        <span class="n">myfile</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s">&quot;/tmp/&quot;</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="s">&quot;Deleting downloaded file locally: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="s">&quot;/tmp&quot;</span> <span class="o">+</span> <span class="n">TEMP_FILENAME</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&quot;/tmp/&quot;</span> <span class="o">+</span> <span class="n">TEMP_FILENAME</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="s">&quot;Making test dir </span><span class="si">%s</span><span class="s"> on iRODS&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">IRODS_DIRECTORY</span><span class="o">+</span><span class="n">TEMP_DIR</span><span class="p">)</span>
+        <span class="n">mydir</span><span class="o">.</span><span class="n">make_dir</span><span class="p">(</span><span class="s">&quot;irods://localhost/&quot;</span><span class="o">+</span><span class="n">IRODS_DIRECTORY</span><span class="o">+</span><span class="n">TEMP_DIR</span><span class="p">)</span>
+        
+        <span class="k">print</span> <span class="s">&quot;Deleting test dir </span><span class="si">%s</span><span class="s"> from iRODS&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">IRODS_DIRECTORY</span><span class="o">+</span><span class="n">TEMP_DIR</span><span class="p">)</span>
+        <span class="n">mydir</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&quot;irods://localhost/&quot;</span><span class="o">+</span><span class="n">IRODS_DIRECTORY</span><span class="o">+</span><span class="n">TEMP_DIR</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="s">&quot;Deleting file </span><span class="si">%s</span><span class="s"> from iRODS&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">IRODS_DIRECTORY</span><span class="o">+</span><span class="n">TEMP_FILENAME</span><span class="p">)</span>
+        <span class="n">myfile</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s">&quot;An error occured while executing the test script!&quot;</span>
+                          <span class="s">&quot;Please run with SAGA_VERBOSE=4 set in the&quot;</span>
+                          <span class="s">&quot;environment for debug output.</span><span class="se">\n</span><span class="s">  </span><span class="si">%s</span><span class="s">&quot;</span>
+                          <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)))</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="s">&quot;iRODS test script finished execution&quot;</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">))</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="configuration-options">
 <h2>10.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
@@ -324,7 +458,7 @@
         <li class="right" >
           <a href="saga.adaptor.pbsjob.html" title="9. saga.adaptor.pbsjob"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.1.1-85-g8db36a4 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.1.1-97-g23a9de9 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" >3. Adaptors</a> &raquo;</li> 
       </ul>
     </div>

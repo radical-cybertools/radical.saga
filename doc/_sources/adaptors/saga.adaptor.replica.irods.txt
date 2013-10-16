@@ -24,7 +24,7 @@ schema                   description
 Example
 -------
 
-NO EXAMPLE AVAILABLE
+.. literalinclude:: ../../../examples/replica/irods/irods_test.py
 
 
 Configuration Options

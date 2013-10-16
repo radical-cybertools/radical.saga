@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.pbs.pbsjob &mdash; SAGA 0.1.1-85-g8db36a4 documentation</title>
+    <title>saga.adaptors.pbs.pbsjob &mdash; SAGA 0.1.1-97-g23a9de9 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.1.1-85-g8db36a4',
+        VERSION:     '0.1.1-97-g23a9de9',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.1.1-85-g8db36a4 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.1.1-97-g23a9de9 documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.1.1-85-g8db36a4 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.1.1-97-g23a9de9 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -285,6 +285,13 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Using Cray specific &#39;#PBS -l mppwidth=xx&#39; flags (PBSPro_10).&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="n">pbs_params</span> <span class="o">+=</span> <span class="s">&quot;#PBS -l mppwidth=</span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span>
+        <span class="k">elif</span> <span class="s">&#39;4.2.5-snap.201308291703&#39;</span> <span class="ow">in</span> <span class="n">pbs_version</span><span class="p">:</span> 
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Using Titan (Cray XP) specific &#39;#PBS -l nodes=xx&#39; against &#39;#PBS -l size=xx&#39;.&quot;</span><span class="p">)</span>
+            <span class="n">nnodes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span><span class="p">)</span><span class="o">//</span><span class="nb">int</span><span class="p">(</span><span class="n">ppn</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">nnodes</span><span class="p">:</span> 
+                <span class="n">pbs_params</span> <span class="o">+=</span> <span class="s">&quot;#PBS -l nodes=</span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">nnodes</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pbs_params</span> <span class="o">+=</span> <span class="s">&quot;#PBS -l nodes=1 </span><span class="se">\n</span><span class="s">&quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Using Cray XT specific &#39;#PBS -l size=xx&#39; flags (TORQUE).&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
@@ -636,8 +643,11 @@
                 <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Couldn&#39;t create working directory - </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">out</span><span class="p">)</span>
                 <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
 
-        <span class="c"># run the PBS script</span>
-        <span class="n">cmdline</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;echo &quot;</span><span class="si">%s</span><span class="s">&quot; | </span><span class="si">%s</span><span class="s">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qsub&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">])</span>
+        <span class="c"># Now we want to execute the script. This process consists of two steps:</span>
+        <span class="c"># (1) we create a temporary file with &#39;mktemp&#39; and write the contents of </span>
+        <span class="c">#     the generated PBS script into it</span>
+        <span class="c"># (2) we call &#39;qsub &lt;tmpfile&gt;&#39; to submit the script to the queueing system</span>
+        <span class="n">cmdline</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;SCRIPTFILE=`mktemp -t SAGA-Python-PBSJobScript.XXXXXX` &amp;&amp;  echo &quot;</span><span class="si">%s</span><span class="s">&quot; &gt; $SCRIPTFILE &amp;&amp; </span><span class="si">%s</span><span class="s"> $SCRIPTFILE&quot;&quot;&quot;</span> <span class="o">%</span>  <span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qsub&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">])</span>
         <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="n">cmdline</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
@@ -1200,7 +1210,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.1.1-85-g8db36a4 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.1.1-97-g23a9de9 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>

@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.attributes &mdash; SAGA 0.1.1-85-g8db36a4 documentation</title>
+    <title>saga.attributes &mdash; SAGA 0.1.1-97-g23a9de9 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.1.1-85-g8db36a4',
+        VERSION:     '0.1.1-97-g23a9de9',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.1.1-85-g8db36a4 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.1.1-97-g23a9de9 documentation" href="../../index.html" />
     <link rel="up" title="saga" href="../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.1.1-85-g8db36a4 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.1.1-97-g23a9de9 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -391,11 +391,20 @@
         <span class="c"># initialize state</span>
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_init</span> <span class="p">()</span>
 
-        <span class="c"># # call to update and the args/kwargs handling seems to be part of the</span>
-        <span class="c"># # dict interface conventions *shrug*</span>
-        <span class="c">#</span>
-        <span class="c"># # FIXME: use similar mechanism to initialize attribs</span>
-        <span class="c"># self.update (*args, **kwargs)</span>
+        <span class="c"># call to update and the args/kwargs handling seems to be part of the</span>
+        <span class="c"># dict interface conventions *shrug*</span>
+        <span class="c"># we use similar mechanism to initialize attribs here:</span>
+
+        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="nb">isinstance</span> <span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">arg</span><span class="o">.</span><span class="n">keys</span> <span class="p">()</span> <span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">set_attribute</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">arg</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+            <span class="k">else</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;initialization expects dictionary&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span> <span class="p">()</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_attribute</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
 
 
     <span class="c"># --------------------------------------------------------------------------</span>
@@ -719,11 +728,9 @@
             <span class="c"># always raise and lower the recursion shield</span>
             <span class="k">try</span> <span class="p">:</span>
                 <span class="n">d</span><span class="p">[</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
-                <span class="k">return</span> <span class="n">lister</span> <span class="p">()</span>
+                <span class="n">lister</span> <span class="p">()</span>
             <span class="k">finally</span> <span class="p">:</span>
                 <span class="n">d</span><span class="p">[</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
-
-        <span class="k">return</span> <span class="p">[]</span>
 
 
 
@@ -1223,7 +1230,7 @@
                     <span class="n">e</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;extended&#39;</span><span class="p">]</span> 
                     <span class="n">p</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;private&#39;</span><span class="p">]</span> 
                     <span class="n">k</span> <span class="o">=</span> <span class="n">key</span>
-
+                    
                     <span class="k">if</span> <span class="n">CamelCase</span> <span class="p">:</span>
                         <span class="n">k</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;camelcase&#39;</span><span class="p">]</span>
 
@@ -1317,9 +1324,10 @@
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_init</span> <span class="p">()</span>
 
         <span class="c"># check if we know about that attribute</span>
-        <span class="k">if</span> <span class="s">&#39;exists&#39;</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="p">:</span>
-            <span class="k">if</span>  <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;exists&#39;</span><span class="p">]</span> <span class="p">:</span>
-                <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">]</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="s">&#39;exists&#39;</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="p">:</span>
+                <span class="k">if</span>  <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;exists&#39;</span><span class="p">]</span> <span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">True</span>
 
         <span class="k">return</span> <span class="bp">False</span>
 
@@ -1597,16 +1605,19 @@
         <span class="c"># that matters).  But we store attributes in &#39;under_score&#39; version.</span>
         <span class="n">us_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_underscore</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
-        <span class="c"># remove any old instance of this attribute</span>
+        <span class="c"># retain old values</span>
+        <span class="n">val</span>    <span class="o">=</span> <span class="n">default</span>
+        <span class="n">exists</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">if</span> <span class="n">us_key</span> <span class="ow">in</span>  <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">]</span> <span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_unregister</span> <span class="p">(</span><span class="n">us_key</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
+            <span class="n">val</span>    <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">us_key</span><span class="p">][</span><span class="s">&#39;value&#39;</span><span class="p">]</span>
+            <span class="n">exists</span> <span class="o">=</span> <span class="bp">True</span>
 
         <span class="c"># register the attribute and properties</span>
         <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">us_key</span><span class="p">]</span>                 <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">us_key</span><span class="p">][</span><span class="s">&#39;value&#39;</span><span class="p">]</span>        <span class="o">=</span> <span class="n">default</span> <span class="c"># initial value</span>
+        <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">us_key</span><span class="p">][</span><span class="s">&#39;value&#39;</span><span class="p">]</span>        <span class="o">=</span> <span class="n">val</span>     <span class="c"># initial value</span>
         <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">us_key</span><span class="p">][</span><span class="s">&#39;default&#39;</span><span class="p">]</span>      <span class="o">=</span> <span class="n">default</span> <span class="c"># default value</span>
         <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">us_key</span><span class="p">][</span><span class="s">&#39;type&#39;</span><span class="p">]</span>         <span class="o">=</span> <span class="n">typ</span>     <span class="c"># int, float, enum, ...</span>
-        <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">us_key</span><span class="p">][</span><span class="s">&#39;exists&#39;</span><span class="p">]</span>       <span class="o">=</span> <span class="bp">False</span>   <span class="c"># no value set, yet</span>
+        <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">us_key</span><span class="p">][</span><span class="s">&#39;exists&#39;</span><span class="p">]</span>       <span class="o">=</span> <span class="n">exists</span>  <span class="c"># no value set, yet?</span>
         <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">us_key</span><span class="p">][</span><span class="s">&#39;flavor&#39;</span><span class="p">]</span>       <span class="o">=</span> <span class="n">flavor</span>  <span class="c"># scalar / vector</span>
         <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">us_key</span><span class="p">][</span><span class="s">&#39;mode&#39;</span><span class="p">]</span>         <span class="o">=</span> <span class="n">mode</span>    <span class="c"># readonly / writeable / final</span>
         <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">us_key</span><span class="p">][</span><span class="s">&#39;extended&#39;</span><span class="p">]</span>     <span class="o">=</span> <span class="n">ext</span>     <span class="c"># is an extended attribute </span>
@@ -1977,7 +1988,6 @@
 
 
         <span class="n">keys_all</span>   <span class="o">=</span> <span class="nb">sorted</span> <span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iterkeys</span> <span class="p">())</span>
-        <span class="n">keys_exist</span> <span class="o">=</span> <span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">lower</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">sorted</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_list</span> <span class="p">(</span><span class="n">flow</span><span class="p">)))</span>
 
         <span class="k">print</span> <span class="s">&quot;---------------------------------------&quot;</span>
         <span class="k">print</span> <span class="nb">str</span> <span class="p">(</span><span class="nb">type</span> <span class="p">(</span><span class="bp">self</span><span class="p">))</span>
@@ -1991,6 +2001,11 @@
         <span class="k">print</span> <span class="s">&quot; </span><span class="si">%-30s</span><span class="s"> : </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="s">&quot;Private&quot;</span>     <span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;private&#39;</span><span class="p">])</span>
         <span class="k">print</span> <span class="s">&quot; </span><span class="si">%-30s</span><span class="s"> : </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="s">&quot;CamelCasing&quot;</span> <span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;camelcasing&#39;</span><span class="p">])</span>
         <span class="k">print</span> <span class="s">&quot;---------------------------------------&quot;</span>
+
+        <span class="n">keys_exist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys_all</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;exists&#39;</span><span class="p">]</span> <span class="p">:</span>
+                <span class="n">keys_exist</span><span class="o">.</span><span class="n">append</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
         <span class="k">print</span> <span class="s">&quot;&#39;Registered&#39; attributes&quot;</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys_all</span> <span class="p">:</span>
@@ -2009,6 +2024,7 @@
         <span class="k">print</span> <span class="s">&quot;---------------------------------------&quot;</span>
 
         <span class="k">print</span> <span class="s">&quot;&#39;Existing&#39; attributes&quot;</span>
+        <span class="n">keys_exist</span><span class="o">.</span><span class="n">sort</span> <span class="p">()</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys_exist</span> <span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span>  <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;mode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ALIAS</span> <span class="p">:</span>
                 <span class="k">print</span> <span class="s">&quot; </span><span class="si">%-30s</span><span class="s"> [</span><span class="si">%6s</span><span class="s">, </span><span class="si">%6s</span><span class="s">, </span><span class="si">%9s</span><span class="s">, </span><span class="si">%3d</span><span class="s">]: </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span> \
@@ -2703,7 +2719,6 @@
 <span class="c"># ------------------------------------------------------------------------------</span>
 
 <span class="c"># FIXME: add </span>
-<span class="c">#   - as_dict()</span>
 <span class="c">#   - class metric()</span>
 <span class="c">#   - add_metric()</span>
 <span class="c">#   - remove_metric()</span>
@@ -2748,7 +2763,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.1.1-85-g8db36a4 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.1.1-97-g23a9de9 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" >saga</a> &raquo;</li> 
       </ul>

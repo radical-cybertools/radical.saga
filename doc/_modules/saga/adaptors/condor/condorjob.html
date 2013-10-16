@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.condor.condorjob &mdash; SAGA 0.1.1-85-g8db36a4 documentation</title>
+    <title>saga.adaptors.condor.condorjob &mdash; SAGA 0.1.1-97-g23a9de9 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.1.1-85-g8db36a4',
+        VERSION:     '0.1.1-97-g23a9de9',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.1.1-85-g8db36a4 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.1.1-97-g23a9de9 documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.1.1-85-g8db36a4 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.1.1-97-g23a9de9 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -267,7 +267,7 @@
         <span class="n">hosts</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
         <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">candidate_hosts</span><span class="p">:</span>
             <span class="n">hosts</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">, &quot;</span> <span class="o">%</span> <span class="n">host</span>
-        <span class="n">sitelist</span> <span class="o">=</span> <span class="s">&quot;+SiteList = </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">hosts</span>
+        <span class="n">sitelist</span> <span class="o">=</span> <span class="s">&quot;+SiteList = </span><span class="se">\\\&quot;</span><span class="si">%s</span><span class="se">\\\&quot;</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">hosts</span>
         <span class="n">requirements</span> <span class="o">+=</span> <span class="s">&quot;(stringListMember(GLIDEIN_ResourceName,SiteList) == True)&quot;</span>
         <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">sitelist</span>
         <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">requirements</span>
@@ -1104,7 +1104,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.1.1-85-g8db36a4 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.1.1-97-g23a9de9 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>
