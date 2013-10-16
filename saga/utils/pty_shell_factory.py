@@ -339,12 +339,10 @@ class PTYShellFactory (object) :
                                     continue
 
 
-                        logger.info ("got initial shell prompt (%s) (%s)" \
+                        logger.info ("Got initial shell prompt (%s) (%s)" \
                                    % (n, match))
-
                         # we are done waiting for a prompt
                         break
-                
                 
             except Exception as e :
                 raise self._translate_exception (e)
@@ -451,6 +449,7 @@ class PTYShellFactory (object) :
             info['schema']    = url.schema.lower ()
             info['host_str']  = url.host
             info['logger']    = logger
+            info['url']       = url
             info['pass']      = ""
             info['key_pass']  = {}
 
