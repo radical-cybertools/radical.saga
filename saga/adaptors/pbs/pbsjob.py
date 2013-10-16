@@ -652,6 +652,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         else:
             # the job seems to exist on the backend. let's gather some data
             job_info = {
+                'job_id':       job_id,
                 'state':        saga.job.UNKNOWN,
                 'exec_hosts':   None,
                 'returncode':   None,
