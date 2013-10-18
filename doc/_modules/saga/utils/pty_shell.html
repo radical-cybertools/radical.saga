@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.utils.pty_shell &mdash; SAGA 0.1.1-97-g23a9de9 documentation</title>
+    <title>saga.utils.pty_shell &mdash; SAGA 0.9.12 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '0.1.1-97-g23a9de9',
+        VERSION:     '0.9.12',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.1.1-97-g23a9de9 documentation" href="../../../index.html" />
+    <link rel="top" title="SAGA 0.9.12 documentation" href="../../../index.html" />
     <link rel="up" title="saga" href="../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../index.html">SAGA 0.1.1-97-g23a9de9 documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -66,8 +66,10 @@
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">errno</span>
 
+<span class="kn">import</span> <span class="nn">saga.utils.misc</span>              <span class="kn">as</span> <span class="nn">sumisc</span>
 <span class="kn">import</span> <span class="nn">saga.utils.logger</span>            <span class="kn">as</span> <span class="nn">sul</span>
 <span class="kn">import</span> <span class="nn">saga.utils.pty_shell_factory</span> <span class="kn">as</span> <span class="nn">supsf</span>
+<span class="kn">import</span> <span class="nn">saga.url</span>                     <span class="kn">as</span> <span class="nn">surl</span>
 <span class="kn">import</span> <span class="nn">saga.exceptions</span>              <span class="kn">as</span> <span class="nn">se</span>
 <span class="kn">import</span> <span class="nn">saga.session</span>                 <span class="kn">as</span> <span class="nn">ss</span>
 
@@ -314,6 +316,21 @@
 
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
                 <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Shell startup on target host failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+
+
+            <span class="k">try</span> <span class="p">:</span>
+                <span class="c"># got a command shell, finally!</span>
+                <span class="c"># for local shells, we now change to the current working</span>
+                <span class="c"># directory.  Remote shells will remain in the default pwd</span>
+                <span class="c"># (usually $HOME).</span>
+                <span class="k">if</span>  <span class="n">sumisc</span><span class="o">.</span><span class="n">host_is_local</span> <span class="p">(</span><span class="n">surl</span><span class="o">.</span><span class="n">Url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">host</span><span class="p">)</span> <span class="p">:</span>
+                    <span class="n">pwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span> <span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&#39;cd </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">pwd</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
+                <span class="c"># We will ignore any errors.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span> <span class="p">(</span><span class="s">&quot;local cd to </span><span class="si">%s</span><span class="s"> failed&quot;</span> <span class="o">%</span> <span class="n">pwd</span><span class="p">)</span>
+                
+                
 
             <span class="bp">self</span><span class="o">.</span><span class="n">initialized</span> <span class="o">=</span> <span class="bp">True</span>
 
@@ -964,7 +981,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../index.html">SAGA 0.1.1-97-g23a9de9 documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../saga.html" >saga</a> &raquo;</li> 
       </ul>
