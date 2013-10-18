@@ -15,6 +15,7 @@ __license__   = "MIT"
 # from   misc        import *
 # from   which       import *
 
+from plugin_manager import PluginManager
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

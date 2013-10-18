@@ -1,3 +1,11 @@
+Version 0.9.12 release xxxx-xx-xx
+---------------------------------------------------------------------
+
+* Added new iRODS replica adaptor
+* Closed tickets:
+  - https://github.com/saga-project/saga-python/issues?milestone=10&state=closed
+
+
 Version 0.9.11 released 2013-09-04
 ----------------------------------------------------------------------
 

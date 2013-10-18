@@ -29,7 +29,6 @@ class Description (saga.Attributes) :
 
         # register properties with the attribute interface
 
-        self._attributes_register  (saga.job.NAME                 , None, sa.STRING, sa.SCALAR, sa.WRITEABLE) 
         self._attributes_register  (saga.job.EXECUTABLE           , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.ARGUMENTS            , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
         self._attributes_register  (saga.job.ENVIRONMENT          , None, sa.STRING, sa.DICT,   sa.WRITEABLE)
@@ -51,6 +50,7 @@ class Description (saga.Attributes) :
         self._attributes_register  (saga.job.OPERATING_SYSTEM_TYPE, None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.CANDIDATE_HOSTS      , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
         self._attributes_register  (saga.job.QUEUE                , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (saga.job.NAME                 , None, sa.STRING, sa.SCALAR, sa.WRITEABLE) 
         self._attributes_register  (saga.job.PROJECT              , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.JOB_CONTACT          , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
         self._attributes_register  (saga.job.SPMD_VARIATION       , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
@@ -96,7 +96,11 @@ class Description (saga.Attributes) :
     @sus.returns ('Description')
     def clone (self, other=None) :
         """ 
-        deep copy: unlike the default python assignment (copy object reference),
+        clone()
+
+        Implements deep copy. u
+
+        Unlike the default python assignment (copy object reference),
         a deep copy will create a new object instance with the same state --
         after a deep copy, a change on one instance will not affect the other.
         """

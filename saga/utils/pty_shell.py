@@ -9,9 +9,12 @@ import os
 import sys
 import errno
 
+import saga.utils.misc              as sumisc
 import saga.utils.logger            as sul
 import saga.utils.pty_shell_factory as supsf
+import saga.url                     as surl
 import saga.exceptions              as se
+import saga.session                 as ss
 
 _PTY_TIMEOUT = 2.0
 
@@ -168,10 +171,11 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, url, session, logger=None, init=None, opts={}) :
+    def __init__ (self, url, session=None, logger=None, init=None, opts={}) :
 
-        self.logger = logger
-        if  not  self.logger : self.logger = sul.getLogger ('PTYShell') 
+        if  None != logger  : self.logger  = logger
+        else                : self.logger  = sul.getLogger ('PTYShell') 
+
         self.logger.debug ("PTYShell init %s" % self)
 
         self.url         = url      # describes the shell to run
@@ -255,6 +259,21 @@ class PTYShell (object) :
 
             except Exception as e :
                 raise se.NoSuccess ("Shell startup on target host failed: %s" % e)
+
+
+            try :
+                # got a command shell, finally!
+                # for local shells, we now change to the current working
+                # directory.  Remote shells will remain in the default pwd
+                # (usually $HOME).
+                if  sumisc.host_is_local (surl.Url(self.url).host) :
+                    pwd = os.getcwd ()
+                    self.run_sync ('cd %s' % pwd)
+            except Exception as e :
+                # We will ignore any errors.
+                self.logger.warning ("local cd to %s failed" % pwd)
+                
+                
 
             self.initialized = True
 
@@ -395,9 +414,6 @@ class PTYShell (object) :
             while True :
 
                 try :
-                  # self.pty_shell.write ("\n")
-                  # self.logger.error  ("sent prompt trigger")
-
                     # make sure we have a non-zero waiting delay (default to
                     # 1 second)
                     delay = 10 * self.latency
@@ -407,8 +423,6 @@ class PTYShell (object) :
                     # FIXME: how do we know that _PTY_TIMOUT suffices?  In particular if
                     # we actually need to flush...
                     fret, match = self.pty_shell.find ([self.prompt], delay)
-
-                  # self.logger.error  ("got match (%s)" % match)
 
                     if  fret == None :
                     

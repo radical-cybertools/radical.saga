@@ -14,40 +14,43 @@ from setuptools import setup, Command
 from distutils.command.install_data import install_data
 from distutils.command.sdist import sdist
 
-# figure out the current version. saga-python's
-# version is defined in saga/VERSION
-version = "latest"
+#-----------------------------------------------------------------------------
+# figure out the current version
+def update_version():
 
-try:
-    cwd = os.path.dirname(os.path.abspath(__file__))
-    fn = os.path.join(cwd, 'saga/VERSION')
-    version = open(fn).read().strip()
-except IOError:
-    from subprocess import Popen, PIPE, STDOUT
-    import re
-
-    VERSION_MATCH = re.compile(r'\d+\.\d+\.\d+(\w|-)*')
+    version = "latest"
 
     try:
-        p = Popen(['git', 'describe', '--tags', '--always'],
-                  stdout=PIPE, stderr=STDOUT)
-        out = p.communicate()[0]
+        cwd = os.path.dirname(os.path.abspath(__file__))
+        fn = os.path.join(cwd, 'saga/VERSION')
+        version = open(fn).read().strip()
+    except IOError:
+        from subprocess import Popen, PIPE, STDOUT
+        import re
 
-        if (not p.returncode) and out:
-            v = VERSION_MATCH.search(out)
-            if v:
-                version = v.group()
-    except OSError:
-        pass
+        VERSION_MATCH = re.compile(r'\d+\.\d+\.\d+(\w|-)*')
 
-scripts = []  # ["bin/saga-run"]
+        try:
+            p = Popen(['git', 'describe', '--tags', '--always'],
+                      stdout=PIPE, stderr=STDOUT)
+            out = p.communicate()[0]
 
+            if (not p.returncode) and out:
+                v = VERSION_MATCH.search(out)
+                if v:
+                    version = v.group()
+        except OSError:
+            pass
 
+    return version
+
+#-----------------------------------------------------------------------------
 # check python version. we need > 2.5
 if sys.hexversion < 0x02050000:
     raise RuntimeError("SAGA requires Python 2.5 or higher")
 
-
+#-----------------------------------------------------------------------------
+# 
 class our_install_data(install_data):
 
     def finalize_options(self): 
@@ -59,17 +62,18 @@ class our_install_data(install_data):
         install_data.run(self)
         # ensure there's a saga/VERSION file
         fn = os.path.join(self.install_dir, 'saga', 'VERSION')
-        open(fn, 'w').write(version)
+        open(fn, 'w').write(update_version())
         self.outfiles.append(fn)
 
-
+#-----------------------------------------------------------------------------
+# 
 class our_sdist(sdist):
 
     def make_release_tree(self, base_dir, files):
         sdist.make_release_tree(self, base_dir, files)
-        # ensure there's a air/VERSION file
+
         fn = os.path.join(base_dir, 'saga', 'VERSION')
-        open(fn, 'w').write(version)
+        open(fn, 'w').write(update_version())
 
 
 class our_test(Command):
@@ -92,7 +96,7 @@ class our_test(Command):
 
 setup_args = {
     'name': "saga-python",
-    'version': version,
+    'version': update_version(),
     'description': "A light-weight access layer for distributed computing infrastructure",
     'long_description': "An implementation of the OGF GFD.90 SAGA standard in Python",
     'author': "Ole Weidner, et al.",
@@ -150,6 +154,7 @@ setup_args = {
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
         "saga.adaptors.redis",
+        "saga.adaptors.irods",
         "saga.adaptors.aws",
         "saga.adaptors.http",
         "saga.engine",
@@ -157,11 +162,11 @@ setup_args = {
         "saga.utils.contrib",
         "saga.utils.logger",
         "saga.utils.config",
-        "saga.utils.job"
+        "saga.utils.job",
     ],
     'package_data': {'': ['*.sh']},
     'zip_safe': False,
-    'scripts': scripts,
+    'scripts': [],
     # mention data_files, even if empty, so install_data is called and
     # VERSION gets copied
     'data_files': [("saga", [])],
