@@ -30,7 +30,7 @@ The redis key layout is like the following::
     /vals:/etc/passwd:val_2  : [/keys/etc/passwd, ...]
 
 all wildcard lookup versions will be slow -- only solution (iiuc) would be to
-blow the indexes to cover for wirldcard expansion - which is always incomplete
+blow the indexes to cover for wildcard expansion - which is always incomplete
 anyway...
 
 All parts of the above structure are set/get in a single pipelined transactional
@@ -38,7 +38,7 @@ All parts of the above structure are set/get in a single pipelined transactional
 performance is insufficient.  
 
 TODO:
-    - use locks to make thread safe
+    - use locks to make thread safe(r)
 
 """
 
@@ -101,13 +101,13 @@ class redis_ns_monitor (sut.SagaThread) :
         self.pat = {}
         self.pat['ATTRIBUTE'] = re.compile ('\s*\[(?P<key>[^=]+)=(?P<val>.+)]\s*')
 
-        sut.SagaThread.__init__ (self)
+        sut.SagaThread.__init__ (self, self.work)
         self.setDaemon (True)
 
 
     # ----------------------------------------------------------------
     #
-    def run (self) :
+    def work (self) :
 
         try :
         
@@ -290,7 +290,7 @@ class redis_ns_entry :
                 raise BadParameter ("Cannot open %s (no such directory)" % path)
 
     
-        if not e.isdir () :
+        if not e.is_dir () :
             raise BadParameter ("Cannot open %s (not a directory)" % path)
 
         return e
@@ -334,9 +334,6 @@ class redis_ns_entry :
                 raise BadParameter ("Cannot open %s (no such entry)" % path)
 
     
-        if e.isdir () :
-            raise BadParameter ("Cannot open %s (is a directory)" % path)
-
         return e
             
     
@@ -380,7 +377,7 @@ class redis_ns_entry :
               except Exception as e :
                   raise BadParameter ("mkdir %s fails, parent does not exist: %s" %  (path, e))
 
-              if not pe.isdir () :
+              if not pe.is_dir () :
                   raise BadParameter ("mkdir %s fails, parent is no directory: %s" %  (path, parent))
 
         self.node[TYPE] = DIR
@@ -434,7 +431,7 @@ class redis_ns_entry :
         p.execute ()
     
         # issue notification about entry creation to parent dir
-        self.logger.debug (" pub CREATE %s [%s]"  %  (parent, name))
+        self.logger.debug ("pub CREATE %s [%s]"  %  (parent, name))
         self.r.publish   (MON, "CREATE %s [%s]"  %  (parent, name))
     
         # refresh cache state
@@ -455,12 +452,24 @@ class redis_ns_entry :
 
     # ----------------------------------------------------------------
     #
-    def isdir (self) :
+    def is_dir (self) :
         
         if self.node[TYPE] == DIR :
             return True
         else :
             return False
+
+
+    # ----------------------------------------------------------------
+    #
+    def list (self) :
+        
+        if  not self.node[TYPE] == DIR :
+            raise IncorrectState ("'list()' is only supported on directories")
+        
+        self.fetch ()
+
+        return self.kids
 
 
     # ----------------------------------------------------------------
@@ -526,11 +535,11 @@ class redis_ns_entry :
     # ----------------------------------------------------------------
     #
     def get_data (self) :
-    
+
         self.logger.debug ("redis_ns_entry.get_data %s" % self.path)
     
         self.fetch () # refresh cache/state as needed
-    
+
         return self.data
 
 
@@ -546,74 +555,6 @@ class redis_ns_entry :
         # respective SAGA API object (if possible)
     
         return None
-
-
-    # ----------------------------------------------------------------
-    #
-    def push (self, flags=None) :
-        """
-        assume the entry exists.
-
-        We first fetch the current state, so that we can compare changes in
-        data, and remove old index entries.  Simpler would be to just push the
-        entry, and to leave index cleanup to a separate thread (index is not
-        semantical).
-
-        Also, the implementation right now does some delete/create (for data and
-        indexes -- that creates race conditions, unless entry access is locked on
-        redis level
-        """
-        # FIXME: ensure existence ("DEL+':'+path" must not exist, entry must be valid)
-        # FIXME: optimize index cleanup
-        # FIXME: fix potential race conditions
-        # FIXME: eval flags (exclusive, ...)
-    
-        self.logger.debug ("redis_ns_entry.push %s" % (self.path))
-    
-        new_data  = self.data  # FIXME: is this a clone??
-        self.fetch ()  # can throw if entry does not exist -- use create() then
-
-        # FIXME: we only fetch() for the indexes - we should optimize that again
-        # by moving index consolidation into a separate thread (p.srem below)
-
-        old_data  = self.data
-        self.data = new_data
-    
-        p = self.r.pipeline ()
-        # FIXME: add guard
-        p.hmset  (NODE+':'+self.path, {'mtime': time.time()})
-        p.delete (DATA+':'+self.path)             # simply delete old data hash...
-        p.hmset  (DATA+':'+self.path, self.data)  # ...and replace with new one
-    
-        # delete old invalid index entries
-        # NOTE: one could also optimize the delete by checking differenzes
-        for key in old_data :
-            val = old_data[key]
-            p.srem (KEYS+':'+str(key), self.path)
-            p.srem (VALS+':'+str(val), self.path)
-    
-        # add new index entries
-        for key in self.data :
-            val = self.data[key]
-            p.sadd (KEYS+':'+str(key), self.path)
-            p.sadd (VALS+':'+str(val), self.path)
-    
-        # FIXME: eval vals
-        p.execute ()
-    
-        # issue notification about attribute changes
-        args=[]
-        for key in self.data :
-            args.append (key+'='+self.data[key])
-    
-        self.logger.debug ("pub ATTRIBUTES %s [%s]"  % (self.path, string.join (args, '][')))
-        self.r.publish   (MON, "ATTRIBUTES %s [%s]"  % (self.path, string.join (args, '][')))
-    
-        # refresh cache state
-        self.cache.set (NODE+':'+self.path, self.node)
-        self.cache.set (DATA+':'+self.path, self.data)
-        self.cache.set (KIDS+':'+self.path, self.kids)
-
 
 
     # ----------------------------------------------------------------
@@ -650,7 +591,7 @@ class redis_ns_entry :
         if key in self.data and self.data[key] == val :
 
             # nothing changed - so just trigger the set event
-            self.logger.debug ("pub ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
+            self.logger.debug ("Pub ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
             self.r.publish   (MON, "ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
 
             # nothing else to do
@@ -678,7 +619,7 @@ class redis_ns_entry :
         vals = p.execute ()
     
         # issue notification about key creation/update
-        self.logger.debug ("pub ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
+        self.logger.debug ("PUB ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
         self.r.publish   (MON, "ATTRIBUTE %s [%s=%s]"  %  (path, key, val))
     
         # update cache

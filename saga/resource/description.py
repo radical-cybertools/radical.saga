@@ -86,6 +86,11 @@ class Description (sa.Attributes) :
                   sus.optional (dict))
     @sus.returns (sus.nothing)
     def __init__ (self, d=None):
+        """
+        __init__()
+
+        Create a new Description instance.
+        """
 
         # set attribute interface properties
 
@@ -137,7 +142,11 @@ class Description (sa.Attributes) :
     @sus.returns ('Description')
     def clone (self, other=None) :
         """ 
-        deep copy: unlike the default python assignment (copy object reference),
+        clone()
+
+        Implements deep copy. 
+
+        Unlike the default python assignment (copy object reference),
         a deep copy will create a new object instance with the same state --
         after a deep copy, a change on one instance will not affect the other.
         """

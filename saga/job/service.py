@@ -29,12 +29,6 @@ class Service (sb.Base, sasync.Async) :
     The job.Service represents a resource management backend, and as such allows
     the creation, submission and management of jobs.
 
-    :param url:     resource manager URL
-    :type  url:     string or :class:`saga.Url`
-    :param session: an optional session object with security contexts
-    :type  session: :class:`saga.Session`
-    :rtype:         :class:`saga.job.Service`
-
     A job.Service represents anything which accepts job creation requests, and
     which manages thus created :class:`saga.job.Job` instances.  That can be a local shell, 
     a remote ssh shell, a cluster queuing system, a IaaS backend -- you name it.
@@ -45,18 +39,22 @@ class Service (sb.Base, sasync.Async) :
 
     Example::
 
-        my_job_id = "[fork://localhost]-[12345]"
-        js  = saga.job.Service("fork://localhost")
-        ids = js.list()
+        service  = saga.job.Service("fork://localhost")
+        ids = service.list()
 
-        if my_job_id in ids :
-          print "found my job again, wohhooo!"
+        for job_id in ids :
+            print job_id 
 
-          j = js.get_job(my_job_id)
+            j = service.get_job(job_id)
 
-          if   j.get_state() == saga.job.Job.Pending  : print "pending"
-          elif j.get_state() == saga.job.Job.Running  : print "running"
-          else                                        : print "job is already final!"
+            if j.get_state() == saga.job.Job.Pending: 
+                print "pending"
+            elif j.get_state() == saga.job.Job.Running: 
+                print "running"
+            else: 
+                print "job is already final!"
+
+        service.close()
     """
 
     # --------------------------------------------------------------------------
@@ -71,10 +69,15 @@ class Service (sb.Base, sasync.Async) :
     def __init__ (self, rm=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         """
+        __init__(rm, session)
+
         Create a new job.Service instance.
         
-        :param rm: Url of the (remote) job manager.
-        :type  rm: :class:`saga.Url` 
+        :param rm:      resource manager URL
+        :type  rm:      string or :class:`saga.Url`
+        :param session: an optional session object with security contexts
+        :type  session: :class:`saga.Session`
+        :rtype:         :class:`saga.job.Service`
         """
 
         # job service instances are resource hogs.  Before attempting to create
@@ -115,13 +118,15 @@ class Service (sb.Base, sasync.Async) :
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (st.Task)
     def create   (cls, rm=None, session=None, ttype=SYNC) :
-        """ Create a new job.Service instance asynchronously.
+        """ 
+        create(rm=None, session=None)
+        Create a new job.Service instance asynchronously.
 
-            :param rm:     resource manager URL
-            :type  rm:     string or :class:`saga.Url`
-            :param session: an optional session object with security contexts
-            :type  session: :class:`saga.Session`
-            :rtype:         :class:`saga.Task`
+        :param rm:      resource manager URL
+        :type  rm:      string or :class:`saga.Url`
+        :param session: an optional session object with security contexts
+        :type  session: :class:`saga.Session`
+        :rtype:         :class:`saga.Task`
         """
 
         # param checks
@@ -138,7 +143,12 @@ class Service (sb.Base, sasync.Async) :
     #
     @sus.takes     ('Service')
     @sus.returns   (basestring)
-    def __str__ (self) :
+    def __str__ (self):
+        """
+        __str__()
+
+        String representation. Returns the job service Url.
+        """
 
         if  self.valid :
             return "[%s]" % self.url
@@ -151,6 +161,31 @@ class Service (sb.Base, sasync.Async) :
     @sus.takes     ('Service')
     @sus.returns   (sus.nothing)
     def close (self) :
+        """
+        close()
+
+        Close the job service instance and disconnect from the (remote) 
+        job service if necessary. Any subsequent calls to a job service 
+        instance after `close()` was called will fail. 
+
+        Example::
+
+            service = saga.job.Service("fork://localhost")
+            
+            # do something with the 'service' object, create jobs, etc...                 
+            
+            service.close()
+
+            service.list() # this call will throw an exception
+
+
+        .. warning:: While in principle the job service destructor calls
+            `close()` automatically when a job service instance goes out of scope,
+            you **shouldn't rely on it**. Python's garbage collection can be a 
+            bit odd at times, so you should always call `close()` explicitly.
+            Especially in a **multi-threaded program** this will help to avoid 
+            random errors. 
+        """
 
         if not self.valid :
             raise se.IncorrectState ("This instance was already closed.")
@@ -167,6 +202,8 @@ class Service (sb.Base, sasync.Async) :
     @sus.returns   ((j.Job, st.Task))
     def create_job (self, job_desc, ttype=None) :
         """ 
+        create_job(job_desc)
+
         Create a new job.Job instance from a :class:`~saga.job.Description`. The
         resulting job instance is in :data:`~saga.job.NEW` state. 
 
@@ -186,19 +223,27 @@ class Service (sb.Base, sasync.Async) :
 
         Example::
 
-          js = saga.job.Service("fork://localhost")
-          jd = saga.job.Description ()
-          jd.executable = '/bin/date'
-          j  = js.create_job(jd)
+            # A job.Description object describes the executable/application and its requirements
+            job_desc = saga.job.Description()
+            job_desc.executable  = '/bin/sleep'
+            job_desc.arguments   = ['10']
+            job_desc.output      = 'myjob.out'
+            job_desc.error       = 'myjob.err'
 
-          if   j.get_state() == saga.job.Job.New      : print "new"
-          else                                        : print "oops!"
+            service = saga.job.Service('local://localhost')
 
-          j.run()
+            job = service.create_job(job_desc)
 
-          if   j.get_state() == saga.job.Job.Pending  : print "pending"
-          elif j.get_state() == saga.job.Job.Running  : print "running"
-          else                                        : print "oops!"
+            # Run the job and wait for it to finish
+            job.run()
+            print "Job ID    : %s" % (job.job_id)
+            job.wait()
+
+            # Get some info about the job
+            print "Job State : %s" % (job.state)
+            print "Exitcode  : %s" % (job.exit_code)
+
+            service.close()
         """
 
 
@@ -268,7 +313,10 @@ class Service (sb.Base, sasync.Async) :
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((j.Job, st.Task))
     def run_job  (self, cmd, host=None, ttype=None) :
-        """ .. warning:: |not_implemented|
+        """ 
+        run_job(cmd, host=None)
+        
+        .. warning:: |not_implemented|
         """
 
         if not self.valid :
@@ -287,6 +335,8 @@ class Service (sb.Base, sasync.Async) :
     @sus.returns ((sus.list_of (basestring), st.Task))
     def list     (self, ttype=None) :
         """ 
+        list()
+
         Return a list of the jobs that are managed by this Service 
         instance. 
 
@@ -305,17 +355,13 @@ class Service (sb.Base, sasync.Async) :
 
         Example::
 
-          js  = saga.job.Service("fork://localhost")
-          ids = js.list()
+            service  = saga.job.Service("fork://localhost")
+            ids = service.list()
 
-          if my_job_id in ids :
-            print "found my job again, wohhooo!"
+            for job_id in ids :
+                print job_id
 
-            j = js.get_job(my_job_id)
-
-            if   j.get_state() == saga.job.Job.Pending  : print "pending"
-            elif j.get_state() == saga.job.Job.Running  : print "running"
-            else                                        : print "job is already final!"
+            service.close()
         """
 
         if not self.valid :
@@ -333,17 +379,15 @@ class Service (sb.Base, sasync.Async) :
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((surl.Url, st.Task))
     def get_url  (self, ttype=None) :
-        """ Return the URL this Service instance was created with.
+        """ 
+        get_url()
 
-            .. seealso:: 
-               The :data:`~saga.job.Service.url` property and the
-               :meth:`~saga.job.Service.get_url` method are semantically 
-               equivalent and only duplicated for convenience.
+        Return the URL this Service instance was created with.
 
-
-
-            :ttype: |param_ttype|
-            :rtype: list of :class:`saga.job.Url`
+        .. seealso:: 
+           The :data:`~saga.job.Service.url` property and the
+           :meth:`~saga.job.Service.get_url` method are semantically 
+           equivalent and only duplicated for convenience.
         """
 
         if not self.valid :
@@ -362,21 +406,28 @@ class Service (sb.Base, sasync.Async) :
     @sus.returns ((j.Job, st.Task))
     def get_job  (self, job_id, ttype=None) :
         """ 
+        get_job(job_id)
+
         Return the job object for a given job id.
 
         :param job_id: The id of the job to retrieve
-        :rtype:     :class:`saga.job.Job`
+        :rtype:        :class:`saga.job.Job`
 
 
         Job objects are a local representation of a remote stateful entity.
         The job.Service supports to reconnect to those remote entities::
 
-          js = saga.job.Service("fork://localhost")
-          j  = js.get_job(my_job_id)
+            service = saga.job.Service("fork://localhost")
+            j  = service.get_job(my_job_id)
 
-          if   j.get_state() == saga.job.Job.Pending  : print "pending"
-          elif j.get_state() == saga.job.Job.Running  : print "running"
-          else                                        : print "job is already final!"
+            if j.get_state() == saga.job.Job.Pending: 
+                print "pending"
+            elif j.get_state() == saga.job.Job.Running:
+                print "running"
+            else: 
+                print "job is already final!"
+
+            service.close()
         """
 
         if not self.valid :

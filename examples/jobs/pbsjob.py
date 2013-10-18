@@ -97,6 +97,7 @@ def main():
         print "Start time  : %s" % (touchjob.started)
         print "End time    : %s" % (touchjob.finished)
 
+        js.close()
         return 0
 
     except saga.SagaException, ex:

@@ -228,6 +228,13 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
             logger.info("Using Cray specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
             if jd.total_cpu_count is not None:
                 pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
+        elif '4.2.5-snap.201308291703' in pbs_version: 
+            logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx' against '#PBS -l size=xx'.")
+            nnodes = int(jd.total_cpu_count)//int(ppn)
+            if nnodes: 
+                pbs_params += "#PBS -l nodes=%s \n" % str(nnodes)
+            else:
+                pbs_params += "#PBS -l nodes=1 \n"
         else:
             logger.info("Using Cray XT specific '#PBS -l size=xx' flags (TORQUE).")
             if jd.total_cpu_count is not None:
@@ -579,8 +586,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 message = "Couldn't create working directory - %s" % (out)
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        # run the PBS script
-        cmdline = """echo "%s" | %s""" % (script, self._commands['qsub']['path'])
+        # Now we want to execute the script. This process consists of two steps:
+        # (1) we create a temporary file with 'mktemp' and write the contents of 
+        #     the generated PBS script into it
+        # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-PBSJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
@@ -642,6 +652,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         else:
             # the job seems to exist on the backend. let's gather some data
             job_info = {
+                'job_id':       job_id,
                 'state':        saga.job.UNKNOWN,
                 'exec_hosts':   None,
                 'returncode':   None,

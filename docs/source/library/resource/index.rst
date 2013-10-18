@@ -17,7 +17,6 @@ SAGA job API and finally shut down the VM.
 .. contents:: Table of Contents
    :local:
 
-
 .. _resource_manager:
 
 Resource Manager -- :class:`saga.resource.Manager`
@@ -27,6 +26,8 @@ Resource Manager -- :class:`saga.resource.Manager`
    :members:
    :undoc-members:
    :show-inheritance:
+   :special-members: __init__
+   :exclude-members: create, __module__
 
 
 .. _resource_description:
@@ -37,6 +38,8 @@ Resource Description -- :class:`saga.resource.Description`
 .. autoclass:: saga.resource.Description
    :members:
    :undoc-members:
+   :special-members: __init__
+   :exclude-members: create, __module__, __deepcopy__
 
 
 .. _resource_resource:
@@ -47,3 +50,26 @@ Resource -- :class:`saga.resource.Resource`
 .. autoclass:: saga.resource.Resource
    :members:
    :undoc-members:
+   :exclude-members: create, __module__
+
+
+Compute  Resource -- :class:`saga.resource.Compute`
+---------------------------------------------------
+
+.. autoclass:: saga.resource.Compute
+   :members:
+   :show-inheritance:
+
+Storage  Resource -- :class:`saga.resource.Storage`
+---------------------------------------------------
+
+.. autoclass:: saga.resource.Storage
+   :members:
+   :show-inheritance:
+
+Storage  Resource -- :class:`saga.resource.Network`
+---------------------------------------------------
+
+.. autoclass:: saga.resource.Network
+   :members:
+   :show-inheritance:

@@ -170,8 +170,19 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
                 transfer_output_files += "%s, " % source
             condor_file += "\n%s" % transfer_output_files
 
-    # always define log
-    condor_file += "\nlog = saga-condor-job-$(cluster).log "
+    # always define log. if 'jd.output' is defined, we use it 
+    # to name the logfile. if not, we fall back to a standard
+    # name... 
+    if jd.output is not None:
+        filename = str(jd.output)
+        idx = filename.rfind('.')
+        if idx != -1:
+            filename = filename[0:idx]
+        filename += ".log"
+    else:
+        filename = "saga-condor-job-$(cluster).log"
+
+    condor_file += "\nlog = %s " % filename
 
     # output -> output
     if jd.output is not None:
@@ -199,7 +210,7 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
         hosts = ""
         for host in jd.candidate_hosts:
             hosts += "%s, " % host
-        sitelist = "+SiteList = \"%s\"" % hosts
+        sitelist = "+SiteList = \\\"%s\\\"" % hosts
         requirements += "(stringListMember(GLIDEIN_ResourceName,SiteList) == True)"
         condor_file += "\n%s" % sitelist
         condor_file += "\n%s" % requirements

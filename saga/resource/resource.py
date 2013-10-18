@@ -87,11 +87,14 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         """
+        __init__(id=None, session=None)
+
+        Create / reconnect to a resource.
+
         :param id: id of the resource
         :type  id: :class:`saga.Url`
         
-        :param session: SAGA session to be used
-        :type  session: :class:`saga.Session`
+        :param session: :class:`saga.Session`
 
         Resource class instances are usually created by calling :func:`acquire`
         on the :class:`saga.resource.Manager` class.  Already acquired resources
@@ -199,6 +202,8 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     @sus.returns ((sus.nothing, st.Task))
     def reconfig (self, descr, ttype=None) :
         """
+        reconfig(descr)
+
         A resource is acquired according to a resource description, i.e. to
         a specific set of attributes.  At some point in time, while the
         resource is running, the application requirements on the resource may
@@ -224,6 +229,8 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     @sus.returns ((sus.nothing, st.Task))
     def destroy  (self, ttype=None) :
         """
+        destroy()
+
         The semantics of this method is equivalent to the semantics of the
         :func:`destroy` call on the :class:`saga.resource.Manager` class.
         """
@@ -241,8 +248,11 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     @sus.returns ((sus.nothing, st.Task))
     def wait (self, state=const.FINAL, timeout=None, ttype=None) :
         """
-        :type  state: state enum
-        :param state: state to wait for
+        wait(state=FINAL, timeout=None)
+
+        Wait for a resource to enter a specific state.
+
+        :param state: resource state to wait for (UNKNOWN, NEW, PENDING, ACTIVE, DONE, FAILED, EXPIRED, CANCELED, FINAL)
 
         :type  state: float
         :param state: time to block while waiting.
@@ -271,6 +281,11 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, basestring, st.Task))
     def get_id   (self, ttype=None) : 
+        """
+        get_id()
+
+        Return the resource ID.
+        """
         return self._adaptor.get_id            (ttype=ttype)
 
 
@@ -281,6 +296,11 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
                                 const.STORAGE, 
                                 const.NETWORK), st.Task))
     def get_rtype (self, ttype=None) : 
+        """
+        get_rtype()
+
+        Return the resource type.
+        """
         return self._adaptor.get_rtype         (ttype=ttype)
 
 
@@ -297,6 +317,11 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
                                 const.FAILED  ,
                                 const.FINAL   ), st.Task))
     def get_state (self, ttype=None) : 
+        """
+        get_state()
+
+        Return the state of the resource.
+        """
         return self._adaptor.get_state         (ttype=ttype)
 
 
@@ -305,6 +330,11 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, basestring, st.Task))
     def get_state_detail (self, ttype=None) : 
+        """
+        get_state_detail()
+
+        Return the state details (backend specific) of the resource.
+        """
         return self._adaptor.get_state_detail  (ttype=ttype)
 
 
@@ -313,6 +343,11 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     @sus.takes     ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns   ((sus.nothing, basestring, st.Task))
     def get_access (self, ttype=None) : 
+        """
+        get_access()
+
+        Return the resource access Url.
+        """
         return self._adaptor.get_access        (ttype=ttype)
 
 
@@ -320,7 +355,12 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     #
     @sus.takes      ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns    ((basestring, st.Task))
-    def get_manager (self, ttype=None) : 
+    def get_manager (self, ttype=None) :
+        """
+        get_manager()
+
+        Return the manager instance that was used to acquire this resource.
+        """
         return self._adaptor.get_manager       (ttype=ttype)
 
 
@@ -329,6 +369,11 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, descr.Description, st.Task))
     def get_description  (self, ttype=None) : 
+        """
+        get_description()
+
+        Return the description that was used to aquire this resource.
+        """
         return self._adaptor.get_description   (ttype=ttype)
 # 
 # ------------------------------------------------------------------------------
