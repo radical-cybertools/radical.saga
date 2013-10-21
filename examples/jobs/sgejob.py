@@ -44,6 +44,7 @@ def main():
 
         jd.total_cpu_count   = 12 # for lonestar this has to be a multiple of 12
         jd.spmd_variation    = '12way' # translates to the qsub -pe flag
+        #jd.total_physical_memory = 1024 # Memory requirements in Megabyte
 
         jd.queue             = "development"
         jd.project           = "TG-MCB090174"
@@ -90,6 +91,7 @@ def main():
         print "Start time  : %s" % (sleebjob_clone.started)
         print "End time    : %s" % (sleebjob_clone.finished)
 
+        js.close()
         return 0
 
     except saga.SagaException, ex:

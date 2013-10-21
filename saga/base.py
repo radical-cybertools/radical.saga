@@ -8,7 +8,6 @@ import sys
 import string
 import inspect
 
-import saga.utils.signatures
 import saga.utils.logger
 import saga.engine.engine
 import saga.adaptors.base      as sab

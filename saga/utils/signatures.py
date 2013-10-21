@@ -160,6 +160,7 @@ from traceback import extract_stack
 from inspect   import getargspec, isfunction, isbuiltin, isclass
 from types     import NoneType
 from re        import compile as regex
+from functools import wraps
 
 ################################################################################
 # 
@@ -422,7 +423,7 @@ def takes (*args, **kwargs):
     if no_check: # no type checking is performed, return decorated method itself
 
         def takes_proxy (method):
-            return method        
+            return wraps(method)
 
     else:
 
@@ -430,6 +431,7 @@ def takes (*args, **kwargs):
             
             method_args, method_defaults = getargspec (method)[0::3]
 
+            @wraps(method)
             def takes_invocation_proxy (*pargs, **pkwargs):
     
                 # append the default parameters
@@ -470,12 +472,13 @@ def returns (sometype):
     if no_check: # no type checking is performed, return decorated method itself
 
         def returns_proxy (method):
-            return method
+            return wraps(method)
 
     else:
 
         def returns_proxy (method):
             
+            @wraps(method)
             def returns_invocation_proxy (*args, **kwargs):
                 
                 result = method (*args, **kwargs)

@@ -9,7 +9,16 @@ adaptors for different distributed middleware systems and services. SAGA-Python
 focuses on usability, extensibility and simple deployment in real-world
 heterogeneous distributed computing environments and application scenarios.
 
-More information can be found at https://github.com/saga-project/saga-python/ .
+**Get involved or contact us:**
+
++-------+------------------------------+-----------------------------------------------------+
+| |Git| | **SAGA-Python on GitHub:**   | https://github.com/saga-project/saga-python/        |
++-------+------------------------------+-----------------------------------------------------+
+| |Goo| | **SAGA-Python Mailing List:**| https://groups.google.com/forum/#!forum/saga-users  |
++-------+------------------------------+-----------------------------------------------------+
+
+.. |Git| image:: images/github.jpg
+.. |Goo| image:: images/google.png
 
 
 #########
@@ -21,9 +30,9 @@ Contents:
    :maxdepth: 3
 
    usage/index.rst
-   tutorial/index.rst
    library/index.rst
    adaptors/saga.adaptor.index.rst
+   tutorial/index.rst
    developers/index.rst
 
 

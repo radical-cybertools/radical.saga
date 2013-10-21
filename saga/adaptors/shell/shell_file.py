@@ -12,7 +12,6 @@ from   saga.filesystem.constants import *
 import re
 import os
 import time
-import threading
 
 import shell_wrapper
 

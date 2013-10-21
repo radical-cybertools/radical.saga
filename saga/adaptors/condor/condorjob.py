@@ -170,8 +170,19 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
                 transfer_output_files += "%s, " % source
             condor_file += "\n%s" % transfer_output_files
 
-    # always define log
-    condor_file += "\nlog = saga-condor-job-$(cluster).log "
+    # always define log. if 'jd.output' is defined, we use it 
+    # to name the logfile. if not, we fall back to a standard
+    # name... 
+    if jd.output is not None:
+        filename = str(jd.output)
+        idx = filename.rfind('.')
+        if idx != -1:
+            filename = filename[0:idx]
+        filename += ".log"
+    else:
+        filename = "saga-condor-job-$(cluster).log"
+
+    condor_file += "\nlog = %s " % filename
 
     # output -> output
     if jd.output is not None:
@@ -199,7 +210,7 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
         hosts = ""
         for host in jd.candidate_hosts:
             hosts += "%s, " % host
-        sitelist = "+SiteList = \"%s\"" % hosts
+        sitelist = "+SiteList = \\\"%s\\\"" % hosts
         requirements += "(stringListMember(GLIDEIN_ResourceName,SiteList) == True)"
         condor_file += "\n%s" % sitelist
         condor_file += "\n%s" % requirements
@@ -263,8 +274,8 @@ The (HT)Condor(-G) adaptor allows to run and manage jobs on a
 `Condor <http://research.cs.wisc.edu/htcondor/>`_ gateway.
 """,
     "example": "examples/jobs/condorjob.py",
-    "schemas": {"condor :ref:`security_contexts`":        "connect to a local gateway",
-                "condor+ssh :ref:`security_contexts`":    "conenct to a remote gateway via SSH",
+    "schemas": {"condor"        : "connect to a local gateway",
+                "condor+ssh"    : "conenct to a remote gateway via SSH",
                 "condor+gsissh ": "connect to a remote gateway via GSISSH"}
 }
 
@@ -449,7 +460,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # create a Condor job script from SAGA job description
         script = _condorscript_generator(url=self.rm, logger=self._logger, jd=jd,
             option_dict=self.query_options)
-        self._logger.debug("Generated Condor script: %s" % script)
+        self._logger.info("Generated Condor script: %s" % script)
 
         ret, out, _ = self.shell.run_sync('echo "%s" | %s -' \
             % (script, self._commands['condor_submit']['path']))
@@ -655,7 +666,11 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         and (self.jobs[job_id]['returncode'] is None):
             self.jobs[job_id] = self._job_get_info(job_id=job_id)
 
-        return int(self.jobs[job_id]['returncode'])
+        ret = self.jobs[job_id]['returncode']
+
+        # FIXME: 'None' should cause an exception
+        if ret == None : return None
+        else           : return int(ret)
 
     # ----------------------------------------------------------------
     #

@@ -44,23 +44,27 @@ class Manager (sb.Base, async.Async) :
                   sus.optional (dict), 
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns (sus.nothing)
-    def __init__ (self, url_in=None, session=None,
+    def __init__ (self, url=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         """
-        :type  url_in: :class:`saga.Url`
-        :param url_in: the contact point of the resource manager service.
+        __init__(url)
+
+        Create a new Manager instance. Connect to a remote resource management endpoint.
+
+        :type  url: :class:`saga.Url`
+        :param url: resource management endpoint
         """
 
         # param checks
-        url    = surl.Url (url_in)
-        scheme = url.scheme.lower ()
+        _url   = surl.Url(url)
+        scheme = _url.scheme.lower()
 
         if not session :
             session = ss.Session (default=True)
 
         self._base = super  (Manager, self)
         self._base.__init__ (scheme, _adaptor, _adaptor_state, 
-                             url, session, ttype=_ttype)
+                             _url, session, ttype=_ttype)
 
 
     # --------------------------------------------------------------------------
@@ -89,11 +93,14 @@ class Manager (sb.Base, async.Async) :
     @sus.returns ((sus.list_of (basestring), st.Task))
     def list     (self, rtype=None, ttype=None) :
         """ 
-        :type  rtype: None or enum (COMPUTE | STORAGE | NETWORK)
-        :param rtype: specifies a filter of resource types to list.
+        list(rtype=None)
 
         List known resource instances (which can be acquired). 
         Returns a list of IDs.  
+
+        :type  rtype: None or enum (COMPUTE | STORAGE | NETWORK)
+        :param rtype: filter for one or more resource types
+
         """
         return self._adaptor.list (rtype, ttype=ttype)
 
@@ -104,17 +111,18 @@ class Manager (sb.Base, async.Async) :
                   sus.optional (basestring),
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((descr.Description, st.Task))
-    def get_description (self, id, ttype=None) :
+    def get_description (self, rid, ttype=None) :
         """ 
-        :type  id: string
-        :param id: identifies the resource to be described.
+        get_description(rid)
 
-        Get a resource :class:`Description` for the specified resource.
+        Get the resource :class:`Description` for the specified resource.
 
-        NOTE: see drmaav2::machine_info?  Add GLUE inspection as
-        read-only attribs?  link to SD or ISN?
+        :type  rid: str
+        :param rid: identifies the resource to be described.
         """
 
+        # TODO / NOTE: if rid is None, should we return a description of 
+        # the managed resources?  
         return self._adaptor.get_description (id, ttype=ttype)
 
     # --------------------------------------------------------------------------
@@ -125,13 +133,15 @@ class Manager (sb.Base, async.Async) :
     @sus.returns ((sus.list_of (basestring), st.Task))
     def list_templates (self, rtype=None, ttype=None) :
         """
-        :type  rtype: None or enum (COMPUTE | STORAGE | NETWORK)
-        :param rtype: specifies a filter of resource types to list.
+        list_templates(rtype=None)
 
         List template names available for the specified resource type(s).
         Returns a list of strings.
-        """
 
+        :type  rtype: None or enum (COMPUTE | STORAGE | NETWORK)
+        :param rtype: filter for one or more resource types
+
+        """
         return self._adaptor.list_templates (rtype, ttype=ttype)
 
 
@@ -143,10 +153,12 @@ class Manager (sb.Base, async.Async) :
     @sus.returns ((descr.Description, st.Task))
     def get_template (self, name, ttype=None) :
         """
-        :type  name: string
-        :param name: specifies the template to be queried for a description.
+        get_template(name)
 
-        Get a resource :class:`Description` for the specified template.
+        Get a :class:`Description` for the specified template.
+
+        :type  name: str
+        :param name: specifies the name of the template
 
         The returned resource description instance may not have all attributes
         filled, and may in fact not sufficiently complete to allow for
@@ -166,14 +178,34 @@ class Manager (sb.Base, async.Async) :
     @sus.returns ((sus.list_of (basestring), st.Task))
     def list_images (self, rtype=None, ttype=None) :
         """
-        :type  rtype: None or enum (COMPUTE | STORAGE | NETWORK)
-        :param rtype: specifies a filter of resource types to list.
+        list_images(rtype=None)
 
         List image names available for the specified resource type(s).
         Returns a list of strings.
+
+        :type  rtype: None or enum (COMPUTE | STORAGE | NETWORK)
+        :param rtype: filter for one or more resource types
+        """
+        return self._adaptor.list_images (rtype, ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    # 
+    @sus.takes   ('Manager', 
+                  basestring,
+                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
+    @sus.returns ((dict, st.Task))
+    def get_image (self, name, ttype=None) :
+        """
+        get_image(name)
+
+        Get a description string for the specified image.
+
+        :type  name: str
+        :param name: specifies the image name
         """
 
-        return self._adaptor.list_images (rtype, ttype=ttype)
+        return self._adaptor.get_image (name, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -184,11 +216,15 @@ class Manager (sb.Base, async.Async) :
     @sus.returns ((resrc.Resource, st.Task))
     def acquire  (self, spec, ttype=None) :
         """
-        :type  spec: :class:`Description`
-        :param spec: specifies the resource to be acquired.
+        acquire(desc)
 
-        Get a :class:`saga.resource.Resource` handle for the specified
-        description.  Depending on the `RTYPE` attribute in the description, the
+        Create a new :class:`saga.resource.Resource` handle for a 
+        resource specified by the description.
+
+        :type  spec: :class:`Description`
+        :param spec: specifies the resource
+
+        Depending on the `RTYPE` attribute in the description, the
         returned resource may be a :class:`saga.resource.Compute`,
         :class:`saga.resource.Storage` or :class:`saga.resource.Network`
         instance.  The returned resource will be in NEW, PENDING or ACTIVE
@@ -220,42 +256,22 @@ class Manager (sb.Base, async.Async) :
                   basestring,
                   sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
     @sus.returns ((sus.nothing, st.Task))
-    def destroy  (self, id, ttype=None) :
+    def destroy  (self, rid, ttype=None) :
         """
-        :type  id   : string
-        :param id   : identifies the resource to be released.
+        destroy(rid)
 
-        This call requests to move a resource from any non-final state to the
-        `CANCELED` state.  
-        """
+        Destroy / release a resource. 
 
-        return self._adaptor.destroy (id, ttype=ttype)
-
-  # FIXME: add 
-  # templates = property (list_templates, get_template)  # dict {string : Description}
-  # resources = property (get_resources)                 # list [string]
-
-
-    # --------------------------------------------------------------------------
-    # 
-    @sus.takes   ('Manager', 
-                  basestring,
-                  sus.optional (sus.one_of (UNKNOWN, NEW, PENDING, ACTIVE, DONE,
-                                            FAILED, EXPIRED, CANCELED, FINAL)),
-                  sus.optional (float),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((sus.nothing, st.Task))
-    def wait     (self, id, timeout=-1.0, ttype=None) :
-        """
-        :type  id   : string
-        :param id   : identifies the resource to be waited for.
-
-        This call will block for at more 'timeout' seconds, or until the
-        specified resource has entered the specified stat, whatever occurs
-        first. If the timeout is smaller 0, the call can block forever.
+        :type  rid   : string
+        :param rid   : identifies the resource to be released
         """
 
-        return self._adaptor.wait (id, timeout, ttype=ttype)
+        return self._adaptor.destroy (rid, ttype=ttype)
+
+  # FIXME: add
+  # templates = property (list_templates, get_template)    # dict {string : Description}
+  # images    = property (list_images,    get_image)       # dict {string : dict}
+  # resources = property (list,           get_description) # dict {string : Description}
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
