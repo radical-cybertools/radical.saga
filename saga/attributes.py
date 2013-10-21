@@ -340,6 +340,9 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         for key in kwargs.keys () :
             self.set_attribute (key, kwargs[key])
 
+        # make iterable
+        self.list_attributes ()
+
 
 
     # --------------------------------------------------------------------------
@@ -1932,7 +1935,8 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         d = self._attributes_t_init ()
 
 
-        keys_all   = sorted (d['attributes'].iterkeys ())
+        keys_all = sorted (d['attributes'].iterkeys ())
+        keys_all.remove ('_iterlist')
 
         print "---------------------------------------"
         print str (type (self))
@@ -2414,7 +2418,9 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         List all attributes which have been explicitly set. 
         """
 
-        return self._attributes_i_list (_flow)
+        ret = self._attributes_i_list (_flow)
+        self._iterlist = list(ret)
+        return ret
 
 
     # --------------------------------------------------------------------------
@@ -2690,6 +2696,16 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     def keys (self) :
         return self.list_attributes ()
 
+    # --------------------------------------------------------------------------
+    #
+    def __iter__ (self) :
+        self.list_attributes ()  # refresh iterlist
+        return iter (self._iterlist)
+
+    # --------------------------------------------------------------------------
+    #
+    def next (self) :
+        return self._iterlist.next
 
 
 
