@@ -1968,7 +1968,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                               d['attributes'][key]['type'],
                               d['attributes'][key]['flavor'],
                               d['attributes'][key]['mode'],
-                      len(d['attributes'][key]['callbacks']),
+                          len(d['attributes'][key]['callbacks']),
                               d['attributes'][key]['value']
                               )
 
@@ -1999,7 +1999,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                               d['attributes'][key]['type'],
                               d['attributes'][key]['flavor'],
                               d['attributes'][key]['mode'],
-                      len(d['attributes'][key]['callbacks']),
+                          len(d['attributes'][key]['callbacks']),
                               d['attributes'][key]['value']
                               )
 
