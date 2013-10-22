@@ -1936,7 +1936,9 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
 
         keys_all = sorted (d['attributes'].iterkeys ())
-        keys_all.remove ('_iterlist')
+
+        if '_iterlist' in keys_all :
+            keys_all.remove ('_iterlist')
 
         print "---------------------------------------"
         print str (type (self))
