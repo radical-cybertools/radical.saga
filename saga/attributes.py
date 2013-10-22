@@ -321,8 +321,6 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         _attributes_t_init makes sure that the basic structures are in place on
         the attribute dictionary - this saves us ton of safety checks later on.
         """
-        # FIXME: add the ability to initalize the attributes via a dict
-
         # initialize state
         d = self._attributes_t_init ()
 
@@ -332,8 +330,11 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
         for arg in args :
             if  isinstance (arg, dict) :
+                d['extensible']  = True   # it is just being extended ;)
+                d['camelcasing'] = True   # default for dict inits
                 for key in arg.keys () :
-                    self.set_attribute (key, arg[key])
+                    us_key = self._attributes_t_underscore (key)
+                    self._attributes_i_set (us_key, arg[key], force=True, flow=self._UP)
             else :
                 raise se.BadParameter ("initialization expects dictionary")
 
@@ -721,7 +722,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     @rus.takes   ('Attributes', 
                   basestring)
     @rus.returns (basestring)
-    def _attributes_t_underscore (self, key) :
+    def _attributes_t_underscore (self, key, force=False) :
         """ 
         This internal function is not to be used by the consumer of this API.
 
@@ -735,7 +736,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         d = self._attributes_t_init ()
 
 
-        if d['camelcasing'] :
+        if  force or d['camelcasing'] :
             temp = Attributes._camel_case_regex_1.sub(r'\1_\2', key)
             return Attributes._camel_case_regex_2.sub(r'\1_\2', temp).lower()
         else :
@@ -1039,14 +1040,12 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             if key[0] == '_' and d['private'] :
                 # if the set is private, we can register the new key.  It
                 # won't have any callbacks at this point.
-                self._attributes_register (key, None, ANY, SCALAR, WRITEABLE,
-                        EXTENDED, flow=flow)
+                self._attributes_register (key, None, ANY, SCALAR, WRITEABLE, EXTENDED, flow=flow)
 
             elif flow==self._UP or d['extensible'] :
                 # if the set is extensible, we can register the new key.  It
                 # won't have any callbacks at this point.
-                self._attributes_register (key, None, ANY, SCALAR, WRITEABLE,
-                        EXTENDED, flow=flow)
+                self._attributes_register (key, None, ANY, SCALAR, WRITEABLE, EXTENDED, flow=flow)
 
             else :
                 # we cannot add new keys on non-extensible / non-private sets
@@ -1160,7 +1159,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         # call list hooks to update state for listing
         self._attributes_t_call_lister ()
 
-        ret = []
+        ret    = []
         for key in sorted(d['attributes'].iterkeys()) :
             if d['attributes'][key]['mode'] != ALIAS :
                 if d['attributes'][key]['exists'] :
@@ -1184,6 +1183,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                             ret.append (k)
 
         return ret
+
 
 
     # --------------------------------------------------------------------------
@@ -1231,7 +1231,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         # now dig out matching keys. List hooks are triggered in
         # _attributes_i_list(flow).
         matches = []
-        for key in self._attributes_i_list (flow) :
+        for key in self._attributes_i_list (flow=flow) :
             val = str(self._attributes_i_get (key, flow=flow))
 
             if ( (pc_key == None) or pc_key.search (key) ) and \
@@ -1937,9 +1937,6 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
         keys_all = sorted (d['attributes'].iterkeys ())
 
-        if '_iterlist' in keys_all :
-            keys_all.remove ('_iterlist')
-
         print "---------------------------------------"
         print str (type (self))
 
@@ -2420,9 +2417,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         List all attributes which have been explicitly set. 
         """
 
-        ret = self._attributes_i_list (_flow)
-        self._iterlist = list(ret)
-        return ret
+        return self._attributes_i_list (flow=_flow)
 
 
     # --------------------------------------------------------------------------
@@ -2696,18 +2691,19 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     def keys (self) :
-        return self.list_attributes ()
+        return self._attributes_i_list (CamelCase=False)
 
     # --------------------------------------------------------------------------
     #
     def __iter__ (self) :
-        self.list_attributes ()  # refresh iterlist
-        return iter (self._iterlist)
+        iterlist = self._attributes_i_list (CamelCase=False)
+        return iter (iterlist)
 
     # --------------------------------------------------------------------------
     #
     def next (self) :
-        return self._iterlist.next
+        iterlist = self._attributes_i_list (CamelCase=False)
+        return iterlist.next
 
 
 
