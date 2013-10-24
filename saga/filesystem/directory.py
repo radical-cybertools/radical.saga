@@ -4,7 +4,8 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.utils.signatures     as sus
+import radical.utils.signatures  as rus
+
 import saga.adaptors.base        as sab
 import saga.session              as ss
 import saga.task                 as st
@@ -43,14 +44,14 @@ class Directory (nsdir.Directory) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Directory', 
-                  sus.optional ((surl.Url, basestring)), 
-                  sus.optional (int), 
-                  sus.optional (ss.Session),
-                  sus.optional (sab.Base), 
-                  sus.optional (dict), 
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Directory', 
+                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional (int), 
+                  rus.optional (ss.Session),
+                  rus.optional (sab.Base), 
+                  rus.optional (dict), 
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (rus.nothing)
     def __init__ (self, url=None, flags=READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         """
@@ -90,12 +91,12 @@ class Directory (nsdir.Directory) :
     # --------------------------------------------------------------------------
     #
     @classmethod
-    @sus.takes   ('Directory', 
-                  sus.optional ((surl.Url, basestring)), 
-                  sus.optional (int), 
-                  sus.optional (ss.Session),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (st.Task)
+    @rus.takes   ('Directory', 
+                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional (int), 
+                  rus.optional (ss.Session),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (st.Task)
     def create (cls, url=None, flags=READ, session=None, ttype=None) :
         """
         url:       saga.Url
@@ -112,11 +113,11 @@ class Directory (nsdir.Directory) :
     #
     # filesystem directory methods
     #
-    @sus.takes   ('Directory', 
+    @rus.takes   ('Directory', 
                   (surl.Url, basestring),
-                  sus.optional (int),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (('File', st.Task))
+                  rus.optional (int),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (('File', st.Task))
     def open (self, path, flags=READ, ttype=None) :
         """
         open(path, flags=READ)
@@ -134,11 +135,11 @@ class Directory (nsdir.Directory) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Directory', 
+    @rus.takes   ('Directory', 
                   (surl.Url, basestring),
-                  sus.optional (int),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (('Directory', st.Task))
+                  rus.optional (int),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (('Directory', st.Task))
     def open_dir (self, path, flags=READ, ttype=None) :
         """
         open_dir(path, flags=READ)
@@ -161,10 +162,10 @@ class Directory (nsdir.Directory) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Directory', 
-                  sus.optional ((surl.Url, basestring)),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((int, st.Task))
+    @rus.takes   ('Directory', 
+                  rus.optional ((surl.Url, basestring)),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((int, st.Task))
     def get_size (self, path=None, ttype=None) :
         """
         get_size(path=None)
@@ -189,10 +190,10 @@ class Directory (nsdir.Directory) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Directory', 
-                  sus.optional ((surl.Url, basestring)),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((bool, st.Task))
+    @rus.takes   ('Directory', 
+                  rus.optional ((surl.Url, basestring)),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((bool, st.Task))
     def is_file (self, path=None, ttype=None) :
         """
         is_file(path=None)
@@ -211,5 +212,5 @@ class Directory (nsdir.Directory) :
     size  = property (get_size)  # int
 
     
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

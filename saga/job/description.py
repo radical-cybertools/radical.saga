@@ -1,13 +1,14 @@
 
-__author__    = "Andre Merzky, Ole Weidner"
+__author__    = "Andre Merzky, Ole Weidner, Thomas Schatz"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
 """ SAGA job description interface """
 
+import radical.utils.signatures as rus
+
 import saga
-import saga.utils.signatures as sus
 
 #-------------------------------------------------------------------------------
 #
@@ -16,8 +17,8 @@ class Description (saga.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Description')
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Description')
+    @rus.returns (rus.nothing)
     def __init__(self):
 
         # set attribute interface properties
@@ -82,18 +83,18 @@ class Description (saga.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Description',
+    @rus.takes   ('Description',
                   ('Description', dict))
-    @sus.returns ('Description')
+    @rus.returns ('Description')
     def __deepcopy__ (self, memo) :
         other = saga.job.Description ()
         return self.clone (other)
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Description',
+    @rus.takes   ('Description',
                   'Description')
-    @sus.returns ('Description')
+    @rus.returns ('Description')
     def clone (self, other=None) :
         """ 
         clone()
@@ -114,5 +115,5 @@ class Description (saga.Attributes) :
 
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

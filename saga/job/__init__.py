@@ -12,5 +12,5 @@ from saga.job.container   import Container
 from saga.job.description import Description
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -3,6 +3,7 @@ __author__    = "Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
+
 """ A Simple Mandelbrot Fractal Generator.
 
     We use this example to explore the distributed capabilites of

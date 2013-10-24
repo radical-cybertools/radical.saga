@@ -90,5 +90,5 @@ class Service (cpi_base.CPIBase, cpi_async.Async) :
     def container_get_states_async (self, jobs)                : pass
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 
