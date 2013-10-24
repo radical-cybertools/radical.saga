@@ -28,5 +28,5 @@ import radical.utils as ru
 # if stop : d_1.set_attribute ('foo', 'stop')
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

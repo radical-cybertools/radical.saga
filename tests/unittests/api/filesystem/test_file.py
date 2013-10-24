@@ -151,5 +151,5 @@ class TestFile(unittest.TestCase):
             assert False, "Unexpected exception: %s" % ex
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

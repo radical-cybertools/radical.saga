@@ -129,5 +129,5 @@ class Context (sb.Base, sa.Attributes) :
         self._adaptor._initialize (session)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

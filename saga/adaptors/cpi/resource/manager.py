@@ -78,5 +78,5 @@ class Manager (cpi_base.CPIBase, cpi_async.Async) :
 
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

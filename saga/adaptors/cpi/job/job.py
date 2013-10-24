@@ -161,5 +161,5 @@ class Self (Job) :
     def init_instance_async       (self)                 : pass
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

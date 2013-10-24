@@ -54,5 +54,5 @@ class Directory (cpi_ns.directory.Directory) :
     def is_file_self_async    (self,              ttype)  : pass
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

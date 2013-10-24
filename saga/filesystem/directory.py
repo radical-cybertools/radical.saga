@@ -212,5 +212,5 @@ class Directory (nsdir.Directory) :
     size  = property (get_size)  # int
 
     
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

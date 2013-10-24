@@ -336,5 +336,5 @@ class File (nsentry.Entry) :
     modes_e = property (modes_e)   # list [string]
   
   
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

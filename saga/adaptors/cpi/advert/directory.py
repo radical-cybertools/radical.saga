@@ -64,5 +64,5 @@ class Directory (cpi_ns.directory.Directory,
 
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

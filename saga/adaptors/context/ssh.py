@@ -289,5 +289,5 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
         self._logger.info ("init SSH context for key  at '%s' done" % key)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -118,5 +118,5 @@ def test_url_properties():
    assert url.get_path()     == "/tpath",           "unexpected path" 
    
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

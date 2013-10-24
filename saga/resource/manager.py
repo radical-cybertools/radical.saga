@@ -276,5 +276,5 @@ class Manager (sb.Base, async.Async) :
   # resources = property (list,           get_description) # dict {string : Description}
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -967,5 +967,5 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
 
         return
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

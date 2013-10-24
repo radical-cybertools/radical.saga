@@ -530,5 +530,5 @@ class RedisEntry (saga.adaptors.cpi.advert.Entry) :
   #     shutil.copy2 (src, tgt)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

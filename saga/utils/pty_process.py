@@ -709,5 +709,5 @@ class PTYProcess (object) :
                 raise ptye.translate_exception (e, "write to process failed (%s)" % e)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

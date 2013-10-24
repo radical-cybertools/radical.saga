@@ -107,5 +107,5 @@ VMEMORY_USE           = 'VmemoryUse';  """ :todo: docstring """
 PERFORMANCE           = 'Performance'; """ :todo: docstring """ 
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

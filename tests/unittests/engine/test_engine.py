@@ -110,5 +110,5 @@ def test_load_broken_adaptor():
     sys.path = old_sys_path
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 
