@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 """ libcloud based EC2 resource adaptor """
 
 import saga.adaptors.cpi.base
@@ -1098,5 +1103,5 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
     
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

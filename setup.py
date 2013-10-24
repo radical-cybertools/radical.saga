@@ -159,9 +159,6 @@ setup_args = {
         "saga.adaptors.http",
         "saga.engine",
         "saga.utils",
-        "saga.utils.contrib",
-        "saga.utils.logger",
-        "saga.utils.config",
         "saga.utils.job",
     ],
     'package_data': {'': ['*.sh']},
@@ -175,7 +172,7 @@ setup_args = {
         'sdist': our_sdist,
         'test': our_test
     },
-    'install_requires': ['setuptools', 'colorama', 'apache-libcloud'],
+    'install_requires': ['setuptools', 'colorama', 'apache-libcloud', 'radical.utils'],
     'tests_require': ['setuptools', 'nose']
 }
 

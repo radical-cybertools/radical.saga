@@ -36,5 +36,5 @@ except Exception as e :
     print "Exception: %s" % e
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

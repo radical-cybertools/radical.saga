@@ -10,6 +10,9 @@ __license__   = "MIT"
 import os, sys
 from   saga.engine.engine import Engine
 
+import radical.utils as ru
+
+
 def test_singleton():
     """ Test that the object behaves like a singleton
     """
@@ -107,5 +110,5 @@ def test_load_broken_adaptor():
     sys.path = old_sys_path
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

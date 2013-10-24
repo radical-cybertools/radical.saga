@@ -3,6 +3,7 @@ __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
+
 """ This is an example which shows how to access Amazon EC2 clouds via the SAGA
     resource package.
 

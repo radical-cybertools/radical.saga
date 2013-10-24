@@ -41,5 +41,5 @@ print checks.count('ShellJobService')
 checks.show_backrefs(checks.by_type('ShellJobService')[-1])
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -1,5 +1,5 @@
 
-__author__    = "Andre Merzky"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -10,14 +10,16 @@ import pwd
 import string
 import getpass
 
+import radical.utils           as ru
+import radical.utils.logger    as rul
+
 import saga
 import saga.exceptions         as se
-import saga.utils.threads      as sut
-import saga.utils.which        as suw
 import saga.utils.misc         as sumisc
-import saga.utils.logger       as sul
-import saga.utils.singleton    as sus
 import saga.utils.pty_process  as supp
+
+import pty_exceptions               as ptye
+
 
 # ------------------------------------------------------------------------------
 #
@@ -124,16 +126,16 @@ class PTYShellFactory (object) :
 
     """
 
-    __metaclass__ = sus.Singleton
+    __metaclass__ = ru.Singleton
 
 
     # --------------------------------------------------------------------------
     #
     def __init__ (self) :
 
-        self.logger   = sul.getLogger ('PTYShellFactory')
+        self.logger   = rul.getLogger ('saga', 'PTYShellFactory')
         self.registry = {}
-        self.rlock    = sut.RLock ('pty shell factory')
+        self.rlock    = ru.RLock ('pty shell factory')
 
 
     # --------------------------------------------------------------------------
@@ -146,7 +148,7 @@ class PTYShellFactory (object) :
             url = saga.Url (url)
 
             if  not logger :
-                logger = sul.getLogger ('PTYShellFactory')
+                logger = rul.getLogger ('saga', 'PTYShellFactory')
 
             # collect all information we have/need about the requested master
             # connection
@@ -346,7 +348,7 @@ class PTYShellFactory (object) :
                 
             except Exception as e :
                 raise self._translate_exception (e)
-
+                
 
     # --------------------------------------------------------------------------
     #
@@ -456,15 +458,15 @@ class PTYShellFactory (object) :
             # find out what type of shell we have to deal with
             if  info['schema']   in _SCHEMAS_SSH :
                 info['type']     = "ssh"
-                info['ssh_exe']  = suw.which ("ssh")
-                info['scp_exe']  = suw.which ("scp")
-                info['sftp_exe'] = suw.which ("sftp")
+                info['ssh_exe']  = ru.which ("ssh")
+                info['scp_exe']  = ru.which ("scp")
+                info['sftp_exe'] = ru.which ("sftp")
 
             elif info['schema']  in _SCHEMAS_GSI :
                 info['type']     = "ssh"
-                info['ssh_exe']  = suw.which ("gsissh")
-                info['scp_exe']  = suw.which ("gsiscp")
-                info['sftp_exe'] = suw.which ("gsisftp")
+                info['ssh_exe']  = ru.which ("gsissh")
+                info['scp_exe']  = ru.which ("gsiscp")
+                info['sftp_exe'] = ru.which ("gsisftp")
 
             elif info['schema']  in _SCHEMAS_SH :
                 info['type']     = "sh"
@@ -474,11 +476,11 @@ class PTYShellFactory (object) :
                 info['fs_root']  = "/"
 
                 if  "SHELL" in os.environ :
-                    info['sh_exe'] =  suw.which (os.environ["SHELL"])
-                    info['cp_exe'] =  suw.which ("cp")
+                    info['sh_exe'] =  ru.which (os.environ["SHELL"])
+                    info['cp_exe'] =  ru.which ("cp")
                 else :
-                    info['sh_exe'] =  suw.which ("sh")
-                    info['cp_exe'] =  suw.which ("cp")
+                    info['sh_exe'] =  ru.which ("sh")
+                    info['cp_exe'] =  ru.which ("cp")
 
             else :
                 raise se.BadParameter._log (self.logger, \
@@ -607,50 +609,5 @@ class PTYShellFactory (object) :
             return info
 
 
-    # ----------------------------------------------------------------
-    #
-    def _translate_exception (self, e) :
-        """
-        In many cases, we should be able to roughly infer the exception cause
-        from the error message -- this is centrally done in this method.  If
-        possible, it will return a new exception with a more concise error
-        message and appropriate exception type.
-        """
 
-        if  not issubclass (e.__class__, se.SagaException) :
-            # we do not touch non-saga exceptions
-            return e
-
-        if  not issubclass (e.__class__, se.NoSuccess) :
-            # this seems to have a specific cause already, leave it alone
-            return e
-
-        cmsg = e._plain_message
-        lmsg = cmsg.lower ()
-
-        if 'auth' in lmsg :
-            e = se.AuthorizationFailed (cmsg)
-
-        elif 'pass' in lmsg :
-            e = se.AuthenticationFailed (cmsg)
-
-        elif 'ssh_exchange_identification' in lmsg :
-            e = se.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
-
-        elif 'denied' in lmsg :
-            e = se.PermissionDenied (cmsg)
-
-        elif 'shared connection' in lmsg :
-            e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
-
-        elif 'pty allocation' in lmsg :
-            e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
-
-        elif 'Connection to master closed' in lmsg :
-            e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
-
-        return e
-
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

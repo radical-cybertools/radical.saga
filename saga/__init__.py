@@ -5,11 +5,12 @@ __license__   = "MIT"
 
 
 from   saga.constants      import *
+
+from   saga.task           import Task, Container
 from   saga.attributes     import Attributes, Callback
 from   saga.session        import Session
 from   saga.context        import Context
 from   saga.url            import Url
-from   saga.task           import Task, Container
 from   saga.version        import version
 
 from   saga.exceptions     import SagaException
@@ -24,8 +25,6 @@ from   saga.exceptions     import AuthorizationFailed
 from   saga.exceptions     import AuthenticationFailed
 from   saga.exceptions     import Timeout
 from   saga.exceptions     import NoSuccess
-
-from   saga.constants      import * 
 
 import saga.job
 import saga.filesystem

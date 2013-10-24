@@ -9,6 +9,8 @@ import time
 import signal
 import saga.utils.pty_process as supp
 
+import radical.utils as ru
+
 
 # ------------------------------------------------------------------------------
 #

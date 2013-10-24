@@ -62,5 +62,5 @@ class Entry (cpi_ns.entry.Entry,
     def delete_object_async     (self, ttype)                        : pass
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

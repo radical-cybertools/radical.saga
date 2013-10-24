@@ -1,6 +1,8 @@
+
 __author__    = "Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
+
 
 import os
 import saga
@@ -8,6 +10,8 @@ import unittest
 import saga.utils.test_config as sutc
 
 from copy import deepcopy
+
+import radical.utils as ru
 
 
 class TestFile(unittest.TestCase):
@@ -25,7 +29,7 @@ class TestFile(unittest.TestCase):
         """Teardown called once per class instance"""
         try:
             # do the cleanup
-            tc = sutc.TestConfig()
+            tc = ru.get_test_config ()
             d = saga.filesystem.Directory(tc.filesystem_url)
             d.remove(self.uniquefilename1)
             d.remove(self.uniquefilename2)
@@ -38,7 +42,7 @@ class TestFile(unittest.TestCase):
         """ Testing if opening a file on a non-existing host causes an exception.
         """
         try:
-            tc = sutc.TestConfig()
+            tc = ru.get_test_config ()
             invalid_url = deepcopy(saga.Url(tc.filesystem_url))
             invalid_url.host = "does.not.exist"
             f = saga.filesystem.File(invalid_url)
@@ -56,7 +60,7 @@ class TestFile(unittest.TestCase):
         """
         try:
             pass
-            tc = sutc.TestConfig()
+            tc = ru.get_test_config ()
             nonex_file = deepcopy(saga.Url(tc.filesystem_url))
             nonex_file.path += "/file.does.not.exist"
             f = saga.filesystem.File(nonex_file)
@@ -74,7 +78,7 @@ class TestFile(unittest.TestCase):
         """
         try:
             pass
-            tc = sutc.TestConfig()
+            tc = ru.get_test_config ()
             nonex_file = deepcopy(saga.Url(tc.filesystem_url))
             nonex_file.path += "/%s" % self.uniquefilename1
             f = saga.filesystem.File(nonex_file, saga.filesystem.CREATE)
@@ -89,7 +93,7 @@ class TestFile(unittest.TestCase):
         """ Testing if we can open an existing file.
         """
         try:
-            tc = sutc.TestConfig()
+            tc = ru.get_test_config ()
             filename = deepcopy(saga.Url(tc.filesystem_url))
             filename.path += "/%s" % self.uniquefilename1
             f = saga.filesystem.File(filename, saga.filesystem.CREATE)
@@ -106,7 +110,7 @@ class TestFile(unittest.TestCase):
         """ Testing if get an exception if we try to copy an unsupported target scheme.
         """
         try:
-            tc = sutc.TestConfig()
+            tc = ru.get_test_config ()
 
             # Create the source file
             source_file = deepcopy(saga.Url(tc.filesystem_url))
@@ -131,7 +135,7 @@ class TestFile(unittest.TestCase):
         """
         try:
             pass
-            tc = sutc.TestConfig()
+            tc = ru.get_test_config ()
             filename1 = deepcopy(saga.Url(tc.filesystem_url))
             filename1.path += "/%s" % self.uniquefilename1
             f1 = saga.filesystem.File(filename1, saga.filesystem.CREATE)
@@ -147,5 +151,5 @@ class TestFile(unittest.TestCase):
             assert False, "Unexpected exception: %s" % ex
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

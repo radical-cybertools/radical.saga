@@ -1,7 +1,8 @@
 
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2011-2013, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
+
 
 '''This examples shows how to use the saga.Filesystem API
    with the SFTP file adaptor.

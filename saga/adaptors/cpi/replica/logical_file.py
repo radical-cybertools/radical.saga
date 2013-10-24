@@ -82,5 +82,5 @@ class LogicalFile (cpi_ns.entry.Entry,
     def download_async        (self, name, src, flags, ttype)  : pass
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

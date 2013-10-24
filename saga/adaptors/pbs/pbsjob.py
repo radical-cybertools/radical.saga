@@ -1,5 +1,5 @@
 
-__author__    = "Andre Merzky, Mark Santcroos, Ole Weidner"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -7,7 +7,6 @@ __license__   = "MIT"
 """ PBS job adaptor implementation
 """
 
-import saga.utils.which
 import saga.utils.pty_shell
 import saga.utils.threads   as sut
 
@@ -355,11 +354,10 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__(self):
 
-        saga.adaptors.base.Base.__init__(self,
-            _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts = self.get_config()
+        self.opts  = self.get_config (_ADAPTOR_NAME)
 
     # ----------------------------------------------------------------
     #
