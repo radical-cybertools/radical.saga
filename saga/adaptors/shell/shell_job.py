@@ -1231,5 +1231,5 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         return self._exception
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

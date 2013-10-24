@@ -544,5 +544,5 @@ class LocalFile (saga.adaptors.cpi.filesystem.File) :
             raise saga.exceptions.NotImplemented ("Cannot handle %s tasks" %  call)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -191,5 +191,5 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         else             :  return self._nsdirec.find          (name_pattern,               flags, ttype=ttype)
 
     
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

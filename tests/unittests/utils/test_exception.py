@@ -22,5 +22,5 @@ def test_Exceptions():
     except saga.SagaException, se:
         assert (msg in str(se)), "'%s' not in '%s'" % (msg, se)
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

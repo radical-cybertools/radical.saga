@@ -438,5 +438,5 @@ class Service (sb.Base, sasync.Async) :
 
 # FIXME: add get_self()
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

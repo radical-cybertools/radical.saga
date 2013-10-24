@@ -119,5 +119,5 @@ def test_ptyshell_file_stage () :
 
 
 # ------------------------------------------------------------------------------
-# vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -514,5 +514,5 @@ class NoSuccess(SagaException):
         SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

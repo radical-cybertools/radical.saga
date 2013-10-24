@@ -263,5 +263,5 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
         return self._adaptor.download (name, src, flags, ttype=ttype)
     
   
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

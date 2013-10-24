@@ -385,5 +385,5 @@ class ShellResourceCompute (saga.adaptors.cpi.resource.Compute) :
         # we never get here...
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -435,5 +435,5 @@ class Entry (sb.Base, sasync.Async) :
     name = property (get_name)  # string
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

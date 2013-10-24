@@ -11,5 +11,5 @@ __license__   = "MIT"
 # from   misc        import *
 
 
-# vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
+
 

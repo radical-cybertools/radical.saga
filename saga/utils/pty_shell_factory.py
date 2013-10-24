@@ -611,5 +611,5 @@ class PTYShellFactory (object) :
             return info
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

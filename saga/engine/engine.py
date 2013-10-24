@@ -566,5 +566,5 @@ class Engine(ruc.Configurable):
         pprint.pprint (self._adaptor_registry)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

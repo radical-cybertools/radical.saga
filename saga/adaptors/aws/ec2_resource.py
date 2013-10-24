@@ -1103,5 +1103,5 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
     
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

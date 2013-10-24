@@ -46,5 +46,5 @@ def test_logger():
     cl.error('error')
     cl.fatal('fatal')
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

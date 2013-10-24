@@ -66,5 +66,5 @@ class LogicalDirectory (cpi_ns.directory.Directory,
     def find_replicas_async (self, name_pattern, attr_pattern, flags, ttype)  : pass
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -708,5 +708,5 @@ class Self (Job) :
         self._base.__init__ (_method_type, _adaptor, _adaptor_state, _ttype=_ttype)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

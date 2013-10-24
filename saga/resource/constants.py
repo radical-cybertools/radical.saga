@@ -59,5 +59,5 @@ ACCESS       = 'Access';      """ string, identifying the hostname/ip, mount
                                   point or provisioning URL to access the
                                   resource """
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

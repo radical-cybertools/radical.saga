@@ -60,5 +60,5 @@ REMOTE_HOST     = "RemoteHost"
 REMOTE_PORT     = "RemotePort"
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

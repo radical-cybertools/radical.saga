@@ -11,5 +11,5 @@ from saga.adaptors.cpi.resource.resource  import Storage
 from saga.adaptors.cpi.resource.resource  import Network
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

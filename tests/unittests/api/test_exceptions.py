@@ -54,5 +54,5 @@ def test_IncorrectURL():
         assert e.get_message() == 'IncorrectURL'
         assert str(e)          == 'IncorrectURL'
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

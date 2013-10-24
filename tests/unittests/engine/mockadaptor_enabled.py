@@ -61,5 +61,5 @@ class MockJob(saga.adaptors.cpi.job.Job):
         self._cpi_base.__init__(api, adaptor)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -50,7 +50,7 @@ def test_advert_callback () :
     
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 
 test_advert_callback ()
 
