@@ -1,5 +1,5 @@
 
-__author__    = "Andre Merzky, Ole Weidner"
+__author__    = "Andre Merzky, Ole Weidner, Alexander Grill"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -553,7 +553,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         if  sumisc.url_is_compatible (cwdurl, tgt) :
 
-            ret, out, _ = self.shell.run_sync ("rm %s %s\n" % (rec_flag, tgt.path))
+            ret, out, _ = self.shell.run_sync ("rm -f %s %s\n" % (rec_flag, tgt.path))
             if  ret != 0 :
                 raise saga.NoSuccess ("remove (%s) failed (%s): (%s)" \
                                    % (tgt, ret, out))
@@ -723,7 +723,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     @SYNC_CALL
     def is_file (self, tgt_in):
 
-        return self.is_file (tgt_in)
+        return self.is_entry (tgt_in)
    
    
 ###############################################################################
@@ -1027,6 +1027,42 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         self.flags = flags
         self.initialize ()
 
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def write (self, string, flags=None):
+
+        self._is_valid ()
+        if flags==None:
+            flags = self.flags
+        else:
+            self.flags=flags
+
+        tgt = saga.Url (self.url)  # deep copy, is absolute
+            
+        if flags==saga.filesystem.APPEND:
+            string = self.read()+string            
+        # FIXME: eval flags
+
+        self.shell.write_to_remote(string,tgt.path)
+                                                    
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def read (self,size=None):
+
+        self._is_valid ()
+
+        tgt = saga.Url (self.url)  # deep copy, is absolute
+        
+        out = self.shell.read_from_remote(tgt.path)
+
+        if size!=None:
+            return out[0:size-1]
+        else:
+            return out
+
+
    
     # ----------------------------------------------------------------
     #
@@ -1044,7 +1080,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         if flags & saga.filesystem.RECURSIVE : 
             rec_flag  += "-r "
 
-        ret, out, _ = self.shell.run_sync ("rm %s %s\n" % (rec_flag, tgt.path))
+        ret, out, _ = self.shell.run_sync ("rm -f %s %s\n" % (rec_flag, tgt.path))
         if  ret != 0 :
             raise saga.NoSuccess ("remove (%s) failed (%s): (%s)" \
                                % (tgt, ret, out))
