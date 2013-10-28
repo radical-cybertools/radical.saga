@@ -4,14 +4,16 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.utils.singleton
-import saga.utils.logger
+import radical.utils            as ru
+import radical.utils.signatures as rus
+import radical.utils.logger     as  rul
+
+import saga.exceptions          as se
+
 import saga.engine.engine
 import saga.context
 import saga.base
 
-import saga.exceptions       as se
-import saga.utils.signatures as sus
 
 
 # ------------------------------------------------------------------------------
@@ -36,7 +38,7 @@ class _ContextList (list) :
         if  session : 
             self._logger  = session._logger
         else :
-            self._logger  = saga.utils.logger.getLogger ('ContextList')
+            self._logger  = rul.getLogger ('saga', 'ContextList')
 
         base_list = super  (_ContextList, self)
         base_list.__init__ (*args, **kwargs)
@@ -84,12 +86,12 @@ class _ContextList (list) :
 #
 class _DefaultSession (object) :
 
-    __metaclass__ = saga.utils.singleton.Singleton
+    __metaclass__ = ru.Singleton
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('_DefaultSession')
-    @sus.returns (sus.nothing)
+    @rus.takes   ('_DefaultSession')
+    @rus.returns (rus.nothing)
     def __init__ (self) :
 
         # the default session picks up default contexts, from all context
@@ -98,7 +100,7 @@ class _DefaultSession (object) :
         # default contexts.
 
         self.contexts  = _ContextList ()
-        self._logger   = saga.utils.logger.getLogger ('saga.DefaultSession')
+        self._logger   = rul.getLogger ('saga', 'DefaultSession')
 
         _engine = saga.engine.engine.Engine ()
 
@@ -184,9 +186,9 @@ class Session (saga.base.SimpleBase) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Session', 
-                  sus.optional(bool))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Session', 
+                  rus.optional(bool))
+    @rus.returns (rus.nothing)
     def __init__ (self, default=True) :
         """
         default: bool
@@ -209,8 +211,8 @@ class Session (saga.base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Session')
-    @sus.returns (basestring)
+    @rus.takes   ('Session')
+    @rus.returns (basestring)
     def __str__  (self):
         """String represenation."""
 
@@ -219,9 +221,9 @@ class Session (saga.base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes      ('Session', 
+    @rus.takes      ('Session', 
                      saga.context.Context)
-    @sus.returns    (sus.nothing)
+    @rus.returns    (rus.nothing)
     def add_context (self, ctx) :
         """
         ctx:     saga.Context
@@ -236,9 +238,9 @@ class Session (saga.base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Session', 
+    @rus.takes   ('Session', 
                   saga.context.Context)
-    @sus.returns (sus.nothing)
+    @rus.returns (rus.nothing)
     def remove_context (self, ctx) :
         """
         ctx:     saga.Context
@@ -254,8 +256,8 @@ class Session (saga.base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Session')
-    @sus.returns (sus.list_of (saga.context.Context))
+    @rus.takes   ('Session')
+    @rus.returns (rus.list_of (saga.context.Context))
     def list_contexts  (self) :
         """
         ret:     list[saga.Context]
@@ -268,5 +270,5 @@ class Session (saga.base.SimpleBase) :
 
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

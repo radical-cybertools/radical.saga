@@ -1,3 +1,9 @@
+
+__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 # TODO: Create function to check for all the iRODS error codes and give
 #       a better error readout?
 
@@ -962,5 +968,5 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
 
         return
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

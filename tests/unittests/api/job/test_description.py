@@ -9,6 +9,8 @@ import sys
 import saga
 import saga.utils.test_config as sutc
 
+import radical.utils as ru
+
 
 # ------------------------------------------------------------------------------
 #

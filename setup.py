@@ -45,9 +45,9 @@ def update_version():
     return version
 
 #-----------------------------------------------------------------------------
-# check python version. we need > 2.5
-if sys.hexversion < 0x02050000:
-    raise RuntimeError("SAGA requires Python 2.5 or higher")
+# check python version. we need > 2.5, <3.x
+if  sys.hexversion < 0x02050000 or sys.hexversion >= 0x03000000:
+    raise RuntimeError("SAGA requires Python 2.x (2.5 or higher)")
 
 #-----------------------------------------------------------------------------
 # 
@@ -159,9 +159,6 @@ setup_args = {
         "saga.adaptors.http",
         "saga.engine",
         "saga.utils",
-        "saga.utils.contrib",
-        "saga.utils.logger",
-        "saga.utils.config",
         "saga.utils.job",
     ],
     'package_data': {'': ['*.sh']},
@@ -175,7 +172,7 @@ setup_args = {
         'sdist': our_sdist,
         'test': our_test
     },
-    'install_requires': ['setuptools', 'colorama', 'apache-libcloud'],
+    'install_requires': ['setuptools', 'colorama', 'apache-libcloud', 'radical.utils'],
     'tests_require': ['setuptools', 'nose']
 }
 

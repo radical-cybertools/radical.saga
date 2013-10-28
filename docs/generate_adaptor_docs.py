@@ -327,5 +327,5 @@ the :ref:`conf_file` section.\n")
 i.write ("\n")
 i.write ("\n")
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

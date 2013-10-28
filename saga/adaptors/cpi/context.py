@@ -22,5 +22,5 @@ class Context (cpi_base.CPIBase) :
     def _get_default_contexts (self, session) : pass
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 
