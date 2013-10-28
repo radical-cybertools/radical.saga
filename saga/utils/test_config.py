@@ -6,7 +6,7 @@ __license__   = "MIT"
 
 import copy
 
-import radical.utils          as ru
+import radical.utils.testing  as rut
 import radical.utils.logger   as rul
 
 import saga.exceptions        as se
@@ -28,7 +28,7 @@ def add_tc_params_to_jd (tc, jd):
 
 # ------------------------------------------------------------------------------
 #
-class TestConfig (ru.TestConfig): 
+class TestConfig (rut.TestConfig): 
 
     #-----------------------------------------------------------------
     # 
@@ -36,7 +36,7 @@ class TestConfig (ru.TestConfig):
 
         # initialize configuration.  We only use the 'saga.tests' category from
         # the config file.
-        ru.TestConfig.__init__ (self, cfg_file, 'saga.tests')
+        rut.TestConfig.__init__ (self, cfg_file, 'saga.tests')
 
         # setup a saga session for the tests
         # don't populate session with default contexts...

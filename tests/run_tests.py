@@ -10,7 +10,7 @@ import glob
 import optparse
 
 import saga.utils.test_config as sutc
-import radical.utils as ru
+import radical.utils.testing as rut
 
 
 #-----------------------------------------------------------------------------
@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
 
     # set up the testing framework
-    testing = ru.Testing ('saga', __file__)
+    testing = rut.Testing ('saga', __file__)
 
     # test_cfgs will contain a list of all configuation files
     # that we will use for the tests
