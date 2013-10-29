@@ -20,7 +20,7 @@ uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'imap',
 uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
                'imap', 'wais', 'file', 'mms', 'https', 'shttp',
                'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
-               'svn', 'svn+ssh', 'sftp', 'pbs', 'pbs+ssh', 'sge', 'sge+ssh',
+               'svn', 'svn+ssh', 'sftp', 'pbs', 'pbs+ssh', 'sge', 'sge+ssh', 'loadl', 'loadl+ssh',
                'fork', 'ssh', 'xt5torque', 'ec2', 'euca', 'pbs+gsissh', 'sge+gsissh',
                'xt5torque+gsissh', 'xt5torque+ssh', 'redis']
 non_hierarchical = ['gopher', 'hdl', 'mailto', 'news',
