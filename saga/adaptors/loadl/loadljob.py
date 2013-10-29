@@ -25,9 +25,6 @@ from cgi import parse_qs
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
-#PLSI_CLUSTER="kisti.glory"
-PLSI_CLUSTER="kisti.baekdusan"
-
 
 # --------------------------------------------------------------------
 #
