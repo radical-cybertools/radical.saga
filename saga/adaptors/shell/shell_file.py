@@ -336,6 +336,17 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
 
     # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def close (self, timeout):
+
+        if  timeout :
+            raise saga.BadParameter ("timeout for close not supported")
+
+        self.finalize (kill=True)
+
+
+    # ----------------------------------------------------------------
     @SYNC_CALL
     def get_url (self) :
 
@@ -883,7 +894,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
     # ----------------------------------------------------------------
     #
-    def finalize (self, kill = False) :
+    def finalize (self, kill=False) :
 
         if  kill and self.shell :
             self.shell.finalize (True)
@@ -894,6 +905,17 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             self.local = None
 
         self.valid = False
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def close (self, timeout):
+
+        if  timeout :
+            raise saga.BadParameter ("timeout for close not supported")
+
+        self.finalize (kill=True)
 
 
     # ----------------------------------------------------------------
