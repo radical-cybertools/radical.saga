@@ -1031,7 +1031,14 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     #
     @SYNC_CALL
     def write (self, string, flags=None):
-
+	"""
+	This call is intended to write a string to a local or remote file.
+	Since write() uses file staging calls, it cannot be used to randomly
+	write certain parts of a file (i.e. seek()). Together with read(),
+	it was designed to manipulate template files and write them back to
+	the remote directory. Be aware, that writing large files will
+	be very slow compared to native read(2) and write(2) calls.
+	"""
         self._is_valid ()
         if flags==None:
             flags = self.flags
@@ -1050,6 +1057,15 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     #
     @SYNC_CALL
     def read (self,size=None):
+	"""
+	This call is intended to read a string wit length size from a local
+	or remote file.	Since read() uses file staging calls, it cannot be
+	used to randomly read certain parts of a file (i.e. seek()).
+	Together with write(), it was designed to manipulate template files
+	and write them back to the remote directory. Be aware, that reading
+	large files will be very slow compared to native read(2) and write(2)
+	calls.
+	"""
 
         self._is_valid ()
 
