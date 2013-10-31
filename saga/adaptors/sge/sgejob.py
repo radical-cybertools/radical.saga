@@ -1,5 +1,5 @@
 
-__author__    = "Andre Merzky, Christian Pérez-Llamas, Ole Weidner, Thomas Schatz"
+__author__    = "Andre Merzky, Christian Pérez-Llamas, Ole Weidner, Thomas Schatz, Alexander Grill"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -926,6 +926,12 @@ class SGEJob (saga.adaptors.cpi.job.Job):
             self._started = False
 
         return self.get_api()
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_description (self):
+        return self.jd
 
     # ----------------------------------------------------------------
     #
