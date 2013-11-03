@@ -5,12 +5,10 @@ __license__   = "MIT"
 
 import time
 import saga
-import saga.utils.test_config as sutc
+
+import radical.utils.testing as testing
 
 from copy import deepcopy
-
-import radical.utils as ru
-
 
 # ------------------------------------------------------------------------------
 #
@@ -39,7 +37,7 @@ def test_job_service_get_url():
     """
     js = None
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
         assert js, "job service creation failed?"
         assert (tc.job_service_url == str(js.url)), "%s == %s" % (tc.job_service_url, str(js.url))
@@ -56,7 +54,7 @@ def test_job_service_invalid_url():
     """ Test if a non-resolvable hostname results in a proper exception
     """
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         invalid_url = deepcopy(saga.Url(tc.job_service_url))
         invalid_url.host = "does.not.exist"
         tmp_js = saga.job.Service(invalid_url, tc.session)
@@ -76,7 +74,7 @@ def test_job_service_create():
     """
     js = None
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
@@ -107,7 +105,7 @@ def test_job_run():
     js = None
     j  = None
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
@@ -141,7 +139,7 @@ def test_job_wait():
     js = None
     j  = None
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
@@ -175,7 +173,7 @@ def test_job_multiline_run():
     js = None
     j  = None
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
         jd = saga.job.Description()
         jd.executable = '/bin/sh'
@@ -216,7 +214,7 @@ def test_job_suspend_resume():
     js = None
     j  = None
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
@@ -255,7 +253,7 @@ def test_job_cancel():
     js = None
     j  = None
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
@@ -291,7 +289,7 @@ def test_job_run_many():
     jobs = []
     try:
 
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
@@ -335,7 +333,7 @@ def test_get_exit_code():
     js = None
     j  = None
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
         jd = saga.job.Description()
         jd.executable = "/bin/sleep"
@@ -368,7 +366,7 @@ def test_get_service_url():
     """
     js = None
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
@@ -399,7 +397,7 @@ def test_get_id():
     js = None
     j  = None
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'

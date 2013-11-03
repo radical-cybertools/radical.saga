@@ -5,12 +5,11 @@ __license__   = "MIT"
 
 import time
 import saga
-import saga.utils.test_config as sutc
 import os
 
 from copy import deepcopy
 
-import radical.utils as ru
+import radical.utils.testing as testing
 
 
 FILE_SIZE      = 1 # in megs, approx                                                                                                         
@@ -30,7 +29,7 @@ def test_replica_entry():
     """ Test logical file entry 
     """
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         the_url = tc.job_service_url # from test config file
         the_session = tc.session # from test config file
         replica_url = tc.replica_url
@@ -46,7 +45,7 @@ def test_replica_directory():
     """ Test logical file directory 
     """
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         the_url = tc.job_service_url # from test config file
         the_session = tc.session # from test config file
         replica_url = tc.replica_url
@@ -62,7 +61,7 @@ def test_replica_directory_listing():
     """ Test logical file directory listing
     """
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         the_url = tc.job_service_url # from test config file
         the_session = tc.session # from test config file
         replica_url = tc.replica_url
@@ -86,7 +85,7 @@ def test_upload_and_download():
     """ Test file upload and download"
     """
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         home_dir = os.path.expanduser("~"+"/")
         replica_url = tc.replica_url
         print "Creating temporary file of size %dM : %s" % \
@@ -133,7 +132,7 @@ def test_replica_get_size():
     """ Test logical file get_size()
     """
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         the_url = tc.job_service_url # from test config file
         the_session = tc.session # from test config file
         replica_url = tc.replica_url
@@ -171,7 +170,7 @@ def test_replica_remove():
     """ Test logical file remove, which should remove the file from the remote resource
     """
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         the_url = tc.job_service_url # from test config file
         the_session = tc.session # from test config file
         replica_url = tc.replica_url
@@ -208,7 +207,7 @@ def test_replica_make_dir():
     """ Test logical file make_dir, which makes a directory on the logical service
     """
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         the_url = tc.job_service_url # from test config file
         the_session = tc.session # from test config file
         replica_url = tc.replica_url
@@ -235,7 +234,7 @@ def test_replica_replicate():
     """ Test logical file replicate()
     """
     try:
-        tc = ru.get_test_config ()
+        tc = testing.get_test_config ()
         the_url = tc.job_service_url # from test config file
         the_session = tc.session # from test config file
         replica_url = tc.replica_url
