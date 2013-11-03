@@ -347,7 +347,7 @@ class PTYShellFactory (object) :
                         break
                 
             except Exception as e :
-                raise self._translate_exception (e)
+                raise ptye.translate_exception (e)
                 
 
     # --------------------------------------------------------------------------
