@@ -347,7 +347,7 @@ class PTYShellFactory (object) :
                         break
                 
             except Exception as e :
-                raise self._translate_exception (e)
+                raise ptye.translate_exception (e)
                 
 
     # --------------------------------------------------------------------------
@@ -396,13 +396,20 @@ class PTYShellFactory (object) :
 
             self._initialize_pty (cp_slave, info)
 
-            cp_slave.write ("%s\n" % s_in)
-            cp_slave.wait  ()
+            _   = cp_slave.write ("%s\n" % s_in)
+            ret = cp_slave.wait  ()
+
+            info['logger'].debug ("copy done: ret")
+
+            if 'No such file or directory' in ret :
+                raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % ret)
+
+            if 'is not a directory' in ret :
+                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % ret)
 
             if  cp_slave.exit_code != 0 :
-                raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+                raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % ret)
 
-            info['logger'].debug ("copy done")
 
 
     # --------------------------------------------------------------------------
