@@ -17,14 +17,18 @@ import saga
 #
 def add_tc_params_to_jd (tc, jd):
 
-    if 'job_walltime_limit'   in tc : jd.wall_time_limit = tc['job_walltime_limit'] 
-    if 'job_project'          in tc : jd.project         = tc['job_project']        
-    if 'job_queue'            in tc : jd.queue           = tc['job_queue']          
-    if 'job_total_cpu_count'  in tc : jd.total_cpu_count = tc['job_total_cpu_count']
-    if 'job_spmd_variation'   in tc : jd.spmd_variation  = tc['job_spmd_variation'] 
+    if 'job_walltime_limit' in tc and tc['job_walltime_limit'] != "": 
+        jd.wall_time_limit = tc['job_walltime_limit'] 
+    if 'job_project' in tc and tc['job_project'] != "": 
+        jd.project = tc['job_project']
+    if 'job_queue' in tc and tc['job_queue'] != "":
+        jd.queue = tc['job_queue']
+    if 'job_total_cpu_count' in tc and tc['job_total_cpu_count'] != "":
+        jd.total_cpu_count = tc['job_total_cpu_count']
+    if 'job_spmd_variation' in tc and tc['job_spmd_variation'] != "": 
+        jd.spmd_variation = tc['job_spmd_variation'] 
 
     return jd
-
 
 # ------------------------------------------------------------------------------
 #
