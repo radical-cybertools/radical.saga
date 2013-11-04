@@ -9,8 +9,24 @@ import sys
 import glob
 import optparse
 
-import saga.utils.test_config as sutc
-import radical.utils.testing as rut
+try:
+    import saga
+    import saga.utils.test_config as sutc
+    import radical.utils.testing as rut
+
+    print "______________________________________________________________________"
+    print "Using saga-python from: %s" % str(saga)
+    print "______________________________________________________________________"
+
+except Exception, e:
+    srcdir = "%s/../" % os.path.dirname(os.path.realpath(__file__))
+    sys.path.insert(0, os.path.abspath(srcdir))
+    import saga
+    import saga.utils.test_config as sutc
+    import radical.utils.testing as rut
+    print "______________________________________________________________________"
+    print "Using saga-python from: %s" % str(saga)
+    print "______________________________________________________________________"
 
 
 #-----------------------------------------------------------------------------
