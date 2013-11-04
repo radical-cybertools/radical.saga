@@ -273,15 +273,26 @@ class PTYProcess (object) :
     def wait (self) :
         """ 
         blocks forever until the child finishes on its own, or is getting
-        killed
+        killed.  
+
+        Actully, we might just as well try to figure out what is going on on the
+        remote end of things -- so we read the pipe until the child dies...
         """
+
+        output = ""
+        # yes, for ever and ever...
+        while True :
+            try :
+                output += self.read ()
+            except :
+                break
 
         # yes, for ever and ever...
         while True :
 
             if not self.child:
                 # this was quick ;-)
-                return
+                return output
 
             # we need to lock, as the SIGCHLD will only arrive once
             with self.rlock :
@@ -296,7 +307,7 @@ class PTYProcess (object) :
                         self.exit_code   = None
                         self.exit_signal = None
                         self.finalize ()
-                        return
+                        return output
 
                     # no idea what happened -- it is likely bad
                     raise se.NoSuccess ("waitpid failed")
@@ -324,7 +335,7 @@ class PTYProcess (object) :
                 self.child = None
                 self.finalize (wstat=wstat)
 
-                return
+                return output
 
 
     # --------------------------------------------------------------------

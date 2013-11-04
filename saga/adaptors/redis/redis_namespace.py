@@ -53,8 +53,9 @@ import time
 import string
 import redis
 
-import radical.utils        as ru
-import radical.utils.logger as rul
+import radical.utils         as ru
+import radical.utils.logger  as rul
+import radical.utils.threads as rut
 
 import redis_cache
 

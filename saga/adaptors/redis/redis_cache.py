@@ -6,8 +6,8 @@ __license__   = "MIT"
 
 import time
 
-import saga.utils.threads   as sut
-import redis_ordered_dict   as rod
+import threading
+import redis_ordered_dict    as rod
 
 CACHE_DEFAULT_SIZE = 10000
 CACHE_DEFAULT_TTL  = 1.0    # 1 second
@@ -32,7 +32,7 @@ class Cache :
         self.size   = size
         self.ttl    = ttl
         self.dict   = rod.OrderedDict ()
-        self.lock   = sut.RLock ()
+        self.lock   = threading.RLock ()
         self.logger = logger
         self.hit    = 0
         self.miss   = 0
