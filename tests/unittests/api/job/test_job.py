@@ -6,7 +6,8 @@ __license__   = "MIT"
 import time
 import saga
 
-import radical.utils.testing as testing
+import radical.utils.testing  as testing
+import saga.utils.test_config as sutc
 
 from copy import deepcopy
 
