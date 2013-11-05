@@ -9,7 +9,7 @@
    script in order to get some debug output.
 
    If you think you have encountered a defect, please 
-   report it at: https://github.com/saga-project/bliss/issues
+   report it at: https://github.com/saga-project/saga-python/issues
 '''
 
 __author__    = "Ashley Zebrowski"
