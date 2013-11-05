@@ -238,7 +238,7 @@ class Adaptor (saga.adaptors.base.Base):
             for item in out.strip().split("\n"):
     
                 # if we are listing a directory or remote resource file location i.e.
-                # (bliss-irods)[azebro1@gw68 bliss]$ ils -L /osg/home/azebro1
+                # [azebro1@gw68]$ ils -L /osg/home/azebro1
                 # /osg/home/azebro1:
                 #    azebro1           1 UFlorida-SSERCA_FTP            12 2012-11-14.09:55 & irods-test.txt
                 #          /data/cache/UFlorida-SSERCA_FTPplaceholder/home/azebro1/irods-test.txt    osgGridFtpGroup
