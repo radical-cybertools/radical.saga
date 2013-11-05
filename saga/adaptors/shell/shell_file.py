@@ -1020,7 +1020,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         # we handle move non-atomically, i.e. as copy/remove
         self.copy_self   (tgt_in, flags)
-        self.remove_self (tgt_in, flags)
+        self.remove_self (flags)
 
         # however, we are not closed at this point, but need to re-initialize
         self.url   = tgt_in
