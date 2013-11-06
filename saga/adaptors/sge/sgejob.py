@@ -26,177 +26,84 @@ from datetime import datetime
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
-_QSTAT_JOB_STATE_RE = re.compile(r"^([^ ]+) (.+)$")
+_QSTAT_JOB_STATE_RE = re.compile(r"^([^ ]+) ([0-9]{2}/[0-9]{2}/[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}) (.+)$")
 _QSTAT_KEY_VALUE_RE = re.compile(r"(.+): +(.+)$")
 _QACCT_KEY_VALUE_RE = re.compile(r"^([^ ]+) +(.+)$")
+
+class SgeKeyValueParser(object):
+    """
+    Parser for SGE commands returning lines with key-value pairs.
+    It takes into account multi-line key-value pairs.
+    It works as an iterator returning (key, value) tuples or as a dictionary.
+    It allows to filter for keys.
+    """
+
+    KEY_VALUE_RE = re.compile(r"^([^ ]+) +(.+)$")
+
+    def __init__(self, stream, filter_keys=None, key_suffix=None):
+        """
+        :param stream: an string or a file-like object implementing readline()
+        :param filter_keys: an iterable with the list of keys of interest.
+        :param key_suffix: a key suffix to remove when parsing
+        """
+
+        # check whether it is an string or a file-like object
+        if isinstance(stream, basestring):
+            self.stream = StringIO(stream)
+        else:
+            self.stream = stream
+
+        self.filter_keys = set(filter_keys) if filter_keys is not None else None
+        self.key_suffix = key_suffix
+
+    def next(self):
+        """
+        Return the next key-value pair.
+        :return: (key, value)
+        """
+
+        key, value = None, None
+        while key is None:
+            line = self.stream.readline()
+            if len(line) == 0:
+                raise StopIteration
+
+            line = line.rstrip(" \n")
+
+            # check for multi-line options
+            while len(line) > 0 and line[-1] == "\\":
+                line = line[:-1] + self.stream.readline().rstrip(" \n").lstrip(" ")
+
+            m = self.KEY_VALUE_RE.match(line)
+            if m is not None:
+                key, value = m.groups()
+                if self.key_suffix is not None and key.endswith(self.key_suffix):
+                    key = key[:-len(self.key_suffix)]
+                if self.filter_keys is not None and key not in self.filter_keys:
+                    key = None # skip this pair
+
+        return key, value
+
+    def __iter__(self):
+        return self
+
+    def as_dict(self):
+        """
+        Parses the key-value pairs and return them as a dictionary.
+        :return: a dictionary containing key-value pairs parsed from a SGE command.
+        """
+
+        d = dict()
+        for key, value in self:
+            d[key] = value
+
+        return d
 
 # --------------------------------------------------------------------
 #
 def log_error_and_raise(message, exception, logger):
     logger.error(message)
     raise exception(message)
-
-
-# --------------------------------------------------------------------
-#
-def _sge_to_saga_jobstate(sgejs):
-    """ translates a sge one-letter state to saga
-    """
-    if sgejs == 'c':
-        return saga.job.DONE
-    elif sgejs == 'E':
-        return saga.job.RUNNING
-    elif sgejs == 'H':
-        return saga.job.PENDING
-    elif sgejs == 'qw':
-        return saga.job.PENDING
-    elif sgejs == 'r':
-        return saga.job.RUNNING
-    elif sgejs == 't':
-        return saga.job.RUNNING
-    elif sgejs == 'w':
-        return saga.job.PENDING
-    elif sgejs == 's':
-        return saga.job.PENDING
-    elif sgejs == 'X':
-        return saga.job.CANCELED
-    elif sgejs == 'Eqw':
-        return saga.job.FAILED
-    else:
-        return saga.job.UNKNOWN
-
-
-# --------------------------------------------------------------------
-# simple parser for getting memory requirements flags and multipliers from the memreqs part of the job.Service url
-#
-def _parse_memreqs(s):
-    flags = []
-    multipliers = []
-    while not s=='':
-        # find multiplier
-        m = re.match(r'\d+\.?\d*|\d*\.?\d+', s)
-        if m:
-            multipliers.append(float(s[m.start():m.end()]))
-            s = s[m.end():]
-        else:
-            multipliers.append(1.)        
-        # find flag
-        pos = s.find('~')
-        if pos < 0:
-            flags.append(s)
-            s = ''
-        else:                
-            flags.append(s[:pos])
-            s = s[pos+1:]
-    return flags, multipliers
-
-# --------------------------------------------------------------------
-#
-#
-def _sgescript_generator(url, logger, jd, pe_list, queue=None, memreqs=None):
-    """ generates an SGE script from a SAGA job description
-    """
-    sge_params = "#$ -S /bin/bash\n"
-    exec_n_args = str()
-
-    # if no cores are requested at all, we default to one
-    if jd.total_cpu_count is None:
-        jd.total_cpu_count = 1
-
-    # check spmd variation. this translates to the SGE qsub -pe flag.
-    if jd.spmd_variation is not None:
-        if jd.spmd_variation not in pe_list:
-            raise Exception("'%s' is not a valid option for jd.spmd_variation. \
-Valid options are: %s" % (jd.spmd_variation, pe_list))
-    else:
-        if jd.total_cpu_count > 1:
-            raise Exception("jd.spmd_variation need to be set in order for jd.total_cpu_count to be greater than 1. Valid options for jd.spmd_variation are: %s" % (pe_list))
-
-    if jd.executable is not None:
-        exec_n_args += "%s " % (jd.executable)
-    if jd.arguments is not None:
-        for arg in jd.arguments:
-            exec_n_args += "%s " % (arg)
-
-    if jd.name is not None:
-        sge_params += "#$ -N %s \n" % jd.name
-
-    sge_params += "#$ -V \n"
-
-    if jd.environment is not None and len(jd.environment) > 0:
-        variable_list = str()
-        for key in jd.environment.keys():
-            variable_list += "%s=%s," % (key, jd.environment[key])
-        sge_params += "#$ -v %s \n" % variable_list
-
-    if jd.working_directory is not None:
-        sge_params += "#$ -wd %s \n" % jd.working_directory
-    if jd.output is not None:
-        sge_params += "#$ -o %s \n" % jd.output
-    if jd.error is not None:
-        sge_params += "#$ -e %s \n" % jd.error
-    if jd.wall_time_limit is not None:
-        hours = jd.wall_time_limit / 60
-        minutes = jd.wall_time_limit % 60
-        sge_params += "#$ -l h_rt=%s:%s:00 \n" % (str(hours), str(minutes))
-
-    if (jd.queue is not None) and (queue is not None):
-        sge_params += "#$ -q %s \n" % queue
-    elif (jd.queue is not None) and (queue is None):
-        sge_params += "#$ -q %s \n" % jd.queue
-    elif (jd.queue is None) and (queue is not None):
-        sge_params += "#$ -q %s \n" % queue
-    else:
-        raise Exception("No queue defined.")
-
-    if jd.project is not None:
-        sge_params += "#$ -A %s \n" % str(jd.project)
-    if jd.job_contact is not None:
-        sge_params += "#$ -m be \n"
-        sge_params += "#$ -M %s \n" % jd.contact
-
-    # memory requirements - TOTAL_PHYSICAL_MEMORY
-    # it is assumed that the value passed through jd is always in Megabyte
-    if jd.total_physical_memory is not None:
-        # this is (of course) not the same for all SGE installations. some 
-        # use virtual_free, some use a combination of mem_req / h_vmem. 
-        # It is very annoying. We need some sort of configuration variable 
-        # that can control this. Yes, ugly and not very saga-ish, but 
-        # the only way to do this, IMHO...
-        if memreqs is None:
-            raise Exception("When using 'total_physical_memory' with the SGE adaptor, the query parameters of the job.Service URL must define the attributes used by your particular instance of SGE to control memory allocation.\n 'virtual_free', 'h_vmem' or 'mem_req' are commonly encountered examples of such attributes.\n A valid job.Service URL could be for instance:\n 'sge+ssh://myserver.edu?memreqs=virtual_free~1.5h_vmem'\n here the attribute 'virtual_free' would be set to 'total_physical_memory' and the attribute 'h_vmem' would be set to 1.5*'total_physical_memory', '~' is used as a separator.")            
-        
-        flags, multipliers = _parse_memreqs(memreqs)
-        for flag,mult in zip(flags, multipliers):
-            sge_params += "#$ -l %s=%sm \n" % (flag, int (round (mult*int(jd.total_physical_memory) ) ) )
-
-    # if no cores are requested at all, we default to one
-    if jd.total_cpu_count is None:
-        jd.total_cpu_count = 1
-
-    # we need to translate the # cores requested into
-    # multiplicity, i.e., if one core is requested and
-    # the cluster consists of 16-way SMP nodes, we will
-    # request 16. If 17 cores are requested, we will
-    # request 32... and so on ... self.__ppn represents
-    # the core count per single node
-    #count = int(int(jd.total_cpu_count) / int(ppn))
-    #if int(jd.total_cpu_count) % int(ppn) != 0:
-    #    count = count + 1
-    #count = count * int(ppn)
-
-    # escape all double quotes and dollarsigns, otherwise 'echo |'
-    # further down won't work
-    # only escape '$' in args and exe. not in the params
-    exec_n_args = exec_n_args.replace('$', '\\$')
-
-    if jd.spmd_variation is not None:
-        sge_params += "#$ -pe %s %s" % (jd.spmd_variation, jd.total_cpu_count)       
-
-    sgescript = "\n#!/bin/bash \n%s \n%s" % (sge_params, exec_n_args)
-
-    sgescript = sgescript.replace('"', '\\"')
-    return sgescript
 
 # --------------------------------------------------------------------
 # some private defs
@@ -352,7 +259,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         self.memreqs = None
         self.shell   = None
         self.mandatory_memreqs = list()
-
+        self.accounting = False
+        self.temp_path = "$HOME/.saga/adaptors/sge_job"
 
 
         rm_scheme = rm_url.scheme
@@ -401,7 +309,6 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
     def close (self) :
         if  self.shell :
             self.shell.finalize (True)
-
 
     # ----------------------------------------------------------------
     #
@@ -457,7 +364,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else: 
             mandatory_attrs = []
-            optional_attrs = []           
+            optional_attrs = []
             for line in out.split('\n'):
                 if (line != '') and (line[0] != '#'):
                     [name, _, att_type, _, requestable, _, _, _] = line.split()
@@ -471,7 +378,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         if self.memreqs is None:
             flags = []
         else:
-            flags, _ = _parse_memreqs(self.memreqs) 
+            flags, _ = self.__parse_memreqs(self.memreqs)
         # if there are mandatory memory attributes store them and check that they were specified in the job.Service URL
         if not (mandatory_attrs == []):
             self.mandatory_memreqs = mandatory_attrs
@@ -483,14 +390,18 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 message = "The following memory attribute(s) are mandatory in your SGE environment and thus must be specified in the job service URL: %s" % ' '.join(missing_flags)
                 log_error_and_raise(message, saga.BadParameter, self._logger) 
         # if memory attributes were specified in the job.Service URL, check that they correspond to existing optional or mandatory memory attributes
-        invalid_attrs = []              
+        invalid_attrs = []
         for f in flags:
             if not (f in optional_attrs or f in mandatory_attrs):
                 invalid_attrs.append(f)
         if not (invalid_attrs == []):
             message = "The following memory attribute(s) were specified in the job.Service URL but are not valid memory attributes in your SGE environment: %s" % ' '.join(invalid_attrs)
             log_error_and_raise(message, saga.BadParameter, self._logger)
-                    
+
+        # check if accounting is activated
+        qres = self.__kvcmd_results('qconf', '-sconf', filter_keys=["reporting_params"])
+        self.accounting = "reporting_params" in qres and "accounting=true" in qres["reporting_params"]
+        self._logger.info("Accounting is {}abled".format("en" if self.accounting else "dis"))
 
     # ----------------------------------------------------------------
     #
@@ -499,7 +410,75 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             if  self.shell :
                 self.shell.finalize (True)
 
-    def _remote_mkdir(self, path):
+    # ----------------------------------------------------------------
+    #
+    # private members
+    #
+
+    def __sge_to_saga_jobstate(self, sge_state):
+        """
+        Translates an SGE one-letter state to SAGA
+        """
+
+        try:
+            return {
+                'c'   : saga.job.DONE,
+                'E'   : saga.job.RUNNING,
+                'H'   : saga.job.PENDING,
+                'qw'  : saga.job.PENDING,
+                'r'   : saga.job.RUNNING,
+                't'   : saga.job.RUNNING,
+                'w'   : saga.job.PENDING,
+                's'   : saga.job.PENDING,
+                'X'   : saga.job.CANCELED,
+                'Eqw' : saga.job.FAILED
+            }[sge_state]
+        except:
+            return saga.job.UNKNOWN
+
+    def _parse_memreqs(self, s):
+        """
+        Simple parser for getting memory requirements flags and multipliers from the memreqs part of the job.Service url
+        """
+        flags = []
+        multipliers = []
+        while len(s) != 0:
+            # find multiplier
+            m = re.match(r'\d+\.?\d*|\d*\.?\d+', s)
+            if m:
+                multipliers.append(float(s[m.start():m.end()]))
+                s = s[m.end():]
+            else:
+                multipliers.append(1.0)
+            # find flag
+            pos = s.find('~')
+            if pos < 0:
+                flags.append(s)
+                s = ''
+            else:
+                flags.append(s[:pos])
+                s = s[pos+1:]
+        return flags, multipliers
+
+    def __kvcmd_results(self, cmd, cmd_args, *args, **kwargs):
+        """
+        Runs a SGE command that returns key-value pairs as result and parses the results.
+        :param cmd: command alias
+        :param cmd_args: command arguments
+        :param args: parser arguments
+        :param kwargs: parser keyword arguments
+        :returns: a dictionary if succeeded or None otherwise
+        """
+        ret, out, _ = self.shell.run_sync('%s %s' % (self._commands[cmd]['path'], cmd_args))
+        if ret == 0:
+            return SgeKeyValueParser(out, *args, **kwargs).as_dict()
+        return None
+
+    def __remote_mkdir(self, path):
+        """
+        Creates a directory on the remote host.
+        :param path: the remote directory to be created.
+        """
         # check if the path exists
         ret, out, _ = self.shell.run_sync(
                         "(test -d %s && echo -n 0) || (mkdir -p %s && echo -n 1)" % (path, path))
@@ -511,8 +490,219 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             message = "Couldn't create remote directory - %s" % (out)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
+    def __job_info_from_accounting(self, sge_job_id, max_retries=10):
+        """ Returns job information from the SGE accounting using qacct.
+        It may happen that when the job exits from the queue system the results in
+        the accounting database take some time to appear. To avoid premature failing
+        several tries can be done (up to a maximum) with delays of 1 second in between.
+        :param sge_job_id: SGE job id
+        :param max_retries: The maximum number of retries in case qacct fails
+        :return: job information dictionary
+        """
+
+        job_info = None
+        retries = max_retries
+
+        while job_info is None and retries > 0:
+            retries -= 1
+
+            qres = self.__kvcmd_results('qacct', "-j %s | grep -E '%s'" % (
+                                            sge_job_id, "hostname|qsub_time|start_time|end_time|exit_status|failed"))
+
+            if qres is not None: # ok, extract job info from qres
+                # hostname     sge
+                # qsub_time    Mon Jun 24 17:24:43 2013
+                # start_time   Mon Jun 24 17:24:50 2013
+                # end_time     Mon Jun 24 17:44:50 2013
+                # failed       0
+                # exit_status  0
+                job_info = dict(
+                    state=saga.job.DONE if qres.get("failed") == "0" else saga.job.FAILED,
+                    exec_hosts=qres.get("hostname"),
+                    returncode=int(qres.get("exit_status")),
+                    create_time=qres.get("qsub_time"),
+                    start_time=qres.get("start_time"),
+                    end_time=qres.get("end_time"),
+                    gone=False)
+            elif retries > 0:
+                # sometimes there is a lapse between the job exits from the queue and
+                # its information enters in the accounting database
+                # let's run qacct again after a delay
+                time.sleep(1)
+
+        return job_info
+
+    def __remote_job_info_path(self, sge_job_id="$JOB_ID"):
+        """
+        Returns the path of the remote job info file.
+        :param sge_job_id: the SGE job id, if omitted an enviroment variable representing the job id will be used.
+        :return: path to the remote job info file
+        """
+
+        return "%s/%s" % (self.temp_path, sge_job_id)
+
+    def __clean_remote_job_info(self, sge_job_id):
+        """
+        Removes the temporary remote file containing job info.
+        :param sge_job_id: the SGE job id
+        """
+
+        path = self.__remote_job_info_path(sge_job_id)
+        ret, out, _ = self.shell.run_sync("rm %s" % path)
+        if ret != 0:
+            self._logger.debug("Remote job info couldn't be removed: %s" % path)
+
+    def __get_remote_job_info(self, sge_job_id):
+        """
+        Obtains the job info from a temporary remote file created by the qsub script.
+        :param sge_job_id: the SGE job id
+        :return: a dictionary with the job info
+        """
+
+        ret, out, _ = self.shell.run_sync("cat %s" % self.__remote_job_info_path(sge_job_id))
+        if ret != 0:
+            return None
+
+        qres = SgeKeyValueParser(out, key_suffix=":").as_dict()
+        job_info = dict(
+                    state=saga.job.DONE if "exit_status" in qres else saga.job.RUNNING,
+                    exec_hosts=qres.get("hostname"),
+                    returncode=int(qres.get("exit_status", -1)),
+                    create_time=qres.get("qsub_time"),
+                    start_time=qres.get("start_time"),
+                    end_time=qres.get("end_time"),
+                    gone=False)
+
+        return job_info
+
+    def __generate_qsub_script(self, jd):
+        """
+        Generates an SGE script from a SAGA job description
+        :param jd: job descriptor
+        :return: the qsub script
+        """
+
+        # SGE parameters
+
+        sge_params = ["#$ -S /bin/bash"]
+
+        if jd.name is not None:
+            sge_params += ["#$ -N %s" % jd.name]
+
+        sge_params += ["#$ -V"]
+
+        if jd.environment is not None and len(jd.environment) > 0:
+            env_list = ",".join(["%s=%s" % (key, value) for key, value in jd.environment.items()])
+            sge_params += ["#$ -v %s" % env_list]
+
+        if jd.working_directory is not None:
+            sge_params += ["#$ -wd %s" % jd.working_directory]
+
+        if jd.output is not None:
+            sge_params += ["#$ -o %s" % jd.output]
+
+        if jd.error is not None:
+            sge_params += ["#$ -e %s" % jd.error]
+
+        if jd.wall_time_limit is not None:
+            hours = jd.wall_time_limit / 60
+            minutes = jd.wall_time_limit % 60
+            sge_params += ["#$ -l h_rt=%s:%s:00" % (str(hours), str(minutes))]
+
+        queue = self.queue or jd.queue
+        if queue is not None:
+            sge_params += ["#$ -q %s" % queue]
+
+        if jd.project is not None:
+            sge_params += ["#$ -A %s" % str(jd.project)]
+
+        if jd.job_contact is not None:
+            sge_params += ["#$ -m be", "#$ -M %s" % jd.contact]
+
+        # memory requirements - TOTAL_PHYSICAL_MEMORY
+        # it is assumed that the value passed through jd is always in Megabyte
+        if jd.total_physical_memory is not None:
+            # this is (of course) not the same for all SGE installations. some
+            # use virtual_free, some use a combination of mem_req / h_vmem.
+            # It is very annoying. We need some sort of configuration variable
+            # that can control this. Yes, ugly and not very saga-ish, but
+            # the only way to do this, IMHO...
+            if self.memreqs is None:
+                raise Exception("When using 'total_physical_memory' with the SGE adaptor, the query parameters "
+                                "of the job.Service URL must define the attributes used by your particular instance "
+                                "of SGE to control memory allocation.\n"
+                                "'virtual_free', 'h_vmem' or 'mem_req' are commonly encountered examples of "
+                                "such attributes.\n"
+                                "A valid job.Service URL could be for instance:\n"
+                                "'sge+ssh://myserver.edu?memreqs=virtual_free~1.5h_vmem'\n"
+                                "here the attribute 'virtual_free' would be set to 'total_physical_memory' and "
+                                "the attribute 'h_vmem' would be set to 1.5*'total_physical_memory', "
+                                "'~' is used as a separator.")
+
+            flags, multipliers = self.__parse_memreqs(self.memreqs)
+            for flag, mult in zip(flags, multipliers):
+                sge_params += ["#$ -l %s=%sm" % (flag, int(round(mult * int(jd.total_physical_memory))))]
+
+        # check spmd variation. this translates to the SGE qsub -pe flag.
+        if jd.spmd_variation is not None:
+            if jd.spmd_variation not in self.pe_list:
+                raise Exception("'%s' is not a valid option for jd.spmd_variation. "
+                                "Valid options are: %s" % (jd.spmd_variation, self.pe_list))
+
+            # if no cores are requested at all, we default to 1
+
+            # we need to translate the # cores requested into
+            # multiplicity, i.e., if one core is requested and
+            # the cluster consists of 16-way SMP nodes, we will
+            # request 16. If 17 cores are requested, we will
+            # request 32... and so on ... self.__ppn represents
+            # the core count per single node
+            #count = int(int(jd.total_cpu_count) / int(ppn))
+            #if int(jd.total_cpu_count) % int(ppn) != 0:
+            #    count = count + 1
+            #count = count * int(ppn)
+            sge_params += ["#$ -pe %s %s" % (jd.spmd_variation, jd.total_cpu_count or 1)]
+
+        elif jd.total_cpu_count is not None and jd.total_cpu_count > 1:
+                raise Exception("jd.total_cpu_count requires that jd.spmd_variation is not empty. "
+                                "Valid options for jd.spmd_variation are: %s" % (self.pe_list))
+
+        # convert sge params into an string
+        sge_params = "\n".join(sge_params)
+
+        # Job info, executable and arguments
+
+        job_info_path = self.__remote_job_info_path()
+
+        exec_n_args = ["mkdir -p %s" % self.temp_path]
+        exec_n_args += ['echo "hostname: $HOSTNAME" >%s' % job_info_path]
+        exec_n_args += ['echo "qsub_time: %s" >%s' % (datetime.now().strftime("%a %b %d %H:%M:%S %Y"), job_info_path)]
+        exec_n_args += ['echo "start_time: $(date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path]
+
+        if jd.executable is not None:
+            exec_n_args += ["%s " % jd.executable]
+
+        if jd.arguments is not None:
+            exec_n_args += [" ".join(jd.arguments)]
+
+        exec_n_args += ['\necho "exit_status: $?" >>%s' % job_info_path]
+        exec_n_args += ['echo "finish_time: $(date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path]
+
+        # convert exec and args into an string and
+        # escape all double quotes and dollar signs, otherwise 'echo |'
+        # further down won't work.
+        # only escape '$' in args and exe. not in the params
+        exec_n_args = "\n".join(exec_n_args).replace('$', '\\$')
+
+        sgescript = "\n#!/bin/bash \n%s \n%s" % (sge_params, exec_n_args)
+
+        return sgescript.replace('"', '\\"')
+
     # ----------------------------------------------------------------
     #
+    # Adaptor internal methods
+    #
+
     def _job_run(self, jd):
         """ runs a job via qsub
         """
@@ -525,10 +715,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             log_error_and_raise("Your SGE environments has mandatory memory attributes, so 'total_physical_memory' must be specified in your job descriptor", saga.BadParameter, self._logger)            
         try:
             # create a SGE job script from SAGA job description
-            script = _sgescript_generator(url=self.rm, logger=self._logger,
-                                          jd=jd, pe_list=self.pe_list,
-                                          queue=self.queue,
-                                          memreqs=self.memreqs)
+            script = self.__generate_qsub_script(jd)
 
             self._logger.info("Generated SGE script: %s" % script)
         except Exception, ex:
@@ -538,13 +725,13 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         # WARNING: this assumes a shared filesystem between login node and
         #           compute nodes.
         if jd.working_directory is not None and len(jd.working_directory) > 0:
-            self._remote_mkdir(jd.working_directory)
+            self.__remote_mkdir(jd.working_directory)
 
         if jd.output is not None and len(jd.output) > 0:
-            self._remote_mkdir(os.path.dirname(jd.output))
+            self.__remote_mkdir(os.path.dirname(jd.output))
 
         if jd.error is not None and len(jd.error) > 0:
-            self._remote_mkdir(os.path.dirname(jd.output))
+            self.__remote_mkdir(os.path.dirname(jd.output))
 
         # submit the SGE script
         cmdline = """echo "%s" | %s""" % (script, self._commands['qsub']['path'])
@@ -584,61 +771,6 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
-    def __job_info_from_accounting(self, pid, max_retries=10):
-        """ Returns job information from the SGE accounting using qacct.
-        It may happen that when the job exits from the queue system the results in
-        the accounting database take some time to appear. To avoid premature failing
-        several tries can be done (up to a maximum) with delays of 1 second in between.
-        :param pid: SGE job id
-        :param max_retries: The maximum number of retries in case qacct fails
-        :return: job information dictionary
-        """
-
-        job_info = None
-        retries = max_retries
-
-        while job_info is None and retries > 0:
-            retries -= 1
-
-            ret, out, _ = self.shell.run_sync("qacct -j %s | grep -E '%s'" % (
-                                pid, "hostname|qsub_time|start_time|end_time|exit_status|failed"))
-
-            if ret == 0: # ok, put qacct results into a dictionary
-                # hostname     sge
-                # qsub_time    Mon Jun 24 17:24:43 2013
-                # start_time   Mon Jun 24 17:24:50 2013
-                # end_time     Mon Jun 24 17:44:50 2013
-                # failed       0
-                # exit_status  0
-                qres = dict()
-                for line in StringIO(out):
-                    line = line.rstrip("\n")
-                    m = _QACCT_KEY_VALUE_RE.match(line)
-                    if m is not None:
-                        key, value = m.groups()
-                        qres[key] = value.rstrip()
-                    else:
-                        self._logger.warn("Unmatched qacct line: %s" % line)
-
-                # extract job info from qres
-                job_info = dict(
-                    state=saga.job.DONE if qres.get("failed") == "0" else saga.job.FAILED,
-                    exec_hosts=qres.get("hostname"),
-                    returncode=int(qres.get("exit_status")),
-                    create_time=qres.get("qsub_time"),
-                    start_time=qres.get("start_time"),
-                    end_time=qres.get("end_time"),
-                    gone=False)
-            elif retries > 0:
-                # sometimes there is a lapse between the job exits from the queue and
-                # its information enters in the accounting database
-                # let's run qacct again after a delay
-                time.sleep(1)
-
-        return job_info
-
-    # ----------------------------------------------------------------
-    #
     def _retrieve_job(self, job_id):
         """ retrieve job information
         :param job_id: SAGA job id
@@ -649,7 +781,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         # check the state of the job
         ret, out, _ = self.shell.run_sync(
-                        "{qstat} | tail -n+3 | awk '($1=={pid}) {{print $5,$6,$7}}'".format(
+                        "{qstat} | tail -n+3 | awk '($1=={pid}) {{print $5,$6,$7,$8}}'".format(
                             qstat=self._commands['qstat']['path'], pid=pid))
 
         out = out.strip()
@@ -664,7 +796,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 message = "Unexpected qstat results retrieving job info:\n%s" % out.rstrip()
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-            state, start_time = m.groups()
+            state, start_time, queue = m.groups()
 
             # Convert start time into POSIX format
             try:
@@ -676,49 +808,48 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             if state not in ["r", "t", "s", "S", "T", "d", "E", "Eqw"]:
                 start_time = None
 
-            if state == "Eqw": # if it is an Eqw job it is better to retrieve the information from qacct
+            exec_host = None
+            if "@" in queue:
+                queue, exec_host = queue.split("@")
+                exec_host = exec_host.rstrip()
+
+            if self.accounting and state == "Eqw": # if it is an Eqw job it is better to retrieve the information from qacct
                 job_info = self.__job_info_from_accounting(pid)
                 # TODO remove the job from the queue ?
                 # self.__shell_run("%s %s" % (self._commands['qdel']['path'], pid))
 
             if job_info is None: # use qstat -j pid
-                ret, out, _ = self.shell.run_sync(
-                            "{qstat} -j {pid} | grep -E 'submission_time|sge_o_host'".format(
-                                qstat=self._commands['qstat']['path'], pid=pid))
+                qres = self.__kvcmd_results('qstat', "-j {pid} | grep -E 'submission_time|sge_o_host'".format(pid=pid),
+                                            key_suffix=":")
 
-                if ret == 0: # if ret != 0 fall back to qacct
+                if qres is not None: # when qstat fails it will fall back to qacct
                     # output is something like
                     # submission_time:            Mon Jun 24 17:24:43 2013
                     # sge_o_host:                 sge
-                    qres = dict()
-                    for line in StringIO(out):
-                        line = line.rstrip("\n")
-                        m = _QSTAT_KEY_VALUE_RE.match(line)
-                        if m is not None:
-                            key, value = m.groups()
-                            qres[key] = value.rstrip()
-                        else:
-                            self._logger.warn("Unmatched qstat line: %s" % line)
-
                     job_info = dict(
-                        state=_sge_to_saga_jobstate(state),
-                        exec_hosts=qres.get("sge_o_host"),
+                        state=self.__sge_to_saga_jobstate(state),
+                        exec_hosts=exec_host or qres.get("sge_o_host"),
                         returncode=None, # it can not be None because it will be casted to int()
                         create_time=qres.get("submission_time"),
                         start_time=start_time,
                         end_time=None,
                         gone=False)
 
+        # if job already finished or there was an error with qstat
+        # try to read the remote job info
         if job_info is None:
-            # job already finished or there was an error with qstat
-            # let's try running qacct to get accounting info about the job
+            job_info = self.__get_remote_job_info(pid)
+
+        # none of the previous methods gave us job info
+        # if accounting is activated use qacct
+        if self.accounting and job_info is None:
             job_info = self.__job_info_from_accounting(pid)
 
         if job_info is None: # Oooops, we couldn't retrieve information from SGE
             message = "Couldn't reconnect to job '%s'" % job_id
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        self._logger.debug("job_info=[{}]".format(", ".join(["%s=%s" % (k, job_info[k]) for k in [
+        self._logger.debug("job_info({})=[{}]".format(pid, ", ".join(["%s=%s" % (k, job_info[k]) for k in [
                 "state", "returncode", "exec_hosts", "create_time", "start_time", "end_time", "gone"]])))
 
         return job_info
@@ -853,6 +984,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             message = "Error canceling job via 'qdel': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
+        self.__clean_remote_job_info(pid)
+
         # assume the job was succesfully canceld
         self.jobs[job_id]['state'] = saga.job.CANCELED
 
@@ -875,6 +1008,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             if state == saga.job.DONE or \
                state == saga.job.FAILED or \
                state == saga.job.CANCELED:
+                    self.__clean_remote_job_info(pid)
                     return True
             # avoid busy poll
             time.sleep(0.5)
