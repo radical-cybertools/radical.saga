@@ -421,6 +421,10 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         """
 
         try:
+            if sge_state.startswith("d"):
+            # when a qdel is done the state is prefixed with a d while the termination signal is queued
+                sge_state = sge_state[1:]
+
             return {
                 'c'   : saga.job.DONE,
                 'E'   : saga.job.RUNNING,
@@ -564,8 +568,16 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             return None
 
         qres = SgeKeyValueParser(out, key_suffix=":").as_dict()
+
+        if "signal" in qres:
+            state = saga.job.CANCELED
+        elif "exit_status" in qres:
+            state = saga.job.DONE
+        else:
+            state = saga.job.RUNNING
+
         job_info = dict(
-                    state=saga.job.DONE if "exit_status" in qres else saga.job.RUNNING,
+                    state=state,
                     exec_hosts=qres.get("hostname"),
                     returncode=int(qres.get("exit_status", -1)),
                     create_time=qres.get("qsub_time"),
@@ -674,27 +686,44 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         job_info_path = self.__remote_job_info_path()
 
-        exec_n_args = ["mkdir -p %s" % self.temp_path]
-        exec_n_args += ['echo "hostname: $HOSTNAME" >%s' % job_info_path]
-        exec_n_args += ['echo "qsub_time: %s" >%s' % (datetime.now().strftime("%a %b %d %H:%M:%S %Y"), job_info_path)]
-        exec_n_args += ['echo "start_time: $(date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path]
+        script_body = [
+            'function aborted() {',
+            '  echo Aborted with signal $1.',
+            '  echo "signal: $1" >>%s' % job_info_path,
+            '  echo "end_time: $(date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path,
+            '  exit -1',
+            '}',
+            'mkdir -p %s' % self.temp_path,
+            'for sig in SIGHUP SIGINT SIGQUIT SIGUSR1 SIGUSR2 SIGTERM; do trap "aborted $sig" $sig; done',
+            'echo "hostname: $HOSTNAME" >%s' % job_info_path,
+            'echo "qsub_time: %s" >>%s' % (datetime.now().strftime("%a %b %d %H:%M:%S %Y"), job_info_path),
+            'echo "start_time: $(date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
+        ]
 
+        exec_n_args = None
         if jd.executable is not None:
-            exec_n_args += ["%s " % jd.executable]
+            exec_n_args = jd.executable
+            if jd.arguments is not None:
+                exec_n_args += " %s" % " ".join(jd.arguments)
 
-        if jd.arguments is not None:
-            exec_n_args += [" ".join(jd.arguments)]
+        elif jd.arguments is not None:
+            raise Exception("jd.arguments defined without jd.executable being defined")
 
-        exec_n_args += ['\necho "exit_status: $?" >>%s' % job_info_path]
-        exec_n_args += ['echo "finish_time: $(date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path]
+        if exec_n_args is not None:
+            script_body += [exec_n_args]
+
+        script_body += [
+            'echo "exit_status: $?" >>%s' % job_info_path,
+            'echo "end_time: $(date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
+        ]
 
         # convert exec and args into an string and
         # escape all double quotes and dollar signs, otherwise 'echo |'
         # further down won't work.
         # only escape '$' in args and exe. not in the params
-        exec_n_args = "\n".join(exec_n_args).replace('$', '\\$')
+        script_body = "\n".join(script_body).replace('$', '\\$')
 
-        sgescript = "\n#!/bin/bash \n%s \n%s" % (sge_params, exec_n_args)
+        sgescript = "\n#!/bin/bash \n%s \n%s" % (sge_params, script_body)
 
         return sgescript.replace('"', '\\"')
 
@@ -704,15 +733,20 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
     #
 
     def _job_run(self, jd):
-        """ runs a job via qsub
         """
-        if (self.queue is not None) and (jd.queue is not None):
-            self._logger.warning("Job service was instantiated explicitly with \
-'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." %
-                (self.queue, jd.queue, self.queue))
+        Runs a job via qsub
+        """
+
+        if self.queue is not None and jd.queue is not None and self.queue != jd.queue:
+            self._logger.warning("Job service was instantiated explicitly with 'queue=%s', "
+                                "but job description tries to a different queue: '%s'. Using '%s'." % (
+                                    self.queue, jd.queue, self.queue))
+
         # In SGE environments with mandatory memory attributes, 'total_physical_memory' must be specified        
-        if (not (self.mandatory_memreqs == [])) and (jd.total_physical_memory is None):
-            log_error_and_raise("Your SGE environments has mandatory memory attributes, so 'total_physical_memory' must be specified in your job descriptor", saga.BadParameter, self._logger)            
+        if len(self.mandatory_memreqs) != 0 and jd.total_physical_memory is None:
+            log_error_and_raise("Your SGE environments has mandatory memory attributes, so 'total_physical_memory' "
+                                "must be specified in your job descriptor", saga.BadParameter, self._logger)
+
         try:
             # create a SGE job script from SAGA job description
             script = self.__generate_qsub_script(jd)
@@ -721,7 +755,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         except Exception, ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
-        # try to create the working directory (if defined)
+        # try to create the working/output/error directories (if defined)
         # WARNING: this assumes a shared filesystem between login node and
         #           compute nodes.
         if jd.working_directory is not None and len(jd.working_directory) > 0:
@@ -734,40 +768,39 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             self.__remote_mkdir(os.path.dirname(jd.output))
 
         # submit the SGE script
-        cmdline = """echo "%s" | %s""" % (script, self._commands['qsub']['path'])
+        cmdline = 'echo "%s" | %s -notify' % (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
             # something went wrong
-            message = "Error running job via 'qsub': %s. Commandline was: %s" \
-                % (out, cmdline)
+            message = "Error running job via 'qsub': %s. Commandline was: %s" % (out, cmdline)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
-        else:
-            # stdout contains the job id:
-            # Your job 1036608 ("testjob") has been submitted
-            pid = None
-            for line in out.split('\n'):
-                if line.find("Your job") != -1:
-                    pid = line.split()[2]
-            if pid is None:
-                message = "Couldn't parse job id from 'qsub' output: %s" % out
-                log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-            job_id = "[%s]-[%s]" % (self.rm, pid)
-            self._logger.info("Submitted SGE job with id: %s" % job_id)
+        # stdout contains the job id:
+        # Your job 1036608 ("testjob") has been submitted
+        sge_job_id = None
+        for line in out.split('\n'):
+            if line.find("Your job") != -1:
+                sge_job_id = line.split()[2]
+        if sge_job_id is None:
+            message = "Couldn't parse job id from 'qsub' output: %s" % out
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-            # add job to internal list of known jobs.
-            self.jobs[job_id] = {
-                'state':        saga.job.PENDING,
-                'exec_hosts':   None,
-                'returncode':   None,
-                'create_time':  None,
-                'start_time':   None,
-                'end_time':     None,
-                'gone':         False
-            }
+        job_id = "[%s]-[%s]" % (self.rm, sge_job_id)
+        self._logger.info("Submitted SGE job with id: %s" % job_id)
 
-            return job_id
+        # add job to internal list of known jobs.
+        self.jobs[job_id] = {
+            'state':        saga.job.PENDING,
+            'exec_hosts':   None,
+            'returncode':   None,
+            'create_time':  None,
+            'start_time':   None,
+            'end_time':     None,
+            'gone':         False
+        }
+
+        return job_id
 
     # ----------------------------------------------------------------
     #
