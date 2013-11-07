@@ -27,8 +27,6 @@ SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 _QSTAT_JOB_STATE_RE = re.compile(r"^([^ ]+) ([0-9]{2}/[0-9]{2}/[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}) (.+)$")
-_QSTAT_KEY_VALUE_RE = re.compile(r"(.+): +(.+)$")
-_QACCT_KEY_VALUE_RE = re.compile(r"^([^ ]+) +(.+)$")
 
 class SgeKeyValueParser(object):
     """
@@ -115,8 +113,29 @@ _PTY_TIMEOUT = 2.0
 #
 _ADAPTOR_NAME          = "saga.adaptor.sgejob"
 _ADAPTOR_SCHEMAS       = ["sge", "sge+ssh", "sge+gsissh"]
-_ADAPTOR_OPTIONS       = []
-
+_ADAPTOR_OPTIONS       = [
+    { 
+    'category'         : 'saga.adaptor.sge_job',
+    'name'             : 'purge_on_start', 
+    'type'             : bool,
+    'default'          : True,
+    'valid_options'    : [True, False],
+    'documentation'    : '''Purge temporary job information for all
+                          jobs which are older than a number of days.
+                          The number of days can be configured with <purge_older_than>.''',
+    'env_variable'     : None
+    },
+    {
+    'category'         : 'saga.adaptor.sge_job',
+    'name'             : 'purge_older_than',
+    'type'             : int,
+    'default'          : 30,
+    #'valid_options'    : [True, False],
+    'documentation'    : '''When <purge_on_start> is enabled this specifies the number
+                            of days to consider a temporary file older enough to be deleted.''',
+    'env_variable'     : None
+    },
+]
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
 #
@@ -167,10 +186,10 @@ The SGE (Sun/Oracle Grid Engine) adaptor allows to run and manage jobs on
 # the adaptor info is used to register the adaptor with SAGA
 #
 _ADAPTOR_INFO = {
-    "name"        :    _ADAPTOR_NAME,
-    "version"     : "v0.1",
-    "schemas"     : _ADAPTOR_SCHEMAS,
-    "capabilities":  _ADAPTOR_CAPABILITIES,
+    "name"         : _ADAPTOR_NAME,
+    "version"      : "v0.1",
+    "schemas"      : _ADAPTOR_SCHEMAS,
+    "capabilities" : _ADAPTOR_CAPABILITIES,
     "cpis": [
         {
         "type": "saga.job.Service",
@@ -200,6 +219,9 @@ class Adaptor (saga.adaptors.base.Base):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config (_ADAPTOR_NAME)
+
+        self.purge_on_start = True #self.opts['purge_on_start'].get_value()
+        self.purge_older_than = 30 #self.opts['purge_older_than'].get_value()
 
     # ----------------------------------------------------------------
     #
@@ -234,9 +256,6 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
-
-
-
 
     # ----------------------------------------------------------------
     #
@@ -387,7 +406,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 if not attr in flags:
                     missing_flags.append(attr)
             if not (missing_flags == []):
-                message = "The following memory attribute(s) are mandatory in your SGE environment and thus must be specified in the job service URL: %s" % ' '.join(missing_flags)
+                message = "The following memory attribute(s) are mandatory in your SGE environment and thus " \
+                          "must be specified in the job service URL: %s" % ' '.join(missing_flags)
                 log_error_and_raise(message, saga.BadParameter, self._logger) 
         # if memory attributes were specified in the job.Service URL, check that they correspond to existing optional or mandatory memory attributes
         invalid_attrs = []
@@ -395,13 +415,22 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             if not (f in optional_attrs or f in mandatory_attrs):
                 invalid_attrs.append(f)
         if not (invalid_attrs == []):
-            message = "The following memory attribute(s) were specified in the job.Service URL but are not valid memory attributes in your SGE environment: %s" % ' '.join(invalid_attrs)
+            message = "The following memory attribute(s) were specified in the job.Service URL but are not valid " \
+                      "memory attributes in your SGE environment: %s" % ' '.join(invalid_attrs)
             log_error_and_raise(message, saga.BadParameter, self._logger)
 
         # check if accounting is activated
         qres = self.__kvcmd_results('qconf', '-sconf', filter_keys=["reporting_params"])
         self.accounting = "reporting_params" in qres and "accounting=true" in qres["reporting_params"]
         self._logger.info("Accounting is {}abled".format("en" if self.accounting else "dis"))
+
+        # purge temporary files
+        if self._adaptor.purge_on_start:
+            cmd = "find $HOME/.saga/adaptors/sge_job" \
+                  " -type f -mtime +%d -print -delete | wc -l" % self._adaptor.purge_older_than
+            ret, out, _ = self.shell.run_sync(cmd)
+            if ret == 0 and out != "0":
+                self._logger.info("Purged %s temporary files" % out)
 
     # ----------------------------------------------------------------
     #
@@ -422,7 +451,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         try:
             if sge_state.startswith("d"):
-            # when a qdel is done the state is prefixed with a d while the termination signal is queued
+                # when a qdel is done the state is prefixed with a d while the termination signal is queued
                 sge_state = sge_state[1:]
 
             return {
@@ -440,7 +469,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         except:
             return saga.job.UNKNOWN
 
-    def _parse_memreqs(self, s):
+    def __parse_memreqs(self, s):
         """
         Simple parser for getting memory requirements flags and multipliers from the memreqs part of the job.Service url
         """
@@ -523,7 +552,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 job_info = dict(
                     state=saga.job.DONE if qres.get("failed") == "0" else saga.job.FAILED,
                     exec_hosts=qres.get("hostname"),
-                    returncode=int(qres.get("exit_status")),
+                    returncode=int(qres.get("exit_status", -1)),
                     create_time=qres.get("qsub_time"),
                     start_time=qres.get("start_time"),
                     end_time=qres.get("end_time"),
@@ -694,7 +723,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             '  exit -1',
             '}',
             'mkdir -p %s' % self.temp_path,
-            'for sig in SIGHUP SIGINT SIGQUIT SIGUSR1 SIGUSR2 SIGTERM; do trap "aborted $sig" $sig; done',
+            'for sig in SIGHUP SIGINT SIGQUIT SIGTERM SIGUSR1 SIGUSR2; do trap "aborted $sig" $sig; done',
             'echo "hostname: $HOSTNAME" >%s' % job_info_path,
             'echo "qsub_time: %s" >>%s' % (datetime.now().strftime("%a %b %d %H:%M:%S %Y"), job_info_path),
             'echo "start_time: $(date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
