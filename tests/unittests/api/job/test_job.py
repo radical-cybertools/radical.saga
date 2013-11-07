@@ -62,10 +62,20 @@ def test_job_service_invalid_url():
         _silent_close_js(tmp_js)
         assert False, "Expected XYZ exception but got none."
 
-    except saga.BadParameter:
+    except saga.BadParameter :
         assert True
+
+    # we don't check DNS anymore, as that can take *ages* -- so we now also
+    # see Timeout and NoSuccess exceptions...
+    except saga.Timeout :
+        assert True
+
+    except saga.NoSuccess :
+        assert True
+
+    # other exceptions sould never occur
     except saga.SagaException as ex:
-        assert False, "Expected BadParameter exception, but got %s" % ex
+        assert False, "Expected BadParameter, Timeout or NoSuccess exception, but got %s" % ex
 
 
 # ------------------------------------------------------------------------------
