@@ -5,8 +5,8 @@ __license__   = "MIT"
 
 
 import saga
-import radical.utils.testing as testing
-import saga.utils.test_cinfg    as sutc
+import radical.utils.testing  as testing
+import saga.utils.test_config as sutc
 
 
 # ------------------------------------------------------------------------------
