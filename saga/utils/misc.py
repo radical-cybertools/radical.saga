@@ -155,8 +155,12 @@ def url_is_local (arg) :
     # host is local, but what does the port indicate?
     if u.port and u.port > 0 :
         
-        if  socket.getservbyport (u.port) in u.schema :
-            # some non-default port is used -- consider remote
+        try :
+            if  socket.getservbyport (u.port) in u.schema :
+                # some non-default port is used -- consider remote
+                return False
+        except :
+            # unknown service port --assume this is non-standard...
             return False
 
     # port is not set or points to default port for service
