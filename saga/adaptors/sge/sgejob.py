@@ -115,7 +115,7 @@ _ADAPTOR_NAME          = "saga.adaptor.sgejob"
 _ADAPTOR_SCHEMAS       = ["sge", "sge+ssh", "sge+gsissh"]
 _ADAPTOR_OPTIONS       = [
     { 
-    'category'         : 'saga.adaptor.sge_job',
+    'category'         : 'saga.adaptor.sgejob',
     'name'             : 'purge_on_start', 
     'type'             : bool,
     'default'          : True,
@@ -126,7 +126,7 @@ _ADAPTOR_OPTIONS       = [
     'env_variable'     : None
     },
     {
-    'category'         : 'saga.adaptor.sge_job',
+    'category'         : 'saga.adaptor.sgejob',
     'name'             : 'purge_older_than',
     'type'             : int,
     'default'          : 30,
@@ -220,8 +220,8 @@ class Adaptor (saga.adaptors.base.Base):
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config (_ADAPTOR_NAME)
 
-        self.purge_on_start = True #self.opts['purge_on_start'].get_value()
-        self.purge_older_than = 30 #self.opts['purge_older_than'].get_value()
+        self.purge_on_start = self.opts['purge_on_start'].get_value()
+        self.purge_older_than = self.opts['purge_older_than'].get_value()
 
     # ----------------------------------------------------------------
     #
@@ -422,7 +422,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         # check if accounting is activated
         qres = self.__kvcmd_results('qconf', '-sconf', filter_keys=["reporting_params"])
         self.accounting = "reporting_params" in qres and "accounting=true" in qres["reporting_params"]
-        self._logger.info("Accounting is {}abled".format("en" if self.accounting else "dis"))
+        self._logger.info("Accounting is %sabled" % ("en" if self.accounting else "dis"))
 
         # purge temporary files
         if self._adaptor.purge_on_start:
@@ -843,8 +843,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         # check the state of the job
         ret, out, _ = self.shell.run_sync(
-                        "{qstat} | tail -n+3 | awk '($1=={pid}) {{print $5,$6,$7,$8}}'".format(
-                            qstat=self._commands['qstat']['path'], pid=pid))
+                        "%s | tail -n+3 | awk '($1==%s) {{print $5,$6,$7,$8}}'" % (
+                            self._commands['qstat']['path'], pid))
 
         out = out.strip()
 
@@ -881,7 +881,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 # self.__shell_run("%s %s" % (self._commands['qdel']['path'], pid))
 
             if job_info is None: # use qstat -j pid
-                qres = self.__kvcmd_results('qstat', "-j {pid} | grep -E 'submission_time|sge_o_host'".format(pid=pid),
+                qres = self.__kvcmd_results('qstat', "-j %s | grep -E 'submission_time|sge_o_host'" % pid,
                                             key_suffix=":")
 
                 if qres is not None: # when qstat fails it will fall back to qacct
@@ -911,7 +911,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             message = "Couldn't reconnect to job '%s'" % job_id
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        self._logger.debug("job_info({})=[{}]".format(pid, ", ".join(["%s=%s" % (k, job_info[k]) for k in [
+        self._logger.debug("job_info(%s)=[%s]" % (pid, ", ".join(["%s=%s" % (k, job_info[k]) for k in [
                 "state", "returncode", "exec_hosts", "create_time", "start_time", "end_time", "gone"]])))
 
         return job_info
