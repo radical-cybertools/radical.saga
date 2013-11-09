@@ -719,14 +719,14 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             'function aborted() {',
             '  echo Aborted with signal $1.',
             '  echo "signal: $1" >>%s' % job_info_path,
-            '  echo "end_time: $(date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path,
+            '  echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path,
             '  exit -1',
             '}',
             'mkdir -p %s' % self.temp_path,
             'for sig in SIGHUP SIGINT SIGQUIT SIGTERM SIGUSR1 SIGUSR2; do trap "aborted $sig" $sig; done',
             'echo "hostname: $HOSTNAME" >%s' % job_info_path,
             'echo "qsub_time: %s" >>%s' % (datetime.now().strftime("%a %b %d %H:%M:%S %Y"), job_info_path),
-            'echo "start_time: $(date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
+            'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
         ]
 
         exec_n_args = None
@@ -743,7 +743,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         script_body += [
             'echo "exit_status: $?" >>%s' % job_info_path,
-            'echo "end_time: $(date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
+            'echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
         ]
 
         # convert exec and args into an string and
@@ -911,7 +911,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             message = "Couldn't reconnect to job '%s'" % job_id
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        self._logger.debug("job_info(%s)=[%s]" % (pid, ", ".join(["%s=%s" % (k, job_info[k]) for k in [
+        self._logger.debug("job_info(%s)=[%s]" % (pid, ", ".join(["%s=%s" % (k, str(job_info[k])) for k in [
                 "state", "returncode", "exec_hosts", "create_time", "start_time", "end_time", "gone"]])))
 
         return job_info
