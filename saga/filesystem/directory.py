@@ -211,6 +211,17 @@ class Directory (nsdir.Directory) :
 
     size  = property (get_size)  # int
 
-    
+
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes     ('Directory')
+    @rus.returns   (rus.nothing)
+    def close(self):
+        """
+        close(timeout=None)
+
+        Closes the direcotry object. 
+        """
+        return self._adaptor.close()
 
 
