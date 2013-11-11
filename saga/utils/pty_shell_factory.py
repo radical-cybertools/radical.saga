@@ -462,6 +462,10 @@ class PTYShellFactory (object) :
             info['pass']      = ""
             info['key_pass']  = {}
 
+            if  not info['schema'] :
+                info['schema'] = 'local'
+                    
+
             # find out what type of shell we have to deal with
             if  info['schema']   in _SCHEMAS_SSH :
                 info['type']     = "ssh"
