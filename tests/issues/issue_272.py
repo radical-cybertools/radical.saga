@@ -4,6 +4,10 @@ import sys
 import saga
 
 def main():
+    """This code fails with the following error:
+ 
+       copy from /etc//passwd to file://localhost/tmp/passwd-from-stampede is not supported
+    """
 
     try:
         d = saga.filesystem.Directory("sftp://login1.stampede.tacc.utexas.edu/")
