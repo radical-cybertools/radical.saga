@@ -37,6 +37,9 @@ def translate_exception (e, msg=None) :
     elif  'connection timed out' in lmsg :
         e = se.BadParameter (cmsg)
 
+    elif  'connection refused' in lmsg :
+        e = se.BadParameter (cmsg)
+
     elif 'auth' in lmsg :
         e = se.AuthorizationFailed (cmsg)
 
