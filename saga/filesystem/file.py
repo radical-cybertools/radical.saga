@@ -334,6 +334,19 @@ class File (nsentry.Entry) :
   
     size    = property (get_size)  # int
     modes_e = property (modes_e)   # list [string]
+
+
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes     ('File')
+    @rus.returns   (rus.nothing)
+    def close(self):
+        """
+        close(timeout=None)
+
+        Closes the file object. 
+        """
+        return self._adaptor.close()
   
   
 
