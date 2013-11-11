@@ -7,9 +7,10 @@ __license__   = "MIT"
 """ LSF job adaptor implementation
 """
 
-import saga.utils.which
+import radical.utils.which
+import radical.utils.threads as sut
+
 import saga.utils.pty_shell
-import saga.utils.threads   as sut
 
 import saga.adaptors.base
 import saga.adaptors.cpi.job
@@ -318,7 +319,7 @@ class Adaptor (saga.adaptors.base.Base):
             _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts = self.get_config()
+        self.opts = self.get_config(_ADAPTOR_NAME)
 
     # ----------------------------------------------------------------
     #
@@ -446,13 +447,13 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         for cmd in self._commands.keys():
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
-                message = "Error finding LSF tools: %s" % out
+                message = "Couldn't find LSF tools: %s" % out
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
             else:
                 path = out.strip()  # strip removes newline
                 ret, out, _ = self.shell.run_sync("%s -V" % cmd)
                 if ret != 0:
-                    message = "Error finding LSF tools: %s" % out
+                    message = "Couldn't find LSF tools: %s" % out
                     log_error_and_raise(message, saga.NoSuccess, self._logger)
                 else:
                     # version is reported as: "version: x.y.z"
