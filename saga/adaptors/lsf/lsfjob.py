@@ -136,11 +136,12 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue=None, ):
 
     #lsf_params += "#PBS -V \n"
 
-    #if jd.environment is not None:
-    #    variable_list = str()
-    #    for key in jd.environment.keys():
-    #        variable_list += "%s=%s," % (key, jd.environment[key])
-    #    lsf_params += "#PBS -v %s \n" % variable_list
+    if jd.environment is not None:
+        env_variable_list = "export "
+        for key in jd.environment.keys():
+            env_variable_list += " %s=%s " % (key, jd.environment[key])
+    else:
+        env_variable_list = ""
 
     # a workaround is to do an explicit 'cd'
     if jd.working_directory is not None:
@@ -216,10 +217,10 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue=None, ):
     #exec_n_args = workdir_directives exec_n_args
     exec_n_args = exec_n_args.replace('$', '\\$')
 
-    lsfcript = "\n#!/bin/bash \n%s%s" % (lsf_params, exec_n_args)
+    lsfscript = "\n#!/bin/bash \n%s\n%s\n%s" % (lsf_params, env_variable_list, exec_n_args)
 
-    lsfcript = lsfcript.replace('"', '\\"')
-    return lsfcript
+    lsfscript = lsfscript.replace('"', '\\"')
+    return lsfscript
 
 
 # --------------------------------------------------------------------
@@ -536,20 +537,16 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
                 % (out, cmdline)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
-            # parse the job id. qsub usually returns just the job id, but
-            # sometimes there are a couple of lines of warnings before.
-            # if that's the case, we log those as 'warnings'
-            lines = out.split('\n')
+            # parse the job id. bsub's output looks like this:
+            # Job <901545> is submitted to queue <regular>
+            lines = out.split("\n")
             lines = filter(lambda lines: lines != '', lines)  # remove empty
 
             if len(lines) > 1:
                 self._logger.warning('qsub: %s' % ''.join(lines[:-2]))
 
-            # we asssume job id is in the last line
-            #print cmdline
-            #print out
-
-            job_id = "[%s]-[%s]" % (self.rm, lines[-1].strip().split('.')[0])
+            # we asssume job id is in the first line
+            job_id = "[%s]-[%s]" % (self.rm, lines[0].split(" ")[1][1:-1])
             self._logger.info("Submitted LSF job with id: %s" % job_id)
 
             # update job dictionary
@@ -623,7 +620,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def _job_get_info(self, job_obj):
-        """ get job attributes via qstat
+        """ get job attributes via bjob
         """
 
         # if we don't have the job in our dictionary, we don't want it
@@ -646,17 +643,18 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
 
         rm, pid = self._adaptor.parse_id(job_obj._id)
 
-        # run the LSF 'qstat' command to get some infos about our job
-        if 'PBSPro_10' in self._commands['qstat']['version']:
-            qstat_flag = '-f'
-        else:
-            qstat_flag ='-f1'
-        ret, out, _ = self.shell.run_sync("%s %s %s | \
-            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)\
-|(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
+        # run the LSF 'bjobs' command to get some infos about our job
+        # the result of bjobs <id> looks like this:
+        #  
+        # JOBID   USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME
+        # 901545  oweidne DONE  regular    yslogin5-ib ys3833-ib   *FILENAME  Nov 11 12:06 
+        # 
+        # If we add the -nodeader flag, the first row is ommited 
+
+        ret, out, _ = self.shell.run_sync("%s -noheader %s" % (self._commands['bjobs']['path'], pid))
 
         if ret != 0:
-            if ("Unknown Job Id" in out):
+            if ("Illegal job ID" in out):
                 # Let's see if the previous job state was runnig or pending. in
                 # that case, the job is gone now, which can either mean DONE,
                 # or FAILED. the only thing we can do is set it to 'DONE'
@@ -671,32 +669,13 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
                     curr_info['state'] = saga.job.FAILED
             else:
                 # something went wrong
-                message = "Error retrieving job info via 'qstat': %s" % out
+                message = "Error retrieving job info via 'bjobs': %s" % out
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
-            # parse the egrep result. this should look something like this:
-            #     job_state = C
-            #     exec_host = i72/0
-            #     exit_status = 0
-            results = out.split('\n')
-            for result in results:
-                if len(result.split('=')) == 2:
-                    key, val = result.split('=')
-                    key = key.strip()  # strip() removes whitespaces at the
-                    val = val.strip()  # beginning and the end of the string
-
-                    if key == 'job_state':
-                        curr_info['state'] = _lsf_to_saga_jobstate(val)
-                    elif key == 'exec_host':
-                        curr_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
-                    elif key == 'exit_status':
-                        curr_info['returncode'] = int(val)
-                    elif key == 'ctime':
-                        curr_info['create_time'] = val
-                    elif key == 'start_time':
-                        curr_info['start_time'] = val
-                    elif key == 'comp_time':
-                        curr_info['end_time'] = val
+            # parse the result
+            results = out.split( )
+            curr_info['state'] = _lsf_to_saga_jobstate(results[2])
+            curr_info['exec_host'] = results[5]
 
         # return the new job info dict
         return curr_info
@@ -867,14 +846,13 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("%s | grep `whoami`" %
-                                          self._commands['qstat']['path'])
+        ret, out, _ = self.shell.run_sync("%s -a" % self._commands['bjobs']['path'])
 
         if ret != 0 and len(out) > 0:
-            message = "failed to list jobs via 'qstat': %s" % out
+            message = "failed to list jobs via 'bjobs': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         elif ret != 0 and len(out) == 0:
-            # qstat | grep `` exits with 1 if the list is empty
+
             pass
         else:
             for line in out.split("\n"):

@@ -81,9 +81,9 @@ def main():
 
         # List all jobs that are known by the adaptor.
         # This should show our job as well.
-        print "\nListing active jobs: "
-        for job in js.list():
-            print " * %s" % job
+        #print "\nListing active jobs: "
+        #for job in js.list():
+        #    print " * %s" % job
 
         # wait for our job to complete
         print "\n...waiting for job...\n"
