@@ -540,7 +540,12 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             self._remote_mkdir(os.path.dirname(jd.output))
 
         # submit the SGE script
-        cmdline = """echo "%s" | %s""" % (script, self._commands['qsub']['path'])
+        # Now we want to execute the script. This process consists of two steps:
+        # (1) we create a temporary file with 'mktemp' and write the contents of 
+        #     the generated PBS script into it
+        # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-SGEJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
+        #cmdline = """echo "%s" | %s""" % (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
