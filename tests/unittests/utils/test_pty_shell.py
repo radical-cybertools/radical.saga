@@ -27,8 +27,7 @@ def test_ptyshell_ok () :
     assert (out == txt)  , "%s == %s" % (repr(out), repr(txt))
 
     assert (shell.alive ())
-    shell.run_async ("exit")
-    time.sleep (1)
+    shell.finalize (True)
     assert (not shell.alive ())
 
 
@@ -45,8 +44,7 @@ def test_ptyshell_nok () :
     assert (out == txt)  , "%s == %s" % (repr(out), repr(txt))
 
     assert (shell.alive ())
-    shell.run_async ("exit")
-    time.sleep (1)
+    shell.finalize (True)
     assert (not shell.alive ())
 
 
@@ -69,8 +67,7 @@ def test_ptyshell_async () :
     assert (out == txt) , "%s == %s" % (repr(out), repr(txt))
  
     assert (shell.alive ())
-    shell.run_async ("exit")
-    time.sleep (1)
+    shell.finalize (True)
     assert (not shell.alive ())
 
 
@@ -95,8 +92,7 @@ def test_ptyshell_prompt () :
     assert (out == txt)  , "%s == %s" % (repr(out), repr(txt))
 
     assert (shell.alive ())
-    shell.run_async ("exit")
-    time.sleep (1)
+    shell.finalize (True)
     assert (not shell.alive ())
 
 
