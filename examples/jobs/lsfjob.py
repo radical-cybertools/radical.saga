@@ -40,7 +40,7 @@ def main():
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
         # and '+ssh' enables PBS remote access via SSH.
-        js = saga.job.Service("lsf://localhost",
+        js = saga.job.Service("lsf+ssh://yellowstone.ucar.edu",
                               session=session)
 
         # Next, we describe the job we want to run. A complete set of job
@@ -101,7 +101,7 @@ def main():
 
     except saga.SagaException, ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print "An exception occurred: (%s) %s " % (ex.type, (str(ex)))
         # Get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
         print " \n*** Backtrace:\n %s" % ex.traceback
