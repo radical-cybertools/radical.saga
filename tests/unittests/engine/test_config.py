@@ -9,6 +9,9 @@ __license__   = "MIT"
 
 from saga.utils.config import *
 
+import radical.utils as ru
+
+
 ############################# BEGIN UNIT TESTS ################################
 ##
 
@@ -217,5 +220,5 @@ def test_invalid_config_file():
     except ValueTypeError:
         assert True
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -1028,5 +1028,5 @@ perf (100,  [(10, 'ssh://amerzky@cyder.cct.lsu.edu/'),
 # perf (32768, [(10, 'gsissh://ranger.tacc.utexas.edu/')])
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

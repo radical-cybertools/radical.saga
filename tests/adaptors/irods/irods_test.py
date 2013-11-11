@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.4
 # -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 
 '''This example runs some iRODS commands
 
@@ -9,7 +9,7 @@
    script in order to get some debug output.
 
    If you think you have encountered a defect, please 
-   report it at: https://github.com/saga-project/bliss/issues
+   report it at: https://github.com/saga-project/saga-python/issues
 '''
 
 __author__    = "Ashley Zebrowski"

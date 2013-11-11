@@ -9,7 +9,6 @@ __license__   = "MIT"
 #TODO: Throw errors if a user does not specify the MINIMUM number of
 #      attributes required for SLURM in a job description
 
-import saga.utils.which
 import saga.utils.pty_shell
 
 import saga.adaptors.base
@@ -1181,5 +1180,5 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         self._id = self.js._job_run (self.jd)
         self._started = True
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

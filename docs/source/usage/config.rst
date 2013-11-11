@@ -23,16 +23,9 @@ Configuration Files
 
 If you need to make persistent changes to any of SAGA's :ref:`conf_options`, the
 simplest option is to create a configuration file. During startup, SAGA checks 
-in two different locations for the existence of a configuration file:
-
-- ``/etc/saga.conf`` - for a system-wide configuration
-- ``$HOME/.saga.conf`` - for a user-specific configuration (Note that it start with a '.')
-
-If a configuration file is found, it is parsed by SAGA's configuration system.
-If files are present in both locations, SAGA will try to merge both, with the
-user-level  configuration (``$HOME/.saga.conf``) always having precedence over
-the  system-wide configuration (``$HOME/.saga.conf``). SAGA configuration files 
-use a structure that looks like this::
+for the existence of a configuration file in `$HOME/.saga.conf`.  If that 
+configuration file is found, it is parsed by SAGA's configuration system.
+SAGA configuration files use a structure that looks like this::
 
     [saga.engine]
         option = value

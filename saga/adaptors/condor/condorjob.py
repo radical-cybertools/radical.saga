@@ -7,7 +7,6 @@ __license__   = "MIT"
 """ Condor job adaptor implementation
 """
 
-import saga.utils.which
 import saga.utils.pty_shell
 
 import saga.adaptors.base
@@ -210,7 +209,7 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
         hosts = ""
         for host in jd.candidate_hosts:
             hosts += "%s, " % host
-        sitelist = "+SiteList = \"%s\"" % hosts
+        sitelist = "+SiteList = \\\"%s\\\"" % hosts
         requirements += "(stringListMember(GLIDEIN_ResourceName,SiteList) == True)"
         condor_file += "\n%s" % sitelist
         condor_file += "\n%s" % requirements
@@ -312,11 +311,10 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__(self):
 
-        saga.adaptors.base.Base.__init__(self,
-            _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts = self.get_config()
+        self.opts  = self.get_config (_ADAPTOR_NAME)
 
     # ----------------------------------------------------------------
     #

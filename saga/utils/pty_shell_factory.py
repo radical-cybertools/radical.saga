@@ -1,5 +1,5 @@
 
-__author__    = "Andre Merzky"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -10,14 +10,16 @@ import pwd
 import string
 import getpass
 
+import radical.utils           as ru
+import radical.utils.logger    as rul
+
 import saga
 import saga.exceptions         as se
-import saga.utils.threads      as sut
-import saga.utils.which        as suw
 import saga.utils.misc         as sumisc
-import saga.utils.logger       as sul
-import saga.utils.singleton    as sus
 import saga.utils.pty_process  as supp
+
+import pty_exceptions               as ptye
+
 
 # ------------------------------------------------------------------------------
 #
@@ -124,16 +126,16 @@ class PTYShellFactory (object) :
 
     """
 
-    __metaclass__ = sus.Singleton
+    __metaclass__ = ru.Singleton
 
 
     # --------------------------------------------------------------------------
     #
     def __init__ (self) :
 
-        self.logger   = sul.getLogger ('PTYShellFactory')
+        self.logger   = rul.getLogger ('saga', 'PTYShellFactory')
         self.registry = {}
-        self.rlock    = sut.RLock ('pty shell factory')
+        self.rlock    = ru.RLock ('pty shell factory')
 
 
     # --------------------------------------------------------------------------
@@ -146,7 +148,7 @@ class PTYShellFactory (object) :
             url = saga.Url (url)
 
             if  not logger :
-                logger = sul.getLogger ('PTYShellFactory')
+                logger = rul.getLogger ('saga', 'PTYShellFactory')
 
             # collect all information we have/need about the requested master
             # connection
@@ -339,16 +341,14 @@ class PTYShellFactory (object) :
                                     continue
 
 
-                        logger.info ("got initial shell prompt (%s) (%s)" \
+                        logger.info ("Got initial shell prompt (%s) (%s)" \
                                    % (n, match))
-
                         # we are done waiting for a prompt
                         break
                 
-                
             except Exception as e :
-                raise self._translate_exception (e)
-
+                raise ptye.translate_exception (e)
+                
 
     # --------------------------------------------------------------------------
     #
@@ -396,13 +396,20 @@ class PTYShellFactory (object) :
 
             self._initialize_pty (cp_slave, info)
 
-            cp_slave.write ("%s\n" % s_in)
-            cp_slave.wait  ()
+            _   = cp_slave.write ("%s\n" % s_in)
+            ret = cp_slave.wait  ()
+
+            info['logger'].debug ("copy done: ret")
+
+            if 'No such file or directory' in ret :
+                raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % ret)
+
+            if 'is not a directory' in ret :
+                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % ret)
 
             if  cp_slave.exit_code != 0 :
-                raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+                raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % ret)
 
-            info['logger'].debug ("copy done")
 
 
     # --------------------------------------------------------------------------
@@ -451,21 +458,26 @@ class PTYShellFactory (object) :
             info['schema']    = url.schema.lower ()
             info['host_str']  = url.host
             info['logger']    = logger
+            info['url']       = url
             info['pass']      = ""
             info['key_pass']  = {}
+
+            if  not info['schema'] :
+                info['schema'] = 'local'
+                    
 
             # find out what type of shell we have to deal with
             if  info['schema']   in _SCHEMAS_SSH :
                 info['type']     = "ssh"
-                info['ssh_exe']  = suw.which ("ssh")
-                info['scp_exe']  = suw.which ("scp")
-                info['sftp_exe'] = suw.which ("sftp")
+                info['ssh_exe']  = ru.which ("ssh")
+                info['scp_exe']  = ru.which ("scp")
+                info['sftp_exe'] = ru.which ("sftp")
 
             elif info['schema']  in _SCHEMAS_GSI :
                 info['type']     = "ssh"
-                info['ssh_exe']  = suw.which ("gsissh")
-                info['scp_exe']  = suw.which ("gsiscp")
-                info['sftp_exe'] = suw.which ("gsisftp")
+                info['ssh_exe']  = ru.which ("gsissh")
+                info['scp_exe']  = ru.which ("gsiscp")
+                info['sftp_exe'] = ru.which ("gsisftp")
 
             elif info['schema']  in _SCHEMAS_SH :
                 info['type']     = "sh"
@@ -475,11 +487,11 @@ class PTYShellFactory (object) :
                 info['fs_root']  = "/"
 
                 if  "SHELL" in os.environ :
-                    info['sh_exe'] =  suw.which (os.environ["SHELL"])
-                    info['cp_exe'] =  suw.which ("cp")
+                    info['sh_exe'] =  ru.which (os.environ["SHELL"])
+                    info['cp_exe'] =  ru.which ("cp")
                 else :
-                    info['sh_exe'] =  suw.which ("sh")
-                    info['cp_exe'] =  suw.which ("cp")
+                    info['sh_exe'] =  ru.which ("sh")
+                    info['cp_exe'] =  ru.which ("cp")
 
             else :
                 raise se.BadParameter._log (self.logger, \
@@ -535,10 +547,10 @@ class PTYShellFactory (object) :
                                 if  context.attribute_exists ("user_id") and context.user_id :
                                     info['user']  = context.user_id
 
-                                if  context.attribute_exists ("user_cert")  and  context.user_cert  :
-                                    info['ssh_args']  += "-o IdentityFile=%s " % context.user_cert 
-                                    info['scp_args']  += "-o IdentityFile=%s " % context.user_cert 
-                                    info['sftp_args'] += "-o IdentityFile=%s " % context.user_cert 
+                                if  context.attribute_exists ("user_key")  and  context.user_key  :
+                                    info['ssh_args']  += "-o IdentityFile=%s " % context.user_key 
+                                    info['scp_args']  += "-o IdentityFile=%s " % context.user_key 
+                                    info['sftp_args'] += "-o IdentityFile=%s " % context.user_key 
 
                                     if  context.attribute_exists ("user_pass") and context.user_pass :
                                         info['key_pass'][context.user_cert] = context.user_pass
@@ -608,50 +620,5 @@ class PTYShellFactory (object) :
             return info
 
 
-    # ----------------------------------------------------------------
-    #
-    def _translate_exception (self, e) :
-        """
-        In many cases, we should be able to roughly infer the exception cause
-        from the error message -- this is centrally done in this method.  If
-        possible, it will return a new exception with a more concise error
-        message and appropriate exception type.
-        """
 
-        if  not issubclass (e.__class__, se.SagaException) :
-            # we do not touch non-saga exceptions
-            return e
-
-        if  not issubclass (e.__class__, se.NoSuccess) :
-            # this seems to have a specific cause already, leave it alone
-            return e
-
-        cmsg = e._plain_message
-        lmsg = cmsg.lower ()
-
-        if 'auth' in lmsg :
-            e = se.AuthorizationFailed (cmsg)
-
-        elif 'pass' in lmsg :
-            e = se.AuthenticationFailed (cmsg)
-
-        elif 'ssh_exchange_identification' in lmsg :
-            e = se.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
-
-        elif 'denied' in lmsg :
-            e = se.PermissionDenied (cmsg)
-
-        elif 'shared connection' in lmsg :
-            e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
-
-        elif 'pty allocation' in lmsg :
-            e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
-
-        elif 'Connection to master closed' in lmsg :
-            e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
-
-        return e
-
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

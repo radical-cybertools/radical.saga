@@ -6,7 +6,6 @@ __license__   = "MIT"
 
 """ shell based job adaptor implementation """
 
-import saga.utils.which
 import saga.utils.pty_shell
 
 import saga.adaptors.base
@@ -233,7 +232,7 @@ class Adaptor (saga.adaptors.base.Base):
         saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
-        self.opts  = self.get_config ()
+        self.opts  = self.get_config (_ADAPTOR_NAME)
 
         self.notifications  = self.opts['enable_notifications'].get_value ()
         self.purge_on_start = self.opts['purge_on_start'].get_value ()
@@ -1232,5 +1231,5 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         return self._exception
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

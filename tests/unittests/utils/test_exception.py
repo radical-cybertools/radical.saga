@@ -9,6 +9,9 @@ __license__   = "MIT"
 
 import saga
 
+import radical.utils as ru
+
+
 def test_Exceptions():
     """ Test if Exceptions work properly
     """
@@ -19,5 +22,5 @@ def test_Exceptions():
     except saga.SagaException, se:
         assert (msg in str(se)), "'%s' not in '%s'" % (msg, se)
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

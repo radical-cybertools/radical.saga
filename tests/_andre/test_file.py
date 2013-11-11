@@ -8,18 +8,16 @@ import os
 import sys
 import saga
 
-# f = saga.filesystem.File ("file://localhost/tmp/tmp.txt")
-# f.copy ("sftp://merzky@india.futuregrid.org/tmp/")
-# 
-# sys.exit (0)
-# 
-# host = "gw68.quarry.iu.teragrid.org"
-# src  = saga.Url('sftp://%s/etc/passwd' % host)
-# tgt  = saga.Url('file://localhost/tmp/')
-# f    = saga.filesystem.File (src)
-# f.copy (tgt)
-# 
-# sys.exit (0)
+os.system ("ls -la /tmp > /tmp/tmp.txt")
+
+f = saga.filesystem.File ("file://localhost/tmp/tmp.txt")
+f.copy ("sftp://merzky@india.futuregrid.org/tmp/")
+
+host = "gw68.quarry.iu.teragrid.org"
+src  = saga.Url('sftp://%s/etc/passwd' % host)
+tgt  = saga.Url('file://localhost/tmp/')
+f    = saga.filesystem.File (src)
+f.copy (tgt)
 
 os.system ("rm -rf /tmp/src ; mkdir /tmp/src ; ls -la /tmp > /tmp/src/src.dat; ln -s /tmp/src/src.dat /tmp/src/src.lnk")
 
@@ -63,10 +61,8 @@ test_tests ("file://localhost/tmp/src/")
 test_tests ("file://localhost/tmp/src/src.dat")
 test_tests ("file://localhost/tmp/src/src.lnk")
 
-sys.exit (0)
-
-d = saga.filesystem.Directory ("file://localhost/tmp/src/")
-f = saga.filesystem.File("file://localhost/etc/passwd")
+d = saga.filesystem.Directory ("ssh://localhost/tmp/src/")
+f = saga.filesystem.File("ssh://localhost/etc/passwd")
 print f.size
 f.copy('/tmp/')
 

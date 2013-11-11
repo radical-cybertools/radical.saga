@@ -1,5 +1,5 @@
 
-__author__    = "Andre Merzky, Ole Weidner"
+__author__    = "Andre Merzky, Christian Pérez-Llamas, Ole Weidner, Thomas Schatz"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -7,7 +7,6 @@ __license__   = "MIT"
 """ SGE job adaptor implementation
 """
 
-import saga.utils.which
 import saga.utils.pty_shell
 
 import saga.adaptors.base
@@ -284,11 +283,10 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__(self):
 
-        saga.adaptors.base.Base.__init__(self,
-            _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts = self.get_config()
+        self.opts  = self.get_config (_ADAPTOR_NAME)
 
     # ----------------------------------------------------------------
     #
@@ -542,7 +540,12 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             self._remote_mkdir(os.path.dirname(jd.output))
 
         # submit the SGE script
-        cmdline = """echo "%s" | %s""" % (script, self._commands['qsub']['path'])
+        # Now we want to execute the script. This process consists of two steps:
+        # (1) we create a temporary file with 'mktemp' and write the contents of 
+        #     the generated PBS script into it
+        # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-SGEJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
+        #cmdline = """echo "%s" | %s""" % (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
