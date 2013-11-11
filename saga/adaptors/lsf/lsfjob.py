@@ -103,24 +103,16 @@ def log_error_and_raise(message, exception, logger):
 def _lsf_to_saga_jobstate(lsfjs):
     """ translates a lsf one-letter state to saga
     """
-    if lsfjs == 'C':
+    if lsfjs in ['RUN']:
+        return saga.job.RUNNING
+    elif lsfjs in ['WAIT', 'PEND']:
+        return saga.job.PENDING
+    elif lsfjs in ['DONE']:
         return saga.job.DONE
-    elif lsfjs == 'E':
-        return saga.job.RUNNING
-    elif lsfjs == 'H':
-        return saga.job.PENDING
-    elif lsfjs == 'Q':
-        return saga.job.PENDING
-    elif lsfjs == 'R':
-        return saga.job.RUNNING
-    elif lsfjs == 'T':
-        return saga.job.RUNNING
-    elif lsfjs == 'W':
-        return saga.job.PENDING
-    elif lsfjs == 'S':
-        return saga.job.PENDING
-    elif lsfjs == 'X':
-        return saga.job.CANCELED
+    elif lsfjs in ['UNKNOWN', 'ZOMBI', 'EXIT']:
+        return saga.job.FAILED
+    elif lsfjs in ['USUSP', 'SSUSP', 'PSUSP']:
+        return saga.job.SUSPENDED
     else:
         return saga.job.UNKNOWN
 
@@ -140,22 +132,19 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue=None, ):
             exec_n_args += "%s " % (arg)
 
     if jd.name is not None:
-        lsf_params += "#PBS -N %s \n" % jd.name
+        lsf_params += "#BSUB -J %s \n" % jd.name
 
-    lsf_params += "#PBS -V \n"
+    #lsf_params += "#PBS -V \n"
 
-    if jd.environment is not None:
-        variable_list = str()
-        for key in jd.environment.keys():
-            variable_list += "%s=%s," % (key, jd.environment[key])
-        lsf_params += "#PBS -v %s \n" % variable_list
+    #if jd.environment is not None:
+    #    variable_list = str()
+    #    for key in jd.environment.keys():
+    #        variable_list += "%s=%s," % (key, jd.environment[key])
+    #    lsf_params += "#PBS -v %s \n" % variable_list
 
     # a workaround is to do an explicit 'cd'
     if jd.working_directory is not None:
-        workdir_directives  = 'export PBS_O_WORKDIR=%s \n' % jd.working_directory
-        workdir_directives += 'cd $PBS_O_WORKDIR \n'
-    else:
-        workdir_directives = ''
+        lsf_params += "#BSUB -cwd %s \n" % jd.working_directory
 
     if jd.output is not None:
         # if working directory is set, we want stdout to end up in
@@ -163,14 +152,14 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue=None, ):
         # path name.
         if jd.working_directory is not None:
             if os.path.isabs(jd.output):
-                lsf_params += "#PBS -o %s \n" % jd.output
+                lsf_params += "#BSUB -o %s \n" % jd.output
             else:
                 # user provided a relative path for STDOUT. in this case 
                 # we prepend the workind directory path before passing
                 # it on to PBS
-                lsf_params += "#PBS -o %s/%s \n" % (jd.working_directory, jd.output)
+                lsf_params += "#BSUB -o %s/%s \n" % (jd.working_directory, jd.output)
         else:
-            lsf_params += "#PBS -o %s \n" % jd.output
+            lsf_params += "#BSUB -o %s \n" % jd.output
 
     if jd.error is not None:
         # if working directory is set, we want stderr to end up in 
@@ -178,51 +167,53 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue=None, ):
         # path name. 
         if jd.working_directory is not None:
             if os.path.isabs(jd.error):
-                lsf_params += "#PBS -e %s \n" % jd.error
+                lsf_params += "#BSUB -e %s \n" % jd.error
             else:
                 # user provided a realtive path for STDERR. in this case 
                 # we prepend the workind directory path before passing
                 # it on to PBS
-                lsf_params += "#PBS -e %s/%s \n" % (jd.working_directory, jd.error)
+                lsf_params += "#BSUB -e %s/%s \n" % (jd.working_directory, jd.error)
         else:
-            lsf_params += "#PBS -e %s \n" % jd.error
+            lsf_params += "#BSUB -e %s \n" % jd.error
 
 
     if jd.wall_time_limit is not None:
         hours = jd.wall_time_limit / 60
         minutes = jd.wall_time_limit % 60
-        lsf_params += "#PBS -l walltime=%s:%s:00 \n" \
+        lsf_params += "#BSUB -W %s:%s \n" \
             % (str(hours), str(minutes))
 
     if (jd.queue is not None) and (queue is not None):
-        lsf_params += "#PBS -q %s \n" % queue
+        lsf_params += "#BSUB -q %s \n" % queue
     elif (jd.queue is not None) and (queue is None):
-        lsf_params += "#PBS -q %s \n" % jd.queue
+        lsf_params += "#BSUB -q %s \n" % jd.queue
     elif (jd.queue is None) and (queue is not None):
-        lsf_params += "#PBS -q %s \n" % queue
+        lsf_params += "#BSUB -q %s \n" % queue
 
     if jd.project is not None:
-        lsf_params += "#PBS -A %s \n" % str(jd.project)
+        lsf_params += "#BSUB -P %s \n" % str(jd.project)
     if jd.job_contact is not None:
-        lsf_params += "#PBS -m abe \n"
+        lsf_params += "#BSUB -U %s \n" % str(jd.job_contact)
 
     # if total_cpu_count is not defined, we assume 1
     if jd.total_cpu_count is None:
         jd.total_cpu_count = 1
 
-    tcc = int(jd.total_cpu_count)
-    tbd = float(tcc) / float(ppn)
-    if float(tbd) > int(tbd):
-        lsf_params += "#PBS -l nodes=%s:ppn=%s \n" \
-            % (str(int(tbd) + 1), ppn)
-    else:
-        lsf_params += "#PBS -l nodes=%s:ppn=%s \n" \
-            % (str(int(tbd)), ppn)
+    lsf_params += "#BSUB -n %s \n" % str(jd.total_cpu_count)
+
+    #tcc = int(jd.total_cpu_count)
+    #tbd = float(tcc) / float(ppn)
+    #if float(tbd) > int(tbd):
+    #    lsf_params += "#PBS -l nodes=%s:ppn=%s \n" \
+    #        % (str(int(tbd) + 1), ppn)
+    #else:
+    #    lsf_params += "#PBS -l nodes=%s:ppn=%s \n" \
+    #        % (str(int(tbd)), ppn)
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
     # only escape '$' in args and exe. not in the params
-    exec_n_args = workdir_directives + exec_n_args
+    #exec_n_args = workdir_directives exec_n_args
     exec_n_args = exec_n_args.replace('$', '\\$')
 
     lsfcript = "\n#!/bin/bash \n%s%s" % (lsf_params, exec_n_args)
@@ -258,7 +249,6 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.PROJECT,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
-                          saga.job.WALL_TIME_LIMIT,
                           saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
                           saga.job.TOTAL_CPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
@@ -434,10 +424,10 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         # these are the commands that we need in order to interact with LSF.
         # the adaptor will try to find them during initialize(self) and bail
         # out in case they are note avaialbe.
-        self._commands = {'pbsnodes': None,
-                          'qstat':    None,
-                          'qsub':     None,
-                          'qdel':     None}
+        self._commands = {'bqueues':  None,
+                          'bjobs':    None,
+                          'bsub':     None,
+                          'bkill':    None}
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
@@ -459,22 +449,17 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
             else:
                 path = out.strip()  # strip removes newline
-                if cmd == 'qdel':  # qdel doesn't support --version!
-                    self._commands[cmd] = {"path":    path,
-                                           "version": "?"}
+                ret, out, _ = self.shell.run_sync("%s -V" % cmd)
+                if ret != 0:
+                    message = "Error finding LSF tools: %s" % out
+                    log_error_and_raise(message, saga.NoSuccess, self._logger)
                 else:
-                    ret, out, _ = self.shell.run_sync("%s --version" % cmd)
-                    if ret != 0:
-                        message = "Error finding LSF tools: %s" % out
-                        log_error_and_raise(message, saga.NoSuccess,
-                            self._logger)
-                    else:
-                        # version is reported as: "version: x.y.z"
-                        version = out#.strip().split()[1]
+                    # version is reported as: "version: x.y.z"
+                    version = out.split("\n")[0]
 
-                        # add path and version to the command dictionary
-                        self._commands[cmd] = {"path":    path,
-                                               "version": version}
+                    # add path and version to the command dictionary
+                    self._commands[cmd] = {"path":    path,
+                                           "version": version}
 
         self._logger.info("Found LSF tools: %s" % self._commands)
 
@@ -482,29 +467,29 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         # different queues, number of processes per node, etc.
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
-        ret, out, _ = self.shell.run_sync('%s -a | egrep "(np|pcpu)"' % \
-            self._commands['pbsnodes']['path'])
-        if ret != 0:
-
-            message = "Error running pbsnodes: %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
-        else:
+        #ret, out, _ = self.shell.run_sync('%s -a | egrep "(np|pcpu)"' % \
+        #    self._commands['pbsnodes']['path'])
+        #if ret != 0:
+        #
+        #    message = "Error running pbsnodes: %s" % out
+        #    log_error_and_raise(message, saga.NoSuccess, self._logger)
+        #else:
             # this is black magic. we just assume that the highest occurence
             # of a specific np is the number of processors (cores) per compute
             # node. this equals max "PPN" for job scripts
-            ppn_list = dict()
-            for line in out.split('\n'):
-                np = line.split(' = ')
-                if len(np) == 2:
-                    np = np[1].strip()
-                    if np in ppn_list:
-                        ppn_list[np] += 1
-                    else:
-                        ppn_list[np] = 1
-            self.ppn = max(ppn_list, key=ppn_list.get)
-            self._logger.debug("Found the following 'ppn' configurations: %s. \
-    Using %s as default ppn." 
-                % (ppn_list, self.ppn))
+        #    ppn_list = dict()
+        #    for line in out.split('\n'):
+        #        np = line.split(' = ')
+        #        if len(np) == 2:
+        #            np = np[1].strip()
+        #            if np in ppn_list:
+        #                ppn_list[np] += 1
+        #            else:
+        #                ppn_list[np] = 1
+        #    self.ppn = max(ppn_list, key=ppn_list.get)
+        #    self._logger.debug("Found the following 'ppn' configurations: %s. \
+    #Using %s as default ppn." 
+     #           % (ppn_list, self.ppn))
 
     # ----------------------------------------------------------------
     #
@@ -523,7 +508,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
             # create an LSF job script from SAGA job description
             script = _lsfcript_generator(url=self.rm, logger=self._logger,
                                          jd=jd, ppn=self.ppn,
-                                         lsf_version=self._commands['qstat']['version'],
+                                         lsf_version=self._commands['bjobs']['version'],
                                          queue=self.queue,
                                          )
 
@@ -532,8 +517,8 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
         # try to create the working directory (if defined)
-        # WRANING: this assumes a shared filesystem between login node and
-        #           comnpute nodes.
+        # WARNING: this assumes a shared filesystem between login node and
+        #          comnpute nodes.
         if jd.working_directory is not None:
             self._logger.info("Creating working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
@@ -542,13 +527,12 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
                 message = "Couldn't create working directory - %s" % (out)
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        # run the LSF script
-        cmdline = """echo "%s" | %s""" % (script, self._commands['qsub']['path'])
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s < $SCRIPTFILE""" % (script, self._commands['bsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
             # something went wrong
-            message = "Error running job via 'qsub': %s. Commandline was: %s" \
+            message = "Error running job via 'bsub': %s. Commandline was: %s" \
                 % (out, cmdline)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
