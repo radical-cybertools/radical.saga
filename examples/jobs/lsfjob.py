@@ -40,7 +40,7 @@ def main():
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
         # and '+ssh' enables PBS remote access via SSH.
-        js = saga.job.Service("lsf+ssh://yellowstone.ucar.edu",
+        js = saga.job.Service("lsf://localhost",
                               session=session)
 
         # Next, we describe the job we want to run. A complete set of job

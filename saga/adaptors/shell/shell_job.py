@@ -1184,9 +1184,9 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         if self._exit_code != None :
             return self._exit_code
 
-        if  self.get_state not in [saga.job.DONE, 
-                                   saga.job.FAILED, 
-                                   saga.job.CANCELED] :
+        if  self.get_state () not in [saga.job.DONE, 
+                                      saga.job.FAILED, 
+                                      saga.job.CANCELED] :
             return None
 
         self._exit_code = self.js._job_get_exit_code (self._id)
