@@ -494,13 +494,48 @@ class PTYShellFactory (object) :
                         prep += "lmkdir %s/%s\n" % (tgt, os.path.basename (s))
 
 
-            cp_slave.write ("%s%s\n" % (prep, s_in))
-            cp_slave.wait  ()
+            _ = cp_slave.write ("%s%s\n" % (prep, s_in))
+
+            # capture the output of the command
+            out = ""
+            try :
+                while cp_slave.alive () :
+                    out += cp_slave.read ()
+            except :
+                pass
+
+            # we interpret the *second* word on the line as name of src file -- we
+            # will return a list of those
+            lines = out.split ('\n')
+            files = []
+            for line in lines :
+                elems = line.split (' ', 3)
+                if  elems and len(elems) > 1 and elems[0] == 'Fetching' :
+                    f = elems[1]
+
+                    # remove quotes
+                    if  f :
+                        if  f[ 0] in ["'", '"', '`'] : f = f[1:  ]
+                        if  f[-1] in ["'", '"', '`'] : f = f[ :-1]
+
+                    # ignore empty lines
+                    if  f :
+                        files.append (f)
+
+            ret = cp_slave.wait  ()
+
+            if 'No such file or directory' in ret :
+                raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % ret)
+
+            if 'is not a directory' in ret :
+                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % ret)
 
             if  cp_slave.exit_code != 0 :
                 raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
 
             info['logger'].debug ("copy done")
+
+            return files
 
 
     # --------------------------------------------------------------------------

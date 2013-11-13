@@ -410,9 +410,9 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         src    = saga.Url (src_in)   # deep copy
         tgt    = saga.Url (tgt_in)   # deep copy
 
-        if sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
-        if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
-
+      # if  sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
+      # if  sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
+    
         rec_flag = ""
         if flags & saga.filesystem.RECURSIVE : 
             rec_flag  += "-r "
@@ -420,10 +420,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         if flags & saga.filesystem.CREATE_PARENTS : 
             self._create_parent (cwdurl, tgt)
 
-
-        # print cwdurl
-        # print src
-        # print tgt
+        files_copied = list()
 
         # if cwd, src and tgt point to the same host, we just run a shell cp
         # command on that host
@@ -451,13 +448,13 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                    sumisc.url_is_compatible (cwdurl, tgt) :
 
                     # print "from local to remote"
-                    self.shell.stage_to_remote (src.path, tgt.path, rec_flag)
+                    files_copied = self.shell.stage_to_remote (src.path, tgt.path, rec_flag)
 
                 elif sumisc.url_is_local (tgt)          and \
                      sumisc.url_is_compatible (cwdurl, src) :
 
                     # print "from remote to loca"
-                    files = self.shell.stage_from_remote (src.path, tgt.path, rec_flag)
+                    files_copied = self.shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
                 else :
                     # print "from remote to other remote -- fail"
@@ -481,8 +478,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                                               % (tgt))
 
                     # print "from local to remote"
-                    tmp_shell = sups.PTYShell (tgt, self.session, self._logger)
-                    files     = tmp_shell.stage_to_remote (src.path, tgt.path, rec_flag)
+                    tmp_shell    = sups.PTYShell (tgt, self.session, self._logger)
+                    files_copied = tmp_shell.stage_to_remote (src.path, tgt.path, rec_flag)
 
                 elif sumisc.url_is_local (tgt) :
 
@@ -492,8 +489,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                                               % (src))
 
                     # print "from remote to local"
-                    tmp_shell = sups.PTYShell (src, self.session, self._logger)
-                    files     = tmp_shell.stage_from_remote (src.path, tgt.path, rec_flag)
+                    tmp_shell    = sups.PTYShell (src, self.session, self._logger)
+                    files_copied = tmp_shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
                 else :
 
@@ -504,7 +501,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
    
         if  _from_task :
-            _from_task._set_metric ('files_copied', files)
+            _from_task._set_metric ('files_copied', files_copied)
 
 
     # ----------------------------------------------------------------
@@ -560,7 +557,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         cwdurl = saga.Url (self.url) # deep copy
         tgt    = saga.Url (tgt_in)   # deep copy
 
-        if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
+        # if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
 
         rec_flag = ""
         if flags & saga.filesystem.RECURSIVE : 
@@ -589,7 +586,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         cwdurl = saga.Url (self.url) # deep copy
         tgturl = saga.Url (tgt_in)   # deep copy
 
-        tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
+        # tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
 
         if  flags & saga.filesystem.EXCLUSIVE : 
             # FIXME: this creates a race condition between testing for exclusive
@@ -628,7 +625,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         cwdurl = saga.Url (self.url) # deep copy
         tgt    = saga.Url (tgt_in)   # deep copy
 
-        tgt_abs = sumisc.url_make_absolute (cwdurl, tgt)
+        # tgt_abs = sumisc.url_make_absolute (cwdurl, tgt)
 
         ret, out, _ = self.shell.run_sync ("du -ks %s  | xargs | cut -f 1 -d ' '\n" % tgt.path)
         if  ret != 0 :
@@ -664,7 +661,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         cwdurl = saga.Url (self.url) # deep copy
         tgturl = saga.Url (tgt_in)   # deep copy
 
-        tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
+        # tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
 
         ret, out, _ = self.shell.run_sync ("test -d %s && test ! -h %s" % (tgt_abs.path, tgt_abs.path))
 
@@ -691,7 +688,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         cwdurl = saga.Url (self.url) # deep copy
         tgturl = saga.Url (tgt_in)   # deep copy
 
-        tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
+        # tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
 
         ret, out, _ = self.shell.run_sync ("test -f %s && test ! -h %s" % (tgt_abs.path, tgt_abs.path))
 
@@ -718,7 +715,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         cwdurl = saga.Url (self.url) # deep copy
         tgturl = saga.Url (tgt_in)   # deep copy
 
-        tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
+        # tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
 
         ret, out, _ = self.shell.run_sync ("test -h %s" % tgt_abs.path)
 
@@ -945,8 +942,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         src    = saga.Url (self.url)    # deep copy
         tgt    = saga.Url (tgt_in)      # deep copy
 
-        if sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
-        if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
+        # if sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
+        # if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
 
         rec_flag = ""
         if flags & saga.filesystem.RECURSIVE : 
@@ -954,10 +951,6 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         if flags & saga.filesystem.CREATE_PARENTS : 
             self._create_parent (cwdurl, tgt)
-
-        # print cwdurl
-        # print src
-        # print tgt
 
         # if cwd, src and tgt point to the same host, we just run a shell cp
         # command on that host
@@ -985,13 +978,13 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                    sumisc.url_is_compatible (cwdurl, tgt) :
 
                     # print "from local to remote"
-                    self.shell.stage_to_remote (src.path, tgt.path, rec_flag)
+                    files_copied = self.shell.stage_to_remote (src.path, tgt.path, rec_flag)
 
                 elif sumisc.url_is_local (tgt)          and \
                      sumisc.url_is_compatible (cwdurl, src) :
 
                     # print "from remote to loca"
-                    self.shell.stage_from_remote (src.path, tgt.path, rec_flag)
+                    files_copied = self.shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
                 else :
                     # print "from remote to other remote -- fail"
@@ -1015,8 +1008,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                                               % (tgt))
 
                     # print "from local to remote"
-                    tmp_shell = sups.PTYShell (tgt, self.session, self._logger)
-                    tmp_shell.stage_to_remote (src.path, tgt.path, rec_flag)
+                    tmp_shell    = sups.PTYShell (tgt, self.session, self._logger)
+                    files_copied = tmp_shell.stage_to_remote (src.path, tgt.path, rec_flag)
 
                 elif sumisc.url_is_local (tgt) :
 
@@ -1026,8 +1019,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                                               % (src))
 
                     # print "from remote to local"
-                    tmp_shell = sups.PTYShell (src, self.session, self._logger)
-                    tmp_shell.stage_from_remote (src.path, tgt.path, rec_flag)
+                    tmp_shell    = sups.PTYShell (src, self.session, self._logger)
+                    files_copied = tmp_shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
                 else :
 

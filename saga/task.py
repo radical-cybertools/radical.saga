@@ -135,7 +135,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     @rus.returns (rus.nothing)
     def run (self) :
 
-        if self._thread :
+        if  self._thread :
             self._thread.run ()
 
         else :
@@ -225,16 +225,16 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
         assert (self.state in [DONE, FAILED, CANCELED]) 
         
-        if self.state == FAILED :
+        if  self.state == FAILED :
             self.re_raise ()
             return
 
         if self.state == CANCELED :
             raise se.IncorrectState ("task.get_result() cannot be called on cancelled tasks")
 
-        if self.state == DONE :
+        if  self.state == DONE :
 
-            if self._thread :
+            if  self._thread :
                 self._set_result (self._thread.result)
 
             return self.result
@@ -265,7 +265,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     @rus.returns (se.SagaException)
     def get_exception (self) :
 
-        if self._thread :
+        if  self._thread :
             self._set_exception (self._thread.exception)
 
         return self.exception
