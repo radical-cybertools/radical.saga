@@ -1,4 +1,4 @@
-
+# coding=utf-8
 __author__    = "Andre Merzky, Christian Pérez-Llamas, Ole Weidner, Thomas Schatz, Alexander Grill"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
