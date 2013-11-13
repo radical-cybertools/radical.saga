@@ -16,7 +16,7 @@ import radical.utils            as ru
 import base                     as sbase
 import exceptions               as se
 import attributes               as satt
-import adaptors.base            as sab
+import adaptors.cpi.base        as sacb
 
 from   saga.constants       import *
 
@@ -28,7 +28,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Task', 
-                  sab.Base, 
+                  sacb.CPIBase, 
                   basestring,
                   dict, 
                   rus.one_of (SYNC, ASYNC, TASK))
@@ -76,8 +76,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
         self._method_context = _method_context
 
         # set attribute interface properties
-        self._attributes_allow_private (True)
         self._attributes_extensible    (False)
+        self._attributes_allow_private (True)
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface
@@ -111,6 +111,9 @@ class Task (sbase.SimpleBase, satt.Attributes) :
             call   = self._method_context['_call']
             args   = self._method_context['_args']
             kwargs = self._method_context['_kwargs']
+
+            if  not    '_from_task' in kwargs :
+                kwargs['_from_task'] = self
 
             self._thread = ru.Thread (call, *args, **kwargs)
 
@@ -235,6 +238,17 @@ class Task (sbase.SimpleBase, satt.Attributes) :
                 self._set_result (self._thread.result)
 
             return self.result
+
+
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes   ('Task', 
+                  basestring, 
+                  rus.anything)
+    @rus.returns (rus.nothing)
+    def _set_metric (self, metric, value) :
+
+        self._attributes_i_set (self._attributes_t_underscore (metric), value, force=True)
 
 
     # --------------------------------------------------------------------------

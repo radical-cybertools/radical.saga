@@ -80,8 +80,8 @@ _SCRIPTS = {
         'shell'         : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'copy_to'       : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'copy_from'     : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'copy_to_in'    : "cd ~ && exec %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s",
-        'copy_from_in'  : "cd ~ && exec %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s",
+        'copy_to_in'    : "cd ~ && exec %(cp_exe)s -v %(cp_flags)s %(src)s %(tgt)s",
+        'copy_from_in'  : "cd ~ && exec %(cp_exe)s -v %(cp_flags)s %(src)s %(tgt)s",
     }
 }
 
@@ -392,7 +392,7 @@ class PTYShellFactory (object) :
 
             repl = dict ({'src'      : src, 
                           'tgt'      : tgt, 
-                          'cp_flags' : cp_flags}.items ()+ info.items ())
+                          'cp_flags' : cp_flags}.items () + info.items ())
 
             # at this point, we do have a valid, living master
             s_cmd = _SCRIPTS[info['type']]['copy_to']    % repl
@@ -413,9 +413,36 @@ class PTYShellFactory (object) :
 
 
             _   = cp_slave.write ("%s%s\n" % (prep, s_in))
+
+            # capture the output of the command
+            out = ""
+            try :
+                while cp_slave.alive () :
+                    out += cp_slave.read ()
+            except :
+                pass
+
+            # we interpret the first word on the line as name of src file -- we
+            # will return a list of those
+            lines = out.split ('\n')
+            files = []
+            for line in lines :
+                elems = line.split (' ', 2)
+                if  elems :
+                    f = elems[0]
+
+                    # remove quotes
+                    if  f :
+                        if  f[ 0] in ["'", '"', '`'] : f = f[1:  ]
+                        if  f[-1] in ["'", '"', '`'] : f = f[ :-1]
+
+                    # ignore empty lines
+                    if  f :
+                        files.append (f)
+
             ret = cp_slave.wait  ()
 
-            info['logger'].debug ("copy done: ret")
+            info['logger'].debug ("copy done: %s" % files)
 
             if 'No such file or directory' in ret :
                 raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % ret)
@@ -425,6 +452,8 @@ class PTYShellFactory (object) :
 
             if  cp_slave.exit_code != 0 :
                 raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % ret)
+
+            return files
 
 
 

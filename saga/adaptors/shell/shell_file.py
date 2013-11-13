@@ -400,7 +400,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def copy (self, src_in, tgt_in, flags):
+    def copy (self, src_in, tgt_in, flags, _from_task=None):
 
         self._is_valid ()
 
@@ -457,7 +457,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                      sumisc.url_is_compatible (cwdurl, src) :
 
                     # print "from remote to loca"
-                    self.shell.stage_from_remote (src.path, tgt.path, rec_flag)
+                    files = self.shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
                 else :
                     # print "from remote to other remote -- fail"
@@ -482,7 +482,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
                     # print "from local to remote"
                     tmp_shell = sups.PTYShell (tgt, self.session, self._logger)
-                    tmp_shell.stage_to_remote (src.path, tgt.path, rec_flag)
+                    files     = tmp_shell.stage_to_remote (src.path, tgt.path, rec_flag)
 
                 elif sumisc.url_is_local (tgt) :
 
@@ -493,7 +493,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
                     # print "from remote to local"
                     tmp_shell = sups.PTYShell (src, self.session, self._logger)
-                    tmp_shell.stage_from_remote (src.path, tgt.path, rec_flag)
+                    files     = tmp_shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
                 else :
 
@@ -503,6 +503,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                                           % (src, tgt))
 
    
+        if  _from_task :
+            _from_task._set_metric ('files_copied', files)
 
 
     # ----------------------------------------------------------------
