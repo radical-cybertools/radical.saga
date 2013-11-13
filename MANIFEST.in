@@ -31,6 +31,7 @@ include saga/adaptors/shell/*.py
 include saga/adaptors/shell/*.sh
 include saga/adaptors/sge/*.py
 include saga/adaptors/pbs/*.py
+include saga/adaptors/lsf/*.py
 include saga/adaptors/condor/*.py
 include saga/adaptors/slurm/*.py
 include saga/adaptors/redis/*.py

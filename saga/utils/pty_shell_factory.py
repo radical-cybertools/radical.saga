@@ -72,8 +72,8 @@ _SCRIPTS = {
       # 'copy_from'     : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s  %(root)s/%(src)s %(tgt)s",
         'copy_to'       : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
         'copy_from'     : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
-        'copy_to_in'    : "progress \n put %(cp_flags)s %(src)s %(tgt)s \n exit \n",            
-        'copy_from_in'  : "progress \n get %(cp_flags)s %(src)s %(tgt)s \n exit \n",
+        'copy_to_in'    : "progress \n mput -r %(cp_flags)s %(src)s %(tgt)s \n exit \n",
+        'copy_from_in'  : "progress \n mget -r %(cp_flags)s %(src)s %(tgt)s \n exit \n",
     },
     'sh' : { 
         'master'        : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
@@ -347,7 +347,7 @@ class PTYShellFactory (object) :
                         break
                 
             except Exception as e :
-                raise self._translate_exception (e)
+                raise ptye.translate_exception (e)
                 
 
     # --------------------------------------------------------------------------
@@ -379,6 +379,12 @@ class PTYShellFactory (object) :
         """ 
         This initiates a slave copy connection.   Src is interpreted as local
         path, tgt as path on the remote host.
+
+        Now, this is ugly when over sftp: sftp supports recursive copy, and
+        wildcards, all right -- but for recursive copies, it wants the target
+        dir to exist -- so, we have to check if the local src is a  dir, and if
+        so, we first create the target before the copy.  Worse, for wildcards we
+        have to do a local expansion, and the to do the same for each entry...
         """
 
       # if True :
@@ -396,13 +402,30 @@ class PTYShellFactory (object) :
 
             self._initialize_pty (cp_slave, info)
 
-            cp_slave.write ("%s\n" % s_in)
-            cp_slave.wait  ()
+            prep = ""
+            if  'sftp' in s_cmd :
+                # prepare target dirs for recursive copy, if needed
+                import glob
+                src_list = glob.glob (src)
+                for s in src_list :
+                    if  os.path.isdir (s) :
+                        prep += "mkdir %s/%s\n" % (tgt, os.path.basename (s))
+
+
+            _   = cp_slave.write ("%s%s\n" % (prep, s_in))
+            ret = cp_slave.wait  ()
+
+            info['logger'].debug ("copy done: ret")
+
+            if 'No such file or directory' in ret :
+                raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % ret)
+
+            if 'is not a directory' in ret :
+                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % ret)
 
             if  cp_slave.exit_code != 0 :
-                raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+                raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % ret)
 
-            info['logger'].debug ("copy done")
 
 
     # --------------------------------------------------------------------------
@@ -411,6 +434,9 @@ class PTYShellFactory (object) :
         """ 
         This initiates a slave copy connection.   Src is interpreted as path on
         the remote host, tgt as local path.
+
+        We have to do the same mkdir trick as for the run_copy_to, but here we
+        need to expand wildcards on the *remote* side :/
         """
 
       # if True :
@@ -428,7 +454,18 @@ class PTYShellFactory (object) :
 
             self._initialize_pty (cp_slave, info)
 
-            cp_slave.write ("%s\n" % s_in)
+            prep = ""
+            if  'sftp' in s_cmd :
+                # prepare target dirs for recursive copy, if needed
+                cp_slave.write ("ls %s\n" % src)
+                data = cp_slave.find (["^sftp> "], -1)
+                src_list = data[1].split ('/n')
+                for s in src_list :
+                    if  os.path.isdir (s) :
+                        prep += "lmkdir %s/%s\n" % (tgt, os.path.basename (s))
+
+
+            cp_slave.write ("%s%s\n" % (prep, s_in))
             cp_slave.wait  ()
 
             if  cp_slave.exit_code != 0 :
@@ -454,6 +491,10 @@ class PTYShellFactory (object) :
             info['url']       = url
             info['pass']      = ""
             info['key_pass']  = {}
+
+            if  not info['schema'] :
+                info['schema'] = 'local'
+                    
 
             # find out what type of shell we have to deal with
             if  info['schema']   in _SCHEMAS_SSH :

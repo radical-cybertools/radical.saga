@@ -131,12 +131,40 @@ def get_host_latency (host_url) :
 # --------------------------------------------------------------------
 #
 def url_is_local (arg) :
-    """ Returns True if the given url points to localhost
+    """ 
+    Returns True if the given url points to localhost.
+
+    We consider all URLs which explicitly define a port as non-local, because it
+    looks like someone wants to explicitly use some protocol --
+    `ssh://localost:2222/` is likely to point at an ssh tunnel.  
+    
+    If, however, the port matches the default port for the given protocol, we
+    consider it local again -- `ssh://localhost:22/` is most likely a real local
+    activity.
+
+    Note that the schema set operates on substring level, so that we will accept
+    port 22 for `ssh` and also for `sge+ssh` -- this may break in corner cases
+    (altough I can't think of any right now).
     """
     
     u = saga.Url (arg)
 
-    return host_is_local (u.host)
+    if  not host_is_local (u.host) :
+        return False
+
+    # host is local, but what does the port indicate?
+    if u.port and u.port > 0 :
+        
+        try :
+            if  socket.getservbyport (u.port) in u.schema :
+                # some non-default port is used -- consider remote
+                return False
+        except :
+            # unknown service port --assume this is non-standard...
+            return False
+
+    # port is not set or points to default port for service
+    return True
 
 
 

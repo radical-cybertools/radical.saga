@@ -9,8 +9,24 @@ import sys
 import glob
 import optparse
 
-import saga.utils.test_config as sutc
-import radical.utils as ru
+try:
+    import saga
+    import saga.utils.test_config as sutc
+    import radical.utils.testing as rut
+
+    print "______________________________________________________________________"
+    print "Using saga-python from: %s" % str(saga)
+    print "______________________________________________________________________"
+
+except Exception, e:
+    srcdir = "%s/../" % os.path.dirname(os.path.realpath(__file__))
+    sys.path.insert(0, os.path.abspath(srcdir))
+    import saga
+    import saga.utils.test_config as sutc
+    import radical.utils.testing as rut
+    print "______________________________________________________________________"
+    print "Using saga-python from: %s" % str(saga)
+    print "______________________________________________________________________"
 
 
 #-----------------------------------------------------------------------------
@@ -40,7 +56,7 @@ if __name__ == "__main__":
 
 
     # set up the testing framework
-    testing = ru.Testing ('saga', __file__)
+    testing = rut.Testing ('saga', __file__)
 
     # test_cfgs will contain a list of all configuation files
     # that we will use for the tests

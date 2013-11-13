@@ -250,7 +250,11 @@ class Adaptor (saga.adaptors.base.Base):
     # ----------------------------------------------------------------
     #
     def parse_id (self, id) :
-        # split the id '[rm]-[pid]' in its parts, and return them.
+        """
+        Split the id '[rm]-[pid]' in its parts, and return them.
+
+        The callee makes sure that the ID is set and valid.
+        """
 
         match = self.id_re.match (id)
 
@@ -1180,6 +1184,11 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         if self._exit_code != None :
             return self._exit_code
 
+        if  self.get_state () not in [saga.job.DONE, 
+                                      saga.job.FAILED, 
+                                      saga.job.CANCELED] :
+            return None
+
         self._exit_code = self.js._job_get_exit_code (self._id)
 
         return self._exit_code
@@ -1206,6 +1215,10 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     #
     @SYNC_CALL
     def suspend (self):
+
+        if  self.get_state () != saga.job.RUNNING :
+            raise saga.IncorrectState ("Cannot suspend, job is not RUNNING")
+
         self.js._job_suspend (self._id)
    
    
@@ -1213,6 +1226,10 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     #
     @SYNC_CALL
     def resume (self):
+
+        if  self.get_state () != saga.job.SUSPENDED :
+            raise saga.IncorrectState ("Cannot resume, job is not SUSPENDED")
+
         self.js._job_resume (self._id)
    
    
@@ -1220,6 +1237,20 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     #
     @SYNC_CALL
     def cancel (self, timeout):
+
+        if  self.get_state () not in [saga.job.RUNNING, 
+                                      saga.job.SUSPENDED, 
+                                      saga.job.CANCELED, 
+                                      saga.job.DONE, 
+                                      saga.job.FAILED] :
+            raise saga.IncorrectState ("Cannot cancel, job is not running")
+
+        if  self._state in [saga.job.CANCELED, 
+                            saga.job.DONE, 
+                            saga.job.FAILED] :
+            self._state = saga.job.CANCELED
+            return
+
         self.js._job_cancel (self._id)
    
    

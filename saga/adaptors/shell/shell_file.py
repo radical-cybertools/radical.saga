@@ -244,6 +244,9 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     def init_instance (self, adaptor_state, url, flags, session) :
         """ Directory instance constructor """
 
+        if  flags == None :
+            flags = 0
+
         self.url         = saga.Url (url) # deep copy
         self.flags       = flags
         self.session     = session
@@ -336,6 +339,13 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
 
     # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def close (self):
+        self.finalize (kill=True)
+
+
+    # ----------------------------------------------------------------
     @SYNC_CALL
     def get_url (self) :
 
@@ -354,9 +364,12 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         # FIXME: eval flags
 
         if  None == npat :
-            npat = "*"
+            npat = ""
+        else :
+            npat = "-d %s" % npat
 
-        ret, out, _ = self.shell.run_sync ("/bin/ls -C1 -d %s\n" % npat)
+        ret, out, _ = self.shell.run_sync ("/bin/ls -C1 %s\n" % npat)
+
         if  ret != 0 :
             raise saga.NoSuccess ("failed to list(): (%s)(%s)" \
                                % (ret, out))
@@ -788,6 +801,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     def init_instance (self, adaptor_state, url, flags, session):
 
         # FIXME: eval flags!
+        if  flags == None :
+            flags = 0
 
         self._logger.info ("init_instance %s" % url)
 
@@ -883,7 +898,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
     # ----------------------------------------------------------------
     #
-    def finalize (self, kill = False) :
+    def finalize (self, kill=False) :
 
         if  kill and self.shell :
             self.shell.finalize (True)
@@ -894,6 +909,13 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             self.local = None
 
         self.valid = False
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def close (self):
+        self.finalize (kill=True)
 
 
     # ----------------------------------------------------------------
@@ -1108,17 +1130,28 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     def get_size_self (self) :
 
         self._is_valid ()
+        size      = None
+        size_mult = 1
+        ret       = None
+        out       = None
 
-        ret, out, _ = self.shell.run_sync ("wc -c %s | xargs | cut -f 1 -d ' '\n" % self.url.path)
+        if  self.is_dir_self () :
+            size_mult   = 1024   # see '-k' option to 'du'
+            ret, out, _ = self.shell.run_sync ("du -ks %s  | xargs | cut -f 1 -d ' '\n" \
+                                            % self.url.path)
+        else :
+            ret, out, _ = self.shell.run_sync ("wc -c %s | xargs | cut -f 1 -d ' '\n" \
+                                            % self.url.path)
+
         if  ret != 0 :
             raise saga.NoSuccess ("get size for (%s) failed (%s): (%s)" \
                                % (self.url, ret, out))
 
-        size = None
         try :
-            size = int (out)
+            size = int (out) * size_mult
         except Exception as e :
-            raise saga.NoSuccess ("get size for (%s) failed: (%s)" % (self.url, out))
+            raise saga.NoSuccess ("could not get file size: %s" % out)
+
 
         return size
    
