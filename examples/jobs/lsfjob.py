@@ -40,8 +40,7 @@ def main():
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
         # and '+ssh' enables PBS remote access via SSH.
-        js = saga.job.Service("lsf://localhost",
-                              session=session)
+        js = saga.job.Service("lsf://localhost", session=session)
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
@@ -52,8 +51,7 @@ def main():
         jd.executable        = '/bin/touch'
         jd.arguments         = ['$FILENAME']
 
-        #jd.total_cpu_count   = 12 # for lonestar this has to be a multiple of 12
-        #jd.spmd_variation    = '12way' # translates to the qsub -pe flag
+        jd.total_cpu_count   = 16
 
         jd.queue             = "regular"
         jd.project           = "URTG0003" 
