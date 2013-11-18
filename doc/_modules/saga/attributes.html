@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.attributes &mdash; SAGA 0.9.12 documentation</title>
+    <title>saga.attributes &mdash; SAGA 0.9.12-951-ga4d47a5 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.12',
+        VERSION:     '0.9.12-951-ga4d47a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.12 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.12-951-ga4d47a5 documentation" href="../../index.html" />
     <link rel="up" title="saga" href="../saga.html" /> 
   </head>
   <body>
@@ -44,7 +43,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -60,21 +59,13 @@
 <span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
 
-<span class="c"># &gt;&gt;&gt; class MyDict(dict):</span>
-<span class="c"># &gt;&gt;&gt;     def __missing__(self, key):</span>
-<span class="c">#             self[key] = rv = []</span>
-<span class="c">#             return rv</span>
-<span class="c">#    </span>
-<span class="c"># &gt;&gt;&gt; m = MyDict()</span>
-<span class="c"># &gt;&gt;&gt; m[&quot;foo&quot;].append(1)</span>
-<span class="c"># &gt;&gt;&gt; m[&quot;foo&quot;].append(2)</span>
-<span class="c"># &gt;&gt;&gt; dict(m)</span>
-<span class="c"># {&#39;foo&#39;: [1, 2]}</span>
 
 <span class="sd">&quot;&quot;&quot; Attribute interface &quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">saga.exceptions</span>       <span class="kn">as</span> <span class="nn">se</span>
-<span class="kn">import</span> <span class="nn">saga.utils.signatures</span> <span class="kn">as</span> <span class="nn">sus</span>
+<span class="kn">import</span> <span class="nn">radical.utils</span>            <span class="kn">as</span> <span class="nn">ru</span>
+<span class="kn">import</span> <span class="nn">radical.utils.signatures</span> <span class="kn">as</span> <span class="nn">rus</span>
+
+<span class="kn">import</span> <span class="nn">saga.exceptions</span> <span class="kn">as</span> <span class="nn">se</span>
 
 <span class="c"># ------------------------------------------------------------------------------</span>
 
@@ -222,15 +213,15 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;_AttributesBase&#39;</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;_AttributesBase&#39;</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
         <span class="k">pass</span>
 
 
 <span class="c"># ------------------------------------------------------------------------------</span>
 <span class="c">#</span>
-<span class="k">class</span> <span class="nc">Attributes</span> <span class="p">(</span><span class="n">_AttributesBase</span><span class="p">)</span> <span class="p">:</span>
+<span class="k">class</span> <span class="nc">Attributes</span> <span class="p">(</span><span class="n">_AttributesBase</span><span class="p">,</span> <span class="n">ru</span><span class="o">.</span><span class="n">DictMixin</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Attribute Interface Class</span>
 
@@ -374,10 +365,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+                  <span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">,</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is not supposed to be directly called by the consumer of</span>
@@ -386,8 +377,6 @@
 <span class="sd">        _attributes_t_init makes sure that the basic structures are in place on</span>
 <span class="sd">        the attribute dictionary - this saves us ton of safety checks later on.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># FIXME: add the ability to initalize the attributes via a dict</span>
-
         <span class="c"># initialize state</span>
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_init</span> <span class="p">()</span>
 
@@ -397,13 +386,20 @@
 
         <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span> <span class="p">:</span>
             <span class="k">if</span>  <span class="nb">isinstance</span> <span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="p">:</span>
+                <span class="n">d</span><span class="p">[</span><span class="s">&#39;extensible&#39;</span><span class="p">]</span>  <span class="o">=</span> <span class="bp">True</span>   <span class="c"># it is just being extended ;)</span>
+                <span class="n">d</span><span class="p">[</span><span class="s">&#39;camelcasing&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>   <span class="c"># default for dict inits</span>
                 <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">arg</span><span class="o">.</span><span class="n">keys</span> <span class="p">()</span> <span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">set_attribute</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">arg</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                    <span class="n">us_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_underscore</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_set</span> <span class="p">(</span><span class="n">us_key</span><span class="p">,</span> <span class="n">arg</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">force</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_UP</span><span class="p">)</span>
             <span class="k">else</span> <span class="p">:</span>
                 <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;initialization expects dictionary&quot;</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span> <span class="p">()</span> <span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set_attribute</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+        <span class="c"># make iterable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_iterpos</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list_attributes</span> <span class="p">()</span>
 
 
 
@@ -416,9 +412,9 @@
     <span class="c">#</span>
     <span class="c"># Naming: _attributes_t_*</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_t_init</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal function is not to be used by the consumer of this API.</span>
@@ -466,9 +462,9 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_t_keycheck</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal function is not to be used by the consumer of this API.</span>
@@ -506,10 +502,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_t_call_cb</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal function is not to be used by the consumer of this API.</span>
@@ -551,10 +547,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_t_call_setter</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal function is not to be used by the consumer of this API.</span>
@@ -618,9 +614,9 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_t_call_getter</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal function is not to be used by the consumer of this API.</span>
@@ -700,9 +696,9 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">list_of</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">list_of</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">))</span>
     <span class="k">def</span> <span class="nf">_attributes_t_call_lister</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal function is not to be used by the consumer of this API.</span>
@@ -736,11 +732,11 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span>
                   <span class="nb">int</span><span class="p">,</span>
                   <span class="nb">callable</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_t_call_caller</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">cb</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal function is not to be used by the consumer of this API.</span>
@@ -780,10 +776,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">_attributes_t_underscore</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="p">:</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_attributes_t_underscore</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">        This internal function is not to be used by the consumer of this API.</span>
 
@@ -797,7 +793,7 @@
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_init</span> <span class="p">()</span>
 
 
-        <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;camelcasing&#39;</span><span class="p">]</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">force</span> <span class="ow">or</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;camelcasing&#39;</span><span class="p">]</span> <span class="p">:</span>
             <span class="n">temp</span> <span class="o">=</span> <span class="n">Attributes</span><span class="o">.</span><span class="n">_camel_case_regex_1</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r&#39;\1_\2&#39;</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">Attributes</span><span class="o">.</span><span class="n">_camel_case_regex_2</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r&#39;\1_\2&#39;</span><span class="p">,</span> <span class="n">temp</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="k">else</span> <span class="p">:</span>
@@ -807,9 +803,9 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_t_conversion</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal function is not to be used by the consumer of this API.</span>
@@ -855,10 +851,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_t_conversion_flavor</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">        This internal function is not to be used by the consumer of this API.</span>
@@ -968,10 +964,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_t_conversion_type</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">        This internal function is not to be used by the consumer of this API.</span>
@@ -1000,9 +996,9 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_t_wildcard2regex</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">        This internal function is not to be used by the consumer of this API.</span>
@@ -1101,14 +1097,12 @@
             <span class="k">if</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;_&#39;</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;private&#39;</span><span class="p">]</span> <span class="p">:</span>
                 <span class="c"># if the set is private, we can register the new key.  It</span>
                 <span class="c"># won&#39;t have any callbacks at this point.</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">ANY</span><span class="p">,</span> <span class="n">SCALAR</span><span class="p">,</span> <span class="n">WRITEABLE</span><span class="p">,</span>
-                        <span class="n">EXTENDED</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">ANY</span><span class="p">,</span> <span class="n">SCALAR</span><span class="p">,</span> <span class="n">WRITEABLE</span><span class="p">,</span> <span class="n">EXTENDED</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
 
             <span class="k">elif</span> <span class="n">flow</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">_UP</span> <span class="ow">or</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;extensible&#39;</span><span class="p">]</span> <span class="p">:</span>
                 <span class="c"># if the set is extensible, we can register the new key.  It</span>
                 <span class="c"># won&#39;t have any callbacks at this point.</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">ANY</span><span class="p">,</span> <span class="n">SCALAR</span><span class="p">,</span> <span class="n">WRITEABLE</span><span class="p">,</span>
-                        <span class="n">EXTENDED</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">ANY</span><span class="p">,</span> <span class="n">SCALAR</span><span class="p">,</span> <span class="n">WRITEABLE</span><span class="p">,</span> <span class="n">EXTENDED</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
 
             <span class="k">else</span> <span class="p">:</span>
                 <span class="c"># we cannot add new keys on non-extensible / non-private sets</span>
@@ -1222,7 +1216,7 @@
         <span class="c"># call list hooks to update state for listing</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_call_lister</span> <span class="p">()</span>
 
-        <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">ret</span>    <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">())</span> <span class="p">:</span>
             <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;mode&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ALIAS</span> <span class="p">:</span>
                 <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;exists&#39;</span><span class="p">]</span> <span class="p">:</span>
@@ -1246,6 +1240,7 @@
                             <span class="n">ret</span><span class="o">.</span><span class="n">append</span> <span class="p">(</span><span class="n">k</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">ret</span>
+
 
 
     <span class="c"># --------------------------------------------------------------------------</span>
@@ -1293,7 +1288,7 @@
         <span class="c"># now dig out matching keys. List hooks are triggered in</span>
         <span class="c"># _attributes_i_list(flow).</span>
         <span class="n">matches</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_list</span> <span class="p">(</span><span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_list</span> <span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
             <span class="n">val</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_get</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="n">pc_key</span> <span class="o">==</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">pc_key</span><span class="o">.</span><span class="n">search</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="p">)</span> <span class="ow">and</span> \
@@ -1305,10 +1300,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_i_exists</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal method should not be explicitly called by consumers of</span>
@@ -1334,10 +1329,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_i_is_extended</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal method should not be explicitly called by consumers of</span>
@@ -1357,10 +1352,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_i_is_private</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal method should not be explicitly called by consumers of</span>
@@ -1380,10 +1375,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_i_is_readonly</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal method should not be explicitly called by consumers of</span>
@@ -1408,10 +1403,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_i_is_writeable</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal method should not be explicitly called by consumers of</span>
@@ -1427,10 +1422,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_i_is_removable</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal method should not be explicitly called by consumers of</span>
@@ -1449,10 +1444,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_i_is_vector</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal method should not be explicitly called by consumers of</span>
@@ -1473,10 +1468,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_i_is_final</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal method should not be explicitly called by consumers of</span>
@@ -1500,11 +1495,11 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
                   <span class="nb">callable</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_i_add_cb</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal method should not be explicitly called by consumers of</span>
@@ -1528,11 +1523,11 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">int</span><span class="p">),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_i_del_cb</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This internal method should not be explicitly called by consumers of</span>
@@ -1569,15 +1564,15 @@
     <span class="c">#</span>
     <span class="c"># Naming: _attributes_*</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">)),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">ANY</span><span class="p">,</span> <span class="n">URL</span><span class="p">,</span> <span class="n">INT</span><span class="p">,</span> <span class="n">FLOAT</span><span class="p">,</span> <span class="n">STRING</span><span class="p">,</span> <span class="n">BOOL</span><span class="p">,</span> <span class="n">ENUM</span><span class="p">,</span> <span class="n">TIME</span><span class="p">)),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">VECTOR</span><span class="p">,</span> <span class="n">DICT</span><span class="p">)),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">READONLY</span><span class="p">,</span> <span class="n">WRITEABLE</span><span class="p">,</span> <span class="n">ALIAS</span><span class="p">,</span> <span class="n">FINAL</span><span class="p">)),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="n">EXTENDED</span><span class="p">)),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">ANY</span><span class="p">,</span> <span class="n">URL</span><span class="p">,</span> <span class="n">INT</span><span class="p">,</span> <span class="n">FLOAT</span><span class="p">,</span> <span class="n">STRING</span><span class="p">,</span> <span class="n">BOOL</span><span class="p">,</span> <span class="n">ENUM</span><span class="p">,</span> <span class="n">TIME</span><span class="p">)),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">VECTOR</span><span class="p">,</span> <span class="n">DICT</span><span class="p">)),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">READONLY</span><span class="p">,</span> <span class="n">WRITEABLE</span><span class="p">,</span> <span class="n">ALIAS</span><span class="p">,</span> <span class="n">FINAL</span><span class="p">)),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="n">EXTENDED</span><span class="p">)),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_register</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">typ</span><span class="o">=</span><span class="n">ANY</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="n">SCALAR</span><span class="p">,</span>
                               <span class="n">mode</span><span class="o">=</span><span class="n">WRITEABLE</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1665,11 +1660,11 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_register_deprecated</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Often enough, there is the need to use change attribute names.  It is</span>
@@ -1733,10 +1728,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_unregister</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -1766,10 +1761,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_remove</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -1791,11 +1786,11 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">list_of</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">)),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span>  <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">list_of</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span>  <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_set_enums</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">enums</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -1813,14 +1808,14 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">bool</span><span class="p">),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">callable</span><span class="p">),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">callable</span><span class="p">),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">callable</span><span class="p">),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">callable</span><span class="p">),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span>  <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">bool</span><span class="p">),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">callable</span><span class="p">),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">callable</span><span class="p">),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">callable</span><span class="p">),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">callable</span><span class="p">),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span>  <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_extensible</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> 
                                 <span class="n">getter</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">setter</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> 
                                 <span class="n">lister</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">caller</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> 
@@ -1847,10 +1842,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">bool</span><span class="p">),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span>  <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">bool</span><span class="p">),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span>  <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_allow_private</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -1869,10 +1864,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">bool</span><span class="p">),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span>  <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">bool</span><span class="p">),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span>  <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_camelcasing</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -1891,10 +1886,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span>  <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span>  <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_deep_copy</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -1971,10 +1966,20 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span>  <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__deepcopy__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">Attributes</span> <span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_deep_copy</span> <span class="p">(</span><span class="n">other</span><span class="p">)</span>
+    
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span>  <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_dump</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -1987,7 +1992,7 @@
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_init</span> <span class="p">()</span>
 
 
-        <span class="n">keys_all</span>   <span class="o">=</span> <span class="nb">sorted</span> <span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iterkeys</span> <span class="p">())</span>
+        <span class="n">keys_all</span> <span class="o">=</span> <span class="nb">sorted</span> <span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iterkeys</span> <span class="p">())</span>
 
         <span class="k">print</span> <span class="s">&quot;---------------------------------------&quot;</span>
         <span class="k">print</span> <span class="nb">str</span> <span class="p">(</span><span class="nb">type</span> <span class="p">(</span><span class="bp">self</span><span class="p">))</span>
@@ -2017,7 +2022,7 @@
                               <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;type&#39;</span><span class="p">],</span>
                               <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;flavor&#39;</span><span class="p">],</span>
                               <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;mode&#39;</span><span class="p">],</span>
-                      <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;callbacks&#39;</span><span class="p">]),</span>
+                          <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;callbacks&#39;</span><span class="p">]),</span>
                               <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;value&#39;</span><span class="p">]</span>
                               <span class="p">)</span>
 
@@ -2048,7 +2053,7 @@
                               <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;type&#39;</span><span class="p">],</span>
                               <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;flavor&#39;</span><span class="p">],</span>
                               <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;mode&#39;</span><span class="p">],</span>
-                      <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;callbacks&#39;</span><span class="p">]),</span>
+                          <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;callbacks&#39;</span><span class="p">]),</span>
                               <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;value&#39;</span><span class="p">]</span>
                               <span class="p">)</span>
 
@@ -2069,11 +2074,11 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_set_final</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -2113,11 +2118,11 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">float</span><span class="p">),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">float</span><span class="p">),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_set_ttl</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">ttl</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot; set attributes TTL in seconds (float) -- see L{_attributes_i_set} &quot;&quot;&quot;</span>
 
@@ -2131,11 +2136,11 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span>
                   <span class="nb">callable</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_add_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">check</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -2162,11 +2167,11 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span>
                   <span class="nb">callable</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_set_getter</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">getter</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -2224,11 +2229,11 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span>
                   <span class="nb">callable</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_set_setter</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">setter</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -2247,10 +2252,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">callable</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_set_global_lister</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lister</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -2267,10 +2272,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">callable</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_set_global_caller</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">caller</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -2287,10 +2292,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">callable</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_set_global_getter</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">getter</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -2307,10 +2312,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">callable</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_attributes_set_global_setter</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">setter</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
@@ -2332,11 +2337,11 @@
     <span class="c"># The GFD.90 interface supports CamelCasing, and thus converts all keys to</span>
     <span class="c"># underscore before using them.</span>
     <span class="c"># </span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">,</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">set_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.set_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.set_attribute">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        set_attribute(key, val)</span>
@@ -2372,10 +2377,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">get_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.get_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.get_attribute">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        get_attribute(key)</span>
@@ -2393,11 +2398,11 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">list_of</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">list_of</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">set_vector_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.set_vector_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.set_vector_attribute">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        set_vector_attribute (key, val)</span>
@@ -2416,10 +2421,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">list_of</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">))</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">list_of</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">))</span>
     <span class="k">def</span> <span class="nf">get_vector_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.get_vector_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.get_vector_attribute">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        get_vector_attribute (key)</span>
@@ -2438,10 +2443,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">remove_attribute</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.remove_attribute"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.remove_attribute">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        remove_attribute (key)</span>
@@ -2459,9 +2464,9 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">list_of</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">))</span>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">list_of</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">))</span>
     <span class="k">def</span> <span class="nf">list_attributes</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.list_attributes"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.list_attributes">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        list_attributes ()</span>
@@ -2469,15 +2474,15 @@
 <span class="sd">        List all attributes which have been explicitly set. </span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_list</span> <span class="p">(</span><span class="n">_flow</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_list</span> <span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">_flow</span><span class="p">)</span>
 
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">list_of</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">))</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">list_of</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">))</span>
     <span class="k">def</span> <span class="nf">find_attributes</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.find_attributes"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.find_attributes">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        find_attributes (pattern)</span>
@@ -2493,10 +2498,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">attribute_exists</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.attribute_exists"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_exists">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        attribute_exist (key)</span>
@@ -2512,10 +2517,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">attribute_is_readonly</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.attribute_is_readonly"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_is_readonly">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        attribute_is_readonly (key)</span>
@@ -2531,10 +2536,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">attribute_is_writeable</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.attribute_is_writeable"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_is_writeable">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        attribute_is_writeable (key)</span>
@@ -2549,10 +2554,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">attribute_is_removable</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.attribute_is_removable"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_is_removable">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        attribute_is_writeable (key)</span>
@@ -2567,10 +2572,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
                   <span class="nb">basestring</span><span class="p">,</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">attribute_is_vector</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.attribute_is_vector"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.attribute_is_vector">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        attribute_is_vector (key)</span>
@@ -2587,11 +2592,11 @@
     <span class="c">#</span>
     <span class="c"># fold the GFD.90 monitoring API into the attributes API</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
                   <span class="nb">basestring</span><span class="p">,</span>
                   <span class="nb">callable</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">add_callback</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.add_callback"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.add_callback">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        add_callback (key, cb)</span>
@@ -2629,11 +2634,11 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
                   <span class="nb">basestring</span><span class="p">,</span>
                   <span class="nb">int</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">remove_callback</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">_flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.remove_callback"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.remove_callback">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        remove_callback (key, id)</span>
@@ -2658,9 +2663,9 @@
     <span class="c">#</span>
     <span class="c"># we assume that properties are always used in under_score notation.</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> </div>
                   <span class="nb">basestring</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__getattr__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot; see L{get_attribute} (key) for details. &quot;&quot;&quot;</span>
         
@@ -2670,10 +2675,10 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__setattr__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot; see L{set_attribute} (key, val) for details. &quot;&quot;&quot;</span>
 
@@ -2683,9 +2688,9 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__delattr__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot; see L{remove_attribute} (key) for details. &quot;&quot;&quot;</span>
         
@@ -2694,8 +2699,8 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__str__</span>  <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot; return a string representation of all set attributes &quot;&quot;&quot;</span>
 
@@ -2704,7 +2709,10 @@
         <span class="k">return</span> <span class="n">s</span>
 
 
-    <span class="c">####################################</span>
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Attributes&#39;</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">as_dict</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 <div class="viewcode-block" id="Attributes.as_dict"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.as_dict">[docs]</a>        <span class="sd">&quot;&quot;&quot; return a dict representation of all set attributes &quot;&quot;&quot;</span>
 
@@ -2716,6 +2724,57 @@
         <span class="k">return</span> <span class="n">d</span>
 
 
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="c"># Python dictionary interface, via the DictMixin</span>
+    <span class="c">#</span>
+    <span class="c"># we assume that keys are always used in under_score notation.</span>
+    <span class="c">#</span>
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__getitem__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="p">:</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_attribute</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__setitem__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_attribute</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__delitem__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_attribute</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">keys</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="Attributes.keys"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.keys">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_list</span> <span class="p">(</span><span class="n">CamelCase</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">__iter__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="c"># --------------------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">next</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="Attributes.next"><a class="viewcode-back" href="../../library/attribute.html#saga.attributes.Attributes.next">[docs]</a>
+        <span class="n">iterlist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_i_list</span> <span class="p">(</span><span class="n">CamelCase</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        
+        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">_iterpos</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">iterlist</span><span class="p">)</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_iterpos</span>  <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span>
+
+        <span class="k">if</span>  <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">iterlist</span><span class="p">)</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_iterpos</span>  <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_iterpos</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">iterlist</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_iterpos</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+
+
 <span class="c"># ------------------------------------------------------------------------------</span>
 
 <span class="c"># FIXME: add </span>
@@ -2725,11 +2784,9 @@
 <span class="c">#   - fire_metric()</span>
 <span class="c">#   - list_metrics()</span>
 <span class="c">#   - get_metric()</span>
-<span class="c">#   - list_calbacks()</span>
+<span class="c">#   - list_callbacks()</span>
 
 <span class="c"># ------------------------------------------------------------------------------</span>
-
-<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
 </pre></div></div></div>
 
           </div>
@@ -2763,14 +2820,14 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" >saga</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

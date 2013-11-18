@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>4. Resource Management &mdash; SAGA 0.9.12 documentation</title>
+    <title>4. Resource Management &mdash; SAGA 0.9.12-951-ga4d47a5 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.12',
+        VERSION:     '0.9.12-951-ga4d47a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.12 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.12-951-ga4d47a5 documentation" href="../../index.html" />
     <link rel="up" title="2. Library Reference" href="../index.html" />
     <link rel="next" title="5. Replica Management" href="../replica/index.html" />
     <link rel="prev" title="3. Files and Directories" href="../filesystem/index.html" /> 
@@ -52,7 +51,7 @@
         <li class="right" >
           <a href="../filesystem/index.html" title="3. Files and Directories"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -75,6 +74,7 @@ also need your Amazon EC2 id and key.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Ole Weidner&quot;</span>
 <span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
 
 <span class="sd">&quot;&quot;&quot; This is an example which shows how to access Amazon EC2 clouds via the SAGA</span>
 <span class="sd">    resource package.</span>
@@ -208,7 +208,7 @@ also need your Amazon EC2 id and key.</p>
 <span id="resource-manager"></span><h2><a class="toc-backref" href="#id6">4.1. Resource Manager &#8211; <a class="reference internal" href="#saga.resource.Manager" title="saga.resource.Manager"><tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Manager</span></tt></a></a><a class="headerlink" href="#resource-manager-saga-resource-manager" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="saga.resource.Manager">
-<em class="property">class </em><tt class="descclassname">saga.resource.</tt><tt class="descname">Manager</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Manager" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.resource.</tt><tt class="descname">Manager</tt><big>(</big><em>url</em><big>)</big><a class="headerlink" href="#saga.resource.Manager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.Base</span></tt>, <tt class="xref py py-class docutils literal"><span class="pre">saga.async.Async</span></tt></p>
 <p>In the context of SAGA-Python, a <em>ResourceManager</em> is a service which asserts
 control over a set of resources.  That manager can, on request, render
@@ -358,7 +358,7 @@ state.</p>
 <span id="resource-description"></span><h2><a class="toc-backref" href="#id7">4.2. Resource Description &#8211; <a class="reference internal" href="#saga.resource.Description" title="saga.resource.Description"><tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Description</span></tt></a></a><a class="headerlink" href="#resource-description-saga-resource-description" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="saga.resource.Description">
-<em class="property">class </em><tt class="descclassname">saga.resource.</tt><tt class="descname">Description</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Description" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.resource.</tt><tt class="descname">Description</tt><a class="headerlink" href="#saga.resource.Description" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a></p>
 <p>The resource description class.</p>
 <p>Resource descriptions are used for two purposes:</p>
@@ -487,7 +487,7 @@ after a deep copy, a change on one instance will not affect the other.</p>
 <span id="resource-resource"></span><h2><a class="toc-backref" href="#id8">4.3. Resource &#8211; <a class="reference internal" href="#saga.resource.Resource" title="saga.resource.Resource"><tt class="xref py py-class docutils literal"><span class="pre">saga.resource.Resource</span></tt></a></a><a class="headerlink" href="#resource-saga-resource-resource" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="saga.resource.Resource">
-<em class="property">class </em><tt class="descclassname">saga.resource.</tt><tt class="descname">Resource</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.resource.Resource" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.resource.</tt><tt class="descname">Resource</tt><big>(</big><em>id=None</em>, <em>session=None</em><big>)</big><a class="headerlink" href="#saga.resource.Resource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.Base</span></tt>, <a class="reference internal" href="../attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a>, <tt class="xref py py-class docutils literal"><span class="pre">saga.async.Async</span></tt></p>
 <p>A <tt class="xref py py-class docutils literal"><span class="pre">Resource</span></tt> class instance represents a specific slice of resource
 which is, if in <cite>RUNNING</cite> state, under the applications control and ready to
@@ -724,13 +724,13 @@ space.</p>
         <li class="right" >
           <a href="../filesystem/index.html" title="3. Files and Directories"
              >previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../index.html" >2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

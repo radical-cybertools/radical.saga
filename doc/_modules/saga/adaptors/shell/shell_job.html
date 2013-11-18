@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.shell.shell_job &mdash; SAGA 0.9.12 documentation</title>
+    <title>saga.adaptors.shell.shell_job &mdash; SAGA 0.9.12-951-ga4d47a5 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.9.12',
+        VERSION:     '0.9.12-951-ga4d47a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.12 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.9.12-951-ga4d47a5 documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +43,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -63,7 +62,6 @@
 
 <span class="sd">&quot;&quot;&quot; shell based job adaptor implementation &quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">saga.utils.which</span>
 <span class="kn">import</span> <span class="nn">saga.utils.pty_shell</span>
 
 <span class="kn">import</span> <span class="nn">saga.adaptors.base</span>
@@ -290,7 +288,7 @@
         <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="o">.</span><span class="n">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_ADAPTOR_INFO</span><span class="p">,</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">id_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span> <span class="p">(</span><span class="s">&#39;^\[(.*)\]-\[(.*?)\]$&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">opts</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_config</span> <span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opts</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_config</span> <span class="p">(</span><span class="n">_ADAPTOR_NAME</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">notifications</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="p">[</span><span class="s">&#39;enable_notifications&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_value</span> <span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">purge_on_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="p">[</span><span class="s">&#39;purge_on_start&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_value</span> <span class="p">()</span>
@@ -1287,9 +1285,6 @@
     <span class="k">def</span> <span class="nf">re_raise</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <div class="viewcode-block" id="ShellJob.re_raise"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_job.html#saga.adaptors.shell.shell_job.ShellJob.re_raise">[docs]</a>        <span class="c"># nothing to do here actually, as run () is synchronous...</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exception</span>
-
-
-<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
 </pre></div></div></div>
 
           </div>
@@ -1323,14 +1318,14 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

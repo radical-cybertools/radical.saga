@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.context &mdash; SAGA 0.9.12 documentation</title>
+    <title>saga.context &mdash; SAGA 0.9.12-951-ga4d47a5 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.12',
+        VERSION:     '0.9.12-951-ga4d47a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.12 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.12-951-ga4d47a5 documentation" href="../../index.html" />
     <link rel="up" title="saga" href="../saga.html" /> 
   </head>
   <body>
@@ -44,7 +43,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -56,13 +55,13 @@
           <div class="body">
             
   <h1>Source code for saga.context</h1><div class="highlight"><pre>
-<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky&quot;</span>
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Ole Weidner&quot;</span>
 <span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
 
 
+<span class="kn">import</span> <span class="nn">radical.utils.signatures</span> <span class="kn">as</span> <span class="nn">rus</span>
 
-<span class="kn">import</span> <span class="nn">saga.utils.signatures</span> <span class="kn">as</span> <span class="nn">sus</span>
 <span class="kn">import</span> <span class="nn">saga.adaptors.base</span>    <span class="kn">as</span> <span class="nn">sab</span>
 <span class="kn">import</span> <span class="nn">saga.attributes</span>       <span class="kn">as</span> <span class="nn">sa</span>
 <span class="kn">import</span> <span class="nn">saga.base</span>             <span class="kn">as</span> <span class="nn">sb</span>
@@ -107,11 +106,11 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Context&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Context&#39;</span><span class="p">,</span> 
                   <span class="nb">basestring</span><span class="p">,</span> 
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sab</span><span class="o">.</span><span class="n">Base</span><span class="p">),</span>
-                  <span class="n">sus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">dict</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">sab</span><span class="o">.</span><span class="n">Base</span><span class="p">),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="nb">dict</span><span class="p">))</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctype</span><span class="p">,</span> <span class="n">_adaptor</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_adaptor_state</span><span class="o">=</span><span class="p">{})</span> <span class="p">:</span> 
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        ctype: string</span>
@@ -148,8 +147,8 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Context&#39;</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Context&#39;</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__str__</span>  <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_dict</span> <span class="p">()</span>
@@ -167,8 +166,8 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>   <span class="p">(</span><span class="s">&#39;Context&#39;</span><span class="p">)</span>
-    <span class="nd">@sus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
+    <span class="nd">@rus.takes</span>   <span class="p">(</span><span class="s">&#39;Context&#39;</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span> <span class="p">(</span><span class="nb">basestring</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__repr__</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -176,17 +175,14 @@
 
     <span class="c"># --------------------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="nd">@sus.takes</span>      <span class="p">(</span><span class="s">&#39;Context&#39;</span><span class="p">,</span> 
+    <span class="nd">@rus.takes</span>      <span class="p">(</span><span class="s">&#39;Context&#39;</span><span class="p">,</span> 
                      <span class="p">(</span><span class="s">&#39;Session&#39;</span><span class="p">,</span> <span class="s">&#39;_DefaultSession&#39;</span><span class="p">))</span>
-    <span class="nd">@sus.returns</span>    <span class="p">(</span><span class="n">sus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
+    <span class="nd">@rus.returns</span>    <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_initialize</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        ret:  None</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">_initialize</span> <span class="p">(</span><span class="n">session</span><span class="p">)</span>
-
-
-<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
 </pre></div></div>
 
           </div>
@@ -220,14 +216,14 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" >saga</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

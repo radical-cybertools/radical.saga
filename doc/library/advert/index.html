@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>Advert Management &mdash; SAGA 0.9.12 documentation</title>
+    <title>Advert Management &mdash; SAGA 0.9.12-951-ga4d47a5 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.12',
+        VERSION:     '0.9.12-951-ga4d47a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.12 documentation" href="../../index.html" /> 
+    <link rel="top" title="SAGA 0.9.12-951-ga4d47a5 documentation" href="../../index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,7 +42,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li> 
+        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -76,7 +75,7 @@ changes of those information.</p>
 <span class="n">ad</span><span class="o">.</span><span class="n">set_attribute</span> <span class="p">(</span><span class="s">&#39;iteration&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="admonition-see-also admonition seealso">
+<div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last">More examples on how to use the SAGA advert module can be found in
 the <a class="reference internal" href="examples.html#code-examples-advert"><em>Advert Module</em></a> section of the
@@ -99,7 +98,7 @@ documentation.</p>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.namespace.entry.Entry</span></tt>, <a class="reference internal" href="../attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a></p>
 <dl class="attribute">
 <dt id="saga.advert.Entry.url">
-<tt class="descname">url</tt><a class="headerlink" href="#saga.advert.Entry.url" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">url</tt><em class="property"> None</em><a class="headerlink" href="#saga.advert.Entry.url" title="Permalink to this definition">¶</a></dt>
 <dd><p>ttype:         saga.task.type enum
 ret:           saga.Url / saga.Task</p>
 <p>Return the complete url pointing to the entry.</p>
@@ -186,7 +185,7 @@ be called once as that attribute enters finality).</p>
 
 <dl class="method">
 <dt id="saga.advert.Entry.as_dict">
-<tt class="descname">as_dict</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Entry.as_dict" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">as_dict</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.advert.Entry.as_dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>return a dict representation of all set attributes</p>
 </dd></dl>
 
@@ -223,6 +222,11 @@ The call will also return &#8216;True&#8217; if the value for that key is &#8216
 <tt class="descname">attribute_is_writeable</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#saga.advert.Entry.attribute_is_writeable" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will check if the given key is writeable - i.e. not readonly.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Entry.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Entry.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.advert.Entry.close">
@@ -264,7 +268,7 @@ directory name.  If the target entry exists, it is overwritten:</p>
 
 <dl class="attribute">
 <dt id="saga.advert.Entry.cwd">
-<tt class="descname">cwd</tt><a class="headerlink" href="#saga.advert.Entry.cwd" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">cwd</tt><em class="property"> None</em><a class="headerlink" href="#saga.advert.Entry.cwd" title="Permalink to this definition">¶</a></dt>
 <dd><p>ttype:         saga.task.type enum
 ret:           string / saga.Task</p>
 </dd></dl>
@@ -277,6 +281,11 @@ pattern is of the form &#8216;key=val&#8217;, where both &#8216;key&#8217; and &
 POSIX shell wildcards.  For non-string typed attributes, the pattern is
 applied to a string serialization of the typed value, if that exists.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Entry.get">
+<tt class="descname">get</tt><big>(</big><em>key</em>, <em>default</em><big>)</big><a class="headerlink" href="#saga.advert.Entry.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.advert.Entry.get_attribute">
@@ -335,6 +344,11 @@ get_attribute method.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="saga.advert.Entry.has_key">
+<tt class="descname">has_key</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#saga.advert.Entry.has_key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="saga.advert.Entry.is_dir">
 <tt class="descname">is_dir</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.advert.Entry.is_dir" title="Permalink to this definition">¶</a></dt>
 <dd><p>ttype:         saga.task.type enum
@@ -362,6 +376,31 @@ ret:           bool / saga.Task</p>
 ttype:         saga.task.type enum
 ret:           bool / saga.Task</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Entry.items">
+<tt class="descname">items</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Entry.items" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Entry.iteritems">
+<tt class="descname">iteritems</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Entry.iteritems" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Entry.iterkeys">
+<tt class="descname">iterkeys</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Entry.iterkeys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Entry.itervalues">
+<tt class="descname">itervalues</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Entry.itervalues" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Entry.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Entry.keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.advert.Entry.link">
@@ -408,10 +447,20 @@ directory name.  If the target entry exists, it is overwritten:</p>
 
 <dl class="attribute">
 <dt id="saga.advert.Entry.name">
-<tt class="descname">name</tt><a class="headerlink" href="#saga.advert.Entry.name" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">name</tt><em class="property"> None</em><a class="headerlink" href="#saga.advert.Entry.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>ttype:         saga.task.type enum
 ret:           string / saga.Task</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Entry.next">
+<tt class="descname">next</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Entry.next" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Entry.popitem">
+<tt class="descname">popitem</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Entry.popitem" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.advert.Entry.read_link">
@@ -464,7 +513,7 @@ attribute.</p>
 
 <dl class="attribute">
 <dt id="saga.advert.Entry.session">
-<tt class="descname">session</tt><a class="headerlink" href="#saga.advert.Entry.session" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">session</tt><em class="property"> None</em><a class="headerlink" href="#saga.advert.Entry.session" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the session which is managing the object instance.  For objects
 which do not accept a session handle on construction, this call returns
 None.</p>
@@ -504,6 +553,21 @@ is in fact not very useful.  For that reason, it maps internally to the
 set_attribute method.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="saga.advert.Entry.setdefault">
+<tt class="descname">setdefault</tt><big>(</big><em>key</em>, <em>default</em><big>)</big><a class="headerlink" href="#saga.advert.Entry.setdefault" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Entry.update">
+<tt class="descname">update</tt><big>(</big><em>other</em><big>)</big><a class="headerlink" href="#saga.advert.Entry.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Entry.values">
+<tt class="descname">values</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Entry.values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -512,7 +576,7 @@ set_attribute method.</p>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.namespace.directory.Directory</span></tt>, <a class="reference internal" href="../attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a></p>
 <dl class="attribute">
 <dt id="saga.advert.Directory.url">
-<tt class="descname">url</tt><a class="headerlink" href="#saga.advert.Directory.url" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">url</tt><em class="property"> None</em><a class="headerlink" href="#saga.advert.Directory.url" title="Permalink to this definition">¶</a></dt>
 <dd><p>ttype:         saga.task.type enum
 ret:           saga.Url / saga.Task</p>
 <p>Return the complete url pointing to the entry.</p>
@@ -589,7 +653,7 @@ be called once as that attribute enters finality).</p>
 
 <dl class="method">
 <dt id="saga.advert.Directory.as_dict">
-<tt class="descname">as_dict</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Directory.as_dict" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">as_dict</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.advert.Directory.as_dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>return a dict representation of all set attributes</p>
 </dd></dl>
 
@@ -636,6 +700,11 @@ ret:           None / saga.Task</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="saga.advert.Directory.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Directory.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="saga.advert.Directory.close">
 <tt class="descname">close</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.advert.Directory.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>timeout:       float
@@ -675,7 +744,7 @@ source can be relative:</p>
 
 <dl class="attribute">
 <dt id="saga.advert.Directory.cwd">
-<tt class="descname">cwd</tt><a class="headerlink" href="#saga.advert.Directory.cwd" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">cwd</tt><em class="property"> None</em><a class="headerlink" href="#saga.advert.Directory.cwd" title="Permalink to this definition">¶</a></dt>
 <dd><p>ttype:         saga.task.type enum
 ret:           string / saga.Task</p>
 </dd></dl>
@@ -710,6 +779,11 @@ pattern is of the form &#8216;key=val&#8217;, where both &#8216;key&#8217; and &
 POSIX shell wildcards.  For non-string typed attributes, the pattern is
 applied to a string serialization of the typed value, if that exists.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Directory.get">
+<tt class="descname">get</tt><big>(</big><em>key</em>, <em>default</em><big>)</big><a class="headerlink" href="#saga.advert.Directory.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.advert.Directory.get_attribute">
@@ -783,6 +857,11 @@ get_attribute method.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="saga.advert.Directory.has_key">
+<tt class="descname">has_key</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#saga.advert.Directory.has_key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="saga.advert.Directory.is_dir">
 <tt class="descname">is_dir</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.advert.Directory.is_dir" title="Permalink to this definition">¶</a></dt>
 <dd><p>tgt:           saga.Url / None
@@ -812,6 +891,31 @@ ret:           bool / saga.Task</p>
 ttype:         saga.task.type enum
 ret:           bool / saga.Task</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Directory.items">
+<tt class="descname">items</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Directory.items" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Directory.iteritems">
+<tt class="descname">iteritems</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Directory.iteritems" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Directory.iterkeys">
+<tt class="descname">iterkeys</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Directory.iterkeys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Directory.itervalues">
+<tt class="descname">itervalues</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Directory.itervalues" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Directory.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Directory.keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.advert.Directory.link">
@@ -910,10 +1014,15 @@ source can be relative:</p>
 
 <dl class="attribute">
 <dt id="saga.advert.Directory.name">
-<tt class="descname">name</tt><a class="headerlink" href="#saga.advert.Directory.name" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">name</tt><em class="property"> None</em><a class="headerlink" href="#saga.advert.Directory.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>ttype:         saga.task.type enum
 ret:           string / saga.Task</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Directory.next">
+<tt class="descname">next</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Directory.next" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="saga.advert.Directory.open">
@@ -954,6 +1063,11 @@ ret:      saga.namespace.Directory / saga.Task</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="saga.advert.Directory.popitem">
+<tt class="descname">popitem</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Directory.popitem" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="saga.advert.Directory.read_link">
 <tt class="descname">read_link</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.advert.Directory.read_link" title="Permalink to this definition">¶</a></dt>
 <dd><p>tgt:           saga.Url / None
@@ -991,7 +1105,7 @@ attribute.</p>
 
 <dl class="attribute">
 <dt id="saga.advert.Directory.session">
-<tt class="descname">session</tt><a class="headerlink" href="#saga.advert.Directory.session" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">session</tt><em class="property"> None</em><a class="headerlink" href="#saga.advert.Directory.session" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the session which is managing the object instance.  For objects
 which do not accept a session handle on construction, this call returns
 None.</p>
@@ -1030,6 +1144,21 @@ being raised.</p>
 is in fact not very useful.  For that reason, it maps internally to the
 set_attribute method.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Directory.setdefault">
+<tt class="descname">setdefault</tt><big>(</big><em>key</em>, <em>default</em><big>)</big><a class="headerlink" href="#saga.advert.Directory.setdefault" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Directory.update">
+<tt class="descname">update</tt><big>(</big><em>other</em><big>)</big><a class="headerlink" href="#saga.advert.Directory.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="saga.advert.Directory.values">
+<tt class="descname">values</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.advert.Directory.values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -1072,12 +1201,12 @@ set_attribute method.</p>
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li> 
+        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

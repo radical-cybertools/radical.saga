@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.irods.irods_replica &mdash; SAGA 0.9.12 documentation</title>
+    <title>saga.adaptors.irods.irods_replica &mdash; SAGA 0.9.12-951-ga4d47a5 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.9.12',
+        VERSION:     '0.9.12-951-ga4d47a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.12 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.9.12-951-ga4d47a5 documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -44,7 +43,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -56,6 +55,11 @@
           <div class="body">
             
   <h1>Source code for saga.adaptors.irods.irods_replica</h1><div class="highlight"><pre>
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Ashley Z, Ole Weidner&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
+<span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
+
 <span class="c"># TODO: Create function to check for all the iRODS error codes and give</span>
 <span class="c">#       a better error readout?</span>
 
@@ -290,7 +294,7 @@
             <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">):</span>
     
                 <span class="c"># if we are listing a directory or remote resource file location i.e.</span>
-                <span class="c"># (bliss-irods)[azebro1@gw68 bliss]$ ils -L /osg/home/azebro1</span>
+                <span class="c"># [azebro1@gw68]$ ils -L /osg/home/azebro1</span>
                 <span class="c"># /osg/home/azebro1:</span>
                 <span class="c">#    azebro1           1 UFlorida-SSERCA_FTP            12 2012-11-14.09:55 &amp; irods-test.txt</span>
                 <span class="c">#          /data/cache/UFlorida-SSERCA_FTPplaceholder/home/azebro1/irods-test.txt    osgGridFtpGroup</span>
@@ -439,8 +443,8 @@
 <span class="c">#</span>
 <span class="c"># logical_directory adaptor class</span>
 <span class="c">#</span>
-<div class="viewcode-block" id="IRODSDirectory"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory">[docs]</a><span class="k">class</span> <span class="nc">IRODSDirectory</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">LogicalDirectory</span><span class="p">)</span> <span class="p">:</span>
-
+<span class="k">class</span> <span class="nc">IRODSDirectory</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">LogicalDirectory</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSDirectory"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory">[docs]</a>
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="c">#</span>
@@ -464,8 +468,8 @@
     <span class="c">#</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSDirectory.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance">[docs]</a>    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
-
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSDirectory.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance">[docs]</a>
         <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
@@ -477,10 +481,10 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-    <span class="nd">@ASYNC_CALL</span>
-<div class="viewcode-block" id="IRODSDirectory.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance_async">[docs]</a>    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
-
+    <span class="c">#</span>
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSDirectory.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.init_instance_async">[docs]</a>
         <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
@@ -496,8 +500,8 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-    <span class="k">def</span> <span class="nf">_init_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_init_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
 
         <span class="n">url</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
         <span class="n">flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span> 
@@ -514,16 +518,16 @@
     <span class="c">#</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSDirectory.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.get_url">[docs]</a>    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSDirectory.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.get_url">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSDirectory.open"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
-        
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">open</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSDirectory.open"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.open">[docs]</a>        
         <span class="k">if</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">host</span> <span class="p">:</span> 
             <span class="n">url</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
 
@@ -534,10 +538,10 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSDirectory.make_dir"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.make_dir">[docs]</a>    <span class="k">def</span> <span class="nf">make_dir</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
-
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">make_dir</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSDirectory.make_dir"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.make_dir">[docs]</a>
         <span class="c">#complete_path = dir_obj._url.path</span>
         <span class="n">complete_path</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;TEST: Attempting to make directory at: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">complete_path</span><span class="p">)</span>
@@ -563,10 +567,10 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSDirectory.remove"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.remove">[docs]</a>    <span class="k">def</span> <span class="nf">remove</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.remove() &#39;&#39;&#39;</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">remove</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSDirectory.remove"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.remove">[docs]</a>        <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.remove() &#39;&#39;&#39;</span>
 
         <span class="n">complete_path</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Attempting to remove directory at: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">complete_path</span><span class="p">)</span>
@@ -593,10 +597,10 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSDirectory.list"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.list">[docs]</a>    <span class="k">def</span> <span class="nf">list</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">npat</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
-       <span class="c">#TODO: Make this use the irods_get_directory_listing</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">list</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">npat</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSDirectory.list"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSDirectory.list">[docs]</a>       <span class="c">#TODO: Make this use the irods_get_directory_listing</span>
 
         <span class="n">complete_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span>
         <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
@@ -629,9 +633,9 @@
 <span class="c">######################################################################</span>
 <span class="c">#</span>
 <span class="c"># logical_file adaptor class</span>
-<span class="c">#</span></div></div>
-<div class="viewcode-block" id="IRODSFile"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile">[docs]</a><span class="k">class</span> <span class="nc">IRODSFile</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">LogicalFile</span><span class="p">)</span> <span class="p">:</span>
-
+<span class="c">#</span>
+<span class="k">class</span> <span class="nc">IRODSFile</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">LogicalFile</span><span class="p">)</span> <span class="p">:</span></div></div>
+<div class="viewcode-block" id="IRODSFile"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile">[docs]</a>
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="c">#</span>
@@ -660,8 +664,8 @@
     <span class="c">#</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSFile.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.init_instance">[docs]</a>    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
-
+    <span class="k">def</span> <span class="nf">init_instance</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.init_instance">[docs]</a>
         <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
@@ -673,10 +677,10 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-    <span class="nd">@ASYNC_CALL</span>
-<div class="viewcode-block" id="IRODSFile.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.init_instance_async">[docs]</a>    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
-
+    <span class="c">#</span>
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">init_instance_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.init_instance_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.init_instance_async">[docs]</a>
         <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>     <span class="o">=</span> <span class="n">url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span>   <span class="o">=</span> <span class="n">flags</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
@@ -694,8 +698,8 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-    <span class="k">def</span> <span class="nf">_init_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_init_check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
         <span class="n">url</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
         <span class="n">flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span> 
 
@@ -716,15 +720,15 @@
     <span class="c">#</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSFile.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.get_url">[docs]</a>    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
+    <span class="k">def</span> <span class="nf">get_url</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.get_url">[docs]</a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-    <span class="nd">@ASYNC_CALL</span>
-<div class="viewcode-block" id="IRODSFile.get_url_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.get_url_async">[docs]</a>    <span class="k">def</span> <span class="nf">get_url_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
-
+    <span class="c">#</span>
+    <span class="nd">@ASYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_url_async</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.get_url_async"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.get_url_async">[docs]</a>
         <span class="n">t</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">Task</span> <span class="p">()</span>
 
         <span class="n">t</span><span class="o">.</span><span class="n">_set_state</span>  <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">DONE</span>
@@ -735,10 +739,10 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSFile.copy_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.copy_self">[docs]</a>    <span class="k">def</span> <span class="nf">copy_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
-
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">copy_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.copy_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.copy_self">[docs]</a>
         <span class="n">tgt_url</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">target</span><span class="p">)</span>
         <span class="n">tgt</span>     <span class="o">=</span> <span class="n">tgt_url</span><span class="o">.</span><span class="n">path</span>
         <span class="n">src</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">path</span>
@@ -756,10 +760,10 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSFile.list_locations"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.list_locations">[docs]</a>    <span class="k">def</span> <span class="nf">list_locations</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-         <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.list_locations()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">list_locations</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.list_locations"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.list_locations">[docs]</a>         <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.list_locations()</span>
 <span class="sd">         &#39;&#39;&#39;</span>
          <span class="c">#return a list of all replica locations for a file</span>
          <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
@@ -770,20 +774,20 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSFile.get_size_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.get_size_self">[docs]</a>    <span class="k">def</span> <span class="nf">get_size_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
-         <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.get_size()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">get_size_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.get_size_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.get_size_self">[docs]</a>         <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.get_size()</span>
 <span class="sd">         &#39;&#39;&#39;</span>
          <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSFile.remove_location"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.remove_location">[docs]</a>    <span class="k">def</span> <span class="nf">remove_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.remove_locations()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">remove_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
+<div class="viewcode-block" id="IRODSFile.remove_location"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.remove_location">[docs]</a>        <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.remove_locations()</span>
 <span class="sd">        &#39;&#39;&#39;</span>     
         <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NotImplemented</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;Not implemented&quot;</span><span class="p">)</span>
         <span class="k">return</span>
@@ -791,10 +795,10 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSFile.replicate"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.replicate">[docs]</a>    <span class="k">def</span> <span class="nf">replicate</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.replicate()</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">replicate</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
+<div class="viewcode-block" id="IRODSFile.replicate"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.replicate">[docs]</a>        <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.replicate()</span>
 <span class="sd">        &#39;&#39;&#39;</span>        
         <span class="c">#path to file we are replicating on iRODS</span>
         <span class="n">complete_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>        
@@ -825,10 +829,10 @@
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="c"># TODO: This is COMPLETELY untested, as it is unsupported on the only iRODS</span>
-    <span class="c"># machine I have access to.</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSFile.move_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.move_self">[docs]</a>    <span class="k">def</span> <span class="nf">move_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.move() &#39;&#39;&#39;</span>
+    <span class="c"># machine I have access to.</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">move_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.move_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.move_self">[docs]</a>        <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.move() &#39;&#39;&#39;</span>
 
         <span class="c">#path to file we are moving on iRODS</span>
         <span class="n">source_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
@@ -852,18 +856,18 @@
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
-    <span class="c">#</span></div>
-<div class="viewcode-block" id="IRODSFile.add_location"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.add_location">[docs]</a>    <span class="k">def</span> <span class="nf">add_location</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.add_location() &#39;&#39;&#39;</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">add_location</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ttype</span><span class="p">)</span> <span class="p">:</span></div>
+<div class="viewcode-block" id="IRODSFile.add_location"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.add_location">[docs]</a>        <span class="sd">&#39;&#39;&#39;This method is called upon logicaldir.add_location() &#39;&#39;&#39;</span>
         <span class="c"># TODO: REMOVE UPLOAD CALL/MERGE INTO HERE IF SUPERFLUOUS</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">upload</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
 
 
     <span class="c">######################################################################</span>
-    <span class="c">##</span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSFile.remove_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.remove_self">[docs]</a>    <span class="k">def</span> <span class="nf">remove_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&#39;&#39;&#39;This method is called upon logicalfile.remove() &#39;&#39;&#39;</span>
+    <span class="c">##</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">remove_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.remove_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.remove_self">[docs]</a>        <span class="sd">&#39;&#39;&#39;This method is called upon logicalfile.remove() &#39;&#39;&#39;</span>
 
         <span class="n">complete_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="o">.</span><span class="n">get_path</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Attempting to remove file at: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">complete_path</span><span class="p">)</span>
@@ -897,10 +901,10 @@
     <span class="c"># OR (revised)</span>
     <span class="c"># myfile.upload(&quot;file://home/ashley/my/local/filesystem/irods.tar.gz&quot;,</span>
     <span class="c">#               &quot;irods://.../?resource=host3&quot;)</span>
-    <span class="c"># </span></div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSFile.upload"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.upload">[docs]</a>    <span class="k">def</span> <span class="nf">upload</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&#39;&#39;&#39;Uploads a file from the LOCAL, PHYSICAL filesystem to</span>
+    <span class="c"># </span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">upload</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.upload"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.upload">[docs]</a>        <span class="sd">&#39;&#39;&#39;Uploads a file from the LOCAL, PHYSICAL filesystem to</span>
 <span class="sd">           the replica management system.</span>
 <span class="sd">           @param source: URL (should be file:// or local path) of local file</span>
 <span class="sd">           @param target: Optional param containing ?resource=myresource query</span>
@@ -961,10 +965,10 @@
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="o">.</span><span class="n">_log</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="s">&quot;Couldn&#39;t upload file: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ex</span><span class="p">)</span>
 
         <span class="k">return</span>
-</div>
-    <span class="nd">@SYNC_CALL</span>
-<div class="viewcode-block" id="IRODSFile.download"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.download">[docs]</a>    <span class="k">def</span> <span class="nf">download</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
-        <span class="sd">&#39;&#39;&#39;Downloads a file from the REMOTE REPLICA FILESYSTEM to a local</span>
+
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">download</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="IRODSFile.download"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.replica.irods.html#saga.adaptors.irods.irods_replica.IRODSFile.download">[docs]</a>        <span class="sd">&#39;&#39;&#39;Downloads a file from the REMOTE REPLICA FILESYSTEM to a local</span>
 <span class="sd">           directory.</span>
 <span class="sd">           @param target: param containing a local path/filename</span>
 <span class="sd">                          to save the file to</span>
@@ -1019,8 +1023,6 @@
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;Couldn&#39;t download file. </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ex</span><span class="p">)</span>
 
         <span class="k">return</span>
-
-<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
 </pre></div></div></div>
 
           </div>
@@ -1054,14 +1056,14 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

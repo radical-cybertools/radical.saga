@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>2. Configuration &mdash; SAGA 0.9.12 documentation</title>
+    <title>2. Configuration &mdash; SAGA 0.9.12-951-ga4d47a5 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.12',
+        VERSION:     '0.9.12-951-ga4d47a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.12 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.12-951-ga4d47a5 documentation" href="../index.html" />
     <link rel="up" title="1. Installation and Usage" href="index.html" />
     <link rel="next" title="3. Logging System" href="logger.html" />
     <link rel="prev" title="1. Installation" href="install.html" /> 
@@ -52,7 +51,7 @@
         <li class="right" >
           <a href="install.html" title="1. Installation"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">1. Installation and Usage</a> &raquo;</li> 
       </ul>
     </div>  
@@ -80,16 +79,9 @@ modify  its configuration: via <a class="reference internal" href="#conf-file"><
 <span id="conf-file"></span><h2>2.1. Configuration Files<a class="headerlink" href="#configuration-files" title="Permalink to this headline">¶</a></h2>
 <p>If you need to make persistent changes to any of SAGA&#8217;s <a class="reference internal" href="#conf-options"><em>Configuration Options</em></a>, the
 simplest option is to create a configuration file. During startup, SAGA checks
-in two different locations for the existence of a configuration file:</p>
-<ul class="simple">
-<li><tt class="docutils literal"><span class="pre">/etc/saga.conf</span></tt> - for a system-wide configuration</li>
-<li><tt class="docutils literal"><span class="pre">$HOME/.saga.conf</span></tt> - for a user-specific configuration (Note that it start with a &#8216;.&#8217;)</li>
-</ul>
-<p>If a configuration file is found, it is parsed by SAGA&#8217;s configuration system.
-If files are present in both locations, SAGA will try to merge both, with the
-user-level  configuration (<tt class="docutils literal"><span class="pre">$HOME/.saga.conf</span></tt>) always having precedence over
-the  system-wide configuration (<tt class="docutils literal"><span class="pre">$HOME/.saga.conf</span></tt>). SAGA configuration files
-use a structure that looks like this:</p>
+for the existence of a configuration file in <cite>$HOME/.saga.conf</cite>.  If that
+configuration file is found, it is parsed by SAGA&#8217;s configuration system.
+SAGA configuration files use a structure that looks like this:</p>
 <div class="highlight-python"><pre>[saga.engine]
     option = value
 
@@ -187,13 +179,13 @@ of SAGA:</p>
         <li class="right" >
           <a href="install.html" title="1. Installation"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="index.html" >1. Installation and Usage</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

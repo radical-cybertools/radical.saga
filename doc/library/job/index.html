@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>2. Job Submission and Control &mdash; SAGA 0.9.12 documentation</title>
+    <title>2. Job Submission and Control &mdash; SAGA 0.9.12-951-ga4d47a5 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.12',
+        VERSION:     '0.9.12-951-ga4d47a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.12 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.12-951-ga4d47a5 documentation" href="../../index.html" />
     <link rel="up" title="2. Library Reference" href="../index.html" />
     <link rel="next" title="3. Files and Directories" href="../filesystem/index.html" />
     <link rel="prev" title="1. URLs" href="../url.html" /> 
@@ -52,7 +51,7 @@
         <li class="right" >
           <a href="../url.html" title="1. URLs"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -94,7 +93,7 @@ HPC queing system to grid and cloud computing services.</p>
 <span class="n">service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="admonition-see-also admonition seealso">
+<div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last">More examples can be found in the individual adaptor sections!</p>
 </div>
@@ -128,7 +127,7 @@ documentation.</p>
 <span id="job-service"></span><h2><a class="toc-backref" href="#id1">2.1. Job Service &#8211; <a class="reference internal" href="#saga.job.Service" title="saga.job.Service"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Service</span></tt></a></a><a class="headerlink" href="#job-service-saga-job-service" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="saga.job.Service">
-<em class="property">class </em><tt class="descclassname">saga.job.</tt><tt class="descname">Service</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.job.Service" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.job.</tt><tt class="descname">Service</tt><big>(</big><em>rm</em>, <em>session</em><big>)</big><a class="headerlink" href="#saga.job.Service" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.base.Base</span></tt>, <tt class="xref py py-class docutils literal"><span class="pre">saga.async.Async</span></tt></p>
 <p>The job.Service represents a resource management backend, and as such allows
 the creation, submission and management of jobs.</p>
@@ -175,12 +174,6 @@ endpoint for that service.</p>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.job.Service.__str__">
-<tt class="descname">__str__</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.job.Service.__str__" title="Permalink to this definition">¶</a></dt>
-<dd><p>String representation. Returns the job service Url.</p>
 </dd></dl>
 
 <dl class="method">
@@ -277,7 +270,7 @@ the job object.</p>
 <tt class="descname">list</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.job.Service.list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a list of the jobs that are managed by this Service 
 instance.</p>
-<div class="admonition-see-also admonition seealso">
+<div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last">The <a class="reference internal" href="#saga.job.Service.jobs" title="saga.job.Service.jobs"><tt class="xref py py-data docutils literal"><span class="pre">jobs</span></tt></a> property and the
 <a class="reference internal" href="#saga.job.Service.list" title="saga.job.Service.list"><tt class="xref py py-meth docutils literal"><span class="pre">list()</span></tt></a> method are semantically 
@@ -287,7 +280,7 @@ equivalent.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Ttype :</th><td class="field-body">Type of operation. Default (None) is synchronous.</td>
+<tr class="field-odd field"><th class="field-name">Ttype:</th><td class="field-body">Type of operation. Default (None) is synchronous.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of <a class="reference internal" href="#saga.job.Job" title="saga.job.Job"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Job</span></tt></a></td>
 </tr>
@@ -310,11 +303,11 @@ and which can potentially be accessed and managed by the application.</p>
 
 <dl class="attribute">
 <dt id="saga.job.Service.jobs">
-<tt class="descname">jobs</tt><a class="headerlink" href="#saga.job.Service.jobs" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">jobs</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Service.jobs" title="Permalink to this definition">¶</a></dt>
 <dd><p>list()</p>
 <p>Return a list of the jobs that are managed by this Service 
 instance.</p>
-<div class="admonition-see-also admonition seealso">
+<div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last">The <a class="reference internal" href="#saga.job.Service.jobs" title="saga.job.Service.jobs"><tt class="xref py py-data docutils literal"><span class="pre">jobs</span></tt></a> property and the
 <a class="reference internal" href="#saga.job.Service.list" title="saga.job.Service.list"><tt class="xref py py-meth docutils literal"><span class="pre">list()</span></tt></a> method are semantically 
@@ -324,7 +317,7 @@ equivalent.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Ttype :</th><td class="field-body">Type of operation. Default (None) is synchronous.</td>
+<tr class="field-odd field"><th class="field-name">Ttype:</th><td class="field-body">Type of operation. Default (None) is synchronous.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of <a class="reference internal" href="#saga.job.Job" title="saga.job.Job"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Job</span></tt></a></td>
 </tr>
@@ -349,7 +342,7 @@ and which can potentially be accessed and managed by the application.</p>
 <dt id="saga.job.Service.get_url">
 <tt class="descname">get_url</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.job.Service.get_url" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the URL this Service instance was created with.</p>
-<div class="admonition-see-also admonition seealso">
+<div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last">The <a class="reference internal" href="#saga.job.Service.url" title="saga.job.Service.url"><tt class="xref py py-data docutils literal"><span class="pre">url</span></tt></a> property and the
 <a class="reference internal" href="#saga.job.Service.get_url" title="saga.job.Service.get_url"><tt class="xref py py-meth docutils literal"><span class="pre">get_url()</span></tt></a> method are semantically 
@@ -359,10 +352,10 @@ equivalent and only duplicated for convenience.</p>
 
 <dl class="attribute">
 <dt id="saga.job.Service.url">
-<tt class="descname">url</tt><a class="headerlink" href="#saga.job.Service.url" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">url</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Service.url" title="Permalink to this definition">¶</a></dt>
 <dd><p>get_url()</p>
 <p>Return the URL this Service instance was created with.</p>
-<div class="admonition-see-also admonition seealso">
+<div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last">The <a class="reference internal" href="#saga.job.Service.url" title="saga.job.Service.url"><tt class="xref py py-data docutils literal"><span class="pre">url</span></tt></a> property and the
 <a class="reference internal" href="#saga.job.Service.get_url" title="saga.job.Service.get_url"><tt class="xref py py-meth docutils literal"><span class="pre">get_url()</span></tt></a> method are semantically 
@@ -440,7 +433,7 @@ after a deep copy, a change on one instance will not affect the other.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str</td>
 </tr>
 </tbody>
 </table>
@@ -464,7 +457,7 @@ after a deep copy, a change on one instance will not affect the other.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Tpye :</th><td class="field-body">list()</td>
+<tr class="field-odd field"><th class="field-name">Tpye:</th><td class="field-body">list()</td>
 </tr>
 </tbody>
 </table>
@@ -488,7 +481,7 @@ after a deep copy, a change on one instance will not affect the other.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">dict()</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dict()</td>
 </tr>
 </tbody>
 </table>
@@ -512,7 +505,7 @@ after a deep copy, a change on one instance will not affect the other.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str()</td>
 </tr>
 </tbody>
 </table>
@@ -537,7 +530,7 @@ a relative filename, the file is relative to <a class="reference internal" href=
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str()</td>
 </tr>
 </tbody>
 </table>
@@ -562,7 +555,7 @@ a relative filename, the file is relative to <a class="reference internal" href=
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str()</td>
 </tr>
 </tbody>
 </table>
@@ -596,7 +589,7 @@ jd.input_file_transfer = ["file://localhost/data/input/test.dat &gt; "test.dat",
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">list()</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list()</td>
 </tr>
 </tbody>
 </table>
@@ -620,7 +613,7 @@ jd.input_file_transfer = ["file://localhost/data/input/test.dat &gt; "test.dat",
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str()</td>
 </tr>
 </tbody>
 </table>
@@ -644,7 +637,7 @@ jd.input_file_transfer = ["file://localhost/data/input/test.dat &gt; "test.dat",
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str()</td>
 </tr>
 </tbody>
 </table>
@@ -664,7 +657,7 @@ jd.input_file_transfer = ["file://localhost/data/input/test.dat &gt; "test.dat",
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">str()</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str()</td>
 </tr>
 </tbody>
 </table>
@@ -679,7 +672,7 @@ jd.input_file_transfer = ["file://localhost/data/input/test.dat &gt; "test.dat",
 <dl class="data">
 <dt id="saga.job.TOTAL_CPU_COUNT">
 <tt class="descclassname">saga.job.</tt><tt class="descname">TOTAL_CPU_COUNT</tt><em class="property"> = 'TotalCPUCount'</em><a class="headerlink" href="#saga.job.TOTAL_CPU_COUNT" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -692,7 +685,7 @@ If the argument is a string, the return value is the same object.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">int() or str()</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int() or str()</td>
 </tr>
 </tbody>
 </table>
@@ -701,7 +694,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.NUMBER_OF_PROCESSES">
 <tt class="descclassname">saga.job.</tt><tt class="descname">NUMBER_OF_PROCESSES</tt><em class="property"> = 'NumberOfProcesses'</em><a class="headerlink" href="#saga.job.NUMBER_OF_PROCESSES" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -714,7 +707,7 @@ If the argument is a string, the return value is the same object.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">int() or str()</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int() or str()</td>
 </tr>
 </tbody>
 </table>
@@ -723,7 +716,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.PROCESSES_PER_HOST">
 <tt class="descclassname">saga.job.</tt><tt class="descname">PROCESSES_PER_HOST</tt><em class="property"> = 'ProcessesPerHost'</em><a class="headerlink" href="#saga.job.PROCESSES_PER_HOST" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -736,7 +729,7 @@ If the argument is a string, the return value is the same object.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">int() or str()</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int() or str()</td>
 </tr>
 </tbody>
 </table>
@@ -745,7 +738,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.THREADS_PER_PROCESS">
 <tt class="descclassname">saga.job.</tt><tt class="descname">THREADS_PER_PROCESS</tt><em class="property"> = 'ThreadsPerProcess'</em><a class="headerlink" href="#saga.job.THREADS_PER_PROCESS" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -758,7 +751,7 @@ If the argument is a string, the return value is the same object.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">int() or str()</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int() or str()</td>
 </tr>
 </tbody>
 </table>
@@ -768,7 +761,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.CLEANUP">
 <tt class="descclassname">saga.job.</tt><tt class="descname">CLEANUP</tt><em class="property"> = 'Cleanup'</em><a class="headerlink" href="#saga.job.CLEANUP" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -781,7 +774,7 @@ If the argument is a string, the return value is the same object.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">bool()</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool()</td>
 </tr>
 </tbody>
 </table>
@@ -790,7 +783,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.JOB_START_TIME">
 <tt class="descclassname">saga.job.</tt><tt class="descname">JOB_START_TIME</tt><em class="property"> = 'JobStartTime'</em><a class="headerlink" href="#saga.job.JOB_START_TIME" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -803,7 +796,7 @@ If the argument is a string, the return value is the same object.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type :</th><td class="field-body">UNIX timestamp</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">UNIX timestamp</td>
 </tr>
 </tbody>
 </table>
@@ -812,7 +805,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.WALL_TIME_LIMIT">
 <tt class="descclassname">saga.job.</tt><tt class="descname">WALL_TIME_LIMIT</tt><em class="property"> = 'WallTimeLimit'</em><a class="headerlink" href="#saga.job.WALL_TIME_LIMIT" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -826,7 +819,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.TOTAL_PHYSICAL_MEMORY">
 <tt class="descclassname">saga.job.</tt><tt class="descname">TOTAL_PHYSICAL_MEMORY</tt><em class="property"> = 'TotalPhysicalMemory'</em><a class="headerlink" href="#saga.job.TOTAL_PHYSICAL_MEMORY" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -840,7 +833,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.CPU_ARCHITECTURE">
 <tt class="descclassname">saga.job.</tt><tt class="descname">CPU_ARCHITECTURE</tt><em class="property"> = 'CPUArchitecture'</em><a class="headerlink" href="#saga.job.CPU_ARCHITECTURE" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -854,7 +847,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.OPERATING_SYSTEM_TYPE">
 <tt class="descclassname">saga.job.</tt><tt class="descname">OPERATING_SYSTEM_TYPE</tt><em class="property"> = 'OperatingSystemType'</em><a class="headerlink" href="#saga.job.OPERATING_SYSTEM_TYPE" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -868,7 +861,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.CANDIDATE_HOSTS">
 <tt class="descclassname">saga.job.</tt><tt class="descname">CANDIDATE_HOSTS</tt><em class="property"> = 'CandidateHosts'</em><a class="headerlink" href="#saga.job.CANDIDATE_HOSTS" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -882,7 +875,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.JOB_CONTACT">
 <tt class="descclassname">saga.job.</tt><tt class="descname">JOB_CONTACT</tt><em class="property"> = 'JobContact'</em><a class="headerlink" href="#saga.job.JOB_CONTACT" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -969,14 +962,14 @@ actual environment of the running job instance.</p>
 
 <dl class="attribute">
 <dt id="saga.job.Job.id">
-<tt class="descname">id</tt><a class="headerlink" href="#saga.job.Job.id" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">id</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Job.id" title="Permalink to this definition">¶</a></dt>
 <dd><p>get_id()</p>
 <p>Return the job ID.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="saga.job.Job.description">
-<tt class="descname">description</tt><a class="headerlink" href="#saga.job.Job.description" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">description</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Job.description" title="Permalink to this definition">¶</a></dt>
 <dd><p>get_description()</p>
 <p>Return the job description this job was created from.</p>
 <p>The returned description can be used to inspect job properties
@@ -1158,7 +1151,7 @@ state.  The default timeout value is &#8216;None&#8217; (blocking).</p>
 
 <dl class="attribute">
 <dt id="saga.job.Job.state">
-<tt class="descname">state</tt><a class="headerlink" href="#saga.job.Job.state" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">state</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Job.state" title="Permalink to this definition">¶</a></dt>
 <dd><p>get_state()</p>
 <p>Return the current state of the job.</p>
 <p><strong>Example</strong>:</p>
@@ -1186,7 +1179,7 @@ state.  The default timeout value is &#8216;None&#8217; (blocking).</p>
 
 <dl class="attribute">
 <dt id="saga.job.Job.ExitCode">
-<tt class="descname">ExitCode</tt><a class="headerlink" href="#saga.job.Job.ExitCode" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">ExitCode</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Job.ExitCode" title="Permalink to this definition">¶</a></dt>
 <dd><p>The job&#8217;s exitcode.</p>
 <p>this attribute is only meaningful if the job is in &#8216;Done&#8217; or &#8216;Final&#8217;
 state - for all other job states, this attribute value is undefined.</p>
@@ -1210,14 +1203,14 @@ state - for all other job states, this attribute value is undefined.</p>
 
 <dl class="attribute">
 <dt id="saga.job.Job.JobID">
-<tt class="descname">JobID</tt><a class="headerlink" href="#saga.job.Job.JobID" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">JobID</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Job.JobID" title="Permalink to this definition">¶</a></dt>
 <dd><p>The job&#8217;s identifier.</p>
 <p>This attribute is equivalent to the value returned by job.get_job_id()</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="saga.job.Job.ServiceURL">
-<tt class="descname">ServiceURL</tt><a class="headerlink" href="#saga.job.Job.ServiceURL" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">ServiceURL</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Job.ServiceURL" title="Permalink to this definition">¶</a></dt>
 <dd><p>The URL of the <a class="reference internal" href="#saga.job.Service" title="saga.job.Service"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Service</span></tt></a> instance managing this job.</p>
 <p>This attribute is represents the URL under where the job management
 service can be contacted which owns the job.  The value is equivalent to
@@ -1243,7 +1236,7 @@ the service part of the job_id.</p>
 <dl class="data">
 <dt id="saga.job.ID">
 <tt class="descclassname">saga.job.</tt><tt class="descname">ID</tt><em class="property"> = 'ID'</em><a class="headerlink" href="#saga.job.ID" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1251,7 +1244,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.EXECUTION_HOSTS">
 <tt class="descclassname">saga.job.</tt><tt class="descname">EXECUTION_HOSTS</tt><em class="property"> = 'ExecutionHosts'</em><a class="headerlink" href="#saga.job.EXECUTION_HOSTS" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1259,7 +1252,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.CREATED">
 <tt class="descclassname">saga.job.</tt><tt class="descname">CREATED</tt><em class="property"> = 'Created'</em><a class="headerlink" href="#saga.job.CREATED" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1267,7 +1260,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.STARTED">
 <tt class="descclassname">saga.job.</tt><tt class="descname">STARTED</tt><em class="property"> = 'Started'</em><a class="headerlink" href="#saga.job.STARTED" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1275,7 +1268,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.FINISHED">
 <tt class="descclassname">saga.job.</tt><tt class="descname">FINISHED</tt><em class="property"> = 'Finished'</em><a class="headerlink" href="#saga.job.FINISHED" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1283,7 +1276,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.EXIT_CODE">
 <tt class="descclassname">saga.job.</tt><tt class="descname">EXIT_CODE</tt><em class="property"> = 'ExitCode'</em><a class="headerlink" href="#saga.job.EXIT_CODE" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1308,7 +1301,7 @@ elif job.state == saga.job.Running:
 <dl class="data">
 <dt id="saga.job.UNKNOWN">
 <tt class="descclassname">saga.job.</tt><tt class="descname">UNKNOWN</tt><em class="property"> = 'Unknown'</em><a class="headerlink" href="#saga.job.UNKNOWN" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1316,7 +1309,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.NEW">
 <tt class="descclassname">saga.job.</tt><tt class="descname">NEW</tt><em class="property"> = 'New'</em><a class="headerlink" href="#saga.job.NEW" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1324,7 +1317,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.PENDING">
 <tt class="descclassname">saga.job.</tt><tt class="descname">PENDING</tt><em class="property"> = 'Pending'</em><a class="headerlink" href="#saga.job.PENDING" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1332,7 +1325,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.RUNNING">
 <tt class="descclassname">saga.job.</tt><tt class="descname">RUNNING</tt><em class="property"> = 'Running'</em><a class="headerlink" href="#saga.job.RUNNING" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1340,7 +1333,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.DONE">
 <tt class="descclassname">saga.job.</tt><tt class="descname">DONE</tt><em class="property"> = 'Done'</em><a class="headerlink" href="#saga.job.DONE" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1348,7 +1341,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.CANCELED">
 <tt class="descclassname">saga.job.</tt><tt class="descname">CANCELED</tt><em class="property"> = 'Canceled'</em><a class="headerlink" href="#saga.job.CANCELED" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1356,7 +1349,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.FAILED">
 <tt class="descclassname">saga.job.</tt><tt class="descname">FAILED</tt><em class="property"> = 'Failed'</em><a class="headerlink" href="#saga.job.FAILED" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1364,7 +1357,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.SUSPENDED">
 <tt class="descclassname">saga.job.</tt><tt class="descname">SUSPENDED</tt><em class="property"> = 'Suspended'</em><a class="headerlink" href="#saga.job.SUSPENDED" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1409,7 +1402,7 @@ adaptor-specific lists of supported metrics.</p>
 <dl class="data">
 <dt id="saga.job.STATE">
 <tt class="descclassname">saga.job.</tt><tt class="descname">STATE</tt><em class="property"> = 'State'</em><a class="headerlink" href="#saga.job.STATE" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1417,7 +1410,7 @@ If the argument is a string, the return value is the same object.</p>
 <dl class="data">
 <dt id="saga.job.STATE_DETAIL">
 <tt class="descclassname">saga.job.</tt><tt class="descname">STATE_DETAIL</tt><em class="property"> = 'StateDetail'</em><a class="headerlink" href="#saga.job.STATE_DETAIL" title="Permalink to this definition">¶</a></dt>
-<dd><p>str(object) -&gt; string</p>
+<dd><p>str(object=&#8217;&#8216;) -&gt; string</p>
 <p>Return a nice string representation of the object.
 If the argument is a string, the return value is the same object.</p>
 </dd></dl>
@@ -1426,7 +1419,7 @@ If the argument is a string, the return value is the same object.</p>
 </div>
 <div class="section" id="job-containers-saga-job-container">
 <span id="job-container"></span><h2><a class="toc-backref" href="#id7">2.4. Job Containers &#8211; <a class="reference internal" href="#saga.job.Container" title="saga.job.Container"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Container</span></tt></a></a><a class="headerlink" href="#job-containers-saga-job-container" title="Permalink to this headline">¶</a></h2>
-<div class="admonition-see-also admonition seealso">
+<div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last">More examples on how to use job containers can be found in
 the <a class="reference internal" href="examples.html#code-examples-job"><em>Job Module</em></a> section of the
@@ -1440,7 +1433,7 @@ the <a class="reference internal" href="examples.html#code-examples-job"><em>Job
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Todo :</th><td class="field-body">document me</td>
+<tr class="field-odd field"><th class="field-name">Todo:</th><td class="field-body">document me</td>
 </tr>
 </tbody>
 </table>
@@ -1564,13 +1557,13 @@ from the container.</p>
         <li class="right" >
           <a href="../url.html" title="1. URLs"
              >previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../index.html" >2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

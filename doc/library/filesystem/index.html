@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>3. Files and Directories &mdash; SAGA 0.9.12 documentation</title>
+    <title>3. Files and Directories &mdash; SAGA 0.9.12-951-ga4d47a5 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.12',
+        VERSION:     '0.9.12-951-ga4d47a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.12 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.12-951-ga4d47a5 documentation" href="../../index.html" />
     <link rel="up" title="2. Library Reference" href="../index.html" />
     <link rel="next" title="4. Resource Management" href="../resource/index.html" />
     <link rel="prev" title="2. Job Submission and Control" href="../job/index.html" /> 
@@ -52,7 +51,7 @@
         <li class="right" >
           <a href="../job/index.html" title="2. Job Submission and Control"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -67,8 +66,8 @@
 <div class="section" id="introduction">
 <h2>3.1. Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>The file managment API provides the ability to interact with (local and
-remote) file systems via the two classes, <tt class="xref py py-class docutils literal"><span class="pre">bliss.saga.filesystem.Directory</span></tt> and
-<tt class="xref py py-class docutils literal"><span class="pre">bliss.saga.filesystem.File</span></tt>. The API provides a number of operations, which all
+remote) file systems via the two classes, <a class="reference internal" href="#saga.filesystem.Directory" title="saga.filesystem.Directory"><tt class="xref py py-class docutils literal"><span class="pre">saga.filesystem.Directory</span></tt></a> and
+<a class="reference internal" href="#saga.filesystem.File" title="saga.filesystem.File"><tt class="xref py py-class docutils literal"><span class="pre">saga.filesystem.File</span></tt></a>. The API provides a number of operations, which all
 behave similar to the common unix command line tools (cp, ls, rm etc).</p>
 <p><strong>Example</strong>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># get a directory handle</span>
@@ -133,7 +132,7 @@ individual class documentations.</p>
 <span id="file"></span><h2>3.3. File &#8211; <a class="reference internal" href="#saga.filesystem.File" title="saga.filesystem.File"><tt class="xref py py-class docutils literal"><span class="pre">saga.filesystem.File</span></tt></a><a class="headerlink" href="#file-saga-filesystem-file" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="saga.filesystem.File">
-<em class="property">class </em><tt class="descclassname">saga.filesystem.</tt><tt class="descname">File</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.filesystem.</tt><tt class="descname">File</tt><big>(</big><em>url</em>, <em>flags=READ</em>, <em>session</em><big>)</big><a class="headerlink" href="#saga.filesystem.File" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.namespace.entry.Entry</span></tt></p>
 <p>Represents a local or remote file.</p>
 <p>The saga.filesystem.File class represents, as the name indicates,
@@ -163,7 +162,7 @@ a number of operations on that file, such as copy, move and remove:</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Fgs :</th><td class="field-body"><p class="first last"><a class="reference internal" href="../replica/index.html#filesystemflags"><em>Flags</em></a></p>
+<tr class="field-even field"><th class="field-name">Fgs:</th><td class="field-body"><p class="first last"><a class="reference internal" href="../replica/index.html#filesystemflags"><em>Flags</em></a></p>
 </td>
 </tr>
 </tbody>
@@ -205,7 +204,7 @@ a directory), otherwise a BadParameter exception is raised.</p>
 
 <dl class="attribute">
 <dt id="saga.filesystem.File.size">
-<tt class="descname">size</tt><a class="headerlink" href="#saga.filesystem.File.size" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">size</tt><em class="property"> None</em><a class="headerlink" href="#saga.filesystem.File.size" title="Permalink to this definition">¶</a></dt>
 <dd><p>get_size()</p>
 <p>Returns the size (in bytes) of a file.</p>
 <blockquote>
@@ -220,6 +219,12 @@ a directory), otherwise a BadParameter exception is raised.</p>
 </div></blockquote>
 </dd></dl>
 
+<dl class="method">
+<dt id="saga.filesystem.File.close">
+<tt class="descname">close</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the file object.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -227,7 +232,7 @@ a directory), otherwise a BadParameter exception is raised.</p>
 <span id="dir"></span><h2>3.4. Directory &#8211; <a class="reference internal" href="#saga.filesystem.Directory" title="saga.filesystem.Directory"><tt class="xref py py-class docutils literal"><span class="pre">saga.filesystem.Directory</span></tt></a><a class="headerlink" href="#directory-saga-filesystem-directory" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="saga.filesystem.Directory">
-<em class="property">class </em><tt class="descclassname">saga.filesystem.</tt><tt class="descname">Directory</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.filesystem.</tt><tt class="descname">Directory</tt><big>(</big><em>url</em>, <em>flags=READ</em>, <em>session</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.namespace.directory.Directory</span></tt></p>
 <p>Represents a (remote) directory.</p>
 <p>The saga.filesystem.Directory class represents, as the name indicates,
@@ -364,7 +369,7 @@ directory object itself.</p>
 
 <dl class="attribute">
 <dt id="saga.filesystem.Directory.size">
-<tt class="descname">size</tt><a class="headerlink" href="#saga.filesystem.Directory.size" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">size</tt><em class="property"> None</em><a class="headerlink" href="#saga.filesystem.Directory.size" title="Permalink to this definition">¶</a></dt>
 <dd><p>get_size(path=None)</p>
 <p>Return the size of the directory itself or the entry pointed to by <cite>path</cite>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -383,6 +388,12 @@ directory object itself.</p>
 <span class="k">print</span> <span class="n">size</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="method">
+<dt id="saga.filesystem.Directory.close">
+<tt class="descname">close</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the direcotry object.</p>
 </dd></dl>
 
 </dd></dl>
@@ -450,13 +461,13 @@ directory object itself.</p>
         <li class="right" >
           <a href="../job/index.html" title="2. Job Submission and Control"
              >previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../index.html" >2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

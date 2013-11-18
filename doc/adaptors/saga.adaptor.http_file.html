@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>13. saga.adaptor.http_file &mdash; SAGA 0.9.12 documentation</title>
+    <title>14. saga.adaptor.http_file &mdash; SAGA 0.9.12-951-ga4d47a5 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.12',
+        VERSION:     '0.9.12-951-ga4d47a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,10 +30,10 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.12 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.12-951-ga4d47a5 documentation" href="../index.html" />
     <link rel="up" title="3. Adaptors" href="saga.adaptor.index.html" />
-    <link rel="next" title="14. saga.adaptor.ec2_resource" href="saga.adaptor.ec2_resource.html" />
-    <link rel="prev" title="12. saga.adaptor.slurm_job" href="saga.adaptor.slurm_job.html" /> 
+    <link rel="next" title="15. saga.adaptor.ec2_resource" href="saga.adaptor.ec2_resource.html" />
+    <link rel="prev" title="13. saga.adaptor.slurm_job" href="saga.adaptor.slurm_job.html" /> 
   </head>
   <body>
     <div class="related">
@@ -47,12 +46,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.ec2_resource.html" title="14. saga.adaptor.ec2_resource"
+          <a href="saga.adaptor.ec2_resource.html" title="15. saga.adaptor.ec2_resource"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.slurm_job.html" title="12. saga.adaptor.slurm_job"
+          <a href="saga.adaptor.slurm_job.html" title="13. saga.adaptor.slurm_job"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" accesskey="U">3. Adaptors</a> &raquo;</li> 
       </ul>
     </div>  
@@ -63,13 +62,13 @@
           <div class="body">
             
   <div class="section" id="saga-adaptor-http-file">
-<h1>13. saga.adaptor.http_file<a class="headerlink" href="#saga-adaptor-http-file" title="Permalink to this headline">¶</a></h1>
+<h1>14. saga.adaptor.http_file<a class="headerlink" href="#saga-adaptor-http-file" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
-<h2>13.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<h2>14.1. Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>The HTTP file adpator allows file transfer (copy) from remote resources to the local machine via the HTTP/HTTPS protocol, similar to cURL.</p>
 </div>
 <div class="section" id="supported-schemas">
-<h2>13.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
+<h2>14.2. Supported Schemas<a class="headerlink" href="#supported-schemas" title="Permalink to this headline">¶</a></h2>
 <p>This adaptor is triggered by the following URL schemes:</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -92,10 +91,11 @@
 </table>
 </div>
 <div class="section" id="example">
-<h2>13.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<h2>14.3. Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Ole Weidner&quot;</span>
-<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2011-2013, The SAGA Project&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
+
 
 <span class="sd">&#39;&#39;&#39;This examples shows how to use the saga.Filesystem API</span>
 <span class="sd">   with the HTTP file adaptor.</span>
@@ -132,16 +132,16 @@
 </div>
 </div>
 <div class="section" id="configuration-options">
-<h2>13.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<h2>14.4. Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
 <p>Configuration options can be used to control the adaptor&#8217;s runtime behavior. Most adaptors don&#8217;t need any configuration options to be set in order to work. They are mostly for controlling experimental features and properties of the adaptors.</p>
 <blockquote>
-<div><div class="admonition-see-also admonition seealso">
+<div><div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last">More information about configuration options can be found in the <a class="reference internal" href="../usage/config.html#conf-file"><em>Configuration Files</em></a> section.</p>
 </div>
 </div></blockquote>
 <div class="section" id="enabled">
-<h3>13.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
+<h3>14.4.1. enabled<a class="headerlink" href="#enabled" title="Permalink to this headline">¶</a></h3>
 <p>enable / disable saga.adaptor.http_file adaptor</p>
 <blockquote>
 <div><ul class="simple">
@@ -154,12 +154,12 @@
 </div>
 </div>
 <div class="section" id="capabilities">
-<h2>13.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
+<h2>14.5. Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="supported-monitorable-metrics">
-<h3>13.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
+<h3>14.5.1. Supported Monitorable Metrics<a class="headerlink" href="#supported-monitorable-metrics" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="supported-context-types">
-<h3>13.5.2. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
+<h3>14.5.2. Supported Context Types<a class="headerlink" href="#supported-context-types" title="Permalink to this headline">¶</a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="50%" />
@@ -179,7 +179,7 @@
 </div>
 </div>
 <div class="section" id="supported-api-classes">
-<h2>13.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
+<h2>14.6. Supported API Classes<a class="headerlink" href="#supported-api-classes" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt>This adaptor supports the following API classes:</dt>
 <dd><ul class="first last simple">
@@ -190,7 +190,7 @@
 </dl>
 <p>Method implementation details are listed below.</p>
 <div class="section" id="saga-namespace-entry">
-<h3>13.6.1. saga.namespace.Entry<a class="headerlink" href="#saga-namespace-entry" title="Permalink to this headline">¶</a></h3>
+<h3>14.6.1. saga.namespace.Entry<a class="headerlink" href="#saga-namespace-entry" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="saga.adaptors.http.http_file.HTTPFile">
 <em class="property">class </em><tt class="descclassname">saga.adaptors.http.http_file.</tt><tt class="descname">HTTPFile</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/http/http_file.html#HTTPFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#saga.adaptors.http.http_file.HTTPFile" title="Permalink to this definition">¶</a></dt>
@@ -245,7 +245,7 @@
 
 </div>
 <div class="section" id="saga-filesystem-file">
-<h3>13.6.2. saga.filesystem.File<a class="headerlink" href="#saga-filesystem-file" title="Permalink to this headline">¶</a></h3>
+<h3>14.6.2. saga.filesystem.File<a class="headerlink" href="#saga-filesystem-file" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt>
 <em class="property">class </em><tt class="descclassname">saga.adaptors.http.http_file.</tt><tt class="descname">HTTPFile</tt><big>(</big><em>api</em>, <em>adaptor</em><big>)</big><a class="reference internal" href="../_modules/saga/adaptors/http/http_file.html#HTTPFile"><span class="viewcode-link">[source]</span></a></dt>
@@ -310,22 +310,22 @@
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">13. saga.adaptor.http_file</a><ul>
-<li><a class="reference internal" href="#description">13.1. Description</a></li>
-<li><a class="reference internal" href="#supported-schemas">13.2. Supported Schemas</a></li>
-<li><a class="reference internal" href="#example">13.3. Example</a></li>
-<li><a class="reference internal" href="#configuration-options">13.4. Configuration Options</a><ul>
-<li><a class="reference internal" href="#enabled">13.4.1. enabled</a></li>
+<li><a class="reference internal" href="#">14. saga.adaptor.http_file</a><ul>
+<li><a class="reference internal" href="#description">14.1. Description</a></li>
+<li><a class="reference internal" href="#supported-schemas">14.2. Supported Schemas</a></li>
+<li><a class="reference internal" href="#example">14.3. Example</a></li>
+<li><a class="reference internal" href="#configuration-options">14.4. Configuration Options</a><ul>
+<li><a class="reference internal" href="#enabled">14.4.1. enabled</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#capabilities">13.5. Capabilities</a><ul>
-<li><a class="reference internal" href="#supported-monitorable-metrics">13.5.1. Supported Monitorable Metrics</a></li>
-<li><a class="reference internal" href="#supported-context-types">13.5.2. Supported Context Types</a></li>
+<li><a class="reference internal" href="#capabilities">14.5. Capabilities</a><ul>
+<li><a class="reference internal" href="#supported-monitorable-metrics">14.5.1. Supported Monitorable Metrics</a></li>
+<li><a class="reference internal" href="#supported-context-types">14.5.2. Supported Context Types</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#supported-api-classes">13.6. Supported API Classes</a><ul>
-<li><a class="reference internal" href="#saga-namespace-entry">13.6.1. saga.namespace.Entry</a></li>
-<li><a class="reference internal" href="#saga-filesystem-file">13.6.2. saga.filesystem.File</a></li>
+<li><a class="reference internal" href="#supported-api-classes">14.6. Supported API Classes</a><ul>
+<li><a class="reference internal" href="#saga-namespace-entry">14.6.1. saga.namespace.Entry</a></li>
+<li><a class="reference internal" href="#saga-filesystem-file">14.6.2. saga.filesystem.File</a></li>
 </ul>
 </li>
 </ul>
@@ -334,10 +334,10 @@
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="saga.adaptor.slurm_job.html"
-                        title="previous chapter">12. saga.adaptor.slurm_job</a></p>
+                        title="previous chapter">13. saga.adaptor.slurm_job</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="saga.adaptor.ec2_resource.html"
-                        title="next chapter">14. saga.adaptor.ec2_resource</a></p>
+                        title="next chapter">15. saga.adaptor.ec2_resource</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/adaptors/saga.adaptor.http_file.txt"
@@ -370,18 +370,18 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.ec2_resource.html" title="14. saga.adaptor.ec2_resource"
+          <a href="saga.adaptor.ec2_resource.html" title="15. saga.adaptor.ec2_resource"
              >next</a> |</li>
         <li class="right" >
-          <a href="saga.adaptor.slurm_job.html" title="12. saga.adaptor.slurm_job"
+          <a href="saga.adaptor.slurm_job.html" title="13. saga.adaptor.slurm_job"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" >3. Adaptors</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

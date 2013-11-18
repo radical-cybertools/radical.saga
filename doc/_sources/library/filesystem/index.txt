@@ -8,8 +8,8 @@ Introduction
 ------------
 
 The file managment API provides the ability to interact with (local and
-remote) file systems via the two classes, :class:`bliss.saga.filesystem.Directory` and
-:class:`bliss.saga.filesystem.File`. The API provides a number of operations, which all
+remote) file systems via the two classes, :class:`saga.filesystem.Directory` and
+:class:`saga.filesystem.File`. The API provides a number of operations, which all
 behave similar to the common unix command line tools (cp, ls, rm etc).
 
 **Example**::

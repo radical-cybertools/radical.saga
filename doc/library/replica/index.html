@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>5. Replica Management &mdash; SAGA 0.9.12 documentation</title>
+    <title>5. Replica Management &mdash; SAGA 0.9.12-951-ga4d47a5 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.12',
+        VERSION:     '0.9.12-951-ga4d47a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.12 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.12-951-ga4d47a5 documentation" href="../../index.html" />
     <link rel="up" title="2. Library Reference" href="../index.html" />
     <link rel="next" title="6. Exception Handling" href="../exceptions.html" />
     <link rel="prev" title="4. Resource Management" href="../resource/index.html" /> 
@@ -52,7 +51,7 @@
         <li class="right" >
           <a href="../resource/index.html" title="4. Resource Management"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -136,7 +135,7 @@ documentation.</p>
 <span id="replica-file"></span><h2><a class="toc-backref" href="#id3">5.2. Logical File &#8211; <a class="reference internal" href="#saga.replica.LogicalFile" title="saga.replica.LogicalFile"><tt class="xref py py-class docutils literal"><span class="pre">saga.replica.LogicalFile</span></tt></a></a><a class="headerlink" href="#logical-file-saga-replica-logicalfile" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="saga.replica.LogicalFile">
-<em class="property">class </em><tt class="descclassname">saga.replica.</tt><tt class="descname">LogicalFile</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.replica.</tt><tt class="descname">LogicalFile</tt><big>(</big><em>url=None</em>, <em>flags=READ</em>, <em>session=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.namespace.entry.Entry</span></tt>, <a class="reference internal" href="../attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a></p>
 <dl class="method">
 <dt id="saga.replica.LogicalFile.__init__">
@@ -248,7 +247,7 @@ ret:            None / saga.Task</p>
 <span id="replica-directory"></span><h2><a class="toc-backref" href="#id4">5.3. Logical Directory &#8211; <a class="reference internal" href="#saga.replica.LogicalDirectory" title="saga.replica.LogicalDirectory"><tt class="xref py py-class docutils literal"><span class="pre">saga.replica.LogicalDirectory</span></tt></a></a><a class="headerlink" href="#logical-directory-saga-replica-logicaldirectory" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="saga.replica.LogicalDirectory">
-<em class="property">class </em><tt class="descclassname">saga.replica.</tt><tt class="descname">LogicalDirectory</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalDirectory" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">saga.replica.</tt><tt class="descname">LogicalDirectory</tt><big>(</big><em>url</em>, <em>flags=READ</em>, <em>session=None</em><big>)</big><a class="headerlink" href="#saga.replica.LogicalDirectory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">saga.namespace.directory.Directory</span></tt>, <a class="reference internal" href="../attribute.html#saga.attributes.Attributes" title="saga.attributes.Attributes"><tt class="xref py py-class docutils literal"><span class="pre">saga.attributes.Attributes</span></tt></a></p>
 <dl class="method">
 <dt id="saga.replica.LogicalDirectory.__init__">
@@ -399,13 +398,13 @@ ret:            list [saga.Url] / saga.Task</p>
         <li class="right" >
           <a href="../resource/index.html" title="4. Resource Management"
              >previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="../index.html" >2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

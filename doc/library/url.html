@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>1. URLs &mdash; SAGA 0.9.12 documentation</title>
+    <title>1. URLs &mdash; SAGA 0.9.12-951-ga4d47a5 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -20,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.12',
+        VERSION:     '0.9.12-951-ga4d47a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.12 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.12-951-ga4d47a5 documentation" href="../index.html" />
     <link rel="up" title="2. Library Reference" href="index.html" />
     <link rel="next" title="2. Job Submission and Control" href="job/index.html" />
     <link rel="prev" title="2. Library Reference" href="index.html" /> 
@@ -52,7 +51,7 @@
         <li class="right" >
           <a href="index.html" title="2. Library Reference"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -68,8 +67,8 @@
 <h2>1.1. Url &#8211; <a class="reference internal" href="#saga.Url" title="saga.Url"><tt class="xref py py-class docutils literal"><span class="pre">saga.Url</span></tt></a><a class="headerlink" href="#url-saga-url" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="saga.Url">
-<em class="property">class </em><tt class="descclassname">saga.</tt><tt class="descname">Url</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.Url" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<em class="property">class </em><tt class="descclassname">saga.</tt><tt class="descname">Url</tt><big>(</big><em>url_string=''</em><big>)</big><a class="headerlink" href="#saga.Url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">radical.utils.url.Url</span></tt></p>
 <p>The SAGA Url class.</p>
 <p>URLs are used in several places in the SAGA API: to specify service
 endpoints for job submission or resource management, for file or
@@ -97,221 +96,6 @@ alternatively, via getter / setter methods. Example:</p>
 <span class="n">url</span><span class="o">.</span><span class="n">set_scheme</span><span class="p">(</span><span class="s">&quot;anotherscheme&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<dl class="method">
-<dt id="saga.Url.set_scheme">
-<tt class="descname">set_scheme</tt><big>(</big><em>scheme</em><big>)</big><a class="headerlink" href="#saga.Url.set_scheme" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the URL &#8216;scheme&#8217; component.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>scheme</strong> &#8211; The new scheme</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.get_scheme">
-<tt class="descname">get_scheme</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_scheme" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the URL &#8216;scheme&#8217; component.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="saga.Url.scheme">
-<tt class="descname">scheme</tt><a class="headerlink" href="#saga.Url.scheme" title="Permalink to this definition">¶</a></dt>
-<dd><p>get_scheme()</p>
-<p>Return the URL &#8216;scheme&#8217; component.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="saga.Url.schema">
-<tt class="descname">schema</tt><a class="headerlink" href="#saga.Url.schema" title="Permalink to this definition">¶</a></dt>
-<dd><p>The scheme component.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.set_host">
-<tt class="descname">set_host</tt><big>(</big><em>host</em><big>)</big><a class="headerlink" href="#saga.Url.set_host" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the &#8216;host&#8217; component.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>host</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; The new hostname</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.get_host">
-<tt class="descname">get_host</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_host" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the URL &#8216;host&#8217; component.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="saga.Url.host">
-<tt class="descname">host</tt><a class="headerlink" href="#saga.Url.host" title="Permalink to this definition">¶</a></dt>
-<dd><p>The host component.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.set_port">
-<tt class="descname">set_port</tt><big>(</big><em>port</em><big>)</big><a class="headerlink" href="#saga.Url.set_port" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the URL &#8216;port&#8217; component.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>port</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; The new port</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.get_port">
-<tt class="descname">get_port</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_port" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the URL &#8216;port&#8217; component.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="saga.Url.port">
-<tt class="descname">port</tt><a class="headerlink" href="#saga.Url.port" title="Permalink to this definition">¶</a></dt>
-<dd><p>The port component.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.set_username">
-<tt class="descname">set_username</tt><big>(</big><em>username</em><big>)</big><a class="headerlink" href="#saga.Url.set_username" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the URL &#8216;username&#8217; component.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>username</strong> &#8211; The new username</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.get_username">
-<tt class="descname">get_username</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_username" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the URL &#8216;username&#8217; component.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="saga.Url.username">
-<tt class="descname">username</tt><a class="headerlink" href="#saga.Url.username" title="Permalink to this definition">¶</a></dt>
-<dd><p>The username component.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.set_password">
-<tt class="descname">set_password</tt><big>(</big><em>password</em><big>)</big><a class="headerlink" href="#saga.Url.set_password" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the URL &#8216;password&#8217; component.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>password</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; The new password</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.get_password">
-<tt class="descname">get_password</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_password" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the URL &#8216;username&#8217; component.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="saga.Url.password">
-<tt class="descname">password</tt><a class="headerlink" href="#saga.Url.password" title="Permalink to this definition">¶</a></dt>
-<dd><p>The password component.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.set_fragment">
-<tt class="descname">set_fragment</tt><big>(</big><em>fragment</em><big>)</big><a class="headerlink" href="#saga.Url.set_fragment" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the URL &#8216;fragment&#8217; component.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fragment</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; The new fragment</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.get_fragment">
-<tt class="descname">get_fragment</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_fragment" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the URL &#8216;fragment&#8217; component.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="saga.Url.fragment">
-<tt class="descname">fragment</tt><a class="headerlink" href="#saga.Url.fragment" title="Permalink to this definition">¶</a></dt>
-<dd><p>The fragment component.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.set_path">
-<tt class="descname">set_path</tt><big>(</big><em>path</em><big>)</big><a class="headerlink" href="#saga.Url.set_path" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the URL &#8216;path&#8217; component.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; The new path</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.get_path">
-<tt class="descname">get_path</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_path" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the URL &#8216;path&#8217; component.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="saga.Url.path">
-<tt class="descname">path</tt><a class="headerlink" href="#saga.Url.path" title="Permalink to this definition">¶</a></dt>
-<dd><p>The path component.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.set_query">
-<tt class="descname">set_query</tt><big>(</big><em>query</em><big>)</big><a class="headerlink" href="#saga.Url.set_query" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the URL &#8216;query&#8217; component.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>query</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; The new query</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.Url.get_query">
-<tt class="descname">get_query</tt><big>(</big><big>)</big><a class="headerlink" href="#saga.Url.get_query" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the URL &#8216;query&#8217; component.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="saga.Url.query">
-<tt class="descname">query</tt><a class="headerlink" href="#saga.Url.query" title="Permalink to this definition">¶</a></dt>
-<dd><p>The query component.</p>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -374,13 +158,13 @@ alternatively, via getter / setter methods. Example:</p>
         <li class="right" >
           <a href="index.html" title="2. Library Reference"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.12 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
           <li><a href="index.html" >2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>
