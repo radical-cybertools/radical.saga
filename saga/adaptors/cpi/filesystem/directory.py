@@ -24,9 +24,6 @@ class Directory (cpi_ns.directory.Directory) :
         self._cpi_nsdirec.__init__ (api, adaptor)
 
     @SYNC
-    def close                 (self)                      : pass
-
-    @SYNC
     def init_instance         (self, url, flags, session) : pass
     @ASYNC
     def init_instance_async   (self, url, flags, session) : pass
@@ -36,9 +33,6 @@ class Directory (cpi_ns.directory.Directory) :
     #
     # add filesystem directory methods
     #
-    @SYNC
-    def close                 (self)                      : pass
-
     @SYNC
     def get_size              (self, name, flags, ttype)  : pass
     @ASYNC
@@ -58,4 +52,7 @@ class Directory (cpi_ns.directory.Directory) :
     def is_file_self          (self,              ttype)  : pass
     @ASYNC                                        
     def is_file_self_async    (self,              ttype)  : pass
+
+
+
 
