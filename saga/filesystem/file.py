@@ -158,9 +158,9 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('File', 
-                  sus.optional (bool))
-    @sus.returns (st.Task)
+    @rus.takes   ('File', 
+                  rus.optional (bool))
+    @rus.returns (st.Task)
     def close     (self, kill=True, ttype=None) :
         '''
         kill :    bool
