@@ -375,7 +375,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                     self.pe_list.append(pe)
             self._logger.debug("Available processing elements: %s" %
                 (self.pe_list))
-         
+
         # find out mandatory and optional memory attributes 
         ret, out, _ = self.shell.run_sync('%s -sc' % (self._commands['qconf']['path']))
         if ret != 0:
