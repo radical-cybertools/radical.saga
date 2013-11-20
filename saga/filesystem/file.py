@@ -1,5 +1,5 @@
 
-__author__    = "Andre Merzky, Ole Weidner"
+__author__    = "Andre Merzky, Ole Weidner, Alexander Grill"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -156,6 +156,18 @@ class File (nsentry.Entry) :
         '''
         return self._adaptor.read (size, ttype=ttype)
 
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes   ('File', 
+                  rus.optional (bool))
+    @rus.returns (st.Task)
+    def close     (self, kill=True, ttype=None) :
+        '''
+        kill :    bool
+        ttype:    saga.task.type enum
+        ret:      string / bytearray / saga.Task
+        '''
+        return self._adaptor.finalize (kill)
   
     # --------------------------------------------------------------------------
     #

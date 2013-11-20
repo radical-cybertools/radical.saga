@@ -1,5 +1,5 @@
 
-__author__    = "Andre Merzky, Ole Weidner"
+__author__    = "Andre Merzky, Ole Weidner, Alexander Grill"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -570,7 +570,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         if  sumisc.url_is_compatible (cwdurl, tgt) :
 
-            ret, out, _ = self.shell.run_sync ("rm %s %s\n" % (rec_flag, tgt.path))
+            ret, out, _ = self.shell.run_sync ("rm -f %s %s\n" % (rec_flag, tgt.path))
             if  ret != 0 :
                 raise saga.NoSuccess ("remove (%s) failed (%s): (%s)" \
                                    % (tgt, ret, out))
@@ -740,7 +740,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     @SYNC_CALL
     def is_file (self, tgt_in):
 
-        return self.is_file (tgt_in)
+        return self.is_entry (tgt_in)
    
    
 ###############################################################################
@@ -1057,6 +1057,58 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         self.flags = flags
         self.initialize ()
 
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def write (self, string, flags=None):
+	"""
+	This call is intended to write a string to a local or remote file.
+	Since write() uses file staging calls, it cannot be used to randomly
+	write certain parts of a file (i.e. seek()). Together with read(),
+	it was designed to manipulate template files and write them back to
+	the remote directory. Be aware, that writing large files will
+	be very slow compared to native read(2) and write(2) calls.
+	"""
+        self._is_valid ()
+        if flags==None:
+            flags = self.flags
+        else:
+            self.flags=flags
+
+        tgt = saga.Url (self.url)  # deep copy, is absolute
+            
+        if flags==saga.filesystem.APPEND:
+            string = self.read()+string            
+        # FIXME: eval flags
+
+        self.shell.write_to_remote(string,tgt.path)
+                                                    
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def read (self,size=None):
+	"""
+	This call is intended to read a string wit length size from a local
+	or remote file.	Since read() uses file staging calls, it cannot be
+	used to randomly read certain parts of a file (i.e. seek()).
+	Together with write(), it was designed to manipulate template files
+	and write them back to the remote directory. Be aware, that reading
+	large files will be very slow compared to native read(2) and write(2)
+	calls.
+	"""
+
+        self._is_valid ()
+
+        tgt = saga.Url (self.url)  # deep copy, is absolute
+        
+        out = self.shell.read_from_remote(tgt.path)
+
+        if size!=None:
+            return out[0:size-1]
+        else:
+            return out
+
+
    
     # ----------------------------------------------------------------
     #
@@ -1074,7 +1126,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         if flags & saga.filesystem.RECURSIVE : 
             rec_flag  += "-r "
 
-        ret, out, _ = self.shell.run_sync ("rm %s %s\n" % (rec_flag, tgt.path))
+        ret, out, _ = self.shell.run_sync ("rm -f %s %s\n" % (rec_flag, tgt.path))
         if  ret != 0 :
             raise saga.NoSuccess ("remove (%s) failed (%s): (%s)" \
                                % (tgt, ret, out))
