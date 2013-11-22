@@ -241,6 +241,12 @@ def url_make_absolute (url_1, url_2) :
     protocol/port/user etc.
     """
 
+    if not isinstance(url_1, saga.Url):
+        url_1 = saga.Url(url_1)
+
+    if not isinstance(url_2, saga.Url):
+        url_2 = saga.Url(url_2)
+
     if not url_is_compatible (url_1, url_2) :
         raise saga.BadParameter ("Cannot interpret url %s in the context of url %s" \
                               % (url_2, url_1))

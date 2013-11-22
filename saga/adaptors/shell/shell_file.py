@@ -341,6 +341,22 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
+    def open_dir (self, url, flags) :
+
+        self._is_valid ()
+
+        adaptor_state = { "from_open" : True,
+                          "cwd"       : saga.Url(self.url) }  # deep copy
+
+        if sumisc.url_is_relative (url) :
+            url = sumisc.url_make_absolute (self.get_url (), url)
+
+        return saga.filesystem.Directory (url=url, flags=flags, session=self.session, 
+                                          _adaptor=self._adaptor, _adaptor_state=adaptor_state)
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
     def close (self, timeout):
 
         if  timeout :
