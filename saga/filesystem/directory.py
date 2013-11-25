@@ -199,7 +199,7 @@ class Directory (nsdir.Directory) :
         ttype:    saga.task.type enum
         ret:      string / bytearray / saga.Task
         '''
-        return self._adaptor.finalize (kill)
+        return self._adaptor.close ()
 
     # --------------------------------------------------------------------------
     #
