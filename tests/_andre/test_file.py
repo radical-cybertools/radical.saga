@@ -106,14 +106,14 @@ for name in d.list () :
 print "many remote files"
 srcdir = saga.filesystem.Directory ("ssh://india.futuregrid.org/tmp/andre.merzky/src/", 
                                     saga.filesystem.CREATE_PARENTS)
-files  = []
-for i in range (0, 20) :
-    print "open test_%02d.dat" % i
-    files.append (srcdir.open ("test_%02d.dat" % i, saga.filesystem.CREATE))
 
 tgtdir = saga.filesystem.Directory ("file://localhost/tmp/andre.merzky/tgt/", 
                                     saga.filesystem.CREATE_PARENTS)
-for f in files :
+
+files  = []
+for i in range (0, 50) :
+    f = srcdir.open ("test_%02d.dat" % i, saga.filesystem.CREATE)
     print "copy %s file://localhost/tmp/andre.merzky/tgt/" % f.url
-    f.copy ("file://localhost/tmp/andre.merzky/tgt/")
+    f.copy  ("file://localhost/tmp/andre.merzky/tgt/")
+    f.close ()
 
