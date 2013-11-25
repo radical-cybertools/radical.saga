@@ -2241,7 +2241,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                   callable,
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (rus.nothing)
-    def _attributes_set_global_getter (self, getter, flow) :
+    def _attributes_set_global_getter (self, getter, flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can
         safely be called from within derived classes.
