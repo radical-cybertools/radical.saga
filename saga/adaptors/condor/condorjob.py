@@ -474,11 +474,10 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         submit_file.close()
         self._logger.info("Written Condor script locally: %s" % submit_file.name)
 
-        remote_name = '/tmp/magic-file.condor'
+        #remote_name = '/tmp/magic-file.condor'
         if self.shell.url.scheme == "ssh":
             self._logger.info("Transferring Condor script to: %s" % self.shell.url)
-            self.shell.stage_to_remote(submit_file.name,
-                    remote_name)
+            self.shell.stage_to_remote(submit_file.name, submit_file.name)
                     #os.path.basename(submit_file.name))
 
         elif self.shell.url.scheme == "gsissh":
@@ -487,7 +486,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         #ret, out, _ = self.shell.run_sync('echo "%s" | %s -verbose' \
         #    % (script, self._commands['condor_submit']['path']))
         ret, out, _ = self.shell.run_sync('%s -verbose %s' \
-            % (self._commands['condor_submit']['path'], remote_name))
+            % (self._commands['condor_submit']['path'], submit_file.name))
 
         if ret != 0:
             # something went wrong
