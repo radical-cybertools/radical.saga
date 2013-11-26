@@ -19,7 +19,7 @@ import re
 import os
 import time
 from copy import deepcopy
-from cgi import parse_qs
+from urlparse import parse_qs
 from tempfile import NamedTemporaryFile
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
@@ -386,9 +386,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             for key, val in parse_qs(rm_url.query).iteritems():
                 self.query_options[key] = val[0]
 
-        # we need to extrac the scheme for PTYShell. That's basically the
-        # job.Serivce Url withou the condor+ part. We use the PTYShell to execute
-        # condor commands either locally or via gsissh or ssh.
+        # we need to extract the scheme for PTYShell. That's basically the
+        # job.Service Url without the condor+ part. We use the PTYShell to
+        # execute condor commands either locally or via gsissh or ssh.
         if rm_scheme == "condor":
             pty_url.scheme = "fork"
         elif rm_scheme == "condor+ssh":
@@ -398,7 +398,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # these are the commands that we need in order to interact with Condor.
         # the adaptor will try to find them during initialize(self) and bail
-        # out in case they are note avaialbe.
+        # out in case they are not available.
         self._commands = {'condor_version': None,
                           'condor_submit':  None,
                           'condor_q':       None,
@@ -480,7 +480,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             self.shell.stage_to_remote(submit_file.name, submit_file_name)
 
         elif self.shell.url.scheme == "gsissh":
-            pass
+            raise NotImplemented("GSISSH support for Condor not implemented.")
         else:
             submit_file_name = submit_file.name
 
@@ -527,7 +527,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             if self.shell.url.scheme == 'ssh':
                 ret, out, _ = self.shell.run_sync ('rm %s' % submit_file_name)
             elif self.shell.url.scheme == 'gsissh':
-                pass
+                raise NotImplemented("GSISSH support for Condor not implemented.")
             os.remove(submit_file.name)
 
             return job_id
