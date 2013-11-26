@@ -474,19 +474,19 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         submit_file.close()
         self._logger.info("Written Condor script locally: %s" % submit_file.name)
 
-        #remote_name = '/tmp/magic-file.condor'
         if self.shell.url.scheme == "ssh":
             self._logger.info("Transferring Condor script to: %s" % self.shell.url)
-            self.shell.stage_to_remote(submit_file.name, submit_file.name)
-                    #os.path.basename(submit_file.name))
+            submit_file_name = os.path.basename(submit_file.name)
+            self.shell.stage_to_remote(submit_file.name, submit_file_name)
 
         elif self.shell.url.scheme == "gsissh":
             pass
+        else:
+            submit_file_name = submit_file.name
 
-        #ret, out, _ = self.shell.run_sync('echo "%s" | %s -verbose' \
-        #    % (script, self._commands['condor_submit']['path']))
         ret, out, _ = self.shell.run_sync('%s -verbose %s' \
-            % (self._commands['condor_submit']['path'], submit_file.name))
+            % (self._commands['condor_submit']['path'], submit_file_name))
+
 
         if ret != 0:
             # something went wrong
@@ -494,6 +494,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 % (out, script)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
+            
+
             # stdout contains the job id
             for line in out.split("\n"):
                 if "** Proc" in line:
@@ -519,6 +521,14 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'end_time':     None,
                 'gone':         False
             }
+
+            # remove submit file(s)
+            # XXX: maybe leave them in case of debugging?
+            if self.shell.url.scheme == 'ssh':
+                ret, out, _ = self.shell.run_sync ('rm %s' % submit_file_name)
+            elif self.shell.url.scheme == 'gsissh':
+                pass
+            os.remove(submit_file.name)
 
             return job_id
 
