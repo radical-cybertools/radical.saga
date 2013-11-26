@@ -20,6 +20,7 @@ import os
 import time
 from copy import deepcopy
 from cgi import parse_qs
+from tempfile import NamedTemporaryFile
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -74,6 +75,11 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
     """
     condor_file = str()
 
+    #
+    # HTCondor quoting/escaping:
+    # http://research.cs.wisc.edu/htcondor/manual/current/condor_submit.html#SECTION0012514000000000000000
+    #
+
     ##### OPTIONS PASSED VIA JOB SERVICE URL #####
     ##
     if option_dict is not None:
@@ -94,11 +100,11 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
     condor_file += "\nexecutable = /bin/env"
 
     # arguments -> arguments
-    arguments = 'arguments = \\"/bin/sh -c \''
+    arguments = 'arguments = \"/bin/sh -c \''
 
     # The actual executable becomes the first argument.
     if jd.executable is not None:
-        arguments += "%s " % jd.executable
+        arguments += "%s" % jd.executable
 
     if jd.arguments is not None:
 
@@ -115,12 +121,12 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
             arg = arg.replace('"', '""')
     
             # Escape dollars (for environment variables)
-            arg = arg.replace('$', '\\$')
+            #arg = arg.replace('$', '\\$')
     
-            arguments += "%s " % arg
+            arguments += " %s" % arg
 
     # close the quote opened earlier 
-    arguments += '\'\\"'
+    arguments += '\'\"'
 
     condor_file += "\n%s" % arguments
 
@@ -192,12 +198,13 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
         condor_file += "\nerror = %s " % jd.error 
 
     # environment -> environment
-    environment = "environment = "
+    # http://research.cs.wisc.edu/htcondor/manual/current/condor_submit.html#SECTION0012514000000000000000
+    environment = "environment ="
     if jd.environment is not None:
         variable_list = str()
         for key in jd.environment.keys(): 
-            variable_list += "%s=%s;" % (key, jd.environment[key])
-        environment += "%s " % variable_list
+            variable_list += "%s=%s " % (key, jd.environment[key])
+        environment += " \"%s\"" % variable_list.strip()
     condor_file += "\n%s" % environment
 
     # project -> +ProjectName
@@ -214,7 +221,8 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
         condor_file += "\n%s" % sitelist
         condor_file += "\n%s" % requirements
 
-    condor_file += "\n\nqueue"
+    condor_file += "\n\nqueue\n"
+    condor_file += "\n##### END OF FILE #####\n"
 
     return condor_file
 
@@ -456,12 +464,20 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """ runs a job via qsub
         """
         # create a Condor job script from SAGA job description
-        script = _condorscript_generator(url=self.rm, logger=self._logger, jd=jd,
-            option_dict=self.query_options)
+        script = _condorscript_generator(url=self.rm, logger=self._logger,
+                jd=jd, option_dict=self.query_options)
         self._logger.info("Generated Condor script: %s" % script)
 
-        ret, out, _ = self.shell.run_sync('echo "%s" | %s -' \
-            % (script, self._commands['condor_submit']['path']))
+        submit_file = NamedTemporaryFile(mode='w', suffix='.condor',
+                    prefix='tmp-saga', delete=False)
+        submit_file.write(script)
+        submit_file.close()
+        self._logger.info("Written Condor script: %s" % submit_file.name)
+
+        #ret, out, _ = self.shell.run_sync('echo "%s" | %s -verbose' \
+        #    % (script, self._commands['condor_submit']['path']))
+        ret, out, _ = self.shell.run_sync('%s -verbose %s' \
+            % (self._commands['condor_submit']['path'], submit_file.name))
 
         if ret != 0:
             # something went wrong
