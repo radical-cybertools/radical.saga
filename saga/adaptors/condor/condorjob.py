@@ -87,6 +87,18 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
         # special treatment for universe - defaults to 'vanilla'
         if 'universe' not in option_dict:
             condor_file += "\nuniverse = vanilla"
+        if 'should_transfer_files' in option_dict:
+            if 'when_to_transfer_output' not in option_dict:
+                message = "When should_transfer_files is specified, " \
+                          "when_to_transfer_output should also be specified: " \
+                          "ON_EXIT or ON_EXIT_OR_EVICT."
+                log_error_and_raise(message, saga.NoSuccess, logger)
+
+        # When "when_to_transfer_output is set, transfer should be enabled
+        if 'when_to_transfer_output' in option_dict:
+            if 'should_transfer_files' not in option_dict:
+                option_dict['should_transfer_files'] = 'YES'
+
         for (key, value) in option_dict.iteritems():
             condor_file += "\n%s = %s" % (key, value)
 
