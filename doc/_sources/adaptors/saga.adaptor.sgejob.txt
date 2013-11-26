@@ -48,6 +48,30 @@ enable / disable saga.adaptor.sgejob adaptor
   - **environment** : None
   - **valid options** : [True, False]
 
+purge_on_start
+**************
+
+Purge temporary job information for all
+jobs which are older than a number of days.
+The number of days can be configured with <purge_older_than>.
+
+
+  - **type** : <type 'bool'>
+  - **default** : True
+  - **environment** : None
+  - **valid options** : [True, False]
+
+purge_older_than
+****************
+
+When <purge_on_start> is enabled this specifies the number
+of days to consider a temporary file older enough to be deleted.
+
+
+  - **type** : <type 'int'>
+  - **default** : 30
+  - **environment** : None
+
 
 
 Capabilities

@@ -9,7 +9,7 @@ Requirements
 
 saga-python has the following requirements:
 
-* Python 2.x, more specifically 2.5 or newer
+* Python 2.5 or newer
 
 
 Installation via PyPi

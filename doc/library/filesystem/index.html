@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>3. Files and Directories &mdash; SAGA 0.9.12-951-ga4d47a5 documentation</title>
+    <title>3. Files and Directories &mdash; SAGA 0.9.13 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.12-951-ga4d47a5',
+        VERSION:     '0.9.13',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.12-951-ga4d47a5 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.13 documentation" href="../../index.html" />
     <link rel="up" title="2. Library Reference" href="../index.html" />
     <link rel="next" title="4. Resource Management" href="../resource/index.html" />
     <link rel="prev" title="2. Job Submission and Control" href="../job/index.html" /> 
@@ -51,7 +51,7 @@
         <li class="right" >
           <a href="../job/index.html" title="2. Job Submission and Control"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.13 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -202,6 +202,14 @@ a directory), otherwise a BadParameter exception is raised.</p>
 </div></blockquote>
 </dd></dl>
 
+<dl class="method">
+<dt id="saga.filesystem.File.close">
+<tt class="descname">close</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>kill :    bool
+ttype:    saga.task.type enum
+ret:      string / bytearray / saga.Task</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="saga.filesystem.File.size">
 <tt class="descname">size</tt><em class="property"> None</em><a class="headerlink" href="#saga.filesystem.File.size" title="Permalink to this definition">¶</a></dt>
@@ -217,12 +225,6 @@ a directory), otherwise a BadParameter exception is raised.</p>
 </pre></div>
 </div>
 </div></blockquote>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.filesystem.File.close">
-<tt class="descname">close</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.File.close" title="Permalink to this definition">¶</a></dt>
-<dd><p>Closes the file object.</p>
 </dd></dl>
 
 </dd></dl>
@@ -352,6 +354,14 @@ a new directory object.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="saga.filesystem.Directory.close">
+<tt class="descname">close</tt><big>(</big><em>*pargs</em>, <em>**pkwargs</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>kill :    bool
+ttype:    saga.task.type enum
+ret:      string / bytearray / saga.Task</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="saga.filesystem.Directory.is_file">
 <tt class="descname">is_file</tt><big>(</big><em>path=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.is_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <cite>True</cite> if entry points to a file, <cite>False</cite> otherwise. If <cite>path</cite>
@@ -388,12 +398,6 @@ directory object itself.</p>
 <span class="k">print</span> <span class="n">size</span>
 </pre></div>
 </div>
-</dd></dl>
-
-<dl class="method">
-<dt id="saga.filesystem.Directory.close">
-<tt class="descname">close</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#saga.filesystem.Directory.close" title="Permalink to this definition">¶</a></dt>
-<dd><p>Closes the direcotry object.</p>
 </dd></dl>
 
 </dd></dl>
@@ -461,7 +465,7 @@ directory object itself.</p>
         <li class="right" >
           <a href="../job/index.html" title="2. Job Submission and Control"
              >previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.13 documentation</a> &raquo;</li>
           <li><a href="../index.html" >2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>

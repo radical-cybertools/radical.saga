@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>8. saga.adaptor.sgejob &mdash; SAGA 0.9.12-951-ga4d47a5 documentation</title>
+    <title>8. saga.adaptor.sgejob &mdash; SAGA 0.9.13 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.12-951-ga4d47a5',
+        VERSION:     '0.9.13',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.12-951-ga4d47a5 documentation" href="../index.html" />
+    <link rel="top" title="SAGA 0.9.13 documentation" href="../index.html" />
     <link rel="up" title="3. Adaptors" href="saga.adaptor.index.html" />
     <link rel="next" title="9. saga.adaptor.pbsjob" href="saga.adaptor.pbsjob.html" />
     <link rel="prev" title="7. saga.adaptor.shell_resource" href="saga.adaptor.shell_resource.html" /> 
@@ -51,7 +51,7 @@
         <li class="right" >
           <a href="saga.adaptor.shell_resource.html" title="7. saga.adaptor.shell_resource"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.13 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" accesskey="U">3. Adaptors</a> &raquo;</li> 
       </ul>
     </div>  
@@ -171,22 +171,16 @@
         <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">js</span><span class="o">.</span><span class="n">list</span><span class="p">():</span>
             <span class="k">print</span> <span class="s">&quot; * </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job</span>
 
-        <span class="c"># Now we disconnect and reconnect to our job by using the get_job()</span>
-        <span class="c"># method and our job&#39;s id. While this doesn&#39;t make a lot of sense</span>
-        <span class="c"># here,  disconnect / reconnect can become very important for</span>
-        <span class="c"># long-running job.</span>
-        <span class="n">sleebjob_clone</span> <span class="o">=</span> <span class="n">js</span><span class="o">.</span><span class="n">get_job</span><span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-
         <span class="c"># wait for our job to complete</span>
         <span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">...waiting for job...</span><span class="se">\n</span><span class="s">&quot;</span>
-        <span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+        <span class="n">touchjob</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
 
-        <span class="k">print</span> <span class="s">&quot;Job State   : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Exitcode    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">exit_code</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Exec. hosts : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">execution_hosts</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Create time : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">created</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Start time  : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">started</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;End time    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sleebjob_clone</span><span class="o">.</span><span class="n">finished</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Job State   : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Exitcode    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">exit_code</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Exec. hosts : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">execution_hosts</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Create time : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">created</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Start time  : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">started</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;End time    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">touchjob</span><span class="o">.</span><span class="n">finished</span><span class="p">)</span>
 
         <span class="n">js</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">return</span> <span class="mi">0</span>
@@ -222,6 +216,32 @@
 <li><strong>default</strong> : True</li>
 <li><strong>environment</strong> : None</li>
 <li><strong>valid options</strong> : [True, False]</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="purge-on-start">
+<h3>8.4.2. purge_on_start<a class="headerlink" href="#purge-on-start" title="Permalink to this headline">¶</a></h3>
+<p>Purge temporary job information for all
+jobs which are older than a number of days.
+The number of days can be configured with &lt;purge_older_than&gt;.</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>type</strong> : &lt;type &#8216;bool&#8217;&gt;</li>
+<li><strong>default</strong> : True</li>
+<li><strong>environment</strong> : None</li>
+<li><strong>valid options</strong> : [True, False]</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="purge-older-than">
+<h3>8.4.3. purge_older_than<a class="headerlink" href="#purge-older-than" title="Permalink to this headline">¶</a></h3>
+<p>When &lt;purge_on_start&gt; is enabled this specifies the number
+of days to consider a temporary file older enough to be deleted.</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>type</strong> : &lt;type &#8216;int&#8217;&gt;</li>
+<li><strong>default</strong> : 30</li>
+<li><strong>environment</strong> : None</li>
 </ul>
 </div></blockquote>
 </div>
@@ -329,6 +349,8 @@
 <li><a class="reference internal" href="#example">8.3. Example</a></li>
 <li><a class="reference internal" href="#configuration-options">8.4. Configuration Options</a><ul>
 <li><a class="reference internal" href="#enabled">8.4.1. enabled</a></li>
+<li><a class="reference internal" href="#purge-on-start">8.4.2. purge_on_start</a></li>
+<li><a class="reference internal" href="#purge-older-than">8.4.3. purge_older_than</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#capabilities">8.5. Capabilities</a><ul>
@@ -390,7 +412,7 @@
         <li class="right" >
           <a href="saga.adaptor.shell_resource.html" title="7. saga.adaptor.shell_resource"
              >previous</a> |</li>
-        <li><a href="../index.html">SAGA 0.9.12-951-ga4d47a5 documentation</a> &raquo;</li>
+        <li><a href="../index.html">SAGA 0.9.13 documentation</a> &raquo;</li>
           <li><a href="saga.adaptor.index.html" >3. Adaptors</a> &raquo;</li> 
       </ul>
     </div>
