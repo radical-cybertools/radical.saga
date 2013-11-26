@@ -356,7 +356,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def close (self, timeout=False):
+    def close (self, timeout=None):
 
         if  timeout :
             raise saga.BadParameter ("timeout for close not supported")
@@ -933,7 +933,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def close (self, timeout=False):
+    def close (self, timeout=None):
 
         if  timeout :
             raise saga.BadParameter ("timeout for close not supported")
