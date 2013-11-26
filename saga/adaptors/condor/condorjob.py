@@ -282,7 +282,7 @@ The (HT)Condor(-G) adaptor allows to run and manage jobs on a
 """,
     "example": "examples/jobs/condorjob.py",
     "schemas": {"condor"        : "connect to a local gateway",
-                "condor+ssh"    : "conenct to a remote gateway via SSH",
+                "condor+ssh"    : "connect to a remote gateway via SSH",
                 "condor+gsissh ": "connect to a remote gateway via GSISSH"}
 }
 
@@ -469,15 +469,25 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         self._logger.info("Generated Condor script: %s" % script)
 
         submit_file = NamedTemporaryFile(mode='w', suffix='.condor',
-                    prefix='tmp-saga', delete=False)
+                    prefix='tmp-saga-', delete=False)
         submit_file.write(script)
         submit_file.close()
-        self._logger.info("Written Condor script: %s" % submit_file.name)
+        self._logger.info("Written Condor script locally: %s" % submit_file.name)
+
+        remote_name = '/tmp/magic-file.condor'
+        if self.shell.url.scheme == "ssh":
+            self._logger.info("Transferring Condor script to: %s" % self.shell.url)
+            self.shell.stage_to_remote(submit_file.name,
+                    remote_name)
+                    #os.path.basename(submit_file.name))
+
+        elif self.shell.url.scheme == "gsissh":
+            pass
 
         #ret, out, _ = self.shell.run_sync('echo "%s" | %s -verbose' \
         #    % (script, self._commands['condor_submit']['path']))
         ret, out, _ = self.shell.run_sync('%s -verbose %s' \
-            % (self._commands['condor_submit']['path'], submit_file.name))
+            % (self._commands['condor_submit']['path'], remote_name))
 
         if ret != 0:
             # something went wrong
