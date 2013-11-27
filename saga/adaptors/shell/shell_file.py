@@ -206,7 +206,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     #
     def _is_valid (self) :
 
-        if not self.valid :
+        if  not self.valid :
             raise saga.IncorrectState ("this instance was closed or removed")
 
     # ----------------------------------------------------------------
@@ -215,7 +215,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         dirname = sumisc.url_get_dirname (tgt)
 
-        if sumisc.url_is_compatible (cwdurl, tgt) :
+        if  sumisc.url_is_compatible (cwdurl, tgt) :
 
             ret, out, _ = self.shell.run_sync ("mkdir -p %s\n" % (dirname))
             if  ret != 0 :
@@ -224,7 +224,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         elif sumisc.url_is_local (tgt) :
 
-            if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
+            if  tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
                 raise saga.BadParameter ("schema of mkdir target is not supported (%s)" \
                                       % (tgt))
 
@@ -330,7 +330,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         adaptor_state = { "from_open" : True,
                           "cwd"       : saga.Url(self.url) }  # deep copy
 
-        if sumisc.url_is_relative (url) :
+        if  sumisc.url_is_relative (url) :
             url = sumisc.url_make_absolute (self.get_url (), url)
 
         return saga.filesystem.File (url=url, flags=flags, session=self.session, 
@@ -347,7 +347,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         adaptor_state = { "from_open" : True,
                           "cwd"       : saga.Url(self.url) }  # deep copy
 
-        if sumisc.url_is_relative (url) :
+        if  sumisc.url_is_relative (url) :
             url = sumisc.url_make_absolute (self.get_url (), url)
 
         return saga.filesystem.Directory (url=url, flags=flags, session=self.session, 
@@ -433,10 +433,10 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
 
         rec_flag = ""
-        if flags & saga.filesystem.RECURSIVE : 
+        if  flags & saga.filesystem.RECURSIVE : 
             rec_flag  += "-r "
 
-        if flags & saga.filesystem.CREATE_PARENTS : 
+        if  flags & saga.filesystem.CREATE_PARENTS : 
             self._create_parent (cwdurl, tgt)
 
 
@@ -450,10 +450,10 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             sumisc.url_is_compatible (cwdurl, tgt) :
 
             # print "shell cp"
-            ret, out, _ = self.shell.run_sync ("cp %s %s %s\n" % (rec_flag, src.path, tgt.path))
+            ret, out, err = self.shell.run_sync ("cp %s %s %s\n" % (rec_flag, src.path, tgt.path))
             if  ret != 0 :
-                raise saga.NoSuccess ("copy (%s -> %s) failed (%s): (%s)" \
-                                   % (src, tgt, ret, out))
+                raise saga.NoSuccess ("copy (%s -> %s) failed (%s): (out: %s) (err: %s)" \
+                                   % (src, tgt, ret, out, err))
 
 
         # src and tgt are on different hosts, we need to find out which of them
@@ -462,12 +462,12 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             # print "! shell cp"
 
             # if cwd is remote, we use stage from/to
-            if not sumisc.url_is_local (cwdurl) :
+            if  not sumisc.url_is_local (cwdurl) :
 
                 # print "cwd remote"
 
-                if sumisc.url_is_local (src)          and \
-                   sumisc.url_is_compatible (cwdurl, tgt) :
+                if  sumisc.url_is_local (src)          and \
+                    sumisc.url_is_compatible (cwdurl, tgt) :
 
                     # print "from local to remote"
                     self.shell.stage_to_remote (src.path, tgt.path, rec_flag)
@@ -492,10 +492,10 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
                 # print "cwd local"
 
-                if sumisc.url_is_local (src) :
+                if  sumisc.url_is_local (src) :
 
                     # need a compatible target scheme
-                    if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
+                    if  tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
                         raise saga.BadParameter ("schema of copy target is not supported (%s)" \
                                               % (tgt))
 
@@ -506,7 +506,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                 elif sumisc.url_is_local (tgt) :
 
                     # need a compatible source scheme
-                    if src.scheme and not src.scheme.lower () in _ADAPTOR_SCHEMAS :
+                    if  src.scheme and not src.scheme.lower () in _ADAPTOR_SCHEMAS :
                         raise saga.BadParameter ("schema of copy source is not supported (%s)" \
                                               % (src))
 
@@ -580,15 +580,15 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
 
         rec_flag = ""
-        if flags & saga.filesystem.RECURSIVE : 
+        if  flags & saga.filesystem.RECURSIVE : 
             rec_flag  += "-r "
 
         if  sumisc.url_is_compatible (cwdurl, tgt) :
 
-            ret, out, _ = self.shell.run_sync ("rm -f %s %s\n" % (rec_flag, tgt.path))
+            ret, out, err = self.shell.run_sync ("rm -f %s %s\n" % (rec_flag, tgt.path))
             if  ret != 0 :
-                raise saga.NoSuccess ("remove (%s) failed (%s): (%s)" \
-                                   % (tgt, ret, out))
+                raise saga.NoSuccess ("remove (%s) failed (%s): (out: %s) (err: %s)" \
+                                   % (tgt, ret, out, err))
 
 
         # we cannot support the URL
@@ -782,7 +782,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     #
     def _is_valid (self) :
 
-        if not self.valid :
+        if  not self.valid :
             raise saga.IncorrectState ("this instance was closed or removed")
 
     # ----------------------------------------------------------------
@@ -791,7 +791,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         dirname = sumisc.url_get_dirname (tgt)
 
-        if sumisc.url_is_compatible (cwdurl, tgt) :
+        if  sumisc.url_is_compatible (cwdurl, tgt) :
 
             ret, out, _ = self.shell.run_sync ("mkdir -p %s\n" % (dirname))
             if  ret != 0 :
@@ -800,7 +800,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         elif sumisc.url_is_local (tgt) :
 
-            if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
+            if  tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
                 raise saga.BadParameter ("schema of mkdir target is not supported (%s)" \
                                       % (tgt))
 
@@ -903,7 +903,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         ret, out, _ = self.shell.run_sync (cmd)
 
         if  ret != 0 :
-            if self.flags & saga.filesystem.CREATE_PARENTS :
+            if  self.flags & saga.filesystem.CREATE_PARENTS :
                 raise saga.BadParameter ("cannot open/create: '%s' - %s" % (self.url.path, out))
             elif self.flags & saga.filesystem.CREATE :
                 raise saga.BadParameter ("cannot open/create: '%s' - %s" % (self.url.path, out))
@@ -970,10 +970,10 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
 
         rec_flag = ""
-        if flags & saga.filesystem.RECURSIVE : 
+        if  flags & saga.filesystem.RECURSIVE : 
             rec_flag  += "-r "
 
-        if flags & saga.filesystem.CREATE_PARENTS : 
+        if  flags & saga.filesystem.CREATE_PARENTS : 
             self._create_parent (cwdurl, tgt)
 
         # print cwdurl
@@ -998,12 +998,12 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             # print "! shell cp"
 
             # if cwd is remote, we use stage from/to on the existing pipe
-            if not sumisc.url_is_local (cwdurl) :
+            if  not sumisc.url_is_local (cwdurl) :
 
                 # print "cwd remote"
 
-                if sumisc.url_is_local (src)          and \
-                   sumisc.url_is_compatible (cwdurl, tgt) :
+                if  sumisc.url_is_local (src)          and \
+                    sumisc.url_is_compatible (cwdurl, tgt) :
 
                     # print "from local to remote"
                     self.shell.stage_to_remote (src.path, tgt.path, rec_flag)
@@ -1028,10 +1028,10 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
                 # print "cwd local"
 
-                if sumisc.url_is_local (src) :
+                if  sumisc.url_is_local (src) :
 
                     # need a compatible target scheme
-                    if tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
+                    if  tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
                         raise saga.BadParameter ("schema of copy target is not supported (%s)" \
                                               % (tgt))
 
@@ -1042,7 +1042,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                 elif sumisc.url_is_local (tgt) :
 
                     # need a compatible source scheme
-                    if src.scheme and not src.scheme.lower () in _ADAPTOR_SCHEMAS :
+                    if  src.scheme and not src.scheme.lower () in _ADAPTOR_SCHEMAS :
                         raise saga.BadParameter ("schema of copy source is not supported (%s)" \
                                               % (src))
 
@@ -1052,8 +1052,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
                 else :
 
-                    # print "from remote to other remote -- fail"
-                    # we cannot support the combination of URLs
+                    # we cannot support two remote URLs
                     raise saga.BadParameter ("copy from %s to %s is not supported" \
                                           % (src, tgt))
 
@@ -1085,14 +1084,14 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 	be very slow compared to native read(2) and write(2) calls.
 	"""
         self._is_valid ()
-        if flags==None:
+        if  flags==None:
             flags = self.flags
         else:
             self.flags=flags
 
         tgt = saga.Url (self.url)  # deep copy, is absolute
             
-        if flags==saga.filesystem.APPEND:
+        if  flags==saga.filesystem.APPEND:
             string = self.read()+string            
         # FIXME: eval flags
 
@@ -1118,7 +1117,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         
         out = self.shell.read_from_remote(tgt.path)
 
-        if size!=None:
+        if  size!=None:
             return out[0:size-1]
         else:
             return out
@@ -1138,7 +1137,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         tgt = saga.Url (self.url)  # deep copy, is absolute
 
         rec_flag = ""
-        if flags & saga.filesystem.RECURSIVE : 
+        if  flags & saga.filesystem.RECURSIVE : 
             rec_flag  += "-r "
 
         ret, out, _ = self.shell.run_sync ("rm -f %s %s\n" % (rec_flag, tgt.path))
