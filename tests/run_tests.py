@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     (options, args) = parser.parse_args ()
 
-    if options.config == None:
+    if options.config == None and not args ::
         print "ERROR: You need to provide the -c/--config option."
         sys.exit (-1)
 
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     # test_cfgs will contain a list of all configuation files
     # that we will use for the tests
-    test_cfgs = []
+    test_cfgs = args
 
     for config in options.config.split (",") :
         if  os.path.exists (config) :
@@ -69,6 +69,8 @@ if __name__ == "__main__":
             print "ERROR: Directory/file '%s' doesn't exist." % config
             sys.exit (-1)
 
+    print test_cfgs
+    sys.exit (0)
 
     for test_cfg in test_cfgs :
 

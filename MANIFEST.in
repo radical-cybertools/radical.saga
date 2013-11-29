@@ -1,7 +1,4 @@
-include *.py
 
-#include all tests
-recursive-include tests *
 
 include saga/*.py
 
@@ -39,5 +36,6 @@ include saga/adaptors/irods/*.py
 include saga/adaptors/aws/*.py
 include saga/adaptors/http/*.py
 
+include saga/VERSION
 include MANIFEST.in README.md LICENSE.md CHANGES.md
 
