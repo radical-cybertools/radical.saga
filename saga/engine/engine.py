@@ -137,6 +137,7 @@ class Engine(ruc.Configurable):
 
         # Initialize the logging
         self._logger = rul.getLogger ('saga', 'Engine')
+        self._logger.info ('saga-python version: %s', saga.version)
 
 
         # load adaptors
