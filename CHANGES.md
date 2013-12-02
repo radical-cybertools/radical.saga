@@ -2,6 +2,8 @@ Version 0.9.14 release
 ---------------------------------------------------------------------
 
 * Added IBM LoadLeveler adaptor
+* Closed tickets: 
+  - https://github.com/saga-project/saga-python/issues?milestone=13&state=closed
 
 
 Version 0.9.13 release 2013-11-26
