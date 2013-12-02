@@ -1,14 +1,20 @@
+Version 0.9.14 release 
+---------------------------------------------------------------------
+
+* Added IBM LoadLeveler adaptor
+
+
 Version 0.9.13 release 2013-11-26
 ---------------------------------------------------------------------
 
-* Added new iRODS replica adaptor
+* Added Platform LSF adaptor
 * Closed tickets:
   - https://github.com/saga-project/saga-python/issues?milestone=11&state=closed
 
 Version 0.9.12 release 2013-10-18
 ---------------------------------------------------------------------
 
-* Added new iRODS replica adaptor
+* Added iRODS replica adaptor
 * Closed tickets:
   - https://github.com/saga-project/saga-python/issues?milestone=10&state=closed
 
