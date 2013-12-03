@@ -39,12 +39,14 @@ def get_version():
                         stdout=sp.PIPE, stderr=sp.STDOUT)
         out = p.communicate()[0]
 
+        srcroot = os.path.dirname (os.path.abspath (__file__))
+
 
         if  p.returncode != 0 or not out :
 
             # the git check failed -- its likely that we are called from
             # a tarball, so use ./VERSION instead
-            out=open (os.path.dirname (os.path.abspath (__file__)) + "/VERSION", 'r').read().strip()
+            out=open ("%s/VERSION" % srcroot, 'r').read().strip()
 
 
         # from the full string, extract short and long versions
@@ -62,8 +64,8 @@ def get_version():
 
 
         # make sure the version files exist for the runtime version inspection
-        open (     'VERSION', 'w').write (long_version+"\n")
-        open ('saga/VERSION', 'w').write (long_version+"\n")
+        open (     '%s/VERSION' % srcroot, 'w').write (long_version+"\n")
+        open ('%s/saga/VERSION' % srcroot, 'w').write (long_version+"\n")
 
 
     except Exception as e :
@@ -83,7 +85,10 @@ if  sys.hexversion < 0x02050000 or sys.hexversion >= 0x03000000:
 
 #-----------------------------------------------------------------------------
 class our_test(Command):
-    def run(self):
+    user_options = []
+    def initialize_options (self) : pass
+    def finalize_options   (self) : pass
+    def run (self) :
         testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
         retval  = subprocess.call([sys.executable, 
                                   '%s/run_tests.py'          % testdir,

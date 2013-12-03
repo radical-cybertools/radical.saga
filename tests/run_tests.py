@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     (options, args) = parser.parse_args ()
 
-    if options.config == None and not args ::
+    if options.config == None and not args :
         print "ERROR: You need to provide the -c/--config option."
         sys.exit (-1)
 
