@@ -58,7 +58,7 @@ class TransferDirectives(object):
                 (local, remote) = directive.split('>')
                 self._in_overwrite[local.strip()] = remote.strip()
             else:
-                msg = "'%s' is not a valid transfer directive string."
+                msg = "'%s' is not a valid transfer directive string." % directive
                 raise se.BadParameter(msg)
 
     def _dicts_to_string_list(self):
