@@ -150,6 +150,7 @@ setup_args = {
         "saga.adaptors.sge",
         "saga.adaptors.pbs",
         "saga.adaptors.lsf",
+        "saga.adaptors.loadl",
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
         "saga.adaptors.redis",
