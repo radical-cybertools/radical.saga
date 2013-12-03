@@ -9,7 +9,7 @@ __license__   = "MIT"
 	Hangi, Kim hgkim@kisti.re.kr
 """
 
-import saga.utils.which
+import radical.utils.which
 import saga.utils.pty_shell
 
 import saga.adaptors.cpi.base
@@ -245,7 +245,7 @@ class Adaptor (saga.adaptors.base.Base):
             _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts = self.get_config()
+        self.opts = self.get_config(_ADAPTOR_NAME)
 
     # ----------------------------------------------------------------
     #
