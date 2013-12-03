@@ -121,6 +121,7 @@ class PTYProcess (object) :
 
 
         self.cache   = ""      # data cache
+        self.tail    = ""      # tail of data data cache for error messages
         self.child   = None    # the process as created by subprocess.Popen
         self.ptyio   = None    # the process' io channel, from pty.fork()
 
@@ -468,11 +469,8 @@ class PTYProcess (object) :
 
             found_eof = False
 
-            if not self.alive (recover=False) :
-                if self.cache :
-                    raise se.NoSuccess ("process I/O failed: %s" % self.cache[-256:])
-                else :
-                    raise se.NoSuccess ("process I/O failed")
+            if  not self.alive (recover=False) :
+                raise se.NoSuccess ("process I/O failed: %s" % self.tail)
 
             try:
                 # start the timeout timer right now.  Note that even if timeout is
@@ -488,14 +486,18 @@ class PTYProcess (object) :
                     if len (self.cache) :
 
                         if  not size :
-                            ret = self.cache
+                            ret        = self.cache
                             self.cache = ""
+                            self.tail += ret
+                            self.tail  = self.tail[-256:]
                             return ret
 
                         # we don't even need all of the cache
                         elif size <= len (self.cache) :
-                            ret = self.cache[:size]
+                            ret        = self.cache[:size]
                             self.cache = self.cache[size:]
+                            self.tail += ret
+                            self.tail  = self.tail[-256:]
                             return ret
 
                     # otherwise we need to read some more data, right?
@@ -516,8 +518,7 @@ class PTYProcess (object) :
                             self.logger.debug ("read : MacOS EOF")
                             self.finalize ()
                             found_eof = True
-                            raise se.NoSuccess ("unexpected EOF (%s)" \
-                                                % self.cache[-256:])
+                            raise se.NoSuccess ("unexpected EOF (%s)" % self.tail)
 
 
                         self.cache += buf.replace ('\r', '')
@@ -537,14 +538,18 @@ class PTYProcess (object) :
                     if len (self.cache) :
 
                         if  not size :
-                            ret = self.cache
+                            ret        = self.cache
                             self.cache = ""
+                            self.tail += ret
+                            self.tail  = self.tail[-256:]
                             return ret
 
                         # we don't even need all of the cache
                         elif size <= len (self.cache) :
-                            ret = self.cache[:size]
+                            ret        = self.cache[:size]
                             self.cache = self.cache[size:]
+                            self.tail += ret
+                            self.tail  = self.tail[-256:]
                             return ret
 
                     # at this point, we do not have sufficient data -- only
@@ -555,12 +560,16 @@ class PTYProcess (object) :
                         if len (self.cache) :
                             ret        = self.cache
                             self.cache = ""
+                            self.tail += ret
+                            self.tail  = self.tail[-256:]
                             return ret
 
                     elif timeout < 0 :
                         # return of we have data or not
                         ret        = self.cache
                         self.cache = ""
+                        self.tail += ret
+                        self.tail  = self.tail[-256:]
                         return ret
 
                     else : # timeout > 0
@@ -569,6 +578,8 @@ class PTYProcess (object) :
                         if (now-start) > timeout :
                             ret        = self.cache
                             self.cache = ""
+                            self.tail += ret
+                            self.tail  = self.tail[-256:]
                             return ret
 
 
@@ -578,7 +589,7 @@ class PTYProcess (object) :
                     raise e
 
                 raise se.NoSuccess ("read from process failed '%s' : (%s)" \
-                                 % (e, self.cache[-256:]))
+                                 % (e, self.tail))
 
 
     # ----------------------------------------------------------------
