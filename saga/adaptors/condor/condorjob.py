@@ -87,17 +87,7 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
         # special treatment for universe - defaults to 'vanilla'
         if 'universe' not in option_dict:
             condor_file += "\nuniverse = vanilla"
-        if 'should_transfer_files' in option_dict:
-            if 'when_to_transfer_output' not in option_dict:
-                message = "When should_transfer_files is specified, " \
-                          "when_to_transfer_output should also be specified: " \
-                          "ON_EXIT or ON_EXIT_OR_EVICT."
-                log_error_and_raise(message, saga.NoSuccess, logger)
 
-        # When "when_to_transfer_output is set, transfer should be enabled
-        if 'when_to_transfer_output' in option_dict:
-            if 'should_transfer_files' not in option_dict:
-                option_dict['should_transfer_files'] = 'YES'
 
         for (key, value) in option_dict.iteritems():
             condor_file += "\n%s = %s" % (key, value)
@@ -142,50 +132,20 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
 
     condor_file += "\n%s" % arguments
 
-    # file_transfer -> transfer_input_files
-    if jd.file_transfer is not None:
-        td = TransferDirectives(jd.file_transfer)
+    # All checking is done in _handle_file_transfers() already.
+    td = jd.transfer_directives
 
-        if len(td.in_append_dict) > 0:
-            raise Exception('FileTransfer append syntax (>>) not supported by Condor: %s' % td.in_append_dict)
-        if len(td.out_append_dict) > 0:
-            raise Exception('FileTransfer append syntax (<<) not supported by Condor: %s' % td.out_append_dict)
+    if hasattr(td, 'transfer_input_files'):
+        transfer_input_files = "transfer_input_files = "
+        for source in td.transfer_input_files:
+            transfer_input_files += "%s, " % source
+        condor_file += "\n%s" % transfer_input_files
 
-        if len(td.in_overwrite_dict) > 0:
-            transfer_input_files = "transfer_input_files = "
-            for (source, target) in td.in_overwrite_dict.iteritems():
-                # make sure source is file an not dir
-                (s_path, s_entry) = os.path.split(source)
-                if len(s_entry) < 1:
-                    raise Exception('Condor accepts only files (not directories) as FileTransfer sources: %s' % source)
-                # make sure target is just a file
-                (t_path, t_entry) = os.path.split(target)
-                if len(t_path) > 1:
-                    raise Exception('Condor accepts only filenames (without paths) as FileTransfer targets: %s' % target)
-                # make sure source and target file are the same
-                if s_entry != t_entry:
-                    raise Exception('For Condor source file name and target file name have to be identical: %s != %s' % (s_entry, t_entry))
-                # entry ok - add to job script
-                transfer_input_files += "%s, " % source
-            condor_file += "\n%s" % transfer_input_files
-
-        if len(td.out_overwrite_dict) > 0:
-            transfer_output_files = "transfer_output_files = "
-            for (source, target) in td.out_overwrite_dict.iteritems():
-                # make sure source is file an not dir
-                (s_path, s_entry) = os.path.split(source)
-                if len(s_entry) < 1:
-                    raise Exception('Condor accepts only files (not directories) as FileTransfer sources: %s' % source)
-                # make sure target is just a file
-                (t_path, t_entry) = os.path.split(target)
-                if len(t_path) > 1:
-                    raise Exception('Condor accepts only filenames (without paths) as FileTransfer targets: %s' % target)
-                # make sure source and target file are the same
-                if s_entry != t_entry:
-                    raise Exception('For Condor source file name and target file name have to be identical: %s != %s' % (s_entry, t_entry))
-                # entry ok - add to job script
-                transfer_output_files += "%s, " % source
-            condor_file += "\n%s" % transfer_output_files
+    if hasattr(td, 'transfer_output_files'):
+        transfer_output_files = "transfer_output_files = "
+        for target in td.transfer_output_files:
+            transfer_output_files += "%s, " % target
+        condor_file += "\n%s" % transfer_output_files
 
     # always define log. if 'jd.output' is defined, we use it 
     # to name the logfile. if not, we fall back to a standard
@@ -475,6 +435,16 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     def _job_run(self, jd):
         """ runs a job via qsub
         """
+
+        if jd.file_transfer is not None:
+            jd.transfer_directives = TransferDirectives(jd.file_transfer)
+
+            self._handle_file_transfers(jd)
+
+            td = jd.transfer_directives
+            if not (hasattr(td, 'transfer_output_files') or hasattr(td, 'transfer_input_files')):
+                raise RuntimeError('One of them should be set!')
+
         # create a Condor job script from SAGA job description
         script = _condorscript_generator(url=self.rm, logger=self._logger,
                 jd=jd, option_dict=self.query_options)
@@ -489,12 +459,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         if self.shell.url.scheme == "ssh":
             self._logger.info("Transferring Condor script to: %s" % self.shell.url)
             submit_file_name = os.path.basename(submit_file.name)
-            self.shell.stage_to_remote(submit_file.name, submit_file_name)
+            self.shell.stage_to_remote(submit_file.name, submit_file_name, cp_flags="-P")
 
         elif self.shell.url.scheme == "gsissh":
             raise NotImplemented("GSISSH support for Condor not implemented.")
         else:
             submit_file_name = submit_file.name
+
 
         ret, out, _ = self.shell.run_sync('%s -verbose %s' \
             % (self._commands['condor_submit']['path'], submit_file_name))
@@ -588,6 +559,59 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
             return job_info
 
+    def _handle_file_transfers(self, jd):
+
+        td = jd.transfer_directives
+
+        # Condor specific safety checks
+        if len(td.in_append_dict) > 0:
+            raise Exception('FileTransfer append syntax (>>) not supported by Condor: %s' % td.in_append_dict)
+        if len(td.out_append_dict) > 0:
+            raise Exception('FileTransfer append syntax (<<) not supported by Condor: %s' % td.out_append_dict)
+
+        if len(td.in_overwrite_dict) > 0:
+            td.transfer_input_files = []
+            for (source, target) in td.in_overwrite_dict.iteritems():
+                # make sure source is file an not dir
+                (s_path, s_entry) = os.path.split(source)
+                if len(s_entry) < 1:
+                    raise Exception('Condor accepts only files (not directories) as FileTransfer sources: %s' % source)
+                    # make sure target is just a file
+                (t_path, t_entry) = os.path.split(target)
+                if len(t_path) > 1:
+                    raise Exception('Condor accepts only filenames (without paths) as FileTransfer targets: %s' % target)
+                    # make sure source and target file are the same
+                if s_entry != t_entry:
+                    raise Exception('For Condor source file name and target file name have to be identical: %s != %s' % (s_entry, t_entry))
+                    # entry ok - add to job script
+
+                # add for later use by job script generator
+                td.transfer_input_files.append(source)
+
+                if self.shell.url.scheme == "ssh":
+                    self._logger.info("Transferring file %s to %s" % (source, target))
+                    self.shell.stage_to_remote(source, target)
+
+        if len(td.out_overwrite_dict) > 0:
+            td.transfer_output_files = []
+            for (source, target) in td.out_overwrite_dict.iteritems():
+                # make sure source is file an not dir
+                (s_path, s_entry) = os.path.split(source)
+                if len(s_entry) < 1:
+                    raise Exception('Condor accepts only files (not directories) as FileTransfer sources: %s' % source)
+                    # make sure target is just a file
+                (t_path, t_entry) = os.path.split(target)
+                if len(t_path) > 1:
+                    raise Exception('Condor accepts only filenames (without paths) as FileTransfer targets: %s' % target)
+                    # make sure source and target file are the same
+                if s_entry != t_entry:
+                    raise Exception('For Condor source file name and target file name have to be identical: %s != %s' % (s_entry, t_entry))
+                    # entry ok - add to job script
+
+                # add for later use by job script generator
+                td.transfer_output_files.append(target)
+
+
     # ----------------------------------------------------------------
     #
     def _job_get_info(self, job_id):
@@ -622,7 +646,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         if ret != 0:
             #if ("Unknown Job Id" in out):
-                # Let's see if the previous job state was runnig or pending. in
+                # Let's see if the previous job state was running or pending. in
                 # that case, the job is gone now, which can either mean DONE,
                 # or FAILED. the only thing we can do is set it to 'DONE'
             if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
@@ -680,6 +704,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         curr_info['returncode'] = val
                     elif key == 'CompletionDate':
                         curr_info['end_time'] = val
+
+        if curr_info['gone'] is True:
+            jd = self.get_job(job_id)['job_description']
+            if self.shell.url.scheme == "ssh":
+                for source in jd.transfer_directives.transfer_output_files:
+                    self._logger.info("Transferring file %s" % source)
+                    self.shell.stage_from_remote(source, source)
 
         # return the new job info dict
         return curr_info
@@ -779,7 +810,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             message = "Error canceling job via 'condor_rm': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        # assume the job was succesfully canceld
+        # assume the job was successfully canceled
         self.jobs[job_id]['state'] = saga.job.CANCELED
 
     # ----------------------------------------------------------------
@@ -948,7 +979,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_state(self):
-        """ mplements saga.adaptors.cpi.job.Job.get_state()
+        """ implements saga.adaptors.cpi.job.Job.get_state()
         """
         if self._started is False:
             # jobs that are not started are always in 'NEW' state
