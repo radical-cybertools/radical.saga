@@ -72,16 +72,16 @@ _SCRIPTS = {
       # 'copy_from'     : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s  %(root)s/%(src)s %(tgt)s",
         'copy_to'       : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
         'copy_from'     : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
-        'copy_to_in'    : "progress \n mput -r %(cp_flags)s %(src)s %(tgt)s \n exit \n",
-        'copy_from_in'  : "progress \n mget -r %(cp_flags)s %(src)s %(tgt)s \n exit \n",
+        'copy_to_in'    : "mput -r %(cp_flags)s %(src)s %(tgt)s \n",
+        'copy_from_in'  : "mget -r %(cp_flags)s %(src)s %(tgt)s \n",
     },
     'sh' : { 
         'master'        : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'shell'         : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'copy_to'       : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'copy_from'     : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'copy_to_in'    : "cd ~ && exec %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s",
-        'copy_from_in'  : "cd ~ && exec %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s",
+        'copy_to_in'    : "cd ~ && %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s",
+        'copy_from_in'  : "cd ~ && %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s",
     }
 }
 
@@ -387,7 +387,6 @@ class PTYShellFactory (object) :
         have to do a local expansion, and the to do the same for each entry...
         """
 
-      # if True :
         with self.rlock :
 
             repl = dict ({'src'      : src, 
@@ -413,18 +412,26 @@ class PTYShellFactory (object) :
 
 
             _   = cp_slave.write ("%s%s\n" % (prep, s_in))
-            ret = cp_slave.wait  ()
+            out = cp_slave.find  (['[\$\>] *$'], -1)
 
-            info['logger'].debug ("copy done: ret")
+            if  'Invalid flag' in out :
+                raise se.NoSuccess._log (info['logger'], "sftp version not supported (%s)" % str(out))
 
-            if 'No such file or directory' in ret :
-                raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % ret)
+            info['logger'].debug ("copy done")
 
-            if 'is not a directory' in ret :
-                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % ret)
+            if 'No such file or directory' in out :
+                raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % str(out))
 
-            if  cp_slave.exit_code != 0 :
-                raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % ret)
+            if 'is not a directory' in out :
+                raise se.BadParameter._log (info['logger'], "File copy failed: %s" % str(out))
+
+            # FIXME: we don't really get exit codes from copy
+            # if  cp_slave.exit_code != 0 :
+            #     raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % str(out))
+
+            cp_slave.finalize ()
+
+            info['logger'].debug ("copy done")
 
 
 
@@ -458,18 +465,26 @@ class PTYShellFactory (object) :
             if  'sftp' in s_cmd :
                 # prepare target dirs for recursive copy, if needed
                 cp_slave.write ("ls %s\n" % src)
-                data = cp_slave.find (["^sftp> "], -1)
-                src_list = data[1].split ('/n')
+                out = cp_slave.find (["^sftp> "], -1)
+
+                src_list = out[1].split ('/n')
+
                 for s in src_list :
                     if  os.path.isdir (s) :
                         prep += "lmkdir %s/%s\n" % (tgt, os.path.basename (s))
 
 
-            cp_slave.write ("%s%s\n" % (prep, s_in))
-            cp_slave.wait  ()
+            _   = cp_slave.write ("%s%s\n" % (prep, s_in))
+            out = cp_slave.find  (['[\$\>] *$'], -1)
 
-            if  cp_slave.exit_code != 0 :
-                raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+            if  'Invalid flag' in out :
+                raise se.NoSuccess._log (info['logger'], "sftp version not supported (%s)" % out)
+
+            # FIXME: we don't really get exit codes from copy
+            # if  cp_slave.exit_code != 0 :
+            #     raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+
+            cp_slave.finalize ()
 
             info['logger'].debug ("copy done")
 

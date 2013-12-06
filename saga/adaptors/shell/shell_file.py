@@ -810,8 +810,9 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                                    % (dirname, ret, out))
 
         else :
-            raise saga.BadParameter ("failed: cannot create target dir for '%s': (%s) (%s)" \
-                                  % (tgt, ret, out))
+
+            raise saga.BadParameter ("failed: cannot create target dir '%s': not local to pwd (%s)" \
+                                  % (tgt, cwdurl))
 
 
     # ----------------------------------------------------------------
