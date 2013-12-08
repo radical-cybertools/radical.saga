@@ -10,8 +10,14 @@ def main():
     """
 
     try:
-        d = saga.filesystem.Directory("sftp://india.futuregrid.org/")
-        d.copy("/etc//passwd", "file://localhost/tmp/copy_test")
+        src = saga.filesystem.Directory  ("sftp://localhost/")
+        tgt = saga.filesystem.Directory  ("file://localhost/tmp/copy_test",    flags=saga.filesystem.CREATE_PARENTS)
+        copy_task = src.copy ("/tmp/stage*", "file://localhost/tmp/copy_test", flags=saga.filesystem.RECURSIVE, 
+                                                                               ttype=saga.task.SYNC)
+
+        copy_task.wait ()
+        print copy_task.state
+        print copy_task.files_copied
 
         return 0
 

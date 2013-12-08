@@ -880,6 +880,11 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
         elif f == SCALAR :
             # we want a scalar
+            
+            if  t == ANY :
+                # no need to do anything, really
+                return val
+
             if isinstance (val, list) :
                 # need to create scalar from vec
                 if len (val) > 1 :
@@ -1039,6 +1044,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
         # if the key is not known
         if not key in d['attributes'] :
+
             if key[0] == '_' and d['private'] :
                 # if the set is private, we can register the new key.  It
                 # won't have any callbacks at this point.
@@ -1048,6 +1054,10 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                 # if the set is extensible, we can register the new key.  It
                 # won't have any callbacks at this point.
                 self._attributes_register (key, None, ANY, ANY, WRITEABLE, EXTENDED, flow=flow)
+
+            elif force :
+                # someone *really* wants this attrib to be set...
+                self._attributes_register (key, None, ANY, SCALAR, WRITEABLE, EXTENDED, flow=flow)
 
             else :
                 # we cannot add new keys on non-extensible / non-private sets

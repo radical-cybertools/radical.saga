@@ -80,8 +80,8 @@ _SCRIPTS = {
         'shell'         : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'copy_to'       : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'copy_from'     : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'copy_to_in'    : "cd ~ && %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s",
-        'copy_from_in'  : "cd ~ && %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s",
+        'copy_to_in'    : "cd ~ && %(cp_exe)s -v %(cp_flags)s %(src)s %(tgt)s",
+        'copy_from_in'  : "cd ~ && %(cp_exe)s -v %(cp_flags)s %(src)s %(tgt)s",
     }
 }
 
@@ -391,7 +391,7 @@ class PTYShellFactory (object) :
 
             repl = dict ({'src'      : src, 
                           'tgt'      : tgt, 
-                          'cp_flags' : cp_flags}.items ()+ info.items ())
+                          'cp_flags' : cp_flags}.items () + info.items ())
 
             # at this point, we do have a valid, living master
             s_cmd = _SCRIPTS[info['type']]['copy_to']    % repl
@@ -411,8 +411,14 @@ class PTYShellFactory (object) :
                         prep += "mkdir %s/%s\n" % (tgt, os.path.basename (s))
 
 
-            _   = cp_slave.write ("%s%s\n" % (prep, s_in))
-            out = cp_slave.find  (['[\$\>] *$'], -1)
+            _      = cp_slave.write    ("%s%s\n" % (prep, s_in))
+            _, out = cp_slave.find     (['[\$\>] *$'], -1)
+            _      = cp_slave.finalize ()
+
+
+            # FIXME: we don't really get exit codes from copy
+            # if  cp_slave.exit_code != 0 :
+            #     raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % str(out))
 
             if  'Invalid flag' in out :
                 raise se.NoSuccess._log (info['logger'], "sftp version not supported (%s)" % str(out))
@@ -425,14 +431,34 @@ class PTYShellFactory (object) :
             if 'is not a directory' in out :
                 raise se.BadParameter._log (info['logger'], "File copy failed: %s" % str(out))
 
-            # FIXME: we don't really get exit codes from copy
-            # if  cp_slave.exit_code != 0 :
-            #     raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % str(out))
 
-            cp_slave.finalize ()
+            # we interpret the first word on the line as name of src file -- we
+            # will return a list of those
+            lines = out.split ('\n')
+            files = []
 
-            info['logger'].debug ("copy done")
+            for line in lines :
 
+                elems = line.split (' ', 2)
+
+                if  elems :
+
+                    f = elems[0]
+
+                    # remove quotes
+                    if  f :
+
+                        if  f[ 0] in ["'", '"', '`'] : f = f[1:  ]
+                        if  f[-1] in ["'", '"', '`'] : f = f[ :-1]
+
+                    # ignore empty lines
+                    if  f :
+
+                        files.append (f)
+
+            info['logger'].debug ("copy done: %s" % files)
+
+            return files
 
 
     # --------------------------------------------------------------------------
@@ -446,7 +472,6 @@ class PTYShellFactory (object) :
         need to expand wildcards on the *remote* side :/
         """
 
-      # if True :
         with self.rlock :
 
             repl = dict ({'src'      : src, 
@@ -465,7 +490,7 @@ class PTYShellFactory (object) :
             if  'sftp' in s_cmd :
                 # prepare target dirs for recursive copy, if needed
                 cp_slave.write ("ls %s\n" % src)
-                out = cp_slave.find (["^sftp> "], -1)
+                _, out = cp_slave.find (["^sftp> "], -1)
 
                 src_list = out[1].split ('/n')
 
@@ -474,19 +499,51 @@ class PTYShellFactory (object) :
                         prep += "lmkdir %s/%s\n" % (tgt, os.path.basename (s))
 
 
-            _   = cp_slave.write ("%s%s\n" % (prep, s_in))
-            out = cp_slave.find  (['[\$\>] *$'], -1)
-
-            if  'Invalid flag' in out :
-                raise se.NoSuccess._log (info['logger'], "sftp version not supported (%s)" % out)
+            _      = cp_slave.write    ("%s%s\n" % (prep, s_in))
+            _, out = cp_slave.find     (['[\$\>] *$'], -1)
+            _      = cp_slave.finalize ()
 
             # FIXME: we don't really get exit codes from copy
             # if  cp_slave.exit_code != 0 :
             #     raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
 
-            cp_slave.finalize ()
+            if 'Invalid flag' in out :
+                raise se.NoSuccess._log (info['logger'], "sftp version not supported (%s)" % out)
 
-            info['logger'].debug ("copy done")
+            if 'No such file or directory' in out :
+                raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % out)
+
+            if 'is not a directory' in out :
+                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
+
+
+            # we run copy with -v, so get a list of files which have been copied
+            # -- we parse that list and return it.  we interpret the *second*
+            # word on the line as name of src file.
+            lines = out.split ('\n')
+            files = []
+
+            for line in lines :
+
+                elems = line.split (' ', 3)
+                
+                if  elems and len(elems) > 1 and elems[0] == 'Fetching' :
+
+                    f = elems[1]
+
+                    # remove quotes
+                    if  f :
+
+                        if  f[ 0] in ["'", '"', '`']  :  f = f[1:  ]
+                        if  f[-1] in ["'", '"', '`']  :  f = f[ :-1]
+
+                    # ignore empty lines
+                    if  f :
+                        files.append (f)
+
+            info['logger'].debug ("copy done: %s" % files)
+
+            return files
 
 
     # --------------------------------------------------------------------------

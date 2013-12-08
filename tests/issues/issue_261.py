@@ -20,3 +20,8 @@ print "final:"
 for u in local_tmp.list () :
     print str(u)
 
+bj_pwd = "/tmp/agent-123"
+remote_dir = saga.filesystem.Directory ("sftp://india.futuregrid.org%s" % bj_pwd)
+remote_dir.copy ('*', "file://localhost/tmp/data_store",
+                 saga.filesystem.RECURSIVE | saga.filesystem.CREATE_PARENTS))
+

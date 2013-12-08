@@ -401,7 +401,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def finalize(self, kill_shell=False):
-        if  kill_shel1 :
+        if  kill_shell :
             if  self.shell :
                 self.shell.finalize (True)
 
@@ -677,7 +677,7 @@ about finished jobs. Setting state to 'DONE'.")
         rm, pid = self._adaptor.parse_id(job_id)
 
         ret, out, _ = self.shell.run_sync("%s -X %s %s\n" \
-            % (self._commands['llcancel']['path'], self.clusters, pid))
+            % (self._commands['llcancel']['path'], self.cluster, pid))
 
         if ret != 0:
             message = "Error canceling job via 'llcancel': %s" % out

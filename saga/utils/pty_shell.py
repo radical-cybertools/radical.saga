@@ -759,9 +759,11 @@ class PTYShell (object) :
             fhandle.flush  ()
             fhandle.close  ()
 
-            self.factory.run_copy_to (self.pty_info, fname, tgt)
+            ret = self.factory.run_copy_to (self.pty_info, fname, tgt)
 
             os.remove (fname)
+
+            return ret
 
         except Exception as e :
             raise ptye.translate_exception (e)
@@ -784,7 +786,7 @@ class PTYShell (object) :
             # first, write data into a tmp file
             fname   = self.base + "/staging.%s" % id(self)
 
-            self.factory.run_copy_from (self.pty_info, src, fname)
+            _ = self.factory.run_copy_from (self.pty_info, src, fname)
 
             fhandle = open (fname, 'r')
             out = fhandle.read  ()
@@ -817,7 +819,7 @@ class PTYShell (object) :
         # prompt, and updating pwd state on every find_prompt.
 
         try :
-            self.factory.run_copy_to (self.pty_info, src, tgt, cp_flags)
+            return self.factory.run_copy_to (self.pty_info, src, tgt, cp_flags)
 
         except Exception as e :
             raise ptye.translate_exception (e)
@@ -841,7 +843,7 @@ class PTYShell (object) :
         # prompt, and updating pwd state on every find_prompt.
 
         try :
-            self.factory.run_copy_from (self.pty_info, src, tgt, cp_flags)
+            return self.factory.run_copy_from (self.pty_info, src, tgt, cp_flags)
 
         except Exception as e :
             raise ptye.translate_exception (e)
