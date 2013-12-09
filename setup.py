@@ -32,14 +32,13 @@ def get_version():
         import subprocess as sp
         import re
 
+        srcroot       = os.path.dirname (os.path.abspath (__file__))
         VERSION_MATCH = re.compile (r'(([\d\.]+)\D.*)')
 
         # attempt to get version information from git
-        p   = sp.Popen (['git', 'describe', '--tags', '--always'],
-                        stdout=sp.PIPE, stderr=sp.STDOUT)
+        p   = sp.Popen ('cd %s && git describe --tags --always' % srcroot,
+                        stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
         out = p.communicate()[0]
-
-        srcroot = os.path.dirname (os.path.abspath (__file__))
 
 
         if  p.returncode != 0 or not out :
@@ -74,6 +73,7 @@ def get_version():
         sys.exit (-1)
 
     return short_version, long_version
+
 
 short_version, long_version = get_version ()
 
