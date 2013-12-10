@@ -1,5 +1,7 @@
 
 
+include MANIFEST.in README.md LICENSE.md CHANGES.md VERSION
+
 include saga/*.py
 
 include saga/job/*.py
@@ -36,7 +38,4 @@ include saga/adaptors/redis/*.py
 include saga/adaptors/irods/*.py
 include saga/adaptors/aws/*.py
 include saga/adaptors/http/*.py
-
-include saga/VERSION
-include MANIFEST.in README.md LICENSE.md CHANGES.md
 

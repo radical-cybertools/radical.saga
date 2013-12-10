@@ -11,7 +11,6 @@ import sys
 import subprocess
 
 from setuptools import setup, Command
-from distutils.command.sdist import sdist
 
 
 #-----------------------------------------------------------------------------
@@ -98,16 +97,6 @@ class our_test(Command):
 
 
 #-----------------------------------------------------------------------------
-class our_sdist(sdist):
-
-    def make_release_tree(self, base_dir, files):
-        # ensure there's a VERSION file
-        sdist.make_release_tree (self, base_dir, files)
-        fn = os.path.join(base_dir, 'VERSION')
-        open (fn, 'w').write (short_version)
-
-
-#-----------------------------------------------------------------------------
 #
 def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
@@ -176,7 +165,6 @@ setup_args = {
     'package_data'         : {'' : ['*.sh', 'VERSION']},
     'cmdclass'             : {
         'test'             : our_test, 
-        'sdist'            : our_sdist,
     },
     'install_requires'     : ['setuptools', 'colorama', 'apache-libcloud', 'radical.utils'],
     'tests_require'        : ['setuptools', 'nose'],
