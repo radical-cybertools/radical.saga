@@ -116,17 +116,17 @@ setup_args = {
     'license'          : "MIT",
     'keywords'         : "radical pilot job saga",    
     'classifiers'      : [
-        'Development Status   :: 5 - Production/Stable',
-        'Intended Audience    :: Developers',
-        'Environment          :: Console',                    
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Developers',
+        'Environment :: Console',                    
         'Programming Language :: Python',
-        'License              :: OSI Approved :: MIT License',
-        'Topic                :: Utilities',
-        'Topic                :: System :: Distributed Computing',
-        'Topic                :: Scientific/Engineering :: Interface Engine/Protocol Translator',
-        'Operating System     :: MacOS :: MacOS X',
-        'Operating System     :: POSIX',
-        'Operating System     :: Unix'
+        'License :: OSI Approved :: MIT License',
+        'Topic :: Utilities',
+        'Topic :: System :: Distributed Computing',
+        'Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator',
+        'Operating System :: MacOS :: MacOS X',
+        'Operating System :: POSIX',
+        'Operating System :: Unix'
     ],
     'packages': [
         "saga",
