@@ -1,7 +1,8 @@
-Version 0.9.14 release 
+Version 0.9.14 release 2013-12-10
 ---------------------------------------------------------------------
 
-* Added IBM LoadLeveler adaptor
+* Migration to radical.utils
+* Numerous SFTP file adaptor improvements
 * Closed tickets: 
   - https://github.com/saga-project/saga-python/issues?milestone=13&state=closed
 
