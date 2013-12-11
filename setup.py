@@ -166,14 +166,14 @@ setup_args = {
     'cmdclass'             : {
         'test'             : our_test, 
     },
-    'install_requires'     : ['setuptools', 'colorama', 'apache-libcloud', 'radical.utils'],
-    'tests_require'        : ['setuptools', 'nose'],
+    'install_requires'     : ['apache-libcloud', 'radical.utils'],
+    'tests_require'        : ['nose'],
     'zip_safe'             : False,
 }
 
 #-----------------------------------------------------------------------------
 
-setup(**setup_args)
+setup (**setup_args)
 
 #-----------------------------------------------------------------------------
 
