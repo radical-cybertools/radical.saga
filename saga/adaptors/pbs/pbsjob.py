@@ -1,5 +1,5 @@
 
-__author__    = "Andre Merzky, Mark Santcroos, Ole Weidner"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -7,10 +7,9 @@ __license__   = "MIT"
 """ PBS job adaptor implementation
 """
 
-import saga.utils.which
-import saga.utils.pty_shell
-import saga.utils.threads   as sut
+import threading
 
+import saga.utils.pty_shell
 import saga.adaptors.base
 import saga.adaptors.cpi.job
 
@@ -24,11 +23,11 @@ import threading
 from copy import deepcopy
 from cgi  import parse_qs
 
-SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 SYNC_WAIT_UPDATE_INTERVAL = 1  # seconds
-MONITOR_UPDATE_INTERVAL = 3  # seconds
+MONITOR_UPDATE_INTERVAL   = 3  # seconds
 
 
 # --------------------------------------------------------------------
@@ -40,7 +39,7 @@ class _job_state_monitor(threading.Thread):
 
         self.logger = job_service._logger
         self.js = job_service
-        self._stop = sut.Event()
+        self._stop = threading.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
@@ -355,11 +354,10 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__(self):
 
-        saga.adaptors.base.Base.__init__(self,
-            _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts = self.get_config()
+        self.opts  = self.get_config (_ADAPTOR_NAME)
 
     # ----------------------------------------------------------------
     #

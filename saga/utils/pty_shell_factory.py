@@ -1,5 +1,5 @@
 
-__author__    = "Andre Merzky"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -10,14 +10,16 @@ import pwd
 import string
 import getpass
 
+import radical.utils           as ru
+import radical.utils.logger    as rul
+
 import saga
 import saga.exceptions         as se
-import saga.utils.threads      as sut
-import saga.utils.which        as suw
 import saga.utils.misc         as sumisc
-import saga.utils.logger       as sul
-import saga.utils.singleton    as sus
 import saga.utils.pty_process  as supp
+
+import pty_exceptions               as ptye
+
 
 # ------------------------------------------------------------------------------
 #
@@ -70,16 +72,16 @@ _SCRIPTS = {
       # 'copy_from'     : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s  %(root)s/%(src)s %(tgt)s",
         'copy_to'       : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
         'copy_from'     : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
-        'copy_to_in'    : "progress \n put %(cp_flags)s %(src)s %(tgt)s \n exit \n",            
-        'copy_from_in'  : "progress \n get %(cp_flags)s %(src)s %(tgt)s \n exit \n",
+        'copy_to_in'    : "mput -r %(cp_flags)s %(src)s %(tgt)s \n",
+        'copy_from_in'  : "mget -r %(cp_flags)s %(src)s %(tgt)s \n",
     },
     'sh' : { 
         'master'        : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'shell'         : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'copy_to'       : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'copy_from'     : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'copy_to_in'    : "cd ~ && exec %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s",
-        'copy_from_in'  : "cd ~ && exec %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s",
+        'copy_to_in'    : "cd ~ && %(cp_exe)s -v %(cp_flags)s %(src)s %(tgt)s",
+        'copy_from_in'  : "cd ~ && %(cp_exe)s -v %(cp_flags)s %(src)s %(tgt)s",
     }
 }
 
@@ -124,16 +126,16 @@ class PTYShellFactory (object) :
 
     """
 
-    __metaclass__ = sus.Singleton
+    __metaclass__ = ru.Singleton
 
 
     # --------------------------------------------------------------------------
     #
     def __init__ (self) :
 
-        self.logger   = sul.getLogger ('PTYShellFactory')
+        self.logger   = rul.getLogger ('saga', 'PTYShellFactory')
         self.registry = {}
-        self.rlock    = sut.RLock ('pty shell factory')
+        self.rlock    = ru.RLock ('pty shell factory')
 
 
     # --------------------------------------------------------------------------
@@ -146,7 +148,7 @@ class PTYShellFactory (object) :
             url = saga.Url (url)
 
             if  not logger :
-                logger = sul.getLogger ('PTYShellFactory')
+                logger = rul.getLogger ('saga', 'PTYShellFactory')
 
             # collect all information we have/need about the requested master
             # connection
@@ -345,8 +347,8 @@ class PTYShellFactory (object) :
                         break
                 
             except Exception as e :
-                raise self._translate_exception (e)
-
+                raise ptye.translate_exception (e)
+                
 
     # --------------------------------------------------------------------------
     #
@@ -377,14 +379,19 @@ class PTYShellFactory (object) :
         """ 
         This initiates a slave copy connection.   Src is interpreted as local
         path, tgt as path on the remote host.
+
+        Now, this is ugly when over sftp: sftp supports recursive copy, and
+        wildcards, all right -- but for recursive copies, it wants the target
+        dir to exist -- so, we have to check if the local src is a  dir, and if
+        so, we first create the target before the copy.  Worse, for wildcards we
+        have to do a local expansion, and the to do the same for each entry...
         """
 
-      # if True :
         with self.rlock :
 
             repl = dict ({'src'      : src, 
                           'tgt'      : tgt, 
-                          'cp_flags' : cp_flags}.items ()+ info.items ())
+                          'cp_flags' : cp_flags}.items () + info.items ())
 
             # at this point, we do have a valid, living master
             s_cmd = _SCRIPTS[info['type']]['copy_to']    % repl
@@ -394,13 +401,64 @@ class PTYShellFactory (object) :
 
             self._initialize_pty (cp_slave, info)
 
-            cp_slave.write ("%s\n" % s_in)
-            cp_slave.wait  ()
+            prep = ""
+            if  'sftp' in s_cmd :
+                # prepare target dirs for recursive copy, if needed
+                import glob
+                src_list = glob.glob (src)
+                for s in src_list :
+                    if  os.path.isdir (s) :
+                        prep += "mkdir %s/%s\n" % (tgt, os.path.basename (s))
 
-            if  cp_slave.exit_code != 0 :
-                raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+
+            _      = cp_slave.write    ("%s%s\n" % (prep, s_in))
+            _, out = cp_slave.find     (['[\$\>] *$'], -1)
+            _      = cp_slave.finalize ()
+
+
+            # FIXME: we don't really get exit codes from copy
+            # if  cp_slave.exit_code != 0 :
+            #     raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % str(out))
+
+            if  'Invalid flag' in out :
+                raise se.NoSuccess._log (info['logger'], "sftp version not supported (%s)" % str(out))
 
             info['logger'].debug ("copy done")
+
+            if 'No such file or directory' in out :
+                raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % str(out))
+
+            if 'is not a directory' in out :
+                raise se.BadParameter._log (info['logger'], "File copy failed: %s" % str(out))
+
+
+            # we interpret the first word on the line as name of src file -- we
+            # will return a list of those
+            lines = out.split ('\n')
+            files = []
+
+            for line in lines :
+
+                elems = line.split (' ', 2)
+
+                if  elems :
+
+                    f = elems[0]
+
+                    # remove quotes
+                    if  f :
+
+                        if  f[ 0] in ["'", '"', '`'] : f = f[1:  ]
+                        if  f[-1] in ["'", '"', '`'] : f = f[ :-1]
+
+                    # ignore empty lines
+                    if  f :
+
+                        files.append (f)
+
+            info['logger'].debug ("copy done: %s" % files)
+
+            return files
 
 
     # --------------------------------------------------------------------------
@@ -409,9 +467,11 @@ class PTYShellFactory (object) :
         """ 
         This initiates a slave copy connection.   Src is interpreted as path on
         the remote host, tgt as local path.
+
+        We have to do the same mkdir trick as for the run_copy_to, but here we
+        need to expand wildcards on the *remote* side :/
         """
 
-      # if True :
         with self.rlock :
 
             repl = dict ({'src'      : src, 
@@ -426,13 +486,64 @@ class PTYShellFactory (object) :
 
             self._initialize_pty (cp_slave, info)
 
-            cp_slave.write ("%s\n" % s_in)
-            cp_slave.wait  ()
+            prep = ""
+            if  'sftp' in s_cmd :
+                # prepare target dirs for recursive copy, if needed
+                cp_slave.write ("ls %s\n" % src)
+                _, out = cp_slave.find (["^sftp> "], -1)
 
-            if  cp_slave.exit_code != 0 :
-                raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+                src_list = out[1].split ('/n')
 
-            info['logger'].debug ("copy done")
+                for s in src_list :
+                    if  os.path.isdir (s) :
+                        prep += "lmkdir %s/%s\n" % (tgt, os.path.basename (s))
+
+
+            _      = cp_slave.write    ("%s%s\n" % (prep, s_in))
+            _, out = cp_slave.find     (['[\$\>] *$'], -1)
+            _      = cp_slave.finalize ()
+
+            # FIXME: we don't really get exit codes from copy
+            # if  cp_slave.exit_code != 0 :
+            #     raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+
+            if 'Invalid flag' in out :
+                raise se.NoSuccess._log (info['logger'], "sftp version not supported (%s)" % out)
+
+            if 'No such file or directory' in out :
+                raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % out)
+
+            if 'is not a directory' in out :
+                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
+
+
+            # we run copy with -v, so get a list of files which have been copied
+            # -- we parse that list and return it.  we interpret the *second*
+            # word on the line as name of src file.
+            lines = out.split ('\n')
+            files = []
+
+            for line in lines :
+
+                elems = line.split (' ', 3)
+                
+                if  elems and len(elems) > 1 and elems[0] == 'Fetching' :
+
+                    f = elems[1]
+
+                    # remove quotes
+                    if  f :
+
+                        if  f[ 0] in ["'", '"', '`']  :  f = f[1:  ]
+                        if  f[-1] in ["'", '"', '`']  :  f = f[ :-1]
+
+                    # ignore empty lines
+                    if  f :
+                        files.append (f)
+
+            info['logger'].debug ("copy done: %s" % files)
+
+            return files
 
 
     # --------------------------------------------------------------------------
@@ -453,18 +564,22 @@ class PTYShellFactory (object) :
             info['pass']      = ""
             info['key_pass']  = {}
 
+            if  not info['schema'] :
+                info['schema'] = 'local'
+                    
+
             # find out what type of shell we have to deal with
             if  info['schema']   in _SCHEMAS_SSH :
                 info['type']     = "ssh"
-                info['ssh_exe']  = suw.which ("ssh")
-                info['scp_exe']  = suw.which ("scp")
-                info['sftp_exe'] = suw.which ("sftp")
+                info['ssh_exe']  = ru.which ("ssh")
+                info['scp_exe']  = ru.which ("scp")
+                info['sftp_exe'] = ru.which ("sftp")
 
             elif info['schema']  in _SCHEMAS_GSI :
                 info['type']     = "ssh"
-                info['ssh_exe']  = suw.which ("gsissh")
-                info['scp_exe']  = suw.which ("gsiscp")
-                info['sftp_exe'] = suw.which ("gsisftp")
+                info['ssh_exe']  = ru.which ("gsissh")
+                info['scp_exe']  = ru.which ("gsiscp")
+                info['sftp_exe'] = ru.which ("gsisftp")
 
             elif info['schema']  in _SCHEMAS_SH :
                 info['type']     = "sh"
@@ -474,11 +589,11 @@ class PTYShellFactory (object) :
                 info['fs_root']  = "/"
 
                 if  "SHELL" in os.environ :
-                    info['sh_exe'] =  suw.which (os.environ["SHELL"])
-                    info['cp_exe'] =  suw.which ("cp")
+                    info['sh_exe'] =  ru.which (os.environ["SHELL"])
+                    info['cp_exe'] =  ru.which ("cp")
                 else :
-                    info['sh_exe'] =  suw.which ("sh")
-                    info['cp_exe'] =  suw.which ("cp")
+                    info['sh_exe'] =  ru.which ("sh")
+                    info['cp_exe'] =  ru.which ("cp")
 
             else :
                 raise se.BadParameter._log (self.logger, \
@@ -607,50 +722,5 @@ class PTYShellFactory (object) :
             return info
 
 
-    # ----------------------------------------------------------------
-    #
-    def _translate_exception (self, e) :
-        """
-        In many cases, we should be able to roughly infer the exception cause
-        from the error message -- this is centrally done in this method.  If
-        possible, it will return a new exception with a more concise error
-        message and appropriate exception type.
-        """
 
-        if  not issubclass (e.__class__, se.SagaException) :
-            # we do not touch non-saga exceptions
-            return e
-
-        if  not issubclass (e.__class__, se.NoSuccess) :
-            # this seems to have a specific cause already, leave it alone
-            return e
-
-        cmsg = e._plain_message
-        lmsg = cmsg.lower ()
-
-        if 'auth' in lmsg :
-            e = se.AuthorizationFailed (cmsg)
-
-        elif 'pass' in lmsg :
-            e = se.AuthenticationFailed (cmsg)
-
-        elif 'ssh_exchange_identification' in lmsg :
-            e = se.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
-
-        elif 'denied' in lmsg :
-            e = se.PermissionDenied (cmsg)
-
-        elif 'shared connection' in lmsg :
-            e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
-
-        elif 'pty allocation' in lmsg :
-            e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
-
-        elif 'Connection to master closed' in lmsg :
-            e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
-
-        return e
-
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

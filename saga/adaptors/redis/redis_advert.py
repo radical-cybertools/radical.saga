@@ -1,4 +1,9 @@
 
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 """ Redis advert adaptor implementation """
 
 import traceback
@@ -247,7 +252,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
     @SYNC_CALL
     def attribute_lister (self) :
 
-        data = self._nsentry.get_data ()
+        data = self._nsdir.get_data ()
 
         for key in data.keys () :
             self._api ()._attributes_i_set (key, data[key], self._api ()._UP)
@@ -339,7 +344,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
             if  not sumisc.url_is_compatible (tgt, self._url) :
                 raise se.BadParameter ("cannot chdir to %s, leaves namespace" % tgt)
 
-            self._url = sumisc.url_make_absolute (tgt, self_url)
+            self._url = sumisc.url_make_absolute (tgt, self._url)
             self._init_check ()
 
 
@@ -525,5 +530,5 @@ class RedisEntry (saga.adaptors.cpi.advert.Entry) :
   #     shutil.copy2 (src, tgt)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

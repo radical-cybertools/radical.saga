@@ -74,22 +74,16 @@ def main():
         for job in js.list():
             print " * %s" % job
 
-        # Now we disconnect and reconnect to our job by using the get_job()
-        # method and our job's id. While this doesn't make a lot of sense
-        # here,  disconnect / reconnect can become very important for
-        # long-running job.
-        sleebjob_clone = js.get_job(touchjob.id)
-
         # wait for our job to complete
         print "\n...waiting for job...\n"
-        sleebjob_clone.wait()
+        touchjob.wait()
 
-        print "Job State   : %s" % (sleebjob_clone.state)
-        print "Exitcode    : %s" % (sleebjob_clone.exit_code)
-        print "Exec. hosts : %s" % (sleebjob_clone.execution_hosts)
-        print "Create time : %s" % (sleebjob_clone.created)
-        print "Start time  : %s" % (sleebjob_clone.started)
-        print "End time    : %s" % (sleebjob_clone.finished)
+        print "Job State   : %s" % (touchjob.state)
+        print "Exitcode    : %s" % (touchjob.exit_code)
+        print "Exec. hosts : %s" % (touchjob.execution_hosts)
+        print "Create time : %s" % (touchjob.created)
+        print "Start time  : %s" % (touchjob.started)
+        print "End time    : %s" % (touchjob.finished)
 
         js.close()
         return 0

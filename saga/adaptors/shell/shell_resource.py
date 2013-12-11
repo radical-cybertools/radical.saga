@@ -1,7 +1,11 @@
 
+__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 """ shell based resource adaptor implementation """
 
-import saga.utils.which
 import saga.utils.pty_shell
 
 import saga.adaptors.cpi.base
@@ -381,5 +385,5 @@ class ShellResourceCompute (saga.adaptors.cpi.resource.Compute) :
         # we never get here...
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

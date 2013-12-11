@@ -1,3 +1,9 @@
+
+__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 # TODO: Create function to check for all the iRODS error codes and give
 #       a better error readout?
 
@@ -232,7 +238,7 @@ class Adaptor (saga.adaptors.base.Base):
             for item in out.strip().split("\n"):
     
                 # if we are listing a directory or remote resource file location i.e.
-                # (bliss-irods)[azebro1@gw68 bliss]$ ils -L /osg/home/azebro1
+                # [azebro1@gw68]$ ils -L /osg/home/azebro1
                 # /osg/home/azebro1:
                 #    azebro1           1 UFlorida-SSERCA_FTP            12 2012-11-14.09:55 & irods-test.txt
                 #          /data/cache/UFlorida-SSERCA_FTPplaceholder/home/azebro1/irods-test.txt    osgGridFtpGroup
@@ -962,5 +968,5 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
 
         return
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -22,7 +22,8 @@ try :
 
 
   # js = saga.job.Service ('gsissh://gsissh.kraken.nics.xsede.org', session=s)
-    js = saga.job.Service ('ssh://localhost/', session=s)
+  # js = saga.job.Service ('ssh://localhost/', session=s)
+    js = saga.job.Service ('ssh://india.futuregrid.org/', session=s)
   
     jd = saga.job.Description ()
     jd.executable = '/bin/echo'
@@ -51,8 +52,8 @@ try :
     #     print "--%s--" % id
 
 except saga.SagaException as e :
-    print str(e)
+    print "Error: %s" % str(e)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

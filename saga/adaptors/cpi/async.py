@@ -22,5 +22,5 @@ class Async (object) :
     def task_cancel (self, task)          : pass
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

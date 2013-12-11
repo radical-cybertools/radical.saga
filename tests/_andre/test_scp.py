@@ -59,5 +59,5 @@ except saga.SagaException as e :
     print "exception: %s" % e
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 
