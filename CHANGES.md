@@ -1,3 +1,8 @@
+Version 0.9.15 release 2013-12-10
+---------------------------------------------------------------------
+
+* Emergency release to fix missing VERSION file
+
 Version 0.9.14 release 2013-12-10
 ---------------------------------------------------------------------
 
@@ -5,7 +10,6 @@ Version 0.9.14 release 2013-12-10
 * Numerous SFTP file adaptor improvements
 * Closed tickets: 
   - https://github.com/saga-project/saga-python/issues?milestone=13&state=closed
-
 
 Version 0.9.13 release 2013-11-26
 ---------------------------------------------------------------------
