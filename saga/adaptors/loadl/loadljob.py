@@ -88,42 +88,26 @@ def _loadlcript_generator(url, logger, jd, ppn, queue=None):
         loadl_params += "#@wall_clock_limit=%s:%s:00 \n" \
             % (str(hours), str(minutes))
 
-    """
-    if (jd.queue is not None) and (queue is not None):
-        loadl_params += "#@queue=%s \n" % queue
-    elif (jd.queue is not None) and (queue is None):
-        loadl_params += "#@queue=%s \n" % jd.queue
-    elif (jd.queue is None) and (queue is not None):
-        loadl_params += "#@queue=%s \n" % queue
-    """
+    if jd.total_cpu_count is None:
+        # try to come up with a sensible (?) default value
+        jd.total_cpu_count = 1
 
-    loadl_params += "#@resources=ConsumableCpus(1)ConsumableMemory(100mb)\n"
+    if jd.total_physical_memory is not None:
+        # try to come up with a sensible (?) default value for memeory
+        jd.total_physical_memory = 256
+
+    loadl_params += "#@resources=ConsumableCpus(%s)ConsumableMemory(%smb)\n" % \
+        (jd.total_cpu_count, jd.total_physical_memory)
+
+    if jd.job_contact is not None:
+        loadl_params += "#@notify_user=%s\n" % jd.job_contact
+
+    # some default (?) parameter that seem to work fine everywhere... 
     loadl_params += "#@class=normal\n"
     loadl_params += "#@notification=complete\n"
-    loadl_params += "#@notify_user=hgkim@kisti.re.kr\n"
+
+    # finally, we 'queue' the job
     loadl_params += "#@queue\n"
-
-    """
-    if jd.project is not None:
-        loadl_params += "#PBS -A %s \n" % str(jd.project)
-    if jd.job_contact is not None:
-        loadl_params += "#PBS -m abe \n"
-    """
-
-	# Default case, i.e, standard HPC cluster (non-Cray XT)
-    """
-	if jd.total_cpu_count is None:
-		jd.total_cpu_count = 1
-
-	tcc = int(jd.total_cpu_count)
-	tbd = float(tcc) / float(ppn)
-	if float(tbd) > int(tbd):
-		loadl_params += "#PBS -l nodes=%s:ppn=%s \n" \
-			% (str(int(tbd) + 1), ppn)
-	else:
-		loadl_params += "#PBS -l nodes=%s:ppn=%s \n" \
-			% (str(int(tbd)), ppn)
-    """
 
     loadlscript = "\n#!/bin/bash \n%s%s" % (loadl_params, exec_n_args)
 	# add by hgkim 
@@ -299,6 +283,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         self.queue   = None
         self.jobs    = dict()
         self.query_options = dict()
+        self.cluster = None
 
         rm_scheme = rm_url.scheme
         pty_url   = deepcopy(rm_url)
