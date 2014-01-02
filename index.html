@@ -112,15 +112,11 @@
 
   <div class="marketing">
 
-    <!--h1>Introducing Bootstrap.</h1>
-    <p class="marketing-byline">Need reasons to love Bootstrap? Look no further.</p-->
+    <div class="row">
 
-    <div class="row-fluid">
-      <div class="span12">
-        <!--img class="marketing-img" src="img/bs-docs-twitter-github.png"-->
-        <br />
-        <br />
-        <h2>Introduction</h2>
+      <div class="col-md-12" id="introduction">
+
+        <h1>Introduction</h1>
 
         <p class="marketing-byline">A Simple API for Grid and Distributed Applications.</p>
 
@@ -157,16 +153,11 @@
               marshals <i>tens of thousands</i> of cores and 
               moves <i>terabytes</i> of data in production science applications.
             </p>
+
+            <hr class="soften">
       </div>
 
-    </div>
-
-    <hr class="soften">
-
-    <div class="row-fluid">
-
-
-      <div class="span6" id="supportedmw">
+      <div class="col-md-12" id="supportedmw">
         <h2>Supported Middleware</h2>
 
         <p class="marketing-byline">Extensible Connectivity Through Adaptors.</p>
@@ -177,7 +168,8 @@
           are plug-ins that bind API calls to the respective backend. SAGA-Python
           currently supports the following backends:</p>
 
-        <p align="justify"><b>Job Submission Systems</b></br>
+        <div class="well well-lg">
+        <strong>Job Submission Systems</strong> <br>
            <i>(All queuing system adaptors can also access clusters remotely
               by tunneling commands through SSH and GSISSH)</i>
           <ul class="adaptors">
@@ -187,31 +179,28 @@
             <li><a href="doc/adaptors/saga.adaptor.sgejob.html">Sun Grid Engine</a></li>
             <li><a href="doc/adaptors/saga.adaptor.slurm_job.html">SLURM</a></li>
           </ul>
-        </p>
+        </div>
 
-        <p><b>File / Data Management</b>
+         <div class="well well-lg">
+        <strong>File / Data Management</strong>
           <ul class="adaptors">
             <li><a href="doc/adaptors/saga.adaptor.shell_file.html">SFTP/GSIFTP</a></li>
             <li><a href="doc/adaptors/saga.adaptor.http_file.html">HTTP/HTTPS</a></li>
             <li><a href="doc/adaptors/saga.adaptor.replica.irods.html">iRODS</a></li>
           </ul>
-        </p>
+          </div>
 
-        <p><b>Resource Management / Clouds</b>
+         <div class="well well-lg"><strong>Resource Management / Clouds</strong>
           <ul class="adaptors">
             <li><a href="doc/adaptors/saga.adaptor.ec2_resource.html">EC2 (libcloud)</a></li>
           </ul>
-        </p>
+        </div>
 
-          <p align="justify" >
-          A list of all available adaptors, their description and usage 
-          examples can be found in the <a href="doc/adaptors/saga.adaptor.index.html">
-          SAGA-Python manual</a>.
-        </p>
+        <hr class="soften">
       </div>
 
 
-      <div class="span6" id="usershowcase">
+      <div class="col-md-12" id="usershowcase">
         <h2>Who is Using It</h2>
         <p class="marketing-byline">An Active and Diverse User Community</p>
 
@@ -229,13 +218,11 @@ the need for scalable resources.
 Last but not least, SAGA has brought music to many ears in the <a href="http://m.isgtw.org/feature/grid-makes-laptops-sing"> GRENDL</a>
   project.</p>
 
-        <!--p>TODO: User showcase</p>
-        <p><a class="btn" href="#">Read more &raquo;</a></p-->
+       <hr class="soften">
 
       </div>
     </div>
-
-    <hr class="soften">
+    
 
     <h1 id="getstarted">Get Started</h1>
 
