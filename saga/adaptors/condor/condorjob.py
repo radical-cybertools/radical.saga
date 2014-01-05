@@ -502,7 +502,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'create_time':  None,
                 'start_time':   None,
                 'end_time':     None,
-                'gone':         False
+                'gone':         False,
+                'transfers':    None
             }
 
             # remove submit file(s)
@@ -540,7 +541,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'create_time':  None,
                 'start_time':   None,
                 'end_time':     None,
-                'gone':         False
+                'gone':         False,
+                'transfers':    None
             }
 
             results = out.split('\n')
@@ -704,11 +706,11 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     elif key == 'CompletionDate':
                         curr_info['end_time'] = val
 
-        if curr_info['gone'] is True:
+        if curr_info['gone'] is True and curr_info['transfers']:
             # If we are running over SSH, copy the output to our local system
             if self.shell.url.scheme == "ssh":
                 t = curr_info['transfers']
-                self._logger.info("TransferOutput: %s" % t)
+                self._logger.debug("TransferOutput: %s" % t)
 
                 # Remove leading and ending double quotes
                 if t.startswith('"') and t.endswith('"'):
