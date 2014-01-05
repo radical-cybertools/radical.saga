@@ -479,8 +479,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 % (out, script)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
-            
-
             # stdout contains the job id
             for line in out.split("\n"):
                 if "** Proc" in line:
@@ -647,35 +645,34 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             % (self._commands['condor_q']['path'], pid))
 
         if ret != 0:
-            #if ("Unknown Job Id" in out):
-                # Let's see if the previous job state was running or pending. in
-                # that case, the job is gone now, which can either mean DONE,
-                # or FAILED. the only thing we can do is set it to 'DONE'
             if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
 
                 # run the Condor 'condor_history' command to get info about 
                 # finished jobs
                 ret, out, _ = self.shell.run_sync("%s -long %s | \
-                    egrep '(ExitCode)'" \
+                    egrep '(ExitCode)|(TransferOutput)'" \
                     % (self._commands['condor_history']['path'], pid))
                 
                 if ret != 0:
                     message = "Error getting job history via 'condor_history': %s" % out
                     log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-                # sometimes we get other crap (like biff)
-                out = out.split('\n')[0] 
+                # parse the egrep result. this should look something like this:
+                # ExitCode = 0
+                # TransferOutput = "radical.txt"
+                results = out.split('\n')
+                for result in results:
+                    if len(result.split('=')) == 2:
+                        key, val = result.split('=')
+                        key = key.strip()  # strip() removes whitespaces at the
+                        val = val.strip()  # beginning and the end of the string
 
-                if len(out.split('=')) != 2:
-                    message = "No ExitCode found via 'condor_history'"
-                    log_error_and_raise(message, saga.NoSuccess, self._logger)
+                        if key == 'ExitCode':
+                            curr_info['returncode'] = int(val)
+                        elif key == 'TransferOutput':
+                            curr_info['transfers'] = val
 
-                _, val = out.split('=')
-                retcode = int(val.strip())
-                    
-                curr_info['returncode'] = retcode
-
-                if retcode == 0:
+                if curr_info['returncode'] == 0:
                     curr_info['state'] = saga.job.DONE
                 else:
                     curr_info['state'] = saga.job.FAILED
@@ -708,11 +705,20 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         curr_info['end_time'] = val
 
         if curr_info['gone'] is True:
-            jd = self.get_job(job_id)['job_description']
+            # If we are running over SSH, copy the output to our local system
             if self.shell.url.scheme == "ssh":
-                for source in jd.transfer_directives.transfer_output_files:
-                    self._logger.info("Transferring file %s" % source)
-                    self.shell.stage_from_remote(source, source)
+                t = curr_info['transfers']
+                self._logger.info("TransferOutput: %s" % t)
+
+                # Remove leading and ending double quotes
+                if t.startswith('"') and t.endswith('"'):
+                    t = t[1:-1]
+
+                # Transfer list of comma separated files
+                for f in t.split(','):
+                    f = f.strip()
+                    self._logger.info("Transferring file %s" % f)
+                    self.shell.stage_from_remote(f, f)
 
         # return the new job info dict
         return curr_info
