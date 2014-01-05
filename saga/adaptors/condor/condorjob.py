@@ -132,20 +132,22 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
 
     condor_file += "\n%s" % arguments
 
-    # All checking is done in _handle_file_transfers() already.
-    td = jd.transfer_directives
+    # Transfer Directives
+    if jd.attribute_exists('transfer_directives'):
+        # All checking is done in _handle_file_transfers() already.
+        td = jd.transfer_directives
 
-    if hasattr(td, 'transfer_input_files'):
-        transfer_input_files = "transfer_input_files = "
-        for source in td.transfer_input_files:
-            transfer_input_files += "%s, " % source
-        condor_file += "\n%s" % transfer_input_files
+        if hasattr(td, 'transfer_input_files'):
+            transfer_input_files = "transfer_input_files = "
+            for source in td.transfer_input_files:
+                transfer_input_files += "%s, " % source
+            condor_file += "\n%s" % transfer_input_files
 
-    if hasattr(td, 'transfer_output_files'):
-        transfer_output_files = "transfer_output_files = "
-        for target in td.transfer_output_files:
-            transfer_output_files += "%s, " % target
-        condor_file += "\n%s" % transfer_output_files
+        if hasattr(td, 'transfer_output_files'):
+            transfer_output_files = "transfer_output_files = "
+            for target in td.transfer_output_files:
+                transfer_output_files += "%s, " % target
+            condor_file += "\n%s" % transfer_output_files
 
     # always define log. if 'jd.output' is defined, we use it 
     # to name the logfile. if not, we fall back to a standard
