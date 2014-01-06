@@ -503,7 +503,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'start_time':   None,
                 'end_time':     None,
                 'gone':         False,
-                'transfers':    None
+                'transfers':    None,
+                'stdout':       None,
+                'stderr':       None
             }
 
             # remove submit file(s)
@@ -542,7 +544,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'start_time':   None,
                 'end_time':     None,
                 'gone':         False,
-                'transfers':    None
+                'transfers':    None,
+                'stdout':       None,
+                'stderr':       None
             }
 
             results = out.split('\n')
@@ -652,7 +656,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 # run the Condor 'condor_history' command to get info about 
                 # finished jobs
                 ret, out, _ = self.shell.run_sync("%s -long %s | \
-                    egrep '(ExitCode)|(TransferOutput)|(CompletionDate)|(JobCurrentStartDate)|(QDate)'" \
+                    egrep '(ExitCode)|(TransferOutput)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
                     % (self._commands['condor_history']['path'], pid))
                 
                 if ret != 0:
@@ -679,6 +683,10 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                             curr_info['start_time'] = val
                         elif key == 'CompletionDate':
                             curr_info['end_time'] = val
+                        elif key == 'Out':
+                            curr_info['stdout'] = val
+                        elif key == 'Err':
+                            curr_info['stderr'] = val
 
                 if curr_info['returncode'] == 0:
                     curr_info['state'] = saga.job.DONE
@@ -712,18 +720,44 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     elif key == 'CompletionDate':
                         curr_info['end_time'] = val
 
-        if curr_info['gone'] is True and curr_info['transfers']:
+        if curr_info['gone'] is True:
             # If we are running over SSH, copy the output to our local system
             if self.shell.url.scheme == "ssh":
-                t = curr_info['transfers']
-                self._logger.debug("TransferOutput: %s" % t)
+                files = []
 
-                # Remove leading and ending double quotes
-                if t.startswith('"') and t.endswith('"'):
-                    t = t[1:-1]
+                if curr_info['transfers']:
+                    t = curr_info['transfers']
+                    self._logger.debug("TransferOutput: %s" % t)
 
-                # Transfer list of comma separated files
-                for f in t.split(','):
+                    # Remove leading and ending double quotes
+                    if t.startswith('"') and t.endswith('"'):
+                        t = t[1:-1]
+
+                    # Parse comma separated list
+                    files += t.split(',')
+
+                if curr_info['stdout']:
+                    t = curr_info['stdout']
+                    self._logger.debug("StdOut: %s" % t)
+
+                    # Remove leading and ending double quotes
+                    if t.startswith('"') and t.endswith('"'):
+                        t = t[1:-1]
+
+                    files.append(t)
+
+                if curr_info['stderr']:
+                    t = curr_info['stderr']
+                    self._logger.debug("StdErr: %s" % t)
+
+                    # Remove leading and ending double quotes
+                    if t.startswith('"') and t.endswith('"'):
+                        t = t[1:-1]
+
+                    files.append(t)
+
+                # Transfer list of files
+                for f in files:
                     f = f.strip()
                     self._logger.info("Transferring file %s" % f)
                     self.shell.stage_from_remote(f, f)
