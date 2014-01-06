@@ -264,8 +264,8 @@ The (HT)Condor(-G) adaptor allows to run and manage jobs on a
 # the adaptor info is used to register the adaptor with SAGA
 #
 _ADAPTOR_INFO = {
-    "name"             :    _ADAPTOR_NAME,
-    "version"          : "v0.1",
+    "name"             : _ADAPTOR_NAME,
+    "version"          : "v0.2",
     "schemas"          : _ADAPTOR_SCHEMAS,
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "cpis": [
