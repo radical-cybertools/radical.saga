@@ -652,7 +652,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 # run the Condor 'condor_history' command to get info about 
                 # finished jobs
                 ret, out, _ = self.shell.run_sync("%s -long %s | \
-                    egrep '(ExitCode)|(TransferOutput)'" \
+                    egrep '(ExitCode)|(TransferOutput)|(CompletionDate)|(JobCurrentStartDate)|(QDate)'" \
                     % (self._commands['condor_history']['path'], pid))
                 
                 if ret != 0:
@@ -673,6 +673,12 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                             curr_info['returncode'] = int(val)
                         elif key == 'TransferOutput':
                             curr_info['transfers'] = val
+                        elif key == 'QDate':
+                            curr_info['create_time'] = val
+                        elif key == 'JobCurrentStartDate':
+                            curr_info['start_time'] = val
+                        elif key == 'CompletionDate':
+                            curr_info['end_time'] = val
 
                 if curr_info['returncode'] == 0:
                     curr_info['state'] = saga.job.DONE
