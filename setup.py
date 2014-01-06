@@ -1,133 +1,131 @@
 
 __author__    = "Andre Merzky, Ashley Z, Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__copyright__ = "Copyright 2012-2013, RADICAL Research, Rutgers University"
 __license__   = "MIT"
 
 
-""" Setup script. Used by easy_install and pip.
-"""
+""" Setup script. Used by easy_install and pip. """
 
 import os
 import sys
+import subprocess
 
 from setuptools import setup, Command
-from distutils.command.install_data import install_data
-from distutils.command.sdist import sdist
+
 
 #-----------------------------------------------------------------------------
-# figure out the current version
-def update_version():
+#
+# versioning mechanism:
+#
+#   - short_version:  1.2.3 - is used for installation
+#   - long_version:  v1.2.3-9-g0684b06  - is used as runtime (ru.version)
+#   - both are derived from the last git tag
+#   - the file saga/VERSION is created with the long_version, und used
+#     by ru.__init__.py to provide the runtime version information. 
+#
+def get_version():
 
-    version = "latest"
+    short_version = None  # 0.4.0
+    long_version  = None  # 0.4.0-9-g0684b06
 
     try:
-        cwd = os.path.dirname(os.path.abspath(__file__))
-        fn = os.path.join(cwd, 'saga/VERSION')
-        version = open(fn).read().strip()
-    except IOError:
-        from subprocess import Popen, PIPE, STDOUT
+        import subprocess as sp
         import re
 
-        VERSION_MATCH = re.compile(r'\d+\.\d+\.\d+(\w|-)*')
+        srcroot       = os.path.dirname (os.path.abspath (__file__))
+        VERSION_MATCH = re.compile (r'(([\d\.]+)\D.*)')
 
-        try:
-            p = Popen(['git', 'describe', '--tags', '--always'],
-                      stdout=PIPE, stderr=STDOUT)
-            out = p.communicate()[0]
+        # attempt to get version information from git
+        p   = sp.Popen ('cd %s && git describe --tags --always' % srcroot,
+                        stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
+        out = p.communicate()[0]
 
-            if (not p.returncode) and out:
-                v = VERSION_MATCH.search(out)
-                if v:
-                    version = v.group()
-        except OSError:
-            pass
 
-    return version
+        if  p.returncode != 0 or not out :
+
+            # the git check failed -- its likely that we are called from
+            # a tarball, so use ./VERSION instead
+            out=open ("%s/VERSION" % srcroot, 'r').read().strip()
+
+
+        # from the full string, extract short and long versions
+        v = VERSION_MATCH.search (out)
+        if v:
+            long_version  = v.groups ()[0]
+            short_version = v.groups ()[1]
+
+
+        # sanity check if we got *something*
+        if  not short_version or not long_version :
+            sys.stderr.write ("Cannot determine version from git or ./VERSION\n")
+            import sys
+            sys.exit (-1)
+
+
+        # make sure the version files exist for the runtime version inspection
+        open (     '%s/VERSION' % srcroot, 'w').write (long_version+"\n")
+        open ('%s/saga/VERSION' % srcroot, 'w').write (long_version+"\n")
+
+
+    except Exception as e :
+        print 'Could not extract/set version: %s' % e
+        import sys
+        sys.exit (-1)
+
+    return short_version, long_version
+
+
+short_version, long_version = get_version ()
 
 #-----------------------------------------------------------------------------
 # check python version. we need > 2.5, <3.x
 if  sys.hexversion < 0x02050000 or sys.hexversion >= 0x03000000:
     raise RuntimeError("SAGA requires Python 2.x (2.5 or higher)")
 
-#-----------------------------------------------------------------------------
-# 
-class our_install_data(install_data):
-
-    def finalize_options(self): 
-        self.set_undefined_options('install',
-                                   ('install_lib', 'install_dir'))
-        install_data.finalize_options(self)
-
-    def run(self):
-        install_data.run(self)
-        # ensure there's a saga/VERSION file
-        fn = os.path.join(self.install_dir, 'saga', 'VERSION')
-        open(fn, 'w').write(update_version())
-        self.outfiles.append(fn)
 
 #-----------------------------------------------------------------------------
-# 
-class our_sdist(sdist):
-
-    def make_release_tree(self, base_dir, files):
-        sdist.make_release_tree(self, base_dir, files)
-
-        fn = os.path.join(base_dir, 'saga', 'VERSION')
-        open(fn, 'w').write(update_version())
-
-
 class our_test(Command):
     user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        import sys
-        import subprocess
+    def initialize_options (self) : pass
+    def finalize_options   (self) : pass
+    def run (self) :
         testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
-        errno = subprocess.call([sys.executable, '%s/run_tests.py' % testdir,
-                                '--config=%s/configs/basetests.cfg' % testdir])
-        raise SystemExit(errno)
+        retval  = subprocess.call([sys.executable, 
+                                  '%s/run_tests.py'          % testdir,
+                                  '%s/configs/basetests.cfg' % testdir])
+        raise SystemExit(retval)
 
 
+#-----------------------------------------------------------------------------
+#
+def read(*rnames):
+    return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
+
+
+#-----------------------------------------------------------------------------
 setup_args = {
-    'name': "saga-python",
-    'version': update_version(),
-    'description': "A light-weight access layer for distributed computing infrastructure",
-    'long_description': "An implementation of the OGF GFD.90 SAGA standard in Python",
-    'author': "Ole Weidner, et al.",
-    'author_email': "ole.weidner@rutgers.edu",
-    'maintainer': "Ole Weidner",
-    'maintainer_email': "ole.weidner@rutgers.edu",
-    'url': "http://saga-project.github.com/saga-python/",
-    'license': "MIT",
-    'classifiers': [
+    'name'             : "saga-python",
+    'version'          : short_version,
+    'description'      : "A light-weight access layer for distributed computing infrastructure",
+    'long_description' : (read('README.md') + '\n\n' + read('CHANGES.md')),
+    'author'           : "The RADICAL Group",
+    'author_email'     : "ole.weidner@rutgers.edu",
+    'maintainer'       : "Ole Weidner",
+    'maintainer_email' : "ole.weidner@rutgers.edu",
+    'url'              : "http://saga-project.github.com/saga-python/",
+    'license'          : "MIT",
+    'keywords'         : "radical pilot job saga",    
+    'classifiers'      : [
         'Development Status :: 5 - Production/Stable',
-        'Environment :: No Input/Output (Daemon)',
         'Intended Audience :: Developers',
+        'Environment :: Console',                    
         'Programming Language :: Python',
         'License :: OSI Approved :: MIT License',
+        'Topic :: Utilities',
         'Topic :: System :: Distributed Computing',
         'Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator',
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: POSIX',
-        'Operating System :: POSIX :: AIX',
-        'Operating System :: POSIX :: BSD',
-        'Operating System :: POSIX :: BSD :: BSD/OS',
-        'Operating System :: POSIX :: BSD :: FreeBSD',
-        'Operating System :: POSIX :: BSD :: NetBSD',
-        'Operating System :: POSIX :: BSD :: OpenBSD',
-        'Operating System :: POSIX :: GNU Hurd',
-        'Operating System :: POSIX :: HP-UX',
-        'Operating System :: POSIX :: IRIX',
-        'Operating System :: POSIX :: Linux',
-        'Operating System :: POSIX :: Other',
-        'Operating System :: POSIX :: SCO',
-        'Operating System :: POSIX :: SunOS/Solaris',
         'Operating System :: Unix'
     ],
     'packages': [
@@ -152,6 +150,7 @@ setup_args = {
         "saga.adaptors.sge",
         "saga.adaptors.pbs",
         "saga.adaptors.lsf",
+        "saga.adaptors.loadl",
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
         "saga.adaptors.redis",
@@ -162,19 +161,19 @@ setup_args = {
         "saga.utils",
         "saga.utils.job",
     ],
-    'package_data': {'': ['*.sh']},
-    'zip_safe': False,
-    'scripts': [],
-    # mention data_files, even if empty, so install_data is called and
-    # VERSION gets copied
-    'data_files': [("saga", [])],
-    'cmdclass': {
-        'install_data': our_install_data,
-        'sdist': our_sdist,
-        'test': our_test
+    'scripts'              : [],
+    'package_data'         : {'' : ['*.sh', 'VERSION']},
+    'cmdclass'             : {
+        'test'             : our_test, 
     },
-    'install_requires': ['setuptools', 'colorama', 'apache-libcloud', 'radical.utils'],
-    'tests_require': ['setuptools', 'nose']
+    'install_requires'     : ['apache-libcloud', 'radical.utils'],
+    'tests_require'        : ['nose'],
+    'zip_safe'             : False,
 }
 
-setup(**setup_args)
+#-----------------------------------------------------------------------------
+
+setup (**setup_args)
+
+#-----------------------------------------------------------------------------
+

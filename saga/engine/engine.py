@@ -135,7 +135,7 @@ class Engine(ruc.Configurable):
         self._cfg = self.get_config('saga.engine')
 
 
-        # Initialize the logging
+        # Initialize the logging, and log version (this is a singleton!)
         self._logger = rul.getLogger ('saga', 'Engine')
 
 

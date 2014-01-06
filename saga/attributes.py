@@ -396,7 +396,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
 
         # check if we know about the given attribute
-        if key :
+        if  key :
             if not key in d['attributes'] :
                 raise se.DoesNotExist ("attribute key is invalid: %s"  %  (key))
 
@@ -427,7 +427,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         d = self._attributes_t_init ()
 
         # perform name validity checks if key is new
-        if not key in d['attributes'] :
+        if  not key in d['attributes'] :
             # FIXME: we actually don't have any tests, yet.  We should allow to
             # configure such via, say, _attributes_add_check (callable (key))
             pass
@@ -436,7 +436,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         # if key is known, check for aliasing
         else: 
             # check if we know about the given attribute
-            if d['attributes'][key]['mode'] == ALIAS :
+            if  d['attributes'][key]['mode'] == ALIAS :
                 alias = d['attributes'][key]['alias']
                 print "attribute key / property name '%s' is deprecated - use '%s'"  %  (key, alias)
                 key   = alias
@@ -463,7 +463,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         d = self._attributes_t_init (key)
 
         # avoid recursion
-        if d['attributes'][key]['recursion'] :
+        if  d['attributes'][key]['recursion'] :
             return
 
         callbacks = d['attributes'][key]['callbacks']
@@ -484,7 +484,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                 d['attributes'][key]['recursion'] = False
 
             # remove callbacks which return 'False', or raised and exception
-            if not ret :
+            if  not ret :
                 callbacks.remove (cb)
 
 
@@ -507,11 +507,11 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         d = self._attributes_t_init (key)
 
         # avoid recursion
-        if d['attributes'][key]['recursion'] :
+        if  d['attributes'][key]['recursion'] :
             return
 
         # no callbacks for private keys
-        if key[0] == '_' and d['private'] :
+        if  key[0] == '_' and d['private'] :
             return
 
         # key_setter overwrites results from all_setter
@@ -528,9 +528,9 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         #
         # always raise and lower the recursion shield.
         can_ignore = 0
-        if all_setter and key_setter : can_ignore = 1
+        if  all_setter and key_setter : can_ignore = 1
 
-        if all_setter :
+        if  all_setter :
             try :
                 d['attributes'][key]['recursion'] = True
                 all_setter (key, val)
@@ -543,7 +543,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             finally :
                 d['attributes'][key]['recursion'] = False
 
-        if key_setter :
+        if  key_setter :
             try :
                 d['attributes'][key]['recursion'] = True
                 key_setter (val)
@@ -572,11 +572,11 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         d = self._attributes_t_init (key)
 
         # avoid recursion
-        if d['attributes'][key]['recursion'] :
+        if  d['attributes'][key]['recursion'] :
             return
 
         # no callbacks for private keys
-        if key[0] == '_' and d['private'] :
+        if  key[0] == '_' and d['private'] :
             return
 
         # key getter overwrites results from all_getter
@@ -610,9 +610,9 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         #
         # always raise and lower the recursion shield.
         retries = 1
-        if all_getter and key_getter : retries = 2
+        if  all_getter and key_getter : retries = 2
 
-        if all_getter :
+        if  all_getter :
 
             try :
                 d['attributes'][key]['recursion'] = True
@@ -624,7 +624,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             finally :
               d['attributes'][key]['recursion'] = False
 
-        if key_getter :
+        if  key_getter :
             try :
                 d['attributes'][key]['recursion'] = True
                 val=key_getter ()
@@ -654,7 +654,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         d = self._attributes_t_init ()
 
         # avoid recursion
-        if d['recursion'] :
+        if  d['recursion'] :
             return
 
         lister = d['lister']
@@ -692,16 +692,16 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         d = self._attributes_t_init (key)
 
         # avoid recursion
-        if d['recursion'] :
+        if  d['recursion'] :
             return
 
         # no callbacks for private keys
-        if key[0] == '_' and d['private'] :
+        if  key[0] == '_' and d['private'] :
             return
 
         caller = d['caller']
 
-        if caller :
+        if  caller :
 
             # the caller is simply called, and it is expected that it internally
             # adds/removes callbacks as needed
@@ -767,14 +767,14 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         d = self._attributes_t_init ()
 
         # if the key is not known
-        if not key in d['attributes'] :
+        if  not key in d['attributes'] :
             # cannot handle unknown attributes.  Attributes which have been
             # registered earlier will be fine, as they have type information.
             return val
 
         # check if a value is given.  If not, revert to the default value
         # (if available)
-        if val == None :
+        if  val == None :
             if 'default' in d['attributes'][key] :
                 val = d['attributes'][key]['default']
 
@@ -785,7 +785,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         # apply all value checks on the conversion result
         for check in d['attributes'][key]['checks'] :
             ret = check (key, val)
-            if ret != True :
+            if  ret != True :
                 raise se.BadParameter ("attribute value %s is not valid: %s"  %  (key, ret))
 
         # aaaand done
@@ -880,6 +880,11 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
         elif f == SCALAR :
             # we want a scalar
+            
+            if  t == ANY :
+                # no need to do anything, really
+                return val
+
             if isinstance (val, list) :
                 # need to create scalar from vec
                 if len (val) > 1 :
@@ -1039,6 +1044,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
         # if the key is not known
         if not key in d['attributes'] :
+
             if key[0] == '_' and d['private'] :
                 # if the set is private, we can register the new key.  It
                 # won't have any callbacks at this point.
@@ -1048,6 +1054,10 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                 # if the set is extensible, we can register the new key.  It
                 # won't have any callbacks at this point.
                 self._attributes_register (key, None, ANY, ANY, WRITEABLE, EXTENDED, flow=flow)
+
+            elif force :
+                # someone *really* wants this attrib to be set...
+                self._attributes_register (key, None, ANY, SCALAR, WRITEABLE, EXTENDED, flow=flow)
 
             else :
                 # we cannot add new keys on non-extensible / non-private sets
@@ -1518,7 +1528,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                   rus.optional (rus.one_of (bool, EXTENDED)),
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (rus.nothing)
-    def _attributes_register (self, key,      default=None, typ=ANY, flavor=SCALAR,
+    def _attributes_register (self, key,      default=None, typ=ANY, flavor=ANY,
                               mode=WRITEABLE, ext=False,    flow=_DOWN) :
         """
         This interface method is not part of the public consumer API, but can

@@ -1,43 +1,7 @@
-include *.py
 
-#include all tests
+
+include MANIFEST.in README.md LICENSE.md CHANGES.md VERSION
+
+recursive-include saga  *
 recursive-include tests *
-
-include saga/*.py
-
-include saga/job/*.py
-include saga/namespace/*.py
-include saga/filesystem/*.py
-include saga/replica/*.py
-include saga/resource/*.py
-include saga/advert/*.py
-
-include saga/engine/*.py
-
-include saga/utils/*.py
-include saga/utils/job/*.py
-
-include saga/adaptors/*.py
-include saga/adaptors/cpi/*.py
-include saga/adaptors/cpi/job/*.py
-include saga/adaptors/cpi/namespace/*.py
-include saga/adaptors/cpi/filesystem/*.py
-include saga/adaptors/cpi/replica/*.py
-include saga/adaptors/cpi/resource/*.py
-include saga/adaptors/cpi/advert/*.py
-include saga/adaptors/context/*.py
-include saga/adaptors/local/*.py
-include saga/adaptors/shell/*.py
-include saga/adaptors/shell/*.sh
-include saga/adaptors/sge/*.py
-include saga/adaptors/pbs/*.py
-include saga/adaptors/lsf/*.py
-include saga/adaptors/condor/*.py
-include saga/adaptors/slurm/*.py
-include saga/adaptors/redis/*.py
-include saga/adaptors/irods/*.py
-include saga/adaptors/aws/*.py
-include saga/adaptors/http/*.py
-
-include MANIFEST.in README.md LICENSE.md CHANGES.md
 

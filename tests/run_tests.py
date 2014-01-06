@@ -50,18 +50,15 @@ if __name__ == "__main__":
 
     (options, args) = parser.parse_args ()
 
-    if options.config == None:
-        print "ERROR: You need to provide the -c/--config option."
-        sys.exit (-1)
+
+    if  options.config == None :
+        if  not args :
+            print "ERROR: You need to provide test config files as arguments"
+            sys.exit (-1)
+        options.config = ",".join (args)
 
 
-    # set up the testing framework
-    testing = rut.Testing ('saga', __file__)
-
-    # test_cfgs will contain a list of all configuation files
-    # that we will use for the tests
-    test_cfgs = []
-
+    test_cfgs = list()
     for config in options.config.split (",") :
         if  os.path.exists (config) :
             test_cfgs.append (config)
@@ -69,6 +66,10 @@ if __name__ == "__main__":
             print "ERROR: Directory/file '%s' doesn't exist." % config
             sys.exit (-1)
 
+
+    # set up the testing framework
+    testing = rut.Testing ('saga', __file__)
+    ret     = True
 
     for test_cfg in test_cfgs :
 
@@ -78,7 +79,11 @@ if __name__ == "__main__":
         # tag the notimpl_warn_only option to the config
         tc.notimpl_warn_only = options.notimpl_warn_only
 
-        testing.run ()
+        # run the tests...
+        if  not testing.run () :
+            ret = False
+
+    sys.exit (ret)
 
 
 # ------------------------------------------------------------------------------
