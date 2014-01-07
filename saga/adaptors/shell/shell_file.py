@@ -472,7 +472,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                 elif sumisc.url_is_local (tgt)          and \
                      sumisc.url_is_compatible (cwdurl, src) :
 
-                    # print "from remote to loca"
+                  # print "from remote to local: %s -> %s" % (src.path, tgt.path)
                     files_copied = self.shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
                 else :
