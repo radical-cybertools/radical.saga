@@ -29,7 +29,9 @@ class SimpleBase (object) :
     @rus.returns (rus.nothing)
     def __init__  (self) :
 
-        self._apitype   = self._get_apitype ()
+        if  not hasattr (self, '_apitype') :
+            self._apitype = self._get_apitype ()
+
         self._logger    = rul.getLogger ('saga', self._apitype)
 
       # self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
