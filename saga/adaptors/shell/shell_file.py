@@ -435,6 +435,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         rec_flag = ""
         if  flags & saga.filesystem.RECURSIVE : 
             rec_flag  += "-r "
+        else :
+            raise saga.BadParameter ("directory copy requires 'RECURSIVE' flag")
 
         if  flags & saga.filesystem.CREATE_PARENTS : 
             self._create_parent (cwdurl, tgt)
