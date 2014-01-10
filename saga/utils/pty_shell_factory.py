@@ -72,8 +72,8 @@ _SCRIPTS = {
       # 'copy_from'     : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s  %(root)s/%(src)s %(tgt)s",
         'copy_to'       : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
         'copy_from'     : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
-        'copy_to_in'    : "mput -r %(cp_flags)s %(src)s %(tgt)s \n",
-        'copy_from_in'  : "mget -r %(cp_flags)s %(src)s %(tgt)s \n",
+        'copy_to_in'    : "mput %(cp_flags)s %(src)s %(tgt)s \n",
+        'copy_from_in'  : "mget %(cp_flags)s %(src)s %(tgt)s \n",
     },
     'sh' : { 
         'master'        : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
