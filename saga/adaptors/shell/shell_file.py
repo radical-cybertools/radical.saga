@@ -528,6 +528,59 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
+    def link_self (self, tgt, flags):
+
+        self._is_valid ()
+
+        # FIXME: eval flags
+
+        return self.link (self.url, tgt, flags)
+   
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def link (self, src_in, tgt_in, flags, _from_task=None):
+
+        # link will *only* work if src and tgt are on the same resource (and
+        # even then may fail)
+        self._is_valid ()
+
+        cwdurl = saga.Url (self.url) # deep copy
+        src    = saga.Url (src_in)   # deep copy
+        tgt    = saga.Url (tgt_in)   # deep copy
+
+        rec_flag = ""
+        if  flags & saga.filesystem.RECURSIVE : 
+            raise saga.BadParameter ("'RECURSIVE' flag not  supported for link()")
+
+        if  flags & saga.filesystem.CREATE_PARENTS : 
+            self._create_parent (cwdurl, tgt)
+
+        if  sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
+        if  sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
+    
+        # if src and tgt point to the same host, we just run a shell link
+        # on that host
+        if  sumisc.url_is_compatible (cwdurl, src) and \
+            sumisc.url_is_compatible (cwdurl, tgt) :
+
+            # print "shell ln"
+            ret, out, err = self.shell.run_sync ("ln -s %s %s\n" % (src.path, tgt.path))
+            if  ret != 0 :
+                raise saga.NoSuccess ("link (%s -> %s) failed (%s): (out: %s) (err: %s)" \
+                                   % (src, tgt, ret, out, err))
+
+
+        # src and tgt are on different hosts, this is not supported
+        else :
+            raise saga.BadParameter ("link is only supported on same file system as cwd")
+
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
     def move_self (self, tgt, flags):
 
         self._is_valid ()
@@ -1055,6 +1108,47 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                                           % (src, tgt))
 
    
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def link_self (self, tgt_in, flags, _from_task=None):
+
+        # link will *only* work if src and tgt are on the same resource (and
+        # even then may fail)
+        self._is_valid ()
+
+        cwdurl = saga.Url (self.url) # deep copy
+        src    = saga.Url (self.url)    # deep copy
+        tgt    = saga.Url (tgt_in)   # deep copy
+
+        rec_flag = ""
+        if  flags & saga.filesystem.RECURSIVE : 
+            raise saga.BadParameter ("'RECURSIVE' flag not  supported for link()")
+
+        if  flags & saga.filesystem.CREATE_PARENTS : 
+            self._create_parent (cwdurl, tgt)
+
+        if  sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
+        if  sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
+    
+        # if src and tgt point to the same host, we just run a shell link
+        # on that host
+        if  sumisc.url_is_compatible (cwdurl, src) and \
+            sumisc.url_is_compatible (cwdurl, tgt) :
+
+            # print "shell ln"
+            ret, out, err = self.shell.run_sync ("ln -s %s %s\n" % (src.path, tgt.path))
+            if  ret != 0 :
+                raise saga.NoSuccess ("link (%s -> %s) failed (%s): (out: %s) (err: %s)" \
+                                   % (src, tgt, ret, out, err))
+
+
+        # src and tgt are on different hosts, this is not supported
+        else :
+            raise saga.BadParameter ("link is only supported on same file system as cwd")
+
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
