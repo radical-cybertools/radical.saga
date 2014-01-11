@@ -429,14 +429,12 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         src    = saga.Url (src_in)   # deep copy
         tgt    = saga.Url (tgt_in)   # deep copy
 
-      # if  sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
-      # if  sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
+        if  sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
+        if  sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
     
         rec_flag = ""
         if  flags & saga.filesystem.RECURSIVE : 
             rec_flag  += "-r "
-        else :
-            raise saga.BadParameter ("directory copy requires 'RECURSIVE' flag")
 
         if  flags & saga.filesystem.CREATE_PARENTS : 
             self._create_parent (cwdurl, tgt)
@@ -557,9 +555,6 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         if  flags & saga.filesystem.CREATE_PARENTS : 
             self._create_parent (cwdurl, tgt)
 
-        if  sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
-        if  sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
-    
         # if src and tgt point to the same host, we just run a shell link
         # on that host
         if  sumisc.url_is_compatible (cwdurl, src) and \
@@ -631,8 +626,6 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         cwdurl = saga.Url (self.url) # deep copy
         tgt    = saga.Url (tgt_in)   # deep copy
 
-        # if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
-
         rec_flag = ""
         if  flags & saga.filesystem.RECURSIVE : 
             rec_flag  += "-r "
@@ -658,14 +651,12 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self._is_valid ()
 
         cwdurl = saga.Url (self.url) # deep copy
-        tgturl = saga.Url (tgt_in)   # deep copy
-
-        tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
+        tgt    = saga.Url (tgt_in)   # deep copy
 
         if  flags & saga.filesystem.EXCLUSIVE : 
             # FIXME: this creates a race condition between testing for exclusive
             # mkdir and creating the dir.
-            ret, out, _ = self.shell.run_sync ("test -d %s " % tgt_abs.path)
+            ret, out, _ = self.shell.run_sync ("test -d %s " % tgt.path)
 
             if  ret != 0 :
                 raise saga.AlreadyExists ("make_dir target (%s) exists (%s)" \
@@ -677,7 +668,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         if  flags & saga.filesystem.CREATE_PARENTS : 
             options += "-p"
 
-        self.shell.run_sync ("mkdir %s %s" % (options, tgt_abs.path))
+        self.shell.run_sync ("mkdir %s %s" % (options, tgt.path))
 
    
     # ----------------------------------------------------------------
@@ -698,8 +689,6 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         cwdurl = saga.Url (self.url) # deep copy
         tgt    = saga.Url (tgt_in)   # deep copy
-
-        # tgt_abs = sumisc.url_make_absolute (cwdurl, tgt)
 
         ret, out, _ = self.shell.run_sync ("du -ks %s  | xargs | cut -f 1 -d ' '\n" % tgt.path)
         if  ret != 0 :
@@ -733,11 +722,9 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self._is_valid ()
 
         cwdurl = saga.Url (self.url) # deep copy
-        tgturl = saga.Url (tgt_in)   # deep copy
+        tgt    = saga.Url (tgt_in)   # deep copy
 
-        tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
-
-        ret, out, _ = self.shell.run_sync ("test -d %s && test ! -h %s" % (tgt_abs.path, tgt_abs.path))
+        ret, out, _ = self.shell.run_sync ("test -d %s && test ! -h %s" % (tgt.path, tgt.path))
 
         return True if ret == 0 else False
    
@@ -760,11 +747,9 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self._is_valid ()
 
         cwdurl = saga.Url (self.url) # deep copy
-        tgturl = saga.Url (tgt_in)   # deep copy
+        tgt    = saga.Url (tgt_in)   # deep copy
 
-        tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
-
-        ret, out, _ = self.shell.run_sync ("test -f %s && test ! -h %s" % (tgt_abs.path, tgt_abs.path))
+        ret, out, _ = self.shell.run_sync ("test -f %s && test ! -h %s" % (tgt.path, tgt.path))
 
         return True if ret == 0 else False
    
@@ -787,11 +772,9 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self._is_valid ()
 
         cwdurl = saga.Url (self.url) # deep copy
-        tgturl = saga.Url (tgt_in)   # deep copy
+        tgt    = saga.Url (tgt_in)   # deep copy
 
-        tgt_abs = sumisc.url_make_absolute (cwdurl, tgturl)
-
-        ret, out, _ = self.shell.run_sync ("test -h %s" % tgt_abs.path)
+        ret, out, _ = self.shell.run_sync ("test -h %s" % tgt.path)
 
         return True if ret == 0 else False
    
@@ -1021,8 +1004,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         src    = saga.Url (self.url)    # deep copy
         tgt    = saga.Url (tgt_in)      # deep copy
 
-        # if sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
-        # if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
+        if sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
+        if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
 
         rec_flag = ""
         if  flags & saga.filesystem.RECURSIVE : 
@@ -1128,9 +1111,6 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         if  flags & saga.filesystem.CREATE_PARENTS : 
             self._create_parent (cwdurl, tgt)
 
-        if  sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
-        if  sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
-    
         # if src and tgt point to the same host, we just run a shell link
         # on that host
         if  sumisc.url_is_compatible (cwdurl, src) and \
