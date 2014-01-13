@@ -1,3 +1,10 @@
+Version 0.9.16 release 2014-01-13
+---------------------------------------------------------------------
+
+* Some improvements to sftp file adaptor
+* Closed tickets: 
+  - https://github.com/saga-project/saga-python/issues?milestone=14&state=closed
+
 Version 0.9.15 release 2013-12-10
 ---------------------------------------------------------------------
 
