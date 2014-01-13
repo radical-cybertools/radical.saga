@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>2. Job Submission and Control &mdash; SAGA 0.9.13 documentation</title>
+    <title>2. Job Submission and Control &mdash; SAGA 0.9.16 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.13',
+        VERSION:     '0.9.16',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.13 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.16 documentation" href="../../index.html" />
     <link rel="up" title="2. Library Reference" href="../index.html" />
     <link rel="next" title="3. Files and Directories" href="../filesystem/index.html" />
     <link rel="prev" title="1. URLs" href="../url.html" /> 
@@ -51,7 +51,7 @@
         <li class="right" >
           <a href="../url.html" title="1. URLs"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.13 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.16 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -303,7 +303,7 @@ and which can potentially be accessed and managed by the application.</p>
 
 <dl class="attribute">
 <dt id="saga.job.Service.jobs">
-<tt class="descname">jobs</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Service.jobs" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">jobs</tt><a class="headerlink" href="#saga.job.Service.jobs" title="Permalink to this definition">¶</a></dt>
 <dd><p>list()</p>
 <p>Return a list of the jobs that are managed by this Service 
 instance.</p>
@@ -352,7 +352,7 @@ equivalent and only duplicated for convenience.</p>
 
 <dl class="attribute">
 <dt id="saga.job.Service.url">
-<tt class="descname">url</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Service.url" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">url</tt><a class="headerlink" href="#saga.job.Service.url" title="Permalink to this definition">¶</a></dt>
 <dd><p>get_url()</p>
 <p>Return the URL this Service instance was created with.</p>
 <div class="admonition seealso">
@@ -962,14 +962,14 @@ actual environment of the running job instance.</p>
 
 <dl class="attribute">
 <dt id="saga.job.Job.id">
-<tt class="descname">id</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Job.id" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">id</tt><a class="headerlink" href="#saga.job.Job.id" title="Permalink to this definition">¶</a></dt>
 <dd><p>get_id()</p>
 <p>Return the job ID.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="saga.job.Job.description">
-<tt class="descname">description</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Job.description" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">description</tt><a class="headerlink" href="#saga.job.Job.description" title="Permalink to this definition">¶</a></dt>
 <dd><p>get_description()</p>
 <p>Return the job description this job was created from.</p>
 <p>The returned description can be used to inspect job properties
@@ -1151,7 +1151,7 @@ state.  The default timeout value is &#8216;None&#8217; (blocking).</p>
 
 <dl class="attribute">
 <dt id="saga.job.Job.state">
-<tt class="descname">state</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Job.state" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">state</tt><a class="headerlink" href="#saga.job.Job.state" title="Permalink to this definition">¶</a></dt>
 <dd><p>get_state()</p>
 <p>Return the current state of the job.</p>
 <p><strong>Example</strong>:</p>
@@ -1179,7 +1179,7 @@ state.  The default timeout value is &#8216;None&#8217; (blocking).</p>
 
 <dl class="attribute">
 <dt id="saga.job.Job.ExitCode">
-<tt class="descname">ExitCode</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Job.ExitCode" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">ExitCode</tt><a class="headerlink" href="#saga.job.Job.ExitCode" title="Permalink to this definition">¶</a></dt>
 <dd><p>The job&#8217;s exitcode.</p>
 <p>this attribute is only meaningful if the job is in &#8216;Done&#8217; or &#8216;Final&#8217;
 state - for all other job states, this attribute value is undefined.</p>
@@ -1203,14 +1203,14 @@ state - for all other job states, this attribute value is undefined.</p>
 
 <dl class="attribute">
 <dt id="saga.job.Job.JobID">
-<tt class="descname">JobID</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Job.JobID" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">JobID</tt><a class="headerlink" href="#saga.job.Job.JobID" title="Permalink to this definition">¶</a></dt>
 <dd><p>The job&#8217;s identifier.</p>
 <p>This attribute is equivalent to the value returned by job.get_job_id()</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="saga.job.Job.ServiceURL">
-<tt class="descname">ServiceURL</tt><em class="property"> None</em><a class="headerlink" href="#saga.job.Job.ServiceURL" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">ServiceURL</tt><a class="headerlink" href="#saga.job.Job.ServiceURL" title="Permalink to this definition">¶</a></dt>
 <dd><p>The URL of the <a class="reference internal" href="#saga.job.Service" title="saga.job.Service"><tt class="xref py py-class docutils literal"><span class="pre">saga.job.Service</span></tt></a> instance managing this job.</p>
 <p>This attribute is represents the URL under where the job management
 service can be contacted which owns the job.  The value is equivalent to
@@ -1557,13 +1557,13 @@ from the container.</p>
         <li class="right" >
           <a href="../url.html" title="1. URLs"
              >previous</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.13 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.16 documentation</a> &raquo;</li>
           <li><a href="../index.html" >2. Library Reference</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.attributes &mdash; SAGA 0.9.13 documentation</title>
+    <title>saga.attributes &mdash; SAGA 0.9.16 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.13',
+        VERSION:     '0.9.16',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.13 documentation" href="../../index.html" />
+    <link rel="top" title="SAGA 0.9.16 documentation" href="../../index.html" />
     <link rel="up" title="saga" href="../saga.html" /> 
   </head>
   <body>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.13 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.16 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -452,7 +452,7 @@
 
 
         <span class="c"># check if we know about the given attribute</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">key</span> <span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">]</span> <span class="p">:</span>
                 <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">DoesNotExist</span> <span class="p">(</span><span class="s">&quot;attribute key is invalid: </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">key</span><span class="p">))</span>
 
@@ -483,7 +483,7 @@
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_init</span> <span class="p">()</span>
 
         <span class="c"># perform name validity checks if key is new</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">]</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="ow">not</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">]</span> <span class="p">:</span>
             <span class="c"># FIXME: we actually don&#39;t have any tests, yet.  We should allow to</span>
             <span class="c"># configure such via, say, _attributes_add_check (callable (key))</span>
             <span class="k">pass</span>
@@ -492,7 +492,7 @@
         <span class="c"># if key is known, check for aliasing</span>
         <span class="k">else</span><span class="p">:</span> 
             <span class="c"># check if we know about the given attribute</span>
-            <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;mode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ALIAS</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;mode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ALIAS</span> <span class="p">:</span>
                 <span class="n">alias</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;alias&#39;</span><span class="p">]</span>
                 <span class="k">print</span> <span class="s">&quot;attribute key / property name &#39;</span><span class="si">%s</span><span class="s">&#39; is deprecated - use &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">alias</span><span class="p">)</span>
                 <span class="n">key</span>   <span class="o">=</span> <span class="n">alias</span>
@@ -519,7 +519,7 @@
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_init</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
         <span class="c"># avoid recursion</span>
-        <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="p">:</span>
             <span class="k">return</span>
 
         <span class="n">callbacks</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;callbacks&#39;</span><span class="p">]</span>
@@ -540,7 +540,7 @@
                 <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
 
             <span class="c"># remove callbacks which return &#39;False&#39;, or raised and exception</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">ret</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="ow">not</span> <span class="n">ret</span> <span class="p">:</span>
                 <span class="n">callbacks</span><span class="o">.</span><span class="n">remove</span> <span class="p">(</span><span class="n">cb</span><span class="p">)</span>
 
 
@@ -563,13 +563,12 @@
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_init</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
         <span class="c"># avoid recursion</span>
-        <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="p">:</span>
             <span class="k">return</span>
 
         <span class="c"># no callbacks for private keys</span>
-        <span class="k">if</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;_&#39;</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;private&#39;</span><span class="p">]</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;_&#39;</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;private&#39;</span><span class="p">]</span> <span class="p">:</span>
             <span class="k">return</span>
-
 
         <span class="c"># key_setter overwrites results from all_setter</span>
         <span class="n">all_setter</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;setter&#39;</span><span class="p">]</span>
@@ -585,9 +584,9 @@
         <span class="c">#</span>
         <span class="c"># always raise and lower the recursion shield.</span>
         <span class="n">can_ignore</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">if</span> <span class="n">all_setter</span> <span class="ow">and</span> <span class="n">key_setter</span> <span class="p">:</span> <span class="n">can_ignore</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span>  <span class="n">all_setter</span> <span class="ow">and</span> <span class="n">key_setter</span> <span class="p">:</span> <span class="n">can_ignore</span> <span class="o">=</span> <span class="mi">1</span>
 
-        <span class="k">if</span> <span class="n">all_setter</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">all_setter</span> <span class="p">:</span>
             <span class="k">try</span> <span class="p">:</span>
                 <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
                 <span class="n">all_setter</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
@@ -600,7 +599,7 @@
             <span class="k">finally</span> <span class="p">:</span>
                 <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
 
-        <span class="k">if</span> <span class="n">key_setter</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">key_setter</span> <span class="p">:</span>
             <span class="k">try</span> <span class="p">:</span>
                 <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
                 <span class="n">key_setter</span> <span class="p">(</span><span class="n">val</span><span class="p">)</span>
@@ -629,11 +628,11 @@
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_init</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
         <span class="c"># avoid recursion</span>
-        <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="p">:</span>
             <span class="k">return</span>
 
         <span class="c"># no callbacks for private keys</span>
-        <span class="k">if</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;_&#39;</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;private&#39;</span><span class="p">]</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;_&#39;</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;private&#39;</span><span class="p">]</span> <span class="p">:</span>
             <span class="k">return</span>
 
         <span class="c"># key getter overwrites results from all_getter</span>
@@ -667,9 +666,9 @@
         <span class="c">#</span>
         <span class="c"># always raise and lower the recursion shield.</span>
         <span class="n">retries</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="n">all_getter</span> <span class="ow">and</span> <span class="n">key_getter</span> <span class="p">:</span> <span class="n">retries</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">if</span>  <span class="n">all_getter</span> <span class="ow">and</span> <span class="n">key_getter</span> <span class="p">:</span> <span class="n">retries</span> <span class="o">=</span> <span class="mi">2</span>
 
-        <span class="k">if</span> <span class="n">all_getter</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">all_getter</span> <span class="p">:</span>
 
             <span class="k">try</span> <span class="p">:</span>
                 <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
@@ -681,7 +680,7 @@
             <span class="k">finally</span> <span class="p">:</span>
               <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
 
-        <span class="k">if</span> <span class="n">key_getter</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">key_getter</span> <span class="p">:</span>
             <span class="k">try</span> <span class="p">:</span>
                 <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
                 <span class="n">val</span><span class="o">=</span><span class="n">key_getter</span> <span class="p">()</span>
@@ -711,7 +710,7 @@
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_init</span> <span class="p">()</span>
 
         <span class="c"># avoid recursion</span>
-        <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">d</span><span class="p">[</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="p">:</span>
             <span class="k">return</span>
 
         <span class="n">lister</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;lister&#39;</span><span class="p">]</span>
@@ -749,16 +748,16 @@
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_init</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
         <span class="c"># avoid recursion</span>
-        <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">d</span><span class="p">[</span><span class="s">&#39;recursion&#39;</span><span class="p">]</span> <span class="p">:</span>
             <span class="k">return</span>
 
         <span class="c"># no callbacks for private keys</span>
-        <span class="k">if</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;_&#39;</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;private&#39;</span><span class="p">]</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;_&#39;</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;private&#39;</span><span class="p">]</span> <span class="p">:</span>
             <span class="k">return</span>
 
         <span class="n">caller</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;caller&#39;</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="n">caller</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">caller</span> <span class="p">:</span>
 
             <span class="c"># the caller is simply called, and it is expected that it internally</span>
             <span class="c"># adds/removes callbacks as needed</span>
@@ -824,14 +823,14 @@
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_t_init</span> <span class="p">()</span>
 
         <span class="c"># if the key is not known</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">]</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="ow">not</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">]</span> <span class="p">:</span>
             <span class="c"># cannot handle unknown attributes.  Attributes which have been</span>
             <span class="c"># registered earlier will be fine, as they have type information.</span>
             <span class="k">return</span> <span class="n">val</span>
 
         <span class="c"># check if a value is given.  If not, revert to the default value</span>
         <span class="c"># (if available)</span>
-        <span class="k">if</span> <span class="n">val</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">val</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
             <span class="k">if</span> <span class="s">&#39;default&#39;</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="p">:</span>
                 <span class="n">val</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;default&#39;</span><span class="p">]</span>
 
@@ -842,7 +841,7 @@
         <span class="c"># apply all value checks on the conversion result</span>
         <span class="k">for</span> <span class="n">check</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;checks&#39;</span><span class="p">]</span> <span class="p">:</span>
             <span class="n">ret</span> <span class="o">=</span> <span class="n">check</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="bp">True</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="bp">True</span> <span class="p">:</span>
                 <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;attribute value </span><span class="si">%s</span><span class="s"> is not valid: </span><span class="si">%s</span><span class="s">&quot;</span>  <span class="o">%</span>  <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">ret</span><span class="p">))</span>
 
         <span class="c"># aaaand done</span>
@@ -864,7 +863,7 @@
         <span class="c">#        convert the flavors...</span>
 
         <span class="c"># easiest conversion of them all... ;-)</span>
-        <span class="k">if</span> <span class="n">val</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">val</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
 
         <span class="c"># make sure interface is ready to use.</span>
@@ -873,9 +872,13 @@
         <span class="c"># check if we need to serialize a list into a scalar</span>
         <span class="n">f</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;flavor&#39;</span><span class="p">]</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s">&#39;type&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">f</span> <span class="o">==</span> <span class="n">VECTOR</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">f</span> <span class="o">==</span> <span class="n">ANY</span> <span class="p">:</span>
+            <span class="c"># leave it alone</span>
+            <span class="k">return</span> <span class="n">val</span>
+
+        <span class="k">elif</span>  <span class="n">f</span> <span class="o">==</span> <span class="n">VECTOR</span> <span class="p">:</span>
             <span class="c"># we want a vector</span>
-            <span class="k">if</span> <span class="nb">isinstance</span> <span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="nb">isinstance</span> <span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="p">:</span>
                 <span class="c"># val is already vec - apply type conversion on all elems</span>
                 <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">val</span> <span class="p">:</span>
@@ -883,7 +886,7 @@
                 <span class="k">return</span> <span class="n">ret</span>
             <span class="k">else</span> <span class="p">:</span>
                 <span class="c"># need to create vec from scalar</span>
-                <span class="k">if</span> <span class="nb">isinstance</span> <span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">if</span>  <span class="nb">isinstance</span> <span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">)</span> <span class="p">:</span>
                     <span class="c"># for string values, we split on white spaces and type-convert </span>
                     <span class="c"># all elements</span>
                     <span class="n">vec</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">split</span> <span class="p">()</span>
@@ -928,13 +931,16 @@
                 <span class="k">return</span> <span class="n">out</span>
 
 
-
-
             <span class="c"># can&#39;t handle any other types...</span>
 
 
         <span class="k">elif</span> <span class="n">f</span> <span class="o">==</span> <span class="n">SCALAR</span> <span class="p">:</span>
             <span class="c"># we want a scalar</span>
+            
+            <span class="k">if</span>  <span class="n">t</span> <span class="o">==</span> <span class="n">ANY</span> <span class="p">:</span>
+                <span class="c"># no need to do anything, really</span>
+                <span class="k">return</span> <span class="n">val</span>
+
             <span class="k">if</span> <span class="nb">isinstance</span> <span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="p">:</span>
                 <span class="c"># need to create scalar from vec</span>
                 <span class="k">if</span> <span class="nb">len</span> <span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="p">:</span>
@@ -1094,14 +1100,19 @@
 
         <span class="c"># if the key is not known</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;attributes&#39;</span><span class="p">]</span> <span class="p">:</span>
+
             <span class="k">if</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;_&#39;</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;private&#39;</span><span class="p">]</span> <span class="p">:</span>
                 <span class="c"># if the set is private, we can register the new key.  It</span>
                 <span class="c"># won&#39;t have any callbacks at this point.</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">ANY</span><span class="p">,</span> <span class="n">SCALAR</span><span class="p">,</span> <span class="n">WRITEABLE</span><span class="p">,</span> <span class="n">EXTENDED</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">ANY</span><span class="p">,</span> <span class="n">ANY</span><span class="p">,</span> <span class="n">WRITEABLE</span><span class="p">,</span> <span class="n">EXTENDED</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
 
             <span class="k">elif</span> <span class="n">flow</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">_UP</span> <span class="ow">or</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;extensible&#39;</span><span class="p">]</span> <span class="p">:</span>
                 <span class="c"># if the set is extensible, we can register the new key.  It</span>
                 <span class="c"># won&#39;t have any callbacks at this point.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">ANY</span><span class="p">,</span> <span class="n">ANY</span><span class="p">,</span> <span class="n">WRITEABLE</span><span class="p">,</span> <span class="n">EXTENDED</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="n">force</span> <span class="p">:</span>
+                <span class="c"># someone *really* wants this attrib to be set...</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_attributes_register</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">ANY</span><span class="p">,</span> <span class="n">SCALAR</span><span class="p">,</span> <span class="n">WRITEABLE</span><span class="p">,</span> <span class="n">EXTENDED</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
 
             <span class="k">else</span> <span class="p">:</span>
@@ -1568,13 +1579,13 @@
                   <span class="nb">basestring</span><span class="p">,</span> 
                   <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">anything</span><span class="p">)),</span>
                   <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">ANY</span><span class="p">,</span> <span class="n">URL</span><span class="p">,</span> <span class="n">INT</span><span class="p">,</span> <span class="n">FLOAT</span><span class="p">,</span> <span class="n">STRING</span><span class="p">,</span> <span class="n">BOOL</span><span class="p">,</span> <span class="n">ENUM</span><span class="p">,</span> <span class="n">TIME</span><span class="p">)),</span>
-                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">SCALAR</span><span class="p">,</span> <span class="n">VECTOR</span><span class="p">,</span> <span class="n">DICT</span><span class="p">)),</span>
+                  <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">ANY</span><span class="p">,</span> <span class="n">SCALAR</span><span class="p">,</span> <span class="n">VECTOR</span><span class="p">,</span> <span class="n">DICT</span><span class="p">)),</span>
                   <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">READONLY</span><span class="p">,</span> <span class="n">WRITEABLE</span><span class="p">,</span> <span class="n">ALIAS</span><span class="p">,</span> <span class="n">FINAL</span><span class="p">)),</span>
                   <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="n">EXTENDED</span><span class="p">)),</span>
                   <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
     <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">_attributes_register</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">typ</span><span class="o">=</span><span class="n">ANY</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="n">SCALAR</span><span class="p">,</span>
-                              <span class="n">mode</span><span class="o">=</span><span class="n">WRITEABLE</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_attributes_register</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span>      <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">typ</span><span class="o">=</span><span class="n">ANY</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="n">ANY</span><span class="p">,</span>
+                              <span class="n">mode</span><span class="o">=</span><span class="n">WRITEABLE</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>    <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
 <span class="sd">        safely be called from within derived classes.</span>
@@ -2296,7 +2307,7 @@
                   <span class="nb">callable</span><span class="p">,</span>
                   <span class="n">rus</span><span class="o">.</span><span class="n">optional</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">one_of</span> <span class="p">(</span><span class="n">_UP</span><span class="p">,</span> <span class="n">_DOWN</span><span class="p">)))</span>
     <span class="nd">@rus.returns</span> <span class="p">(</span><span class="n">rus</span><span class="o">.</span><span class="n">nothing</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">_attributes_set_global_getter</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">getter</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span> <span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_attributes_set_global_getter</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">getter</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">_DOWN</span><span class="p">)</span> <span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This interface method is not part of the public consumer API, but can</span>
 <span class="sd">        safely be called from within derived classes.</span>
@@ -2820,14 +2831,14 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">SAGA 0.9.13 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">SAGA 0.9.16 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../saga.html" >saga</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

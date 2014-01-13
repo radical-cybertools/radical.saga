@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.shell.shell_file &mdash; SAGA 0.9.13 documentation</title>
+    <title>saga.adaptors.shell.shell_file &mdash; SAGA 0.9.16 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.9.13',
+        VERSION:     '0.9.16',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.13 documentation" href="../../../../index.html" />
+    <link rel="top" title="SAGA 0.9.16 documentation" href="../../../../index.html" />
     <link rel="up" title="saga" href="../../../saga.html" /> 
   </head>
   <body>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.13 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.16 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -55,7 +55,7 @@
           <div class="body">
             
   <h1>Source code for saga.adaptors.shell.shell_file</h1><div class="highlight"><pre>
-<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Ole Weidner&quot;</span>
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Ole Weidner, Alexander Grill&quot;</span>
 <span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
 
@@ -262,7 +262,7 @@
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">_is_valid</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;this instance was closed or removed&quot;</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -271,7 +271,7 @@
 
         <span class="n">dirname</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_get_dirname</span> <span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
 
             <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;mkdir -p </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">dirname</span><span class="p">))</span>
             <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
@@ -280,7 +280,7 @@
 
         <span class="k">elif</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
 
-            <span class="k">if</span> <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
                 <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;schema of mkdir target is not supported (</span><span class="si">%s</span><span class="s">)&quot;</span> \
                                       <span class="o">%</span> <span class="p">(</span><span class="n">tgt</span><span class="p">))</span>
 
@@ -363,7 +363,6 @@
         <span class="k">if</span>  <span class="n">kill</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="bp">True</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="bp">None</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
 
 
@@ -387,7 +386,7 @@
         <span class="n">adaptor_state</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&quot;from_open&quot;</span> <span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
                           <span class="s">&quot;cwd&quot;</span>       <span class="p">:</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span> <span class="p">}</span>  <span class="c"># deep copy</span>
 
-        <span class="k">if</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_relative</span> <span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_relative</span> <span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="p">:</span>
             <span class="n">url</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_make_absolute</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_url</span> <span class="p">(),</span> <span class="n">url</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">File</span> <span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> 
@@ -397,8 +396,28 @@
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
-    <span class="k">def</span> <span class="nf">close</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="ShellDirectory.close"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_file.html#saga.adaptors.shell.shell_file.ShellDirectory.close">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">kill</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">open_dir</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="p">:</span>
+<div class="viewcode-block" id="ShellDirectory.open_dir"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_file.html#saga.adaptors.shell.shell_file.ShellDirectory.open_dir">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid</span> <span class="p">()</span>
+
+        <span class="n">adaptor_state</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&quot;from_open&quot;</span> <span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                          <span class="s">&quot;cwd&quot;</span>       <span class="p">:</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span> <span class="p">}</span>  <span class="c"># deep copy</span>
+
+        <span class="k">if</span>  <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_relative</span> <span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="p">:</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_make_absolute</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_url</span> <span class="p">(),</span> <span class="n">url</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">Directory</span> <span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">flags</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> 
+                                          <span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">,</span> <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">close</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ShellDirectory.close"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_file.html#saga.adaptors.shell.shell_file.ShellDirectory.close">[docs]</a>
+        <span class="k">if</span>  <span class="n">timeout</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;timeout for close not supported&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">kill</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -420,9 +439,12 @@
         <span class="c"># FIXME: eval flags</span>
 
         <span class="k">if</span>  <span class="bp">None</span> <span class="o">==</span> <span class="n">npat</span> <span class="p">:</span>
-            <span class="n">npat</span> <span class="o">=</span> <span class="s">&quot;*&quot;</span>
+            <span class="n">npat</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="n">npat</span> <span class="o">=</span> <span class="s">&quot;-d </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">npat</span>
 
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;/bin/ls -C1 -d </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">npat</span><span class="p">)</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;/bin/ls -C1 </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">npat</span><span class="p">)</span>
+
         <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;failed to list(): (</span><span class="si">%s</span><span class="s">)(</span><span class="si">%s</span><span class="s">)&quot;</span> \
                                <span class="o">%</span> <span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
@@ -453,7 +475,7 @@
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
-    <span class="k">def</span> <span class="nf">copy</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src_in</span><span class="p">,</span> <span class="n">tgt_in</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">copy</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src_in</span><span class="p">,</span> <span class="n">tgt_in</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">_from_task</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
 <div class="viewcode-block" id="ShellDirectory.copy"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_file.html#saga.adaptors.shell.shell_file.ShellDirectory.copy">[docs]</a>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid</span> <span class="p">()</span>
 
@@ -463,20 +485,17 @@
         <span class="n">src</span>    <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">src_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
         <span class="n">tgt</span>    <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
 
-        <span class="k">if</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_relative</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="p">:</span> <span class="n">src</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_make_absolute</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_relative</span> <span class="p">(</span><span class="n">tgt</span><span class="p">)</span> <span class="p">:</span> <span class="n">tgt</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_make_absolute</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
-
+        <span class="k">if</span>  <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_relative</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="p">:</span> <span class="n">src</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_make_absolute</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span>
+        <span class="k">if</span>  <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_relative</span> <span class="p">(</span><span class="n">tgt</span><span class="p">)</span> <span class="p">:</span> <span class="n">tgt</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_make_absolute</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+    
         <span class="n">rec_flag</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">RECURSIVE</span> <span class="p">:</span> 
+        <span class="k">if</span>  <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">RECURSIVE</span> <span class="p">:</span> 
             <span class="n">rec_flag</span>  <span class="o">+=</span> <span class="s">&quot;-r &quot;</span>
 
-        <span class="k">if</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="p">:</span> 
+        <span class="k">if</span>  <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="p">:</span> 
             <span class="bp">self</span><span class="o">.</span><span class="n">_create_parent</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
 
-
-        <span class="c"># print cwdurl</span>
-        <span class="c"># print src</span>
-        <span class="c"># print tgt</span>
+        <span class="n">files_copied</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
         <span class="c"># if cwd, src and tgt point to the same host, we just run a shell cp</span>
         <span class="c"># command on that host</span>
@@ -484,10 +503,10 @@
             <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
 
             <span class="c"># print &quot;shell cp&quot;</span>
-            <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;cp </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">rec_flag</span><span class="p">,</span> <span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+            <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;cp </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">rec_flag</span><span class="p">,</span> <span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
             <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
-                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;copy (</span><span class="si">%s</span><span class="s"> -&gt; </span><span class="si">%s</span><span class="s">) failed (</span><span class="si">%s</span><span class="s">): (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                   <span class="o">%</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;copy (</span><span class="si">%s</span><span class="s"> -&gt; </span><span class="si">%s</span><span class="s">) failed (</span><span class="si">%s</span><span class="s">): (out: </span><span class="si">%s</span><span class="s">) (err: </span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                   <span class="o">%</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
 
 
         <span class="c"># src and tgt are on different hosts, we need to find out which of them</span>
@@ -496,21 +515,21 @@
             <span class="c"># print &quot;! shell cp&quot;</span>
 
             <span class="c"># if cwd is remote, we use stage from/to</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="ow">not</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">)</span> <span class="p">:</span>
 
                 <span class="c"># print &quot;cwd remote&quot;</span>
 
-                <span class="k">if</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span>          <span class="ow">and</span> \
-                   <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">if</span>  <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span>          <span class="ow">and</span> \
+                    <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
 
-                    <span class="c"># print &quot;from local to remote&quot;</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_to_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
+                  <span class="c"># print &quot;from local to remote: %s -&gt; %s&quot; % (src.path, tgt.path)</span>
+                    <span class="n">files_copied</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_to_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
 
                 <span class="k">elif</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">tgt</span><span class="p">)</span>          <span class="ow">and</span> \
                      <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span> <span class="p">:</span>
 
-                    <span class="c"># print &quot;from remote to loca&quot;</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_from_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
+                  <span class="c"># print &quot;from remote to local: %s -&gt; %s&quot; % (src.path, tgt.path)</span>
+                    <span class="n">files_copied</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_from_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
 
                 <span class="k">else</span> <span class="p">:</span>
                     <span class="c"># print &quot;from remote to other remote -- fail&quot;</span>
@@ -526,27 +545,27 @@
 
                 <span class="c"># print &quot;cwd local&quot;</span>
 
-                <span class="k">if</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">if</span>  <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="p">:</span>
 
                     <span class="c"># need a compatible target scheme</span>
-                    <span class="k">if</span> <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
+                    <span class="k">if</span>  <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
                         <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;schema of copy target is not supported (</span><span class="si">%s</span><span class="s">)&quot;</span> \
                                               <span class="o">%</span> <span class="p">(</span><span class="n">tgt</span><span class="p">))</span>
 
                     <span class="c"># print &quot;from local to remote&quot;</span>
-                    <span class="n">tmp_shell</span> <span class="o">=</span> <span class="n">sups</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
-                    <span class="n">tmp_shell</span><span class="o">.</span><span class="n">stage_to_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
+                    <span class="n">tmp_shell</span>    <span class="o">=</span> <span class="n">sups</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+                    <span class="n">files_copied</span> <span class="o">=</span> <span class="n">tmp_shell</span><span class="o">.</span><span class="n">stage_to_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
 
                 <span class="k">elif</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
 
                     <span class="c"># need a compatible source scheme</span>
-                    <span class="k">if</span> <span class="n">src</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">src</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
+                    <span class="k">if</span>  <span class="n">src</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">src</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
                         <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;schema of copy source is not supported (</span><span class="si">%s</span><span class="s">)&quot;</span> \
                                               <span class="o">%</span> <span class="p">(</span><span class="n">src</span><span class="p">))</span>
 
                     <span class="c"># print &quot;from remote to local&quot;</span>
-                    <span class="n">tmp_shell</span> <span class="o">=</span> <span class="n">sups</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
-                    <span class="n">tmp_shell</span><span class="o">.</span><span class="n">stage_from_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
+                    <span class="n">tmp_shell</span>    <span class="o">=</span> <span class="n">sups</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+                    <span class="n">files_copied</span> <span class="o">=</span> <span class="n">tmp_shell</span><span class="o">.</span><span class="n">stage_from_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
 
                 <span class="k">else</span> <span class="p">:</span>
 
@@ -556,6 +575,58 @@
                                           <span class="o">%</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">))</span>
 
    
+        <span class="k">if</span>  <span class="n">_from_task</span> <span class="p">:</span>
+            <span class="n">_from_task</span><span class="o">.</span><span class="n">_set_metric</span> <span class="p">(</span><span class="s">&#39;files_copied&#39;</span><span class="p">,</span> <span class="n">files_copied</span><span class="p">)</span>
+
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">link_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
+<div class="viewcode-block" id="ShellDirectory.link_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_file.html#saga.adaptors.shell.shell_file.ShellDirectory.link_self">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid</span> <span class="p">()</span>
+
+        <span class="c"># FIXME: eval flags</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+   
+   
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">link</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src_in</span><span class="p">,</span> <span class="n">tgt_in</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">_from_task</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ShellDirectory.link"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_file.html#saga.adaptors.shell.shell_file.ShellDirectory.link">[docs]</a>
+        <span class="c"># link will *only* work if src and tgt are on the same resource (and</span>
+        <span class="c"># even then may fail)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid</span> <span class="p">()</span>
+
+        <span class="n">cwdurl</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span> <span class="c"># deep copy</span>
+        <span class="n">src</span>    <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">src_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
+        <span class="n">tgt</span>    <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
+
+        <span class="n">rec_flag</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span>  <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">RECURSIVE</span> <span class="p">:</span> 
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;&#39;RECURSIVE&#39; flag not  supported for link()&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span>  <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="p">:</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">_create_parent</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+
+        <span class="c"># if src and tgt point to the same host, we just run a shell link</span>
+        <span class="c"># on that host</span>
+        <span class="k">if</span>  <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span> <span class="ow">and</span> \
+            <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
+
+            <span class="c"># print &quot;shell ln&quot;</span>
+            <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;ln -s </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+            <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;link (</span><span class="si">%s</span><span class="s"> -&gt; </span><span class="si">%s</span><span class="s">) failed (</span><span class="si">%s</span><span class="s">): (out: </span><span class="si">%s</span><span class="s">) (err: </span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                   <span class="o">%</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+
+
+        <span class="c"># src and tgt are on different hosts, this is not supported</span>
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;link is only supported on same file system as cwd&quot;</span><span class="p">)</span>
+
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -611,18 +682,16 @@
         <span class="n">cwdurl</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span> <span class="c"># deep copy</span>
         <span class="n">tgt</span>    <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
 
-        <span class="k">if</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_relative</span> <span class="p">(</span><span class="n">tgt</span><span class="p">)</span> <span class="p">:</span> <span class="n">tgt</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_make_absolute</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
-
         <span class="n">rec_flag</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">RECURSIVE</span> <span class="p">:</span> 
+        <span class="k">if</span>  <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">RECURSIVE</span> <span class="p">:</span> 
             <span class="n">rec_flag</span>  <span class="o">+=</span> <span class="s">&quot;-r &quot;</span>
 
         <span class="k">if</span>  <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
 
-            <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;rm </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">rec_flag</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+            <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;rm -f </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">rec_flag</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
             <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
-                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;remove (</span><span class="si">%s</span><span class="s">) failed (</span><span class="si">%s</span><span class="s">): (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                   <span class="o">%</span> <span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;remove (</span><span class="si">%s</span><span class="s">) failed (</span><span class="si">%s</span><span class="s">): (out: </span><span class="si">%s</span><span class="s">) (err: </span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                   <span class="o">%</span> <span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
 
 
         <span class="c"># we cannot support the URL</span>
@@ -638,14 +707,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid</span> <span class="p">()</span>
 
         <span class="n">cwdurl</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span> <span class="c"># deep copy</span>
-        <span class="n">tgturl</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
-
-        <span class="n">tgt_abs</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_make_absolute</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgturl</span><span class="p">)</span>
+        <span class="n">tgt</span>    <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
 
         <span class="k">if</span>  <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">EXCLUSIVE</span> <span class="p">:</span> 
             <span class="c"># FIXME: this creates a race condition between testing for exclusive</span>
             <span class="c"># mkdir and creating the dir.</span>
-            <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;test -d </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">tgt_abs</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+            <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;test -d </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
 
             <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
                 <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">AlreadyExists</span> <span class="p">(</span><span class="s">&quot;make_dir target (</span><span class="si">%s</span><span class="s">) exists (</span><span class="si">%s</span><span class="s">)&quot;</span> \
@@ -657,7 +724,7 @@
         <span class="k">if</span>  <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="p">:</span> 
             <span class="n">options</span> <span class="o">+=</span> <span class="s">&quot;-p&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;mkdir </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">tgt_abs</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;mkdir </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
 
    
     <span class="c"># ----------------------------------------------------------------</span>
@@ -678,8 +745,6 @@
 
         <span class="n">cwdurl</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span> <span class="c"># deep copy</span>
         <span class="n">tgt</span>    <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
-
-        <span class="n">tgt_abs</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_make_absolute</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
 
         <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;du -ks </span><span class="si">%s</span><span class="s">  | xargs | cut -f 1 -d &#39; &#39;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
         <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
@@ -713,11 +778,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid</span> <span class="p">()</span>
 
         <span class="n">cwdurl</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span> <span class="c"># deep copy</span>
-        <span class="n">tgturl</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
+        <span class="n">tgt</span>    <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
 
-        <span class="n">tgt_abs</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_make_absolute</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgturl</span><span class="p">)</span>
-
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;test -d </span><span class="si">%s</span><span class="s"> &amp;&amp; test ! -h </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tgt_abs</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt_abs</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;test -d </span><span class="si">%s</span><span class="s"> &amp;&amp; test ! -h </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="bp">True</span> <span class="k">if</span> <span class="n">ret</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">False</span>
    
@@ -740,11 +803,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid</span> <span class="p">()</span>
 
         <span class="n">cwdurl</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span> <span class="c"># deep copy</span>
-        <span class="n">tgturl</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
+        <span class="n">tgt</span>    <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
 
-        <span class="n">tgt_abs</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_make_absolute</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgturl</span><span class="p">)</span>
-
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;test -f </span><span class="si">%s</span><span class="s"> &amp;&amp; test ! -h </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tgt_abs</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt_abs</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;test -f </span><span class="si">%s</span><span class="s"> &amp;&amp; test ! -h </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="bp">True</span> <span class="k">if</span> <span class="n">ret</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">False</span>
    
@@ -767,11 +828,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid</span> <span class="p">()</span>
 
         <span class="n">cwdurl</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span> <span class="c"># deep copy</span>
-        <span class="n">tgturl</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
+        <span class="n">tgt</span>    <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
 
-        <span class="n">tgt_abs</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_make_absolute</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgturl</span><span class="p">)</span>
-
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;test -h </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">tgt_abs</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;test -h </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">True</span> <span class="k">if</span> <span class="n">ret</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">False</span>
    
@@ -789,7 +848,7 @@
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">is_file</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt_in</span><span class="p">):</span>
 <div class="viewcode-block" id="ShellDirectory.is_file"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_file.html#saga.adaptors.shell.shell_file.ShellDirectory.is_file">[docs]</a>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_file</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_entry</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>
    
    
 <span class="c">###############################################################################</span>
@@ -816,7 +875,7 @@
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">_is_valid</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">IncorrectState</span> <span class="p">(</span><span class="s">&quot;this instance was closed or removed&quot;</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -825,7 +884,7 @@
 
         <span class="n">dirname</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_get_dirname</span> <span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">if</span>  <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
 
             <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;mkdir -p </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">dirname</span><span class="p">))</span>
             <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
@@ -834,7 +893,7 @@
 
         <span class="k">elif</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
 
-            <span class="k">if</span> <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
                 <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;schema of mkdir target is not supported (</span><span class="si">%s</span><span class="s">)&quot;</span> \
                                       <span class="o">%</span> <span class="p">(</span><span class="n">tgt</span><span class="p">))</span>
 
@@ -844,8 +903,9 @@
                                    <span class="o">%</span> <span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
 
         <span class="k">else</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;failed: cannot create target dir for &#39;</span><span class="si">%s</span><span class="s">&#39;: (</span><span class="si">%s</span><span class="s">) (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                  <span class="o">%</span> <span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
+
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;failed: cannot create target dir &#39;</span><span class="si">%s</span><span class="s">&#39;: not local to pwd (</span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                  <span class="o">%</span> <span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="n">cwdurl</span><span class="p">))</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -937,7 +997,7 @@
         <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
 
         <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="p">:</span>
                 <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;cannot open/create: &#39;</span><span class="si">%s</span><span class="s">&#39; - </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE</span> <span class="p">:</span>
                 <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;cannot open/create: &#39;</span><span class="si">%s</span><span class="s">&#39; - </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
@@ -967,8 +1027,12 @@
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
-    <span class="k">def</span> <span class="nf">close</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="ShellFile.close"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_file.html#saga.adaptors.shell.shell_file.ShellFile.close">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">kill</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">close</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ShellFile.close"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_file.html#saga.adaptors.shell.shell_file.ShellFile.close">[docs]</a>
+        <span class="k">if</span>  <span class="n">timeout</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;timeout for close not supported&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">kill</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -1000,15 +1064,11 @@
         <span class="k">if</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_relative</span> <span class="p">(</span><span class="n">tgt</span><span class="p">)</span> <span class="p">:</span> <span class="n">tgt</span> <span class="o">=</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_make_absolute</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
 
         <span class="n">rec_flag</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">RECURSIVE</span> <span class="p">:</span> 
+        <span class="k">if</span>  <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">RECURSIVE</span> <span class="p">:</span> 
             <span class="n">rec_flag</span>  <span class="o">+=</span> <span class="s">&quot;-r &quot;</span>
 
-        <span class="k">if</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="p">:</span> 
+        <span class="k">if</span>  <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="p">:</span> 
             <span class="bp">self</span><span class="o">.</span><span class="n">_create_parent</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
-
-        <span class="c"># print cwdurl</span>
-        <span class="c"># print src</span>
-        <span class="c"># print tgt</span>
 
         <span class="c"># if cwd, src and tgt point to the same host, we just run a shell cp</span>
         <span class="c"># command on that host</span>
@@ -1028,21 +1088,21 @@
             <span class="c"># print &quot;! shell cp&quot;</span>
 
             <span class="c"># if cwd is remote, we use stage from/to on the existing pipe</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="ow">not</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">)</span> <span class="p">:</span>
 
                 <span class="c"># print &quot;cwd remote&quot;</span>
 
-                <span class="k">if</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span>          <span class="ow">and</span> \
-                   <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">if</span>  <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span>          <span class="ow">and</span> \
+                    <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
 
                     <span class="c"># print &quot;from local to remote&quot;</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_to_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
+                    <span class="n">files_copied</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_to_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
 
                 <span class="k">elif</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">tgt</span><span class="p">)</span>          <span class="ow">and</span> \
                      <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span> <span class="p">:</span>
 
                     <span class="c"># print &quot;from remote to loca&quot;</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_from_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
+                    <span class="n">files_copied</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">stage_from_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
 
                 <span class="k">else</span> <span class="p">:</span>
                     <span class="c"># print &quot;from remote to other remote -- fail&quot;</span>
@@ -1058,36 +1118,73 @@
 
                 <span class="c"># print &quot;cwd local&quot;</span>
 
-                <span class="k">if</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">if</span>  <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="p">:</span>
 
                     <span class="c"># need a compatible target scheme</span>
-                    <span class="k">if</span> <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
+                    <span class="k">if</span>  <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">tgt</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
                         <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;schema of copy target is not supported (</span><span class="si">%s</span><span class="s">)&quot;</span> \
                                               <span class="o">%</span> <span class="p">(</span><span class="n">tgt</span><span class="p">))</span>
 
                     <span class="c"># print &quot;from local to remote&quot;</span>
-                    <span class="n">tmp_shell</span> <span class="o">=</span> <span class="n">sups</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
-                    <span class="n">tmp_shell</span><span class="o">.</span><span class="n">stage_to_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
+                    <span class="n">tmp_shell</span>    <span class="o">=</span> <span class="n">sups</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+                    <span class="n">files_copied</span> <span class="o">=</span> <span class="n">tmp_shell</span><span class="o">.</span><span class="n">stage_to_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
 
                 <span class="k">elif</span> <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_local</span> <span class="p">(</span><span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
 
                     <span class="c"># need a compatible source scheme</span>
-                    <span class="k">if</span> <span class="n">src</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">src</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
+                    <span class="k">if</span>  <span class="n">src</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">src</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">lower</span> <span class="p">()</span> <span class="ow">in</span> <span class="n">_ADAPTOR_SCHEMAS</span> <span class="p">:</span>
                         <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;schema of copy source is not supported (</span><span class="si">%s</span><span class="s">)&quot;</span> \
                                               <span class="o">%</span> <span class="p">(</span><span class="n">src</span><span class="p">))</span>
 
                     <span class="c"># print &quot;from remote to local&quot;</span>
-                    <span class="n">tmp_shell</span> <span class="o">=</span> <span class="n">sups</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
-                    <span class="n">tmp_shell</span><span class="o">.</span><span class="n">stage_from_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
+                    <span class="n">tmp_shell</span>    <span class="o">=</span> <span class="n">sups</span><span class="o">.</span><span class="n">PTYShell</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+                    <span class="n">files_copied</span> <span class="o">=</span> <span class="n">tmp_shell</span><span class="o">.</span><span class="n">stage_from_remote</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rec_flag</span><span class="p">)</span>
 
                 <span class="k">else</span> <span class="p">:</span>
 
-                    <span class="c"># print &quot;from remote to other remote -- fail&quot;</span>
-                    <span class="c"># we cannot support the combination of URLs</span>
+                    <span class="c"># we cannot support two remote URLs</span>
                     <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;copy from </span><span class="si">%s</span><span class="s"> to </span><span class="si">%s</span><span class="s"> is not supported&quot;</span> \
                                           <span class="o">%</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">))</span>
 
    
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">link_self</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt_in</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">_from_task</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ShellFile.link_self"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_file.html#saga.adaptors.shell.shell_file.ShellFile.link_self">[docs]</a>
+        <span class="c"># link will *only* work if src and tgt are on the same resource (and</span>
+        <span class="c"># even then may fail)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid</span> <span class="p">()</span>
+
+        <span class="n">cwdurl</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span> <span class="c"># deep copy</span>
+        <span class="n">src</span>    <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>    <span class="c"># deep copy</span>
+        <span class="n">tgt</span>    <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="n">tgt_in</span><span class="p">)</span>   <span class="c"># deep copy</span>
+
+        <span class="n">rec_flag</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span>  <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">RECURSIVE</span> <span class="p">:</span> 
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;&#39;RECURSIVE&#39; flag not  supported for link()&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span>  <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">CREATE_PARENTS</span> <span class="p">:</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">_create_parent</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+
+        <span class="c"># if src and tgt point to the same host, we just run a shell link</span>
+        <span class="c"># on that host</span>
+        <span class="k">if</span>  <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span> <span class="ow">and</span> \
+            <span class="n">sumisc</span><span class="o">.</span><span class="n">url_is_compatible</span> <span class="p">(</span><span class="n">cwdurl</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="p">:</span>
+
+            <span class="c"># print &quot;shell ln&quot;</span>
+            <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;ln -s </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+            <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;link (</span><span class="si">%s</span><span class="s"> -&gt; </span><span class="si">%s</span><span class="s">) failed (</span><span class="si">%s</span><span class="s">): (out: </span><span class="si">%s</span><span class="s">) (err: </span><span class="si">%s</span><span class="s">)&quot;</span> \
+                                   <span class="o">%</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+
+
+        <span class="c"># src and tgt are on different hosts, this is not supported</span>
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span> <span class="p">(</span><span class="s">&quot;link is only supported on same file system as cwd&quot;</span><span class="p">)</span>
+
+
+
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
@@ -1101,6 +1198,58 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">url</span>   <span class="o">=</span> <span class="n">tgt_in</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span> <span class="p">()</span>
+
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">write</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ShellFile.write"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_file.html#saga.adaptors.shell.shell_file.ShellFile.write">[docs]</a>	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	This call is intended to write a string to a local or remote file.</span>
+<span class="sd">	Since write() uses file staging calls, it cannot be used to randomly</span>
+<span class="sd">	write certain parts of a file (i.e. seek()). Together with read(),</span>
+<span class="sd">	it was designed to manipulate template files and write them back to</span>
+<span class="sd">	the remote directory. Be aware, that writing large files will</span>
+<span class="sd">	be very slow compared to native read(2) and write(2) calls.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid</span> <span class="p">()</span>
+        <span class="k">if</span>  <span class="n">flags</span><span class="o">==</span><span class="bp">None</span><span class="p">:</span>
+            <span class="n">flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flags</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">flags</span><span class="o">=</span><span class="n">flags</span>
+
+        <span class="n">tgt</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>  <span class="c"># deep copy, is absolute</span>
+            
+        <span class="k">if</span>  <span class="n">flags</span><span class="o">==</span><span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">APPEND</span><span class="p">:</span>
+            <span class="n">string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">+</span><span class="n">string</span>            
+        <span class="c"># FIXME: eval flags</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">write_to_remote</span><span class="p">(</span><span class="n">string</span><span class="p">,</span><span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+                                                    
+    <span class="c"># ----------------------------------------------------------------</span>
+    <span class="c">#</span>
+    <span class="nd">@SYNC_CALL</span></div>
+    <span class="k">def</span> <span class="nf">read</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ShellFile.read"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.shell_file.html#saga.adaptors.shell.shell_file.ShellFile.read">[docs]</a>	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	This call is intended to read a string wit length size from a local</span>
+<span class="sd">	or remote file.	Since read() uses file staging calls, it cannot be</span>
+<span class="sd">	used to randomly read certain parts of a file (i.e. seek()).</span>
+<span class="sd">	Together with write(), it was designed to manipulate template files</span>
+<span class="sd">	and write them back to the remote directory. Be aware, that reading</span>
+<span class="sd">	large files will be very slow compared to native read(2) and write(2)</span>
+<span class="sd">	calls.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid</span> <span class="p">()</span>
+
+        <span class="n">tgt</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>  <span class="c"># deep copy, is absolute</span>
+        
+        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">read_from_remote</span><span class="p">(</span><span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="k">if</span>  <span class="n">size</span><span class="o">!=</span><span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">size</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">out</span>
+
 
    
     <span class="c"># ----------------------------------------------------------------</span>
@@ -1116,10 +1265,10 @@
         <span class="n">tgt</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">Url</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>  <span class="c"># deep copy, is absolute</span>
 
         <span class="n">rec_flag</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">RECURSIVE</span> <span class="p">:</span> 
+        <span class="k">if</span>  <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">saga</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">RECURSIVE</span> <span class="p">:</span> 
             <span class="n">rec_flag</span>  <span class="o">+=</span> <span class="s">&quot;-r &quot;</span>
 
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;rm </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">rec_flag</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span> <span class="p">(</span><span class="s">&quot;rm -f </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">rec_flag</span><span class="p">,</span> <span class="n">tgt</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
         <span class="k">if</span>  <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
             <span class="k">raise</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;remove (</span><span class="si">%s</span><span class="s">) failed (</span><span class="si">%s</span><span class="s">): (</span><span class="si">%s</span><span class="s">)&quot;</span> \
                                <span class="o">%</span> <span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">))</span>
@@ -1246,14 +1395,14 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">SAGA 0.9.13 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">SAGA 0.9.16 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../../saga.html" >saga</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>

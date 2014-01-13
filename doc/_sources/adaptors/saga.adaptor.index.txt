@@ -23,5 +23,6 @@ Adaptors
    saga.adaptor.slurm_job
    saga.adaptor.http_file
    saga.adaptor.ec2_resource
+   saga.adaptor.loadljob
 
 

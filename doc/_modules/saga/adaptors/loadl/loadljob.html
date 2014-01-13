@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.adaptors.condor.condorjob &mdash; SAGA 0.9.16 documentation</title>
+    <title>saga.adaptors.loadl.loadljob &mdash; SAGA 0.9.16 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -54,25 +54,26 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <h1>Source code for saga.adaptors.condor.condorjob</h1><div class="highlight"><pre>
-<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Andre Merzky, Mark Santcroos, Ole Weidner&quot;</span>
+  <h1>Source code for saga.adaptors.loadl.loadljob</h1><div class="highlight"><pre>
+<span class="n">__author__</span>    <span class="o">=</span> <span class="s">&quot;Hangi,Kim&quot;</span>
 <span class="n">__copyright__</span> <span class="o">=</span> <span class="s">&quot;Copyright 2012-2013, The SAGA Project&quot;</span>
 <span class="n">__license__</span>   <span class="o">=</span> <span class="s">&quot;MIT&quot;</span>
 
 
-<span class="sd">&quot;&quot;&quot; Condor job adaptor implementation</span>
+<span class="sd">&quot;&quot;&quot; IBM LoadLeveler job adaptor implementation</span>
+<span class="sd">    reference for pbs job adaptor implementation</span>
+<span class="sd">	Hangi, Kim hgkim@kisti.re.kr</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span> <span class="nn">radical.utils.which</span>
 <span class="kn">import</span> <span class="nn">saga.utils.pty_shell</span>
 
-<span class="kn">import</span> <span class="nn">saga.adaptors.base</span>
+<span class="kn">import</span> <span class="nn">saga.adaptors.cpi.base</span>
 <span class="kn">import</span> <span class="nn">saga.adaptors.cpi.job</span>
 
 <span class="kn">from</span> <span class="nn">saga.job.constants</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">transferdirectives</span> <span class="kn">import</span> <span class="n">TransferDirectives</span>
 
 <span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span> <span class="nn">cgi</span> <span class="kn">import</span> <span class="n">parse_qs</span>
@@ -90,189 +91,105 @@
 
 <span class="c"># --------------------------------------------------------------------</span>
 <span class="c">#</span>
-<span class="k">def</span> <span class="nf">_condor_to_saga_jobstate</span><span class="p">(</span><span class="n">condorjs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; translates a condor one-letter state to saga</span>
+<span class="k">def</span> <span class="nf">_ll_to_saga_jobstate</span><span class="p">(</span><span class="n">lljs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; translates a loadleveler one-letter state to saga</span>
+<span class="sd">        pbs_loadl_comparison.xlsx</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c"># From: http://pages.cs.wisc.edu/~adesmet/status.html</span>
-    <span class="c">#</span>
-    <span class="c"># JobStatus in job ClassAds</span>
-    <span class="c">#</span>
-    <span class="c"># 0   Unexpanded  U</span>
-    <span class="c"># 1   Idle    I</span>
-    <span class="c"># 2   Running R</span>
-    <span class="c"># 3   Removed X</span>
-    <span class="c"># 4   Completed   C</span>
-    <span class="c"># 5   Held    H</span>
-    <span class="c"># 6   Submission_err  E</span>
-
-    <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">condorjs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span>
-    <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">condorjs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span>
-    <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">condorjs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">RUNNING</span>
-    <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">condorjs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANCELED</span>
-    <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">condorjs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">lljs</span> <span class="o">==</span> <span class="s">&#39;C&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span>
-    <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">condorjs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">lljs</span> <span class="o">==</span> <span class="s">&#39;S&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span>
-    <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">condorjs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span>
+    <span class="k">elif</span> <span class="n">lljs</span> <span class="o">==</span> <span class="s">&#39;ST&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span>
+    <span class="k">elif</span> <span class="n">lljs</span> <span class="o">==</span> <span class="s">&#39;I&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span>
+    <span class="k">elif</span> <span class="n">lljs</span> <span class="o">==</span> <span class="s">&#39;R&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">RUNNING</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">UNKNOWN</span>
 
 
 <span class="c"># --------------------------------------------------------------------</span>
 <span class="c">#</span>
-<span class="k">def</span> <span class="nf">_condorscript_generator</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">jd</span><span class="p">,</span> <span class="n">option_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; generates a Condor script from a SAGA job description</span>
+<span class="k">def</span> <span class="nf">_loadlcript_generator</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">jd</span><span class="p">,</span> <span class="n">ppn</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; generates a IMB LoadLeveler script from a SAGA job description</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">condor_file</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
+    <span class="n">loadl_params</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
+    <span class="n">exec_n_args</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
 
-    <span class="c">##### OPTIONS PASSED VIA JOB SERVICE URL #####</span>
-    <span class="c">##</span>
-    <span class="k">if</span> <span class="n">option_dict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">##### DEFAULT OPTIONS PASSED VIA JOB SERVICE URL #####</span><span class="se">\n</span><span class="s">##&quot;</span>
-        <span class="c"># special treatment for universe - defaults to &#39;vanilla&#39;</span>
-        <span class="k">if</span> <span class="s">&#39;universe&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">option_dict</span><span class="p">:</span>
-            <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">universe = vanilla&quot;</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="n">option_dict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
-            <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s"> = </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-
-    <span class="c">##### OPTIONS PASSED VIA JOB DESCRIPTION #####</span>
-    <span class="c">##</span>
-    <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n\n</span><span class="s">##### OPTIONS PASSED VIA JOB DESCRIPTION #####</span><span class="se">\n</span><span class="s">##&quot;</span>
-    <span class="n">requirements</span> <span class="o">=</span> <span class="s">&quot;requirements = &quot;</span>
-
-    <span class="c"># Condor doesn&#39;t expand environment variables in arguments.</span>
-    <span class="c"># To support this functionality, we wrap by calling /bin/env.</span>
-    <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">executable = /bin/env&quot;</span>
-
-    <span class="c"># arguments -&gt; arguments</span>
-    <span class="n">arguments</span> <span class="o">=</span> <span class="s">&#39;arguments = </span><span class="se">\\</span><span class="s">&quot;/bin/sh -c </span><span class="se">\&#39;</span><span class="s">&#39;</span>
-
-    <span class="c"># The actual executable becomes the first argument.</span>
     <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">executable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">arguments</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">executable</span>
-
+        <span class="n">exec_n_args</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">executable</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-
         <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>
-            <span class="c"># Condor can&#39;t deal with multi-line arguments. yep, that&#39;s how</span>
-            <span class="c"># bad of a software it is.</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Condor doesn&#39;t support multi-line arguments: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">arg</span>
-                <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="n">logger</span><span class="p">)</span>
+            <span class="n">exec_n_args</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">arg</span><span class="p">)</span>
 
-            <span class="c"># Condor HATES double quotes in the arguments. It&#39;ll return</span>
-            <span class="c"># some crap like: &quot;Found illegal unescaped double-quote: ...</span>
-            <span class="c"># That&#39;s why we escape them by repeating.</span>
-            <span class="n">arg</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="p">,</span> <span class="s">&#39;&quot;&quot;&#39;</span><span class="p">)</span>
-    
-            <span class="c"># Escape dollars (for environment variables)</span>
-            <span class="n">arg</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;$&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">$&#39;</span><span class="p">)</span>
-    
-            <span class="n">arguments</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">arg</span>
+    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">loadl_params</span> <span class="o">+=</span> <span class="s">&quot;#@job_name=</span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">name</span>
 
-    <span class="c"># close the quote opened earlier </span>
-    <span class="n">arguments</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\&#39;\\</span><span class="s">&quot;&#39;</span>
-
-    <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">arguments</span>
-
-    <span class="c"># file_transfer -&gt; transfer_input_files</span>
-    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">file_transfer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">td</span> <span class="o">=</span> <span class="n">TransferDirectives</span><span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">file_transfer</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">td</span><span class="o">.</span><span class="n">in_append_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;FileTransfer append syntax (&gt;&gt;) not supported by Condor: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">td</span><span class="o">.</span><span class="n">in_append_dict</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">td</span><span class="o">.</span><span class="n">out_append_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;FileTransfer append syntax (&lt;&lt;) not supported by Condor: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">td</span><span class="o">.</span><span class="n">out_append_dict</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">td</span><span class="o">.</span><span class="n">in_overwrite_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">transfer_input_files</span> <span class="o">=</span> <span class="s">&quot;transfer_input_files = &quot;</span>
-            <span class="k">for</span> <span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span> <span class="ow">in</span> <span class="n">td</span><span class="o">.</span><span class="n">in_overwrite_dict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
-                <span class="c"># make sure source is file an not dir</span>
-                <span class="p">(</span><span class="n">s_path</span><span class="p">,</span> <span class="n">s_entry</span><span class="p">)</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s_entry</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;Condor accepts only files (not directories) as FileTransfer sources: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">source</span><span class="p">)</span>
-                <span class="c"># make sure target is just a file</span>
-                <span class="p">(</span><span class="n">t_path</span><span class="p">,</span> <span class="n">t_entry</span><span class="p">)</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t_path</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;Condor accepts only filenames (without paths) as FileTransfer targets: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">target</span><span class="p">)</span>
-                <span class="c"># make sure source and target file are the same</span>
-                <span class="k">if</span> <span class="n">s_entry</span> <span class="o">!=</span> <span class="n">t_entry</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;For Condor source file name and target file name have to be identical: </span><span class="si">%s</span><span class="s"> != </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">s_entry</span><span class="p">,</span> <span class="n">t_entry</span><span class="p">))</span>
-                <span class="c"># entry ok - add to job script</span>
-                <span class="n">transfer_input_files</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">, &quot;</span> <span class="o">%</span> <span class="n">source</span>
-            <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">transfer_input_files</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">td</span><span class="o">.</span><span class="n">out_overwrite_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">transfer_output_files</span> <span class="o">=</span> <span class="s">&quot;transfer_output_files = &quot;</span>
-            <span class="k">for</span> <span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span> <span class="ow">in</span> <span class="n">td</span><span class="o">.</span><span class="n">out_overwrite_dict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
-                <span class="c"># make sure source is file an not dir</span>
-                <span class="p">(</span><span class="n">s_path</span><span class="p">,</span> <span class="n">s_entry</span><span class="p">)</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s_entry</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;Condor accepts only files (not directories) as FileTransfer sources: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">source</span><span class="p">)</span>
-                <span class="c"># make sure target is just a file</span>
-                <span class="p">(</span><span class="n">t_path</span><span class="p">,</span> <span class="n">t_entry</span><span class="p">)</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t_path</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;Condor accepts only filenames (without paths) as FileTransfer targets: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">target</span><span class="p">)</span>
-                <span class="c"># make sure source and target file are the same</span>
-                <span class="k">if</span> <span class="n">s_entry</span> <span class="o">!=</span> <span class="n">t_entry</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;For Condor source file name and target file name have to be identical: </span><span class="si">%s</span><span class="s"> != </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">s_entry</span><span class="p">,</span> <span class="n">t_entry</span><span class="p">))</span>
-                <span class="c"># entry ok - add to job script</span>
-                <span class="n">transfer_output_files</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">, &quot;</span> <span class="o">%</span> <span class="n">source</span>
-            <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">transfer_output_files</span>
-
-    <span class="c"># always define log. if &#39;jd.output&#39; is defined, we use it </span>
-    <span class="c"># to name the logfile. if not, we fall back to a standard</span>
-    <span class="c"># name... </span>
-    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">output</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">filename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
-        <span class="n">idx</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">idx</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-            <span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">idx</span><span class="p">]</span>
-        <span class="n">filename</span> <span class="o">+=</span> <span class="s">&quot;.log&quot;</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">filename</span> <span class="o">=</span> <span class="s">&quot;saga-condor-job-$(cluster).log&quot;</span>
-
-    <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">log = </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">filename</span>
-
-    <span class="c"># output -&gt; output</span>
-    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">output</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">output = </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">output</span>
-
-    <span class="c"># error -&gt; error</span>
-    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">error = </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">error</span> 
-
-    <span class="c"># environment -&gt; environment</span>
-    <span class="n">environment</span> <span class="o">=</span> <span class="s">&quot;environment = &quot;</span>
     <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">environment</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">variable_list</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span> 
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">variable_list</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">=</span><span class="si">%s</span><span class="s">;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">environment</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
-        <span class="n">environment</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">variable_list</span>
-    <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">environment</span>
+        <span class="n">loadl_params</span> <span class="o">+=</span> <span class="s">&quot;#@environment=</span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">variable_list</span>
 
-    <span class="c"># project -&gt; +ProjectName</span>
-    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">project</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">+ProjectName = </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">loadl_params</span> <span class="o">+=</span> <span class="s">&quot;#@initialdir=</span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">working_directory</span>
+    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">output</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">loadl_params</span> <span class="o">+=</span> <span class="s">&quot;#@output=</span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">output</span>
+    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">loadl_params</span> <span class="o">+=</span> <span class="s">&quot;#@error=</span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">error</span>
+    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">wall_time_limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">hours</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">wall_time_limit</span> <span class="o">/</span> <span class="mi">60</span>
+        <span class="n">minutes</span> <span class="o">=</span> <span class="n">jd</span><span class="o">.</span><span class="n">wall_time_limit</span> <span class="o">%</span> <span class="mi">60</span>
+        <span class="n">loadl_params</span> <span class="o">+=</span> <span class="s">&quot;#@wall_clock_limit=</span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">:00 </span><span class="se">\n</span><span class="s">&quot;</span> \
+            <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">hours</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">minutes</span><span class="p">))</span>
 
-    <span class="c"># candidate hosts -&gt; SiteList + requirements</span>
-    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">candidate_hosts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">hosts</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">candidate_hosts</span><span class="p">:</span>
-            <span class="n">hosts</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">, &quot;</span> <span class="o">%</span> <span class="n">host</span>
-        <span class="n">sitelist</span> <span class="o">=</span> <span class="s">&quot;+SiteList = </span><span class="se">\\\&quot;</span><span class="si">%s</span><span class="se">\\\&quot;</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">hosts</span>
-        <span class="n">requirements</span> <span class="o">+=</span> <span class="s">&quot;(stringListMember(GLIDEIN_ResourceName,SiteList) == True)&quot;</span>
-        <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">sitelist</span>
-        <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">requirements</span>
+    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="c"># try to come up with a sensible (?) default value</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span> <span class="o">=</span> <span class="mi">1</span>
 
-    <span class="n">condor_file</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n\n</span><span class="s">queue&quot;</span>
+    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_physical_memory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="c"># try to come up with a sensible (?) default value for memeory</span>
+        <span class="n">jd</span><span class="o">.</span><span class="n">total_physical_memory</span> <span class="o">=</span> <span class="mi">256</span>
 
-    <span class="k">return</span> <span class="n">condor_file</span>
+    <span class="n">loadl_params</span> <span class="o">+=</span> <span class="s">&quot;#@resources=ConsumableCpus(</span><span class="si">%s</span><span class="s">)ConsumableMemory(</span><span class="si">%s</span><span class="s">mb)</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> \
+        <span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">total_cpu_count</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">total_physical_memory</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">jd</span><span class="o">.</span><span class="n">job_contact</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">loadl_params</span> <span class="o">+=</span> <span class="s">&quot;#@notify_user=</span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jd</span><span class="o">.</span><span class="n">job_contact</span>
+
+    <span class="c"># some default (?) parameter that seem to work fine everywhere... </span>
+    <span class="n">loadl_params</span> <span class="o">+=</span> <span class="s">&quot;#@class=normal</span><span class="se">\n</span><span class="s">&quot;</span>
+    <span class="n">loadl_params</span> <span class="o">+=</span> <span class="s">&quot;#@notification=complete</span><span class="se">\n</span><span class="s">&quot;</span>
+
+    <span class="c"># finally, we &#39;queue&#39; the job</span>
+    <span class="n">loadl_params</span> <span class="o">+=</span> <span class="s">&quot;#@queue</span><span class="se">\n</span><span class="s">&quot;</span>
+
+    <span class="n">loadlscript</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">#!/bin/bash </span><span class="se">\n</span><span class="si">%s%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">loadl_params</span><span class="p">,</span> <span class="n">exec_n_args</span><span class="p">)</span>
+	<span class="c"># add by hgkim </span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">loadlscript</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">loadlscript</span>
+
+
+<span class="k">def</span> <span class="nf">getId</span><span class="p">(</span><span class="n">out</span><span class="p">):</span>
+    <span class="n">jobId</span><span class="o">=-</span><span class="mi">1</span>
+    <span class="n">CLUSTERFINDWORDS</span><span class="o">=</span><span class="s">&quot;has been submitted to cluster&quot;</span>
+
+    <span class="n">t</span><span class="o">=</span><span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">t</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;Job&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">jobId</span><span class="o">==-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">tmpStr</span><span class="o">=</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)</span>
+            <span class="n">jobId</span><span class="o">=</span><span class="n">tmpStr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">CLUSTERFINDWORDS</span><span class="p">)</span><span class="o">!=-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="c">#print &quot;find:&quot;, line</span>
+            <span class="n">tmpStr2</span><span class="o">=</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">CLUSTERFINDWORDS</span><span class="p">)</span>
+            <span class="n">tmp</span><span class="o">=</span><span class="n">tmpStr2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">tmpLen</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+            <span class="n">clusterId</span><span class="o">=</span><span class="n">tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">tmpLen</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">jobId</span>
 
 
 <span class="c"># --------------------------------------------------------------------</span>
@@ -283,8 +200,8 @@
 <span class="c"># --------------------------------------------------------------------</span>
 <span class="c"># the adaptor name</span>
 <span class="c">#</span>
-<span class="n">_ADAPTOR_NAME</span>          <span class="o">=</span> <span class="s">&quot;saga.adaptor.condorjob&quot;</span>
-<span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&quot;condor&quot;</span><span class="p">,</span> <span class="s">&quot;condor+ssh&quot;</span><span class="p">,</span> <span class="s">&quot;condor+gsissh&quot;</span><span class="p">]</span>
+<span class="n">_ADAPTOR_NAME</span>          <span class="o">=</span> <span class="s">&quot;saga.adaptor.loadljob&quot;</span>
+<span class="n">_ADAPTOR_SCHEMAS</span>       <span class="o">=</span> <span class="p">[</span><span class="s">&quot;loadl&quot;</span><span class="p">,</span> <span class="s">&quot;loadl+ssh&quot;</span><span class="p">,</span> <span class="s">&quot;loadl+gsissh&quot;</span><span class="p">]</span>
 <span class="n">_ADAPTOR_OPTIONS</span>       <span class="o">=</span> <span class="p">[]</span>
 
 <span class="c"># --------------------------------------------------------------------</span>
@@ -302,10 +219,7 @@
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PROJECT</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">WALL_TIME_LIMIT</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">WORKING_DIRECTORY</span><span class="p">,</span>
-                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CANDIDATE_HOSTS</span><span class="p">,</span>
-                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">TOTAL_CPU_COUNT</span><span class="p">,</span>
-                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">SPMD_VARIATION</span><span class="p">,</span> <span class="c"># TODO: &#39;hot&#39;-fix for BigJob</span>
-                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FILE_TRANSFER</span><span class="p">],</span>
+                          <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">TOTAL_CPU_COUNT</span><span class="p">],</span>
     <span class="s">&quot;job_attributes&quot;</span><span class="p">:</span>    <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXIT_CODE</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">EXECUTION_HOSTS</span><span class="p">,</span>
                           <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">CREATED</span><span class="p">,</span>
@@ -325,31 +239,30 @@
     <span class="s">&quot;cfg_options&quot;</span><span class="p">:</span>   <span class="n">_ADAPTOR_OPTIONS</span><span class="p">,</span>
     <span class="s">&quot;capabilities&quot;</span><span class="p">:</span>  <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
     <span class="s">&quot;description&quot;</span><span class="p">:</span>  <span class="s">&quot;&quot;&quot;</span>
-<span class="s">The (HT)Condor(-G) adaptor allows to run and manage jobs on a </span>
-<span class="s">`Condor &lt;http://research.cs.wisc.edu/htcondor/&gt;`_ gateway.</span>
+<span class="s">The LoadLeveler adaptor allows to run and manage jobs on ` IBM LoadLeveler&lt;http://www-03.ibm.com/systems/software/loadleveler/&gt;`_</span>
+<span class="s">controlled HPC clusters.</span>
 <span class="s">&quot;&quot;&quot;</span><span class="p">,</span>
-    <span class="s">&quot;example&quot;</span><span class="p">:</span> <span class="s">&quot;examples/jobs/condorjob.py&quot;</span><span class="p">,</span>
-    <span class="s">&quot;schemas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;condor&quot;</span>        <span class="p">:</span> <span class="s">&quot;connect to a local gateway&quot;</span><span class="p">,</span>
-                <span class="s">&quot;condor+ssh&quot;</span>    <span class="p">:</span> <span class="s">&quot;conenct to a remote gateway via SSH&quot;</span><span class="p">,</span>
-                <span class="s">&quot;condor+gsissh &quot;</span><span class="p">:</span> <span class="s">&quot;connect to a remote gateway via GSISSH&quot;</span><span class="p">}</span>
+    <span class="s">&quot;example&quot;</span><span class="p">:</span> <span class="s">&quot;examples/jobs/loadljob.py&quot;</span><span class="p">,</span>
+    <span class="s">&quot;schemas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;loadl&quot;</span><span class="p">:</span>        <span class="s">&quot;connect to a local cluster&quot;</span><span class="p">,</span>
+                <span class="s">&quot;loadl+ssh&quot;</span><span class="p">:</span>    <span class="s">&quot;conenct to a remote cluster via SSH&quot;</span><span class="p">,</span>
+                <span class="s">&quot;loadl+gsissh&quot;</span><span class="p">:</span> <span class="s">&quot;connect to a remote cluster via GSISSH&quot;</span><span class="p">}</span>
 <span class="p">}</span>
 
 <span class="c"># --------------------------------------------------------------------</span>
 <span class="c"># the adaptor info is used to register the adaptor with SAGA</span>
 <span class="c">#</span>
 <span class="n">_ADAPTOR_INFO</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s">&quot;name&quot;</span>             <span class="p">:</span>    <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
-    <span class="s">&quot;version&quot;</span>          <span class="p">:</span> <span class="s">&quot;v0.1&quot;</span><span class="p">,</span>
-    <span class="s">&quot;schemas&quot;</span>          <span class="p">:</span> <span class="n">_ADAPTOR_SCHEMAS</span><span class="p">,</span>
-    <span class="s">&quot;capabilities&quot;</span>     <span class="p">:</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">,</span>
+    <span class="s">&quot;name&quot;</span><span class="p">:</span>    <span class="n">_ADAPTOR_NAME</span><span class="p">,</span>
+    <span class="s">&quot;version&quot;</span><span class="p">:</span> <span class="s">&quot;v0.1&quot;</span><span class="p">,</span>
+    <span class="s">&quot;schemas&quot;</span><span class="p">:</span> <span class="n">_ADAPTOR_SCHEMAS</span><span class="p">,</span>
     <span class="s">&quot;cpis&quot;</span><span class="p">:</span> <span class="p">[</span>
         <span class="p">{</span>
-        <span class="s">&quot;type&quot;</span>         <span class="p">:</span> <span class="s">&quot;saga.job.Service&quot;</span><span class="p">,</span>
-        <span class="s">&quot;class&quot;</span>        <span class="p">:</span> <span class="s">&quot;CondorJobService&quot;</span>
+        <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;saga.job.Service&quot;</span><span class="p">,</span>
+        <span class="s">&quot;class&quot;</span><span class="p">:</span> <span class="s">&quot;LOADLJobService&quot;</span>
         <span class="p">},</span>
         <span class="p">{</span>
-        <span class="s">&quot;type&quot;</span>         <span class="p">:</span> <span class="s">&quot;saga.job.Job&quot;</span><span class="p">,</span>
-        <span class="s">&quot;class&quot;</span>        <span class="p">:</span> <span class="s">&quot;CondorJob&quot;</span>
+        <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;saga.job.Job&quot;</span><span class="p">,</span>
+        <span class="s">&quot;class&quot;</span><span class="p">:</span> <span class="s">&quot;LOADLJob&quot;</span>
         <span class="p">}</span>
     <span class="p">]</span>
 <span class="p">}</span>
@@ -357,9 +270,10 @@
 
 <span class="c">###############################################################################</span>
 <span class="c"># The adaptor class</span>
+<span class="c">#class Adaptor (saga.adaptors.cpi.base.AdaptorBase):</span>
 <span class="k">class</span> <span class="nc">Adaptor</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; this is the actual adaptor class, which gets loaded by SAGA (i.e. by</span>
-<span class="sd">        the SAGA engine), and which registers the CPI implementation classes</span>
+    <span class="sd">&quot;&quot;&quot; this is the actual adaptor class, which gets loaded by SAGA (i.e. by </span>
+<span class="sd">        the SAGA engine), and which registers the CPI implementation classes </span>
 <span class="sd">        which provide the adaptor&#39;s functionality.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -367,10 +281,11 @@
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
-        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_ADAPTOR_INFO</span><span class="p">,</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">)</span>
+        <span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">_ADAPTOR_INFO</span><span class="p">,</span> <span class="n">_ADAPTOR_OPTIONS</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">id_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;^\[(.*)\]-\[(.*?)\]$&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">opts</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_config</span> <span class="p">(</span><span class="n">_ADAPTOR_NAME</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="n">_ADAPTOR_NAME</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -393,16 +308,16 @@
 
 <span class="c">###############################################################################</span>
 <span class="c">#</span>
-<span class="k">class</span> <span class="nc">CondorJobService</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJobService"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService">[docs]</a>    <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service</span>
+<span class="k">class</span> <span class="nc">LOADLJobService</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Service</span><span class="p">):</span>
+<div class="viewcode-block" id="LOADLJobService"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJobService">[docs]</a>    <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">):</span>
 
-        <span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">CondorJobService</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">LOADLJobService</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span> <span class="o">=</span> <span class="n">adaptor</span>
 
@@ -416,14 +331,15 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
     <span class="k">def</span> <span class="nf">init_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adaptor_state</span><span class="p">,</span> <span class="n">rm_url</span><span class="p">,</span> <span class="n">session</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJobService.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; service instance constructor</span>
-<span class="sd">        &quot;&quot;&quot;</span>        
-        <span class="bp">self</span><span class="o">.</span><span class="n">rm</span>            <span class="o">=</span> <span class="n">rm_url</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">session</span>       <span class="o">=</span> <span class="n">session</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ppn</span>           <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">is_cray</span>       <span class="o">=</span> <span class="bp">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span>          <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+<div class="viewcode-block" id="LOADLJobService.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJobService.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; service instance constructor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rm</span>      <span class="o">=</span> <span class="n">rm_url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ppn</span>     <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span>   <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span>    <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">query_options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster</span> <span class="o">=</span> <span class="bp">None</span>
 
         <span class="n">rm_scheme</span> <span class="o">=</span> <span class="n">rm_url</span><span class="o">.</span><span class="n">scheme</span>
         <span class="n">pty_url</span>   <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">rm_url</span><span class="p">)</span>
@@ -432,113 +348,142 @@
         <span class="c"># &#39;query&#39; component of the job service URL.</span>
         <span class="k">if</span> <span class="n">rm_url</span><span class="o">.</span><span class="n">query</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">parse_qs</span><span class="p">(</span><span class="n">rm_url</span><span class="o">.</span><span class="n">query</span><span class="p">)</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">query_options</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;queue&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;cluster&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cluster</span><span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="c"># we need to extrac the scheme for PTYShell. That&#39;s basically the</span>
-        <span class="c"># job.Serivce Url withou the condor+ part. We use the PTYShell to execute</span>
-        <span class="c"># condor commands either locally or via gsissh or ssh.</span>
-        <span class="k">if</span> <span class="n">rm_scheme</span> <span class="o">==</span> <span class="s">&quot;condor&quot;</span><span class="p">:</span>
+        <span class="c"># job.Serivce Url withou the pbs+ part. We use the PTYShell to execute</span>
+        <span class="c"># pbs commands either locally or via gsissh or ssh.</span>
+        <span class="k">if</span> <span class="n">rm_scheme</span> <span class="o">==</span> <span class="s">&quot;loadl&quot;</span><span class="p">:</span>
             <span class="n">pty_url</span><span class="o">.</span><span class="n">scheme</span> <span class="o">=</span> <span class="s">&quot;fork&quot;</span>
-        <span class="k">elif</span> <span class="n">rm_scheme</span> <span class="o">==</span> <span class="s">&quot;condor+ssh&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">rm_scheme</span> <span class="o">==</span> <span class="s">&quot;loadl+ssh&quot;</span><span class="p">:</span>
             <span class="n">pty_url</span><span class="o">.</span><span class="n">scheme</span> <span class="o">=</span> <span class="s">&quot;ssh&quot;</span>
-        <span class="k">elif</span> <span class="n">rm_scheme</span> <span class="o">==</span> <span class="s">&quot;condor+gsissh&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">rm_scheme</span> <span class="o">==</span> <span class="s">&quot;loadl+gsissh&quot;</span><span class="p">:</span>
             <span class="n">pty_url</span><span class="o">.</span><span class="n">scheme</span> <span class="o">=</span> <span class="s">&quot;gsissh&quot;</span>
 
-        <span class="c"># these are the commands that we need in order to interact with Condor.</span>
+        <span class="c"># these are the commands that we need in order to interact with PBS.</span>
         <span class="c"># the adaptor will try to find them during initialize(self) and bail</span>
         <span class="c"># out in case they are note avaialbe.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;condor_version&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
-                          <span class="s">&#39;condor_submit&#39;</span><span class="p">:</span>  <span class="bp">None</span><span class="p">,</span>
-                          <span class="s">&#39;condor_q&#39;</span><span class="p">:</span>       <span class="bp">None</span><span class="p">,</span>
-                          <span class="s">&#39;condor_history&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
-                          <span class="s">&#39;condor_rm&#39;</span><span class="p">:</span>      <span class="bp">None</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;llq&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+                          <span class="s">&#39;llsubmit&#39;</span><span class="p">:</span>     <span class="bp">None</span><span class="p">,</span>
+                          <span class="s">&#39;llcancel&#39;</span><span class="p">:</span>     <span class="bp">None</span><span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">pty_shell</span><span class="o">.</span><span class="n">PTYShell</span><span class="p">(</span><span class="n">pty_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span>
 
-      <span class="c"># self.shell.set_initialize_hook(self.initialize)</span>
-      <span class="c"># self.shell.set_finalize_hook(self.finalize)</span>
+        <span class="c">#self.shell.set_initialize_hook(self.initialize)</span>
+        <span class="c">#self.shell.set_finalize_hook(self.finalize)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_api</span> <span class="p">()</span>
 
-
-    <span class="c"># ----------------------------------------------------------------</span>
-    <span class="c">#</span>
-    <span class="k">def</span> <span class="nf">close</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="p">:</span></div>
-<div class="viewcode-block" id="CondorJobService.close"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.close">[docs]</a>        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="bp">True</span><span class="p">)</span>
-
-
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div>
-<div class="viewcode-block" id="CondorJobService.initialize"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.initialize">[docs]</a>        <span class="c"># check if all required condor tools are available</span>
+<div class="viewcode-block" id="LOADLJobService.initialize"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJobService.initialize">[docs]</a>        <span class="c"># check if all required pbs tools are available</span>
         <span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;which </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error finding Condor tools: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error finding LoadLeveler tools: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
                 <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">path</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>  <span class="c"># strip removes newline</span>
-                <span class="k">if</span> <span class="n">cmd</span> <span class="o">==</span> <span class="s">&#39;condor_version&#39;</span><span class="p">:</span>
-                    <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error determining Condor version: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
-                        <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="c"># version is reported as:</span>
-                        <span class="c"># $CondorVersion: 7.8.6 Oct 25 2012 $</span>
-                        <span class="c"># $CondorPlatform: X86_64-CentOS_5.7 $</span>
-                        <span class="n">lines</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
-                        <span class="n">version</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;$CondorVersion: &quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
-                        <span class="n">version</span> <span class="o">=</span> <span class="n">version</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s">&quot; $&quot;</span><span class="p">)</span>
+                <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> -v&quot;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error finding LoadLeveler tools: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
+                    <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c"># version is reported as: &quot;version: x.y.z&quot;</span>
+                    <span class="n">version</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
 
-                        <span class="c"># add path and version to the command dictionary</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="n">cmd</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;path&quot;</span><span class="p">:</span>    <span class="n">path</span><span class="p">,</span>
-                                       <span class="s">&quot;version&quot;</span><span class="p">:</span> <span class="n">version</span><span class="p">}</span>
+                    <span class="c"># add path and version to the command dictionary</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="n">cmd</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;path&quot;</span><span class="p">:</span>    <span class="n">path</span><span class="p">,</span>
+                                           <span class="s">&quot;version&quot;</span><span class="p">:</span> <span class="n">version</span><span class="p">}</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Found Condor tools: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Found LoadLeveler tools: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">)</span>
+
+        <span class="c"># see if we can get some information about the cluster, e.g.,</span>
+        <span class="c"># different queues, number of processes per node, etc.</span>
+        <span class="c"># TODO: this is quite a hack. however, it *seems* to work quite</span>
+        <span class="c">#       well in practice.</span>
+        <span class="c"># modi by hgkim</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ret, out, _ = self.shell.run_sync(&#39;%s -a | grep np&#39; % \</span>
+<span class="sd">            self._commands[&#39;pbsnodes&#39;][&#39;path&#39;])</span>
+<span class="sd">        if ret != 0:</span>
+<span class="sd">            message = &quot;Error running pbsnodes: %s&quot; % out</span>
+<span class="sd">            log_error_and_raise(message, saga.NoSuccess, self._logger)</span>
+<span class="sd">        else:</span>
+<span class="sd">            # this is black magic. we just assume that the highest occurence</span>
+<span class="sd">            # of a specific np is the number of processors (cores) per compute</span>
+<span class="sd">            # node. this equals max &quot;PPN&quot; for job scripts</span>
+<span class="sd">            ppn_list = dict()</span>
+<span class="sd">            for line in out.split(&#39;\n&#39;):</span>
+<span class="sd">                np = line.split(&#39; = &#39;)</span>
+<span class="sd">                if len(np) == 2:</span>
+<span class="sd">                    np = np[1].strip()</span>
+<span class="sd">                    if np in ppn_list:</span>
+<span class="sd">                        ppn_list[np] += 1</span>
+<span class="sd">                    else:</span>
+<span class="sd">                        ppn_list[np] = 1</span>
+<span class="sd">			# add by hgkim</span>
+<span class="sd">            #self.ppn = max(ppn_list, key=ppn_list.get)</span>
+<span class="sd">            self.ppn = 1</span>
+<span class="sd">            self._logger.debug(&quot;Found the following &#39;ppn&#39; configurations: %s. \</span>
+<span class="sd">    Using %s as default ppn.&quot; </span>
+<span class="sd">                % (ppn_list, self.ppn))</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kill_shell</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span></div>
-<div class="viewcode-block" id="CondorJobService.finalize"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.finalize">[docs]</a>        <span class="k">pass</span>
+<div class="viewcode-block" id="LOADLJobService.finalize"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJobService.finalize">[docs]</a>        <span class="k">if</span>  <span class="n">kill_shell</span> <span class="p">:</span>
+            <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="bp">True</span><span class="p">)</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">_job_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jd</span><span class="p">):</span></div>
-        <span class="sd">&quot;&quot;&quot; runs a job via qsub</span>
+        <span class="sd">&quot;&quot;&quot; runs a job via llsubmit</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># create a Condor job script from SAGA job description</span>
-        <span class="n">script</span> <span class="o">=</span> <span class="n">_condorscript_generator</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span> <span class="n">jd</span><span class="o">=</span><span class="n">jd</span><span class="p">,</span>
-            <span class="n">option_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">query_options</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Generated Condor script: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">script</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">jd</span><span class="o">.</span><span class="n">queue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Job service was instantiated explicitly with </span><span class="se">\</span>
+<span class="s">&#39;queue=</span><span class="si">%s</span><span class="s">&#39;, but job description tries to a differnt queue: &#39;</span><span class="si">%s</span><span class="s">&#39;. Using &#39;</span><span class="si">%s</span><span class="s">&#39;.&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="n">jd</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">))</span>
 
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&#39;echo &quot;</span><span class="si">%s</span><span class="s">&quot; | </span><span class="si">%s</span><span class="s"> -&#39;</span> \
-            <span class="o">%</span> <span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;condor_submit&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">]))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c"># create a LoadLeveler job script from SAGA job description</span>
+            <span class="n">script</span> <span class="o">=</span> <span class="n">_loadlcript_generator</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">,</span>
+                                         <span class="n">jd</span><span class="o">=</span><span class="n">jd</span><span class="p">,</span> <span class="n">ppn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ppn</span><span class="p">,</span>
+                                         <span class="n">queue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span>
+
+            <span class="c"># escape all double quotes and dollarsigns, otherwise &#39;echo |&#39; </span>
+            <span class="c"># further down won&#39;t work</span>
+            <span class="n">script</span> <span class="o">=</span> <span class="n">script</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;&quot;&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">&quot;&#39;</span><span class="p">)</span>
+            <span class="n">script</span> <span class="o">=</span> <span class="n">script</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;$&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">$&#39;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Generated LoadLeveler script: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">script</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="n">log_error_and_raise</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">),</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;&quot;&quot;echo &quot;</span><span class="si">%s</span><span class="s">&quot; | </span><span class="si">%s</span><span class="s"> -X </span><span class="si">%s</span><span class="s"> -&quot;&quot;&quot;</span> \
+            <span class="o">%</span> <span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;llsubmit&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c"># something went wrong</span>
-            <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error running job via &#39;condor_submit&#39;: </span><span class="si">%s</span><span class="s">. Script was: </span><span class="si">%s</span><span class="s">&quot;</span> \
+            <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error running job via &#39;llsubmit&#39;: </span><span class="si">%s</span><span class="s">. Script was: </span><span class="si">%s</span><span class="s">&quot;</span> \
                 <span class="o">%</span> <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">script</span><span class="p">)</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c"># stdout contains the job id</span>
-            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">):</span>
-                <span class="k">if</span> <span class="s">&quot;** Proc&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
-                    <span class="n">pid</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">2</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-
-            <span class="c"># we don&#39;t want the &#39;query&#39; part of the URL to be part of the ID,</span>
-            <span class="c"># simply because it can get terribly long (and ugly). to get rid</span>
-            <span class="c"># of it, we clone the URL and set the query part to None.</span>
-            <span class="n">rm_clone</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">)</span>
-            <span class="n">rm_clone</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-            <span class="n">rm_clone</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-
-            <span class="n">job_id</span> <span class="o">=</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">]-[</span><span class="si">%s</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">rm_clone</span><span class="p">,</span> <span class="n">pid</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Submitted Condor job with id: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job_id</span><span class="p">)</span>
+            <span class="c">#job_id = &quot;[%s]-[%s]&quot; % (self.rm, out.strip().split(&#39;.&#39;)[0])</span>
+            <span class="n">job_id</span> <span class="o">=</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">]-[</span><span class="si">%s</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">getId</span><span class="p">(</span><span class="n">out</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Submitted LoadLeveler job with id: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job_id</span><span class="p">)</span>
 
             <span class="c"># add job to internal list of known jobs.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
@@ -561,10 +506,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
 
-        <span class="c"># run the Condor &#39;condor_q&#39; command to get some infos about our job</span>
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> -long </span><span class="si">%s</span><span class="s"> | </span><span class="se">\</span>
-<span class="s">            egrep &#39;(JobStatus)|(ExitStatus)|(CompletionDate)&#39;&quot;</span> \
-            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;condor_q&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="n">pid</span><span class="p">))</span>
+        <span class="c"># run the LoadLeveler &#39;llq&#39; command to get some infos about our job</span>
+        <span class="c">#ret, out, _ = self.shell.run_sync(&quot;%s -f1 %s | \</span>
+        <span class="c">#    egrep &#39;(job_state)|(exec_host)|(exit_status)|(ctime)|\</span>
+<span class="c">#(start_time)|(comp_time)&#39;&quot; % (self._commands[&#39;qstat&#39;][&#39;path&#39;], pid))</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> -X </span><span class="si">%s</span><span class="s"> -j </span><span class="si">%s</span><span class="s"> </span><span class="se">\</span>
+<span class="s">-r </span><span class="si">%%</span><span class="s">st </span><span class="si">%%</span><span class="s">dd </span><span class="si">%%</span><span class="s">cc </span><span class="si">%%</span><span class="s">jt </span><span class="si">%%</span><span class="s">c </span><span class="si">%%</span><span class="s">Xs&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;llq&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster</span><span class="p">,</span> <span class="n">pid</span><span class="p">))</span>
+
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Couldn&#39;t reconnect to job &#39;</span><span class="si">%s</span><span class="s">&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">job_id</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
@@ -581,26 +529,30 @@
                 <span class="s">&#39;gone&#39;</span><span class="p">:</span>         <span class="bp">False</span>
             <span class="p">}</span>
 
-            <span class="n">results</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-                    <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">)</span>
-                    <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>  <span class="c"># strip() removes whitespaces at the</span>
-                    <span class="n">val</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>  <span class="c"># beginning and the end of the string</span>
+            <span class="n">lastStr</span><span class="o">=</span><span class="n">out</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">lastStr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lastStr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;llq:&#39;</span><span class="p">):</span> <span class="c"># llq: There is currently no job status to report</span>
+                <span class="c"># hgkim 2013/08/22</span>
+                <span class="c">#job_info[&#39;state&#39;] = _ll_to_saga_jobstate(&#39;C&#39;)</span>
+                <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span>
+                <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+                <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;end_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%c</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="n">lastStr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;!&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;results: </span><span class="si">%r</span><span class="s">&quot;</span><span class="p">,</span><span class="n">results</span><span class="p">)</span>
 
-                    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;JobStatus&#39;</span><span class="p">:</span>
-                        <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_condor_to_saga_jobstate</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-                    <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;ExitStatus&#39;</span><span class="p">:</span>
-                        <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
-                    <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;CompletionDate&#39;</span><span class="p">:</span>
-                        <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;end_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+                <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_ll_to_saga_jobstate</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="c"># still running</span>
+                <span class="n">job_info</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="c">#job_info[&#39;exec_hosts&#39;] = results[5]</span>
 
             <span class="k">return</span> <span class="n">job_info</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">_job_get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; get job attributes via condor_q</span>
+        <span class="sd">&quot;&quot;&quot; get job attributes via llq</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c"># if we don&#39;t have the job in our dictionary, we don&#39;t want it</span>
@@ -624,71 +576,59 @@
 
         <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
 
-        <span class="c"># run the Condor &#39;condor_q&#39; command to get some infos about our job</span>
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> -long </span><span class="si">%s</span><span class="s"> | </span><span class="se">\</span>
-<span class="s">            egrep &#39;(JobStatus)|(ExitStatus)|(CompletionDate)&#39;&quot;</span> \
-            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;condor_q&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="n">pid</span><span class="p">))</span>
+        <span class="c"># run the LoadLeveler &#39;llq&#39; command to get some infos about our job</span>
+        <span class="c">#ret, out, _ = self.shell.run_sync(&quot;%s -f1 %s | \</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> -X </span><span class="si">%s</span><span class="s"> -j </span><span class="si">%s</span><span class="s"> </span><span class="se">\</span>
+<span class="s">-r </span><span class="si">%%</span><span class="s">st </span><span class="si">%%</span><span class="s">dd </span><span class="si">%%</span><span class="s">cc </span><span class="si">%%</span><span class="s">jt </span><span class="si">%%</span><span class="s">c </span><span class="si">%%</span><span class="s">Xs&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;llq&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster</span><span class="p">,</span> <span class="n">pid</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c">#if (&quot;Unknown Job Id&quot; in out):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s">&quot;Unknown Job Id&quot;</span> <span class="ow">in</span> <span class="n">out</span><span class="p">):</span>
                 <span class="c"># Let&#39;s see if the previous job state was runnig or pending. in</span>
                 <span class="c"># that case, the job is gone now, which can either mean DONE,</span>
                 <span class="c"># or FAILED. the only thing we can do is set it to &#39;DONE&#39;</span>
-            <span class="k">if</span> <span class="n">prev_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span><span class="p">]:</span>
-
-                <span class="c"># run the Condor &#39;condor_history&#39; command to get info about </span>
-                <span class="c"># finished jobs</span>
-                <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> -long </span><span class="si">%s</span><span class="s"> | </span><span class="se">\</span>
-<span class="s">                    egrep &#39;(ExitCode)&#39;&quot;</span> \
-                    <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;condor_history&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="n">pid</span><span class="p">))</span>
-                
-                <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error getting job history via &#39;condor_history&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
-                    <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
-
-                <span class="c"># sometimes we get other crap (like biff)</span>
-                <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> 
-
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-                    <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;No ExitCode found via &#39;condor_history&#39;&quot;</span>
-                    <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
-
-                <span class="n">_</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">)</span>
-                <span class="n">retcode</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
-                    
-                <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">retcode</span>
-
-                <span class="k">if</span> <span class="n">retcode</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">prev_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">PENDING</span><span class="p">]:</span>
                     <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">DONE</span>
+                    <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Previously running job has </span><span class="se">\</span>
+<span class="s">disappeared. This probably means that the backend doesn&#39;t store informations </span><span class="se">\</span>
+<span class="s">about finished jobs. Setting state to &#39;DONE&#39;.&quot;</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">FAILED</span>
-
-                <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
-
+                    <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;gone&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
-            <span class="c">#else:</span>
-            <span class="c">#    # something went wrong</span>
-            <span class="c">#    message = &quot;Error retrieving job info via &#39;condor_q&#39;: %s&quot; % out</span>
-            <span class="c">#    log_error_and_raise(message, saga.NoSuccess, self._logger)</span>
+                <span class="c"># something went wrong</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error retrieving job info via &#39;llq&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
+                <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c"># parse the egrep result. this should look something like this:</span>
-            <span class="c"># JobStatus = 5</span>
-            <span class="c"># ExitStatus = 0</span>
-            <span class="c"># CompletionDate = 0</span>
-            <span class="n">results</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-                    <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">)</span>
-                    <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>  <span class="c"># strip() removes whitespaces at the</span>
-                    <span class="n">val</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>  <span class="c"># beginning and the end of the string</span>
+            <span class="c"># parse the result(last string). this should look something like this:</span>
+            <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">            ===== Cluster kisti.glory =====</span>
 
-                    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;JobStatus&#39;</span><span class="p">:</span>
-                        <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_condor_to_saga_jobstate</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-                    <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;ExitStatus&#39;</span><span class="p">:</span>
-                        <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
-                    <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;CompletionDate&#39;</span><span class="p">:</span>
-                        <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;end_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+<span class="sd">            06/19 09:51:45 llq: 2539-457 Cannot gethostbyname for machine: glory118.plsi.or.kr</span>
+<span class="sd">            R!06/19/2013 09:51!!Serial!normal!kisti.login</span>
+<span class="sd">            0 : Status</span>
+<span class="sd">            1 : Dispatch Date</span>
+<span class="sd">            2 : %cc</span>
+<span class="sd">            3 : Job type</span>
+<span class="sd">            4 : class</span>
+<span class="sd">            5 : Cluster name from where the job was submitted</span>
+<span class="sd">            &quot;&quot;&quot;</span> 
+            <span class="n">lastStr</span><span class="o">=</span><span class="n">out</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">lastStr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lastStr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;llq:&#39;</span><span class="p">):</span> <span class="c"># llq: There is currently no job status to report</span>
+                <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_ll_to_saga_jobstate</span><span class="p">(</span><span class="s">&#39;C&#39;</span><span class="p">)</span>
+                
+                <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+                <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;end_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%c</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="n">lastStr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;!&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+                
+                <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_ll_to_saga_jobstate</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span> <span class="c"># later, fix</span>
+                <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;create_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">curr_info</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="c">#curr_info[&#39;exec_hosts&#39;] = results[5]</span>
 
         <span class="c"># return the new job info dict</span>
         <span class="k">return</span> <span class="n">curr_info</span>
@@ -720,11 +660,7 @@
         <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_get_info</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="n">job_id</span><span class="p">)</span>
 
-        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span>
-
-        <span class="c"># FIXME: &#39;None&#39; should cause an exception</span>
-        <span class="k">if</span> <span class="n">ret</span> <span class="o">==</span> <span class="bp">None</span> <span class="p">:</span> <span class="k">return</span> <span class="bp">None</span>
-        <span class="k">else</span>           <span class="p">:</span> <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">job_id</span><span class="p">][</span><span class="s">&#39;returncode&#39;</span><span class="p">]</span>
 
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
@@ -777,15 +713,15 @@
     <span class="c"># ----------------------------------------------------------------</span>
     <span class="c">#</span>
     <span class="k">def</span> <span class="nf">_job_cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; cancel the job via &#39;condor_rm&#39;</span>
+        <span class="sd">&quot;&quot;&quot; cancel the job via &#39;llcancel&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">rm</span><span class="p">,</span> <span class="n">pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="o">.</span><span class="n">parse_id</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
 
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> \
-            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;condor_rm&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="n">pid</span><span class="p">))</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> -X </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> \
+            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;llcancel&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster</span><span class="p">,</span> <span class="n">pid</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error canceling job via &#39;condor_rm&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;Error canceling job via &#39;llcancel&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
 
         <span class="c"># assume the job was succesfully canceld</span>
@@ -821,15 +757,22 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span>
     <span class="k">def</span> <span class="nf">create_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jd</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJobService.create_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.create_job">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service.get_url()</span>
+<div class="viewcode-block" id="LOADLJobService.create_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJobService.create_job">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service.get_url()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># check that only supported attributes are provided</span>
+        <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">jd</span><span class="o">.</span><span class="n">list_attributes</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">attribute</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_ADAPTOR_CAPABILITIES</span><span class="p">[</span><span class="s">&quot;jdes_attributes&quot;</span><span class="p">]:</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;&#39;jd.</span><span class="si">%s</span><span class="s">&#39; is not supported by this adaptor&quot;</span> \
+                    <span class="o">%</span> <span class="n">attribute</span>
+                <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">BadParameter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
+
         <span class="c"># this dict is passed on to the job adaptor class -- use it to pass any</span>
         <span class="c"># state information you need there.</span>
         <span class="n">adaptor_state</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;job_service&quot;</span><span class="p">:</span>     <span class="bp">self</span><span class="p">,</span>
                          <span class="s">&quot;job_description&quot;</span><span class="p">:</span> <span class="n">jd</span><span class="p">,</span>
                          <span class="s">&quot;job_schema&quot;</span><span class="p">:</span>      <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span>
                          <span class="s">&quot;reconnect&quot;</span><span class="p">:</span>       <span class="bp">False</span>
-                        <span class="p">}</span>
+                         <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">(</span><span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">,</span>
                             <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
@@ -838,9 +781,10 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobid</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJobService.get_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.get_job">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_job()</span>
+<div class="viewcode-block" id="LOADLJobService.get_job"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJobService.get_job">[docs]</a>        <span class="sd">&quot;&quot;&quot; Implements saga.adaptors.cpi.job.Service.get_job()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;get_job: </span><span class="si">%r</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">jobid</span><span class="p">)</span>
         <span class="c"># try to get some information about this job and throw it into</span>
         <span class="c"># our job dictionary.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="n">jobid</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_job</span><span class="p">(</span><span class="n">jobid</span><span class="p">)</span>
@@ -853,7 +797,7 @@
                          <span class="s">&quot;job_schema&quot;</span><span class="p">:</span>      <span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span>
                          <span class="s">&quot;reconnect&quot;</span><span class="p">:</span>       <span class="bp">True</span><span class="p">,</span>
                          <span class="s">&quot;reconnect_jobid&quot;</span><span class="p">:</span> <span class="n">jobid</span>
-                        <span class="p">}</span>
+                         <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">saga</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">(</span><span class="n">_adaptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_adaptor</span><span class="p">,</span>
                             <span class="n">_adaptor_state</span><span class="o">=</span><span class="n">adaptor_state</span><span class="p">)</span>
@@ -862,7 +806,7 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJobService.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.get_url">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service.get_url()</span>
+<div class="viewcode-block" id="LOADLJobService.get_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJobService.get_url">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service.get_url()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rm</span>
 
@@ -870,17 +814,18 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJobService.list"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJobService.list">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service.list()</span>
+<div class="viewcode-block" id="LOADLJobService.list"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJobService.list">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Service.list()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ids</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> | grep `whoami`&quot;</span>\
-            <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;condor_q&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">])</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> | grep `whoami`&quot;</span> <span class="o">%</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">_commands</span><span class="p">[</span><span class="s">&#39;qstat&#39;</span><span class="p">][</span><span class="s">&#39;path&#39;</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;failed to list jobs via &#39;condor_q&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;failed to list jobs via &#39;qstat&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">saga</span><span class="o">.</span><span class="n">NoSuccess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># qstat | grep `` exits with 1 if the list is empty</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">):</span>
@@ -888,11 +833,7 @@
                 <span class="c"># 112059.svc.uc.futuregrid testjob oweidner 0 Q batch</span>
                 <span class="c"># 112061.svc.uc.futuregrid testjob oweidner 0 Q batch</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="n">rm_clone</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">)</span>
-                    <span class="n">rm_clone</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-                    <span class="n">rm_clone</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-
-                    <span class="n">jobid</span> <span class="o">=</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">]-[</span><span class="si">%s</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">rm_clone</span><span class="p">,</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">jobid</span> <span class="o">=</span> <span class="s">&quot;[</span><span class="si">%s</span><span class="s">]-[</span><span class="si">%s</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rm</span><span class="p">,</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
                     <span class="n">ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">jobid</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">ids</span>
@@ -925,19 +866,19 @@
 
 <span class="c">###############################################################################</span>
 <span class="c">#</span>
-<span class="k">class</span> <span class="nc">CondorJob</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">):</span></div></div>
-<div class="viewcode-block" id="CondorJob"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob">[docs]</a>    <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job</span>
+<span class="k">class</span> <span class="nc">LOADLJob</span> <span class="p">(</span><span class="n">saga</span><span class="o">.</span><span class="n">adaptors</span><span class="o">.</span><span class="n">cpi</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">):</span></div></div>
+<div class="viewcode-block" id="LOADLJob"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJob">[docs]</a>    <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">):</span>
 
         <span class="c"># initialize parent class</span>
-        <span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">CondorJob</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">LOADLJob</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpi_base</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">adaptor</span><span class="p">)</span>
 
     <span class="nd">@SYNC_CALL</span>
     <span class="k">def</span> <span class="nf">init_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_info</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJob.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.init_instance()</span>
+<div class="viewcode-block" id="LOADLJob.init_instance"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJob.init_instance">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.init_instance()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># init_instance is called for every new saga.job.Job object</span>
         <span class="c"># that is created</span>
@@ -957,7 +898,7 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJob.get_state"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_state">[docs]</a>        <span class="sd">&quot;&quot;&quot; mplements saga.adaptors.cpi.job.Job.get_state()</span>
+<div class="viewcode-block" id="LOADLJob.get_state"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJob.get_state">[docs]</a>        <span class="sd">&quot;&quot;&quot; mplements saga.adaptors.cpi.job.Job.get_state()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="c"># jobs that are not started are always in &#39;NEW&#39; state</span>
@@ -969,7 +910,7 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJob.wait"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.wait">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.wait()</span>
+<div class="viewcode-block" id="LOADLJob.wait"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJob.wait">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.wait()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="s">&quot;Can&#39;t wait for job that hasn&#39;t been started&quot;</span><span class="p">,</span>
@@ -981,7 +922,7 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJob.cancel"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.cancel">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.cancel()</span>
+<div class="viewcode-block" id="LOADLJob.cancel"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJob.cancel">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.cancel()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="n">log_error_and_raise</span><span class="p">(</span><span class="s">&quot;Can&#39;t wait for job that hasn&#39;t been started&quot;</span><span class="p">,</span>
@@ -993,7 +934,7 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJob.run"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.run">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.run()</span>
+<div class="viewcode-block" id="LOADLJob.run"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJob.run">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.run()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="bp">True</span>
@@ -1002,7 +943,7 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_service_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJob.get_service_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_service_url">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_service_url()</span>
+<div class="viewcode-block" id="LOADLJob.get_service_url"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJob.get_service_url">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_service_url()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">rm</span>
 
@@ -1010,7 +951,7 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJob.get_id"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_id">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_id()</span>
+<div class="viewcode-block" id="LOADLJob.get_id"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJob.get_id">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_id()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span>
 
@@ -1018,7 +959,7 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_exit_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJob.get_exit_code"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_exit_code">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_exit_code()</span>
+<div class="viewcode-block" id="LOADLJob.get_exit_code"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJob.get_exit_code">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_exit_code()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
@@ -1029,7 +970,7 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_created</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJob.get_created"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_created">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_created()</span>
+<div class="viewcode-block" id="LOADLJob.get_created"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJob.get_created">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_created()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
@@ -1040,7 +981,7 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_started</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJob.get_started"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_started">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_started()</span>
+<div class="viewcode-block" id="LOADLJob.get_started"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJob.get_started">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_started()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
@@ -1051,7 +992,7 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJob.get_finished"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_finished">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_finished()</span>
+<div class="viewcode-block" id="LOADLJob.get_finished"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJob.get_finished">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_finished()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
@@ -1062,12 +1003,14 @@
     <span class="c">#</span>
     <span class="nd">@SYNC_CALL</span></div>
     <span class="k">def</span> <span class="nf">get_execution_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<div class="viewcode-block" id="CondorJob.get_execution_hosts"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.condorjob.html#saga.adaptors.condor.condorjob.CondorJob.get_execution_hosts">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_execution_hosts()</span>
+<div class="viewcode-block" id="LOADLJob.get_execution_hosts"><a class="viewcode-back" href="../../../../adaptors/saga.adaptor.loadljob.html#saga.adaptors.loadl.loadljob.LOADLJob.get_execution_hosts">[docs]</a>        <span class="sd">&quot;&quot;&quot; implements saga.adaptors.cpi.job.Job.get_execution_hosts()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">js</span><span class="o">.</span><span class="n">_job_get_execution_hosts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+
+<span class="c"># vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4</span>
 </pre></div></div></div>
 
           </div>

@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
 
-    <title>saga.utils.pty_process &mdash; SAGA 0.9.13 documentation</title>
+    <title>saga.utils.pty_process &mdash; SAGA 0.9.16 documentation</title>
 
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
 
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '0.9.13',
+        VERSION:     '0.9.16',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../../_static/searchtools.js"></script>
-    <link rel="top" title="SAGA 0.9.13 documentation" href="../../../index.html" />
+    <link rel="top" title="SAGA 0.9.16 documentation" href="../../../index.html" />
     <link rel="up" title="saga" href="../../saga.html" /> 
   </head>
   <body>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../index.html">SAGA 0.9.13 documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">SAGA 0.9.16 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../saga.html" accesskey="U">saga</a> &raquo;</li> 
       </ul>
@@ -177,6 +177,7 @@
 
 
         <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>   <span class="o">=</span> <span class="s">&quot;&quot;</span>      <span class="c"># data cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tail</span>    <span class="o">=</span> <span class="s">&quot;&quot;</span>      <span class="c"># tail of data data cache for error messages</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">child</span>   <span class="o">=</span> <span class="bp">None</span>    <span class="c"># the process as created by subprocess.Popen</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ptyio</span>   <span class="o">=</span> <span class="bp">None</span>    <span class="c"># the process&#39; io channel, from pty.fork()</span>
 
@@ -419,14 +420,14 @@
             <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="p">:</span>
 
                 <span class="k">while</span> <span class="bp">True</span> <span class="p">:</span>
-                    <span class="c"># print &#39;waitpid %s&#39; % self.child</span>
+                  <span class="c"># print &#39;waitpid %s&#39; % self.child</span>
                     <span class="c"># hey, kiddo, whats up?</span>
                     <span class="n">wpid</span><span class="p">,</span> <span class="n">wstat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">waitpid</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">WNOHANG</span><span class="p">)</span>
-                    <span class="c"># print &#39;waitpid %s : %s - %s&#39; % (self.child, wpid, wstat)</span>
+                  <span class="c"># print &#39;waitpid %s : %s - %s&#39; % (self.child, wpid, wstat)</span>
 
                     <span class="c"># did we get a note about child termination?</span>
                     <span class="k">if</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">wpid</span> <span class="p">:</span>
-                        <span class="c"># print &#39;waitpid %s : %s - %s -- none&#39; % (self.child, wpid, wstat)</span>
+                      <span class="c"># print &#39;waitpid %s : %s - %s -- none&#39; % (self.child, wpid, wstat)</span>
                         <span class="c"># nope, all is well - carry on</span>
                         <span class="k">return</span> <span class="bp">True</span>
 
@@ -435,7 +436,7 @@
                     <span class="c"># Well, maybe the child fooled us and is just playing dead?</span>
                     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">WIFSTOPPED</span>   <span class="p">(</span><span class="n">wstat</span><span class="p">)</span> <span class="ow">or</span> \
                        <span class="n">os</span><span class="o">.</span><span class="n">WIFCONTINUED</span> <span class="p">(</span><span class="n">wstat</span><span class="p">)</span>    <span class="p">:</span>
-                        <span class="c"># print &#39;waitpid %s : %s - %s -- stop/cont&#39; % (self.child, wpid, wstat)</span>
+                      <span class="c"># print &#39;waitpid %s : %s - %s -- stop/cont&#39; % (self.child, wpid, wstat)</span>
                         <span class="c"># we don&#39;t care if someone stopped/resumed the child -- that is up</span>
                         <span class="c"># to higher powers.  For our purposes, the child is alive.  Ha!</span>
                         <span class="k">continue</span>
@@ -444,13 +445,14 @@
 
                 <span class="c"># so its dead -- make sure it stays dead, to avoid zombie</span>
                 <span class="c"># apocalypse...</span>
+              <span class="c"># print &quot;he&#39;s dead, honeybunny, jim is dead...&quot;</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span> <span class="bp">None</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">(</span><span class="n">wstat</span><span class="o">=</span><span class="n">wstat</span><span class="p">)</span>
 
 
             <span class="c"># check if we can attempt a post-mortem revival though</span>
             <span class="k">if</span>  <span class="ow">not</span> <span class="n">recover</span> <span class="p">:</span>
-                <span class="c"># print &#39;not alive, not recover&#39;</span>
+              <span class="c"># print &#39;not alive, not recover&#39;</span>
                 <span class="c"># nope, we are on holy ground - revival not allowed.</span>
                 <span class="k">return</span> <span class="bp">False</span>
 
@@ -459,7 +461,7 @@
             <span class="c"># reincarnate, etc.)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">recover_attempts</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recover_max</span> <span class="p">:</span>
                 <span class="c"># nope, its gone for good - just report the sad news</span>
-                <span class="c"># print &#39;not alive, no recover anymore&#39;</span>
+              <span class="c"># print &#39;not alive, no recover anymore&#39;</span>
                 <span class="k">return</span> <span class="bp">False</span>
 
             <span class="c"># MEDIIIIC!!!!</span>
@@ -470,7 +472,7 @@
             <span class="c"># again.  Yes, this is recursive -- but note that recover_attempts get</span>
             <span class="c"># incremented on every iteration, and this will eventually lead to</span>
             <span class="c"># call termination (tm).</span>
-            <span class="c"># print &#39;alive, or not alive?  Check again!&#39;</span>
+          <span class="c"># print &#39;alive, or not alive?  Check again!&#39;</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
 
@@ -523,11 +525,8 @@
 
             <span class="n">found_eof</span> <span class="o">=</span> <span class="bp">False</span>
 
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;process I/O failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:])</span>
-                <span class="k">else</span> <span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;process I/O failed&quot;</span><span class="p">)</span>
+            <span class="k">if</span>  <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="p">(</span><span class="n">recover</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="p">:</span>
+                <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;process I/O failed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">tail</span><span class="p">)</span>
 
             <span class="k">try</span><span class="p">:</span>
                 <span class="c"># start the timeout timer right now.  Note that even if timeout is</span>
@@ -543,14 +542,18 @@
                     <span class="k">if</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
 
                         <span class="k">if</span>  <span class="ow">not</span> <span class="n">size</span> <span class="p">:</span>
-                            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                            <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">tail</span> <span class="o">+=</span> <span class="n">ret</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">tail</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tail</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:]</span>
                             <span class="k">return</span> <span class="n">ret</span>
 
                         <span class="c"># we don&#39;t even need all of the cache</span>
                         <span class="k">elif</span> <span class="n">size</span> <span class="o">&lt;=</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
-                            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+                            <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">tail</span> <span class="o">+=</span> <span class="n">ret</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">tail</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tail</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:]</span>
                             <span class="k">return</span> <span class="n">ret</span>
 
                     <span class="c"># otherwise we need to read some more data, right?</span>
@@ -571,8 +574,7 @@
                             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="p">(</span><span class="s">&quot;read : MacOS EOF&quot;</span><span class="p">)</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span> <span class="p">()</span>
                             <span class="n">found_eof</span> <span class="o">=</span> <span class="bp">True</span>
-                            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;unexpected EOF (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                                <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:])</span>
+                            <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;unexpected EOF (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">tail</span><span class="p">)</span>
 
 
                         <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">+=</span> <span class="n">buf</span><span class="o">.</span><span class="n">replace</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
@@ -592,14 +594,18 @@
                     <span class="k">if</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
 
                         <span class="k">if</span>  <span class="ow">not</span> <span class="n">size</span> <span class="p">:</span>
-                            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                            <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">tail</span> <span class="o">+=</span> <span class="n">ret</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">tail</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tail</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:]</span>
                             <span class="k">return</span> <span class="n">ret</span>
 
                         <span class="c"># we don&#39;t even need all of the cache</span>
                         <span class="k">elif</span> <span class="n">size</span> <span class="o">&lt;=</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
-                            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+                            <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">tail</span> <span class="o">+=</span> <span class="n">ret</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">tail</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tail</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:]</span>
                             <span class="k">return</span> <span class="n">ret</span>
 
                     <span class="c"># at this point, we do not have sufficient data -- only</span>
@@ -610,12 +616,16 @@
                         <span class="k">if</span> <span class="nb">len</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="p">:</span>
                             <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">tail</span> <span class="o">+=</span> <span class="n">ret</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">tail</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tail</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:]</span>
                             <span class="k">return</span> <span class="n">ret</span>
 
                     <span class="k">elif</span> <span class="n">timeout</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">:</span>
                         <span class="c"># return of we have data or not</span>
                         <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">tail</span> <span class="o">+=</span> <span class="n">ret</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">tail</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tail</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:]</span>
                         <span class="k">return</span> <span class="n">ret</span>
 
                     <span class="k">else</span> <span class="p">:</span> <span class="c"># timeout &gt; 0</span>
@@ -624,6 +634,8 @@
                         <span class="k">if</span> <span class="p">(</span><span class="n">now</span><span class="o">-</span><span class="n">start</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">timeout</span> <span class="p">:</span>
                             <span class="n">ret</span>        <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">tail</span> <span class="o">+=</span> <span class="n">ret</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">tail</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tail</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:]</span>
                             <span class="k">return</span> <span class="n">ret</span>
 
 
@@ -633,7 +645,7 @@
                     <span class="k">raise</span> <span class="n">e</span>
 
                 <span class="k">raise</span> <span class="n">se</span><span class="o">.</span><span class="n">NoSuccess</span> <span class="p">(</span><span class="s">&quot;read from process failed &#39;</span><span class="si">%s</span><span class="s">&#39; : (</span><span class="si">%s</span><span class="s">)&quot;</span> \
-                                 <span class="o">%</span> <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="o">-</span><span class="mi">256</span><span class="p">:]))</span>
+                                 <span class="o">%</span> <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tail</span><span class="p">))</span>
 
 
     <span class="c"># ----------------------------------------------------------------</span>
@@ -807,14 +819,14 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../index.html">SAGA 0.9.13 documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">SAGA 0.9.16 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../saga.html" >saga</a> &raquo;</li> 
       </ul>
     </div>
 <div class="footer">
     &copy; Copyright 2012, The SAGA Project.
-  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2b3.
+  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.
   <br />Theme based on <a href="http://readthedocs.org/">Read The Docs</a>
 
 </div>
