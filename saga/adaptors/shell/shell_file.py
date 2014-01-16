@@ -462,7 +462,6 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             if  not sumisc.url_is_local (cwdurl) :
 
                 # print "cwd remote"
-
                 if  sumisc.url_is_local (src)          and \
                     sumisc.url_is_compatible (cwdurl, tgt) :
 

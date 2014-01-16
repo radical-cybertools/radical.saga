@@ -162,8 +162,9 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
 
     # a workaround is to do an explicit 'cd'
     if jd.working_directory is not None:
-        workdir_directives  = 'export PBS_O_WORKDIR=%s \n' % jd.working_directory
-        workdir_directives += 'cd $PBS_O_WORKDIR \n'
+        workdir_directives  = 'export    PBS_O_WORKDIR=%s \n' % jd.working_directory
+        workdir_directives += 'mkdir -p  %s\n' % jd.working_directory
+        workdir_directives += 'cd        %s\n' % jd.working_directory
     else:
         workdir_directives = ''
 
@@ -555,6 +556,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """
         # get the job description
         jd = job_obj.jd
+
+        # normalize working directory path
+        if  jd.working_directory :
+            jd.working_directory = os.path.normpath (jd.working_directory)
 
         if (self.queue is not None) and (jd.queue is not None):
             self._logger.warning("Job service was instantiated explicitly with \
