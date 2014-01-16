@@ -282,8 +282,8 @@ def url_is_compatible (url_1, url_2) :
 
     # if either one url only contains a path, it is compatible to anything.
 
-    if u1.path == str(u1) : return True
-    if u2.path == str(u2) : return True
+    if u1.path == os.path.normpath (str(u1)) : return True
+    if u2.path == os.path.normpath (str(u2)) : return True
 
     # more than path in both URLs -- check compatibility for all elements
     if u1.scheme   and     u2.scheme   and u1.scheme   != u2.scheme   : return False 
