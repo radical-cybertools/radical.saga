@@ -41,7 +41,7 @@ def main():
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
         # and '+ssh' enables PBS remote access via SSH.
-        js = saga.job.Service("pbs+ssh://hotel.futuregrid.org",
+        js = saga.job.Service("pbs+ssh://india.futuregrid.org",
                               session=session)
 
         # Next, we describe the job we want to run. A complete set of job

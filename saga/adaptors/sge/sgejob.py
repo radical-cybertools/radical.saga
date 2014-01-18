@@ -801,7 +801,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         # (1) we create a temporary file with 'mktemp' and write the contents of 
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-SGEJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s -notify $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-SGEJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s -notify $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
         #cmdline = 'echo "%s" | %s -notify' % (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
