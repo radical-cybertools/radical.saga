@@ -355,6 +355,36 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     # ----------------------------------------------------------------
     #
+    def change_dir (self, tgt, flags) :
+
+        cwdurl = saga.Url (self.url)
+        tgturl = saga.Url (tgt)
+
+        if  not sumisc.url_is_compatible (cwdurl, tgturl) :
+            raise saga.BadParameter ("target dir outside of namespace '%s': %s" \
+                                  % (cwdurl, tgturl))
+
+        cmd = ""
+
+        if  self.flags & saga.filesystem.CREATE_PARENTS :
+            cmd = "mkdir -p %s ;  cd %s" % (tgturl.path, tgturl.path)
+        elif self.flags & saga.filesystem.CREATE :
+            cmd = "mkdir    %s ;  cd %s" % (tgturl.path, tgturl.path)
+        else :
+            cmd = "test -d  %s && cd %s" % (tgturl.path, tgturl.path)
+
+        ret, out, _ = self.shell.run_sync (cmd)
+
+        if  ret != 0 :
+            raise saga.BadParameter ("invalid dir '%s': %s" % (cwdurl, tgturl)
+
+        self._logger.debug ("changed directory (%s)(%s)" % (ret, out))
+
+        self.valid = True
+
+
+    # ----------------------------------------------------------------
+    #
     @SYNC_CALL
     def close (self, timeout=None):
 
