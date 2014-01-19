@@ -376,7 +376,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         ret, out, _ = self.shell.run_sync (cmd)
 
         if  ret != 0 :
-            raise saga.BadParameter ("invalid dir '%s': %s" % (cwdurl, tgturl)
+            raise saga.BadParameter ("invalid dir '%s': %s" % (cwdurl, tgturl))
 
         self._logger.debug ("changed directory (%s)(%s)" % (ret, out))
 
