@@ -1,3 +1,18 @@
+Version 0.10 release 2014-01-18
+---------------------------------------------------------------------
+
+* Changed versioning scheme from major.minor.patch to major.minor
+  due to Python's messed up installers
+* Fixed job script cleanup:
+  https://github.com/saga-project/saga-python/issues?milestone=15&state=closed
+
+Version 0.9.16 release 2014-01-13
+---------------------------------------------------------------------
+
+* Some improvements to sftp file adaptor
+* Closed tickets: 
+  - https://github.com/saga-project/saga-python/issues?milestone=14&state=closed
+
 Version 0.9.15 release 2013-12-10
 ---------------------------------------------------------------------
 

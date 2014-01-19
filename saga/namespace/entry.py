@@ -235,6 +235,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Entry',
                   (surl.Url, basestring),
+                  rus.optional (int),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def copy     (self, tgt, flags=0, ttype=None) :
@@ -347,6 +348,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Entry',
                   (surl.Url, basestring),
+                  rus.optional (int),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def link     (self, tgt, flags=0, ttype=None) :
@@ -364,6 +366,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Entry',
                   (surl.Url, basestring),
+                  rus.optional (int),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def move     (self, tgt, flags=0, ttype=None) :

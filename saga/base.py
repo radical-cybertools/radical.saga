@@ -29,8 +29,10 @@ class SimpleBase (object) :
     @rus.returns (rus.nothing)
     def __init__  (self) :
 
-        self._apitype   = self._get_apitype ()
-        self._logger    = rul.getLogger ('saga', self._apitype)
+        if  not hasattr (self, '_apitype') :
+            self._apitype = self._get_apitype ()
+
+        self._logger = rul.getLogger ('saga', self._apitype)
 
       # self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
 
@@ -83,7 +85,7 @@ class Base (SimpleBase) :
         _engine       = saga.engine.engine.Engine ()
 
         self._adaptor = adaptor
-        self._adaptor = _engine.bind_adaptor   (self, self._apitype, schema, adaptor)
+        self._adaptor = _engine.bind_adaptor (self, self._apitype, schema, adaptor)
 
         # Sync creation (normal __init__) will simply call the adaptor's
         # init_instance at this point.  _init_task should *not* be evaluated,

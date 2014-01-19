@@ -72,8 +72,8 @@ _SCRIPTS = {
       # 'copy_from'     : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s  %(root)s/%(src)s %(tgt)s",
         'copy_to'       : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
         'copy_from'     : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
-        'copy_to_in'    : "mput -r %(cp_flags)s %(src)s %(tgt)s \n",
-        'copy_from_in'  : "mget -r %(cp_flags)s %(src)s %(tgt)s \n",
+        'copy_to_in'    : "mput %(cp_flags)s %(src)s %(tgt)s \n",
+        'copy_from_in'  : "mget %(cp_flags)s %(src)s %(tgt)s \n",
     },
     'sh' : { 
         'master'        : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
@@ -420,16 +420,17 @@ class PTYShellFactory (object) :
             # if  cp_slave.exit_code != 0 :
             #     raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % str(out))
 
-            if  'Invalid flag' in out :
+            if 'Invalid flag' in out :
                 raise se.NoSuccess._log (info['logger'], "sftp version not supported (%s)" % str(out))
-
-            info['logger'].debug ("copy done")
 
             if 'No such file or directory' in out :
                 raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % str(out))
 
             if 'is not a directory' in out :
                 raise se.BadParameter._log (info['logger'], "File copy failed: %s" % str(out))
+
+            if 'not found' in out :
+                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
 
 
             # we interpret the first word on the line as name of src file -- we
@@ -514,6 +515,9 @@ class PTYShellFactory (object) :
                 raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % out)
 
             if 'is not a directory' in out :
+                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
+
+            if 'not found' in out :
                 raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
 
 
