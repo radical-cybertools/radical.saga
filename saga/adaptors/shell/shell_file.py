@@ -355,6 +355,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     # ----------------------------------------------------------------
     #
+    @SYNC_CALL
     def change_dir (self, tgt, flags) :
 
         cwdurl = saga.Url (self.url)
