@@ -438,6 +438,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """ runs a job via qsub
         """
 
+        # Because we do funky shit with env and sh, we need to explicitly add
+        # the executable to the transfer list.
+        # (Of course not if the executable is already on the target systems,
+        # defined by the fact that it starts with ./
+        if jd.executable.startswith('./'):
+            jd.file_transfer.append('%s > %s' % (jd.executable, jd.executable))
+
         if jd.file_transfer is not None:
             jd.transfer_directives = TransferDirectives(jd.file_transfer)
 
