@@ -196,15 +196,17 @@ class Directory (entry.Entry) :
     #
     @rus.takes   ('Directory', 
                   (surl.Url, basestring), 
+                  rus.optional (int),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
-    def change_dir (self, url, ttype=None) :
+    def change_dir (self, url, flags=None, ttype=None) :
         '''
         url:           saga.Url
+        flags:         flags enum
         ttype:         saga.task.type enum
         ret:           None / saga.Task
         '''
-        return self._adaptor.change_dir (url, ttype=ttype)
+        return self._adaptor.change_dir (url, flags=flags, ttype=ttype)
   
     
     # --------------------------------------------------------------------------

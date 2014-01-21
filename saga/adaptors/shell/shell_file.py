@@ -356,7 +356,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def change_dir (self, tgt) :
+    def change_dir (self, tgt, flags) :
 
         cwdurl = saga.Url (self.url)
         tgturl = saga.Url (tgt)
@@ -365,7 +365,14 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             raise saga.BadParameter ("target dir outside of namespace '%s': %s" \
                                   % (cwdurl, tgturl))
 
-        cmd = "test -d  %s && cd %s" % (tgturl.path, tgturl.path)
+        cmd = None
+
+        if  self.flags & saga.filesystem.CREATE_PARENTS :
+            cmd = "mkdir -p %s ;  cd %s" % (tgturl.path, tgturl.path)
+        elif self.flags & saga.filesystem.CREATE :
+            cmd = "mkdir    %s ;  cd %s" % (tgturl.path, tgturl.path)
+        else :
+            cmd = "test -d  %s && cd %s" % (tgturl.path, tgturl.path)
 
         ret, out, _ = self.shell.run_sync (cmd)
 
