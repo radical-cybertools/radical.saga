@@ -443,7 +443,19 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # (Of course not if the executable is already on the target systems,
         # defined by the fact that it starts with ./
         if jd.executable.startswith('./'):
-            jd.file_transfer.append('%s > %s' % (jd.executable, jd.executable))
+
+            # TODO: Check if the executable is already in the file_transfer list,
+            # because then we don't need to implicitly add it anymore.
+            # (For example, if the executable is not in the local directory, it needs
+            # to be explicitly added.)
+
+            exe = jd.executable[len('./'):]
+            exe_transfer = '%s > %s' % (exe, exe)
+
+            if jd.file_transfer:
+                jd.file_transfer.append(exe_transfer)
+            else:
+                jd.file_transfer = [ exe_transfer ]
 
         if jd.file_transfer is not None:
             jd.transfer_directives = TransferDirectives(jd.file_transfer)
