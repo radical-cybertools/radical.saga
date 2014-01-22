@@ -611,7 +611,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     # entry ok - add to job script
 
                 # add for later use by job script generator
-                td.transfer_input_files.append(source)
+                td.transfer_input_files.append(target)
 
                 if self.shell.url.scheme == "ssh":
                     self._logger.info("Transferring file %s to %s" % (source, target))
