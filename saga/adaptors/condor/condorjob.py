@@ -442,7 +442,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # the executable to the transfer list.
         # (Of course not if the executable is already on the target systems,
         # defined by the fact that it starts with ./
-        if jd.executable.startswith('./'):
+        if jd.executable.startswith('./') and os.path.exists(jd.executable):
 
             # TODO: Check if the executable is already in the file_transfer list,
             # because then we don't need to implicitly add it anymore.
