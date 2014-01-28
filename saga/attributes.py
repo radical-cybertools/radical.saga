@@ -1964,7 +1964,8 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
         keys_exist = []
         for key in keys_all :
-            if  d['attributes'][key]['exists'] :
+            if  'exists' in d['attributes'][key] and \
+                d['attributes'][key]['exists']   :
                 keys_exist.append (key)
 
         print "'Registered' attributes"
