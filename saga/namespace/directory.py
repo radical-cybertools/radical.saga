@@ -199,7 +199,7 @@ class Directory (entry.Entry) :
                   rus.optional (int),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
-    def change_dir (self, url, flags=None, ttype=None) :
+    def change_dir (self, url, flags=0, ttype=None) :
         '''
         url:           saga.Url
         flags:         flags enum
