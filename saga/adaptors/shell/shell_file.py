@@ -367,9 +367,9 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         cmd = None
 
-        if  self.flags & saga.filesystem.CREATE_PARENTS :
+        if  flags & saga.filesystem.CREATE_PARENTS :
             cmd = "mkdir -p %s ;  cd %s" % (tgturl.path, tgturl.path)
-        elif self.flags & saga.filesystem.CREATE :
+        elif flags & saga.filesystem.CREATE :
             cmd = "mkdir    %s ;  cd %s" % (tgturl.path, tgturl.path)
         else :
             cmd = "test -d  %s && cd %s" % (tgturl.path, tgturl.path)
