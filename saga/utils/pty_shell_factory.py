@@ -133,9 +133,10 @@ class PTYShellFactory (object) :
     #
     def __init__ (self) :
 
-        self.logger   = rul.getLogger ('saga', 'PTYShellFactory')
-        self.registry = {}
-        self.rlock    = ru.RLock ('pty shell factory')
+        self.logger    = rul.getLogger ('saga', 'PTYShellFactory')
+        self.registry  = {}
+        self.rlock     = ru.RLock ('pty shell factory')
+        self._cp_slave = None
 
 
     # --------------------------------------------------------------------------
@@ -352,6 +353,16 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
+    def _get_cp_slave (self, s_cmd, info) :
+        
+        if  not self._cp_slave :
+            self._cp_slave = supp.PTYProcess (s_cmd, info['logger'])
+            self._initialize_pty (self._cp_slave, info)
+
+        return self._cp_slave
+
+    # --------------------------------------------------------------------------
+    #
     def run_shell (self, info) :
         """ 
         This initiates a master connection.  If there is a suitable master
@@ -397,9 +408,7 @@ class PTYShellFactory (object) :
             s_cmd = _SCRIPTS[info['type']]['copy_to']    % repl
             s_in  = _SCRIPTS[info['type']]['copy_to_in'] % repl
 
-            cp_slave = supp.PTYProcess (s_cmd, info['logger'])
-
-            self._initialize_pty (cp_slave, info)
+            cp_slave = self._get_cp_slave (s_cmd, info)
 
             prep = ""
             if  'sftp' in s_cmd :
@@ -413,7 +422,6 @@ class PTYShellFactory (object) :
 
             _      = cp_slave.write    ("%s%s\n" % (prep, s_in))
             _, out = cp_slave.find     (['[\$\>] *$'], -1)
-            _      = cp_slave.finalize ()
 
 
             # FIXME: we don't really get exit codes from copy
@@ -483,9 +491,7 @@ class PTYShellFactory (object) :
             s_cmd = _SCRIPTS[info['type']]['copy_from']    % repl
             s_in  = _SCRIPTS[info['type']]['copy_from_in'] % repl
 
-            cp_slave = supp.PTYProcess (s_cmd, info['logger'])
-
-            self._initialize_pty (cp_slave, info)
+            cp_slave = self._get_cp_slave (s_cmd, info)
 
             prep = ""
             if  'sftp' in s_cmd :
@@ -502,7 +508,6 @@ class PTYShellFactory (object) :
 
             _      = cp_slave.write    ("%s%s\n" % (prep, s_in))
             _, out = cp_slave.find     (['[\$\>] *$'], -1)
-            _      = cp_slave.finalize ()
 
             # FIXME: we don't really get exit codes from copy
             # if  cp_slave.exit_code != 0 :

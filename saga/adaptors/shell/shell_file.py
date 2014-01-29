@@ -281,6 +281,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     def _get_copy_shell (self, tgt) :
 
         if  not self._copy_shell :
+            self._logger.debug ("new copy shell (%s)" % (tgt))
             self._copy_shell = sups.PTYShell (tgt, self.session, self._logger)
 
         return self._copy_shell
