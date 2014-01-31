@@ -659,7 +659,7 @@ class PTYShellFactory (object) :
                                     info['sftp_args'] += "-o IdentityFile=%s " % context.user_key 
 
                                     if  context.attribute_exists ("user_pass") and context.user_pass :
-                                        info['key_pass'][context.user_cert] = context.user_pass
+                                        info['key_pass'][context.user_key] = context.user_pass
 
                         if  context.type.lower () == "userpass" :
                             if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
