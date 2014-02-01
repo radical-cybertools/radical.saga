@@ -422,6 +422,7 @@ class PTYShellFactory (object) :
 
             _      = cp_slave.write    ("%s%s\n" % (prep, s_in))
             _, out = cp_slave.find     (['[\$\>] *$'], -1)
+            _, out = cp_slave.find     (['[\$\>] *$'], 1.0)
 
 
             # FIXME: we don't really get exit codes from copy
