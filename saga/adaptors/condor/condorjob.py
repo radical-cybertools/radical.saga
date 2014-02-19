@@ -674,7 +674,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
                 # run the Condor 'condor_history' command to get info about 
                 # finished jobs
-                ret, out, _ = self.shell.run_sync("%s -long %s | \
+                ret, out, _ = self.shell.run_sync("%s -long -match 1 %s | \
                     egrep '(ExitCode)|(TransferOutput)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
                     % (self._commands['condor_history']['path'], pid))
                 
