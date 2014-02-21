@@ -2660,7 +2660,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     def __str__  (self) :
         """ return a string representation of all set attributes """
 
-        s = "%s %s" % (type(self), str(self.as_dict))
+        s = "%s %s" % (type(self), str(self.as_dict()))
 
         return s
 
