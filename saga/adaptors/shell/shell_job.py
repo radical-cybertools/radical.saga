@@ -420,8 +420,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         if  kill_shell :
             if  self.shell :
-                self.shell.run_async ("QUIT")
-                self.shell.finalize (True)
+                self.shell.finalize (kill_pty=True)
 
 
     
