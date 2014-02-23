@@ -102,7 +102,6 @@ i.write ("Adaptors\n")
 i.write ("********\n")
 i.write ("\n")
 i.write (".. toctree::\n")
-i.write ("   :numbered:\n")
 i.write ("   :maxdepth: 1\n")
 i.write ("\n")
 
