@@ -48,28 +48,36 @@ def get_version (paths=None):
         if  not isinstance (paths, list) :
             paths = [paths]
 
-        # if in any of the paths a VERSION file exists, we use the long version
-        # in there.
         long_version  = None
         short_version = None
         branch_name   = None
 
+
+        # if in any of the paths a VERSION file exists, we use the long version
+        # in there.
         for path in paths :
+
             try :
+
                 filename = "%s/VERSION" % path
+
                 with open (filename) as f :
-                    lines = [line.strip() for line in f.readlines()]
-
-                    if len(lines) >= 1 : long_version  = lines[0]
-                    if len(lines) >= 2 : short_version = lines[1]
-                    if len(lines) >= 3 : branch_name   = lines[2]
-
-                    if  long_version :
+                    line = f.readline()
+                    line.strip()
+                    pattern = re.compile ('^\s*(?P<long>(?P<short>[^-@]+?)(-[^@]+?)?(?P<branch>@.+?)?)\s*$')
+                    match   = pattern.search (line)
+    
+                    if  match :
+                        long_version  = match.group ('long')
+                        short_version = match.group ('short')
+                        branch_name   = match.group ('branch')
                         print 'reading  %s' % filename
                         break
 
             except Exception as e :
+                # ignore missing VERSION file -- this is caught below
                 pass
+
 
         # if we didn't find it, get it from git 
         if  not long_version :
@@ -88,31 +96,26 @@ def get_version (paths=None):
                             stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
             out = p.communicate()[0]
 
-            if  p.returncode != 0 or not out :
+            if  p.returncode == 0 and out :
 
-                # the git check failed -- its likely that we are called from
-                # a tarball, so use ./VERSION instead
-                out=open ("%s/VERSION" % paths[0], 'r').read().strip()
+                pattern = re.compile ('(?P<long>(?P<short>[\d\.]+).*?)(\s+\*\s+(?P<branch>\S+))?$')
+                match   = pattern.search (out)
+
+                if  match :
+                    long_version  = match.group ('long')
+                    short_version = match.group ('short')
+                    branch_name   = match.group ('branch')
+                    print 'inspecting git for version info'
+
+                    # if not on master, make sure the branch is part of the long version
+                    if  branch_name and not branch_name == 'master' :
+                        long_version = "%s@%s" % (long_version, branch_name)
 
 
-            pattern = re.compile ('(?P<long>(?P<short>[\d\.]+).*?)(\s+\*\s+(?P<branch>\S+))?$')
-            match   = pattern.search (out)
-
-            if  match :
-                long_version  = match.group ('long')
-                short_version = match.group ('short')
-                branch_name   = match.group ('branch')
-                print 'inspecting git for version info'
-
-            else :
-                import sys
-                sys.stderr.write ("Cannot determine version from git or ./VERSION\n")
-                sys.exit (-1)
-                
-
-            if  branch_name and not branch_name == 'master' :
-                long_version = "%s-%s" % (long_version, branch_name)
-
+        # check if either one worked ok
+        if  None == long_version :
+            raise RuntimeError ("Cannot determine version from git or ./VERSION\n")
+                    
 
         # make sure the version files exist for the runtime version inspection
         for path in paths :
@@ -120,16 +123,12 @@ def get_version (paths=None):
             print 'creating %s'  % vpath
             with open (vpath, 'w') as f :
                 f.write (long_version  + "\n")
-                f.write (short_version + "\n")
-                f.write (branch_name   + "\n")
     
         return short_version, long_version, branch_name
 
 
     except Exception as e :
-        print 'Could not extract/set version: %s' % e
-        import sys
-        sys.exit (-1)
+        raise RuntimeError ("Could not extract/set version: %s" % e)
 
 
 #-----------------------------------------------------------------------------
