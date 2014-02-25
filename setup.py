@@ -233,16 +233,16 @@ setup_args = {
     'cmdclass'             : {
         'test'             : our_test, 
     },
-    'install_requires' : ['colorama', 'pymongo'],
-    'tests_require'    : ['nose'],
-    'zip_safe'         : False,
-#   'build_sphinx'     : {
-#       'source-dir'   : 'docs/',
-#       'build-dir'    : 'docs/build',
-#       'all_files'    : 1,
+    'install_requires'     : ['apache-libcloud', 'radical.utils>=0.6.0'],
+    'tests_require'        : ['nose'],
+    'zip_safe'             : False,
+#   'build_sphinx'         : {
+#       'source-dir'       : 'docs/',
+#       'build-dir'        : 'docs/build',
+#       'all_files'        : 1,
 #   },
-#   'upload_sphinx'    : {
-#       'upload-dir'   : 'docs/build/html',
+#   'upload_sphinx'        : {
+#       'upload-dir'       : 'docs/build/html',
 #   }
 }
 
