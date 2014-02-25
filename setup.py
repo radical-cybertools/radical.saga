@@ -233,7 +233,7 @@ setup_args = {
     'cmdclass'             : {
         'test'             : our_test, 
     },
-    'install_requires'     : ['apache-libcloud', 'radical.utils'],
+    'install_requires'     : ['apache-libcloud', 'radical.utils>=0.6.0'],
     'tests_require'        : ['nose'],
     'zip_safe'             : False,
 }
