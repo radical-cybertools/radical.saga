@@ -258,7 +258,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self.cwdurl      = saga.Url (url) # deep copy
         self.cwdurl.path = self.cwd
 
-        self.shell = sups.PTYShell     (self.url, self.session, self._logger)
+        self.shell       = sups.PTYShell     (self.url, self.session, self._logger)
+        self._copy_shell = None
 
       # self.shell.set_initialize_hook (self.initialize)
       # self.shell.set_finalize_hook   (self.finalize)
@@ -273,6 +274,18 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                                     self._logger)
 
         return self.get_api ()
+
+
+    # ----------------------------------------------------------------
+    #
+    def _get_copy_shell (self, tgt) :
+
+        if  not self._copy_shell :
+            self._logger.debug ("new copy shell (%s)" % (tgt))
+            self._copy_shell = sups.PTYShell (tgt, self.session, self._logger)
+
+        return self._copy_shell
+
 
     # ----------------------------------------------------------------
     #
@@ -352,6 +365,42 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         return saga.filesystem.Directory (url=url, flags=flags, session=self.session, 
                                           _adaptor=self._adaptor, _adaptor_state=adaptor_state)
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def change_dir (self, tgt, flags) :
+
+        cwdurl = saga.Url (self.url)
+        tgturl = saga.Url (tgt)
+
+        if  not sumisc.url_is_compatible (cwdurl, tgturl) :
+            raise saga.BadParameter ("target dir outside of namespace '%s': %s" \
+                                  % (cwdurl, tgturl))
+
+        cmd = None
+
+        if  tgturl.path == '.' or \
+            tgturl.path == cwdurl.path :
+            self._logger.debug ("change directory optimized away (%s) == (%s)" % (cwdurl, tgturl))
+
+
+        if  flags & saga.filesystem.CREATE_PARENTS :
+            cmd = "mkdir -p %s ;  cd %s" % (tgturl.path, tgturl.path)
+        elif flags & saga.filesystem.CREATE :
+            cmd = "mkdir    %s ;  cd %s" % (tgturl.path, tgturl.path)
+        else :
+            cmd = "test -d  %s && cd %s" % (tgturl.path, tgturl.path)
+
+        ret, out, _ = self.shell.run_sync (cmd)
+
+        if  ret != 0 :
+            raise saga.BadParameter ("invalid dir '%s': %s" % (cwdurl, tgturl))
+
+        self._logger.debug ("changed directory (%s)(%s)" % (ret, out))
+
+        self.valid = True
+
 
     # ----------------------------------------------------------------
     #
@@ -496,8 +545,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                                               % (tgt))
 
                     # print "from local to remote"
-                    tmp_shell    = sups.PTYShell (tgt, self.session, self._logger)
-                    files_copied = tmp_shell.stage_to_remote (src.path, tgt.path, rec_flag)
+                    copy_shell   = self._get_copy_shell (tgt)
+                    files_copied = copy_shell.stage_to_remote (src.path, tgt.path, rec_flag)
 
                 elif sumisc.url_is_local (tgt) :
 
@@ -507,8 +556,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                                               % (src))
 
                     # print "from remote to local"
-                    tmp_shell    = sups.PTYShell (src, self.session, self._logger)
-                    files_copied = tmp_shell.stage_from_remote (src.path, tgt.path, rec_flag)
+                    copy_shell   = self._get_copy_shell (tgt)
+                    files_copied = copy_shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
                 else :
 
@@ -806,6 +855,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         _cpi_base = super  (ShellFile, self)
         _cpi_base.__init__ (api, adaptor)
 
+        self._copy_shell = None
+
 
     # ----------------------------------------------------------------
     #
@@ -849,6 +900,16 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
             raise saga.BadParameter ("failed: cannot create target dir '%s': not local to pwd (%s)" \
                                   % (tgt, cwdurl))
+
+
+    # ----------------------------------------------------------------
+    #
+    def _get_copy_shell (self, tgt) :
+
+        if  not self._copy_shell :
+            self._copy_shell = sups.PTYShell (tgt, self.session, self._logger)
+
+        return self._copy_shell
 
 
     # ----------------------------------------------------------------
@@ -1069,8 +1130,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                                               % (tgt))
 
                     # print "from local to remote"
-                    tmp_shell    = sups.PTYShell (tgt, self.session, self._logger)
-                    files_copied = tmp_shell.stage_to_remote (src.path, tgt.path, rec_flag)
+                    copy_shell   = self._get_copy_shell (tgt)
+                    files_copied = copy_shell.stage_to_remote (src.path, tgt.path, rec_flag)
 
                 elif sumisc.url_is_local (tgt) :
 
@@ -1080,8 +1141,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                                               % (src))
 
                     # print "from remote to local"
-                    tmp_shell    = sups.PTYShell (src, self.session, self._logger)
-                    files_copied = tmp_shell.stage_from_remote (src.path, tgt.path, rec_flag)
+                    copy_shell   = self._get_copy_shell (tgt)
+                    files_copied = copy_shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
                 else :
 

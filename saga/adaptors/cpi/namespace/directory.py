@@ -34,9 +34,9 @@ class Directory (entry.Entry) :
     # namespace directory methods
     #
     @SYNC
-    def change_dir              (self, url, ttype)             : pass
+    def change_dir              (self, url, flags, ttype)      : pass
     @ASYNC
-    def change_dir_async        (self, url, ttype)             : pass
+    def change_dir_async        (self, url, flags, ttype)      : pass
 
     @SYNC
     def list                    (self, npat, ttype)            : pass

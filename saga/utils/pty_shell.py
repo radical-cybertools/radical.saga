@@ -282,6 +282,7 @@ class PTYShell (object) :
                 
 
             self.initialized = True
+            self.finalized   = False
 
 
     # ----------------------------------------------------------------
@@ -291,7 +292,9 @@ class PTYShell (object) :
         try :
             if  kill_pty and self.pty_shell :
                 with self.pty_shell.rlock :
-                    self.pty_shell.finalize ()
+                    if not self.finalized :
+                        self.pty_shell.finalize ()
+                        self.finalized = True
 
         except Exception as e :
             pass
