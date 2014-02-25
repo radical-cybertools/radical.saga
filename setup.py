@@ -1,6 +1,6 @@
 
-__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
-__copyright__ = "Copyright 2012-2013, RADICAL Research, Rutgers University"
+__author__    = "RADICAL Team"
+__copyright__ = "Copyright 2013, RADICAL Research, Rutgers University"
 __license__   = "MIT"
 
 
@@ -12,59 +12,119 @@ import subprocess
 
 from setuptools import setup, Command
 
+srcroot = 'saga'
+name    = 'SAGA-Python'
+lname   = name.lower()
 
 #-----------------------------------------------------------------------------
 #
 # versioning mechanism:
 #
-#   - short_version:  1.2.3 - is used for installation
-#   - long_version:  v1.2.3-9-g0684b06  - is used as runtime (ru.version)
-#   - both are derived from the last git tag
-#   - the file saga/VERSION is created with the long_version, und used
-#     by ru.__init__.py to provide the runtime version information. 
+#   - short_version:  1.2.3                   - is used for installation
+#   - long_version:   1.2.3-9-g0684b06-devel  - is used as runtime (ru.version)
+#   - both are derived from the last git tag and branch information
+#   - VERSION files are created on demand, with the long_version
 #
-def get_version():
-
-    short_version = None  # 0.4.0
-    long_version  = None  # 0.4.0-9-g0684b06
+# can't use radical.utils versioning detection, as radical.utils is only
+# below specified as dependency :/
+def get_version (paths=None):
+    """
+    paths:
+        a VERSION file containing the long version is created in every directpry
+        listed in paths.  Those VERSION files are used when they exist to get
+        the version numbers, if they exist prior to calling this method.  If 
+        not, we cd into the first path, try to get version numbers from git tags 
+        in that location, and create the VERSION files in all dirst given in 
+        paths.
+    """
 
     try:
-        import subprocess as sp
-        import re
 
-        srcroot       = os.path.dirname (os.path.abspath (__file__))
-        VERSION_MATCH = re.compile (r'(([\d\.]+)\D.*)')
+        if  None == paths :
+            # by default, get version for myself
+            pwd     = os.path.dirname (__file__)
+            root    = "%s/.." % pwd
+            paths = [root, pwd]
 
-        # attempt to get version information from git
-        p   = sp.Popen ('cd %s && git describe --tags --always' % srcroot,
-                        stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
-        out = p.communicate()[0]
+        if  not isinstance (paths, list) :
+            paths = [paths]
+
+        # if in any of the paths a VERSION file exists, we use the long version
+        # in there.
+        long_version  = None
+        short_version = None
+        branch_name   = None
+
+        for path in paths :
+            try :
+                filename = "%s/VERSION" % path
+                with open (filename) as f :
+                    lines = [line.strip() for line in f.readlines()]
+
+                    if len(lines) >= 1 : long_version  = lines[0]
+                    if len(lines) >= 2 : short_version = lines[1]
+                    if len(lines) >= 3 : branch_name   = lines[2]
+
+                    if  long_version :
+                        print 'reading  %s' % filename
+                        break
+
+            except Exception as e :
+                pass
+
+        # if we didn't find it, get it from git 
+        if  not long_version :
+
+            import subprocess as sp
+            import re
+
+            # make sure we look at the right git repo
+            if  len(paths) :
+                git_cd  = "cd %s ;" % paths[0]
+
+            # attempt to get version information from git
+            p   = sp.Popen ('%s'\
+                            'git describe --tags --always ; ' \
+                            'git branch   --contains | grep -e "^\*"' % git_cd,
+                            stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
+            out = p.communicate()[0]
+
+            if  p.returncode != 0 or not out :
+
+                # the git check failed -- its likely that we are called from
+                # a tarball, so use ./VERSION instead
+                out=open ("%s/VERSION" % paths[0], 'r').read().strip()
 
 
-        if  p.returncode != 0 or not out :
+            pattern = re.compile ('(?P<long>(?P<short>[\d\.]+)\D.*)(\s+\*\s+(?P<branch>\S+))?')
+            match   = pattern.search (out)
 
-            # the git check failed -- its likely that we are called from
-            # a tarball, so use ./VERSION instead
-            out=open ("%s/VERSION" % srcroot, 'r').read().strip()
+            if  match :
+                long_version  = match.group ('long')
+                short_version = match.group ('short')
+                branch_name   = match.group ('branch')
+                print 'inspecting git for version info'
 
+            else :
+                import sys
+                sys.stderr.write ("Cannot determine version from git or ./VERSION\n")
+                sys.exit (-1)
+                
 
-        # from the full string, extract short and long versions
-        v = VERSION_MATCH.search (out)
-        if v:
-            long_version  = v.groups ()[0]
-            short_version = v.groups ()[1]
-
-
-        # sanity check if we got *something*
-        if  not short_version or not long_version :
-            sys.stderr.write ("Cannot determine version from git or ./VERSION\n")
-            import sys
-            sys.exit (-1)
+            if  branch_name :
+                long_version = "%s-%s" % (long_version, branch_name)
 
 
         # make sure the version files exist for the runtime version inspection
-        open (     '%s/VERSION' % srcroot, 'w').write (long_version+"\n")
-        open ('%s/saga/VERSION' % srcroot, 'w').write (long_version+"\n")
+        for path in paths :
+            vpath = '%s/VERSION' % path
+            print 'creating %s'  % vpath
+            with open (vpath, 'w') as f :
+                f.write (long_version  + "\n")
+                f.write (short_version + "\n")
+                f.write (branch_name   + "\n")
+    
+        return short_version, long_version, branch_name
 
 
     except Exception as e :
@@ -72,15 +132,18 @@ def get_version():
         import sys
         sys.exit (-1)
 
-    return short_version, long_version
 
+#-----------------------------------------------------------------------------
+# get version info -- this will create VERSION and srcroot/VERSION
+root     = os.path.dirname (__file__)
+src_dir = "%s/%s" % (root, srcroot)
+short_version, long_version, branch = get_version ([root, src_dir])
 
-short_version, long_version = get_version ()
 
 #-----------------------------------------------------------------------------
 # check python version. we need > 2.5, <3.x
 if  sys.hexversion < 0x02050000 or sys.hexversion >= 0x03000000:
-    raise RuntimeError("SAGA requires Python 2.x (2.5 or higher)")
+    raise RuntimeError("%s requires Python 2.x (2.5 or higher)" % name)
 
 
 #-----------------------------------------------------------------------------
@@ -90,9 +153,9 @@ class our_test(Command):
     def finalize_options   (self) : pass
     def run (self) :
         testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
-        retval  = subprocess.call([sys.executable, 
-                                  '%s/run_tests.py'          % testdir,
-                                  '%s/configs/basetests.cfg' % testdir])
+        retval  = subprocess.call([sys.executable,
+                                   '%s/run_tests.py'               % testdir,
+                                   '%s/configs/basetests.cfg'      % testdir])
         raise SystemExit(retval)
 
 
@@ -104,7 +167,7 @@ def read(*rnames):
 
 #-----------------------------------------------------------------------------
 setup_args = {
-    'name'             : "saga-python",
+    'name'             : name,
     'version'          : short_version,
     'description'      : "A light-weight access layer for distributed computing infrastructure",
     'long_description' : (read('README.md') + '\n\n' + read('CHANGES.md')),
@@ -114,13 +177,17 @@ setup_args = {
     'maintainer_email' : "ole.weidner@rutgers.edu",
     'url'              : "http://saga-project.github.com/saga-python/",
     'license'          : "MIT",
-    'keywords'         : "radical pilot job saga",    
+    'keywords'         : "radical pilot job saga",
     'classifiers'      : [
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
-        'Environment :: Console',                    
-        'Programming Language :: Python',
+        'Environment :: Console',
         'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.5',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
         'Topic :: Utilities',
         'Topic :: System :: Distributed Computing',
         'Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator',

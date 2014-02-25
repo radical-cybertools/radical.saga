@@ -1,7 +1,12 @@
 
-__author__    = "Andre Merzky, Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__author__    = "SAGA Development Team"
+__copyright__ = "Copyright 2013, RADICAL"
 __license__   = "MIT"
+
+
+import os
+import radical.utils        as ru
+import radical.utils.logger as rul
 
 
 # ------------------------------------------------------------------------------
@@ -35,13 +40,18 @@ import saga.resource
 
 
 # ------------------------------------------------------------------------------
-#
-import os
-import radical.utils.logger as rul
 
-version=open    (os.path.dirname (os.path.abspath (__file__)) + "/VERSION", 'r').read().strip()
-# rul.log_version ('saga', 'saga-python', version)
-rul.getLogger ('saga').info ('saga-python     version: %s' % version)
+
+pwd     = os.path.dirname (__file__)
+root    = "%s/.." % pwd
+short_version, long_version, branch = ru.get_version ([root, pwd])
+version = long_version
+
+# FIXME: the logger init will require a 'classical' ini based config, which is
+# different from the json based config we use now.   May need updating once the
+# radical configuration system has changed to json
+_logger = rul.logger.getLogger  ('saga-python')
+_logger.info ('saga-python     version: %s' % version)
 
 
 # ------------------------------------------------------------------------------
