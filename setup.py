@@ -13,8 +13,7 @@ import subprocess
 from setuptools import setup, Command
 
 srcroot = 'saga'
-name    = 'SAGA-Python'
-lname   = name.lower()
+name    = 'saga-python'
 
 # ------------------------------------------------------------------------------
 #
@@ -111,7 +110,7 @@ def get_version (paths=None):
                 sys.exit (-1)
                 
 
-            if  branch_name :
+            if  branch_name and not branch_name == 'master' :
                 long_version = "%s-%s" % (long_version, branch_name)
 
 
@@ -136,7 +135,9 @@ def get_version (paths=None):
 #-----------------------------------------------------------------------------
 # get version info -- this will create VERSION and srcroot/VERSION
 root     = os.path.dirname (__file__)
-src_dir = "%s/%s" % (root, srcroot)
+if  not root :
+    root = os.getcwd()
+src_dir  = "%s/%s" % (root, srcroot)
 short_version, long_version, branch = get_version ([root, src_dir])
 
 
