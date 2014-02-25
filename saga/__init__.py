@@ -50,7 +50,7 @@ version = long_version
 # FIXME: the logger init will require a 'classical' ini based config, which is
 # different from the json based config we use now.   May need updating once the
 # radical configuration system has changed to json
-_logger = rul.logger.getLogger  ('saga-python')
+_logger = rul.logger.getLogger  ('saga')
 _logger.info ('saga-python     version: %s' % version)
 
 
