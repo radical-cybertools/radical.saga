@@ -75,7 +75,7 @@ def test_job_service_invalid_url():
 
     # other exceptions sould never occur
     except saga.SagaException as ex:
-        assert False, "Expected BadParameter, Timeout or NoSuccess exception, but got %s" % ex
+        assert False, "Expected BadParameter, Timeout or NoSuccess exception, but got %s (%s)" % (type(ex), ex)
 
 
 # ------------------------------------------------------------------------------
