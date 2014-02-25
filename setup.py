@@ -16,7 +16,7 @@ srcroot = 'saga'
 name    = 'SAGA-Python'
 lname   = name.lower()
 
-#-----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 # versioning mechanism:
 #
@@ -96,7 +96,7 @@ def get_version (paths=None):
                 out=open ("%s/VERSION" % paths[0], 'r').read().strip()
 
 
-            pattern = re.compile ('(?P<long>(?P<short>[\d\.]+)\D.*)(\s+\*\s+(?P<branch>\S+))?')
+            pattern = re.compile ('(?P<long>(?P<short>[\d\.]+).*?)(\s+\*\s+(?P<branch>\S+))?$')
             match   = pattern.search (out)
 
             if  match :
