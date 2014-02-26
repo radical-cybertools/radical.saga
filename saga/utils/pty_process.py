@@ -148,7 +148,7 @@ class PTYProcess (object) :
 
         self.logger.debug ("PTYProcess del  %s" % self)
         with self.rlock :
-    
+
             try :
                 self.finalize ()
             except :
@@ -218,9 +218,11 @@ class PTYProcess (object) :
                         pass
 
                     # hey, kiddo, how did that go?
-                    while True :
+                    max_tries = 10
+                    tries     =  0
+                    while tries < max_tries :
                         try :
-                            wpid, wstat = os.waitpid (self.child, 0)
+                            wpid, wstat = os.waitpid (self.child, os.WNOHANG)
 
                         except OSError as e :
                             # this should not have failed -- child disappeared?
@@ -231,6 +233,10 @@ class PTYProcess (object) :
 
                         if  wpid :
                             break
+
+                        time.sleep (0.1)
+                        tries += 1
+
 
             # at this point, we declare the process to be gone for good
             self.child = None
@@ -267,6 +273,7 @@ class PTYProcess (object) :
           #     os.close (self.parent_err) 
           # except OSError :
           #     pass
+
 
 
     # --------------------------------------------------------------------
