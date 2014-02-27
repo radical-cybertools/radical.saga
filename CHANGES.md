@@ -1,3 +1,11 @@
+Version 0.13 release 2014-02-27
+---------------------------------------------------------------------
+
+* Bugfix release.
+* Closed tickets:
+  - https://github.com/saga-project/saga-python/issues?milestone=17&page=1&state=closed
+
+
 Version 0.12 release 2014-02-26
 ---------------------------------------------------------------------
 
