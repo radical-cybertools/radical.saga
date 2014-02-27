@@ -223,15 +223,18 @@ class PTYShellFactory (object) :
                                    "Enter passphrase for .*:\s*$", # passphrase prompt
                                    "want to continue connecting",  # hostkey confirmation
                                    ".*HELLO_\\d+_SAGA$",           # prompt detection helper
-                                   "^(.*[\$#%>])\s*$"]             # greedy native shell prompt 
+                                   "^(.*[\$#%>\]])\s*$"]             # greedy native shell prompt 
 
                 # find a prompt
+                # use a very aggressive, but portable prompt setting scheme
+                pty_shell.write ("export PS1='>' >& /dev/null || set prompt='>'\n")
                 n, match = pty_shell.find (prompt_patterns, delay)
 
                 # this loop will run until we finally find the shell prompt, or
                 # if we think we have tried enough and give up.  On success
                 # we'll try to set a different prompt, and when we found that,
                 # too, we exit the loop and are be ready to running shell
+
                 # commands.
                 retries       = 0
                 retry_trigger = True
@@ -261,6 +264,8 @@ class PTYShellFactory (object) :
                         retries += 1
 
                         if  is_shell :
+                            # use a very aggressive, but portable prompt setting scheme
+                            pty_shell.write ("export PS1='>' >& /dev/null || set prompt='>'\n")
                             pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
                             used_trigger = True
 
@@ -423,8 +428,8 @@ class PTYShellFactory (object) :
 
 
             _      = cp_slave.write    ("%s%s\n" % (prep, s_in))
-            _, out = cp_slave.find     (['[\$\>] *$'], -1)
-            _, out = cp_slave.find     (['[\$\>] *$'], 1.0)
+            _, out = cp_slave.find     (['[\$\>\]] *$'], -1)
+            _, out = cp_slave.find     (['[\$\>\]] *$'], 1.0)
 
 
             # FIXME: we don't really get exit codes from copy
@@ -510,7 +515,7 @@ class PTYShellFactory (object) :
 
 
             _      = cp_slave.write    ("%s%s\n" % (prep, s_in))
-            _, out = cp_slave.find     (['[\$\>] *$'], -1)
+            _, out = cp_slave.find     (['[\$\>\]] *$'], -1)
 
             # FIXME: we don't really get exit codes from copy
             # if  cp_slave.exit_code != 0 :

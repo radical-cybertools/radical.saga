@@ -249,7 +249,7 @@ class PTYShell (object) :
 
             # make sure this worked, and that we find the prompt. We use
             # a versatile prompt pattern to account for the custom shell case.
-            self.find (["^(.*[\$#%>])\s*$"])
+            self.find (["^(.*[\$#%>\]])\s*$"])
 
             # make sure this worked, and that we find the prompt. We use
             # a versatile prompt pattern to account for the custom shell case.

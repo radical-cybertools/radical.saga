@@ -539,6 +539,8 @@ class PTYProcess (object) :
                         else :
                             self.logger.debug ("read : [%5d] [%5d] (%s)" \
                                             % (f, len(log), log))
+                          # for c in log :
+                          #     print '%s' % c
 
 
                     # lets see if we still got any data in the cache we can return
