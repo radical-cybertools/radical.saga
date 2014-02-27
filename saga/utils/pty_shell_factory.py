@@ -133,10 +133,10 @@ class PTYShellFactory (object) :
     #
     def __init__ (self) :
 
-        self.logger    = rul.getLogger ('saga', 'PTYShellFactory')
-        self.registry  = {}
-        self.rlock     = ru.RLock ('pty shell factory')
-        self._cp_slave = None
+        self.logger     = rul.getLogger ('saga', 'PTYShellFactory')
+        self.registry   = {}
+        self.rlock      = ru.RLock ('pty shell factory')
+        self._cp_slaves = dict()
 
 
     # --------------------------------------------------------------------------
@@ -354,12 +354,14 @@ class PTYShellFactory (object) :
     # --------------------------------------------------------------------------
     #
     def _get_cp_slave (self, s_cmd, info) :
-        
-        if  not self._cp_slave :
-            self._cp_slave = supp.PTYProcess (s_cmd, info['logger'])
-            self._initialize_pty (self._cp_slave, info)
 
-        return self._cp_slave
+        host = info.get ('host_str', 'any')
+        
+        if  host not in self._cp_slaves :
+            self._cp_slaves[host] = supp.PTYProcess (s_cmd, info['logger'])
+            self._initialize_pty (self._cp_slaves[host], info)
+
+        return self._cp_slaves[host]
 
     # --------------------------------------------------------------------------
     #
