@@ -6,9 +6,10 @@ __license__   = "MIT"
 
 """ Setup script. Used by easy_install and pip. """
 
+import re
 import os
 import sys
-import subprocess
+import subprocess as sp
 
 from setuptools import setup, Command
 
@@ -82,8 +83,6 @@ def get_version (paths=None):
         # if we didn't find it, get it from git 
         if  not long_version :
 
-            import subprocess as sp
-            import re
 
             # make sure we look at the right git repo
             if  len(paths) :
@@ -115,7 +114,7 @@ def get_version (paths=None):
         # check if either one worked ok
         if  None == long_version :
             raise RuntimeError ("Cannot determine version from git or ./VERSION\n")
-                    
+
 
         # make sure the version files exist for the runtime version inspection
         for path in paths :
@@ -153,9 +152,9 @@ class our_test(Command):
     def finalize_options   (self) : pass
     def run (self) :
         testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
-        retval  = subprocess.call([sys.executable,
-                                   '%s/run_tests.py'               % testdir,
-                                   '%s/configs/basetests.cfg'      % testdir])
+        retval  = sp.call([sys.executable,
+                          '%s/run_tests.py'               % testdir,
+                          '%s/configs/basetests.cfg'      % testdir])
         raise SystemExit(retval)
 
 
@@ -233,16 +232,16 @@ setup_args = {
     'cmdclass'             : {
         'test'             : our_test, 
     },
-    'install_requires' : ['colorama', 'pymongo'],
-    'tests_require'    : ['nose'],
-    'zip_safe'         : False,
-#   'build_sphinx'     : {
-#       'source-dir'   : 'docs/',
-#       'build-dir'    : 'docs/build',
-#       'all_files'    : 1,
+    'install_requires'     : ['apache-libcloud', 'radical.utils>=0.6.2'],
+    'tests_require'        : ['nose'],
+    'zip_safe'             : False,
+#   'build_sphinx'         : {
+#       'source-dir'       : 'docs/',
+#       'build-dir'        : 'docs/build',
+#       'all_files'        : 1,
 #   },
-#   'upload_sphinx'    : {
-#       'upload-dir'   : 'docs/build/html',
+#   'upload_sphinx'        : {
+#       'upload-dir'       : 'docs/build/html',
 #   }
 }
 
