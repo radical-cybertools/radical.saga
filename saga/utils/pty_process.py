@@ -225,11 +225,18 @@ class PTYProcess (object) :
                             wpid, wstat = os.waitpid (self.child, os.WNOHANG)
 
                         except OSError as e :
+
                             # this should not have failed -- child disappeared?
-                            self.exit_code   = None 
-                            self.exit_signal = None
-                            wstat            = None
-                            break
+                            if e.errno == errno.ECHILD :
+                                self.exit_code   = None 
+                                self.exit_signal = None
+                                wstat            = None
+                                break
+                            else :
+                                # other errors are bad, but there is not much to
+                                # be done at this point
+                                self.logger.warning ("ignore waitpid failure on finalize (%s)" % e)
+                                break
 
                         if  wpid :
                             break
@@ -307,6 +314,7 @@ class PTYProcess (object) :
                 # hey, kiddo, whats up?
                 try :
                     wpid, wstat = os.waitpid (self.child, 0)
+
                 except OSError as e :
 
                     if e.errno == errno.ECHILD :
@@ -318,7 +326,7 @@ class PTYProcess (object) :
                         return output
 
                     # no idea what happened -- it is likely bad
-                    raise se.NoSuccess ("waitpid failed")
+                    raise se.NoSuccess ("waitpid failed on wait")
 
 
                 # did we get a note about child termination?
@@ -372,9 +380,19 @@ class PTYProcess (object) :
 
                 while True :
                   # print 'waitpid %s' % self.child
+                  
                     # hey, kiddo, whats up?
-                    wpid, wstat = os.waitpid (self.child, os.WNOHANG)
-                  # print 'waitpid %s : %s - %s' % (self.child, wpid, wstat)
+                    try :
+                        wpid, wstat = os.waitpid (self.child, os.WNOHANG)
+                      # print 'waitpid %s : %s - %s' % (self.child, wpid, wstat)
+
+                    except OSError as e :
+
+                        if e.errno == errno.ECHILD :
+                            # child disappeared, go to zombie cleanup routine
+                            break
+
+                        raise ("waitpid failed on wait (%s)" % e)
 
                     # did we get a note about child termination?
                     if 0 == wpid :
