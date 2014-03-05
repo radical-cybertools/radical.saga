@@ -223,7 +223,7 @@ class PTYShellFactory (object) :
                                    "Enter passphrase for .*:\s*$", # passphrase prompt
                                    "want to continue connecting",  # hostkey confirmation
                                    ".*HELLO_\\d+_SAGA$",           # prompt detection helper
-                                   "^(.*[\$#%>\]])\s*$"]             # greedy native shell prompt 
+                                   "^(.*[\$#%>\]])\s*$"]           # greedy native shell prompt 
 
                 # find a prompt
                 # use a very aggressive, but portable prompt setting scheme
@@ -342,8 +342,15 @@ class PTYShellFactory (object) :
                                     # but more retries won't help...
                                     retry_trigger = False
                                     n = None
+                                    attempts = 0
                                     while not n :
+                                        attempt += 1
                                         n, match = pty_shell.find (prompt_patterns, delay)
+                                        if  not attempts % 10 :
+                                            pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+                                        if attempts > 100 :
+                                            raise se.NoSuccess ("Could not detect shell prompt (timeout)")
+
                                     continue
 
 
