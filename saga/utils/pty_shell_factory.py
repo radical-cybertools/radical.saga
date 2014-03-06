@@ -344,7 +344,7 @@ class PTYShellFactory (object) :
                                     n = None
                                     attempts = 0
                                     while not n :
-                                        attempt += 1
+                                        attempts += 1
                                         n, match = pty_shell.find (prompt_patterns, delay)
                                         if  not attempts % 10 :
                                             pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
