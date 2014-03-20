@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# be friendly to bash users (and yes, the leading space is on purpose)
+ export HISTIGNORE='*'
+
 # this script uses only POSIX shell functionality, and does not rely on bash or
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
 # thought.
@@ -18,7 +21,6 @@ fi
 
 # we always start in the user's home dir
 \cd $HOME 2>&1 > /dev/null
-
 
 # --------------------------------------------------------------------
 #

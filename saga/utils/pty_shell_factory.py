@@ -227,7 +227,7 @@ class PTYShellFactory (object) :
 
                 # find a prompt
                 # use a very aggressive, but portable prompt setting scheme
-                pty_shell.write ("export PS1='>' >& /dev/null || set prompt='>'\n")
+                pty_shell.write (" export PS1='>' >& /dev/null || set prompt='>'\n")
                 n, match = pty_shell.find (prompt_patterns, delay)
 
                 # this loop will run until we finally find the shell prompt, or
@@ -265,8 +265,8 @@ class PTYShellFactory (object) :
 
                         if  is_shell :
                             # use a very aggressive, but portable prompt setting scheme
-                            pty_shell.write ("export PS1='>' >& /dev/null || set prompt='>'\n")
-                            pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+                            pty_shell.write (" export PS1='>' >& /dev/null || set prompt='>'\n")
+                            pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
                             used_trigger = True
 
                         # FIXME:  consider better timeout
@@ -337,19 +337,25 @@ class PTYShellFactory (object) :
                                 trigger = "HELLO_%d_SAGA" % retries
 
                                 if  not trigger in found_trigger :
+
                                     logger.debug ("waiting for prompt trigger %s: (%s) (%s)" \
                                                % (trigger, n, match))
                                     # but more retries won't help...
                                     retry_trigger = False
-                                    n = None
-                                    attempts = 0
+                                    attempts      = 0
+                                    n             = None
+
                                     while not n :
+
                                         attempts += 1
-                                        n, match = pty_shell.find (prompt_patterns, delay)
-                                        if  not attempts % 10 :
-                                            pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
-                                        if attempts > 100 :
-                                            raise se.NoSuccess ("Could not detect shell prompt (timeout)")
+                                        n, match  = pty_shell.find (prompt_patterns, delay)
+
+                                        if  not n :
+                                            if  attempts == 1 :
+                                                pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+
+                                            if  attempts > 100 :
+                                                raise se.NoSuccess ("Could not detect shell prompt (timeout)")
 
                                     continue
 
@@ -511,7 +517,7 @@ class PTYShellFactory (object) :
             prep = ""
             if  'sftp' in s_cmd :
                 # prepare target dirs for recursive copy, if needed
-                cp_slave.write ("ls %s\n" % src)
+                cp_slave.write (" ls %s\n" % src)
                 _, out = cp_slave.find (["^sftp> "], -1)
 
                 src_list = out[1].split ('/n')
@@ -744,7 +750,4 @@ class PTYShellFactory (object) :
             # keep all collected info in the master dict, and return it for
             # registration
             return info
-
-
-
 

@@ -82,7 +82,7 @@ class PTYShell (object) :
 
         # run a simple shell command, merge stderr with stdout.  $$ is the pid
         # of the shell instance.
-        ret, out, _ = self.shell.run_sync ("mkdir -p /tmp/data.$$/" )
+        ret, out, _ = self.shell.run_sync (" mkdir -p /tmp/data.$$/" )
 
         # check if mkdir reported success
         if  ret != 0 :
@@ -94,7 +94,7 @@ class PTYShell (object) :
 
         # check size of staged script (this is actually done on PTYShell level
         # already, with no extra hop):
-        ret, out, _ = self.shell.run_sync ("stat -c '%s' /tmp/data.$$/job_1.pbs" )
+        ret, out, _ = self.shell.run_sync (" stat -c '%s' /tmp/data.$$/job_1.pbs" )
         if  ret != 0 :
             raise saga.NoSuccess ("failed to check size (%s)(%s)" % (ret, out))
 
@@ -245,7 +245,7 @@ class PTYShell (object) :
 
 
             self.logger.debug    ("running command shell: %s" % command_shell)
-            self.pty_shell.write ("stty -echo ; %s\n"         % command_shell)
+            self.pty_shell.write (" stty -echo ; %s\n"         % command_shell)
 
             # make sure this worked, and that we find the prompt. We use
             # a versatile prompt pattern to account for the custom shell case.
@@ -255,7 +255,7 @@ class PTYShell (object) :
             # a versatile prompt pattern to account for the custom shell case.
             try :
                 # set and register new prompt
-                self.run_async  ("unset PROMPT_COMMAND ; "
+                self.run_async  (" unset PROMPT_COMMAND ; "
                                      + "PS1='PROMPT-$?->'; "
                                      + "PS2=''; "
                                      + "export PS1 PS2 2>&1 >/dev/null\n")
@@ -274,7 +274,7 @@ class PTYShell (object) :
                 # (usually $HOME).
                 if  sumisc.host_is_local (surl.Url(self.url).host) :
                     pwd = os.getcwd ()
-                    self.run_sync ('cd %s' % pwd)
+                    self.run_sync (' cd %s' % pwd)
             except Exception as e :
                 # We will ignore any errors.
                 self.logger.warning ("local cd to %s failed" % pwd)
@@ -466,7 +466,7 @@ class PTYShell (object) :
             # those cases where we had to use triggers to actually get the
             # prompt
             if triggers > 0 :
-                self.run_async ('printf "SYNCHRONIZE_PROMPT\n"')
+                self.run_async (' printf "SYNCHRONIZE_PROMPT\n"')
 
                 # FIXME: better timout value?
                 fret, match = self.pty_shell.find (["SYNCHRONIZE_PROMPT"], timeout=1.0)  
@@ -650,7 +650,7 @@ class PTYShell (object) :
                 if  iomode == SEPARATE :
                     stdout =  txt
 
-                    self.pty_shell.write ("cat %s\n" % _err)
+                    self.pty_shell.write (" cat %s\n" % _err)
                     fret, match = self.pty_shell.find ([self.prompt], timeout=-1.0)  # blocks
 
                     if  fret == None :

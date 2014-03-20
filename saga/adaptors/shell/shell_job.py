@@ -361,7 +361,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         base = "~/.saga/adaptors/shell_job"
 
-        ret, out, _ = self.shell.run_sync ("mkdir -p %s" % base)
+        ret, out, _ = self.shell.run_sync (" mkdir -p %s" % base)
         if  ret != 0 :
             raise saga.NoSuccess ("host setup failed (%s): (%s)" % (ret, out))
 
@@ -374,7 +374,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # an adaptor lock on this one.
         with self._adaptor._lock :
 
-            ret, out, _ = self.shell.run_sync ("test -f %s" % tgt)
+            ret, out, _ = self.shell.run_sync (" test -f %s" % tgt)
             if  ret != 0 :
                 # yep, need to stage...
                 self.shell.write_to_remote (src, tgt)
@@ -387,13 +387,13 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # Thus, when the script times out, the shell dies and the connection
         # drops -- that will free all associated resources, and allows for
         # a clean reconnect.
-        # ret, out, _ = self.shell.run_sync ("exec sh %s/wrapper.sh" % base)
+        # ret, out, _ = self.shell.run_sync (" exec sh %s/wrapper.sh" % base)
       
         # Well, actually, we do not use exec, as that does not give us good
         # feedback on failures (the shell just quits) -- so we replace it with
         # this poor-man's version...
       # self.shell.pty_shell._debug = True
-        ret, out, _ = self.shell.run_sync ("/bin/sh %s/wrapper.sh $$" % base)
+        ret, out, _ = self.shell.run_sync (" /bin/sh %s/wrapper.sh $$" % base)
 
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
         # detection, too.  Wait for 3sec max.
@@ -404,7 +404,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         id_match   = id_pattern.search (out)
 
         if not id_match :
-            self.shell.run_async ("exit")
+            self.shell.run_async (" exit")
             self._logger.error   ("host bootstrap failed - no pid (%s)" % out)
             raise saga.NoSuccess ("host bootstrap failed - no pid (%s)" % out)
 

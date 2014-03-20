@@ -217,7 +217,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         if  sumisc.url_is_compatible (cwdurl, tgt) :
 
-            ret, out, _ = self.shell.run_sync ("mkdir -p %s\n" % (dirname))
+            ret, out, _ = self.shell.run_sync (" mkdir -p %s\n" % (dirname))
             if  ret != 0 :
                 raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
                                    % (dirname, ret, out))
@@ -228,7 +228,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                 raise saga.BadParameter ("schema of mkdir target is not supported (%s)" \
                                       % (tgt))
 
-            ret, out, _ = self.local.run_sync ("mkdir -p %s\n" % (dirname))
+            ret, out, _ = self.local.run_sync (" mkdir -p %s\n" % (dirname))
             if  ret != 0 :
                 raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
                                    % (dirname, ret, out))
@@ -297,11 +297,11 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         cmd = ""
 
         if  self.flags & saga.filesystem.CREATE_PARENTS :
-            cmd = "mkdir -p %s ;  cd %s" % (self.url.path, self.url.path)
+            cmd = " mkdir -p %s ;  cd %s" % (self.url.path, self.url.path)
         elif self.flags & saga.filesystem.CREATE :
-            cmd = "mkdir    %s ;  cd %s" % (self.url.path, self.url.path)
+            cmd = " mkdir    %s ;  cd %s" % (self.url.path, self.url.path)
         else :
-            cmd = "test -d  %s && cd %s" % (self.url.path, self.url.path)
+            cmd = " test -d  %s && cd %s" % (self.url.path, self.url.path)
 
         ret, out, _ = self.shell.run_sync (cmd)
 
@@ -386,11 +386,11 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
 
         if  flags & saga.filesystem.CREATE_PARENTS :
-            cmd = "mkdir -p %s ;  cd %s" % (tgturl.path, tgturl.path)
+            cmd = " mkdir -p %s ;  cd %s" % (tgturl.path, tgturl.path)
         elif flags & saga.filesystem.CREATE :
-            cmd = "mkdir    %s ;  cd %s" % (tgturl.path, tgturl.path)
+            cmd = " mkdir    %s ;  cd %s" % (tgturl.path, tgturl.path)
         else :
-            cmd = "test -d  %s && cd %s" % (tgturl.path, tgturl.path)
+            cmd = " test -d  %s && cd %s" % (tgturl.path, tgturl.path)
 
         ret, out, _ = self.shell.run_sync (cmd)
 
@@ -436,7 +436,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         else :
             npat = "-d %s" % npat
 
-        ret, out, _ = self.shell.run_sync ("/bin/ls -C1 %s\n" % npat)
+        ret, out, _ = self.shell.run_sync (" /bin/ls -C1 %s\n" % npat)
 
         if  ret != 0 :
             raise saga.NoSuccess ("failed to list(): (%s)(%s)" \
@@ -496,7 +496,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             sumisc.url_is_compatible (cwdurl, tgt) :
 
             # print "shell cp"
-            ret, out, err = self.shell.run_sync ("cp %s %s %s\n" % (rec_flag, src.path, tgt.path))
+            ret, out, err = self.shell.run_sync (" cp %s %s %s\n" % (rec_flag, src.path, tgt.path))
             if  ret != 0 :
                 raise saga.NoSuccess ("copy (%s -> %s) failed (%s): (out: %s) (err: %s)" \
                                    % (src, tgt, ret, out, err))
@@ -609,7 +609,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             sumisc.url_is_compatible (cwdurl, tgt) :
 
             # print "shell ln"
-            ret, out, err = self.shell.run_sync ("ln -s %s %s\n" % (src.path, tgt.path))
+            ret, out, err = self.shell.run_sync (" ln -s %s %s\n" % (src.path, tgt.path))
             if  ret != 0 :
                 raise saga.NoSuccess ("link (%s -> %s) failed (%s): (out: %s) (err: %s)" \
                                    % (src, tgt, ret, out, err))
@@ -680,7 +680,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         if  sumisc.url_is_compatible (cwdurl, tgt) :
 
-            ret, out, err = self.shell.run_sync ("rm -f %s %s\n" % (rec_flag, tgt.path))
+            ret, out, err = self.shell.run_sync (" rm -f %s %s\n" % (rec_flag, tgt.path))
             if  ret != 0 :
                 raise saga.NoSuccess ("remove (%s) failed (%s): (out: %s) (err: %s)" \
                                    % (tgt, ret, out, err))
@@ -704,7 +704,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         if  flags & saga.filesystem.EXCLUSIVE : 
             # FIXME: this creates a race condition between testing for exclusive
             # mkdir and creating the dir.
-            ret, out, _ = self.shell.run_sync ("test -d %s " % tgt.path)
+            ret, out, _ = self.shell.run_sync (" test -d %s " % tgt.path)
 
             if  ret != 0 :
                 raise saga.AlreadyExists ("make_dir target (%s) exists (%s)" \
@@ -716,7 +716,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         if  flags & saga.filesystem.CREATE_PARENTS : 
             options += "-p"
 
-        self.shell.run_sync ("mkdir %s %s" % (options, tgt.path))
+        self.shell.run_sync (" mkdir %s %s" % (options, tgt.path))
 
    
     # ----------------------------------------------------------------
@@ -738,7 +738,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         cwdurl = saga.Url (self.url) # deep copy
         tgt    = saga.Url (tgt_in)   # deep copy
 
-        ret, out, _ = self.shell.run_sync ("du -ks %s  | xargs | cut -f 1 -d ' '\n" % tgt.path)
+        ret, out, _ = self.shell.run_sync (" du -ks %s  | xargs | cut -f 1 -d ' '\n" % tgt.path)
         if  ret != 0 :
             raise saga.NoSuccess ("get size for (%s) failed (%s): (%s)" \
                                % (tgt, ret, out))
@@ -772,7 +772,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         cwdurl = saga.Url (self.url) # deep copy
         tgt    = saga.Url (tgt_in)   # deep copy
 
-        ret, out, _ = self.shell.run_sync ("test -d %s && test ! -h %s" % (tgt.path, tgt.path))
+        ret, out, _ = self.shell.run_sync (" test -d %s && test ! -h %s" % (tgt.path, tgt.path))
 
         return True if ret == 0 else False
    
@@ -797,7 +797,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         cwdurl = saga.Url (self.url) # deep copy
         tgt    = saga.Url (tgt_in)   # deep copy
 
-        ret, out, _ = self.shell.run_sync ("test -f %s && test ! -h %s" % (tgt.path, tgt.path))
+        ret, out, _ = self.shell.run_sync (" test -f %s && test ! -h %s" % (tgt.path, tgt.path))
 
         return True if ret == 0 else False
    
@@ -822,7 +822,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         cwdurl = saga.Url (self.url) # deep copy
         tgt    = saga.Url (tgt_in)   # deep copy
 
-        ret, out, _ = self.shell.run_sync ("test -h %s" % tgt.path)
+        ret, out, _ = self.shell.run_sync (" test -h %s" % tgt.path)
 
         return True if ret == 0 else False
    
@@ -880,7 +880,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         if  sumisc.url_is_compatible (cwdurl, tgt) :
 
-            ret, out, _ = self.shell.run_sync ("mkdir -p %s\n" % (dirname))
+            ret, out, _ = self.shell.run_sync (" mkdir -p %s\n" % (dirname))
             if  ret != 0 :
                 raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
                                    % (dirname, ret, out))
@@ -891,7 +891,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                 raise saga.BadParameter ("schema of mkdir target is not supported (%s)" \
                                       % (tgt))
 
-            ret, out, _ = self.local.run_sync ("mkdir -p %s\n" % (dirname))
+            ret, out, _ = self.local.run_sync (" mkdir -p %s\n" % (dirname))
             if  ret != 0 :
                 raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
                                    % (dirname, ret, out))
@@ -981,15 +981,15 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         dirname = sumisc.url_get_dirname  (self.url)
 
         if  self.flags & saga.filesystem.CREATE_PARENTS :
-            cmd = "mkdir -p %s; touch %s" % (dirname, self.url.path)
+            cmd = " mkdir -p %s; touch %s" % (dirname, self.url.path)
             self._logger.info ("mkdir %s; touch %s" % (dirname, self.url.path))
 
         elif self.flags & saga.filesystem.CREATE :
-            cmd = "touch %s" % (self.url.path)
+            cmd = " touch %s" % (self.url.path)
             self._logger.info ("touch %s" % self.url.path)
 
         else :
-            cmd = "true"
+            cmd = " true"
 
 
         if  self.flags & saga.filesystem.READ :
@@ -1080,7 +1080,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             sumisc.url_is_compatible (cwdurl, tgt) :
 
             # print "shell cp"
-            ret, out, _ = self.shell.run_sync ("cp %s %s %s\n" % (rec_flag, src.path, tgt.path))
+            ret, out, _ = self.shell.run_sync (" cp %s %s %s\n" % (rec_flag, src.path, tgt.path))
             if  ret != 0 :
                 raise saga.NoSuccess ("copy (%s -> %s) failed (%s): (%s)" \
                                    % (src, tgt, ret, out))
@@ -1177,7 +1177,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             sumisc.url_is_compatible (cwdurl, tgt) :
 
             # print "shell ln"
-            ret, out, err = self.shell.run_sync ("ln -s %s %s\n" % (src.path, tgt.path))
+            ret, out, err = self.shell.run_sync (" ln -s %s %s\n" % (src.path, tgt.path))
             if  ret != 0 :
                 raise saga.NoSuccess ("link (%s -> %s) failed (%s): (out: %s) (err: %s)" \
                                    % (src, tgt, ret, out, err))
@@ -1272,7 +1272,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         if  flags & saga.filesystem.RECURSIVE : 
             rec_flag  += "-r "
 
-        ret, out, _ = self.shell.run_sync ("rm -f %s %s\n" % (rec_flag, tgt.path))
+        ret, out, _ = self.shell.run_sync (" rm -f %s %s\n" % (rec_flag, tgt.path))
         if  ret != 0 :
             raise saga.NoSuccess ("remove (%s) failed (%s): (%s)" \
                                % (tgt, ret, out))
@@ -1291,10 +1291,10 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         if  self.is_dir_self () :
             size_mult   = 1024   # see '-k' option to 'du'
-            ret, out, _ = self.shell.run_sync ("du -ks %s  | xargs | cut -f 1 -d ' '\n" \
+            ret, out, _ = self.shell.run_sync (" du -ks %s  | xargs | cut -f 1 -d ' '\n" \
                                             % self.url.path)
         else :
-            ret, out, _ = self.shell.run_sync ("wc -c %s | xargs | cut -f 1 -d ' '\n" \
+            ret, out, _ = self.shell.run_sync (" wc -c %s | xargs | cut -f 1 -d ' '\n" \
                                             % self.url.path)
 
         if  ret != 0 :
@@ -1319,7 +1319,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         cwdurl = saga.Url (self.url) # deep copy
 
-        ret, out, _ = self.shell.run_sync ("test -d %s && test ! -h %s" % (cwdurl.path, cwdurl.path))
+        ret, out, _ = self.shell.run_sync (" test -d %s && test ! -h %s" % (cwdurl.path, cwdurl.path))
 
         return True if ret == 0 else False
 
@@ -1333,7 +1333,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         cwdurl = saga.Url (self.url) # deep copy
 
-        ret, out, _ = self.shell.run_sync ("test -f %s && test ! -h %s" % (cwdurl.path, cwdurl.path))
+        ret, out, _ = self.shell.run_sync (" test -f %s && test ! -h %s" % (cwdurl.path, cwdurl.path))
 
         return True if ret == 0 else False
    
@@ -1347,7 +1347,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         cwdurl = saga.Url (self.url) # deep copy
 
-        ret, out, _ = self.shell.run_sync ("test -h %s" % cwdurl.path)
+        ret, out, _ = self.shell.run_sync (" test -h %s" % cwdurl.path)
 
         return True if ret == 0 else False
    
@@ -1361,7 +1361,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         cwdurl = saga.Url (self.url) # deep copy
 
-        ret, out, _ = self.shell.run_sync ("test -f %s && test ! -h %s" % (cwdurl.path, cwdurl.path))
+        ret, out, _ = self.shell.run_sync (" test -f %s && test ! -h %s" % (cwdurl.path, cwdurl.path))
 
         return True if ret == 0 else False
    
