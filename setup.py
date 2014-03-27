@@ -83,7 +83,6 @@ def get_version (paths=None):
         # if we didn't find it, get it from git 
         if  not long_version :
 
-
             # make sure we look at the right git repo
             if  len(paths) :
                 git_cd  = "cd %s ;" % paths[0]
@@ -194,7 +193,7 @@ setup_args = {
         'Operating System :: POSIX',
         'Operating System :: Unix'
     ],
-    'packages': [
+    'packages'         : [
         "saga",
         "saga.job",
         "saga.namespace",
@@ -227,21 +226,21 @@ setup_args = {
         "saga.utils",
         "saga.utils.job",
     ],
-    'scripts'              : [],
-    'package_data'         : {'' : ['*.sh', 'VERSION']},
-    'cmdclass'             : {
-        'test'             : our_test, 
+    'scripts'          : [],
+    'package_data'     : {'' : ['*.sh', 'VERSION']},
+    'cmdclass'         : {
+        'test'         : our_test,
     },
-    'install_requires'     : ['apache-libcloud', 'radical.utils>=0.6.2'],
-    'tests_require'        : ['nose'],
-    'zip_safe'             : False,
-#   'build_sphinx'         : {
-#       'source-dir'       : 'docs/',
-#       'build-dir'        : 'docs/build',
-#       'all_files'        : 1,
+    'install_requires' : ['apache-libcloud', 'radical.utils>=0.6.2'],
+    'tests_require'    : ['nose'],
+    'zip_safe'         : False,
+#   'build_sphinx'     : {
+#       'source-dir'   : 'docs/',
+#       'build-dir'    : 'docs/build',
+#       'all_files'    : 1,
 #   },
-#   'upload_sphinx'        : {
-#       'upload-dir'       : 'docs/build/html',
+#   'upload_sphinx'    : {
+#       'upload-dir'   : 'docs/build/html',
 #   }
 }
 
