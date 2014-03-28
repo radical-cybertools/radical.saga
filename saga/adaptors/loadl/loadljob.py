@@ -5,7 +5,7 @@ __license__   = "MIT"
 
 
 """ IBM LoadLeveler job adaptor implementation
-    reference for pbs job adaptor implementation
+    reference for pbs job adaptor & sge job adaptor implementation
 	Hangi, Kim hgkim@kisti.re.kr
 """
 
@@ -16,14 +16,21 @@ import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
 from saga.job.constants import *
+from saga.adaptors.sge.sgejob import SgeKeyValueParser
 
+import os
 import re
 import time
 from copy import deepcopy
 from cgi import parse_qs
+from StringIO import StringIO
+from datetime import datetime
+
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
+
+_PID_RE = re.compile(r"^([^ ]+) ([0-9]{2}/[0-9]{2}/[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}) (.+)$")
 
 
 # --------------------------------------------------------------------
@@ -52,67 +59,6 @@ def _ll_to_saga_jobstate(lljs):
     else:
         return saga.job.UNKNOWN
 
-
-# --------------------------------------------------------------------
-#
-def _loadlcript_generator(url, logger, jd, ppn, queue=None):
-    """ generates a IMB LoadLeveler script from a SAGA job description
-    """
-    loadl_params = str()
-    exec_n_args = str()
-
-    if jd.executable is not None:
-        exec_n_args += "%s " % (jd.executable)
-    if jd.arguments is not None:
-        for arg in jd.arguments:
-            exec_n_args += "%s " % (arg)
-
-    if jd.name is not None:
-        loadl_params += "#@job_name=%s \n" % jd.name
-
-    if jd.environment is not None:
-        variable_list = str()
-        for key in jd.environment.keys():
-            variable_list += "%s=%s;" % (key, jd.environment[key])
-        loadl_params += "#@environment=%s \n" % variable_list
-
-    if jd.working_directory is not None:
-        loadl_params += "#@initialdir=%s \n" % jd.working_directory
-    if jd.output is not None:
-        loadl_params += "#@output=%s \n" % jd.output
-    if jd.error is not None:
-        loadl_params += "#@error=%s \n" % jd.error
-    if jd.wall_time_limit is not None:
-        hours = jd.wall_time_limit / 60
-        minutes = jd.wall_time_limit % 60
-        loadl_params += "#@wall_clock_limit=%s:%s:00 \n" \
-            % (str(hours), str(minutes))
-
-    if jd.total_cpu_count is None:
-        # try to come up with a sensible (?) default value
-        jd.total_cpu_count = 1
-
-    if jd.total_physical_memory is not None:
-        # try to come up with a sensible (?) default value for memeory
-        jd.total_physical_memory = 256
-
-    loadl_params += "#@resources=ConsumableCpus(%s)ConsumableMemory(%smb)\n" % \
-        (jd.total_cpu_count, jd.total_physical_memory)
-
-    if jd.job_contact is not None:
-        loadl_params += "#@notify_user=%s\n" % jd.job_contact
-
-    # some default (?) parameter that seem to work fine everywhere... 
-    loadl_params += "#@class=normal\n"
-    loadl_params += "#@notification=complete\n"
-
-    # finally, we 'queue' the job
-    loadl_params += "#@queue\n"
-
-    loadlscript = "\n#!/bin/bash \n%s%s" % (loadl_params, exec_n_args)
-	# add by hgkim 
-    logger.info(loadlscript)
-    return loadlscript
 
 
 def getId(out):
@@ -146,7 +92,30 @@ _PTY_TIMEOUT = 2.0
 #
 _ADAPTOR_NAME          = "saga.adaptor.loadljob"
 _ADAPTOR_SCHEMAS       = ["loadl", "loadl+ssh", "loadl+gsissh"]
-_ADAPTOR_OPTIONS       = []
+_ADAPTOR_OPTIONS       = [
+    {
+    'category'         : 'saga.adaptor.loadljob',
+    'name'             : 'purge_on_start',
+    'type'             : bool,
+    'default'          : True,
+    'valid_options'    : [True, False],
+    'documentation'    : '''Purge temporary job information for all
+                          jobs which are older than a number of days.
+                          The number of days can be configured with <purge_older_than>.''',
+    'env_variable'     : None
+    },
+    {
+    'category'         : 'saga.adaptor.loadljob',
+    'name'             : 'purge_older_than',
+    'type'             : int,
+    'default'          : 30,
+    #'valid_options'    : [True, False],
+    'documentation'    : '''When <purge_on_start> is enabled this specifies the number
+                            of days to consider a temporary file older enough to be deleted.''',
+    'env_variable'     : None
+    },
+]
+
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -225,11 +194,13 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__(self):
 
-        saga.adaptors.base.Base.__init__(self,
-            _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts = self.get_config(_ADAPTOR_NAME)
+
+        self.purge_on_start = self.opts['purge_on_start'].get_value()
+        self.purge_older_than = self.opts['purge_older_than'].get_value()
 
     # ----------------------------------------------------------------
     #
@@ -279,11 +250,12 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         """
         self.rm      = rm_url
         self.session = session
-        self.ppn     = 0
+        self.ppn     = 0 # check for remove
         self.queue   = None
         self.jobs    = dict()
-        self.query_options = dict()
+        self.query_options = dict() # check for remove
         self.cluster = None
+        self.temp_path = "$HOME/.saga/adaptors/loadl_job"
 
         rm_scheme = rm_url.scheme
         pty_url   = deepcopy(rm_url)
@@ -307,7 +279,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         elif rm_scheme == "loadl+gsissh":
             pty_url.scheme = "gsissh"
 
-        # these are the commands that we need in order to interact with PBS.
+        # these are the commands that we need in order to interact with Load Leveler.
         # the adaptor will try to find them during initialize(self) and bail
         # out in case they are note avaialbe.
         self._commands = {'llq': None,
@@ -322,6 +294,13 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         self.initialize()
 
         return self.get_api ()
+
+    # ----------------------------------------------------------------
+    #
+    def close (self) :
+        if  self.shell :
+            self.shell.finalize (True)
+
 
     # ----------------------------------------------------------------
     #
@@ -356,32 +335,14 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
         # modi by hgkim
-        """
-        ret, out, _ = self.shell.run_sync('%s -a | grep np' % \
-            self._commands['pbsnodes']['path'])
-        if ret != 0:
-            message = "Error running pbsnodes: %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
-        else:
-            # this is black magic. we just assume that the highest occurence
-            # of a specific np is the number of processors (cores) per compute
-            # node. this equals max "PPN" for job scripts
-            ppn_list = dict()
-            for line in out.split('\n'):
-                np = line.split(' = ')
-                if len(np) == 2:
-                    np = np[1].strip()
-                    if np in ppn_list:
-                        ppn_list[np] += 1
-                    else:
-                        ppn_list[np] = 1
-			# add by hgkim
-            #self.ppn = max(ppn_list, key=ppn_list.get)
-            self.ppn = 1
-            self._logger.debug("Found the following 'ppn' configurations: %s. \
-    Using %s as default ppn." 
-                % (ppn_list, self.ppn))
-        """
+
+        # purge temporary files
+        if self._adaptor.purge_on_start:
+            cmd = "find $HOME/.saga/adaptors/loadl_job" \
+                  " -type f -mtime +%d -print -delete | wc -l" % self._adaptor.purge_older_than
+            ret, out, _ = self.shell.run_sync(cmd)
+            if ret == 0 and out != "0":
+                self._logger.info("Purged %s temporary files" % out)
 
     # ----------------------------------------------------------------
     #
@@ -389,6 +350,177 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         if  kill_shell :
             if  self.shell :
                 self.shell.finalize (True)
+
+    def __remote_mkdir(self, path):
+        """
+        Creates a directory on the remote host.
+        :param path: the remote directory to be created.
+        """
+        # check if the path exists
+        ret, out, _ = self.shell.run_sync(
+                        "(test -d %s && echo -n 0) || (mkdir -p %s && echo -n 1)" % (path, path))
+
+        if ret == 0 and out == "1":
+            self._logger.info("Remote directory created: %s" % path)
+        elif ret != 0:
+            # something went wrong
+            message = "Couldn't create remote directory - %s\n%s" % (out, path)
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+
+    def __remote_job_info_path(self, loadl_job_id="$LOADL_JOB_NAME"):
+        """
+        Returns the path of the remote job info file.
+        :param loadl_job_id: the LoadLeveler job id, if omitted an enviroment variable representing the job id will be used.
+        :return: path to the remote job info file
+        """
+
+        return "%s/%s" % (self.temp_path, loadl_job_id)
+
+    def __clean_remote_job_info(self, loadl_job_id):
+        """
+        Removes the temporary remote file containing job info.
+        :param loadl_job_id: the LoadLeveler job id
+        """
+
+        path = self.__remote_job_info_path(loadl_job_id)
+        ret, out, _ = self.shell.run_sync("rm %s" % path)
+        if ret != 0:
+            self._logger.debug("Remote job info couldn't be removed: %s" % path)
+
+    def __get_remote_job_info(self, loadl_job_id):
+        """
+        Obtains the job info from a temporary remote file created by the llsubmit script.
+        :param loadl_job_id: the LoadLeveler job id
+        :return: a dictionary with the job info
+        """
+        ret, out, _ = self.shell.run_sync("cat %s" % self.__remote_job_info_path(loadl_job_id))
+        if ret != 0:
+            return None
+
+        qres = SgeKeyValueParser(out, key_suffix=":").as_dict()
+
+        if "signal" in qres:
+            state = saga.job.CANCELED
+        elif "exit_status" in qres:
+            state = saga.job.DONE
+        else:
+            state = saga.job.RUNNING
+
+        job_info = dict(
+                    state=state,
+                    exec_hosts=qres.get("hostname"),
+                    returncode=int(qres.get("exit_status", -1)),
+                    create_time=qres.get("qsub_time"),
+                    start_time=qres.get("start_time"),
+                    end_time=qres.get("end_time"),
+                    gone=False)
+
+        return job_info
+
+    def __generated_llsubmit_script(self, jd):
+        """ 
+        generates a IMB LoadLeveler script from a SAGA job description
+        :param jd: job descriptor
+        :return: the llsubmit script
+        """
+        loadl_params = str()
+        exec_n_args = str()
+
+        if jd.executable is not None:
+            exec_n_args += "%s " % (jd.executable)
+        if jd.arguments is not None:
+            for arg in jd.arguments:
+                exec_n_args += "%s " % (arg)
+
+        if jd.total_cpu_count is not None and jd.total_cpu_count > 1:
+            loadl_params += "#@job_type = MPICH \n"
+
+        if jd.name is not None:
+            loadl_params += "#@job_name=%s \n" % jd.name
+
+        if jd.environment is not None:
+            variable_list = str()
+            for key in jd.environment.keys():
+                variable_list += "%s=%s;" % (key, jd.environment[key])
+            loadl_params += "#@environment=%s \n" % variable_list
+
+        if jd.working_directory is not None:
+            loadl_params += "#@initialdir=%s \n" % jd.working_directory
+        if jd.output is not None:
+            loadl_params += "#@output=%s \n" % jd.output
+        if jd.error is not None:
+            loadl_params += "#@error=%s \n" % jd.error
+        if jd.wall_time_limit is not None:
+            hours = jd.wall_time_limit / 60
+            minutes = jd.wall_time_limit % 60
+            loadl_params += "#@wall_clock_limit=%s:%s:00 \n" \
+                % (str(hours), str(minutes))
+
+        if jd.total_cpu_count is None:
+            # try to come up with a sensible (?) default value
+            jd.total_cpu_count = 1
+        else:
+            if int(jd.total_cpu_count) > 1:
+                loadl_params += "#@total_tasks=%s\n" % jd.total_cpu_count
+                loadl_params += "#@blocking = unlimited\n"
+
+        if jd.total_physical_memory is None:
+            # try to come up with a sensible (?) default value for memeory
+            jd.total_physical_memory = 256
+
+        loadl_params += "#@resources=ConsumableCpus(%s)ConsumableMemory(%smb)\n" % \
+            ("1", jd.total_physical_memory)
+            #(jd.total_cpu_count, jd.total_physical_memory)
+
+        if jd.job_contact is not None:
+            loadl_params += "#@notify_user=%s\n" % jd.job_contact
+
+        # some default (?) parameter that seem to work fine everywhere... 
+        if jd.queue is not None:
+            loadl_params += "#@class=%s\n" % jd.queue
+        else:
+            loadl_params += "#@class=edison\n"
+        loadl_params += "#@notification=complete\n"
+
+        # finally, we 'queue' the job
+        loadl_params += "#@queue\n"
+
+        # Job info, executable and arguments
+        job_info_path = self.__remote_job_info_path()
+
+        script_body = [
+        'function aborted() {',
+            '  echo Aborted with signal $1.',
+            '  echo "signal: $1" >>%s' % job_info_path,
+            '  echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path,
+            '  exit -1',
+            '}',
+            'mkdir -p %s' % self.temp_path,
+            'for sig in SIGHUP SIGINT SIGQUIT SIGTERM SIGUSR1 SIGUSR2; do trap "aborted $sig" $sig; done',
+            'echo "hostname: $HOSTNAME" >%s' % job_info_path,
+            'echo "qsub_time: %s" >>%s' % (datetime.now().strftime("%a %b %d %H:%M:%S %Y"), job_info_path),
+            'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
+                ]
+
+        if exec_n_args is not None:
+            script_body += [exec_n_args]
+
+        script_body += [
+            'echo "exit_status: $?" >>%s' % job_info_path,
+            'echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
+        ]
+
+        # convert exec and args into an string and
+        # escape all double quotes and dollar signs, otherwise 'echo |'
+        # further down won't work.
+        # only escape '$' in args and exe. not in the params
+        script_body = "\n".join(script_body).replace('$', '\\$')
+
+        loadlscript = "\n#!/bin/bash \n%s%s" % (loadl_params, script_body)
+
+        return loadlscript.replace('"', '\\"')
+
 
     # ----------------------------------------------------------------
     #
@@ -402,21 +534,40 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
 
         try:
             # create a LoadLeveler job script from SAGA job description
+            """
             script = _loadlcript_generator(url=self.rm, logger=self._logger,
                                          jd=jd, ppn=self.ppn,
                                          queue=self.queue)
-
-            # escape all double quotes and dollarsigns, otherwise 'echo |' 
-            # further down won't work
-            script = script.replace('"', '\\"')
-            script = script.replace('$', '\\$')
+            """
+            script = self.__generated_llsubmit_script(jd)
 
             self._logger.debug("Generated LoadLeveler script: %s" % script)
         except Exception, ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
-        ret, out, _ = self.shell.run_sync("""echo "%s" | %s -X %s -""" \
-            % (script, self._commands['llsubmit']['path'], self.cluster))
+        # try to create the working/output/error directories (if defined)
+        # WARNING: this assumes a shared filesystem between login node and
+        #           compute nodes.
+        if jd.working_directory is not None and len(jd.working_directory) > 0:
+            self.__remote_mkdir(jd.working_directory)
+
+        if jd.output is not None and len(jd.output) > 0:
+            self.__remote_mkdir(os.path.dirname(jd.output))
+
+        if jd.error is not None and len(jd.error) > 0:
+            self.__remote_mkdir(os.path.dirname(jd.error))
+
+        #ret, out, _ = self.shell.run_sync("""echo "%s" | %s -X %s -""" \
+        #    % (script, self._commands['llsubmit']['path'], self.cluster))
+        # submit the LoadLeveler script
+        # Now we want to execute the script. This process consists of two steps:
+        # (1) we create a temporary file with 'mktemp' and write the contents of
+        #     the generated Load Leveler script into it
+        # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
+        #cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s -X %s $SCRIPTFILE """ %  (script, self._commands['llsubmit']['path'], self.cluster)
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s -X %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'], self.cluster)
+        self._logger.info("cmdline: %r", cmdline)
+        ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
             # something went wrong
@@ -444,19 +595,24 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
-    def _retrieve_job(self, job_id):
+    def _retrieve_job(self, job_id, max_retries=10):
         """ see if we can get some info about a job that we don't
             know anything about
+            refactoring by referencing sgejob.py
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the LoadLeveler 'llq' command to get some infos about our job
-        #ret, out, _ = self.shell.run_sync("%s -f1 %s | \
-        #    egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|\
-#(start_time)|(comp_time)'" % (self._commands['qstat']['path'], pid))
+        """
         ret, out, _ = self.shell.run_sync("%s -X %s -j %s \
 -r %%st %%dd %%cc %%jt %%c %%Xs" % (self._commands['llq']['path'], self.cluster, pid))
-
+        """
+        ret, out, _ = self.shell.run_sync("%s -j %s \
+-r %%st %%dd %%cc %%jt %%c %%Xs" % (self._commands['llq']['path'], pid))
+        # output is something like
+        # R!03/25/2014 13:47!!Serial!normal!kisti.kim
+        # OR
+        # llq: There is currently no job status to report.
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
@@ -473,16 +629,27 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                 'gone':         False
             }
 
-            lastStr=out.rstrip().split('\n')[-1]
-            self._logger.info(lastStr)
+            #lastStr=out.rstrip().split('\n')[-1]
+            lastStr=out.rstrip()
+            self._logger.debug(lastStr)
             if lastStr.startswith('llq:'): # llq: There is currently no job status to report
-                # hgkim 2013/08/22
-                #job_info['state'] = _ll_to_saga_jobstate('C')
-                job_info['state'] = saga.job.DONE
-                job_info['returncode'] = 0
-                from datetime import datetime
-                job_info['end_time'] = datetime.now().strftime('%c')
-            else:
+                job_info = None
+                retries = max_retries
+                while job_info is None and retries > 0:
+                    retries -= 1
+                    job_info = self.__get_remote_job_info(pid)
+                    #print "llq:", job_info
+                    if job_info == None and retries > 0:
+                        message = "__get_remote_job_info get None, pid: %s and retries: %d" % (pid, retries)
+                        self._logger.debug(message)
+                        time.sleep(1)
+
+                if job_info == None:
+                    message = "__get_remote_job_info exceed %d tiems(s), pid: %s" % (max_retries, pid)
+                    log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+                self._logger.info("_retrieve_job: %r", job_info)
+            else: # job is still in the queue
                 results = lastStr.split('!')
                 self._logger.info("results: %r",results)
 
@@ -514,67 +681,18 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             self._logger.warning("Job information is not available anymore.")
             return prev_info
 
-        # curr. info will contain the new job info collect. it starts off
-        # as a copy of prev_info
-        curr_info = deepcopy(prev_info)
+        # if the job is in a terminal state don't expect it to change anymore
+        if prev_info["state"] in [saga.job.CANCELED, saga.job.FAILED, saga.job.DONE]:
+            return prev_info
 
-        rm, pid = self._adaptor.parse_id(job_id)
+        # retrieve updated job information
+        curr_info = self._retrieve_job(job_id)
+        if curr_info is None:
+            prev_info["gone"] = True
+            return prev_info
 
-        # run the LoadLeveler 'llq' command to get some infos about our job
-        #ret, out, _ = self.shell.run_sync("%s -f1 %s | \
-        ret, out, _ = self.shell.run_sync("%s -X %s -j %s \
--r %%st %%dd %%cc %%jt %%c %%Xs" % (self._commands['llq']['path'], self.cluster, pid))
-
-        if ret != 0:
-            if ("Unknown Job Id" in out):
-                # Let's see if the previous job state was runnig or pending. in
-                # that case, the job is gone now, which can either mean DONE,
-                # or FAILED. the only thing we can do is set it to 'DONE'
-                if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                    curr_info['state'] = saga.job.DONE
-                    curr_info['gone'] = True
-                    self._logger.warning("Previously running job has \
-disappeared. This probably means that the backend doesn't store informations \
-about finished jobs. Setting state to 'DONE'.")
-                else:
-                    curr_info['gone'] = True
-            else:
-                # something went wrong
-                message = "Error retrieving job info via 'llq': %s" % out
-                log_error_and_raise(message, saga.NoSuccess, self._logger)
-        else:
-            # parse the result(last string). this should look something like this:
-            """ 
-            ===== Cluster kisti.glory =====
-
-            06/19 09:51:45 llq: 2539-457 Cannot gethostbyname for machine: glory118.plsi.or.kr
-            R!06/19/2013 09:51!!Serial!normal!kisti.login
-            0 : Status
-            1 : Dispatch Date
-            2 : %cc
-            3 : Job type
-            4 : class
-            5 : Cluster name from where the job was submitted
-            """ 
-            lastStr=out.rstrip().split('\n')[-1]
-            self._logger.info(lastStr)
-            if lastStr.startswith('llq:'): # llq: There is currently no job status to report
-                curr_info['state'] = _ll_to_saga_jobstate('C')
-                
-                from datetime import datetime
-                curr_info['end_time'] = datetime.now().strftime('%c')
-            else:
-                results = lastStr.split('!')
-                self._logger.info(results)
-
-                
-                curr_info['state'] = _ll_to_saga_jobstate(results[0])
-                curr_info['returncode'] = 0 # later, fix
-                curr_info['create_time'] = results[1]
-                curr_info['start_time'] = results[1]
-                #curr_info['exec_hosts'] = results[5]
-
-        # return the new job info dict
+        # update the job info cache and return it
+        self.jobs[job_id] = curr_info
         return curr_info
 
     # ----------------------------------------------------------------
@@ -668,6 +786,8 @@ about finished jobs. Setting state to 'DONE'.")
             message = "Error canceling job via 'llcancel': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
+        #self.__clean_remote_job_info(pid)
+
         # assume the job was succesfully canceld
         self.jobs[job_id]['state'] = saga.job.CANCELED
 
@@ -684,9 +804,13 @@ about finished jobs. Setting state to 'DONE'.")
         while True:
             state = self._job_get_state(job_id=job_id)
 
+            if state == saga.job.UNKNOWN :
+                log_error_and_raise("cannot get job state", saga.IncorrectState, self._logger)
+
             if state == saga.job.DONE or \
                state == saga.job.FAILED or \
                state == saga.job.CANCELED:
+                    #self.__clean_remote_job_info(pid)
                     return True
             # avoid busy poll
             time.sleep(0.5)
@@ -763,21 +887,27 @@ about finished jobs. Setting state to 'DONE'.")
         ids = []
 
         ret, out, _ = self.shell.run_sync("%s | grep `whoami`" %
-                                          self._commands['qstat']['path'])
+                                          self._commands['llq']['path'])
 
         if ret != 0 and len(out) > 0:
-            message = "failed to list jobs via 'qstat': %s" % out
+            message = "failed to list jobs via 'llq': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         elif ret != 0 and len(out) == 0:
-            # qstat | grep `` exits with 1 if the list is empty
+            # llq | grep `` exits with 1 if the list is empty
             pass
         else:
             for line in out.split("\n"):
                 # output looks like this:
-                # 112059.svc.uc.futuregrid testjob oweidner 0 Q batch
-                # 112061.svc.uc.futuregrid testjob oweidner 0 Q batch
-                if len(line.split()) > 1:
-                    jobid = "[%s]-[%s]" % (self.rm, line.split()[0].split('.')[0])
+                # v4c064.8637.0            ydkim       3/27 13:33 R  50  normal       v4c064
+                # v4c064.8638.0            ydkim       3/27 13:37 R  50  normal       v4c064
+                # v4c064.8639.0            ydkim       3/27 13:37 R  50  normal       v4c065
+                # v4c064.8640.0            ydkim       3/27 13:37 R  50  normal       v4c065
+                # v4c064.8641.0            ydkim       3/27 13:37 I  50  normal
+                lineArray=line.split()
+                if len(lineArray) > 1:
+                    # lineArray[0] : v4c064.8637.0
+                    tmpStr=lineArray[0].split('.')
+                    jobid = "[%s]-[%s]" % (self.rm, ".".join(tmpStr[:2]))
                     ids.append(str(jobid))
 
         return ids
