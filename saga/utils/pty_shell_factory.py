@@ -227,7 +227,7 @@ class PTYShellFactory (object) :
 
                 # find a prompt
                 # use a very aggressive, but portable prompt setting scheme
-                pty_shell.write (" export PS1='>' > /dev/null 2>&1 || set prompt='>'\n")
+                pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
                 n, match = pty_shell.find (prompt_patterns, delay)
 
                 # this loop will run until we finally find the shell prompt, or
@@ -265,7 +265,7 @@ class PTYShellFactory (object) :
 
                         if  is_shell :
                             # use a very aggressive, but portable prompt setting scheme
-                            pty_shell.write (" export PS1='>' > /dev/null 2>&1 || set prompt='>'\n")
+                            pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
                             pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
                             used_trigger = True
 
