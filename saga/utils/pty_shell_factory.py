@@ -80,8 +80,8 @@ _SCRIPTS = {
         'shell'         : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'copy_to'       : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'copy_from'     : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'copy_to_in'    : "cd ~ && %(cp_exe)s -v %(cp_flags)s %(src)s %(tgt)s",
-        'copy_from_in'  : "cd ~ && %(cp_exe)s -v %(cp_flags)s %(src)s %(tgt)s",
+        'copy_to_in'    : "cd ~ && %(cp_exe)s -v %(cp_flags)s '%(src)s' '%(tgt)s'",
+        'copy_from_in'  : "cd ~ && %(cp_exe)s -v %(cp_flags)s '%(src)s' '%(tgt)s'",
     }
 }
 
@@ -227,7 +227,7 @@ class PTYShellFactory (object) :
 
                 # find a prompt
                 # use a very aggressive, but portable prompt setting scheme
-                pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
+              # pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
                 n, match = pty_shell.find (prompt_patterns, delay)
 
                 # this loop will run until we finally find the shell prompt, or
@@ -515,6 +515,7 @@ class PTYShellFactory (object) :
             cp_slave = self._get_cp_slave (s_cmd, info)
 
             prep = ""
+
             if  'sftp' in s_cmd :
                 # prepare target dirs for recursive copy, if needed
                 cp_slave.write (" ls %s\n" % src)
