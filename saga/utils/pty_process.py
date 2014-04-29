@@ -378,6 +378,8 @@ class PTYProcess (object) :
             # do we have a child which we can check?
             if  self.child :
 
+                wstat = None
+
                 while True :
                   # print 'waitpid %s' % self.child
                   
