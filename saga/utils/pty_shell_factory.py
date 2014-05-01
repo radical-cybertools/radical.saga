@@ -221,6 +221,7 @@ class PTYShellFactory (object) :
             try :
                 prompt_patterns = ["[Pp]assword:\s*$",             # password   prompt
                                    "Enter passphrase for .*:\s*$", # passphrase prompt
+                                   "Token response.*:\s*$",        # passtoken  prompt
                                    "want to continue connecting",  # hostkey confirmation
                                    ".*HELLO_\\d+_SAGA$",           # prompt detection helper
                                    "^(.*[\$#%>\]])\s*$"]           # greedy native shell prompt 
@@ -306,13 +307,21 @@ class PTYShellFactory (object) :
 
                     # --------------------------------------------------------------
                     elif n == 2 :
+                        logger.info ("got token prompt")
+                        token = sys.stdin.readline ()
+                        pty_shell.write ("%s\n" % token.strip())
+                        n, match = pty_shell.find (prompt_patterns, delay)
+
+
+                    # --------------------------------------------------------------
+                    elif n == 3 :
                         logger.info ("got hostkey prompt")
                         pty_shell.write ("yes\n")
                         n, match = pty_shell.find (prompt_patterns, delay)
 
 
                     # --------------------------------------------------------------
-                    elif n == 3 :
+                    elif n == 4 :
 
                         # one of the trigger commands got through -- we can now
                         # hope to find the prompt (or the next trigger...)
@@ -325,7 +334,7 @@ class PTYShellFactory (object) :
 
 
                     # --------------------------------------------------------------
-                    elif n == 4 :
+                    elif n == 5 :
 
                         logger.debug ("got initial shell prompt (%s) (%s)" %  (n, match))
 
