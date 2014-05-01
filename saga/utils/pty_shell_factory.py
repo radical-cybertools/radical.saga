@@ -221,7 +221,7 @@ class PTYShellFactory (object) :
             try :
                 prompt_patterns = ["[Pp]assword:\s*$",             # password   prompt
                                    "Enter passphrase for .*:\s*$", # passphrase prompt
-                                   "Token response.*:\s*$",        # passtoken  prompt
+                                   "Token_Response.*:\s*$",        # passtoken  prompt
                                    "want to continue connecting",  # hostkey confirmation
                                    ".*HELLO_\\d+_SAGA$",           # prompt detection helper
                                    "^(.*[\$#%>\]])\s*$"]           # greedy native shell prompt 
