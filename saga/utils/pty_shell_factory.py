@@ -308,6 +308,7 @@ class PTYShellFactory (object) :
                     # --------------------------------------------------------------
                     elif n == 2 :
                         logger.info ("got token prompt")
+                        sys.stdout.write ("enter token: \n")
                         token = sys.stdin.readline ()
                         pty_shell.write ("%s\n" % token.strip())
                         n, match = pty_shell.find (prompt_patterns, delay)
