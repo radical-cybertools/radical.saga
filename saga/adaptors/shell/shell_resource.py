@@ -1,7 +1,11 @@
 
+__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
 """ shell based resource adaptor implementation """
 
-import saga.utils.which
 import saga.utils.pty_shell
 
 import saga.adaptors.cpi.base
@@ -13,7 +17,6 @@ ANY = COMPUTE | STORAGE
 import re
 import os
 import time
-import threading
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -70,7 +73,7 @@ _ADAPTOR_DOC           = {
 
 _ADAPTOR_INFO          = {
     "name"             : _ADAPTOR_NAME,
-    "version"          : "v0.1",
+    "version"          : "v0.1.beta",
     "schemas"          : _ADAPTOR_SCHEMAS,
     "cpis"             : [
         { 
@@ -382,5 +385,5 @@ class ShellResourceCompute (saga.adaptors.cpi.resource.Compute) :
         # we never get here...
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

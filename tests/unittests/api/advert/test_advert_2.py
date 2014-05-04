@@ -3,6 +3,8 @@ import sys
 import saga
 import saga.utils.test_config as sutc
 
+import radical.utils as ru
+
 
 # start = False
 # stop  = False
@@ -26,5 +28,5 @@ import saga.utils.test_config as sutc
 # if stop : d_1.set_attribute ('foo', 'stop')
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

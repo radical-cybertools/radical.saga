@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# be friendly to bash users (and yes, the leading space is on purpose)
+ export HISTIGNORE='*'
+
 # this script uses only POSIX shell functionality, and does not rely on bash or
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
 # thought.
@@ -16,6 +19,8 @@ then
   KILL_DASHES=""
 fi
 
+# we always start in the user's home dir
+\cd $HOME 2>&1 > /dev/null
 
 # --------------------------------------------------------------------
 #
@@ -34,6 +39,10 @@ TIMEOUT=30
 TIMESTAMP=0
 
 PURGE_ON_START="%(PURGE_ON_START)s"
+
+# default exit value is 1, for error.  We need to set explicitly to 0 for
+# non-error conditions.
+EXIT_VAL=1
 
 # --------------------------------------------------------------------
 #
@@ -63,6 +72,7 @@ idle_checker () {
     if test -e "$BASE/quit.$ppid" 
     then
       \rm   -f  "$BASE/quit.$ppid" 
+      EXIT_VAL=0
       exit 0
     fi
 
@@ -625,6 +635,21 @@ cmd_purge () {
 
 # --------------------------------------------------------------------
 #
+# purge tmp files for bulks etc.
+#
+cmd_purge_tmps () {
+
+  rm -f "$BASE"/bulk.*
+  rm -f "$BASE"/idle.*
+  rm -f "$BASE"/quit.*
+  find  "$BASE" -type d -mtime +30 -exec rm -rf {} \;
+  find  "$BASE" -type f -mtime +30 -exec rm -rf {} \;
+  RETVAL="purged tmp files"
+}
+
+
+# --------------------------------------------------------------------
+#
 # quit this script gracefully
 #
 cmd_quit () {
@@ -633,6 +658,7 @@ cmd_quit () {
   then
     \printf "IDLE TIMEOUT\n"
     \touch "$BASE/timed_out.$$"
+    EXIT_VAL=2
   else
     \touch "$BASE/quit.$$"
   fi
@@ -648,7 +674,7 @@ cmd_quit () {
   \stty echo    >/dev/null 2>&1
   \stty echonl  >/dev/null 2>&1
 
-  exit 0
+  exit $EXIT_VAL
 }
 
 
@@ -786,9 +812,11 @@ listen() {
 \stty -echo   2> /dev/null
 \stty -echonl 2> /dev/null
 
+# FIXME: this leads to timing issues -- disable for benchmarking
 if test "$PURGE_ON_START" = "True"
 then
   cmd_purge
+  cmd_purge_tmps
 fi
 
 create_monitor

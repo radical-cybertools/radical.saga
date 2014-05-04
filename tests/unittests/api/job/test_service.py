@@ -5,6 +5,7 @@ __license__   = "MIT"
 
 
 import saga
+import radical.utils.testing  as testing
 import saga.utils.test_config as sutc
 
 
@@ -35,8 +36,8 @@ def test_close():
     """ Test job service close()
     """
     try:
-        tc = sutc.TestConfig()
-        js = saga.job.Service(tc.js_url, tc.session)
+        tc = testing.get_test_config ()
+        js = saga.job.Service(tc.job_service_url, tc.session)
         js.close()
         js.get_url()
         assert False, "Subsequent calls should fail after close()"
@@ -56,10 +57,10 @@ def test_open_close():
     """
     js = None
     try:
-        tc = sutc.TestConfig()
+        tc = testing.get_test_config ()
 
         for i in range(0, 10):
-            js = saga.job.Service(tc.js_url, tc.session)
+            js = saga.job.Service(tc.job_service_url, tc.session)
             js.close()
 
     except saga.NotImplemented as ni:
@@ -79,10 +80,10 @@ def test_get_url():
     """
     js = None
     try:
-        tc = sutc.TestConfig()
-        js = saga.job.Service(tc.js_url, tc.session)
-        assert str(js.get_url()) == str(tc.js_url)
-        assert str(js.url) == str(tc.js_url)
+        tc = testing.get_test_config ()
+        js = saga.job.Service(tc.job_service_url, tc.session)
+        assert str(js.get_url()) == str(tc.job_service_url)
+        assert str(js.url) == str(tc.job_service_url)
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
@@ -101,8 +102,8 @@ def test_list_jobs():
     j  = None
     js = None
     try:
-        tc = sutc.TestConfig()
-        js = saga.job.Service(tc.js_url, tc.session)
+        tc = testing.get_test_config ()
+        js = saga.job.Service(tc.job_service_url, tc.session)
 
         # create job service and job
         jd = saga.job.Description()
@@ -137,8 +138,8 @@ def test_run_job():
     """ Test to submit a job via run_job, and retrieve id"""
     js = None
     try:
-        tc = sutc.TestConfig()
-        js = saga.job.Service(tc.js_url, tc.session)
+        tc = testing.get_test_config ()
+        js = saga.job.Service(tc.job_service_url, tc.session)
 
         # create job service and job
         j = js.run_job("/bin/sleep 10")
@@ -161,8 +162,8 @@ def test_get_job():
     j  = None
     js = None
     try:
-        tc = sutc.TestConfig()
-        js = saga.job.Service(tc.js_url, tc.session)
+        tc = testing.get_test_config ()
+        js = saga.job.Service(tc.job_service_url, tc.session)
 
         # create job service and job
         jd = saga.job.Description()
@@ -193,8 +194,8 @@ def test_get_job():
 # ------------------------------------------------------------------------------
 #
 def helper_multiple_services(i):
-    tc = sutc.TestConfig()
-    js = saga.job.Service(tc.js_url, tc.session)
+    tc = testing.get_test_config ()
+    js = saga.job.Service(tc.job_service_url, tc.session)
     jd = saga.job.Description()
     jd.executable = '/bin/sleep'
     jd.arguments = ['10']
@@ -213,7 +214,7 @@ NUM_SERVICES = 20
 def test_multiple_services():
     """ Test to create multiple job service instances  (this test might take a while) """
     try:
-        tc = sutc.TestConfig()
+        tc = testing.get_test_config ()
         for i in range(0, NUM_SERVICES):
             helper_multiple_services(i)
 

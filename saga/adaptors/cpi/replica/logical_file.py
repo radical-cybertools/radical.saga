@@ -42,6 +42,11 @@ class LogicalFile (cpi_ns.entry.Entry,
     def is_file_self_async    (self, ttype)                    : pass
 
     @SYNC
+    def get_size_self         (self, ttype)                    : pass
+    @ASYNC
+    def get_size_self_async   (self, ttype)                    : pass
+
+    @SYNC
     def add_location          (self, name, ttype)              : pass
     @ASYNC
     def add_location_async    (self, name, ttype)              : pass
@@ -77,5 +82,5 @@ class LogicalFile (cpi_ns.entry.Entry,
     def download_async        (self, name, src, flags, ttype)  : pass
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

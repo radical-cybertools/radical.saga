@@ -7,16 +7,20 @@ __license__   = "MIT"
 """ Unit tests for saga.utils.exception.py
 """
 
-from saga.utils.exception import *
+import saga
 
-def test_ExceptionBase():
-    """ Test if ExceptionBase works properly
+import radical.utils as ru
+
+
+def test_Exceptions():
+    """ Test if Exceptions work properly
     """
     try:
-        raise ExceptionBase('message')
+        msg = 'this is the message'
+        raise saga.SagaException(msg)
         assert False
-    except ExceptionBase, eb:
-        assert (str(eb) == 'ExceptionBase: message'), "'%s' != '%s'" % (str(eb), 'message')
+    except saga.SagaException, se:
+        assert (msg in str(se)), "'%s' not in '%s'" % (msg, se)
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

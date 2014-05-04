@@ -1,5 +1,5 @@
 
-__author__    = "Andre Merzky, Mark Santcroos, Ole Weidner"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -7,26 +7,27 @@ __license__   = "MIT"
 """ PBS job adaptor implementation
 """
 
-import saga.utils.which
-import saga.utils.pty_shell
-import saga.utils.exception
+import threading
 
+import saga.utils.pty_shell
 import saga.adaptors.base
 import saga.adaptors.cpi.job
 
 from saga.job.constants import *
 
 import re
+import os 
 import time
 import threading
-from copy import deepcopy
-from cgi import parse_qs
 
-SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
+from copy import deepcopy
+from cgi  import parse_qs
+
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 SYNC_WAIT_UPDATE_INTERVAL = 1  # seconds
-MONITOR_UPDATE_INTERVAL = 3  # seconds
+MONITOR_UPDATE_INTERVAL   = 3  # seconds
 
 
 # --------------------------------------------------------------------
@@ -51,8 +52,8 @@ class _job_state_monitor(threading.Thread):
         return self._stop.isSet()
 
     def run(self):
-        try:
-            while self.stopped() is False:
+        while self.stopped() is False:
+            try:
                 # do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
                 jobs = self.js.jobs
@@ -83,10 +84,8 @@ class _job_state_monitor(threading.Thread):
                             self.js.jobs[job] = job_info
 
                 time.sleep(MONITOR_UPDATE_INTERVAL)
-
-        except Exception as e:
-            self.logger.critical("Job monitoring thread crashed: %s" % e)
-            raise e
+            except Exception as e:
+                self.logger.warning("Exception caught in job monitoring thread: %s" % e)
 
 
 # --------------------------------------------------------------------
@@ -163,12 +162,43 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
 
     # a workaround is to do an explicit 'cd'
     if jd.working_directory is not None:
-        exec_n_args = 'cd '+jd.working_directory+' && '+exec_n_args
+        workdir_directives  = 'export    PBS_O_WORKDIR=%s \n' % jd.working_directory
+        workdir_directives += 'mkdir -p  %s\n' % jd.working_directory
+        workdir_directives += 'cd        %s\n' % jd.working_directory
+    else:
+        workdir_directives = ''
 
     if jd.output is not None:
-        pbs_params += "#PBS -o %s \n" % jd.output
+        # if working directory is set, we want stdout to end up in
+        # the working directory as well, unless it containes a specific
+        # path name.
+        if jd.working_directory is not None:
+            if os.path.isabs(jd.output):
+                pbs_params += "#PBS -o %s \n" % jd.output
+            else:
+                # user provided a relative path for STDOUT. in this case 
+                # we prepend the workind directory path before passing
+                # it on to PBS
+                pbs_params += "#PBS -o %s/%s \n" % (jd.working_directory, jd.output)
+        else:
+            pbs_params += "#PBS -o %s \n" % jd.output
+
     if jd.error is not None:
-        pbs_params += "#PBS -e %s \n" % jd.error
+        # if working directory is set, we want stderr to end up in 
+        # the working directory as well, unless it contains a specific
+        # path name. 
+        if jd.working_directory is not None:
+            if os.path.isabs(jd.error):
+                pbs_params += "#PBS -e %s \n" % jd.error
+            else:
+                # user provided a realtive path for STDERR. in this case 
+                # we prepend the workind directory path before passing
+                # it on to PBS
+                pbs_params += "#PBS -e %s/%s \n" % (jd.working_directory, jd.error)
+        else:
+            pbs_params += "#PBS -e %s \n" % jd.error
+
+
     if jd.wall_time_limit is not None:
         hours = jd.wall_time_limit / 60
         minutes = jd.wall_time_limit % 60
@@ -198,6 +228,13 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
             logger.info("Using Cray specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
             if jd.total_cpu_count is not None:
                 pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
+        elif '4.2.5-snap.201308291703' in pbs_version: 
+            logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx' against '#PBS -l size=xx'.")
+            nnodes = int(jd.total_cpu_count)//int(ppn)
+            if nnodes: 
+                pbs_params += "#PBS -l nodes=%s \n" % str(nnodes)
+            else:
+                pbs_params += "#PBS -l nodes=1 \n"
         else:
             logger.info("Using Cray XT specific '#PBS -l size=xx' flags (TORQUE).")
             if jd.total_cpu_count is not None:
@@ -216,6 +253,7 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
     # only escape '$' in args and exe. not in the params
+    exec_n_args = workdir_directives + exec_n_args
     exec_n_args = exec_n_args.replace('$', '\\$')
 
     pbscript = "\n#!/bin/bash \n%s%s" % (pbs_params, exec_n_args)
@@ -317,11 +355,10 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__(self):
 
-        saga.adaptors.base.Base.__init__(self,
-            _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts = self.get_config()
+        self.opts  = self.get_config (_ADAPTOR_NAME)
 
     # ----------------------------------------------------------------
     #
@@ -352,6 +389,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def __init__(self, api, adaptor):
 
+        self._mt  = None
         _cpi_base = super(PBSJobService, self)
         _cpi_base.__init__(api, adaptor)
 
@@ -368,8 +406,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     #
     def close(self):
 
-        self.mt.stop()
-        self.mt.join(10)  # don't block forever on join()
+        if  self.mt :
+            self.mt.stop()
+            self.mt.join(10)  # don't block forever on join()
+
         self._logger.info("Job monitoring thread stopped.")
 
         self.finalize(True)
@@ -517,6 +557,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # get the job description
         jd = job_obj.jd
 
+        # normalize working directory path
+        if  jd.working_directory :
+            jd.working_directory = os.path.normpath (jd.working_directory)
+
         if (self.queue is not None) and (jd.queue is not None):
             self._logger.warning("Job service was instantiated explicitly with \
 'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." %
@@ -530,7 +574,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                                          is_cray=self.is_cray, queue=self.queue,
                                          )
 
-            self._logger.debug("Generated PBS script: %s" % script)
+            self._logger.info("Generated PBS script: %s" % script)
         except Exception, ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
@@ -545,8 +589,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 message = "Couldn't create working directory - %s" % (out)
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        # run the PBS script
-        cmdline = """echo "%s" | %s""" % (script, self._commands['qsub']['path'])
+        # Now we want to execute the script. This process consists of two steps:
+        # (1) we create a temporary file with 'mktemp' and write the contents of 
+        #     the generated PBS script into it
+        # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-PBSJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
@@ -592,7 +639,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the PBS 'qstat' command to get some infos about our job
-        if 'PBSPro_10' in self._commands['qstat']['version']:
+        if 'PBSPro_1' in self._commands['qstat']['version']:
             qstat_flag = '-f'
         else:
             qstat_flag ='-f1'
@@ -608,6 +655,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         else:
             # the job seems to exist on the backend. let's gather some data
             job_info = {
+                'job_id':       job_id,
                 'state':        saga.job.UNKNOWN,
                 'exec_hosts':   None,
                 'returncode':   None,
@@ -732,7 +780,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     def _job_get_exit_code(self, job_obj):
         """ get the job's exit code
         """
-        return self.jobs[job_obj]['returncode']
+        ret = self.jobs[job_obj]['returncode']
+
+        # FIXME: 'None' should cause an exception
+        if ret == None : return None
+        else           : return int(ret)
 
     # ----------------------------------------------------------------
     #

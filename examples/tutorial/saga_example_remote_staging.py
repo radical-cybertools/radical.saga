@@ -1,7 +1,15 @@
+
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
+
+import os
 import sys
 import saga
+import getpass
 
-REMOTE_HOST = "gw68.quarry.iu.teragrid.org"
+REMOTE_HOST = "localhost"
 
 def main():
     try:
@@ -26,8 +34,8 @@ def main():
         jd.environment     = {'MYOUTPUT':'"Hello from SAGA"'}
         jd.executable      = '/bin/echo'
         jd.arguments       = ['$MYOUTPUT']
-        jd.output          = "/tmp/mysagajob.stdout"
-        jd.error           = "/tmp/mysagajob.stderr"
+        jd.output          = "/tmp/mysagajob-%s.stdout" % getpass.getuser()
+        jd.error           = "/tmp/mysagajob-%s.stderr" % getpass.getuser()
 
         # Create a new job from the job description. The initial state of
         # the job is 'New'.
@@ -52,8 +60,8 @@ def main():
         print "Job State : %s" % (myjob.state)
         print "Exitcode  : %s" % (myjob.exit_code)
 
-        outfilesource = 'sftp://%s/tmp/mysagajob.stdout' % REMOTE_HOST
-        outfiletarget = 'file://localhost/tmp/'
+        outfilesource = 'sftp://%s/tmp/mysagajob-%s.stdout' % (REMOTE_HOST, getpass.getuser())
+        outfiletarget = "file://%s/" % os.getcwd()
         out = saga.filesystem.File(outfilesource, session=session)
         out.copy(outfiletarget)
 

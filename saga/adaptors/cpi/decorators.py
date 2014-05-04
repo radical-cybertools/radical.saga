@@ -128,5 +128,5 @@ def CPI_ASYNC_CALL (cpi_async_function) :
     return wrap_function
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -96,5 +96,5 @@ class Entry (cpi_base.CPIBase, cpi_async.Async) :
     def remove_self_async    (self, flags, ttype)             : pass
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

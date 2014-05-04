@@ -10,6 +10,9 @@ __license__   = "MIT"
 from saga.utils.logger        import getLogger
 from saga.utils.logger.logger import _Logger
 
+import radical.utils as ru
+
+
 ############################# BEGIN UNIT TESTS ################################
 ##
 def test_singleton():
@@ -43,5 +46,5 @@ def test_logger():
     cl.error('error')
     cl.fatal('fatal')
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

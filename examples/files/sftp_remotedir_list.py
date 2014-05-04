@@ -1,4 +1,8 @@
-#!/usr/bin/env python
+
+__author__    = "Andre Merzky, Ole Weidner"
+__copyright__ = "Copyright 2013, The SAGA Project"
+__license__   = "MIT"
+
 
 '''This examples shows how to use the saga.Filesystem API
    with the SFTP file adaptor.
@@ -10,10 +14,6 @@
    If you think you have encountered a defect, please 
    report it at: https://github.com/saga-project/saga-python/issues
 '''
-
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2011-2013, The SAGA Project"
-__license__   = "MIT"
 
 import sys
 import saga

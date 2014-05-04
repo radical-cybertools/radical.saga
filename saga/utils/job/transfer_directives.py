@@ -8,7 +8,7 @@ __license__   = "MIT"
     defined in GFD.90, sction 4.1.3.
 '''
 
-from saga.utils.exception import ExceptionBase
+import saga.exceptions as se
 
 # 4.1.3 File Transfer Specifications (GFD90 p 176-177)
 #
@@ -42,7 +42,8 @@ class TransferDirectives(object):
         # each line in directives_list should contain one directive
         for directive in directives_list:
             if (directive.count('>') > 2) or (directive.count('<') > 2):
-                raise InvalidTransferDirective(directive)
+                msg = "'%s' is not a valid transfer directive string."
+                raise se.BadParameter(msg)
             elif '<<' in directive:
                 (remote, local) = directive.split('<<')
                 self._out_append[local.strip()] = remote.strip()
@@ -56,7 +57,8 @@ class TransferDirectives(object):
                 (local, remote) = directive.split('>')
                 self._in_overwrite[local.strip()] = remote.strip()
             else:
-                raise InvalidTransferDirective(directive)
+                msg = "'%s' is not a valid transfer directive string."
+                raise se.BadParameter(msg)
 
     def _dicts_to_string_list(self):
         slist = list()
@@ -96,13 +98,6 @@ class TransferDirectives(object):
         return self._dicts_to_string_list()
 
 
-class InvalidTransferDirective(ExceptionBase):
-    def __init__(self, directive):
-        self.message = "'%s' is not a valid transfer directive string." % directive
-
-    def __str__(self):
-        return self.message  
-
 def _test_():
     tdp = TransferDirectives(["ab","a>c", "c>>d","f<a","g<<h"])
     print tdp.in_append_dict
@@ -112,5 +107,5 @@ def _test_():
 
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

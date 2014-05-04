@@ -52,7 +52,7 @@ It also installs easy_install and pip:
 
 .. code-block:: bash
 
-    curl --insecure -s https://raw.github.com/pypa/virtualenv/master/virtualenv.py | python - $HOME/sagaenv
+    curl --insecure -s https://raw.github.com/pypa/virtualenv/1.9.X/virtualenv.py | python - $HOME/sagaenv
     . $HOME/sagaenv/bin/activate
     pip install saga-python
 

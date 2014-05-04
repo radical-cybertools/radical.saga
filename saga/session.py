@@ -4,13 +4,16 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.utils.singleton
-import saga.utils.logger
+import radical.utils            as ru
+import radical.utils.signatures as rus
+import radical.utils.logger     as  rul
+
+import saga.exceptions          as se
+
 import saga.engine.engine
 import saga.context
 import saga.base
 
-import saga.utils.signatures as sus
 
 
 # ------------------------------------------------------------------------------
@@ -28,17 +31,22 @@ class _ContextList (list) :
 
     # --------------------------------------------------------------------------
     #
-    def __init__ (self, session, *args, **kwargs) :
+    def __init__ (self, session=None, *args, **kwargs) :
 
-        self.session = session
+        self._session = session
 
-        l = super  (_ContextList, self)
-        l.__init__ (*args, **kwargs)
+        if  session : 
+            self._logger  = session._logger
+        else :
+            self._logger  = rul.getLogger ('saga', 'ContextList')
+
+        base_list = super  (_ContextList, self)
+        base_list.__init__ (*args, **kwargs)
 
 
     # --------------------------------------------------------------------------
     #
-    def append (self, ctx) :
+    def append (self, ctx, session=None) :
 
         if  not isinstance (ctx, saga.Context) :
             raise TypeError, "appended item is not a saga.Context instance"
@@ -47,17 +55,27 @@ class _ContextList (list) :
         ctx_clone = saga.Context  (ctx.type)
         ctx._attributes_deep_copy (ctx_clone)
 
-        # from pudb import set_trace; set_trace()
+        if  not session :
+            session = self._session
+            logger  = self._logger
+        else :
+            logger  = session._logger
+
 
         # try to initialize that context, i.e. evaluate its attributes and
         # infer additional runtime information as needed
-        self.session._logger.debug ("adding  context : %s" \
-                                 % (ctx_clone))
-        try :
-            ctx_clone._initialize (self.session)
-        except saga.exceptions.SagaException as e :
-            msg = "Cannot add context, initialization failed (%s)"  %  str(e)
-            raise saga.exceptions.BadParameter (msg)
+        logger.debug ("adding  context : %s" \
+                   % (ctx_clone))
+
+        if  not session :
+            logger.warning ("cannot initialize context - no session: %s" \
+                       % (ctx_clone))
+        else :
+            try :
+                ctx_clone._initialize (session)
+            except se.SagaException as e :
+                msg = "Cannot add context, initialization failed (%s)"  %  str(e)
+                raise se.BadParameter (msg)
 
         # context initialized ok, add it to the list of known contexts
         super (_ContextList, self).append (ctx_clone)
@@ -68,12 +86,12 @@ class _ContextList (list) :
 #
 class _DefaultSession (object) :
 
-    __metaclass__ = saga.utils.singleton.Singleton
+    __metaclass__ = ru.Singleton
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('_DefaultSession')
-    @sus.returns (sus.nothing)
+    @rus.takes   ('_DefaultSession')
+    @rus.returns (rus.nothing)
     def __init__ (self) :
 
         # the default session picks up default contexts, from all context
@@ -81,8 +99,8 @@ class _DefaultSession (object) :
         # dig through the registered context adaptors, and ask each of them for
         # default contexts.
 
-        self.contexts  = _ContextList (session=self)
-        self._logger   = saga.utils.logger.getLogger ('saga.DefaultSession')
+        self.contexts  = _ContextList ()
+        self._logger   = rul.getLogger ('saga', 'DefaultSession')
 
         _engine = saga.engine.engine.Engine ()
 
@@ -90,17 +108,31 @@ class _DefaultSession (object) :
             self._logger.warn ("no context adaptors found")
             return
 
-        for schema in   _engine._adaptor_registry['saga.Context'] :
+        for schema   in _engine._adaptor_registry['saga.Context'] :
             for info in _engine._adaptor_registry['saga.Context'][schema] :
 
-                default_ctxs = info['adaptor_instance']._get_default_contexts()
-                # FIXME:
                 default_ctxs = []
+
+                try : 
+                    default_ctxs = info['adaptor_instance']._get_default_contexts ()
+
+                except se.SagaException as e :
+                    self._logger.debug   ("adaptor %s failed to provide default" \
+                                          "contexts: %s" % (info['adaptor_name'], e))
+                    continue
+                    
+
                 for default_ctx in default_ctxs :
 
-                    self.contexts.append (default_ctx)
-                    self._logger.debug ("default context [%-20s] : %s" \
-                                     % (info['adaptor_name'], default_ctx))
+                    try :
+                        self.contexts.append (ctx=default_ctx, session=self)
+                        self._logger.debug   ("default context [%-20s] : %s" \
+                                         %   (info['adaptor_name'], default_ctx))
+
+                    except se.SagaException as e :
+                        self._logger.debug   ("skip default context [%-20s] : %s : %s" \
+                                         %   (info['adaptor_name'], default_ctx, e))
+                        continue
 
 
 # ------------------------------------------------------------------------------
@@ -108,15 +140,15 @@ class _DefaultSession (object) :
 class Session (saga.base.SimpleBase) :
     """A SAGA Session object as defined in GFD.90.
 
-    A Bliss session has the purpose of scoping the use of security credentials
+    A SAGA session has the purpose of scoping the use of security credentials
     for remote operations.  In other words, a session instance acts as
-    a container for security L{Context} instances -- Bliss objects (such as
-    L{job.Service} or L{filesystem.File}) created in that session will then use
+    a container for security Context instances -- SAGA objects (such as
+    job.Service or filesystem.File) created in that session will then use
     exactly the security contexts from that session (and no others).
 
-    That way, the session serves two purposes:  (1) it helps Bliss to decide
+    That way, the session serves two purposes:  (1) it helps SAGA to decide
     which security mechanism should be used for what interaction, and (2) it
-    helps Bliss to find security credentials which would be difficult to pick up
+    helps SAGA to find security credentials which would be difficult to pick up
     automatically.
     
     The use of a session is as follows:
@@ -141,7 +173,7 @@ class Session (saga.base.SimpleBase) :
 
 
     The session argument to the L{job.Service} constructor is fully optional --
-    if left out, Bliss will use default session, which picks up some default
+    if left out, SAGA will use default session, which picks up some default
     contexts as described above -- that will suffice for the majority of use
     cases.
 
@@ -154,32 +186,33 @@ class Session (saga.base.SimpleBase) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Session', 
-                  sus.optional(bool))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Session', 
+                  rus.optional(bool))
+    @rus.returns (rus.nothing)
     def __init__ (self, default=True) :
         """
         default: bool
         ret:     None
         """
 
-        saga.base.SimpleBase.__init__ (self)
+        simple_base = super  (Session, self)
+        simple_base.__init__ ()
 
         # if the default session is expected, we point our context list to the
         # shared list of the default session singleton.  Otherwise, we create
         # a private list which is not populated.
 
-        if default :
+        if  default :
             default_session  = _DefaultSession ()
             self.contexts    = default_session.contexts 
         else :
-            self.contexts    = _ContextList (session = self)
+            self.contexts    = _ContextList (session=self)
 
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Session')
-    @sus.returns (basestring)
+    @rus.takes   ('Session')
+    @rus.returns (basestring)
     def __str__  (self):
         """String represenation."""
 
@@ -188,9 +221,9 @@ class Session (saga.base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes      ('Session', 
+    @rus.takes      ('Session', 
                      saga.context.Context)
-    @sus.returns    (sus.nothing)
+    @rus.returns    (rus.nothing)
     def add_context (self, ctx) :
         """
         ctx:     saga.Context
@@ -200,14 +233,14 @@ class Session (saga.base.SimpleBase) :
         It is encouraged to use the L{contexts} property instead. 
         """
 
-        return self.contexts.append (ctx)
+        return self.contexts.append (ctx=ctx, session=self)
 
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Session', 
+    @rus.takes   ('Session', 
                   saga.context.Context)
-    @sus.returns (sus.nothing)
+    @rus.returns (rus.nothing)
     def remove_context (self, ctx) :
         """
         ctx:     saga.Context
@@ -223,8 +256,8 @@ class Session (saga.base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @sus.takes   ('Session')
-    @sus.returns (sus.list_of (saga.context.Context))
+    @rus.takes   ('Session')
+    @rus.returns (rus.list_of (saga.context.Context))
     def list_contexts  (self) :
         """
         ret:     list[saga.Context]
@@ -237,5 +270,5 @@ class Session (saga.base.SimpleBase) :
 
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 
