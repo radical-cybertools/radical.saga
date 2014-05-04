@@ -80,8 +80,8 @@ _SCRIPTS = {
         'shell'         : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'copy_to'       : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'copy_from'     : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'copy_to_in'    : "cd ~ && %(cp_exe)s -v %(cp_flags)s %(src)s %(tgt)s",
-        'copy_from_in'  : "cd ~ && %(cp_exe)s -v %(cp_flags)s %(src)s %(tgt)s",
+        'copy_to_in'    : "cd ~ && %(cp_exe)s -v %(cp_flags)s '%(src)s' '%(tgt)s'",
+        'copy_from_in'  : "cd ~ && %(cp_exe)s -v %(cp_flags)s '%(src)s' '%(tgt)s'",
     }
 }
 
@@ -221,13 +221,14 @@ class PTYShellFactory (object) :
             try :
                 prompt_patterns = ["[Pp]assword:\s*$",             # password   prompt
                                    "Enter passphrase for .*:\s*$", # passphrase prompt
+                                   "Token_Response.*:\s*$",        # passtoken  prompt
                                    "want to continue connecting",  # hostkey confirmation
                                    ".*HELLO_\\d+_SAGA$",           # prompt detection helper
-                                   "^(.*[\$#%>\]])\s*$"]             # greedy native shell prompt 
+                                   "^(.*[\$#%>\]])\s*$"]           # greedy native shell prompt 
 
                 # find a prompt
                 # use a very aggressive, but portable prompt setting scheme
-                pty_shell.write ("export PS1='>' >& /dev/null || set prompt='>'\n")
+              # pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
                 n, match = pty_shell.find (prompt_patterns, delay)
 
                 # this loop will run until we finally find the shell prompt, or
@@ -265,8 +266,8 @@ class PTYShellFactory (object) :
 
                         if  is_shell :
                             # use a very aggressive, but portable prompt setting scheme
-                            pty_shell.write ("export PS1='>' >& /dev/null || set prompt='>'\n")
-                            pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+                            pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
+                            pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
                             used_trigger = True
 
                         # FIXME:  consider better timeout
@@ -306,13 +307,22 @@ class PTYShellFactory (object) :
 
                     # --------------------------------------------------------------
                     elif n == 2 :
+                        logger.info ("got token prompt")
+                        import getpass
+                        token = getpass.getpass ("enter token: ")
+                        pty_shell.write ("%s\n" % token.strip())
+                        n, match = pty_shell.find (prompt_patterns, delay)
+
+
+                    # --------------------------------------------------------------
+                    elif n == 3 :
                         logger.info ("got hostkey prompt")
                         pty_shell.write ("yes\n")
                         n, match = pty_shell.find (prompt_patterns, delay)
 
 
                     # --------------------------------------------------------------
-                    elif n == 3 :
+                    elif n == 4 :
 
                         # one of the trigger commands got through -- we can now
                         # hope to find the prompt (or the next trigger...)
@@ -325,7 +335,7 @@ class PTYShellFactory (object) :
 
 
                     # --------------------------------------------------------------
-                    elif n == 4 :
+                    elif n == 5 :
 
                         logger.debug ("got initial shell prompt (%s) (%s)" %  (n, match))
 
@@ -337,13 +347,26 @@ class PTYShellFactory (object) :
                                 trigger = "HELLO_%d_SAGA" % retries
 
                                 if  not trigger in found_trigger :
+
                                     logger.debug ("waiting for prompt trigger %s: (%s) (%s)" \
                                                % (trigger, n, match))
                                     # but more retries won't help...
                                     retry_trigger = False
-                                    n = None
+                                    attempts      = 0
+                                    n             = None
+
                                     while not n :
-                                        n, match = pty_shell.find (prompt_patterns, delay)
+
+                                        attempts += 1
+                                        n, match  = pty_shell.find (prompt_patterns, delay)
+
+                                        if  not n :
+                                            if  attempts == 1 :
+                                                pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+
+                                            if  attempts > 100 :
+                                                raise se.NoSuccess ("Could not detect shell prompt (timeout)")
+
                                     continue
 
 
@@ -502,9 +525,10 @@ class PTYShellFactory (object) :
             cp_slave = self._get_cp_slave (s_cmd, info)
 
             prep = ""
+
             if  'sftp' in s_cmd :
                 # prepare target dirs for recursive copy, if needed
-                cp_slave.write ("ls %s\n" % src)
+                cp_slave.write (" ls %s\n" % src)
                 _, out = cp_slave.find (["^sftp> "], -1)
 
                 src_list = out[1].split ('/n')
@@ -737,7 +761,4 @@ class PTYShellFactory (object) :
             # keep all collected info in the master dict, and return it for
             # registration
             return info
-
-
-
 
