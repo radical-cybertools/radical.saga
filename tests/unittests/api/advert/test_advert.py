@@ -2,6 +2,9 @@
 import saga
 import saga.utils.test_config as sutc
 
+import radical.utils as ru
+
+
 check = False
 
 # ------------------------------------------------------------------------------
@@ -25,7 +28,7 @@ def test_advert_callback () :
     try :
         global check
 
-        tc = sutc.TestConfig()
+        tc = ru.get_test_config ()
         
         d_1 = saga.advert.Directory (tc.advert_url + '/tmp/test1/test1/',
                                      saga.advert.CREATE | saga.advert.CREATE_PARENTS)
@@ -47,7 +50,7 @@ def test_advert_callback () :
     
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 
 test_advert_callback ()
 

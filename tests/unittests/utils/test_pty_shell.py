@@ -11,13 +11,15 @@ import saga
 import saga.utils.pty_shell   as sups
 import saga.utils.test_config as sutc
 
+import radical.utils.testing as rut
+
 
 # ------------------------------------------------------------------------------
 #
 def test_ptyshell_ok () :
     """ Test pty_shell which runs command successfully """
-    conf  = sutc.TestConfig()
-    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session)
+    conf  = rut.get_test_config ()
+    shell = sups.PTYShell (saga.Url(conf.job_service_url), conf.session)
 
     txt = "______1______2_____3_____"
     ret, out, _ = shell.run_sync ("printf \"%s\"" % txt)
@@ -25,8 +27,7 @@ def test_ptyshell_ok () :
     assert (out == txt)  , "%s == %s" % (repr(out), repr(txt))
 
     assert (shell.alive ())
-    shell.run_async ("exit")
-    time.sleep (1)
+    shell.finalize (True)
     assert (not shell.alive ())
 
 
@@ -34,8 +35,8 @@ def test_ptyshell_ok () :
 #
 def test_ptyshell_nok () :
     """ Test pty_shell which runs command unsuccessfully """
-    conf  = sutc.TestConfig()
-    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session)
+    conf  = rut.get_test_config ()
+    shell = sups.PTYShell (saga.Url(conf.job_service_url), conf.session)
 
     txt = "______1______2_____3_____"
     ret, out, _ = shell.run_sync ("printf \"%s\" ; false" % txt)
@@ -43,8 +44,7 @@ def test_ptyshell_nok () :
     assert (out == txt)  , "%s == %s" % (repr(out), repr(txt))
 
     assert (shell.alive ())
-    shell.run_async ("exit")
-    time.sleep (1)
+    shell.finalize (True)
     assert (not shell.alive ())
 
 
@@ -52,8 +52,8 @@ def test_ptyshell_nok () :
 #
 def test_ptyshell_async () :
     """ Test pty_shell which runs command successfully """
-    conf  = sutc.TestConfig()
-    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session)
+    conf  = rut.get_test_config ()
+    shell = sups.PTYShell (saga.Url(conf.job_service_url), conf.session)
 
     txt = "______1______2_____3_____\n"
     shell.run_async ("cat <<EOT")
@@ -67,8 +67,7 @@ def test_ptyshell_async () :
     assert (out == txt) , "%s == %s" % (repr(out), repr(txt))
  
     assert (shell.alive ())
-    shell.run_async ("exit")
-    time.sleep (1)
+    shell.finalize (True)
     assert (not shell.alive ())
 
 
@@ -76,8 +75,8 @@ def test_ptyshell_async () :
 #
 def test_ptyshell_prompt () :
     """ Test pty_shell with prompt change """
-    conf  = sutc.TestConfig()
-    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session)
+    conf  = rut.get_test_config ()
+    shell = sups.PTYShell (saga.Url(conf.job_service_url), conf.session)
 
     txt = "______1______2_____3_____"
     ret, out, _ = shell.run_sync ("printf \"%s\"" % txt)
@@ -93,8 +92,7 @@ def test_ptyshell_prompt () :
     assert (out == txt)  , "%s == %s" % (repr(out), repr(txt))
 
     assert (shell.alive ())
-    shell.run_async ("exit")
-    time.sleep (1)
+    shell.finalize (True)
     assert (not shell.alive ())
 
 
@@ -102,8 +100,8 @@ def test_ptyshell_prompt () :
 #
 def test_ptyshell_file_stage () :
     """ Test pty_shell file staging """
-    conf  = sutc.TestConfig()
-    shell = sups.PTYShell (saga.Url(conf.js_url), conf.session)
+    conf  = rut.get_test_config ()
+    shell = sups.PTYShell (saga.Url(conf.job_service_url), conf.session)
 
     txt = "______1______2_____3_____"
     shell.write_to_remote   (txt, "/tmp/saga-test-staging")
@@ -114,5 +112,8 @@ def test_ptyshell_file_stage () :
     ret, out, _ = shell.run_sync ("rm /tmp/saga-test-staging")
     assert (ret == 0)    , "%s"       % (repr(ret))
     assert (out == "")   , "%s == ''" % (repr(out))
+
+
+# ------------------------------------------------------------------------------
 
 

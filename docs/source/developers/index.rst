@@ -5,7 +5,6 @@ Developer Documentation
 ***********************
 
 .. toctree::
-   :numbered:
 
    adaptorwriting.rst
    timeout_gc.rst

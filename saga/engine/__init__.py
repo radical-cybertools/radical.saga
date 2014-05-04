@@ -9,5 +9,5 @@ __license__   = "MIT"
 from saga.engine.engine import Engine
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

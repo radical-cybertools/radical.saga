@@ -1,5 +1,5 @@
 
-__author__    = "Ole Weidner"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -20,9 +20,6 @@ def main():
         # The adaptor also support ssh:// and gsissh://
         js = saga.job.Service("ssh://localhost")
         l  = js.list ()
-
-       
-        sys.exit (0)
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
@@ -74,16 +71,16 @@ def main():
         print "Start time  : %s" % (touchjob_clone.started)
         print "End time    : %s" % (touchjob_clone.finished)
 
+        js.close()
         return 0
 
     except saga.SagaException, ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print "An exception occured: %s " % ex
         # Trace back the exception. That can be helpful for debugging.
         print " \n*** Backtrace:\n %s" % ex.traceback
         return -1
 
 if __name__ == "__main__":
-    main ()
-    sys.exit (0)
+    sys.exit (main())
 

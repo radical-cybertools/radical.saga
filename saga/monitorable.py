@@ -1,16 +1,16 @@
 
 __author__    = "Andre Merzky"
-__copyright__ = "Copyright 2013, The SAGA Project"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
 """ Monitorable interface """
 
+import radical.utils.signatures as rus
+
 import saga.attributes       as sa
 import saga.base             as sb
 import saga.exceptions       as se
-import saga.utils.exception  as sue
-import saga.utils.signatures as sus
 
 
 # ------------------------------------------------------------------------------
@@ -42,8 +42,8 @@ class Monitorable (sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Monitorable')
-    @sus.returns (sus.list_of (basestring))
+    @rus.takes   ('Monitorable')
+    @rus.returns (rus.list_of (basestring))
     def list_metrics (self) :
 
         self._check ()
@@ -54,8 +54,8 @@ class Monitorable (sa.Attributes) :
     #
     # Metrics are not implemented in SAGA-Python
     #
-  # @sus.takes   ('Monitorable', basestring)
-  # @sus.returns ('Metric')
+  # @rus.takes   ('Monitorable', basestring)
+  # @rus.returns ('Metric')
   # def get_metric (name) :
   #
   #     self._check ()
@@ -64,10 +64,10 @@ class Monitorable (sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Monitorable',
+    @rus.takes   ('Monitorable',
                   basestring,
-                  sus.one_of ('saga.Callback', callable))
-    @sus.returns (int)
+                  rus.one_of ('saga.Callback', callable))
+    @rus.returns (int)
     def add_callback (self, name, cb) :
 
         self._check ()
@@ -76,9 +76,9 @@ class Monitorable (sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Monitorable',
+    @rus.takes   ('Monitorable',
                   int)
-    @sus.returns (sus.nothing)
+    @rus.returns (rus.nothing)
     def remove_callback (self, cookie) :
 
         self._check ()
@@ -86,5 +86,5 @@ class Monitorable (sa.Attributes) :
 
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

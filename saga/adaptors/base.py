@@ -6,9 +6,10 @@ __license__   = "MIT"
 
 """ the adaptor base class. """
 
-import saga.utils.singleton  as sing
-import saga.utils.logger     as sul
-import saga.utils.config     as suc
+import radical.utils         as ru
+import radical.utils.config  as ruc
+import radical.utils.logger  as rul
+
 
 from   saga.exceptions import *
 
@@ -16,13 +17,13 @@ from   saga.exceptions import *
 # ------------------------------------------------------------------------------
 # adaptor base class
 #
-class Base (suc.Configurable) :
+class Base (ruc.Configurable) :
 
     # We only need one instance of this adaptor per process (actually per
     # engine, but engine is a singleton, too...) -- the engine will though
     # create new CPI implementation instances as needed (one per SAGA API
     # object).
-    __metaclass__ = sing.Singleton
+    __metaclass__ = ru.Singleton
 
     
     # --------------------------------------------------------------------------
@@ -36,7 +37,8 @@ class Base (suc.Configurable) :
         self._name    = adaptor_info['name']
         self._schemas = adaptor_info['schemas']
 
-        self._logger = sul.getLogger (self._name)
+        self._lock    = ru.RLock      (self._name)
+        self._logger  = rul.getLogger ('saga', self._name)
 
         has_enabled = False
         for option in self._opts :
@@ -57,7 +59,8 @@ class Base (suc.Configurable) :
             )
 
 
-        suc.Configurable.__init__ (self, self._name, self._opts)
+        ruc.Configurable.__init__       (self, 'saga')
+        ruc.Configurable.config_options (self, self._name, self._opts)
 
 
     # --------------------------------------------------------------------------
@@ -104,5 +107,5 @@ class Base (suc.Configurable) :
 
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -1,5 +1,5 @@
 
-__author__    = "Ole Weidner"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -7,6 +7,8 @@ __license__   = "MIT"
 ''' Provides a parser class for the file transfer specification as it is
     defined in GFD.90, sction 4.1.3.
 '''
+
+import saga.exceptions as se
 
 # 4.1.3 File Transfer Specifications (GFD90 p 176-177)
 #
@@ -41,7 +43,8 @@ class TransferDirectives(object):
         # each line in directives_list should contain one directive
         for directive in directives_list:
             if (directive.count('>') > 2) or (directive.count('<') > 2):
-                raise InvalidTransferDirective(directive)
+                msg = "'%s' is not a valid transfer directive string."
+                raise se.BadParameter(msg)
             elif '<<' in directive:
                 (remote, local) = directive.split('<<')
                 self._out_append[local.strip()] = remote.strip()
@@ -55,7 +58,8 @@ class TransferDirectives(object):
                 (local, remote) = directive.split('>')
                 self._in_overwrite[local.strip()] = remote.strip()
             else:
-                raise InvalidTransferDirective(directive)
+                msg = "'%s' is not a valid transfer directive string." % directive
+                raise se.BadParameter(msg)
 
     def _dicts_to_string_list(self):
         slist = list()
@@ -94,11 +98,3 @@ class TransferDirectives(object):
     def string_list(self):
         return self._dicts_to_string_list()
 
-
-class InvalidTransferDirective(Exception):
-    def __init__(self, directive):
-        self.message = "'%s' is not a valid transfer directive string." \
-            % directive
-
-    def __str__(self):
-        return self.message

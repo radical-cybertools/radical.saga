@@ -1,4 +1,8 @@
-#!/usr/bin/env python
+
+__author__    = "Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 
 '''This examples shows how to use the saga.Filesystem API
    with the HTTP file adaptor.
@@ -7,10 +11,6 @@
    SAGA_VERBOSE=3 in your environment before you run the
    script in order to get some debug output.
 '''
-
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2011-2013, The SAGA Project"
-__license__   = "MIT"
 
 import sys
 import saga

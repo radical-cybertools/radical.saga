@@ -9,7 +9,6 @@ __license__   = "MIT"
 #TODO: Throw errors if a user does not specify the MINIMUM number of
 #      attributes required for SLURM in a job description
 
-import saga.utils.which
 import saga.utils.pty_shell
 
 import saga.adaptors.base
@@ -89,6 +88,68 @@ _ADAPTOR_CAPABILITIES  = {
 # --------------------------------------------------------------------
 # the adaptor documentation
 #
+
+        # General Notes
+        # *************
+
+        # On Stampede, returning a non-zero exit code results in the scheduler
+        # putting the job into a FAILED state and assigning it an exit code of 127.
+
+        # **Example:**
+
+        # ::
+
+        #   js = saga.job.Service("slurm+ssh://stampede")
+        #   jd.executable  = '/bin/exit'
+        #   jd.arguments   = ['3']
+        #   job = js.create_job(jd)
+        #   job.run()
+
+        # Will return something similar to (personal account information
+        # removed)::
+
+        #   (saga-python-env)ashleyz@login1:~$ scontrol show job 309684
+        #   JobId=309684 Name=SlurmJob
+        #      UserId=_____ GroupId=__________
+        #      Priority=3000 Account=_____ QOS=normal
+        #      JobState=FAILED Reason=NonZeroExitCode Dependency=(null)
+        #      Requeue=0 Restarts=0 BatchFlag=1 ExitCode=127:0
+        #      RunTime=00:00:05 TimeLimit=00:01:00 TimeMin=N/A
+        #      SubmitTime=2013-02-22T20:26:50 EligibleTime=2013-02-22T20:26:50
+        #      StartTime=2013-02-22T20:26:50 EndTime=2013-02-22T20:26:55
+        #      PreemptTime=None SuspendTime=None SecsPreSuspend=0
+        #      Partition=development AllocNode:Sid=login1:12070
+        #      ReqNodeList=(null) ExcNodeList=(null)
+        #      NodeList=c557-401
+        #      BatchHost=c557-401
+        #      NumNodes=1 NumCPUs=16 CPUs/Task=1 ReqS:C:T=*:*:*
+        #      MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0
+        #      Features=(null) Gres=(null) Reservation=(null)
+        #      Shared=0 Contiguous=0 Licenses=(null) Network=(null)
+        #      Command=/home1/01414/_______/.saga/adaptors/slurm_job/wrapper.sh
+        #      WorkDir=/home1/01414/_______/
+
+        # I'm not sure how to fix this for the time being.
+
+        # Suspend/resume do not appear to be supported for regular
+        # users on Stampede.
+
+        # run_job is not supported, as there are many attributed (queues,
+        # projects, etc) which need to be passed to the adaptor.  I could
+        # add URL parsing so that you could pile on queue/project/jobname
+        # information if this has any strong usecases, but I avoided doing
+        # so for now to decrease complexity/possible confusion.
+
+        # Cancelling a job with scontrol, puts it into a COMPLETING state, which
+        # is parsed by the SLURM status parser as saga.job.RUNNING (see the
+        # SLURM docs, COMPLETING is a state a job goes into when it is done
+        # running but still flushing IO/etc).  Anyhow, I put some code in to
+        # manually put the job into CANCELED state when the job is canceled,
+        # but I'm not sure that this is reported correctly everywhere yet.
+
+        # What exit code should be returned for a CANCELED job?
+        
+
 _ADAPTOR_DOC           = {
     "name"             : _ADAPTOR_NAME,
     "cfg_options"      : _ADAPTOR_OPTIONS, 
@@ -96,66 +157,6 @@ _ADAPTOR_DOC           = {
     "description"      : """ 
         The SLURM adaptor allows to run and manage jobs on a 
         `SLURM <https://computing.llnl.gov/linux/slurm/slurm.html>`_ HPC cluster.
-
-        General Notes
-        *************
-
-        On Stampede, returning a non-zero exit code results in the scheduler
-        putting the job into a FAILED state and assigning it an exit code of 127.
-
-        **Example:**
-
-        ::
-
-          js = saga.job.Service("slurm+ssh://stampede")
-          jd.executable  = '/bin/exit'
-          jd.arguments   = ['3']
-          job = js.create_job(jd)
-          job.run()
-
-        Will return something similar to (personal account information
-        removed)::
-
-          (saga-python-env)ashleyz@login1:~$ scontrol show job 309684
-          JobId=309684 Name=SlurmJob
-             UserId=_____ GroupId=__________
-             Priority=3000 Account=_____ QOS=normal
-             JobState=FAILED Reason=NonZeroExitCode Dependency=(null)
-             Requeue=0 Restarts=0 BatchFlag=1 ExitCode=127:0
-             RunTime=00:00:05 TimeLimit=00:01:00 TimeMin=N/A
-             SubmitTime=2013-02-22T20:26:50 EligibleTime=2013-02-22T20:26:50
-             StartTime=2013-02-22T20:26:50 EndTime=2013-02-22T20:26:55
-             PreemptTime=None SuspendTime=None SecsPreSuspend=0
-             Partition=development AllocNode:Sid=login1:12070
-             ReqNodeList=(null) ExcNodeList=(null)
-             NodeList=c557-401
-             BatchHost=c557-401
-             NumNodes=1 NumCPUs=16 CPUs/Task=1 ReqS:C:T=*:*:*
-             MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0
-             Features=(null) Gres=(null) Reservation=(null)
-             Shared=0 Contiguous=0 Licenses=(null) Network=(null)
-             Command=/home1/01414/_______/.saga/adaptors/slurm_job/wrapper.sh
-             WorkDir=/home1/01414/_______/
-
-        I'm not sure how to fix this for the time being.
-
-        Suspend/resume do not appear to be supported for regular
-        users on Stampede.
-
-        run_job is not supported, as there are many attributed (queues,
-        projects, etc) which need to be passed to the adaptor.  I could
-        add URL parsing so that you could pile on queue/project/jobname
-        information if this has any strong usecases, but I avoided doing
-        so for now to decrease complexity/possible confusion.
-
-        Cancelling a job with scontrol, puts it into a COMPLETING state, which
-        is parsed by the SLURM status parser as saga.job.RUNNING (see the
-        SLURM docs, COMPLETING is a state a job goes into when it is done
-        running but still flushing IO/etc).  Anyhow, I put some code in to
-        manually put the job into CANCELED state when the job is canceled,
-        but I'm not sure that this is reported correctly everywhere yet.
-
-        What exit code should be returned for a CANCELED job?
 
         Implementation Notes
         ********************
@@ -554,7 +555,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         slurm_script = slurm_script.replace("!", "\"'!'\"")
 
 
-        self._logger.debug("SLURM script generated:\n%s" % slurm_script)
+        self._logger.info("SLURM script generated:\n%s" % slurm_script)
         self._logger.debug("Transferring SLURM script to remote host")
 
         # try to create the working directory (if defined)
@@ -1063,6 +1064,10 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         while True:
             state = self._job_get_state(self._id)
             self._logger.debug("wait() state for job id %s:%s"%(self._id, state))
+
+            if state == saga.job.UNKNOWN :
+                log_error_and_raise("cannot get job state", saga.IncorrectState, self._logger)
+
             if state == saga.job.DONE or \
                state == saga.job.FAILED or \
                state == saga.job.CANCELED:
@@ -1175,5 +1180,5 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         self._id = self.js._job_run (self.jd)
         self._started = True
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -1,132 +1,199 @@
 
-__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__author__    = "RADICAL Team"
+__copyright__ = "Copyright 2013, RADICAL Research, Rutgers University"
 __license__   = "MIT"
 
 
-""" Setup script. Used by easy_install and pip.
-"""
+""" Setup script. Used by easy_install and pip. """
 
+import re
 import os
 import sys
+import subprocess as sp
 
 from setuptools import setup, Command
-from distutils.command.install_data import install_data
-from distutils.command.sdist import sdist
 
-# figure out the current version. saga-python's
-# version is defined in saga/VERSION
-version = "latest"
+srcroot = 'saga'
+name    = 'saga-python'
 
-try:
-    cwd = os.path.dirname(os.path.abspath(__file__))
-    fn = os.path.join(cwd, 'saga/VERSION')
-    version = open(fn).read().strip()
-except IOError:
-    from subprocess import Popen, PIPE, STDOUT
-    import re
-
-    VERSION_MATCH = re.compile(r'\d+\.\d+\.\d+(\w|-)*')
+# ------------------------------------------------------------------------------
+#
+# versioning mechanism:
+#
+#   - short_version:  1.2.3                   - is used for installation
+#   - long_version:   1.2.3-9-g0684b06-devel  - is used as runtime (ru.version)
+#   - both are derived from the last git tag and branch information
+#   - VERSION files are created on demand, with the long_version
+#
+# can't use radical.utils versioning detection, as radical.utils is only
+# below specified as dependency :/
+def get_version (paths=None):
+    """
+    paths:
+        a VERSION file containing the long version is created in every directpry
+        listed in paths.  Those VERSION files are used when they exist to get
+        the version numbers, if they exist prior to calling this method.  If 
+        not, we cd into the first path, try to get version numbers from git tags 
+        in that location, and create the VERSION files in all dirst given in 
+        paths.
+    """
 
     try:
-        p = Popen(['git', 'describe', '--tags', '--always'],
-                  stdout=PIPE, stderr=STDOUT)
-        out = p.communicate()[0]
 
-        if (not p.returncode) and out:
-            v = VERSION_MATCH.search(out)
-            if v:
-                version = v.group()
-    except OSError:
-        pass
+        if  None == paths :
+            # by default, get version for myself
+            pwd     = os.path.dirname (__file__)
+            root    = "%s/.." % pwd
+            paths = [root, pwd]
 
-scripts = []  # ["bin/saga-run"]
+        if  not isinstance (paths, list) :
+            paths = [paths]
 
-
-# check python version. we need > 2.5
-if sys.hexversion < 0x02050000:
-    raise RuntimeError("SAGA requires Python 2.5 or higher")
+        long_version  = None
+        short_version = None
+        branch_name   = None
 
 
-class our_install_data(install_data):
+        # if in any of the paths a VERSION file exists, we use the long version
+        # in there.
+        for path in paths :
 
-    def finalize_options(self): 
-        self.set_undefined_options('install',
-                                   ('install_lib', 'install_dir'))
-        install_data.finalize_options(self)
+            try :
 
-    def run(self):
-        install_data.run(self)
-        # ensure there's a saga/VERSION file
-        fn = os.path.join(self.install_dir, 'saga', 'VERSION')
-        open(fn, 'w').write(version)
-        self.outfiles.append(fn)
+                filename = "%s/VERSION" % path
+
+                with open (filename) as f :
+                    line = f.readline()
+                    line.strip()
+                    pattern = re.compile ('^\s*(?P<long>(?P<short>[^-@]+?)(-[^@]+?)?(?P<branch>@.+?)?)\s*$')
+                    match   = pattern.search (line)
+    
+                    if  match :
+                        long_version  = match.group ('long')
+                        short_version = match.group ('short')
+                        branch_name   = match.group ('branch')
+                        print 'reading  %s' % filename
+                        break
+
+            except Exception as e :
+                # ignore missing VERSION file -- this is caught below
+                pass
 
 
-class our_sdist(sdist):
+        # if we didn't find it, get it from git 
+        if  not long_version :
 
-    def make_release_tree(self, base_dir, files):
-        sdist.make_release_tree(self, base_dir, files)
-        # ensure there's a air/VERSION file
-        fn = os.path.join(base_dir, 'saga', 'VERSION')
-        open(fn, 'w').write(version)
+            # make sure we look at the right git repo
+            if  len(paths) :
+                git_cd  = "cd %s ;" % paths[0]
+
+            # attempt to get version information from git
+            p   = sp.Popen ('%s'\
+                            'git describe --tags --always ; ' \
+                            'git branch   --contains | grep -e "^\*"' % git_cd,
+                            stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
+            out = p.communicate()[0]
+
+            if  p.returncode == 0 and out :
+
+                pattern = re.compile ('(?P<long>(?P<short>[\d\.]+).*?)(\s+\*\s+(?P<branch>\S+))?$')
+                match   = pattern.search (out)
+
+                if  match :
+                    long_version  = match.group ('long')
+                    short_version = match.group ('short')
+                    branch_name   = match.group ('branch')
+                    print 'inspecting git for version info'
+
+                    # if not on master, make sure the branch is part of the long version
+                    if  branch_name and not branch_name == 'master' :
+                        long_version = "%s@%s" % (long_version, branch_name)
 
 
+        # check if either one worked ok
+        if  None == long_version :
+            raise RuntimeError ("Cannot determine version from git or ./VERSION\n")
+
+
+        # make sure the version files exist for the runtime version inspection
+        for path in paths :
+            vpath = '%s/VERSION' % path
+            print 'creating %s'  % vpath
+            with open (vpath, 'w') as f :
+                f.write (long_version  + "\n")
+    
+        return short_version, long_version, branch_name
+
+
+    except Exception as e :
+        raise RuntimeError ("Could not extract/set version: %s" % e)
+
+
+#-----------------------------------------------------------------------------
+# get version info -- this will create VERSION and srcroot/VERSION
+root     = os.path.dirname (__file__)
+if  not root :
+    root = os.getcwd()
+src_dir  = "%s/%s" % (root, srcroot)
+short_version, long_version, branch = get_version ([root, src_dir])
+
+
+#-----------------------------------------------------------------------------
+# check python version. we need > 2.5, <3.x
+if  sys.hexversion < 0x02050000 or sys.hexversion >= 0x03000000:
+    raise RuntimeError("%s requires Python 2.x (2.5 or higher)" % name)
+
+
+#-----------------------------------------------------------------------------
 class our_test(Command):
     user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        import sys
-        import subprocess
+    def initialize_options (self) : pass
+    def finalize_options   (self) : pass
+    def run (self) :
         testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
-        errno = subprocess.call([sys.executable, '%s/run_tests.py' % testdir,
-                                '--config=%s/configs/basetests.cfg' % testdir])
-        raise SystemExit(errno)
+        retval  = sp.call([sys.executable,
+                          '%s/run_tests.py'               % testdir,
+                          '%s/configs/basetests.cfg'      % testdir])
+        raise SystemExit(retval)
 
 
+#-----------------------------------------------------------------------------
+#
+def read(*rnames):
+    return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
+
+
+#-----------------------------------------------------------------------------
 setup_args = {
-    'name': "saga-python",
-    'version': version,
-    'description': "A light-weight access layer for distributed computing infrastructure",
-    'long_description': "An implementation of the OGF GFD.90 SAGA standard in Python",
-    'author': "Ole Weidner, et al.",
-    'author_email': "ole.weidner@rutgers.edu",
-    'maintainer': "Ole Weidner",
-    'maintainer_email': "ole.weidner@rutgers.edu",
-    'url': "http://saga-project.github.com/saga-python/",
-    'license': "MIT",
-    'classifiers': [
+    'name'             : name,
+    'version'          : short_version,
+    'description'      : "A light-weight access layer for distributed computing infrastructure",
+    'long_description' : (read('README.md') + '\n\n' + read('CHANGES.md')),
+    'author'           : "The RADICAL Group",
+    'author_email'     : "ole.weidner@rutgers.edu",
+    'maintainer'       : "Ole Weidner",
+    'maintainer_email' : "ole.weidner@rutgers.edu",
+    'url'              : "http://saga-project.github.com/saga-python/",
+    'license'          : "MIT",
+    'keywords'         : "radical pilot job saga",
+    'classifiers'      : [
         'Development Status :: 5 - Production/Stable',
-        'Environment :: No Input/Output (Daemon)',
         'Intended Audience :: Developers',
-        'Programming Language :: Python',
+        'Environment :: Console',
         'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.5',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Topic :: Utilities',
         'Topic :: System :: Distributed Computing',
         'Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator',
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: POSIX',
-        'Operating System :: POSIX :: AIX',
-        'Operating System :: POSIX :: BSD',
-        'Operating System :: POSIX :: BSD :: BSD/OS',
-        'Operating System :: POSIX :: BSD :: FreeBSD',
-        'Operating System :: POSIX :: BSD :: NetBSD',
-        'Operating System :: POSIX :: BSD :: OpenBSD',
-        'Operating System :: POSIX :: GNU Hurd',
-        'Operating System :: POSIX :: HP-UX',
-        'Operating System :: POSIX :: IRIX',
-        'Operating System :: POSIX :: Linux',
-        'Operating System :: POSIX :: Other',
-        'Operating System :: POSIX :: SCO',
-        'Operating System :: POSIX :: SunOS/Solaris',
         'Operating System :: Unix'
     ],
-    'packages': [
+    'packages'         : [
         "saga",
         "saga.job",
         "saga.namespace",
@@ -151,30 +218,39 @@ setup_args = {
         "saga.adaptors.shell",
         "saga.adaptors.sge",
         "saga.adaptors.pbs",
+        "saga.adaptors.lsf",
+        "saga.adaptors.loadl",
         "saga.adaptors.condor",
         "saga.adaptors.slurm",
+        "saga.adaptors.redis",
+        "saga.adaptors.irods",
         "saga.adaptors.aws",
         "saga.adaptors.http",
         "saga.engine",
         "saga.utils",
-        "saga.utils.contrib",
-        "saga.utils.logger",
-        "saga.utils.config",
-        "saga.utils.job"
+        "saga.utils.job",
     ],
-    'package_data': {'': ['*.sh']},
-    'zip_safe': False,
-    'scripts': scripts,
-    # mention data_files, even if empty, so install_data is called and
-    # VERSION gets copied
-    'data_files': [("saga", [])],
-    'cmdclass': {
-        'install_data': our_install_data,
-        'sdist': our_sdist,
-        'test': our_test
+    'scripts'          : [],
+    'package_data'     : {'' : ['*.sh', 'VERSION']},
+    'cmdclass'         : {
+        'test'         : our_test,
     },
-    'install_requires': ['setuptools', 'colorama', 'apache-libcloud'],
-    'tests_require': ['setuptools', 'nose']
+    'install_requires' : ['apache-libcloud', 'radical.utils>=0.6.2'],
+    'tests_require'    : ['nose'],
+    'zip_safe'         : False,
+#   'build_sphinx'     : {
+#       'source-dir'   : 'docs/',
+#       'build-dir'    : 'docs/build',
+#       'all_files'    : 1,
+#   },
+#   'upload_sphinx'    : {
+#       'upload-dir'   : 'docs/build/html',
+#   }
 }
 
-setup(**setup_args)
+#-----------------------------------------------------------------------------
+
+setup (**setup_args)
+
+#-----------------------------------------------------------------------------
+

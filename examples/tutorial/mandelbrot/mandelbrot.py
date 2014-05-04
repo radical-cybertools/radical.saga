@@ -1,11 +1,13 @@
-#!/usr/bin/env python
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+__author__    = "Ole Weidner"
+__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__license__   = "MIT"
+
 
 """ A Simple Mandelbrot Fractal Generator.
 
     We use this example to explore the distributed capabilites of
-    the SAGA Job and Filesystem APIs in Bliss. The mandelbrot module
+    the SAGA Job and Filesystem APIs. The mandelbrot module
     calculates a full or partial (tile) mandelbrot set fractal and
     writes it to a PNG image file.
 

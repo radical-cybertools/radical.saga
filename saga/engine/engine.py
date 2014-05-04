@@ -12,10 +12,11 @@ import pprint
 import string
 import inspect
 
+import radical.utils         as ru
+import radical.utils.config  as ruc
+import radical.utils.logger  as rul
+
 import saga.exceptions      as se
-import saga.utils.singleton as single
-import saga.utils.logger    as slog
-import saga.utils.config    as sconf
 
 import saga.engine.registry  # adaptors to load
 
@@ -36,7 +37,7 @@ _config_options = [
 
 ################################################################################
 ##
-class Engine(sconf.Configurable): 
+class Engine(ruc.Configurable): 
     """ Represents the SAGA engine runtime system.
 
         The Engine is a singleton class that takes care of adaptor
@@ -116,7 +117,7 @@ class Engine(sconf.Configurable):
                       return
     """
 
-    __metaclass__ = single.Singleton
+    __metaclass__ = ru.Singleton
 
 
 
@@ -129,12 +130,13 @@ class Engine(sconf.Configurable):
 
 
         # set the configuration options for this object
-        sconf.Configurable.__init__(self, 'saga.engine', _config_options)
-        self._cfg = self.get_config()
+        ruc.Configurable.__init__       (self, 'saga')
+        ruc.Configurable.config_options (self, 'saga.engine', _config_options)
+        self._cfg = self.get_config('saga.engine')
 
 
-        # Initialize the logging
-        self._logger = slog.getLogger ('saga.engine')
+        # Initialize the logging, and log version (this is a singleton!)
+        self._logger = rul.getLogger ('saga', 'Engine')
 
 
         # load adaptors
@@ -156,7 +158,7 @@ class Engine(sconf.Configurable):
         """
 
         # get the engine config options
-        global_config = sconf.getConfig()
+        global_config = ruc.getConfig('saga')
 
 
         # get the list of adaptors to load
@@ -183,7 +185,6 @@ class Engine(sconf.Configurable):
 
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s 1: module loading failed: %s" % (module_name, e))
-                self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -199,12 +200,10 @@ class Engine(sconf.Configurable):
 
             except se.SagaException as e:
                 self._logger.error ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
-              # self._logger.trace ()
                 continue # skip to next adaptor
 
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
-              # self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -217,7 +216,6 @@ class Engine(sconf.Configurable):
 
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: failed self test: %s" % (module_name, e))
-              # self._logger.trace ()
                 continue # skip to next adaptor
 
 
@@ -225,7 +223,6 @@ class Engine(sconf.Configurable):
             if adaptor_info is None :
                 self._logger.warning ("Skipping adaptor %s: adaptor meta data are invalid" \
                                    % module_name)
-                self._logger.trace ()
                 continue  # skip to next adaptor
 
 
@@ -235,7 +232,6 @@ class Engine(sconf.Configurable):
                 not 'schemas' in adaptor_info    :
                 self._logger.warning ("Skipping adaptor %s: adaptor meta data are incomplete" \
                                    % module_name)
-                self._logger.trace ()
                 continue  # skip to next adaptor
 
 
@@ -268,7 +264,6 @@ class Engine(sconf.Configurable):
 
             except se.SagaException as e:
                 self._logger.error ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
-                self._logger.trace ()
                 continue # skip to next adaptor
             except Exception as e:
                 self._logger.error ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
@@ -545,7 +540,6 @@ class Engine(sconf.Configurable):
                 exception._add_exception (e)
                 self._logger.info  ("bind_adaptor adaptor class ctor failed : %s.%s: %s" \
                                  % (adaptor_name, cpi_class, str(e)))
-                self._logger.trace ()
                 continue
             except Exception as e :
                 exception._add_exception (saga.NoSuccess (str(e), api_instance))
@@ -572,5 +566,5 @@ class Engine(sconf.Configurable):
         pprint.pprint (self._adaptor_registry)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

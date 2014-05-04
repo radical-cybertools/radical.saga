@@ -7,8 +7,6 @@ __license__   = "MIT"
 import os
 import sys
 import saga
-import saga.utils.test_config as sutc
-
 
 # ------------------------------------------------------------------------------
 #

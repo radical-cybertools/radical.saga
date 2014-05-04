@@ -6,7 +6,6 @@ __license__   = "MIT"
 
 """ shell based job adaptor implementation """
 
-import saga.utils.which
 import saga.utils.pty_shell
 
 import saga.adaptors.base
@@ -15,10 +14,7 @@ import saga.adaptors.cpi.job
 from   saga.job.constants import *
 
 import re
-import os
 import time
-import threading
-import subprocess
 
 import shell_wrapper
 
@@ -236,7 +232,7 @@ class Adaptor (saga.adaptors.base.Base):
         saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
-        self.opts  = self.get_config ()
+        self.opts  = self.get_config (_ADAPTOR_NAME)
 
         self.notifications  = self.opts['enable_notifications'].get_value ()
         self.purge_on_start = self.opts['purge_on_start'].get_value ()
@@ -254,7 +250,11 @@ class Adaptor (saga.adaptors.base.Base):
     # ----------------------------------------------------------------
     #
     def parse_id (self, id) :
-        # split the id '[rm]-[pid]' in its parts, and return them.
+        """
+        Split the id '[rm]-[pid]' in its parts, and return them.
+
+        The callee makes sure that the ID is set and valid.
+        """
 
         match = self.id_re.match (id)
 
@@ -361,25 +361,23 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         base = "~/.saga/adaptors/shell_job"
 
-        ret, out, _ = self.shell.run_sync ("mkdir -p %s" % base)
+        ret, out, _ = self.shell.run_sync (" mkdir -p %s" % base)
         if  ret != 0 :
             raise saga.NoSuccess ("host setup failed (%s): (%s)" % (ret, out))
 
-        # FIXME: this is a race condition is multiple job services stage the
-        # script at the same time.  We should make that atomic by
-        #
-        #   cat > .../wrapper.sh.$$ ... ; mv .../wrapper.sh.$$ .../wrapper.sh
-        #
-        # which should work nicely as long as compatible versions of the script
-        # are staged.  Oh well...
-        #
         # TODO: replace some constants in the script with values from config
         # files, such as 'timeout' or 'purge_on_quit' ...
-        #
         src = shell_wrapper._WRAPPER_SCRIPT % ({ 'PURGE_ON_START' : str(self._adaptor.purge_on_start) })
         tgt = ".saga/adaptors/shell_job/wrapper.sh"
 
-        self.shell.write_to_remote (src, tgt)
+        # lets check if we actually need to stage the wrapper script.  We need
+        # an adaptor lock on this one.
+        with self._adaptor._lock :
+
+            ret, out, _ = self.shell.run_sync (" test -f %s" % tgt)
+            if  ret != 0 :
+                # yep, need to stage...
+                self.shell.write_to_remote (src, tgt)
 
         # we run the script.  In principle, we should set a new / different
         # prompt -- but, due to some strange and very unlikely coincidence, the
@@ -389,25 +387,30 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # Thus, when the script times out, the shell dies and the connection
         # drops -- that will free all associated resources, and allows for
         # a clean reconnect.
-        # ret, out, _ = self.shell.run_sync ("exec sh %s/wrapper.sh" % base)
+        # ret, out, _ = self.shell.run_sync (" exec sh %s/wrapper.sh" % base)
       
         # Well, actually, we do not use exec, as that does not give us good
         # feedback on failures (the shell just quits) -- so we replace it with
         # this poor-man's version...
-        self.shell.run_async ("/bin/sh -c '/bin/sh %s/wrapper.sh $$ && kill -9 $PPID' || false" \
-                           % (base))
+      # self.shell.pty_shell._debug = True
+        ret, out, _ = self.shell.run_sync (" /bin/sh %s/wrapper.sh $$" % base)
 
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
-        # detection, too.  Wait for 1sec max.
-        pid_match = self.shell.find (['PID: \d+'], 1.0)
-        if  pid_match[0] != 0 :
-            raise saga.NoSuccess ("host bootstrap failed (%s)" % (pid_match))
-
-        # now we can be sure to expect the valid prompt instance
-        ret, out = self.shell.find_prompt ()
+        # detection, too.  Wait for 3sec max.
         if  ret != 0 :
             raise saga.NoSuccess ("failed to run bootstrap: (%s)(%s)" % (ret, out))
+
+        id_pattern = re.compile ("\s*PID:\s+(\d+)\s*$")
+        id_match   = id_pattern.search (out)
+
+        if not id_match :
+            self.shell.run_async (" exit")
+            self._logger.error   ("host bootstrap failed - no pid (%s)" % out)
+            raise saga.NoSuccess ("host bootstrap failed - no pid (%s)" % out)
+
+        # we actually don't care much about the PID :-P
         
+        self.shell.pty_shell._debug = False
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out.strip ()))
 
 
@@ -417,8 +420,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         if  kill_shell :
             if  self.shell :
-                self.shell.run_async ("QUIT")
-                self.shell.finalize (True)
+                self.shell.finalize (kill_pty=True)
 
 
     
@@ -1181,6 +1183,11 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         if self._exit_code != None :
             return self._exit_code
 
+        if  self.get_state () not in [saga.job.DONE, 
+                                      saga.job.FAILED, 
+                                      saga.job.CANCELED] :
+            return None
+
         self._exit_code = self.js._job_get_exit_code (self._id)
 
         return self._exit_code
@@ -1207,6 +1214,10 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     #
     @SYNC_CALL
     def suspend (self):
+
+        if  self.get_state () != saga.job.RUNNING :
+            raise saga.IncorrectState ("Cannot suspend, job is not RUNNING")
+
         self.js._job_suspend (self._id)
    
    
@@ -1214,6 +1225,10 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     #
     @SYNC_CALL
     def resume (self):
+
+        if  self.get_state () != saga.job.SUSPENDED :
+            raise saga.IncorrectState ("Cannot resume, job is not SUSPENDED")
+
         self.js._job_resume (self._id)
    
    
@@ -1221,6 +1236,20 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     #
     @SYNC_CALL
     def cancel (self, timeout):
+
+        if  self.get_state () not in [saga.job.RUNNING, 
+                                      saga.job.SUSPENDED, 
+                                      saga.job.CANCELED, 
+                                      saga.job.DONE, 
+                                      saga.job.FAILED] :
+            raise saga.IncorrectState ("Cannot cancel, job is not running")
+
+        if  self._state in [saga.job.CANCELED, 
+                            saga.job.DONE, 
+                            saga.job.FAILED] :
+            self._state = saga.job.CANCELED
+            return
+
         self.js._job_cancel (self._id)
    
    
@@ -1232,5 +1261,5 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         return self._exception
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 
