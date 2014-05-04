@@ -123,11 +123,6 @@ class Job (cpi_base.CPIBase, cpi_async.Async) :
     @ASYNC
     def re_raise_async            (self, ttype)          : pass
 
-    @SYNC
-    def get_exception             (self, ttype)          : pass
-    @ASYNC
-    def get_exception_async       (self, ttype)          : pass
-
 
     #-----------------------------------------------------------------
     # attribute getters

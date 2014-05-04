@@ -7,7 +7,6 @@ __license__   = "MIT"
 import time
 import saga
 
-
 def my_cb (a, b, c) :
     print " ----- callback: [%s, %s, %s]" % (a, b, c)
     return True
@@ -26,7 +25,7 @@ try :
   
     jd = saga.job.Description ()
     jd.executable = '/bin/echo'
-    jd.arguments  = ['hello world; date ; sleep 3; date as']
+    jd.arguments  = ['hello world; date ; sleep 3']
     jd.output     = "/tmp/out"
     jd.error      = "/tmp/err"
   
@@ -45,9 +44,6 @@ try :
 
     print "state: %s" % j.state
     print j.finished
-
-    if  j.state == saga.job.FAILED :
-        print "failed: %s" % j.get_exception ()
 
     # print "list : %s" % js.list ()
     # for id in js.list () :

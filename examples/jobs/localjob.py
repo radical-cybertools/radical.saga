@@ -21,6 +21,9 @@ def main():
         js = saga.job.Service("ssh://localhost")
         l  = js.list ()
 
+       
+        sys.exit (0)
+
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
