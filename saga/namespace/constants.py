@@ -20,5 +20,5 @@ CREATE_PARENTS =   64
 # BINARY       = 2048 # reserved
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# be friendly to bash users (and yes, the leading space is on purpose)
+ export HISTIGNORE='*'
+
 # this script uses only POSIX shell functionality, and does not rely on bash or
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
 # thought.
@@ -16,6 +19,8 @@ then
   KILL_DASHES=""
 fi
 
+# we always start in the user's home dir
+\cd $HOME 2>&1 > /dev/null
 
 # --------------------------------------------------------------------
 #
@@ -646,6 +651,21 @@ cmd_purge () {
 
 # --------------------------------------------------------------------
 #
+# purge tmp files for bulks etc.
+#
+cmd_purge_tmps () {
+
+  rm -f "$BASE"/bulk.*
+  rm -f "$BASE"/idle.*
+  rm -f "$BASE"/quit.*
+  find  "$BASE" -type d -mtime +30 -exec rm -rf {} \;
+  find  "$BASE" -type f -mtime +30 -exec rm -rf {} \;
+  RETVAL="purged tmp files"
+}
+
+
+# --------------------------------------------------------------------
+#
 # quit this script gracefully
 #
 cmd_quit () {
@@ -808,11 +828,12 @@ listen() {
 \stty -echo   2> /dev/null
 \stty -echonl 2> /dev/null
 
-# FIXME: this leads to timing issues -- disabled for benchmarking
-# if test "$PURGE_ON_START" = "True"
-# then
-#   cmd_purge
-# fi
+# FIXME: this leads to timing issues -- disable for benchmarking
+if test "$PURGE_ON_START" = "True"
+then
+  cmd_purge
+  cmd_purge_tmps
+fi
 
 create_monitor
 listen $1

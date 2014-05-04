@@ -105,5 +105,5 @@ class File (cpi_ns.entry.Entry) :
     def write_e_async        (self, emode, spec, data, ttype) : pass
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

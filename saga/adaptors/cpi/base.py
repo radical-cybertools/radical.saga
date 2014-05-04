@@ -1,5 +1,5 @@
 
-__author__    = "Andre Merzky, Ole Weidner"
+__author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -8,8 +8,8 @@ __license__   = "MIT"
 
 import weakref
 
-import saga.utils.logger     as sul
-import saga.utils.config     as suc
+import radical.utils.config  as ruc
+import radical.utils.logger  as rul
 
 from   saga.exceptions import *
 
@@ -18,7 +18,7 @@ from   saga.exceptions import *
 #
 # CPI base class
 #
-class CPIBase (suc.Configurable) :
+class CPIBase (ruc.Configurable) :
 
     # --------------------------------------------------------------------------
     #
@@ -27,7 +27,7 @@ class CPIBase (suc.Configurable) :
         self._session   = None
         self._adaptor   = adaptor
         self._cpi_cname = self.__class__.__name__
-        self._logger    = sul.getLogger (self._cpi_cname)
+        self._logger    = rul.getLogger ('saga', self._cpi_cname)
 
         # The API object must obviously keep an adaptor instance.  If we also
         # keep an API instance ref in this adaptor base, we create a ref cycle
@@ -78,5 +78,5 @@ class CPIBase (suc.Configurable) :
         return self._session
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

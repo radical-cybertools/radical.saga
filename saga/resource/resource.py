@@ -1,9 +1,10 @@
 
-__author__    = "Andre Merzky"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-import saga.utils.signatures    as sus
+
+import radical.utils.signatures as rus
 import saga.adaptors.base       as sab
 import saga.async               as async
 import saga.task                as st
@@ -77,21 +78,24 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Resource', 
-                  sus.optional (basestring), 
-                  sus.optional (ss.Session),
-                  sus.optional (sab.Base), 
-                  sus.optional (dict), 
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Resource', 
+                  rus.optional (basestring), 
+                  rus.optional (ss.Session),
+                  rus.optional (sab.Base), 
+                  rus.optional (dict), 
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (rus.nothing)
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         """
+        __init__(id=None, session=None)
+
+        Create / reconnect to a resource.
+
         :param id: id of the resource
         :type  id: :class:`saga.Url`
         
-        :param session: SAGA session to be used
-        :type  session: :class:`saga.Session`
+        :param session: :class:`saga.Session`
 
         Resource class instances are usually created by calling :func:`acquire`
         on the :class:`saga.resource.Manager` class.  Already acquired resources
@@ -176,11 +180,11 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @classmethod
-    @sus.takes   ('resource', 
-                  sus.optional (basestring), 
-                  sus.optional (ss.Session),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (st.Task)
+    @rus.takes   ('resource', 
+                  rus.optional (basestring), 
+                  rus.optional (ss.Session),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (st.Task)
     def create   (cls, id=None, session=None, ttype=sc.SYNC) :
         """ 
         This is the asynchronous class constructor, returning
@@ -193,12 +197,14 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Resource', 
+    @rus.takes   ('Resource', 
                   descr.Description,
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((sus.nothing, st.Task))
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((rus.nothing, st.Task))
     def reconfig (self, descr, ttype=None) :
         """
+        reconfig(descr)
+
         A resource is acquired according to a resource description, i.e. to
         a specific set of attributes.  At some point in time, while the
         resource is running, the application requirements on the resource may
@@ -218,12 +224,14 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Resource', 
+    @rus.takes   ('Resource', 
                   basestring,
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((sus.nothing, st.Task))
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((rus.nothing, st.Task))
     def destroy  (self, ttype=None) :
         """
+        destroy()
+
         The semantics of this method is equivalent to the semantics of the
         :func:`destroy` call on the :class:`saga.resource.Manager` class.
         """
@@ -233,16 +241,19 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Resource', 
-                  sus.optional (sus.one_of (UNKNOWN, NEW, PENDING, ACTIVE, DONE,
+    @rus.takes   ('Resource', 
+                  rus.optional (rus.one_of (UNKNOWN, NEW, PENDING, ACTIVE, DONE,
                                             FAILED, EXPIRED, CANCELED, FINAL)),
-                  sus.optional (float),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((sus.nothing, st.Task))
+                  rus.optional (float),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((rus.nothing, st.Task))
     def wait (self, state=const.FINAL, timeout=None, ttype=None) :
         """
-        :type  state: state enum
-        :param state: state to wait for
+        wait(state=FINAL, timeout=None)
+
+        Wait for a resource to enter a specific state.
+
+        :param state: resource state to wait for (UNKNOWN, NEW, PENDING, ACTIVE, DONE, FAILED, EXPIRED, CANCELED, FINAL)
 
         :type  state: float
         :param state: time to block while waiting.
@@ -268,26 +279,36 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((sus.nothing, basestring, st.Task))
+    @rus.takes   ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((rus.nothing, basestring, st.Task))
     def get_id   (self, ttype=None) : 
+        """
+        get_id()
+
+        Return the resource ID.
+        """
         return self._adaptor.get_id            (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes    ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns  ((sus.one_of (const.COMPUTE, 
+    @rus.takes    ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns  ((rus.one_of (const.COMPUTE, 
                                 const.STORAGE, 
                                 const.NETWORK), st.Task))
     def get_rtype (self, ttype=None) : 
+        """
+        get_rtype()
+
+        Return the resource type.
+        """
         return self._adaptor.get_rtype         (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes    ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns  ((sus.one_of (const.UNKNOWN ,
+    @rus.takes    ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns  ((rus.one_of (const.UNKNOWN ,
                                 const.NEW     ,
                                 const.PENDING ,
                                 const.ACTIVE  ,
@@ -297,38 +318,63 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
                                 const.FAILED  ,
                                 const.FINAL   ), st.Task))
     def get_state (self, ttype=None) : 
+        """
+        get_state()
+
+        Return the state of the resource.
+        """
         return self._adaptor.get_state         (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((sus.nothing, basestring, st.Task))
+    @rus.takes   ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((rus.nothing, basestring, st.Task))
     def get_state_detail (self, ttype=None) : 
+        """
+        get_state_detail()
+
+        Return the state details (backend specific) of the resource.
+        """
         return self._adaptor.get_state_detail  (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes     ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns   ((sus.nothing, basestring, st.Task))
+    @rus.takes     ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns   ((rus.nothing, basestring, st.Task))
     def get_access (self, ttype=None) : 
+        """
+        get_access()
+
+        Return the resource access Url.
+        """
         return self._adaptor.get_access        (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes      ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns    ((basestring, st.Task))
-    def get_manager (self, ttype=None) : 
+    @rus.takes      ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns    ((basestring, st.Task))
+    def get_manager (self, ttype=None) :
+        """
+        get_manager()
+
+        Return the manager instance that was used to acquire this resource.
+        """
         return self._adaptor.get_manager       (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Resource', sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((sus.nothing, descr.Description, st.Task))
+    @rus.takes   ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((rus.nothing, descr.Description, st.Task))
     def get_description  (self, ttype=None) : 
+        """
+        get_description()
+
+        Return the description that was used to aquire this resource.
+        """
         return self._adaptor.get_description   (ttype=ttype)
 # 
 # ------------------------------------------------------------------------------
@@ -349,13 +395,13 @@ class Compute (Resource) :
     # FIXME: should 'ACCESS' be a list of URLs?  A VM could have an ssh *and*
     #        a gram endpoint...
 
-    # @sus.takes   ('ComputeResource', 
-    #               sus.optional (basestring), 
-    #               sus.optional (ss.Session),
-    #               sus.optional (sab.Base), 
-    #               sus.optional (dict), 
-    #               sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    # @sus.returns (sus.nothing)
+    # @rus.takes   ('ComputeResource', 
+    #               rus.optional (basestring), 
+    #               rus.optional (ss.Session),
+    #               rus.optional (sab.Base), 
+    #               rus.optional (dict), 
+    #               rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    # @rus.returns (rus.nothing)
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
 
@@ -380,13 +426,13 @@ class Storage (Resource) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('StorageResource', 
-                  sus.optional (basestring), 
-                  sus.optional (ss.Session),
-                  sus.optional (sab.Base), 
-                  sus.optional (dict), 
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('StorageResource', 
+                  rus.optional (basestring), 
+                  rus.optional (ss.Session),
+                  rus.optional (sab.Base), 
+                  rus.optional (dict), 
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (rus.nothing)
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         
@@ -407,13 +453,13 @@ class Network (Resource) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('NetworkResource', 
-                  sus.optional (basestring), 
-                  sus.optional (ss.Session),
-                  sus.optional (sab.Base), 
-                  sus.optional (dict), 
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('NetworkResource', 
+                  rus.optional (basestring), 
+                  rus.optional (ss.Session),
+                  rus.optional (sab.Base), 
+                  rus.optional (dict), 
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (rus.nothing)
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         
@@ -427,5 +473,5 @@ class Network (Resource) :
 # ------------------------------------------------------------------------------
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

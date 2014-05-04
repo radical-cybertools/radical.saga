@@ -1,10 +1,11 @@
 
-__author__    = "Andre Merzky"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.utils.signatures     as sus
+import radical.utils.signatures  as rus
+
 import saga.adaptors.base        as sab
 import saga.attributes           as sa
 import saga.session              as ss
@@ -22,17 +23,21 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('LogicalDirectory', 
-                  sus.optional ((surl.Url, basestring)), 
-                  sus.optional (int), 
-                  sus.optional (ss.Session),
-                  sus.optional (sab.Base), 
-                  sus.optional (dict), 
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('LogicalDirectory', 
+                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional (int), 
+                  rus.optional (ss.Session),
+                  rus.optional (sab.Base), 
+                  rus.optional (dict), 
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (rus.nothing)
     def __init__ (self, url=None, flags=READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
+        __init__(url, flags=READ, session=None)
+
+        Create a new Logical Directory instance.
+
         url:       saga.Url
         flags:     flags enum
         session:   saga.Session
@@ -50,13 +55,13 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @classmethod
-    @sus.takes   ('LogicalDirectory', 
-                  sus.optional ((surl.Url, basestring)), 
-                  sus.optional (int), 
-                  sus.optional (ss.Session),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (st.Task)
-    def create (cls, url=None, flags=READ, session=None, ttype=None) :
+    @rus.takes   ('LogicalDirectory', 
+                  rus.one_of (surl.Url, basestring), 
+                  rus.optional (int), 
+                  rus.optional (ss.Session),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (st.Task)
+    def create (cls, url, flags=READ, session=None, ttype=None) :
         '''
         url:       saga.Url
         flags:     saga.replica.flags enum
@@ -69,30 +74,50 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         return _nsdirec.create (url, flags, session, ttype=ttype)
 
 
-    def is_file (self, name=None, ttype=None) :
+    @rus.takes   ('LogicalDirectory', 
+                  rus.one_of (surl.Url, basestring), 
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((bool, st.Task))
+    def is_file (self, tgt=None, ttype=None) :
         '''
-        name:           saga.Url / string
+        is_file(tgt=None)
+
+        tgt:           saga.Url / string
         ttype:          saga.task.type enum
         ret:            bool / saga.Task
         '''
-        if    name  :  return self._adaptor.is_file      (name, ttype=ttype)
-        else        :  return self._nsdirec.is_file_self (      ttype=ttype)
+        if    tgt  :  return self._adaptor.is_file      (tgt, ttype=ttype)
+        else       :  return self._nsdirec.is_file_self (      ttype=ttype)
 
 
-    def open (self, path, flags=READ, ttype=None) :
+    @rus.takes   ('LogicalDirectory', 
+                  rus.one_of (surl.Url, basestring), 
+                  rus.optional (int),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (('LogicalFile', st.Task))
+    def open (self, tgt, flags=READ, ttype=None) :
         '''
-        path:     saga.Url
+        open(tgt, flags=READ)
+
+        tgt:      saga.Url
         flags:    saga.namespace.flags enum
         ttype:    saga.task.type enum
         ret:      saga.namespace.Entry / saga.Task
         '''
-        url = surl.Url(path)
-        return self._adaptor.open (url, flags, ttype=ttype)
+        tgt_url = surl.Url (tgt)
+        return self._adaptor.open (tgt_url, flags, ttype=ttype)
 
 
-    def open_dir (self, path, flags=READ, ttype=None) :
+    @rus.takes   ('LogicalDirectory', 
+                  rus.one_of (surl.Url, basestring), 
+                  rus.optional (int),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (('LogicalDirectory', st.Task))
+    def open_dir (self, tgt, flags=READ, ttype=None) :
         '''
-        :param path: name/path of the directory to open
+        open_dir(tgt, flags=READ)
+
+        :param tgt:   name/path of the directory to open
         :param flags: directory creation flags
 
         ttype:    saga.task.type enum
@@ -108,7 +133,8 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
                dir = saga.namespace.Directory("sftp://localhost/tmp/")
                data = dir.open_dir ('data/', saga.namespace.Create)
         '''
-        return self._adaptor.open_dir (path, flags, ttype=ttype)
+        tgt_url = surl.Url (tgt)
+        return self._adaptor.open_dir (tgt_url, flags, ttype=ttype)
 
 
     # ----------------------------------------------------------------
@@ -117,14 +143,43 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     #
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('LogicalDirectory', 
-                  sus.optional (basestring),
-                  sus.optional (basestring),
-                  sus.optional (int),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((sus.list_of (surl.Url), st.Task))
+    @rus.takes   ('LogicalDirectory', 
+                  rus.one_of (surl.Url, basestring),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((int, st.Task))
+    def get_size (self, tgt, ttype=None) :
+        '''
+        get_size(tgt)
+
+        tgt:     logical file to get size for
+        ttype:    saga.task.type enum
+        ret:      int / saga.Task
+        
+        Returns the size of the physical file represented by the given logical file (in bytes)
+
+           Example::
+
+               # get a logical directory handle
+               lf = saga.replica.LogicalFile("irods://localhost/tmp/data/")
+    
+               # print a logical file's size
+               print lf.get_size ('data.dat')
+
+        '''
+        tgt_url = surl.Url (tgt)
+        return self._adaptor.get_size (tgt_url, ttype=ttype)
+
+  
+    @rus.takes   ('LogicalDirectory', 
+                  rus.optional (basestring),
+                  rus.optional (basestring),
+                  rus.optional (int),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((rus.list_of (surl.Url), st.Task))
     def find (self, name_pattern, attr_pattern=None, flags=RECURSIVE, ttype=None) :
         '''
+        find(name_pattern, attr_pattern=None, flags=RECURSIVE)
+
         name_pattern:   string 
         attr_pattern:   string
         flags:          flags enum
@@ -136,5 +191,5 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         else             :  return self._nsdirec.find          (name_pattern,               flags, ttype=ttype)
 
     
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

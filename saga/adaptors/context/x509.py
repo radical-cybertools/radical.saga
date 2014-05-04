@@ -150,5 +150,5 @@ class ContextX509 (saga.adaptors.cpi.context.Context) :
         else :
             fh.close ()
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -1,5 +1,5 @@
 
-__author__    = "Ole Weidner"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -58,7 +58,7 @@ class TransferDirectives(object):
                 (local, remote) = directive.split('>')
                 self._in_overwrite[local.strip()] = remote.strip()
             else:
-                msg = "'%s' is not a valid transfer directive string."
+                msg = "'%s' is not a valid transfer directive string." % directive
                 raise se.BadParameter(msg)
 
     def _dicts_to_string_list(self):

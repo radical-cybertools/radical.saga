@@ -4,16 +4,11 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-# -*- coding: utf-8 -*-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
-__author__    = "Ole Christian Weidner"
-__copyright__ = "Copyright 2011-2012, Ole Christian Weidner"
-__license__   = "MIT"
-
-
 import saga.exceptions as se
-from   saga.url import *
+from   saga.url import Url
+
+import radical.utils as ru
+
 
 def test_wrong_type():
     """ Test that the right execption is thrown if Url is not initialized
@@ -123,5 +118,5 @@ def test_url_properties():
    assert url.get_path()     == "/tpath",           "unexpected path" 
    
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

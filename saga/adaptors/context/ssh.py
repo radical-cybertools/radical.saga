@@ -125,16 +125,19 @@ class Adaptor (saga.adaptors.base.Base):
                 if  not os.path.exists (key ) or \
                     not os.path.isfile (key )    :
                     self._logger.info ("ignore ssh key at %s (no private key: %s)" %  (key, key))
+                    continue
 
                 if  not os.path.exists (pub) or \
                     not os.path.isfile (pub)    :
                     self._logger.info ("ignore ssh key at %s (no public key: %s)" %  (key, pub))
+                    continue
 
 
                 try :
                     fh_key  = open (key )
                 except Exception as e:
                     self._logger.info ("ignore ssh key at %s (key not readable: %s)" %  (key, e))
+                    continue
                 else :
                     fh_key .close ()
 
@@ -143,6 +146,7 @@ class Adaptor (saga.adaptors.base.Base):
                     fh_pub  = open (pub )
                 except Exception as e:
                     self._logger.info ("ignore ssh key at %s (public key %s not readable: %s)" %  (key, pub, e))
+                    continue
                 else :
                     fh_pub .close ()
 
@@ -274,16 +278,15 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
 
         import subprocess
         if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % key]) :
-            if  not pwd  :
-                raise se.PermissionDenied ("ssh key '%s' is encrypted, need password" % (key))
-
-
-        if  subprocess.call (["sh", "-c", "ssh-keygen -y -f %s -P %s > /dev/null" % (key, pwd)]) :
-            raise se.PermissionDenied ("ssh key '%s' is encrypted, incorrect password" % (key))
+            if  pwd  :
+                if  subprocess.call (["sh", "-c", "ssh-keygen -y -f %s -P %s > /dev/null" % (key, pwd)]) :
+                    raise se.PermissionDenied ("ssh key '%s' is encrypted, incorrect password" % (key))
+            else :
+                self._logger.error ("ssh key '%s' is encrypted, unknown password" % (key))
 
 
         self._logger.info ("init SSH context for key  at '%s' done" % key)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

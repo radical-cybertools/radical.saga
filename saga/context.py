@@ -1,11 +1,11 @@
 
-__author__    = "Andre Merzky"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+import radical.utils.signatures as rus
 
-import saga.utils.signatures as sus
 import saga.adaptors.base    as sab
 import saga.attributes       as sa
 import saga.base             as sb
@@ -64,11 +64,11 @@ class Context (sb.Base, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Context', 
+    @rus.takes   ('Context', 
                   basestring, 
-                  sus.optional (sab.Base),
-                  sus.optional (dict))
-    @sus.returns (sus.nothing)
+                  rus.optional (sab.Base),
+                  rus.optional (dict))
+    @rus.returns (rus.nothing)
     def __init__ (self, ctype, _adaptor=None, _adaptor_state={}) : 
         '''
         ctype: string
@@ -105,8 +105,8 @@ class Context (sb.Base, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Context')
-    @sus.returns (basestring)
+    @rus.takes   ('Context')
+    @rus.returns (basestring)
     def __str__  (self) :
 
         d = self.as_dict ()
@@ -124,8 +124,8 @@ class Context (sb.Base, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Context')
-    @sus.returns (basestring)
+    @rus.takes   ('Context')
+    @rus.returns (basestring)
     def __repr__ (self) :
 
         return str(self)
@@ -133,9 +133,9 @@ class Context (sb.Base, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes      ('Context', 
+    @rus.takes      ('Context', 
                      ('Session', '_DefaultSession'))
-    @sus.returns    (sus.nothing)
+    @rus.returns    (rus.nothing)
     def _initialize (self, session) :
         '''
         ret:  None
@@ -143,5 +143,5 @@ class Context (sb.Base, sa.Attributes) :
         self._adaptor._initialize (session)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

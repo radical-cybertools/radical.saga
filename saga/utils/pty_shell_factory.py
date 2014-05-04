@@ -1,5 +1,5 @@
 
-__author__    = "Andre Merzky"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -10,14 +10,16 @@ import pwd
 import string
 import getpass
 
+import radical.utils           as ru
+import radical.utils.logger    as rul
+
 import saga
 import saga.exceptions         as se
-import saga.utils.threads      as sut
-import saga.utils.which        as suw
 import saga.utils.misc         as sumisc
-import saga.utils.logger       as sul
-import saga.utils.singleton    as sus
 import saga.utils.pty_process  as supp
+
+import pty_exceptions               as ptye
+
 
 # ------------------------------------------------------------------------------
 #
@@ -70,16 +72,16 @@ _SCRIPTS = {
       # 'copy_from'     : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s  %(root)s/%(src)s %(tgt)s",
         'copy_to'       : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
         'copy_from'     : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
-        'copy_to_in'    : "progress \n put %(cp_flags)s %(src)s %(tgt)s \n exit \n",            
-        'copy_from_in'  : "progress \n get %(cp_flags)s %(src)s %(tgt)s \n exit \n",
+        'copy_to_in'    : "mput %(cp_flags)s %(src)s %(tgt)s \n",
+        'copy_from_in'  : "mget %(cp_flags)s %(src)s %(tgt)s \n",
     },
     'sh' : { 
         'master'        : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'shell'         : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'copy_to'       : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
         'copy_from'     : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'copy_to_in'    : "cd ~ && exec %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s",
-        'copy_from_in'  : "cd ~ && exec %(cp_exe)s %(cp_flags)s %(src)s %(tgt)s",
+        'copy_to_in'    : "cd ~ && %(cp_exe)s -v %(cp_flags)s '%(src)s' '%(tgt)s'",
+        'copy_from_in'  : "cd ~ && %(cp_exe)s -v %(cp_flags)s '%(src)s' '%(tgt)s'",
     }
 }
 
@@ -124,18 +126,18 @@ class PTYShellFactory (object) :
 
     """
 
-    __metaclass__ = sus.Singleton
+    __metaclass__ = ru.Singleton
 
 
     # --------------------------------------------------------------------------
     #
     def __init__ (self) :
 
-        self.logger   = sul.getLogger ('PTYShellFactory')
-        self.registry = {}
-        self.rlock    = sut.RLock ('pty shell factory')
+        self.logger     = rul.getLogger ('saga', 'PTYShellFactory')
+        self.registry   = {}
+        self.rlock      = ru.RLock ('pty shell factory')
+        self._cp_slaves = dict()
 
-        self.logger.debug ("PTYShellFactory init %s" % self)
 
     # --------------------------------------------------------------------------
     #
@@ -143,14 +145,11 @@ class PTYShellFactory (object) :
 
         with self.rlock :
 
-            # make sure we have a valid session, and a valid url type
-            if  not session :
-                session = saga.Session (default=True)
-
+            # make sure we have a valid url type
             url = saga.Url (url)
 
             if  not logger :
-                logger = sul.getLogger ('PTYShellFactory')
+                logger = rul.getLogger ('saga', 'PTYShellFactory')
 
             # collect all information we have/need about the requested master
             # connection
@@ -169,7 +168,7 @@ class PTYShellFactory (object) :
                 # new master: create an instance, and register it
                 m_cmd = _SCRIPTS[info['type']]['master'] % info
 
-                self.logger.debug ("open master pty for [%s] [%s] %s: %s'" \
+                logger.debug ("open master pty for [%s] [%s] %s: %s'" \
                                 % (type_s, host_s, user_s, m_cmd))
 
                 info['pty'] = supp.PTYProcess (m_cmd, logger=logger)
@@ -223,19 +222,23 @@ class PTYShellFactory (object) :
             delay = min (1.0, max (0.1, 50 * latency))
 
             try :
-                prompt_patterns = ["[Pp]assword:\s*$",                   # password   prompt
-                                   "Enter passphrase for key '.*':\s*$", # passphrase prompt
-                                   "want to continue connecting",        # hostkey confirmation
-                                   ".*HELLO_\\d+_SAGA$",                 # prompt detection helper
-                                   "^(.*[\$#%>])\s*$"]                   # greedy native shell prompt 
+                prompt_patterns = ["[Pp]assword:\s*$",             # password   prompt
+                                   "Enter passphrase for .*:\s*$", # passphrase prompt
+                                   "Token_Response.*:\s*$",        # passtoken  prompt
+                                   "want to continue connecting",  # hostkey confirmation
+                                   ".*HELLO_\\d+_SAGA$",           # prompt detection helper
+                                   "^(.*[\$#%>\]])\s*$"]           # greedy native shell prompt 
 
                 # find a prompt
+                # use a very aggressive, but portable prompt setting scheme
+              # pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
                 n, match = pty_shell.find (prompt_patterns, delay)
 
                 # this loop will run until we finally find the shell prompt, or
                 # if we think we have tried enough and give up.  On success
                 # we'll try to set a different prompt, and when we found that,
                 # too, we exit the loop and are be ready to running shell
+
                 # commands.
                 retries       = 0
                 retry_trigger = True
@@ -265,7 +268,9 @@ class PTYShellFactory (object) :
                         retries += 1
 
                         if  is_shell :
-                            pty_shell.write ("printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+                            # use a very aggressive, but portable prompt setting scheme
+                            pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
+                            pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
                             used_trigger = True
 
                         # FIXME:  consider better timeout
@@ -305,13 +310,22 @@ class PTYShellFactory (object) :
 
                     # --------------------------------------------------------------
                     elif n == 2 :
+                        logger.info ("got token prompt")
+                        import getpass
+                        token = getpass.getpass ("enter token: ")
+                        pty_shell.write ("%s\n" % token.strip())
+                        n, match = pty_shell.find (prompt_patterns, delay)
+
+
+                    # --------------------------------------------------------------
+                    elif n == 3 :
                         logger.info ("got hostkey prompt")
                         pty_shell.write ("yes\n")
                         n, match = pty_shell.find (prompt_patterns, delay)
 
 
                     # --------------------------------------------------------------
-                    elif n == 3 :
+                    elif n == 4 :
 
                         # one of the trigger commands got through -- we can now
                         # hope to find the prompt (or the next trigger...)
@@ -324,7 +338,7 @@ class PTYShellFactory (object) :
 
 
                     # --------------------------------------------------------------
-                    elif n == 4 :
+                    elif n == 5 :
 
                         logger.debug ("got initial shell prompt (%s) (%s)" %  (n, match))
 
@@ -336,24 +350,49 @@ class PTYShellFactory (object) :
                                 trigger = "HELLO_%d_SAGA" % retries
 
                                 if  not trigger in found_trigger :
+
                                     logger.debug ("waiting for prompt trigger %s: (%s) (%s)" \
                                                % (trigger, n, match))
                                     # but more retries won't help...
                                     retry_trigger = False
-                                    n, match = pty_shell.find (prompt_patterns, delay)
+                                    attempts      = 0
+                                    n             = None
+
+                                    while not n :
+
+                                        attempts += 1
+                                        n, match  = pty_shell.find (prompt_patterns, delay)
+
+                                        if  not n :
+                                            if  attempts == 1 :
+                                                pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+
+                                            if  attempts > 100 :
+                                                raise se.NoSuccess ("Could not detect shell prompt (timeout)")
+
                                     continue
 
 
-                        logger.info ("got initial shell prompt (%s) (%s)" \
+                        logger.info ("Got initial shell prompt (%s) (%s)" \
                                    % (n, match))
-
                         # we are done waiting for a prompt
                         break
                 
-                
             except Exception as e :
-                raise self._translate_exception (e)
+                raise ptye.translate_exception (e)
+                
 
+    # --------------------------------------------------------------------------
+    #
+    def _get_cp_slave (self, s_cmd, info) :
+
+        host = info.get ('host_str', 'any')
+        
+        if  host not in self._cp_slaves :
+            self._cp_slaves[host] = supp.PTYProcess (s_cmd, info['logger'])
+            self._initialize_pty (self._cp_slaves[host], info)
+
+        return self._cp_slaves[host]
 
     # --------------------------------------------------------------------------
     #
@@ -384,30 +423,85 @@ class PTYShellFactory (object) :
         """ 
         This initiates a slave copy connection.   Src is interpreted as local
         path, tgt as path on the remote host.
+
+        Now, this is ugly when over sftp: sftp supports recursive copy, and
+        wildcards, all right -- but for recursive copies, it wants the target
+        dir to exist -- so, we have to check if the local src is a  dir, and if
+        so, we first create the target before the copy.  Worse, for wildcards we
+        have to do a local expansion, and the to do the same for each entry...
         """
 
-      # if True :
         with self.rlock :
 
             repl = dict ({'src'      : src, 
                           'tgt'      : tgt, 
-                          'cp_flags' : cp_flags}.items ()+ info.items ())
+                          'cp_flags' : cp_flags}.items () + info.items ())
 
             # at this point, we do have a valid, living master
             s_cmd = _SCRIPTS[info['type']]['copy_to']    % repl
             s_in  = _SCRIPTS[info['type']]['copy_to_in'] % repl
 
-            cp_slave = supp.PTYProcess (s_cmd, info['logger'])
+            cp_slave = self._get_cp_slave (s_cmd, info)
 
-            self._initialize_pty (cp_slave, info)
+            prep = ""
+            if  'sftp' in s_cmd :
+                # prepare target dirs for recursive copy, if needed
+                import glob
+                src_list = glob.glob (src)
+                for s in src_list :
+                    if  os.path.isdir (s) :
+                        prep += "mkdir %s/%s\n" % (tgt, os.path.basename (s))
 
-            cp_slave.write ("%s\n" % s_in)
-            cp_slave.wait  ()
 
-            if  cp_slave.exit_code != 0 :
-                raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+            _      = cp_slave.write    ("%s%s\n" % (prep, s_in))
+            _, out = cp_slave.find     (['[\$\>\]] *$'], -1)
+            _, out = cp_slave.find     (['[\$\>\]] *$'], 1.0)
 
-            info['logger'].debug ("copy done")
+
+            # FIXME: we don't really get exit codes from copy
+            # if  cp_slave.exit_code != 0 :
+            #     raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % str(out))
+
+            if 'Invalid flag' in out :
+                raise se.NoSuccess._log (info['logger'], "sftp version not supported (%s)" % str(out))
+
+            if 'No such file or directory' in out :
+                raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % str(out))
+
+            if 'is not a directory' in out :
+                raise se.BadParameter._log (info['logger'], "File copy failed: %s" % str(out))
+
+            if 'not found' in out :
+                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
+
+
+            # we interpret the first word on the line as name of src file -- we
+            # will return a list of those
+            lines = out.split ('\n')
+            files = []
+
+            for line in lines :
+
+                elems = line.split (' ', 2)
+
+                if  elems :
+
+                    f = elems[0]
+
+                    # remove quotes
+                    if  f :
+
+                        if  f[ 0] in ["'", '"', '`'] : f = f[1:  ]
+                        if  f[-1] in ["'", '"', '`'] : f = f[ :-1]
+
+                    # ignore empty lines
+                    if  f :
+
+                        files.append (f)
+
+            info['logger'].debug ("copy done: %s" % files)
+
+            return files
 
 
     # --------------------------------------------------------------------------
@@ -416,9 +510,11 @@ class PTYShellFactory (object) :
         """ 
         This initiates a slave copy connection.   Src is interpreted as path on
         the remote host, tgt as local path.
+
+        We have to do the same mkdir trick as for the run_copy_to, but here we
+        need to expand wildcards on the *remote* side :/
         """
 
-      # if True :
         with self.rlock :
 
             repl = dict ({'src'      : src, 
@@ -429,17 +525,69 @@ class PTYShellFactory (object) :
             s_cmd = _SCRIPTS[info['type']]['copy_from']    % repl
             s_in  = _SCRIPTS[info['type']]['copy_from_in'] % repl
 
-            cp_slave = supp.PTYProcess (s_cmd, info['logger'])
+            cp_slave = self._get_cp_slave (s_cmd, info)
 
-            self._initialize_pty (cp_slave, info)
+            prep = ""
 
-            cp_slave.write ("%s\n" % s_in)
-            cp_slave.wait  ()
+            if  'sftp' in s_cmd :
+                # prepare target dirs for recursive copy, if needed
+                cp_slave.write (" ls %s\n" % src)
+                _, out = cp_slave.find (["^sftp> "], -1)
 
-            if  cp_slave.exit_code != 0 :
-                raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+                src_list = out[1].split ('/n')
 
-            info['logger'].debug ("copy done")
+                for s in src_list :
+                    if  os.path.isdir (s) :
+                        prep += "lmkdir %s/%s\n" % (tgt, os.path.basename (s))
+
+
+            _      = cp_slave.write    ("%s%s\n" % (prep, s_in))
+            _, out = cp_slave.find     (['[\$\>\]] *$'], -1)
+
+            # FIXME: we don't really get exit codes from copy
+            # if  cp_slave.exit_code != 0 :
+            #     raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % cp_slave.cache[-256:])
+
+            if 'Invalid flag' in out :
+                raise se.NoSuccess._log (info['logger'], "sftp version not supported (%s)" % out)
+
+            if 'No such file or directory' in out :
+                raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % out)
+
+            if 'is not a directory' in out :
+                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
+
+            if 'not found' in out :
+                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
+
+
+            # we run copy with -v, so get a list of files which have been copied
+            # -- we parse that list and return it.  we interpret the *second*
+            # word on the line as name of src file.
+            lines = out.split ('\n')
+            files = []
+
+            for line in lines :
+
+                elems = line.split (' ', 3)
+                
+                if  elems and len(elems) > 1 and elems[0] == 'Fetching' :
+
+                    f = elems[1]
+
+                    # remove quotes
+                    if  f :
+
+                        if  f[ 0] in ["'", '"', '`']  :  f = f[1:  ]
+                        if  f[-1] in ["'", '"', '`']  :  f = f[ :-1]
+
+                    # ignore empty lines
+                    if  f :
+                        files.append (f)
+
+            info['logger'].debug ("copy done: %s" % files)
+
+            return files
 
 
     # --------------------------------------------------------------------------
@@ -456,21 +604,26 @@ class PTYShellFactory (object) :
             info['schema']    = url.schema.lower ()
             info['host_str']  = url.host
             info['logger']    = logger
+            info['url']       = url
             info['pass']      = ""
             info['key_pass']  = {}
+
+            if  not info['schema'] :
+                info['schema'] = 'local'
+                    
 
             # find out what type of shell we have to deal with
             if  info['schema']   in _SCHEMAS_SSH :
                 info['type']     = "ssh"
-                info['ssh_exe']  = suw.which ("ssh")
-                info['scp_exe']  = suw.which ("scp")
-                info['sftp_exe'] = suw.which ("sftp")
+                info['ssh_exe']  = ru.which ("ssh")
+                info['scp_exe']  = ru.which ("scp")
+                info['sftp_exe'] = ru.which ("sftp")
 
             elif info['schema']  in _SCHEMAS_GSI :
                 info['type']     = "ssh"
-                info['ssh_exe']  = suw.which ("gsissh")
-                info['scp_exe']  = suw.which ("gsiscp")
-                info['sftp_exe'] = suw.which ("gsisftp")
+                info['ssh_exe']  = ru.which ("gsissh")
+                info['scp_exe']  = ru.which ("gsiscp")
+                info['sftp_exe'] = ru.which ("gsisftp")
 
             elif info['schema']  in _SCHEMAS_SH :
                 info['type']     = "sh"
@@ -480,11 +633,11 @@ class PTYShellFactory (object) :
                 info['fs_root']  = "/"
 
                 if  "SHELL" in os.environ :
-                    info['sh_exe'] =  suw.which (os.environ["SHELL"])
-                    info['cp_exe'] =  suw.which ("cp")
+                    info['sh_exe'] =  ru.which (os.environ["SHELL"])
+                    info['cp_exe'] =  ru.which ("cp")
                 else :
-                    info['sh_exe'] =  suw.which ("sh")
-                    info['cp_exe'] =  suw.which ("cp")
+                    info['sh_exe'] =  ru.which ("sh")
+                    info['cp_exe'] =  ru.which ("cp")
 
             else :
                 raise se.BadParameter._log (self.logger, \
@@ -527,54 +680,56 @@ class PTYShellFactory (object) :
                 info['scp_args']  =  ""
                 info['sftp_args'] =  ""
 
-                for context in session.contexts :
+                if  session :
 
-                    # ssh can also handle UserPass contexts, and ssh type contexts.
-                    # gsissh can handle the same, but also X509 contexts.
+                    for context in session.contexts :
 
-                    if  context.type.lower () == "ssh" :
-                        if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
+                        # ssh can also handle UserPass contexts, and ssh type contexts.
+                        # gsissh can handle the same, but also X509 contexts.
 
-                            if  context.attribute_exists ("user_id") and context.user_id :
-                                info['user']  = context.user_id
+                        if  context.type.lower () == "ssh" :
+                            if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
 
-                            if  context.attribute_exists ("user_cert")  and  context.user_cert  :
-                                info['ssh_args']  += "-o IdentityFile=%s " % context.user_cert 
-                                info['scp_args']  += "-o IdentityFile=%s " % context.user_cert 
-                                info['sftp_args'] += "-o IdentityFile=%s " % context.user_cert 
+                                if  context.attribute_exists ("user_id") and context.user_id :
+                                    info['user']  = context.user_id
 
+                                if  context.attribute_exists ("user_key")  and  context.user_key  :
+                                    info['ssh_args']  += "-o IdentityFile=%s " % context.user_key 
+                                    info['scp_args']  += "-o IdentityFile=%s " % context.user_key 
+                                    info['sftp_args'] += "-o IdentityFile=%s " % context.user_key 
+
+                                    if  context.attribute_exists ("user_pass") and context.user_pass :
+                                        info['key_pass'][context.user_key] = context.user_pass
+
+                        if  context.type.lower () == "userpass" :
+                            if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
+                                if  context.attribute_exists ("user_id") and context.user_id :
+                                    info['user']       = context.user_id
                                 if  context.attribute_exists ("user_pass") and context.user_pass :
-                                    info['key_pass'][context.user_cert] = context.user_pass
+                                    info['pass']       = context.user_pass
 
-                    if  context.type.lower () == "userpass" :
-                        if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
-                            if  context.attribute_exists ("user_id") and context.user_id :
-                                info['user']       = context.user_id
-                            if  context.attribute_exists ("user_pass") and context.user_pass :
-                                info['pass']       = context.user_pass
+                        if  context.type.lower () == "x509" :
+                            if  info['schema'] in _SCHEMAS_GSI :
 
-                    if  context.type.lower () == "x509" :
-                        if  info['schema'] in _SCHEMAS_GSI :
-
-                            if  context.attribute_exists ("user_proxy")  and   context.user_proxy :
-                                info['ssh_env']   += "X509_USER_PROXY='%s' " % context.user_proxy
-                                info['scp_env']   += "X509_USER_PROXY='%s' " % context.user_proxy
-                                info['sftp_env']  += "X509_USER_PROXY='%s' " % context.user_proxy
-                   
-                            if  context.attribute_exists ("user_cert")   and  context.user_cert :
-                                info['ssh_env']   += "X509_USER_CERT='%s' " % context.user_cert
-                                info['scp_env']   += "X509_USER_CERT='%s' " % context.user_cert
-                                info['sftp_env']  += "X509_USER_CERT='%s' " % context.user_cert
-                   
-                            if  context.attribute_exists ("user_key")    and  context.user_key :
-                                info['ssh_env']   += "X509_USER_key='%s' "  % context.user_key
-                                info['scp_env']   += "X509_USER_key='%s' "  % context.user_key
-                                info['sftp_env']  += "X509_USER_key='%s' "  % context.user_key
-                   
-                            if  context.attribute_exists ("cert_repository") and context.cert_repository :
-                                info['ssh_env']   += "X509_CERT_DIR='%s' "  % context.cert_repository
-                                info['scp_env']   += "X509_CERT_DIR='%s' "  % context.cert_repository
-                                info['sftp_env']  += "X509_CERT_DIR='%s' "  % context.cert_repository
+                                if  context.attribute_exists ("user_proxy")  and   context.user_proxy :
+                                    info['ssh_env']   += "X509_USER_PROXY='%s' " % context.user_proxy
+                                    info['scp_env']   += "X509_USER_PROXY='%s' " % context.user_proxy
+                                    info['sftp_env']  += "X509_USER_PROXY='%s' " % context.user_proxy
+                       
+                                if  context.attribute_exists ("user_cert")   and  context.user_cert :
+                                    info['ssh_env']   += "X509_USER_CERT='%s' " % context.user_cert
+                                    info['scp_env']   += "X509_USER_CERT='%s' " % context.user_cert
+                                    info['sftp_env']  += "X509_USER_CERT='%s' " % context.user_cert
+                       
+                                if  context.attribute_exists ("user_key")    and  context.user_key :
+                                    info['ssh_env']   += "X509_USER_key='%s' "  % context.user_key
+                                    info['scp_env']   += "X509_USER_key='%s' "  % context.user_key
+                                    info['sftp_env']  += "X509_USER_key='%s' "  % context.user_key
+                       
+                                if  context.attribute_exists ("cert_repository") and context.cert_repository :
+                                    info['ssh_env']   += "X509_CERT_DIR='%s' "  % context.cert_repository
+                                    info['scp_env']   += "X509_CERT_DIR='%s' "  % context.cert_repository
+                                    info['sftp_env']  += "X509_CERT_DIR='%s' "  % context.cert_repository
 
                 if url.port and url.port != -1 :
                     info['ssh_args']  += "-p %d " % int(url.port)
@@ -609,53 +764,4 @@ class PTYShellFactory (object) :
             # keep all collected info in the master dict, and return it for
             # registration
             return info
-
-
-    # ----------------------------------------------------------------
-    #
-    def _translate_exception (self, e) :
-        """
-        In many cases, we should be able to roughly infer the exception cause
-        from the error message -- this is centrally done in this method.  If
-        possible, it will return a new exception with a more concise error
-        message and appropriate exception type.
-        """
-
-        if  not issubclass (e.__class__, se.SagaException) :
-            # we do not touch non-saga exceptions
-            return e
-
-        if  not issubclass (e.__class__, se.NoSuccess) :
-            # this seems to have a specific cause already, leave it alone
-            return e
-
-        cmsg = e._plain_message
-        lmsg = cmsg.lower ()
-
-        if 'auth' in lmsg :
-            e = se.AuthorizationFailed (cmsg)
-
-        elif 'pass' in lmsg :
-            e = se.AuthenticationFailed (cmsg)
-
-        elif 'ssh_exchange_identification' in lmsg :
-            e = se.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
-
-        elif 'denied' in lmsg :
-            e = se.PermissionDenied (cmsg)
-
-        elif 'shared connection' in lmsg :
-            e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
-
-        elif 'pty allocation' in lmsg :
-            e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
-
-        elif 'Connection to master closed' in lmsg :
-            e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
-
-        e.traceback = sumisc.get_trace ()
-        return e
-
-
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 

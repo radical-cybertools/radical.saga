@@ -80,12 +80,15 @@ def main():
         print "Start time  : %s" % (sleebjob_clone.started)
         print "End time    : %s" % (sleebjob_clone.finished)
 
+        js.close()
+        return 0
+
     except saga.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))
         # get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
         print " *** %s" % ex.traceback
-        sys.exit(-1)
+        return -1
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

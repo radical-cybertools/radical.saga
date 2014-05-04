@@ -1,10 +1,11 @@
 
-__author__    = "Andre Merzky, Ole Weidner"
+__author__    = "Andre Merzky, Ole Weidner, Alexander Grill"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.utils.signatures     as sus
+import radical.utils.signatures  as rus
+
 import saga.adaptors.base        as sab
 import saga.session              as ss
 import saga.task                 as st
@@ -18,8 +19,8 @@ from   saga.constants            import SYNC, ASYNC, TASK
 # ------------------------------------------------------------------------------
 #
 class Directory (nsdir.Directory) :
-    '''
-    Represents a SAGA directory as defined in GFD.90
+    """
+    Represents a (remote) directory.
     
     The saga.filesystem.Directory class represents, as the name indicates,
     a directory on some (local or remote) filesystem.  That class offers
@@ -39,30 +40,31 @@ class Directory (nsdir.Directory) :
         for f in files :
             if f ^ '^.*\.dat$' :
                 dir.copy (f, "sftp://localhost/tmp/data/")
-    '''
+    """
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Directory', 
-                  sus.optional ((surl.Url, basestring)), 
-                  sus.optional (int), 
-                  sus.optional (ss.Session),
-                  sus.optional (sab.Base), 
-                  sus.optional (dict), 
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Directory', 
+                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional (int), 
+                  rus.optional (ss.Session),
+                  rus.optional (sab.Base), 
+                  rus.optional (dict), 
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (rus.nothing)
     def __init__ (self, url=None, flags=READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
-        '''
-        :param url: Url of the (remote) file system directory.
-        :type  url: :class:`saga.Url` 
+        """
+        __init__(url, flags=READ, session)
 
-        flags:     flags enum
-        session:   saga.Session
-        ret:       obj
-        
         Construct a new directory object
 
+        :param url:     Url of the (remote) directory
+        :type  url:     :class:`saga.Url` 
+
+        :param flags:   :ref:`filesystemflags`
+        :param session: :class:`saga.Session`
+        
         The specified directory is expected to exist -- otherwise
         a DoesNotExist exception is raised.  Also, the URL must point to
         a directory (not to a file), otherwise a BadParameter exception is
@@ -76,7 +78,7 @@ class Directory (nsdir.Directory) :
             # and list its contents
             files = dir.list ()
 
-        '''
+        """
 
         # param checks
         url = surl.Url (url)
@@ -89,20 +91,20 @@ class Directory (nsdir.Directory) :
     # --------------------------------------------------------------------------
     #
     @classmethod
-    @sus.takes   ('Directory', 
-                  sus.optional ((surl.Url, basestring)), 
-                  sus.optional (int), 
-                  sus.optional (ss.Session),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (st.Task)
+    @rus.takes   ('Directory', 
+                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional (int), 
+                  rus.optional (ss.Session),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (st.Task)
     def create (cls, url=None, flags=READ, session=None, ttype=None) :
-        '''
+        """
         url:       saga.Url
         flags:     saga.replica.flags enum
         session:   saga.Session
         ttype:     saga.task.type enum
         ret:       saga.Task
-        '''
+        """
 
         _nsdir = super (Directory, cls)
         return _nsdir.create (url, flags, session, ttype=ttype)
@@ -111,65 +113,68 @@ class Directory (nsdir.Directory) :
     #
     # filesystem directory methods
     #
-    @sus.takes   ('Directory', 
+    @rus.takes   ('Directory', 
                   (surl.Url, basestring),
-                  sus.optional (int),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (('File', st.Task))
+                  rus.optional (int),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (('File', st.Task))
     def open (self, path, flags=READ, ttype=None) :
-        '''
-        path:     saga.Url
-        flags:    saga.namespace.flags enum
-        ttype:    saga.task.type enum
-        ret:      saga.namespace.Entry / saga.Task
-        '''
+        """
+        open(path, flags=READ)
+
+        Open a file in the directory instance namespace. Returns
+        a new file object.
+
+        :param path:     The name/path of the file to open
+        :type path:      str()
+        :param flags:    :ref:`filesystemflags`
+        """
         url = surl.Url(path)
         return self._adaptor.open (url, flags, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Directory', 
+    @rus.takes   ('Directory', 
                   (surl.Url, basestring),
-                  sus.optional (int),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns (('Directory', st.Task))
+                  rus.optional (int),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns (('Directory', st.Task))
     def open_dir (self, path, flags=READ, ttype=None) :
-        '''
-        :param path: name/path of the directory to open
-        :param flags: directory creation flags
+        """
+        open_dir(path, flags=READ)
 
-        ttype:    saga.task.type enum
-        ret:      saga.namespace.Directory / saga.Task
-        
-        Open and return a new directoy
+        Open a directory in the directory instance namespace. Returns 
+        a new directory object.
 
-           The call opens and returns a directory at the given location.
+        :param path:     The name/path of the directory to open
+        :type path:      str()
+        :param flags:    :ref:`filesystemflags`        
 
-           Example::
+        Example::
 
-               # create a subdir 'data' in /tmp
-               dir = saga.namespace.Directory("sftp://localhost/tmp/")
-               data = dir.open_dir ('data/', saga.namespace.Create)
-        '''
+            # create a subdir 'data' in /tmp
+            dir = saga.namespace.Directory("sftp://localhost/tmp/")
+            data = dir.open_dir ('data/', saga.namespace.Create)
+        """
         return self._adaptor.open_dir (path, flags, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Directory', 
-                  sus.optional ((surl.Url, basestring)),
-                  sus.optional (int),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((int, st.Task))
-    def get_size (self, tgt=None, flags=None, ttype=None) :
-        '''
-        :param tgt: path of the file or directory
+    @rus.takes   ('Directory', 
+                  rus.optional ((surl.Url, basestring)),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((int, st.Task))
+    def get_size (self, path=None, ttype=None) :
+        """
+        get_size(path=None)
 
-        flags:    saga.namespace.flags enum
-        ttype:    saga.task.type enum
-        ret:      int / saga.Task
+        Return the size of the directory itself or the entry pointed to by `path`. 
         
+        :param path:     (Optional) name/path of an entry
+        :type path:      str()
+
         Returns the size of a file or directory (in bytes)
 
         Example::
@@ -178,29 +183,47 @@ class Directory (nsdir.Directory) :
             dir  = saga.filesystem.Directory("sftp://localhost/tmp/")
             size = dir.get_size ('data/data.bin')
             print size
-        '''
-        if tgt    :  return self._adaptor.get_size      (tgt, ttype=ttype)
+        """
+        if path   :  return self._adaptor.get_size      (path, ttype=ttype)
         else      :  return self._adaptor.get_size_self (     ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Directory', 
-                  sus.optional ((surl.Url, basestring)),
-                  sus.optional (sus.one_of (SYNC, ASYNC, TASK)))
-    @sus.returns ((bool, st.Task))
-    def is_file (self, tgt=None, ttype=None) :
+    @rus.takes   ('Directory', 
+                  rus.optional (bool))
+    @rus.returns (st.Task)
+    def close     (self, kill=True, ttype=None) :
         '''
-        tgt:      saga.Url
+        kill :    bool
         ttype:    saga.task.type enum
-        ret:      bool / saga.Task
+        ret:      string / bytearray / saga.Task
         '''
-        if tgt    :  return self._adaptor.is_file      (tgt, ttype=ttype)
+        return self._adaptor.close ()
+
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes   ('Directory', 
+                  rus.optional ((surl.Url, basestring)),
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((bool, st.Task))
+    def is_file (self, path=None, ttype=None) :
+        """
+        is_file(path=None)
+
+        Returns `True` if entry points to a file, `False` otherwise. If `path`
+        is not none, the entry pointed to by `path` is inspected instead of the
+        directory object itself. 
+
+        :param path:     (Optional) name/path of an entry
+        :type path:      str()
+        """
+        if path    :  return self._adaptor.is_file      (path, ttype=ttype)
         else      :  return self._adaptor.is_file_self (     ttype=ttype)
 
 
     size  = property (get_size)  # int
 
     
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

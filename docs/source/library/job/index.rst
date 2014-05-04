@@ -1,7 +1,7 @@
 .. _job_managemen:
 
-Working with Jobs
-=================
+Job Submission and Control
+===========================
 
 SAGA's job management module is central to the API. It
 represents an application/executable running under the management of a resource 
@@ -32,6 +32,8 @@ The basic usage of the job module is as follows::
    print "Job State : %s" % (job.state)
    print "Exitcode  : %s" % (job.exit_code)
 
+   service.close()
+
 .. seealso:: More examples can be found in the individual adaptor sections!
 
 Like all SAGA modules, the job module relies on  middleware adaptors 
@@ -55,16 +57,14 @@ The rest of this section is structured as follows:
 Job Service -- :class:`saga.job.Service`
 ----------------------------------------
 
-:todo: Describe how to work with services.
-
 .. autoclass:: saga.job.Service
    :members:
    :undoc-members:
+   :special-members: __init__
+   :exclude-members: create, __module__
 
 Job Description -- :class:`saga.job.Description`
 ------------------------------------------------
-
-:todo: Describe how to work with description.
 
 **Warning:** There is no guarantee that all middleware adaptors implement all job
 description attributes. In case a specific attribute is not supported, the
@@ -306,19 +306,17 @@ SAGA defines the following constants as valid job description attributes:
 Jobs -- :class:`saga.job.Job`
 -----------------------------
 
-:todo: Describe how to work with jobs.
-
 .. autoclass:: saga.job.Job
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: get_result, get_object, get_exception, re_raise ,result, object, exception, get_stdin, get_stdout, get_stderr, suspend, resume, migrate, checkpoint, stdout, stderr, __module__
+
 
 .. _job_attributes:
 
 Attributes 
 ^^^^^^^^^^
-
-:todo: Explain how to use job attributes
 
 .. currentmodule:: saga.job
 .. autodata:: ID
@@ -404,8 +402,6 @@ SAGA defines the following constants as job metrics:
 
 Job Containers -- :class:`saga.job.Container`
 ---------------------------------------------
-
-:todo: Describe how to work with job containers.
 
 .. seealso:: More examples on how to use job containers can be found in 
              the :ref:`code_examples_job` section of the 

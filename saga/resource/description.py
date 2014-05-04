@@ -1,9 +1,11 @@
 
-__author__    = "Andre Merzky"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-import saga.utils.signatures as sus
+
+import radical.utils.signatures as rus
+
 import saga.attributes       as sa
 import saga.exceptions       as se
 import constants             as const
@@ -82,10 +84,15 @@ class Description (sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Description', 
-                  sus.optional (dict))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('Description', 
+                  rus.optional (dict))
+    @rus.returns (rus.nothing)
     def __init__ (self, d=None):
+        """
+        __init__()
+
+        Create a new Description instance.
+        """
 
         # set attribute interface properties
 
@@ -121,9 +128,9 @@ class Description (sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Description', 
+    @rus.takes   ('Description', 
                   'Description')
-    @sus.returns ('Description')
+    @rus.returns ('Description')
     def __deepcopy__ (self, other) :
         """
         An alias for `clone()`.
@@ -132,12 +139,16 @@ class Description (sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Description', 
-                  sus.optional ('Description'))
-    @sus.returns ('Description')
+    @rus.takes   ('Description', 
+                  rus.optional ('Description'))
+    @rus.returns ('Description')
     def clone (self, other=None) :
         """ 
-        deep copy: unlike the default python assignment (copy object reference),
+        clone()
+
+        Implements deep copy. 
+
+        Unlike the default python assignment (copy object reference),
         a deep copy will create a new object instance with the same state --
         after a deep copy, a change on one instance will not affect the other.
         """
@@ -161,9 +172,9 @@ class ComputeDescription (Description) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('ComputeDescription', 
-                  sus.optional (dict))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('ComputeDescription', 
+                  rus.optional (dict))
+    @rus.returns (rus.nothing)
     def __init__ (self, d=None) :
         
         if  d :
@@ -188,9 +199,9 @@ class StorageDescription (Description) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('StorageDescription', 
-                  sus.optional (dict))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('StorageDescription', 
+                  rus.optional (dict))
+    @rus.returns (rus.nothing)
     def __init__ (self, d=None) :
         
         if  d :
@@ -214,9 +225,9 @@ class NetworkDescription (Description) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('NetworkDescription', 
-                  sus.optional (dict))
-    @sus.returns (sus.nothing)
+    @rus.takes   ('NetworkDescription', 
+                  rus.optional (dict))
+    @rus.returns (rus.nothing)
     def __init__ (self, d=None) :
         
         if  d :
@@ -231,5 +242,5 @@ class NetworkDescription (Description) :
 
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -1,16 +1,23 @@
 
-__author__    = "Andre Merzky, Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__author__    = "SAGA Development Team"
+__copyright__ = "Copyright 2013, RADICAL"
 __license__   = "MIT"
 
 
+import os
+import radical.utils        as ru
+import radical.utils.logger as rul
+
+
+# ------------------------------------------------------------------------------
+#
 from   saga.constants      import *
+
+from   saga.task           import Task, Container
 from   saga.attributes     import Attributes, Callback
 from   saga.session        import Session
 from   saga.context        import Context
 from   saga.url            import Url
-from   saga.task           import Task, Container
-from   saga.version        import version
 
 from   saga.exceptions     import SagaException
 from   saga.exceptions     import NotImplemented
@@ -25,11 +32,27 @@ from   saga.exceptions     import AuthenticationFailed
 from   saga.exceptions     import Timeout
 from   saga.exceptions     import NoSuccess
 
-from   saga.constants      import * 
-
 import saga.job
 import saga.filesystem
 import saga.replica
 import saga.advert
 import saga.resource
+
+
+# ------------------------------------------------------------------------------
+
+
+pwd     = os.path.dirname (__file__)
+root    = "%s/.." % pwd
+short_version, long_version, branch = ru.get_version ([root, pwd])
+version = long_version
+
+# FIXME: the logger init will require a 'classical' ini based config, which is
+# different from the json based config we use now.   May need updating once the
+# radical configuration system has changed to json
+_logger = rul.logger.getLogger  ('saga')
+_logger.info ('saga-python     version: %s' % version)
+
+
+# ------------------------------------------------------------------------------
 
