@@ -383,13 +383,18 @@ class PTYShellFactory (object) :
     #
     def _get_cp_slave (self, s_cmd, info) :
 
-        host = info.get ('host_str', 'any')
-        
-        if  host not in self._cp_slaves :
+        with self.rlock :
+
+            host = info.get ('host_str', 'any')
+
+            if  host in self._cp_slaves :
+                if  self._cp_slaves[host].alive () :
+                    return self._cp_slaves[host]
+            
             self._cp_slaves[host] = supp.PTYProcess (s_cmd, info['logger'])
             self._initialize_pty (self._cp_slaves[host], info)
 
-        return self._cp_slaves[host]
+            return self._cp_slaves[host]
 
     # --------------------------------------------------------------------------
     #
