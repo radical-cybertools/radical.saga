@@ -231,7 +231,7 @@ setup_args = {
     'cmdclass'         : {
         'test'         : our_test,
     },
-    'install_requires' : ['apache-libcloud', 'radical.utils>=0.6.2'],
+    'install_requires' : ['apache-libcloud', 'radical.utils'],
     'tests_require'    : ['nose'],
     'zip_safe'         : False,
 #   'build_sphinx'     : {
