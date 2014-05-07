@@ -259,7 +259,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self.cwdurl.path = self.cwd
 
         self.shell       = sups.PTYShell     (self.url, self.session, self._logger)
-        self._copy_shell = None
+        self.copy_shell  = None
 
       # self.shell.set_initialize_hook (self.initialize)
       # self.shell.set_finalize_hook   (self.finalize)
@@ -280,11 +280,11 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     #
     def _get_copy_shell (self, tgt) :
 
-        if  not self._copy_shell :
+        if  not self.copy_shell :
             self._logger.debug ("new copy shell (%s)" % (tgt))
-            self._copy_shell = sups.PTYShell (tgt, self.session, self._logger)
+            self.copy_shell = sups.PTYShell (tgt, self.session, self._logger)
 
-        return self._copy_shell
+        return self.copy_shell
 
 
     # ----------------------------------------------------------------
@@ -320,6 +320,15 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         if  kill and self.shell :
             self.shell.finalize (True)
             self.shell = None
+
+        if  kill and self.local :
+            self.local.finalize (True)
+            self.local = None
+
+        if  kill and self.copy_shell :
+            self.copy_shell.finalize (True)
+            self.copy_shell = None
+
         self.valid = False
 
 
@@ -855,7 +864,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         _cpi_base = super  (ShellFile, self)
         _cpi_base.__init__ (api, adaptor)
 
-        self._copy_shell = None
+        self.copy_shell = None
 
 
     # ----------------------------------------------------------------
@@ -906,10 +915,10 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     #
     def _get_copy_shell (self, tgt) :
 
-        if  not self._copy_shell :
-            self._copy_shell = sups.PTYShell (tgt, self.session, self._logger)
+        if  not self.copy_shell :
+            self.copy_shell = sups.PTYShell (tgt, self.session, self._logger)
 
-        return self._copy_shell
+        return self.copy_shell
 
 
     # ----------------------------------------------------------------
@@ -1024,6 +1033,10 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         if  kill and self.local :
             self.local.finalize (True)
             self.local = None
+
+        if  kill and self.copy_shell :
+            self.copy_shell.finalize (True)
+            self.copy_shell = None
 
         self.valid = False
 
