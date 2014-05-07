@@ -456,9 +456,8 @@ class PTYShellFactory (object) :
 
 
             _      = cp_slave.write    ("%s%s\n" % (prep, s_in))
-            _, out = cp_slave.find     (['[\$\>\]] *$'], -1)
-            _, out = cp_slave.find     (['[\$\>\]] *$'], 1.0)
-
+            _, out = cp_slave.find     (['[\$\>\]]\s*$'], -1)
+            _, out = cp_slave.find     (['[\$\>\]]\s*$'], 1.0)
 
             # FIXME: we don't really get exit codes from copy
             # if  cp_slave.exit_code != 0 :
@@ -664,6 +663,8 @@ class PTYShellFactory (object) :
                 info['logger'].warning ("Could not contact host '%s': %s" % (url, e))
                 
             if  info['type'] == "sh" :
+
+                info['sh_env'] = "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
 
                 if not sumisc.host_is_local (url.host) :
                     raise se.BadParameter._log (self.logger, \

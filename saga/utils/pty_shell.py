@@ -245,11 +245,11 @@ class PTYShell (object) :
 
 
             self.logger.debug    ("running command shell: %s" % command_shell)
-            self.pty_shell.write (" stty -echo ; %s\n"         % command_shell)
+            self.pty_shell.write (" stty -echo ; %s\n"        % command_shell)
 
             # make sure this worked, and that we find the prompt. We use
             # a versatile prompt pattern to account for the custom shell case.
-            self.find (["^(.*[\$#%>\]])\s*$"])
+            _, out = self.find (["^(.*[\$#%>\]])\s*$"])
 
             # make sure this worked, and that we find the prompt. We use
             # a versatile prompt pattern to account for the custom shell case.
@@ -410,6 +410,11 @@ class PTYShell (object) :
         the output contains multiple occurrences of the prompt, only the match
         up to the first occurence is returned.
         """
+
+        def escape (txt) :
+            pat = re.compile(r'\x1b[^m]*m')
+            return pat.sub ('', txt)
+
 
         with self.pty_shell.rlock :
 
