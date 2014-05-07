@@ -1,9 +1,19 @@
+Version 0.14 release 2014-05-07
+---------------------------------------------------------------------
+
+* Fixed TTY wrapper issues
+* Migration to new GitHub repository
+* Documentation now on ReadTheDocs: http://saga-python.readthedocs.org/en/latest/
+* Integrated Mark's work on the Condor adaptor
+* Closed tickets:
+  - https://github.com/radical-cybertools/saga-python/issues?milestone=18&state=closed
+
 Version 0.13 release 2014-02-27
 ---------------------------------------------------------------------
 
 * Bugfix release.
 * Closed tickets:
-  - https://github.com/saga-project/saga-python/issues?milestone=17&page=1&state=closed
+  - https://github.com/saga-project/saga-python/issues?milestone=17&state=closed
 
 
 Version 0.12 release 2014-02-26
