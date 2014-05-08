@@ -625,7 +625,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     def _slurm_to_saga_jobstate(self, slurmjs):
         """ translates a slurm one-letter state to saga
         """
-        if slurmjs == "CANCELED" or slurmjs == 'CA':
+        if slurmjs == "CANCELLED" or slurmjs == 'CA':
             return saga.job.CANCELED
         elif slurmjs == "COMPLETED" or slurmjs == 'CD':
             return saga.job.DONE
