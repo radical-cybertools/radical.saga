@@ -630,8 +630,8 @@ class PTYShellFactory (object) :
             elif info['schema']  in _SCHEMAS_SH :
                 info['type']     = "sh"
                 info['sh_args']  = "-i"
-                info['sh_env']   = "/usr/bin/env TERM=vt100"
-                info['cp_env']   = "/usr/bin/env TERM=vt100"
+                info['sh_env']   = "/usr/bin/env TERM=vt100 PS1='PROMPT-$?->'"
+                info['cp_env']   = "/usr/bin/env TERM=vt100 PS1='PROMPT-$?->'"
                 info['fs_root']  = "/"
 
                 if  "SHELL" in os.environ :
