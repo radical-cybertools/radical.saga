@@ -472,8 +472,9 @@ class PTYShellFactory (object) :
             if 'is not a directory' in out :
                 raise se.BadParameter._log (info['logger'], "File copy failed: %s" % str(out))
 
-            if 'not found' in out :
-                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
+            if  'sftp' in s_cmd :
+                if 'not found' in out :
+                    raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
 
 
             # we interpret the first word on the line as name of src file -- we
@@ -558,8 +559,9 @@ class PTYShellFactory (object) :
             if 'is not a directory' in out :
                 raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
 
-            if 'not found' in out :
-                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
+            if  'sftp' in s_cmd :
+                if 'not found' in out :
+                    raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
 
 
             # we run copy with -v, so get a list of files which have been copied
