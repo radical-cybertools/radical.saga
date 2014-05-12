@@ -370,7 +370,7 @@ class PTYShellFactory (object) :
                                     continue
 
 
-                        logger.info ("Got initial shell prompt (%s) (%s)" \
+                        logger.debug ("Got initial shell prompt (%s) (%s)" \
                                    % (n, match))
                         # we are done waiting for a prompt
                         break

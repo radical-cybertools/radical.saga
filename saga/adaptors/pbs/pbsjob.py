@@ -520,14 +520,16 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # let's try to figure out if we're working on a Cray XT machine.
         # naively, we assume that if we can find the 'aprun' command in the
         # path that we're logged in to a Cray machine.
-        ret, out, _ = self.shell.run_sync('which aprun')
-        if ret != 0:
-            self.is_cray = ""
-        else:
-            self._logger.info("Host '%s' seems to be a Cray XT class machine." \
-                % self.rm.host)
-            self.is_cray = "unknowncray"
-
+        if self.is_cray == "":
+            ret, out, _ = self.shell.run_sync('which aprun')
+            if ret != 0:
+                self.is_cray = ""
+            else:
+                self._logger.info("Host '%s' seems to be a Cray XT class machine." \
+                    % self.rm.host)
+                self.is_cray = "unknowncray"
+        else: 
+            self._logger.info("Assuming host is a Cray since 'craytype' is set to: %s" % self.is_cray)
         # see if we can get some information about the cluster, e.g.,
         # different queues, number of processes per node, etc.
         # TODO: this is quite a hack. however, it *seems* to work quite
