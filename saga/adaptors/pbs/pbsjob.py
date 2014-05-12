@@ -141,7 +141,7 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     if jd.name is not None:
         pbs_params += "#PBS -N %s \n" % jd.name
 
-    if is_cray is False:
+    if is_cray is "":
         # qsub on Cray systems complains about the -V option:
         # Warning:
         # Your job uses the -V option, which requests that all of your
@@ -221,7 +221,7 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     if jd.total_cpu_count is None:
         jd.total_cpu_count = 1
 
-    if is_cray is True:
+    if is_cray is not "":
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
         # different flags. A complete nightmare...
         if 'PBSPro_10' in pbs_version:
@@ -236,9 +236,14 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
             else:
                 pbs_params += "#PBS -l nodes=1 \n"
         else:
-            logger.info("Using Cray XT specific '#PBS -l size=xx' flags (TORQUE).")
             if jd.total_cpu_count is not None:
-                pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
+                if "archer" in is_cray:
+                    logger.info("Using Cray XT -- ARCHER -- specific '#PBS -l select=xx' flags (TORQUE).")
+                    pbs_params += "#PBS -l select=%s \n" % jd.total_cpu_count
+
+                else:
+                    logger.info("Using Cray XT specific '#PBS -l size=xx' flags (TORQUE).")
+                    pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
     else:
         # Default case, i.e, standard HPC cluster (non-Cray)
         tcc = int(jd.total_cpu_count)
@@ -433,7 +438,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self.rm      = rm_url
         self.session = session
         self.ppn     = 1
-        self.is_cray = False
+        self.is_cray = ""
         self.queue   = None
         self.shell   = None
         self.jobs    = dict()
@@ -451,6 +456,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             for key, val in parse_qs(rm_url.query).iteritems():
                 if key == 'queue':
                     self.queue = val[0]
+                if key == 'craytype':
+                    self.is_cray = val[0]
 
 
         # we need to extrac the scheme for PTYShell. That's basically the
@@ -515,11 +522,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # path that we're logged in to a Cray machine.
         ret, out, _ = self.shell.run_sync('which aprun')
         if ret != 0:
-            self.is_cray = False
+            self.is_cray = ""
         else:
             self._logger.info("Host '%s' seems to be a Cray XT class machine." \
                 % self.rm.host)
-            self.is_cray = True
+            self.is_cray = "unknowncray"
 
         # see if we can get some information about the cluster, e.g.,
         # different queues, number of processes per node, etc.
