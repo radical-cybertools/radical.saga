@@ -441,11 +441,11 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         # FIXME: eval flags
 
         if  None == npat :
-            npat = ""
+            npat = "."
         else :
             npat = "-d '%s'" % npat
 
-        ret, out, _ = self.shell.run_sync (" /bin/ls -C1 '%s'\n" % npat)
+        ret, out, _ = self.shell.run_sync (" /bin/ls -C1 %s\n" % npat)
 
         if  ret != 0 :
             raise saga.NoSuccess ("failed to list(): (%s)(%s)" \
