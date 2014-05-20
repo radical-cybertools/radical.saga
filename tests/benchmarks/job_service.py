@@ -3,7 +3,7 @@ import os
 import sys
 import saga
 
-import saga.utils.benchmark as sb
+import radical.utils.benchmark as rb
 
 
 # ------------------------------------------------------------------------------
@@ -58,7 +58,7 @@ def benchmark_post (args={}) :
 # sys.exit (0)
 
 try:
-    sb.benchmark_init ('job_Servicec_create', benchmark_pre, benchmark_core, benchmark_post)
+    rb.benchmark_init ('job_Servicec_create', benchmark_pre, benchmark_core, benchmark_post)
 
 except saga.SagaException, ex:
     print "An exception occured: (%s) %s " % (ex.type, ex)
