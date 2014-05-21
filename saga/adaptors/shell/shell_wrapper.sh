@@ -87,6 +87,44 @@ idle_checker () {
   done
 }
 
+# --------------------------------------------------------------------
+#
+# When sending command stdout and stderr back, we encode into 
+# hexadecimal via od, to keep the protocol simple.  This is done by 
+# the 'encode' function which sets 'ENCODED' to the result of that 
+# conversion for all given string parameters.  For completeness, we 
+# also give the matching 'decode' function, although we don't use it
+# in this shell wrapper script itself.  'decode' consumes the output 
+# of 'encode' and stores the resulting string in 'DECODED'.  Any 
+# elements for which decoding fails are complained about in 'RETVAL', 
+# which remains otherwise empty on successful decoding.
+#
+encode () {
+  export ENCODED="`echo \"$*\" | od -t x1 -A n #| cut -c 2- | tr -d ' \n'`"
+  echo $ENCODED
+}
+
+decode () {
+  CODE=""
+  SKIPPED=""
+  RETVAL=""
+  for word in $*; do
+    case "$word" in 
+      [0-9a-f][0-9a-f] )
+        CODE="$CODE\x$word"
+        ;;
+      * )
+        SKIPPED="$SKIPPED $word"
+        ;;
+    esac
+  done
+  DECODED=`/usr/bin/printf "$CODE"`
+  if ! test -z "$SKIPPED"; then
+    RETVAL="skip decoding of [$SKIPPED ]"
+  fi
+}
+
+
 
 # --------------------------------------------------------------------
 #
@@ -132,7 +170,7 @@ verify_in () {
 
 
 # --------------------------------------------------------------------
-# ensure that given job id has valid stdou file
+# ensure that given job id has valid stdout file
 verify_out () {
   verify_dir $1
   if ! test -r "$DIR/out";   then ERROR="pid $1 has no stdout"; return 1; fi
@@ -143,7 +181,7 @@ verify_out () {
 # ensure that given job id has valid stderr file
 verify_err () {
   verify_dir $1
-  if ! test -r "$DIR/err";   then ERROR="stderr $1 has no sterr"; return 1; fi
+  if ! test -r "$DIR/err";   then ERROR="pid $1 has no stderr"; return 1; fi
 }
 
 
@@ -579,13 +617,13 @@ cmd_stdin () {
 
 # --------------------------------------------------------------------
 #
-# print uuencoded string of job's stdout
+# print encoded string of job's stdout
 #
 cmd_stdout () {
   verify_out $1 || return
 
   DIR="$BASE/$1"
-  RETVAL=`uuencode "$DIR/out" "/dev/stdout"`
+  RETVAL=`cat "$DIR/out" | od -t x1 -A n #| cut -c 2- | tr -d ' \n'`
 }
 
 
@@ -597,7 +635,7 @@ cmd_stderr () {
   verify_err $1 || return
 
   DIR="$BASE/$1"
-  RETVAL=`uuencode "$DIR/err" "/dev/stdout"`
+  RETVAL=`cat "$DIR/err" | od -t x1 -A n #| cut -c 2- | tr -d ' \n'`
 }
 
 

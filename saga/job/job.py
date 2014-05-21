@@ -227,6 +227,20 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes     ('Job',
                     rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns   ((str, st.Task))
+    def get_stdout_string (self, ttype=None) :
+        """
+        get_stdout_string()
+
+        Return the job's STDOUT.
+        """
+        return self._adaptor.get_stdout_string (ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes     ('Job',
+                    rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns   ((file, st.Task))
     def get_stderr (self, ttype=None) :
         """
@@ -238,6 +252,23 @@ class Job (sb.Base, st.Task, sasync.Async) :
         ret:       File / saga.Task
         """
         return self._adaptor.get_stderr (ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes     ('Job',
+                    rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns   ((str, st.Task))
+    def get_stderr_string (self, ttype=None) :
+        """
+        get_stderr_string()
+
+        Return the job's STDERR.
+
+        ttype:     saga.task.type enum
+        ret:       string.
+        """
+        return self._adaptor.get_stderr_string (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
