@@ -8,32 +8,28 @@ import sys
 
 # ------------------------------------------------------------------------------
 #
-def benchmark_pre (tid, test_cfg, bench_cfg, session) :
+def benchmark_pre (tid, app_cfg, bench_cfg) :
 
     pass
 
 
 # ------------------------------------------------------------------------------
 #
-def benchmark_core (tid, i, args={}) :
+def benchmark_core (tid, i, app_cfg, bench_cfg) :
 
     pass
 
 
 # ------------------------------------------------------------------------------
 #
-def benchmark_post (tid, args={}) :
+def benchmark_post (tid, app_cfg, bench_cfg) :
 
     pass
 
 
 # ------------------------------------------------------------------------------
 #
-try:
-    rb.benchmark_init ('benchmark_selftest', benchmark_pre, benchmark_core, benchmark_post)
-
-except Exception as e :
-    print "Exception: %s" % e
+b = rb.Benchmark (dict(), 'benchmark_selftest', benchmark_pre, benchmark_core, benchmark_post)
 
 
 
