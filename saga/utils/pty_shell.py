@@ -623,8 +623,8 @@ class PTYShell (object) :
                 if  iomode == None :
                     redir  =  ""
 
-                self.logger.debug    ('run_sync: %s%s'   % (command, redir))
-                self.pty_shell.write (          "%s%s\n" % (command, redir))
+                self.logger.debug    ('run_sync:  %s%s'   % (command, redir))
+                self.pty_shell.write (          " %s%s\n" % (command, redir))
 
 
                 # If given, switch to new prompt pattern right now...
@@ -712,7 +712,7 @@ class PTYShell (object) :
 
             try :
                 command = command.strip ()
-                self.send ("%s\n" % command)
+                self.send (" %s\n" % command)
 
             except Exception as e :
                 raise ptye.translate_exception (e)
