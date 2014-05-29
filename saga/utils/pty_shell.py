@@ -255,10 +255,11 @@ class PTYShell (object) :
             # a versatile prompt pattern to account for the custom shell case.
             try :
                 # set and register new prompt
-                self.run_async  (" unset PROMPT_COMMAND ; "
-                                     + "PS1='PROMPT-$?->'; "
-                                     + "PS2=''; "
-                                     + "export PS1 PS2 2>&1 >/dev/null\n")
+                self.run_async  ( " unset PROMPT_COMMAND ; "
+                                + " unset HISTFILE ; "
+                                + "PS1='PROMPT-$?->'; "
+                                + "PS2=''; "
+                                + "export PS1 PS2 2>&1 >/dev/null\n")
                 self.set_prompt (new_prompt="PROMPT-(\d+)->$")
 
                 self.logger.debug ("got new shell prompt")
