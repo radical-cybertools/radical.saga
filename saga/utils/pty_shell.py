@@ -244,8 +244,8 @@ class PTYShell (object) :
                 self.logger.info ("custom  command shell: %s" % command_shell)
 
 
-            self.logger.debug    ("running command shell: %s" % command_shell)
-            self.pty_shell.write (" stty -echo ; %s\n"        % command_shell)
+            self.logger.debug    ("running command shell:         %s"   % command_shell)
+            self.pty_shell.write (" stty -echo ; unset HISTFILE ; %s\n" % command_shell)
 
             # make sure this worked, and that we find the prompt. We use
             # a versatile prompt pattern to account for the custom shell case.
