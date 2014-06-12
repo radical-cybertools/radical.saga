@@ -281,7 +281,7 @@ class PTYShellFactory (object) :
                             raise se.AuthenticationFailed ("prompted for unknown password (%s)" \
                                                           % match)
 
-                        pty_shell.write ("%s\n" % shell_pass)
+                        pty_shell.write ("%s\n" % shell_pass, nolog=True)
                         n, match = pty_shell.find (prompt_patterns, delay)
 
 
@@ -301,7 +301,7 @@ class PTYShellFactory (object) :
                             raise se.AuthenticationFailed ("prompted for unknown key password (%s)" \
                                                           % key)
 
-                        pty_shell.write ("%s\n" % key_pass[key])
+                        pty_shell.write ("%s\n" % key_pass[key], nolog=True)
                         n, match = pty_shell.find (prompt_patterns, delay)
 
 
@@ -310,7 +310,7 @@ class PTYShellFactory (object) :
                         logger.info ("got token prompt")
                         import getpass
                         token = getpass.getpass ("enter token: ")
-                        pty_shell.write ("%s\n" % token.strip())
+                        pty_shell.write ("%s\n" % token.strip(), nolog=True)
                         n, match = pty_shell.find (prompt_patterns, delay)
 
 
