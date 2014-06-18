@@ -141,7 +141,7 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     if jd.name is not None:
         pbs_params += "#PBS -N %s \n" % jd.name
 
-    if is_cray is False:
+    if is_cray is "":
         # qsub on Cray systems complains about the -V option:
         # Warning:
         # Your job uses the -V option, which requests that all of your
@@ -221,34 +221,29 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     if jd.total_cpu_count is None:
         jd.total_cpu_count = 1
 
-    if is_cray is True:
+    tcc = jd.total_cpu_count
+    nnodes = tcc / ppn
+    if tcc % ppn > 0:
+        nnodes += 1 # Request enough nodes to cater for the number of cores requested
+
+    if is_cray is not "":
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
         # different flags. A complete nightmare...
         if 'PBSPro_10' in pbs_version:
-            logger.info("Using Cray specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
-            if jd.total_cpu_count is not None:
-                pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
-        elif '4.2.5-snap.201308291703' in pbs_version: 
-            logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx' against '#PBS -l size=xx'.")
-            nnodes = int(jd.total_cpu_count)//int(ppn)
-            if nnodes: 
-                pbs_params += "#PBS -l nodes=%s \n" % str(nnodes)
-            else:
-                pbs_params += "#PBS -l nodes=1 \n"
+            logger.info("Using Cray XT (e.g. Hopper) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
+            pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
+        elif 'PBSPro_12' in pbs_version:
+            logger.info("Using Cray XT (e.g. Archer) specific '#PBS -l select=xx' flags (PBSPro_12).")
+            pbs_params += "#PBS -l select=%d\n" % nnodes
+        elif '4.2.5-snap.201308291703' in pbs_version:
+            logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
+            pbs_params += "#PBS -l nodes=%d\n" % nnodes
         else:
-            logger.info("Using Cray XT specific '#PBS -l size=xx' flags (TORQUE).")
-            if jd.total_cpu_count is not None:
-                pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
+            logger.info("Using Cray XT (e.g. Kraken, Jaguar) specific '#PBS -l size=xx' flags (TORQUE).")
+            pbs_params += "#PBS -l size=%s\n" % jd.total_cpu_count
     else:
         # Default case, i.e, standard HPC cluster (non-Cray)
-        tcc = int(jd.total_cpu_count)
-        tbd = float(tcc) / float(ppn)
-        if float(tbd) > int(tbd):
-            pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
-                % (str(int(tbd) + 1), ppn)
-        else:
-            pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
-                % (str(int(tbd)), ppn)
+        pbs_params += "#PBS -l nodes=%d:ppn=%d \n" % (nnodes, ppn)
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
@@ -433,7 +428,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self.rm      = rm_url
         self.session = session
         self.ppn     = 1
-        self.is_cray = False
+        self.is_cray = ""
         self.queue   = None
         self.shell   = None
         self.jobs    = dict()
@@ -451,6 +446,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             for key, val in parse_qs(rm_url.query).iteritems():
                 if key == 'queue':
                     self.queue = val[0]
+                if key == 'craytype':
+                    self.is_cray = val[0]
 
 
         # we need to extrac the scheme for PTYShell. That's basically the
@@ -513,19 +510,21 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # let's try to figure out if we're working on a Cray XT machine.
         # naively, we assume that if we can find the 'aprun' command in the
         # path that we're logged in to a Cray machine.
-        ret, out, _ = self.shell.run_sync('which aprun')
-        if ret != 0:
-            self.is_cray = False
-        else:
-            self._logger.info("Host '%s' seems to be a Cray XT class machine." \
-                % self.rm.host)
-            self.is_cray = True
-
+        if self.is_cray == "":
+            ret, out, _ = self.shell.run_sync('which aprun')
+            if ret != 0:
+                self.is_cray = ""
+            else:
+                self._logger.info("Host '%s' seems to be a Cray XT class machine." \
+                    % self.rm.host)
+                self.is_cray = "unknowncray"
+        else: 
+            self._logger.info("Assuming host is a Cray since 'craytype' is set to: %s" % self.is_cray)
         # see if we can get some information about the cluster, e.g.,
         # different queues, number of processes per node, etc.
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
-        ret, out, _ = self.shell.run_sync('%s -a | egrep "(np|pcpu)"' % \
+        ret, out, _ = self.shell.run_sync('%s -a | egrep "(ncpus|np|pcpu)"' % \
             self._commands['pbsnodes']['path'])
         if ret != 0:
 
@@ -539,7 +538,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             for line in out.split('\n'):
                 np = line.split(' = ')
                 if len(np) == 2:
-                    np = np[1].strip()
+                    np = int(np[1].strip())
                     if np in ppn_list:
                         ppn_list[np] += 1
                     else:

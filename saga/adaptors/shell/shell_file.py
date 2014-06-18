@@ -441,7 +441,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         # FIXME: eval flags
 
         if  None == npat :
-            npat = ""
+            npat = "."
         else :
             npat = '-d %s' % npat
 

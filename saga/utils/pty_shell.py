@@ -244,8 +244,8 @@ class PTYShell (object) :
                 self.logger.info ("custom  command shell: %s" % command_shell)
 
 
-            self.logger.debug    ("running command shell: %s" % command_shell)
-            self.pty_shell.write (" stty -echo ; %s\n"        % command_shell)
+            self.logger.debug    ("running command shell:         %s"   % command_shell)
+            self.pty_shell.write (" stty -echo ; unset HISTFILE ; %s\n" % command_shell)
 
             # make sure this worked, and that we find the prompt. We use
             # a versatile prompt pattern to account for the custom shell case.
@@ -255,10 +255,11 @@ class PTYShell (object) :
             # a versatile prompt pattern to account for the custom shell case.
             try :
                 # set and register new prompt
-                self.run_async  (" unset PROMPT_COMMAND ; "
-                                     + "PS1='PROMPT-$?->'; "
-                                     + "PS2=''; "
-                                     + "export PS1 PS2 2>&1 >/dev/null\n")
+                self.run_async  ( " unset PROMPT_COMMAND ; "
+                                + " unset HISTFILE ; "
+                                + "PS1='PROMPT-$?->'; "
+                                + "PS2=''; "
+                                + "export PS1 PS2 2>&1 >/dev/null\n")
                 self.set_prompt (new_prompt="PROMPT-(\d+)->$")
 
                 self.logger.debug ("got new shell prompt")
@@ -623,8 +624,8 @@ class PTYShell (object) :
                 if  iomode == None :
                     redir  =  ""
 
-                self.logger.debug    ('run_sync: %s%s'   % (command, redir))
-                self.pty_shell.write (          "%s%s\n" % (command, redir))
+                self.logger.debug    ('run_sync:  %s%s'   % (command, redir))
+                self.pty_shell.write (          " %s%s\n" % (command, redir))
 
 
                 # If given, switch to new prompt pattern right now...
@@ -712,7 +713,7 @@ class PTYShell (object) :
 
             try :
                 command = command.strip ()
-                self.send ("%s\n" % command)
+                self.send (" %s\n" % command)
 
             except Exception as e :
                 raise ptye.translate_exception (e)
