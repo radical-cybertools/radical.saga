@@ -472,8 +472,9 @@ class PTYShellFactory (object) :
             if 'is not a directory' in out :
                 raise se.BadParameter._log (info['logger'], "File copy failed: %s" % str(out))
 
-            if 'not found' in out :
-                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
+            if  'sftp' in s_cmd :
+                if 'not found' in out :
+                    raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
 
 
             # we interpret the first word on the line as name of src file -- we
@@ -558,8 +559,9 @@ class PTYShellFactory (object) :
             if 'is not a directory' in out :
                 raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
 
-            if 'not found' in out :
-                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
+            if  'sftp' in s_cmd :
+                if 'not found' in out :
+                    raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
 
 
             # we run copy with -v, so get a list of files which have been copied
@@ -629,8 +631,8 @@ class PTYShellFactory (object) :
             elif info['schema']  in _SCHEMAS_SH :
                 info['type']     = "sh"
                 info['sh_args']  = "-i"
-                info['sh_env']   = "/usr/bin/env TERM=vt100"
-                info['cp_env']   = "/usr/bin/env TERM=vt100"
+                info['sh_env']   = "/usr/bin/env TERM=vt100 PS1='PROMPT-$?->'"
+                info['cp_env']   = "/usr/bin/env TERM=vt100 PS1='PROMPT-$?->'"
                 info['fs_root']  = "/"
 
                 if  "SHELL" in os.environ :

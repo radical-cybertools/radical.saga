@@ -18,7 +18,10 @@ Hands-On: Local Job Submission
 
 Before we discuss the individual API call in more detail, let's get down and dirty and run our first example: creating and running a SAGA job on your local machine.
 
-Create a new file ``saga_example_local.py`` and paste the following code:
+Create a new file ``saga_example_local.py`` and paste the following code (
+or download it directly from :download:`here <../../../examples/tutorial/saga_example_local.py>`.
+
+)
 
 .. literalinclude:: ../../../examples/tutorial/saga_example_local.py
 
