@@ -1,3 +1,9 @@
+Version 0.14 release 2014-06-18
+---------------------------------------------------------------------
+
+* Fixed issues with the shell aadaptor Directory.list() method:
+  - https://github.com/radical-cybertools/saga-python/issues/330
+
 Version 0.14 release 2014-05-07
 ---------------------------------------------------------------------
 
