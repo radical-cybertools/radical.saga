@@ -35,7 +35,7 @@ You can give mandelbrot.py a test-drive locally by calculating a single-tiled
 
     python mandelbrot.py 1024 1024 0 1024 0 1024 frac.gif
 
-In your ``$HOME`` directory, open a new file saga_mandelbrot.py with your 
-favorite editor and paste the following content (../../../examples/tutorial/mandelbrot/saga_mandelbrot_osg.py:
+In your ``$HOME`` directory, open a new file saga_mandelbrot_osg.py with your 
+favorite editor and paste the following content :download:`here <../../../examples/tutorial/mandelbrot/saga_mandelbrot_osg.py>`:
 
 .. literalinclude:: ../../../examples/tutorial/mandelbrot/saga_mandelbrot_osg.py
