@@ -443,7 +443,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         if  None == npat :
             npat = "."
         else :
-            npat = "-d '%s'" % npat
+            npat = '-d %s' % npat
 
         ret, out, _ = self.shell.run_sync (" /bin/ls -C1 %s\n" % npat)
 
