@@ -524,7 +524,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # different queues, number of processes per node, etc.
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
-        ret, out, _ = self.shell.run_sync('%s -a | egrep "(ncpus|np|pcpu)"' % \
+        ret, out, _ = self.shell.run_sync('%s -a | egrep "( ncpus|np|pcpu)"' % \
             self._commands['pbsnodes']['path'])
         if ret != 0:
 
