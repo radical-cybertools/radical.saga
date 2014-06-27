@@ -538,7 +538,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             for line in out.split('\n'):
                 np = line.split(' = ')
                 if len(np) == 2:
-                    np = int(np[1].strip())
+                    np_str = np[1].strip()
+                    if np_str == '<various>':
+                        continue
+                    else:
+                        np = int(np_str)
                     if np in ppn_list:
                         ppn_list[np] += 1
                     else:
