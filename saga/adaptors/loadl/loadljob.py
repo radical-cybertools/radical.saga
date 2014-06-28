@@ -434,7 +434,10 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                 exec_n_args += "%s " % (arg)
 
         if jd.total_cpu_count is not None and jd.total_cpu_count > 1:
-            loadl_params += "#@job_type = MPICH \n"
+            #loadl_params += "#@job_type = MPICH \n"
+            loadl_params += "#@job_type = parallel\n"
+        else:
+            loadl_params += "#@job_type = parallel\n"
 
         if jd.name is not None:
             loadl_params += "#@job_name=%s \n" % jd.name
@@ -463,15 +466,19 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         else:
             if int(jd.total_cpu_count) > 1:
                 loadl_params += "#@total_tasks=%s\n" % jd.total_cpu_count
-                loadl_params += "#@blocking = unlimited\n"
+                #loadl_params += "#@blocking = unlimited\n"
+        loadl_params += "#@total_tasks=%s\n" % jd.total_cpu_count
 
         if jd.total_physical_memory is None:
             # try to come up with a sensible (?) default value for memeory
             jd.total_physical_memory = 256
 
-        loadl_params += "#@resources=ConsumableCpus(%s)ConsumableMemory(%smb)\n" % \
-            ("1", jd.total_physical_memory)
-            #(jd.total_cpu_count, jd.total_physical_memory)
+        #loadl_params += "#@resources=ConsumableCpus(%s)ConsumableMemory(%smb)\n" % \
+        #    ("1", jd.total_physical_memory)
+        #    #(jd.total_cpu_count, jd.total_physical_memory)
+
+        loadl_params += "#@ island_count=1,3\n"
+        loadl_params += "#@ network.MPI = sn_all,,us,,\n"
 
         if jd.job_contact is not None:
             loadl_params += "#@notify_user=%s\n" % jd.job_contact
@@ -565,7 +572,8 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         #     the generated Load Leveler script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
         #cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s -X %s $SCRIPTFILE """ %  (script, self._commands['llsubmit']['path'], self.cluster)
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s -X %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'], self.cluster)
+        #cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s -X %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'], self.cluster)
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'])
         self._logger.info("cmdline: %r", cmdline)
         ret, out, _ = self.shell.run_sync(cmdline)
 
