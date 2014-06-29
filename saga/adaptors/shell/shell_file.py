@@ -33,7 +33,7 @@ _PTY_TIMEOUT = 2.0
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.shell_file"
-_ADAPTOR_SCHEMAS       = ["file", "local", "sftp", "gsiftp", "ssh", "gsissh"]
+_ADAPTOR_SCHEMAS       = ["file", "local", "sftp", "gsisftp", "ssh", "gsissh"]
 _ADAPTOR_OPTIONS       = [
     { 
     'category'         : 'saga.adaptor.shell_file',
@@ -115,12 +115,12 @@ _ADAPTOR_DOC           = {
             interfere with each other.
 
         """,
-    "schemas"          : {"file"   :"use /bin/sh to access local filesystems", 
-                          "local"  :"alias for file://", 
-                          "ssh"    :"use sftp to access remote filesystems", 
-                          "sftp"   :"use sftp to access remote filesystems", 
-                          "gsissh" :"use gsiftp to access remote filesystems",
-                          "gsiftp" :"use gsiftp to access remote filesystems"}
+    "schemas"          : {"file"    :"use /bin/sh to access local filesystems",
+                          "local"   :"alias for file://",
+                          "ssh"     :"use sftp to access remote filesystems",
+                          "sftp"    :"use sftp to access remote filesystems",
+                          "gsissh"  :"use gsisftp to access remote filesystems",
+                          "gsisftp" :"use gsisftp to access remote filesystems"}
 }
 
 # --------------------------------------------------------------------

@@ -47,7 +47,7 @@ import pty_exceptions               as ptye
 # these arrays help to map requested client schemas to master schemas
 _SCHEMAS_SH  = ['sh', 'fork', 'local', 'file']
 _SCHEMAS_SSH = ['ssh', 'scp', 'sftp']
-_SCHEMAS_GSI = ['gsissh', 'gsiscp', 'gsisftp', 'gsiftp']
+_SCHEMAS_GSI = ['gsissh', 'gsiscp', 'gsisftp']
 
 _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 
