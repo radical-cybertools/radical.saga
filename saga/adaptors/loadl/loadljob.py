@@ -639,18 +639,20 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             self._logger.debug(lastStr)
             if lastStr.startswith('llq:'): # llq: There is currently no job status to report
                 job_info = None
-                retries = max_retries
-                while job_info is None and retries > 0:
-                    retries -= 1
+                retries = 0
+                delay = 1
+                while job_info is None and retries < max_retries:
                     job_info = self.__get_remote_job_info(pid)
                     #print "llq:", job_info
                     if job_info == None and retries > 0:
                         message = "__get_remote_job_info get None, pid: %s and retries: %d" % (pid, retries)
                         self._logger.debug(message)
-                        time.sleep(1)
+                        # Exponential back-off
+                        time.sleep(2**retries)
+                    retries += 1
 
                 if job_info == None:
-                    message = "__get_remote_job_info exceed %d tiems(s), pid: %s" % (max_retries, pid)
+                    message = "__get_remote_job_info exceed %d times(s), pid: %s" % (max_retries, pid)
                     log_error_and_raise(message, saga.NoSuccess, self._logger)
 
                 self._logger.info("_retrieve_job: %r", job_info)
