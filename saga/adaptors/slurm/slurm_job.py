@@ -346,8 +346,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         shell_url += self.rm.host
 
         #add port
-        if self.rm.port:
-            shell_url += ":" + self.rm.port
+        if  self.rm.port:
+            shell_url += ":" + str(self.rm.port)
 
         shell_url = saga.url.Url(shell_url)
 
