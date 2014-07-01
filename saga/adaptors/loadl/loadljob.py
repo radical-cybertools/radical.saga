@@ -57,22 +57,24 @@ def _ll_to_saga_jobstate(lljs):
 
 
 def getId(out):
-    jobId=-1
-    CLUSTERFINDWORDS="has been submitted to cluster"
 
-    t=out.split('\n')
+    t = out.split('\n')
+
+    jobId = None
 
     for line in t:
-        if line.startswith('Job') and jobId==-1:
+        if line.startswith('Job'):
             tmpStr=line.split(' ')
             jobId=tmpStr[1]
+            break
 
-        if line.find(CLUSTERFINDWORDS)!=-1:
-            #print "find:", line
-            tmpStr2=line.split(CLUSTERFINDWORDS)
-            tmp=tmpStr2[1].strip()
-            tmpLen=len(tmp)
-            clusterId=tmp[1:tmpLen-1]
+        elif re.search('The job ".+" has been submitted.', line):
+            # Format: llsubmit: The job "srv03-ib.443336" has been submitted.
+            jobId = re.findall(r'"(.*?)"', line)[0]
+            break
+
+    if not jobId:
+        raise Exception("Failed to detect jobId.")
 
     return jobId
 
