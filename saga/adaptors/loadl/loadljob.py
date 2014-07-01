@@ -431,10 +431,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                 exec_n_args += "%s " % (arg)
 
         if jd.total_cpu_count is not None and jd.total_cpu_count > 1:
-            #loadl_params += "#@job_type = MPICH \n"
-            loadl_params += "#@job_type = parallel\n"
-        else:
-            loadl_params += "#@job_type = parallel\n"
+            loadl_params += "#@job_type = MPICH\n"
 
         if jd.name is not None:
             loadl_params += "#@job_name=%s \n" % jd.name
