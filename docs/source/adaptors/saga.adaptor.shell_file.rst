@@ -24,8 +24,8 @@ schema                   description
 **sftp://**              use sftp to access remote filesystems                       
 **file://**              use /bin/sh to access local filesystems                     
 **local://**             alias for file://                                           
-**gsiftp://**            use gsiftp to access remote filesystems                     
-**gsissh://**            use gsiftp to access remote filesystems                     
+**gsissh://**            use gsisftp to access remote filesystems
+**gsisftp://**           use gsisftp to access remote filesystems
 ======================== ============================================================
 
 
