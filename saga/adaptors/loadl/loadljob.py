@@ -266,9 +266,9 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                 if key == 'cluster':
                     self.cluster= val[0]
 
-        # we need to extrac the scheme for PTYShell. That's basically the
-        # job.Serivce Url withou the pbs+ part. We use the PTYShell to execute
-        # pbs commands either locally or via gsissh or ssh.
+        # we need to extract the scheme for PTYShell. That's basically the
+        # job.Service Url without the loadl+ part. We use the PTYShell to execute
+        # loadleveler commands either locally or via gsissh or ssh.
         if rm_scheme == "loadl":
             pty_url.scheme = "fork"
         elif rm_scheme == "loadl+ssh":
@@ -302,7 +302,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def initialize(self):
-        # check if all required pbs tools are available
+        # check if all required loadleveler tools are available
         for cmd in self._commands.keys():
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             self._logger.info(ret)
@@ -368,7 +368,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
     def __remote_job_info_path(self, loadl_job_id="$LOADL_JOB_NAME"):
         """
         Returns the path of the remote job info file.
-        :param loadl_job_id: the LoadLeveler job id, if omitted an enviroment variable representing the job id will be used.
+        :param loadl_job_id: the LoadLeveler job id, if omitted an environment variable representing the job id will be used.
         :return: path to the remote job info file
         """
 
@@ -673,7 +673,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
 
         # if we don't have the job in our dictionary, we don't want it
         if job_id not in self.jobs:
-            message = "Unkown job ID: %s. Can't update state." % job_id
+            message = "Unknown job ID: %s. Can't update state." % job_id
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         # prev. info contains the info collect when _job_get_info
@@ -977,7 +977,7 @@ class LOADLJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_state(self):
-        """ mplements saga.adaptors.cpi.job.Job.get_state()
+        """ implements saga.adaptors.cpi.job.Job.get_state()
         """
         if self._started is False:
             # jobs that are not started are always in 'NEW' state
