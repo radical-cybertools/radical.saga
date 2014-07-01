@@ -30,7 +30,7 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 _ADAPTOR_NAME          = "saga.adaptor.shell_file"
 _ADAPTOR_SCHEMAS       = ["file", "local", "sftp", "gsisftp", "ssh", "gsissh"]
 _ADAPTOR_OPTIONS       = [
-    { 
+  # { 
   # 'category'         : 'saga.adaptor.shell_file',
   # 'name'             : 'enable_notifications', 
   # 'type'             : bool, 
@@ -40,7 +40,7 @@ _ADAPTOR_OPTIONS       = [
   #                       enabling this option will create a local thread and a remote 
   #                       shell process.''',
   # 'env_variable'     : None
-    }
+  # }
 ]
 
 # --------------------------------------------------------------------
