@@ -461,7 +461,6 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             if int(jd.total_cpu_count) > 1:
                 loadl_params += "#@total_tasks=%s\n" % jd.total_cpu_count
                 #loadl_params += "#@blocking = unlimited\n"
-        loadl_params += "#@total_tasks=%s\n" % jd.total_cpu_count
 
         if jd.total_physical_memory is None:
             # try to come up with a sensible (?) default value for memeory
