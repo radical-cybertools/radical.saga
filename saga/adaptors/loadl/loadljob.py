@@ -414,7 +414,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
 
         return job_info
 
-    def __generated_llsubmit_script(self, jd):
+    def __generate_llsubmit_script(self, jd):
         """ 
         generates a IMB LoadLeveler script from a SAGA job description
         :param jd: job descriptor
@@ -528,17 +528,12 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         """
         if (self.queue is not None) and (jd.queue is not None):
             self._logger.warning("Job service was instantiated explicitly with \
-'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." %
+'queue=%s', but job description tries to a different queue: '%s'. Using '%s'." %
                 (self.queue, jd.queue, self.queue))
 
         try:
             # create a LoadLeveler job script from SAGA job description
-            """
-            script = _loadlcript_generator(url=self.rm, logger=self._logger,
-                                         jd=jd, ppn=self.ppn,
-                                         queue=self.queue)
-            """
-            script = self.__generated_llsubmit_script(jd)
+            script = self.__generate_llsubmit_script(jd)
 
             self._logger.debug("Generated LoadLeveler script: %s" % script)
         except Exception, ex:
@@ -599,10 +594,6 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the LoadLeveler 'llq' command to get some infos about our job
-        """
-        ret, out, _ = self.shell.run_sync("%s -X %s -j %s \
--r %%st %%dd %%cc %%jt %%c %%Xs" % (self._commands['llq']['path'], self.cluster, pid))
-        """
         ret, out, _ = self.shell.run_sync("%s -j %s \
 -r %%st %%dd %%cc %%jt %%c %%Xs" % (self._commands['llq']['path'], pid))
         # output is something like
