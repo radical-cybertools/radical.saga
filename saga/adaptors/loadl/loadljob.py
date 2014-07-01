@@ -14,14 +14,13 @@ import saga.utils.pty_shell
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
-from saga.job.constants import * # Be gone?
 from saga.adaptors.sge.sgejob import SgeKeyValueParser
 
 import os
 import re
 import time
 from copy import deepcopy
-from cgi import parse_qs
+from urlparse import parse_qs
 from datetime import datetime
 
 
