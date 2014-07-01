@@ -9,13 +9,12 @@ __license__   = "MIT"
 	Hangi, Kim hgkim@kisti.re.kr
 """
 
-import radical.utils.which
 import saga.utils.pty_shell
 
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
-from saga.job.constants import *
+from saga.job.constants import * # Be gone?
 from saga.adaptors.sge.sgejob import SgeKeyValueParser
 
 import os
@@ -23,14 +22,10 @@ import re
 import time
 from copy import deepcopy
 from cgi import parse_qs
-from StringIO import StringIO
 from datetime import datetime
 
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
-
-_PID_RE = re.compile(r"^([^ ]+) ([0-9]{2}/[0-9]{2}/[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}) (.+)$")
 
 
 # --------------------------------------------------------------------
