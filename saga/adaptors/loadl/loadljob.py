@@ -521,7 +521,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         # only escape '$' in args and exe. not in the params
         script_body = "\n".join(script_body).replace('$', '\\$')
 
-        loadlscript = "\n#!/bin/bash \n%s%s" % (loadl_params, script_body)
+        loadlscript = "\n%s%s" % (loadl_params, script_body)
 
         return loadlscript.replace('"', '\\"')
 
