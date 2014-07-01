@@ -250,8 +250,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         self.ppn     = 0 # check for remove
         self.queue   = None
         self.jobs    = dict()
-        self.query_options = dict() # check for remove
-        self.cluster = None
+        self.cluster_option = ''
         self.temp_path = "$HOME/.saga/adaptors/loadl_job"
 
         rm_scheme = rm_url.scheme
@@ -264,7 +263,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                 if key == 'queue':
                     self.queue = val[0]
                 if key == 'cluster':
-                    self.cluster= val[0]
+                    self.cluster_option = " -X %s" % val[0]
 
         # we need to extract the scheme for PTYShell. That's basically the
         # job.Service Url without the loadl+ part. We use the PTYShell to execute
@@ -557,16 +556,12 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         if jd.error is not None and len(jd.error) > 0:
             self.__remote_mkdir(os.path.dirname(jd.error))
 
-        #ret, out, _ = self.shell.run_sync("""echo "%s" | %s -X %s -""" \
-        #    % (script, self._commands['llsubmit']['path'], self.cluster))
         # submit the LoadLeveler script
         # Now we want to execute the script. This process consists of two steps:
         # (1) we create a temporary file with 'mktemp' and write the contents of
         #     the generated Load Leveler script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        #cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s -X %s $SCRIPTFILE """ %  (script, self._commands['llsubmit']['path'], self.cluster)
-        #cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s -X %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'], self.cluster)
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'])
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s%s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'], self.cluster_option)
         self._logger.info("cmdline: %r", cmdline)
         ret, out, _ = self.shell.run_sync(cmdline)
 
@@ -782,8 +777,8 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
-        ret, out, _ = self.shell.run_sync("%s -X %s %s\n" \
-            % (self._commands['llcancel']['path'], self.cluster, pid))
+        ret, out, _ = self.shell.run_sync("%s%s %s\n" \
+            % (self._commands['llcancel']['path'], self.cluster_option, pid))
 
         if ret != 0:
             message = "Error canceling job via 'llcancel': %s" % out
