@@ -25,26 +25,21 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
 # --------------------------------------------------------------------
-# some private defs
-#
-_PTY_TIMEOUT = 2.0
-
-# --------------------------------------------------------------------
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.shell_file"
 _ADAPTOR_SCHEMAS       = ["file", "local", "sftp", "gsiftp", "ssh", "gsissh"]
 _ADAPTOR_OPTIONS       = [
     { 
-    'category'         : 'saga.adaptor.shell_file',
-    'name'             : 'enable_notifications', 
-    'type'             : bool, 
-    'default'          : False,
-    'valid_options'    : [True, False],
-    'documentation'    : '''Enable support for filesystem notifications.  Note that
-                          enabling this option will create a local thread and a remote 
-                          shell process.''',
-    'env_variable'     : None
+  # 'category'         : 'saga.adaptor.shell_file',
+  # 'name'             : 'enable_notifications', 
+  # 'type'             : bool, 
+  # 'default'          : False,
+  # 'valid_options'    : [True, False],
+  # 'documentation'    : '''Enable support for filesystem notifications.  Note that
+  #                       enabling this option will create a local thread and a remote 
+  #                       shell process.''',
+  # 'env_variable'     : None
     }
 ]
 
@@ -167,10 +162,8 @@ class Adaptor (saga.adaptors.base.Base):
 
         saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
-        self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config (_ADAPTOR_NAME)
 
-        self.notifications = self.opts['enable_notifications'].get_value ()
 
     # ----------------------------------------------------------------
     #
@@ -291,7 +284,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     #
     def initialize (self) :
 
-        # shell git started, found its prompt.  Now, change
+        # shell got started, found its prompt.  Now, change
         # to the initial (or later current) working directory.
 
         cmd = ""
@@ -983,7 +976,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     #
     def initialize (self) :
 
-        # shell git started, found its prompt.  Now, change
+        # shell got started, found its prompt.  Now, change
         # to the initial (or later current) working directory.
 
         cmd = ""
