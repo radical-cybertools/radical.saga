@@ -524,10 +524,13 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # different queues, number of processes per node, etc.
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
-        ret, out, _ = self.shell.run_sync('%s -a | egrep "( ncpus|np|pcpu)"' % \
-            self._commands['pbsnodes']['path'])
+        if 'PBSPro_12' in self._commands['qstat']['version']:
+            ret, out, _ = self.shell.run_sync('%s -a | grep "resources_available.ncpus"' % \
+                                               self._commands['pbsnodes']['path'])
+        else:
+            ret, out, _ = self.shell.run_sync('%s -a | egrep "(np|pcpu)"' % \
+                                               self._commands['pbsnodes']['path'])
         if ret != 0:
-
             message = "Error running pbsnodes: %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
