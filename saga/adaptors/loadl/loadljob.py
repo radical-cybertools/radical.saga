@@ -254,6 +254,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         self.island_count = None
         self.node_usage = None
         self.network_mpi = None
+        self.blocking = None
         self.temp_path = "$HOME/.saga/adaptors/loadl_job"
 
         rm_scheme = rm_url.scheme
@@ -275,6 +276,8 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                     self.node_usage = val[0]
                 elif key == 'network_mpi':
                     self.network_mpi = val[0]
+                elif key == 'blocking':
+                    self.blocking = val[0]
 
         # we need to extract the scheme for PTYShell. That's basically the
         # job.Service Url without the loadl+ part. We use the PTYShell to execute
@@ -475,7 +478,9 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         else:
             if int(jd.total_cpu_count) > 1:
                 loadl_params += "#@ total_tasks = %s\n" % jd.total_cpu_count
-                #loadl_params += "#@ blocking = unlimited\n"
+
+        if self.blocking:
+            loadl_params += "#@ blocking = %s\n" % self.blocking
 
         if jd.total_physical_memory is None:
             # try to come up with a sensible (?) default value for memeory
