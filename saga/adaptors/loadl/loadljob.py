@@ -250,6 +250,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         self.queue   = None
         self.jobs    = dict()
         self.cluster_option = ''
+        self.energy_policy_tag = None
         self.temp_path = "$HOME/.saga/adaptors/loadl_job"
 
         rm_scheme = rm_url.scheme
@@ -261,8 +262,10 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             for key, val in parse_qs(rm_url.query).iteritems():
                 if key == 'queue':
                     self.queue = val[0]
-                if key == 'cluster':
+                elif key == 'cluster':
                     self.cluster_option = " -X %s" % val[0]
+                elif key == 'energy_policy_tag':
+                    self.energy_policy_tag = val[0]
 
         # we need to extract the scheme for PTYShell. That's basically the
         # job.Service Url without the loadl+ part. We use the PTYShell to execute
@@ -439,6 +442,11 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             for key in jd.environment.keys():
                 variable_list += "%s=%s;" % (key, jd.environment[key])
             loadl_params += "#@environment=%s \n" % variable_list
+
+        # Energy
+        if self.energy_policy_tag:
+            loadl_params += "#@ energy_policy_tag = %s\n" % self.energy_policy_tag
+            loadl_params += "#@ minimize_time_to_solution = yes\n"
 
         if jd.working_directory is not None:
             loadl_params += "#@initialdir=%s \n" % jd.working_directory
