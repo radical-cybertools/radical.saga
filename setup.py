@@ -222,6 +222,7 @@ setup_args = {
         "saga.adaptors.irods",
         "saga.adaptors.aws",
         "saga.adaptors.http",
+        "saga.adaptors.globus_online",
         "saga.engine",
         "saga.utils",
         "saga.utils.job",

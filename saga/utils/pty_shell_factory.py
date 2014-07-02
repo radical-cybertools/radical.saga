@@ -141,7 +141,7 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def initialize (self, url, session=None, logger=None) :
+    def initialize (self, url, session=None, logger=None, posix=True) :
 
         with self.rlock :
 
@@ -176,8 +176,9 @@ class PTYShellFactory (object) :
                     raise se.NoSuccess._log (logger, \
                 	  "Shell not connected to %s" % info['host_str'])
 
-                # authorization, prompt setup, etc
-                self._initialize_pty (info['pty'], info, is_shell=True)
+                # authorization, prompt setup, etc.  Initialize as shell if not
+                # explicitly marked as non-posix shell
+                self._initialize_pty (info['pty'], info, is_shell=posix)
 
                 # master was created - register it
                 self.registry[host_s][user_s][type_s] = info
@@ -362,7 +363,8 @@ class PTYShellFactory (object) :
 
                                         if  not n :
                                             if  attempts == 1 :
-                                                pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
+                                                if  is_shell :
+                                                    pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
 
                                             if  attempts > 100 :
                                                 raise se.NoSuccess ("Could not detect shell prompt (timeout)")
@@ -392,7 +394,7 @@ class PTYShellFactory (object) :
                     return self._cp_slaves[host]
             
             self._cp_slaves[host] = supp.PTYProcess (s_cmd, info['logger'])
-            self._initialize_pty (self._cp_slaves[host], info)
+            self._initialize_pty (self._cp_slaves[host], info, is_shell=False)
 
             return self._cp_slaves[host]
 

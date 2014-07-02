@@ -25,8 +25,8 @@ import pty_exceptions        as ptye
 
 # --------------------------------------------------------------------
 #
-_CHUNKSIZE = 1024  # default size of each read
-_POLLDELAY = 0.01  # seconds in between read attempts
+_CHUNKSIZE = 1024*1024  # default size of each read
+_POLLDELAY = 0.01       # seconds in between read attempts
 _DEBUG_MAX = 600
 
 
@@ -690,19 +690,17 @@ class PTYProcess (object) :
                 # a pattern, or timeout passes
                 while True :
 
-
-
-                  # time.sleep (0.1)
-
                     # skip non-lines
                     if  not data :
                         data += self.read (timeout=_POLLDELAY)
+
                     if  _debug : print ">>%s<<" % data
 
                     # check current data for any matching pattern
                     for n in range (0, len(patts)) :
 
-                        escaped = escape (data)
+                        escaped = data
+                      # escaped = escape (data)
                       # print '-- 1 --%s--' % data
                       # print '-- 2 --%s--' % escaped
 
