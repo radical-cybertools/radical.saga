@@ -251,6 +251,9 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         self.jobs    = dict()
         self.cluster_option = ''
         self.energy_policy_tag = None
+        self.island_count = None
+        self.node_usage = None
+        self.network_mpi = None
         self.temp_path = "$HOME/.saga/adaptors/loadl_job"
 
         rm_scheme = rm_url.scheme
@@ -266,6 +269,12 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                     self.cluster_option = " -X %s" % val[0]
                 elif key == 'energy_policy_tag':
                     self.energy_policy_tag = val[0]
+                elif key == 'island_count':
+                    self.island_count = val[0]
+                elif key == 'node_usage':
+                    self.node_usage = val[0]
+                elif key == 'network_mpi':
+                    self.network_mpi = val[0]
 
         # we need to extract the scheme for PTYShell. That's basically the
         # job.Service Url without the loadl+ part. We use the PTYShell to execute
@@ -476,11 +485,22 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         #    ("1", jd.total_physical_memory)
         #    #(jd.total_cpu_count, jd.total_physical_memory)
 
-        loadl_params += "#@ island_count=1,3\n"
-        loadl_params += "#@ network.MPI = sn_all,,us,,\n"
+        # Number of islands to allocate resources on, can specify a number, or a min/max
+        if self.island_count:
+            loadl_params += "#@ island_count = %s\n" % self.island_count
+
+        # Specify network configuration
+        if self.network_mpi:
+            loadl_params += "#@ network.MPI = %s\n" % self.network_mpi
+
+        # Specify node usage policy
+        if self.node_usage:
+            loadl_params += "#@ node_usage = not_shared\n"
 
         if jd.job_contact is not None:
             loadl_params += "#@notify_user=%s\n" % jd.job_contact
+        else:
+            loadl_params += "#@notify_user = never\n"
 
         # some default (?) parameter that seem to work fine everywhere... 
         if jd.queue is not None:
