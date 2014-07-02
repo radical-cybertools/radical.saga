@@ -444,6 +444,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                 exec_n_args += "%s " % (arg)
 
         if jd.total_cpu_count is not None and jd.total_cpu_count > 1:
+            # Is this a sane default?
             loadl_params += "#@ job_type = MPICH\n"
 
         if jd.name is not None:
@@ -482,10 +483,10 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         if self.blocking:
             loadl_params += "#@ blocking = %s\n" % self.blocking
 
-        if jd.total_physical_memory is None:
-            # try to come up with a sensible (?) default value for memeory
-            jd.total_physical_memory = 256
-
+        # TODO: Deal with resources field (not supported on SuperMUC)
+        #if jd.total_physical_memory is None:
+        #    # try to come up with a sensible (?) default value for memory
+        #    jd.total_physical_memory = 256
         #loadl_params += "#@ resources=ConsumableCpus(%s)ConsumableMemory(%smb)\n" % \
         #    ("1", jd.total_physical_memory)
         #    #(jd.total_cpu_count, jd.total_physical_memory)
