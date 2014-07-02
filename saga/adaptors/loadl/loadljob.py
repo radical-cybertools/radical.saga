@@ -441,16 +441,16 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                 exec_n_args += "%s " % (arg)
 
         if jd.total_cpu_count is not None and jd.total_cpu_count > 1:
-            loadl_params += "#@job_type = MPICH\n"
+            loadl_params += "#@ job_type = MPICH\n"
 
         if jd.name is not None:
-            loadl_params += "#@job_name=%s \n" % jd.name
+            loadl_params += "#@ job_name=%s \n" % jd.name
 
         if jd.environment is not None:
             variable_list = str()
             for key in jd.environment.keys():
                 variable_list += "%s=%s;" % (key, jd.environment[key])
-            loadl_params += "#@environment=%s \n" % variable_list
+            loadl_params += "#@ environment=%s \n" % variable_list
 
         # Energy
         if self.energy_policy_tag:
@@ -458,15 +458,15 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             loadl_params += "#@ minimize_time_to_solution = yes\n"
 
         if jd.working_directory is not None:
-            loadl_params += "#@initialdir=%s \n" % jd.working_directory
+            loadl_params += "#@ initialdir=%s \n" % jd.working_directory
         if jd.output is not None:
-            loadl_params += "#@output=%s \n" % jd.output
+            loadl_params += "#@ output=%s \n" % jd.output
         if jd.error is not None:
-            loadl_params += "#@error=%s \n" % jd.error
+            loadl_params += "#@ error=%s \n" % jd.error
         if jd.wall_time_limit is not None:
             hours = jd.wall_time_limit / 60
             minutes = jd.wall_time_limit % 60
-            loadl_params += "#@wall_clock_limit=%s:%s:00 \n" \
+            loadl_params += "#@ wall_clock_limit=%s:%s:00 \n" \
                 % (str(hours), str(minutes))
 
         if jd.total_cpu_count is None:
@@ -474,14 +474,14 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             jd.total_cpu_count = 1
         else:
             if int(jd.total_cpu_count) > 1:
-                loadl_params += "#@total_tasks=%s\n" % jd.total_cpu_count
-                #loadl_params += "#@blocking = unlimited\n"
+                loadl_params += "#@ total_tasks=%s\n" % jd.total_cpu_count
+                #loadl_params += "#@ blocking = unlimited\n"
 
         if jd.total_physical_memory is None:
             # try to come up with a sensible (?) default value for memeory
             jd.total_physical_memory = 256
 
-        #loadl_params += "#@resources=ConsumableCpus(%s)ConsumableMemory(%smb)\n" % \
+        #loadl_params += "#@ resources=ConsumableCpus(%s)ConsumableMemory(%smb)\n" % \
         #    ("1", jd.total_physical_memory)
         #    #(jd.total_cpu_count, jd.total_physical_memory)
 
@@ -498,19 +498,20 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             loadl_params += "#@ node_usage = not_shared\n"
 
         if jd.job_contact is not None:
-            loadl_params += "#@notify_user=%s\n" % jd.job_contact
+            loadl_params += "#@ notify_user=%s\n" % jd.job_contact
         else:
-            loadl_params += "#@notify_user = never\n"
+            loadl_params += "#@ notify_user = never\n"
 
         # some default (?) parameter that seem to work fine everywhere... 
         if jd.queue is not None:
-            loadl_params += "#@class=%s\n" % jd.queue
+            loadl_params += "#@ class=%s\n" % jd.queue
         else:
-            loadl_params += "#@class=edison\n"
-        loadl_params += "#@notification=complete\n"
+            loadl_params += "#@ class=edison\n"
+
+        loadl_params += "#@ notification=complete\n"
 
         # finally, we 'queue' the job
-        loadl_params += "#@queue\n"
+        loadl_params += "#@ queue\n"
 
         # Job info, executable and arguments
         job_info_path = self.__remote_job_info_path()
