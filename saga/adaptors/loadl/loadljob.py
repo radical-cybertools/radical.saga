@@ -128,6 +128,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.PROJECT,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
+                          saga.job.TOTAL_PHYSICAL_MEMORY,
                           saga.job.TOTAL_CPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
