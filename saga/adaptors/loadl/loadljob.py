@@ -256,6 +256,11 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         self.node_usage = None
         self.network_mpi = None
         self.blocking = None
+        self.enforce_resource_submission = False
+        self.enforce_consumable_cpus = False
+        self.enforce_consumable_memory = False
+        self.enforce_consumable_virtual_memory = False
+        self.enforce_consumable_large_page_memory = False
         self.temp_path = "$HOME/.saga/adaptors/loadl_job"
 
         rm_scheme = rm_url.scheme
@@ -279,6 +284,19 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                     self.network_mpi = val[0]
                 elif key == 'blocking':
                     self.blocking = val[0]
+                elif key == 'enforce_consumable_cpus':
+                    self.enforce_consumable_cpus = True
+                    self.enforce_resource_submission = True
+                elif key == 'enforce_consumable_memory':
+                    self.enforce_consumable_memory = True
+                    self.enforce_resource_submission = True
+                elif key == 'enforce_consumable_virtual_memory':
+                    self.enforce_consumable_virtual_memory = True
+                    self.enforce_resource_submission = True
+                elif key == 'enforce_consumable_large_page_memory':
+                    self.enforce_consumable_large_page_memory = True
+                    self.enforce_resource_submission = True
+
 
         # we need to extract the scheme for PTYShell. That's basically the
         # job.Service Url without the loadl+ part. We use the PTYShell to execute
@@ -478,19 +496,38 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             # try to come up with a sensible (?) default value
             jd.total_cpu_count = 1
         else:
-            if int(jd.total_cpu_count) > 1:
+            if jd.total_cpu_count > 1:
                 loadl_params += "#@ total_tasks = %s\n" % jd.total_cpu_count
 
         if self.blocking:
             loadl_params += "#@ blocking = %s\n" % self.blocking
 
-        # TODO: Deal with resources field (not supported on SuperMUC)
-        #if jd.total_physical_memory is None:
-        #    # try to come up with a sensible (?) default value for memory
-        #    jd.total_physical_memory = 256
-        #loadl_params += "#@ resources=ConsumableCpus(%s)ConsumableMemory(%smb)\n" % \
-        #    ("1", jd.total_physical_memory)
-        #    #(jd.total_cpu_count, jd.total_physical_memory)
+        if self.enforce_resource_submission:
+
+            loadl_params += "#@ resources ="
+
+            if self.enforce_consumable_cpus:
+                loadl_params += " ConsumableCpus(%d)" % jd.total_cpu_count
+
+            if self.enforce_consumable_memory:
+                if jd.total_physical_memory is None:
+                    raise Exception("total_physical_memory is not set, but required by enforce_consumable_memory.")
+                loadl_params += " ConsumableMemory(%dmb)" % jd.total_physical_memory
+
+            if self.enforce_consumable_large_page_memory:
+                # TODO: Not sure how to get a sensible value for this
+                if jd.total_physical_memory is None:
+                    raise Exception("total_physical_memory is not set, but required by enforce_consumable_large_page_memory.")
+                loadl_params += " ConsumableLargePageMemory(%dmb)" % jd.total_physical_memory
+
+            if self.enforce_consumable_virtual_memory:
+                # TODO: Not sure how to get a sensible value for this
+                if jd.total_physical_memory is None:
+                    raise Exception("total_physical_memory is not set, but required by enforce_consumable_virtual_memory.")
+                loadl_params += " ConsumableVirtualMemory(%dmb)" % jd.total_physical_memory
+
+            loadl_params += "\n"
+
 
         # Number of islands to allocate resources on, can specify a number, or a min/max
         if self.island_count:
