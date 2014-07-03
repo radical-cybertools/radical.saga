@@ -126,6 +126,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.ERROR,
                           saga.job.QUEUE,
                           saga.job.PROJECT,
+                          saga.job.JOB_CONTACT,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
                           saga.job.TOTAL_PHYSICAL_MEMORY,
@@ -542,9 +543,10 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             loadl_params += "#@ node_usage = %s\n" % self.node_usage
 
         if jd.job_contact is not None:
-            loadl_params += "#@ notify_user = %s\n" % jd.job_contact
-        else:
-            loadl_params += "#@ notify_user = never\n"
+            if len(jd.job_contact) > 1:
+                raise Exception("Only one notify user supported.")
+            loadl_params += "#@ notify_user = %s\n" % jd.job_contact[0]
+            loadl_params += "#@ notification = always\n"
 
         # some default (?) parameter that seem to work fine everywhere... 
         if jd.queue is not None:
@@ -552,7 +554,6 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         else:
             loadl_params += "#@ class = edison\n"
 
-        loadl_params += "#@ notification = complete\n"
 
         # finally, we 'queue' the job
         loadl_params += "#@ queue\n"
