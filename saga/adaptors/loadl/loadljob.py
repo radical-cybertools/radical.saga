@@ -249,7 +249,6 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         self.rm      = rm_url
         self.session = session
         self.ppn     = 0 # check for remove
-        self.queue   = None
         self.jobs    = dict()
         self.cluster_option = ''
         self.energy_policy_tag = None
@@ -271,9 +270,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         # 'query' component of the job service URL.
         if rm_url.query is not None:
             for key, val in parse_qs(rm_url.query).iteritems():
-                if key == 'queue':
-                    self.queue = val[0]
-                elif key == 'cluster':
+                if key == 'cluster':
                     self.cluster_option = " -X %s" % val[0]
                 elif key == 'energy_policy_tag':
                     self.energy_policy_tag = val[0]
@@ -599,10 +596,6 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
     def _job_run(self, jd):
         """ runs a job via llsubmit
         """
-        if (self.queue is not None) and (jd.queue is not None):
-            self._logger.warning("Job service was instantiated explicitly with \
-'queue=%s', but job description tries to a different queue: '%s'. Using '%s'." %
-                (self.queue, jd.queue, self.queue))
 
         try:
             # create a LoadLeveler job script from SAGA job description
