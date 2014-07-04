@@ -754,10 +754,10 @@ class PTYShellFactory (object) :
 
                 if  'user' in info and info['user'] :
                     info['host_str'] = "%s@%s"  % (info['user'], info['host_str'])
-                    info['ctrl'] = "%s_%%h_%%p.%s.%s.ctrl" % (ctrl_base, os.getpid (), info['user'])
+                    info['ctrl'] = "%s_%%h_%%p.%s.ctrl" % (ctrl_base, info['user'])
                 else :
                     info['user'] = getpass.getuser ()
-                    info['ctrl'] = "%s_%%h_%%p.%s.ctrl" % (ctrl_base, os.getpid ())
+                    info['ctrl'] = "%s_%%h_%%p.ctrl" % (ctrl_base)
 
                 info['m_flags']  = _SSH_FLAGS_MASTER % ({'ctrl' : info['ctrl']})
                 info['s_flags']  = _SSH_FLAGS_SLAVE  % ({'ctrl' : info['ctrl']})
