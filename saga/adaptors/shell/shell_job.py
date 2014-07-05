@@ -779,6 +779,23 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             cmd   = self._jd2cmd (job.description)
             bulk += "RUN %s\n" % cmd
 
+        # ------------------------------------------------------------
+        # stage input data
+        for job in jobs :
+            jd = job.description
+            if  jd.file_transfer is not None:
+                jd.transfer_directives = TransferDirectives(jd.file_transfer)
+
+                if  len (td.in_append_dict)  > 0 or \
+                    len (td.out_append_dict) > 0 :
+                    raise saga.BadParameter('FileTransfer append (<</>>) not supported')
+
+                if  td.in_overwrite_dict :
+                    for (source, target) in td.in_overwrite_dict.iteritems():
+                        self._logger.info("Transferring file %s to %s" % (source, target))
+                        self.shell.stage_to_remote(source, target)
+        # ------------------------------------------------------------
+
         bulk += "BULK_RUN\n"
         self.shell.run_async (bulk)
 
@@ -983,7 +1000,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 job._adaptor._exception = saga.NoSuccess ("failed to get job state : (%s)(%s)" % (ret, out))
                 continue
 
-            state = self._adaptor.string_to_state (lines[-1])
+            self._update_state (self._adaptor.string_to_state (lines[-1]))
 
             job._adaptor._state = state
             states.append (state)
@@ -1075,6 +1092,34 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         return self.jd
 
 
+    def _update_state (self, state) :
+
+        old_state   = self._state
+
+        if  state == saga.job.DONE and \
+            old_state not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED] :
+
+
+        # ------------------------------------------------------------
+        # stage output data
+        if  self.jd.file_transfer is not None:
+            self.jd.transfer_directives = TransferDirectives(self.jd.file_transfer)
+
+            if  len (td.in_append_dict)  > 0 or \
+                len (td.out_append_dict) > 0 :
+                raise saga.BadParameter('FileTransfer append (<</>>) not supported')
+
+            if  td.out_overwrite_dict :
+                for (source, target) in td.out_overwrite_dict.iteritems():
+                    self._logger.info("Transferring file %s to %s" % (source, target))
+                    self.shell.stage_from_remote(source, target)
+        # ------------------------------------------------------------
+        
+        # files are staged -- update state, and report to application
+        self._state = state
+        self._api ()._attributes_i_set ('state', self._state, self._api ()._UP)
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1103,9 +1148,8 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             raise saga.NoSuccess ("failed to get job state for '%s': (%s)" \
                                % (self._id, stats))
 
-        self._state = self._adaptor.string_to_state (stats['state'])
-
-        self._api ()._attributes_i_set ('state', self._state, self._api ()._UP)
+        # FIXME: this can block until data are staged.  That should not happen.
+        self._update_state (self._adaptor.string_to_state (stats['state']))
         
         return self._state
 
