@@ -528,7 +528,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             ret, out, _ = self.shell.run_sync('%s -a | grep "resources_available.ncpus"' % \
                                                self._commands['pbsnodes']['path'])
         else:
-            ret, out, _ = self.shell.run_sync('%s -a | egrep "(np|pcpu)\s*="' % \
+            ret, out, _ = self.shell.run_sync('%s -a | egrep "(np|pcpu)[[:blank:]]*="' % \
                                                self._commands['pbsnodes']['path'])
         if ret != 0:
             message = "Error running pbsnodes: %s" % out
