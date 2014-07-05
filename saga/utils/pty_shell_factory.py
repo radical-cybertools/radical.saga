@@ -58,8 +58,8 @@ _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 # ssh versions...
 
 # ssh master/slave flag magic # FIXME: make timeouts configurable
-_SSH_FLAGS_MASTER   = "-o ControlMaster=yes -o ControlPath=%(ctrl)s"
-_SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%(ctrl)s"
+_SSH_FLAGS_MASTER   = "-o ControlMaster=auto -o ControlPath=%(ctrl)s"
+_SSH_FLAGS_SLAVE    = "-o ControlMaster=no   -o ControlPath=%(ctrl)s"
 
 # FIXME: right now, we create a shell connection as master --
 # but a master does not actually need a shell, as it is never really
