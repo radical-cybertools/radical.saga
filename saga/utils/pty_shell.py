@@ -778,6 +778,25 @@ class PTYShell (object) :
             raise ptye.translate_exception (e)
 
 
+
+
+    # ----------------------------------------------------------------
+    #
+    def stage_job_input (self, jd) :
+
+        if  jd.file_transfer is not None:
+            jd.transfer_directives = TransferDirectives(jd.file_transfer)
+
+            if  len (td.in_append_dict)  > 0 or \
+                len (td.out_append_dict) > 0 :
+                raise saga.BadParameter('FileTransfer append (<</>>) not supported')
+
+            if  td.in_overwrite_dict :
+                for (source, target) in td.in_overwrite_dict.iteritems():
+                    self._logger.info("Transferring file %s to %s" % (source, target))
+                    self.shell.stage_to_remote(source, target)
+
+
     # ----------------------------------------------------------------
     #
     def read_from_remote (self, src) :

@@ -18,7 +18,7 @@ def main():
         # Create a job service object that represent the local machine.
         # The keyword 'fork' in the url scheme triggers the 'shell' adaptor.
         # The adaptor also support ssh:// and gsissh://
-        js = saga.job.Service("ssh://localhost")
+        js = saga.job.Service("ssh://merzky@login.archer.ac.uk")
         l  = js.list ()
 
         # Next, we describe the job we want to run. A complete set of job

@@ -781,19 +781,10 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         # ------------------------------------------------------------
         # stage input data
+        # FIXME: this is now blocking the run() method.  Ideally, this activity
+        # should be passed to a data manager thread/process/service.
         for job in jobs :
-            jd = job.description
-            if  jd.file_transfer is not None:
-                jd.transfer_directives = TransferDirectives(jd.file_transfer)
-
-                if  len (td.in_append_dict)  > 0 or \
-                    len (td.out_append_dict) > 0 :
-                    raise saga.BadParameter('FileTransfer append (<</>>) not supported')
-
-                if  td.in_overwrite_dict :
-                    for (source, target) in td.in_overwrite_dict.iteritems():
-                        self._logger.info("Transferring file %s to %s" % (source, target))
-                        self.shell.stage_to_remote(source, target)
+            self.shell.stage_job_input (jd)
         # ------------------------------------------------------------
 
         bulk += "BULK_RUN\n"
