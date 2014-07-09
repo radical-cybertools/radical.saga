@@ -1558,7 +1558,11 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         # retain old values
         val    = default
         exists = False
-        if us_key in  d['attributes'] :
+
+        if  default != None :
+            exists = True
+
+        if us_key in d['attributes'] :
             val    = d['attributes'][us_key]['value']
             exists = True
 

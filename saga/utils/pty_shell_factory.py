@@ -47,7 +47,7 @@ import pty_exceptions               as ptye
 # these arrays help to map requested client schemas to master schemas
 _SCHEMAS_SH  = ['sh', 'fork', 'local', 'file']
 _SCHEMAS_SSH = ['ssh', 'scp', 'sftp']
-_SCHEMAS_GSI = ['gsissh', 'gsiscp', 'gsisftp', 'gsiftp']
+_SCHEMAS_GSI = ['gsissh', 'gsiscp', 'gsisftp']
 
 _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 
@@ -59,29 +59,29 @@ _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 
 # ssh master/slave flag magic # FIXME: make timeouts configurable
 _SSH_FLAGS_MASTER   = "-o ControlMaster=yes -o ControlPath=%(ctrl)s"
-_SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%(ctrl)s"
+_SSH_FLAGS_SLAVE    = "-o ControlMaster=no   -o ControlPath=%(ctrl)s"
 
 # FIXME: right now, we create a shell connection as master --
 # but a master does not actually need a shell, as it is never really
 # used to run commands...
 _SCRIPTS = {
     'ssh' : { 
-        'master'        : "%(ssh_env)s %(ssh_exe)s   %(ssh_args)s  %(m_flags)s  %(host_str)s",
-        'shell'         : "%(ssh_env)s %(ssh_exe)s   %(ssh_args)s  %(s_flags)s  %(host_str)s",
-      # 'copy_to'       : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s  %(src)s %(root)s/%(tgt)s",
-      # 'copy_from'     : "%(scp_env)s %(scp_exe)s   %(scp_args)s  %(s_flags)s  %(root)s/%(src)s %(tgt)s",
-        'copy_to'       : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
-        'copy_from'     : "%(sftp_env)s %(sftp_exe)s %(sftp_args)s %(s_flags)s  %(host_str)s",
-        'copy_to_in'    : "mput %(cp_flags)s %(src)s %(tgt)s \n",
-        'copy_from_in'  : "mget %(cp_flags)s %(src)s %(tgt)s \n",
+        'master'        : '%(ssh_env)s "%(ssh_exe)s"   %(ssh_args)s  %(m_flags)s  %(host_str)s',
+        'shell'         : '%(ssh_env)s "%(ssh_exe)s"   %(ssh_args)s  %(s_flags)s  %(host_str)s',
+      # 'copy_to'       : '%(scp_env)s "%(scp_exe)s"   %(scp_args)s  %(s_flags)s  "%(src)s" "%(fs_root)s/%(tgt)s"',
+      # 'copy_from'     : '%(scp_env)s "%(scp_exe)s"   %(scp_args)s  %(s_flags)s  "%(fs_root)s/%(src)s" "%(tgt)s"',
+        'copy_to'       : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s  %(host_str)s',
+        'copy_from'     : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s  %(host_str)s',
+        'copy_to_in'    : 'mput %(cp_flags)s "%(src)s" "%(tgt)s" \n',
+        'copy_from_in'  : 'mget %(cp_flags)s "%(src)s" "%(tgt)s" \n',
     },
-    'sh' : { 
-        'master'        : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'shell'         : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'copy_to'       : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'copy_from'     : "%(sh_env)s %(sh_exe)s  %(sh_args)s",
-        'copy_to_in'    : "cd ~ && %(cp_exe)s -v %(cp_flags)s '%(src)s' '%(tgt)s'",
-        'copy_from_in'  : "cd ~ && %(cp_exe)s -v %(cp_flags)s '%(src)s' '%(tgt)s'",
+    'sh' : {
+        'master'        : '%(sh_env)s "%(sh_exe)s"  %(sh_args)s',
+        'shell'         : '%(sh_env)s "%(sh_exe)s"  %(sh_args)s',
+        'copy_to'       : '%(sh_env)s "%(sh_exe)s"  %(sh_args)s',
+        'copy_from'     : '%(sh_env)s "%(sh_exe)s"  %(sh_args)s',
+        'copy_to_in'    : 'cd ~ && "%(cp_exe)s" -v %(cp_flags)s "%(src)s" "%(tgt)s"',
+        'copy_from_in'  : 'cd ~ && "%(cp_exe)s" -v %(cp_flags)s "%(src)s" "%(tgt)s"',
     }
 }
 
@@ -281,7 +281,7 @@ class PTYShellFactory (object) :
                             raise se.AuthenticationFailed ("prompted for unknown password (%s)" \
                                                           % match)
 
-                        pty_shell.write ("%s\n" % shell_pass)
+                        pty_shell.write ("%s\n" % shell_pass, nolog=True)
                         n, match = pty_shell.find (prompt_patterns, delay)
 
 
@@ -301,7 +301,7 @@ class PTYShellFactory (object) :
                             raise se.AuthenticationFailed ("prompted for unknown key password (%s)" \
                                                           % key)
 
-                        pty_shell.write ("%s\n" % key_pass[key])
+                        pty_shell.write ("%s\n" % key_pass[key], nolog=True)
                         n, match = pty_shell.find (prompt_patterns, delay)
 
 
@@ -310,7 +310,7 @@ class PTYShellFactory (object) :
                         logger.info ("got token prompt")
                         import getpass
                         token = getpass.getpass ("enter token: ")
-                        pty_shell.write ("%s\n" % token.strip())
+                        pty_shell.write ("%s\n" % token.strip(), nolog=True)
                         n, match = pty_shell.find (prompt_patterns, delay)
 
 
@@ -370,7 +370,7 @@ class PTYShellFactory (object) :
                                     continue
 
 
-                        logger.info ("Got initial shell prompt (%s) (%s)" \
+                        logger.debug ("Got initial shell prompt (%s) (%s)" \
                                    % (n, match))
                         # we are done waiting for a prompt
                         break
@@ -754,10 +754,10 @@ class PTYShellFactory (object) :
 
                 if  'user' in info and info['user'] :
                     info['host_str'] = "%s@%s"  % (info['user'], info['host_str'])
-                    info['ctrl'] = "%s_%%h_%%p.%s.%s.ctrl" % (ctrl_base, os.getpid (), info['user'])
+                    info['ctrl'] = "%s_%%h_%%p.%s.ctrl" % (ctrl_base, info['user'])
                 else :
                     info['user'] = getpass.getuser ()
-                    info['ctrl'] = "%s_%%h_%%p.%s.ctrl" % (ctrl_base, os.getpid ())
+                    info['ctrl'] = "%s_%%h_%%p.ctrl" % (ctrl_base)
 
                 info['m_flags']  = _SSH_FLAGS_MASTER % ({'ctrl' : info['ctrl']})
                 info['s_flags']  = _SSH_FLAGS_SLAVE  % ({'ctrl' : info['ctrl']})

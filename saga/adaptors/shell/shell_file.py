@@ -25,27 +25,22 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
 # --------------------------------------------------------------------
-# some private defs
-#
-_PTY_TIMEOUT = 2.0
-
-# --------------------------------------------------------------------
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.shell_file"
-_ADAPTOR_SCHEMAS       = ["file", "local", "sftp", "gsiftp", "ssh", "gsissh"]
+_ADAPTOR_SCHEMAS       = ["file", "local", "sftp", "gsisftp", "ssh", "gsissh"]
 _ADAPTOR_OPTIONS       = [
-    { 
-    'category'         : 'saga.adaptor.shell_file',
-    'name'             : 'enable_notifications', 
-    'type'             : bool, 
-    'default'          : False,
-    'valid_options'    : [True, False],
-    'documentation'    : '''Enable support for filesystem notifications.  Note that
-                          enabling this option will create a local thread and a remote 
-                          shell process.''',
-    'env_variable'     : None
-    }
+  # { 
+  # 'category'         : 'saga.adaptor.shell_file',
+  # 'name'             : 'enable_notifications', 
+  # 'type'             : bool, 
+  # 'default'          : False,
+  # 'valid_options'    : [True, False],
+  # 'documentation'    : '''Enable support for filesystem notifications.  Note that
+  #                       enabling this option will create a local thread and a remote 
+  #                       shell process.''',
+  # 'env_variable'     : None
+  # }
 ]
 
 # --------------------------------------------------------------------
@@ -115,12 +110,12 @@ _ADAPTOR_DOC           = {
             interfere with each other.
 
         """,
-    "schemas"          : {"file"   :"use /bin/sh to access local filesystems", 
-                          "local"  :"alias for file://", 
-                          "ssh"    :"use sftp to access remote filesystems", 
-                          "sftp"   :"use sftp to access remote filesystems", 
-                          "gsissh" :"use gsiftp to access remote filesystems",
-                          "gsiftp" :"use gsiftp to access remote filesystems"}
+    "schemas"          : {"file"    :"use /bin/sh to access local filesystems",
+                          "local"   :"alias for file://",
+                          "ssh"     :"use sftp to access remote filesystems",
+                          "sftp"    :"use sftp to access remote filesystems",
+                          "gsissh"  :"use gsisftp to access remote filesystems",
+                          "gsisftp" :"use gsisftp to access remote filesystems"}
 }
 
 # --------------------------------------------------------------------
@@ -167,10 +162,8 @@ class Adaptor (saga.adaptors.base.Base):
 
         saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
-        self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config (_ADAPTOR_NAME)
 
-        self.notifications = self.opts['enable_notifications'].get_value ()
 
     # ----------------------------------------------------------------
     #
@@ -291,7 +284,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     #
     def initialize (self) :
 
-        # shell git started, found its prompt.  Now, change
+        # shell got started, found its prompt.  Now, change
         # to the initial (or later current) working directory.
 
         cmd = ""
@@ -441,7 +434,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         # FIXME: eval flags
 
         if  None == npat :
-            npat = ""
+            npat = "."
         else :
             npat = '-d %s' % npat
 
@@ -983,7 +976,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     #
     def initialize (self) :
 
-        # shell git started, found its prompt.  Now, change
+        # shell got started, found its prompt.  Now, change
         # to the initial (or later current) working directory.
 
         cmd = ""

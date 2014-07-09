@@ -1154,8 +1154,10 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             # qstat | grep `whoami` exits with 1 if the list is empty
             pass
         else:
-            jobid = "[%s]-[%s]" % (self.rm, out.split()[0])
-            ids.append(jobid)
+            for line in out.split("\n"):
+                if len(line.split()) > 1:
+                    jobid = "[%s]-[%s]" % (self.rm, line.split()[0])
+                    ids.append(jobid)
 
         return ids
 

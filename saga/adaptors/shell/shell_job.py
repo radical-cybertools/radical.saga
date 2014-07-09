@@ -23,6 +23,26 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
 # --------------------------------------------------------------------
+#
+# strip white space from a string, and hex-decode the remaining characters.
+# This must be applied to stdout/stderr data returned from the shell wrapper.
+#
+def _decode (data) :
+
+    elem = ""
+    code = ""
+    
+    for c in data :
+    
+        if  c in ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'] :
+            code += c
+        elif c not in [' ', '\n'] :
+            raise saga.BadParameter("Cannot decode '%s' in data (%s)" % (c, data))
+    
+    return code.decode ('hex')
+
+
+# --------------------------------------------------------------------
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.shell_job"
@@ -1115,6 +1135,72 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
         self.get_state () # refresh stats
         return self._finished
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_stdout_string (self) : 
+
+        state = self.get_state () # refresh stats
+
+        if  state == saga.job.NEW      or \
+            state == saga.job.PENDING  :
+            raise saga.IncorrectState ("Job output is only available after the job started")
+
+        if  not self._id :
+            raise saga.IncorrectState ("Job output is only available after the job started")
+
+        rm, pid     = self._adaptor.parse_id (self._id)
+        ret, out, _ = self.js.shell.run_sync ("STDOUT %s\n" % pid)
+
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to get job stdout for '%s': (%s)(%s)" \
+                               % (self._id, ret, out))
+
+        lines = filter (None, out.split ("\n"))
+
+        if lines[0] != "OK" :
+            raise saga.NoSuccess ("failed to get valid job stdout for '%s' (%s)" % (self._id, lines))
+
+        data = ""
+        for line in lines[1:] :
+            data += "%s\n" % line
+
+        return _decode (data)
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_stderr_string (self) : 
+
+        state = self.get_state () # refresh stats
+
+        if  state == saga.job.NEW      or \
+            state == saga.job.PENDING  :
+            raise saga.IncorrectState ("Job output is only available after the job started")
+
+        if  not self._id :
+            raise saga.IncorrectState ("Job output is only available after the job started")
+
+        rm, pid     = self._adaptor.parse_id (self._id)
+        ret, out, _ = self.js.shell.run_sync ("STDERR %s\n" % pid)
+
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to get job stderr for '%s': (%s)(%s)" \
+                               % (self._id, ret, out))
+
+        lines = filter (None, out.split ("\n"))
+
+        if lines[0] != "OK" :
+            raise saga.NoSuccess ("failed to get valid job stderr for '%s' (%s)" % (self._id, lines))
+
+        data = ""
+        for line in lines[1:] :
+            data += "%s\n" % line
+
+        return _decode (data)
 
 
     # ----------------------------------------------------------------

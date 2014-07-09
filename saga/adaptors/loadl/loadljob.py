@@ -9,28 +9,22 @@ __license__   = "MIT"
 	Hangi, Kim hgkim@kisti.re.kr
 """
 
-import radical.utils.which
 import saga.utils.pty_shell
 
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
-from saga.job.constants import *
 from saga.adaptors.sge.sgejob import SgeKeyValueParser
 
 import os
 import re
 import time
 from copy import deepcopy
-from cgi import parse_qs
-from StringIO import StringIO
+from urlparse import parse_qs
 from datetime import datetime
 
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
-
-_PID_RE = re.compile(r"^([^ ]+) ([0-9]{2}/[0-9]{2}/[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}) (.+)$")
 
 
 # --------------------------------------------------------------------
@@ -62,22 +56,24 @@ def _ll_to_saga_jobstate(lljs):
 
 
 def getId(out):
-    jobId=-1
-    CLUSTERFINDWORDS="has been submitted to cluster"
 
-    t=out.split('\n')
+    t = out.split('\n')
+
+    jobId = None
 
     for line in t:
-        if line.startswith('Job') and jobId==-1:
+        if line.startswith('Job'):
             tmpStr=line.split(' ')
             jobId=tmpStr[1]
+            break
 
-        if line.find(CLUSTERFINDWORDS)!=-1:
-            #print "find:", line
-            tmpStr2=line.split(CLUSTERFINDWORDS)
-            tmp=tmpStr2[1].strip()
-            tmpLen=len(tmp)
-            clusterId=tmp[1:tmpLen-1]
+        elif re.search('The job ".+" has been submitted.', line):
+            # Format: llsubmit: The job "srv03-ib.443336" has been submitted.
+            jobId = re.findall(r'"(.*?)"', line)[0]
+            break
+
+    if not jobId:
+        raise Exception("Failed to detect jobId.")
 
     return jobId
 
@@ -130,8 +126,10 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.ERROR,
                           saga.job.QUEUE,
                           saga.job.PROJECT,
+                          saga.job.JOB_CONTACT,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
+                          saga.job.TOTAL_PHYSICAL_MEMORY,
                           saga.job.TOTAL_CPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -251,10 +249,18 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         self.rm      = rm_url
         self.session = session
         self.ppn     = 0 # check for remove
-        self.queue   = None
         self.jobs    = dict()
-        self.query_options = dict() # check for remove
-        self.cluster = None
+        self.cluster_option = ''
+        self.energy_policy_tag = None
+        self.island_count = None
+        self.node_usage = None
+        self.network_mpi = None
+        self.blocking = None
+        self.enforce_resource_submission = False
+        self.enforce_consumable_cpus = False
+        self.enforce_consumable_memory = False
+        self.enforce_consumable_virtual_memory = False
+        self.enforce_consumable_large_page_memory = False
         self.temp_path = "$HOME/.saga/adaptors/loadl_job"
 
         rm_scheme = rm_url.scheme
@@ -264,14 +270,35 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         # 'query' component of the job service URL.
         if rm_url.query is not None:
             for key, val in parse_qs(rm_url.query).iteritems():
-                if key == 'queue':
-                    self.queue = val[0]
                 if key == 'cluster':
-                    self.cluster= val[0]
+                    self.cluster_option = " -X %s" % val[0]
+                elif key == 'energy_policy_tag':
+                    self.energy_policy_tag = val[0]
+                elif key == 'island_count':
+                    self.island_count = val[0]
+                elif key == 'node_usage':
+                    self.node_usage = val[0]
+                elif key == 'network_mpi':
+                    self.network_mpi = val[0]
+                elif key == 'blocking':
+                    self.blocking = val[0]
+                elif key == 'enforce_consumable_cpus':
+                    self.enforce_consumable_cpus = True
+                    self.enforce_resource_submission = True
+                elif key == 'enforce_consumable_memory':
+                    self.enforce_consumable_memory = True
+                    self.enforce_resource_submission = True
+                elif key == 'enforce_consumable_virtual_memory':
+                    self.enforce_consumable_virtual_memory = True
+                    self.enforce_resource_submission = True
+                elif key == 'enforce_consumable_large_page_memory':
+                    self.enforce_consumable_large_page_memory = True
+                    self.enforce_resource_submission = True
 
-        # we need to extrac the scheme for PTYShell. That's basically the
-        # job.Serivce Url withou the pbs+ part. We use the PTYShell to execute
-        # pbs commands either locally or via gsissh or ssh.
+
+        # we need to extract the scheme for PTYShell. That's basically the
+        # job.Service Url without the loadl+ part. We use the PTYShell to execute
+        # loadleveler commands either locally or via gsissh or ssh.
         if rm_scheme == "loadl":
             pty_url.scheme = "fork"
         elif rm_scheme == "loadl+ssh":
@@ -305,7 +332,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def initialize(self):
-        # check if all required pbs tools are available
+        # check if all required loadleveler tools are available
         for cmd in self._commands.keys():
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             self._logger.info(ret)
@@ -371,7 +398,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
     def __remote_job_info_path(self, loadl_job_id="$LOADL_JOB_NAME"):
         """
         Returns the path of the remote job info file.
-        :param loadl_job_id: the LoadLeveler job id, if omitted an enviroment variable representing the job id will be used.
+        :param loadl_job_id: the LoadLeveler job id, if omitted an environment variable representing the job id will be used.
         :return: path to the remote job info file
         """
 
@@ -418,7 +445,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
 
         return job_info
 
-    def __generated_llsubmit_script(self, jd):
+    def __generate_llsubmit_script(self, jd):
         """ 
         generates a IMB LoadLeveler script from a SAGA job description
         :param jd: job descriptor
@@ -434,57 +461,99 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                 exec_n_args += "%s " % (arg)
 
         if jd.total_cpu_count is not None and jd.total_cpu_count > 1:
-            loadl_params += "#@job_type = MPICH \n"
+            # Is this a sane default?
+            loadl_params += "#@ job_type = MPICH\n"
 
         if jd.name is not None:
-            loadl_params += "#@job_name=%s \n" % jd.name
+            loadl_params += "#@ job_name = %s \n" % jd.name
 
         if jd.environment is not None:
             variable_list = str()
             for key in jd.environment.keys():
                 variable_list += "%s=%s;" % (key, jd.environment[key])
-            loadl_params += "#@environment=%s \n" % variable_list
+            loadl_params += "#@ environment = %s \n" % variable_list
+
+        # Energy
+        if self.energy_policy_tag:
+            loadl_params += "#@ energy_policy_tag = %s\n" % self.energy_policy_tag
+            loadl_params += "#@ minimize_time_to_solution = yes\n"
 
         if jd.working_directory is not None:
-            loadl_params += "#@initialdir=%s \n" % jd.working_directory
+            loadl_params += "#@ initialdir = %s\n" % jd.working_directory
         if jd.output is not None:
-            loadl_params += "#@output=%s \n" % jd.output
+            loadl_params += "#@ output = %s\n" % jd.output
         if jd.error is not None:
-            loadl_params += "#@error=%s \n" % jd.error
+            loadl_params += "#@ error = %s\n" % jd.error
         if jd.wall_time_limit is not None:
             hours = jd.wall_time_limit / 60
             minutes = jd.wall_time_limit % 60
-            loadl_params += "#@wall_clock_limit=%s:%s:00 \n" \
+            loadl_params += "#@ wall_clock_limit = %s:%s:00\n" \
                 % (str(hours), str(minutes))
 
         if jd.total_cpu_count is None:
             # try to come up with a sensible (?) default value
             jd.total_cpu_count = 1
         else:
-            if int(jd.total_cpu_count) > 1:
-                loadl_params += "#@total_tasks=%s\n" % jd.total_cpu_count
-                loadl_params += "#@blocking = unlimited\n"
+            if jd.total_cpu_count > 1:
+                loadl_params += "#@ total_tasks = %s\n" % jd.total_cpu_count
 
-        if jd.total_physical_memory is None:
-            # try to come up with a sensible (?) default value for memeory
-            jd.total_physical_memory = 256
+        if self.blocking:
+            loadl_params += "#@ blocking = %s\n" % self.blocking
 
-        loadl_params += "#@resources=ConsumableCpus(%s)ConsumableMemory(%smb)\n" % \
-            ("1", jd.total_physical_memory)
-            #(jd.total_cpu_count, jd.total_physical_memory)
+        if self.enforce_resource_submission:
+
+            loadl_params += "#@ resources ="
+
+            if self.enforce_consumable_cpus:
+                loadl_params += " ConsumableCpus(%d)" % jd.total_cpu_count
+
+            if self.enforce_consumable_memory:
+                if jd.total_physical_memory is None:
+                    raise Exception("total_physical_memory is not set, but required by enforce_consumable_memory.")
+                loadl_params += " ConsumableMemory(%dmb)" % jd.total_physical_memory
+
+            if self.enforce_consumable_large_page_memory:
+                # TODO: Not sure how to get a sensible value for this
+                if jd.total_physical_memory is None:
+                    raise Exception("total_physical_memory is not set, but required by enforce_consumable_large_page_memory.")
+                loadl_params += " ConsumableLargePageMemory(%dmb)" % jd.total_physical_memory
+
+            if self.enforce_consumable_virtual_memory:
+                # TODO: Not sure how to get a sensible value for this
+                if jd.total_physical_memory is None:
+                    raise Exception("total_physical_memory is not set, but required by enforce_consumable_virtual_memory.")
+                loadl_params += " ConsumableVirtualMemory(%dmb)" % jd.total_physical_memory
+
+            loadl_params += "\n"
+
+
+        # Number of islands to allocate resources on, can specify a number, or a min/max
+        if self.island_count:
+            loadl_params += "#@ island_count = %s\n" % self.island_count
+
+        # Specify network configuration
+        if self.network_mpi:
+            loadl_params += "#@ network.MPI = %s\n" % self.network_mpi
+
+        # Specify node usage policy
+        if self.node_usage:
+            loadl_params += "#@ node_usage = %s\n" % self.node_usage
 
         if jd.job_contact is not None:
-            loadl_params += "#@notify_user=%s\n" % jd.job_contact
+            if len(jd.job_contact) > 1:
+                raise Exception("Only one notify user supported.")
+            loadl_params += "#@ notify_user = %s\n" % jd.job_contact[0]
+            loadl_params += "#@ notification = always\n"
 
         # some default (?) parameter that seem to work fine everywhere... 
         if jd.queue is not None:
-            loadl_params += "#@class=%s\n" % jd.queue
+            loadl_params += "#@ class = %s\n" % jd.queue
         else:
-            loadl_params += "#@class=edison\n"
-        loadl_params += "#@notification=complete\n"
+            loadl_params += "#@ class = edison\n"
+
 
         # finally, we 'queue' the job
-        loadl_params += "#@queue\n"
+        loadl_params += "#@ queue\n"
 
         # Job info, executable and arguments
         job_info_path = self.__remote_job_info_path()
@@ -517,7 +586,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         # only escape '$' in args and exe. not in the params
         script_body = "\n".join(script_body).replace('$', '\\$')
 
-        loadlscript = "\n#!/bin/bash \n%s%s" % (loadl_params, script_body)
+        loadlscript = "\n%s%s" % (loadl_params, script_body)
 
         return loadlscript.replace('"', '\\"')
 
@@ -527,19 +596,10 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
     def _job_run(self, jd):
         """ runs a job via llsubmit
         """
-        if (self.queue is not None) and (jd.queue is not None):
-            self._logger.warning("Job service was instantiated explicitly with \
-'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." %
-                (self.queue, jd.queue, self.queue))
 
         try:
             # create a LoadLeveler job script from SAGA job description
-            """
-            script = _loadlcript_generator(url=self.rm, logger=self._logger,
-                                         jd=jd, ppn=self.ppn,
-                                         queue=self.queue)
-            """
-            script = self.__generated_llsubmit_script(jd)
+            script = self.__generate_llsubmit_script(jd)
 
             self._logger.debug("Generated LoadLeveler script: %s" % script)
         except Exception, ex:
@@ -557,15 +617,12 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         if jd.error is not None and len(jd.error) > 0:
             self.__remote_mkdir(os.path.dirname(jd.error))
 
-        #ret, out, _ = self.shell.run_sync("""echo "%s" | %s -X %s -""" \
-        #    % (script, self._commands['llsubmit']['path'], self.cluster))
         # submit the LoadLeveler script
         # Now we want to execute the script. This process consists of two steps:
         # (1) we create a temporary file with 'mktemp' and write the contents of
         #     the generated Load Leveler script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        #cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s -X %s $SCRIPTFILE """ %  (script, self._commands['llsubmit']['path'], self.cluster)
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s -X %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'], self.cluster)
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s%s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'], self.cluster_option)
         self._logger.info("cmdline: %r", cmdline)
         ret, out, _ = self.shell.run_sync(cmdline)
 
@@ -603,10 +660,6 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the LoadLeveler 'llq' command to get some infos about our job
-        """
-        ret, out, _ = self.shell.run_sync("%s -X %s -j %s \
--r %%st %%dd %%cc %%jt %%c %%Xs" % (self._commands['llq']['path'], self.cluster, pid))
-        """
         ret, out, _ = self.shell.run_sync("%s -j %s \
 -r %%st %%dd %%cc %%jt %%c %%Xs" % (self._commands['llq']['path'], pid))
         # output is something like
@@ -634,18 +687,20 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             self._logger.debug(lastStr)
             if lastStr.startswith('llq:'): # llq: There is currently no job status to report
                 job_info = None
-                retries = max_retries
-                while job_info is None and retries > 0:
-                    retries -= 1
+                retries = 0
+                delay = 1
+                while job_info is None and retries < max_retries:
                     job_info = self.__get_remote_job_info(pid)
                     #print "llq:", job_info
                     if job_info == None and retries > 0:
                         message = "__get_remote_job_info get None, pid: %s and retries: %d" % (pid, retries)
                         self._logger.debug(message)
-                        time.sleep(1)
+                        # Exponential back-off
+                        time.sleep(2**retries)
+                    retries += 1
 
                 if job_info == None:
-                    message = "__get_remote_job_info exceed %d tiems(s), pid: %s" % (max_retries, pid)
+                    message = "__get_remote_job_info exceed %d times(s), pid: %s" % (max_retries, pid)
                     log_error_and_raise(message, saga.NoSuccess, self._logger)
 
                 self._logger.info("_retrieve_job: %r", job_info)
@@ -668,7 +723,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
 
         # if we don't have the job in our dictionary, we don't want it
         if job_id not in self.jobs:
-            message = "Unkown job ID: %s. Can't update state." % job_id
+            message = "Unknown job ID: %s. Can't update state." % job_id
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         # prev. info contains the info collect when _job_get_info
@@ -779,8 +834,8 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
-        ret, out, _ = self.shell.run_sync("%s -X %s %s\n" \
-            % (self._commands['llcancel']['path'], self.cluster, pid))
+        ret, out, _ = self.shell.run_sync("%s%s %s\n" \
+            % (self._commands['llcancel']['path'], self.cluster_option, pid))
 
         if ret != 0:
             message = "Error canceling job via 'llcancel': %s" % out
@@ -972,7 +1027,7 @@ class LOADLJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_state(self):
-        """ mplements saga.adaptors.cpi.job.Job.get_state()
+        """ implements saga.adaptors.cpi.job.Job.get_state()
         """
         if self._started is False:
             # jobs that are not started are always in 'NEW' state

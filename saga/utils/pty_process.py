@@ -155,6 +155,20 @@ class PTYProcess (object) :
 
     # ----------------------------------------------------------------------
     #
+    def _hide_data (self, data, nolog=False) :
+
+        if  nolog :
+            import re
+            return re.sub (r'([^\n])', 'X', data)
+
+        else :
+            return data
+
+
+
+
+    # ----------------------------------------------------------------------
+    #
     def initialize (self) :
 
         with self.rlock :
@@ -729,7 +743,7 @@ class PTYProcess (object) :
 
     # ----------------------------------------------------------------
     #
-    def write (self, data) :
+    def write (self, data, nolog=False) :
         """
         This method will repeatedly attempt to push the given data into the
         child's stdin pipe, until it succeeds to write all data.
@@ -743,7 +757,8 @@ class PTYProcess (object) :
 
             try :
 
-                log = data.replace ('\n', '\\n')
+                log = self._hide_data (data, nolog)
+                log =  log.replace ('\n', '\\n')
                 log =  log.replace ('\r', '')
                 if  len(log) > _DEBUG_MAX :
                     self.logger.debug ("write: [%5d] [%5d] (%s ... %s)" \
