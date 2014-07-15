@@ -37,7 +37,7 @@ _config_options = [
     # only one though, at this point...
     { 
     'category'      : 'saga.utils.pty',
-    'name'          : 'prompt_pattern ', 
+    'name'          : 'prompt_pattern', 
     'type'          : str, 
     'default'       : "[\$#%>\]]\s*$",
     'documentation' : 'use this regex to detect shell prompts',
