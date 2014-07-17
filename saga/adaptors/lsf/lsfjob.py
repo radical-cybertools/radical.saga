@@ -467,7 +467,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         # different queues, number of processes per node, etc.
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
-        #ret, out, _ = self.shell.run_sync('%s -a | egrep "(np|pcpu)"' % \
+        #ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu)"' % \
         #    self._commands['pbsnodes']['path'])
         #if ret != 0:
         #

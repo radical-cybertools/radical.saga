@@ -944,7 +944,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("%s | grep `whoami`" %
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s | grep `whoami`" %
                                           self._commands['llq']['path'])
 
         if ret != 0 and len(out) > 0:
