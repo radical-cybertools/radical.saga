@@ -525,10 +525,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
         if 'PBSPro_12' in self._commands['qstat']['version']:
-            ret, out, _ = self.shell.run_sync('%s -a | grep "resources_available.ncpus"' % \
+            ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "resources_available.ncpus"' % \
                                                self._commands['pbsnodes']['path'])
         else:
-            ret, out, _ = self.shell.run_sync('%s -a | egrep "(np|pcpu)[[:blank:]]*="' % \
+            ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu)[[:blank:]]*=" ' % \
                                                self._commands['pbsnodes']['path'])
         if ret != 0:
             message = "Error running pbsnodes: %s" % out
@@ -650,8 +650,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         else:
             qstat_flag ='-f1'
 
-        ret, out, _ = self.shell.run_sync("%s %s %s | \
-            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|\
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
+            grep -E '(job_state)|(exec_host)|(exit_status)|(ctime)|\
             (start_time)|(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
@@ -724,8 +724,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             qstat_flag = '-f'
         else:
             qstat_flag ='-f1'
-        ret, out, _ = self.shell.run_sync("%s %s %s | \
-            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)\
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
+            grep -E '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)\
 |(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
@@ -940,7 +940,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("%s | grep `whoami`" %
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s | grep `whoami`" %
                                           self._commands['qstat']['path'])
 
         if ret != 0 and len(out) > 0:

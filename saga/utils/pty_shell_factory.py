@@ -141,19 +141,22 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def initialize (self, url, session=None, logger=None) :
+    def initialize (self, url, session=None, prompt=None, logger=None) :
 
         with self.rlock :
 
             # make sure we have a valid url type
             url = saga.Url (url)
 
+            if  not prompt :
+                prompt = "^(.*[\$#%>\]])\s*$"
+
             if  not logger :
                 logger = rul.getLogger ('saga', 'PTYShellFactory')
 
             # collect all information we have/need about the requested master
             # connection
-            info = self._create_master_entry (url, session, logger)
+            info = self._create_master_entry (url, session, prompt, logger)
 
             # we got master info - register the master, and create the instance!
             type_s = str(info['type'])
@@ -206,6 +209,7 @@ class PTYShellFactory (object) :
 
             shell_pass = info['pass']
             key_pass   = info['key_pass']
+            prompt     = info['prompt']
             logger     = info['logger']
             latency    = info['latency']
 
@@ -224,11 +228,11 @@ class PTYShellFactory (object) :
                                    "Token_Response.*:\s*$",        # passtoken  prompt
                                    "want to continue connecting",  # hostkey confirmation
                                    ".*HELLO_\\d+_SAGA$",           # prompt detection helper
-                                   "^(.*[\$#%>\]])\s*$"]           # greedy native shell prompt 
+                                   prompt]                         # greedy native shell prompt 
 
                 # find a prompt
                 # use a very aggressive, but portable prompt setting scheme
-              # pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
+                pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
                 n, match = pty_shell.find (prompt_patterns, delay)
 
                 # this loop will run until we finally find the shell prompt, or
@@ -260,7 +264,10 @@ class PTYShellFactory (object) :
                         if  not retry_trigger : 
                             # just waiting for the *right* trigger or prompt, 
                             # don't need new ones...
-                            continue
+                            # Check n against None, otherwise if n is None an infinite
+                            # loop will occur here
+                            if n:
+			      continue
 
                         retries += 1
 
@@ -595,7 +602,7 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def _create_master_entry (self, url, session, logger) :
+    def _create_master_entry (self, url, session, prompt, logger) :
         # FIXME: cache 'which' results, etc
         # FIXME: check 'which' results
 
@@ -606,6 +613,7 @@ class PTYShellFactory (object) :
 
             info['schema']    = url.schema.lower ()
             info['host_str']  = url.host
+            info['prompt']    = prompt
             info['logger']    = logger
             info['url']       = url
             info['pass']      = ""

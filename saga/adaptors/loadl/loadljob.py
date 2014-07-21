@@ -430,7 +430,10 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         if "signal" in qres:
             state = saga.job.CANCELED
         elif "exit_status" in qres:
-            state = saga.job.DONE
+            if int(qres.get("exit_status")) == 0:
+                state = saga.job.DONE
+            else:
+                state = saga.job.FAILED
         else:
             state = saga.job.RUNNING
 
@@ -941,7 +944,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("%s | grep `whoami`" %
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s | grep `whoami`" %
                                           self._commands['llq']['path'])
 
         if ret != 0 and len(out) > 0:
