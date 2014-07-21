@@ -31,6 +31,7 @@ RETVAL=""
 
 # this is where this 'daemon' keeps state for all started jobs
 BASE=$HOME/.saga/adaptors/shell_job/
+NOTIFICATIONS="$BASE/notifications"
 
 # this process will terminate when idle for longer than TIMEOUT seconds
 TIMEOUT=30
@@ -199,9 +200,10 @@ create_monitor () {
   #
   #   rpid: pid of shell running the job 
   #   mpid: pid of this monitor.sh instance (== pid of process group for cancel)
-  SAGA_PID=\$1
+  export SAGA_PID="\$1"
   shift
   DIR="\$*"
+  NOTIFICATIONS="$NOTIFICATIONS"
 
   # subscript which represents the job.  The 'exec' call will replace the
   # script's shell instance with the job executable, leaving the I/O
@@ -209,7 +211,8 @@ create_monitor () {
   \\touch "\$DIR/in"
 
   (
-    \\printf  "RUNNING \\n"     >> "\$DIR/state"  ;
+    \\printf  "RUNNING \\n"            >> "\$DIR/state"
+    \\printf  "\$SAGA_PID:RUNNING \\n" >> "\$NOTIFICATIONS"
     \\exec /bin/sh "\$DIR/cmd"   < "\$DIR/in" > "\$DIR/out" 2> "\$DIR/err"
   ) 1> /dev/null 2>/dev/null 3</dev/null &
 
@@ -238,12 +241,14 @@ create_monitor () {
       \\rm -f "\$DIR/suspended"
       # need to wait again
       continue
+      printf "\$SAGA_PID:SUSPENDED \n" >> "$NOTIFICATIONS"
     fi
 
     if test -e "\$DIR/resumed"
     then
       \\rm -f "\$DIR/resumed"
       # need to wait again
+      printf "\$SAGA_PID:RESUMED \n" >> "$NOTIFICATIONS"
       continue
     fi
 
@@ -253,8 +258,12 @@ create_monitor () {
     # evaluate exit val
     \\printf "\$retv\\n" > "\$DIR/exit"
 
-    test   "\$retv" -eq 0  && \\printf "DONE \\n"   >> "\$DIR/state"
-    test   "\$retv" -eq 0  || \\printf "FAILED \\n" >> "\$DIR/state"
+    test   "\$retv" -eq 0  && \\printf            "DONE   \\n" >> "\$DIR/state"
+    test   "\$retv" -eq 0  || \\printf            "FAILED \\n" >> "\$DIR/state"
+
+    test   "\$retv" -eq 0  && \\printf "\$SAGA_PID:DONE   \\n" >> "\$NOTIFICATIONS"
+    test   "\$retv" -eq 0  || \\printf "\$SAGA_PID:FAILED \\n" >> "\$NOTIFICATIONS"
+
 
     # done waiting
     break
@@ -264,6 +273,24 @@ create_monitor () {
 
 EOT
 
+}
+
+
+# --------------------------------------------------------------------
+#
+# list all job IDs
+#
+cmd_monitor () {
+
+  # 'touch' to make sure the file exists, and use '-n 0' so that we don't 
+  # read old notifications'
+  \touch        "$NOTIFICATIONS"
+  \tail -f -n 0 "$NOTIFICATIONS"
+
+  # if tail dies for some reason, make sure the shell goes down
+  \printf "EXIT\n"
+  ERROR="EXIT"
+  true
 }
 
 
@@ -728,6 +755,12 @@ listen() {
   \rm  -f "$BASE/bulk.$$"
   \touch  "$BASE/bulk.$$"
 
+  # set up monitoring fifo
+  if ! test -f "$MONITOR"
+  then
+    \touch "$MONITOR"
+  fi
+
   # make sure we get killed when idle
   idle_checker $$ 1>/dev/null 2>/dev/null 3</dev/null &
   IDLE=$!
@@ -778,6 +811,7 @@ listen() {
       # simply invoke the right function for each command, or complain if command
       # is not known
       case $CMD in
+        MONITOR   ) cmd_monitor "$ARGS"  ;;
         RUN       ) cmd_run     "$ARGS"  ;;
         LRUN      ) cmd_lrun    "$ARGS"  ;;
         SUSPEND   ) cmd_suspend "$ARGS"  ;;
@@ -810,6 +844,8 @@ listen() {
       elif test "$ERROR" = "NOOP"; then
         # nothing
         true
+      elif test "$ERROR" = "EXIT"; then
+        exit
       else
         \printf "ERROR\n"
         \printf "$ERROR\n"

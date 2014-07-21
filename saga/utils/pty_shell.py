@@ -334,7 +334,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def find_prompt (self) :
+    def find_prompt (self, timeout=_PTY_TIMEOUT) :
         """
         If run_async was called, a command is running on the shell.  find_prompt
         can be used to collect its output up to the point where the shell prompt
@@ -353,7 +353,7 @@ class PTYShell (object) :
                 fret  = None
 
                 while fret == None :
-                    fret, match = self.pty_shell.find ([self.prompt], _PTY_TIMEOUT)
+                    fret, match = self.pty_shell.find ([self.prompt], timeout)
                 
               # self.logger.debug  ("find prompt '%s' in '%s'" % (self.prompt, match))
                 ret, txt = self._eval_prompt (match)

@@ -15,11 +15,90 @@ from   saga.job.constants import *
 
 import re
 import time
+import threading
 
 import shell_wrapper
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
+
+
+# ------------------------------------------------------------------------------
+#
+class _job_state_monitor (threading.Thread) :
+    """ thread that periodically monitors job states """
+
+    # --------------------------------------------------------------------------
+    #
+    def __init__ (self, js, channel, rm, logger) :
+
+        self.js      = js
+        self.channel = channel
+        self.rm      = rm 
+        self.logger  = logger
+        self.stop    = threading.Event ()
+
+        super (_job_state_monitor, self).__init__ ()
+
+        self.setDaemon (True)
+
+
+    # --------------------------------------------------------------------------
+    #
+    def stop (self) :
+
+        self.stop.set()
+
+
+    # --------------------------------------------------------------------------
+    #
+    def run (self) :
+
+        MONITOR_READ_TIMEOUT = 1.0   # check for stop signal now and then
+
+        try:
+
+            self.channel.run_async ("MONITOR")
+
+            while not self.stop.isSet () and self.channel.alive () :
+
+                idx, out = self.channel.find (['\n'], timeout=MONITOR_READ_TIMEOUT)
+
+                line = out.strip ()
+
+                if  line == 'EXIT' or line == "Killed" :
+                    self.logger.error ("monitoring channel failed -- disable notifications")
+                    return
+
+
+                if  not line :
+                    # just a read timeout...
+                    pass
+
+
+                elif not ':' in line :
+                    self.logger.warn ("monitoring channel noise: %s" % line)
+
+
+                else :
+                    job_pid, state = line.split (':', 1)
+                    job_id = "[%s]-[%s]" % (self.rm, job_pid)
+
+                    state = self.js._adaptor.string_to_state (state)
+
+                    try :
+                        job = self.js.get_job (job_id)
+                        job._attributes_i_set ('state', state,
+                                flow=job._UP, force=True)
+
+                    except saga.DoesNotExist as e :
+                        self.logger.error ("event for unknown job '%s'" % job_id)
+
+
+        except Exception as e:
+
+            self.logger.error ("Exception in job monitoring thread: %s" % e)
+            self.logger.error ("Cancel job monitoring for %s" % self.rm)
 
 
 # --------------------------------------------------------------------
@@ -334,6 +413,9 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 self.shell.run_async ("QUIT")
                 self.finalize (kill_shell=True)
 
+            if  self.monitor : 
+                self.finalize (kill_shell=True)
+
         except Exception as e :
           # print str(e)
             pass
@@ -348,15 +430,27 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         self.rm      = rm_url
         self.session = session
+        self.jobs    = dict()
         self.njobs   = 0
 
         if  self.rm.path and self.rm.path != '/' and self.rm.path != '.' :
             self.opts['shell'] = self.rm.path
 
-        self.shell = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
-                                                    self._logger, opts=self.opts)
-
+        # create and initialize connection for starting jobs
+        self.shell   = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
+                                                      self._logger, opts=self.opts)
+        self.channel = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
+                                                      self._logger, opts=self.opts)
         self.initialize ()
+
+        # the monitoring thread - one per service instance.  We wait for
+        # initialize to finish to make sure that the shell_wrapper is set
+        # up...
+        self.monitor = _job_state_monitor (js      = self,
+                                           channel = self.channel, 
+                                           rm      = self.rm, 
+                                           logger  = self._logger)
+        self.monitor.start ()
 
         return self.get_api ()
 
@@ -364,6 +458,11 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     # ----------------------------------------------------------------
     #
     def close (self) :
+
+        if  self.monitor :
+            self.monitor.stop()
+            # we don't care about join, really
+
         if  self.shell :
             self.shell.finalize (True)
 
@@ -387,7 +486,6 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         # TODO: replace some constants in the script with values from config
         # files, such as 'timeout' or 'purge_on_quit' ...
-        src = shell_wrapper._WRAPPER_SCRIPT % ({ 'PURGE_ON_START' : str(self._adaptor.purge_on_start) })
         tgt = ".saga/adaptors/shell_job/wrapper.sh"
 
         # lets check if we actually need to stage the wrapper script.  We need
@@ -397,8 +495,10 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             ret, out, _ = self.shell.run_sync (" test -f %s" % tgt)
             if  ret != 0 :
                 # yep, need to stage...
+                src = shell_wrapper._WRAPPER_SCRIPT % ({ 'PURGE_ON_START' : str(self._adaptor.purge_on_start) })
                 self.shell.write_to_remote (src, tgt)
 
+        # ----------------------------------------------------------------------
         # we run the script.  In principle, we should set a new / different
         # prompt -- but, due to some strange and very unlikely coincidence, the
         # script has the same prompt as the previous shell... - go figure ;-)
@@ -412,8 +512,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # Well, actually, we do not use exec, as that does not give us good
         # feedback on failures (the shell just quits) -- so we replace it with
         # this poor-man's version...
-      # self.shell.pty_shell._debug = True
-        ret, out, _ = self.shell.run_sync (" /bin/sh %s/wrapper.sh $$" % base)
+        ret, out, _ = self.shell.run_sync (" /bin/sh %s/wrapper.sh $$ 2>&1 | tee -a /tmp/log2" % base)
 
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
         # detection, too.  Wait for 3sec max.
@@ -430,8 +529,29 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         # we actually don't care much about the PID :-P
         
-        self.shell.pty_shell._debug = False
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out.strip ()))
+
+
+        # ----------------------------------------------------------------------
+        # now do the same for the monitoring shell
+        ret, out, _ = self.channel.run_sync (" /bin/sh %s/wrapper.sh $$" % base)
+
+        # shell_wrapper.sh will report its own PID -- we use that to sync prompt
+        # detection, too.  Wait for 3sec max.
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to run bootstrap: (%s)(%s)" % (ret, out))
+
+        id_pattern = re.compile ("\s*PID:\s+(\d+)\s*$")
+        id_match   = id_pattern.search (out)
+
+        if not id_match :
+            self.channel.run_async (" exit")
+            self._logger.error     ("host bootstrap failed - no pid (%s)" % out)
+            raise saga.NoSuccess   ("host bootstrap failed - no pid (%s)" % out)
+
+        # we actually don't care much about the PID :-P
+        
+        self._logger.debug ("got mon prompt (%s)(%s)" % (ret, out.strip ()))
 
 
     # ----------------------------------------------------------------
@@ -530,7 +650,6 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             ret, out = self.shell.find_prompt ()
             if  ret != 0 :
                 raise saga.NoSuccess ("failed to run multiline job '%s': (%s)(%s)" % (run_cmd, ret, out))
-
 
         return job_id
         
@@ -687,7 +806,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     #
     @SYNC_CALL
     def create_job (self, jd) :
-        """ Implements saga.adaptors.cpi.job.Service.get_url()
+        """ Implements saga.adaptors.cpi.job.Service.create_job()
         """
         
         # this dict is passed on to the job adaptor class -- use it to pass any
@@ -697,6 +816,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                           "job_schema"      : self.rm.schema }
 
         return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
+
 
     # ----------------------------------------------------------------
     @SYNC_CALL
@@ -725,42 +845,50 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             raise saga.NoSuccess ("failed to list jobs (%s)" % (lines))
 
         del lines[0]
-        self._ids = []
+        job_ids = list()
 
         for line in lines :
             try :
                 pid    = int(line.strip ())
                 job_id = "[%s]-[%s]" % (self.rm, pid)
-                self._ids.append (job_id)
+                job_ids.append (job_id)
+
             except Exception as e:
                 self._logger.error ("Ignore ill-formatted job id (%s) (%s)" % (line, e))
 
-        return self._ids
+        return job_ids
    
    
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_job (self, jobid):
+    def get_job (self, job_id):
         """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
 
+        if  job_id in self.jobs :
+            # no need to reconnect
+            return self.jobs[job_id]
+
+
         known_jobs = self.list ()
 
-        if jobid not in known_jobs :
+        if  job_id not in known_jobs :
+            # can't reconnect
             raise saga.BadParameter._log (self._logger, "job id '%s' unknown"
-                                       % jobid)
+                                       % job_id)
 
-        else:
-            # this dict is passed on to the job adaptor class -- use it to pass any
-            # state information you need there.
-            adaptor_state = { "job_service"     : self, 
-                              "job_id"          : jobid,
-                              "job_schema"      : self.rm.schema }
+        # this dict is passed on to the job adaptor class -- use it to pass any
+        # state information you need there.
+        adaptor_state = { "job_service"     : self, 
+                          "job_id"          : job_id,
+                          "job_schema"      : self.rm.schema }
 
-            return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
+        job = saga.job.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
-   
+        return job
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -787,19 +915,19 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             ret, out = self.shell.find_prompt ()
 
             if  ret != 0 :
-                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._set_state (saga.job.FAILED)
                 job._adaptor._exception = saga.NoSuccess ("failed to run job: (%s)(%s)" % (ret, out))
                 continue
 
             lines = filter (None, out.split ("\n"))
 
             if  len (lines) < 2 :
-                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._set_state (saga.job.FAILED)
                 job._adaptor._exception = saga.NoSuccess ("failed to run job : (%s)(%s)" % (ret, out))
                 continue
 
             if lines[-2] != "OK" :
-                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._set_state (saga.job.FAILED)
                 job._adaptor._exception = saga.NoSuccess ("failed to run job : (%s)(%s)" % (ret, out))
                 continue
 
@@ -856,19 +984,19 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             ret, out = self.shell.find_prompt ()
 
             if  ret != 0 :
-                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._set_state (saga.job.FAILED)
                 job._adaptor._exception = saga.NoSuccess ("failed to wait for job: (%s)(%s)" % (ret, out))
                 continue
 
             lines = filter (None, out.split ("\n"))
 
             if  len (lines) < 2 :
-                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._set_state (saga.job.FAILED)
                 job._adaptor._exception = saga.NoSuccess ("failed to wait for job : (%s)(%s)" % (ret, out))
                 continue
 
             if lines[-2] != "OK" :
-                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._set_state (saga.job.FAILED)
                 job._adaptor._exception = saga.NoSuccess ("failed to wait for job : (%s)(%s)" % (ret, out))
                 continue
 
@@ -911,19 +1039,19 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             ret, out = self.shell.find_prompt ()
 
             if  ret != 0 :
-                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._set_state (saga.job.FAILED)
                 job._adaptor._exception = saga.NoSuccess ("failed to cancel job: (%s)(%s)" % (ret, out))
                 continue
 
             lines = filter (None, out.split ("\n"))
 
             if  len (lines) < 2 :
-                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._set_state (saga.job.FAILED)
                 job._adaptor._exception = saga.NoSuccess ("failed to cancel job : (%s)(%s)" % (ret, out))
                 continue
 
             if lines[-2] != "OK" :
-                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._set_state (saga.job.FAILED)
                 job._adaptor._exception = saga.NoSuccess ("failed to cancel job : (%s)(%s)" % (ret, out))
                 continue
 
@@ -967,25 +1095,25 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             ret, out = self.shell.find_prompt ()
 
             if  ret != 0 :
-                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._set_state (saga.job.FAILED)
                 job._adaptor._exception = saga.NoSuccess ("failed to get job state: (%s)(%s)" % (ret, out))
                 continue
 
             lines = filter (None, out.split ("\n"))
 
             if  len (lines) < 2 :
-                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._set_state (saga.job.FAILED)
                 job._adaptor._exception = saga.NoSuccess ("failed to get job state : (%s)(%s)" % (ret, out))
                 continue
 
             if lines[-2] != "OK" :
-                job._adaptor._state     = saga.job.FAILED
+                job._adaptor._set_state (saga.job.FAILED)
                 job._adaptor._exception = saga.NoSuccess ("failed to get job state : (%s)(%s)" % (ret, out))
                 continue
 
             state = self._adaptor.string_to_state (lines[-1])
 
-            job._adaptor._state = state
+            job._adaptor._set_state (state)
             states.append (state)
 
 
@@ -1041,18 +1169,20 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
             # initialize job attribute values
             self._id              = None
-            self._state           = saga.job.NEW
+            self._state           = None
             self._exit_code       = None
             self._exception       = None
             self._created         = time.time ()
             self._started         = None
             self._finished        = None
 
+            self._set_state (saga.job.NEW)
+
         elif 'job_id' in job_info :
             # initialize job attribute values
             self.js               = job_info["job_service"] 
             self._id              = job_info['job_id']
-            self._state           = saga.job.UNKNOWN
+            self._state           = None
             self._exit_code       = None
             self._exception       = None
             self._created         = None
@@ -1082,7 +1212,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         """ Implements saga.adaptors.cpi.job.Job.get_state() """
 
         # may not yet have backend representation, state is 'NEW'
-        if self._id == None :
+        if  self._id == None :
             return self._state
 
         # no need to re-fetch final states
@@ -1091,7 +1221,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             self._state == saga.job.CANCELED     :
                 return self._state
 
-        stats = self.js._job_get_stats (self._id)
+        stats     = self.js._job_get_stats (self._id)
 
         if 'start' in stats : self._started  = stats['start']
         if 'stop'  in stats : self._finished = stats['stop']
@@ -1103,9 +1233,20 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             raise saga.NoSuccess ("failed to get job state for '%s': (%s)" \
                                % (self._id, stats))
 
-        self._state = self._adaptor.string_to_state (stats['state'])
+        state = self._adaptor.string_to_state (stats['state'])
+        self._set_state (state)
 
-        self._api ()._attributes_i_set ('state', self._state, self._api ()._UP)
+
+    # ----------------------------------------------------------------
+    #
+    def _set_state (self, state) :
+
+        old_state = self._state
+
+        # on state changes, trigger notifications
+        if  self._state != state :
+            self._state  = state
+            self._api ()._attributes_i_set ('state', state, self._api ()._UP)
         
         return self._state
 
@@ -1294,6 +1435,10 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     @SYNC_CALL
     def run (self): 
         self._id = self.js._job_run (self.jd)
+        self._set_state (saga.job.RUNNING)
+
+        self.js.jobs[self._id] = self._api ()
+        self._set_state (saga.job.RUNNING)
 
 
     # ----------------------------------------------------------------
@@ -1333,7 +1478,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         if  self._state in [saga.job.CANCELED, 
                             saga.job.DONE, 
                             saga.job.FAILED] :
-            self._state = saga.job.CANCELED
+            self._set_state (saga.job.CANCELED)
             return
 
         self.js._job_cancel (self._id)
