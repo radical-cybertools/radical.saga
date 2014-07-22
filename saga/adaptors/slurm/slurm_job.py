@@ -625,7 +625,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     def _slurm_to_saga_jobstate(self, slurmjs):
         """ translates a slurm one-letter state to saga
         """
-        if slurmjs == "CANCELED" or slurmjs == 'CA':
+        if slurmjs == "CANCELLED" or slurmjs == 'CA':
             return saga.job.CANCELED
         elif slurmjs == "COMPLETED" or slurmjs == 'CD':
             return saga.job.DONE
@@ -673,7 +673,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                 # if no match, we have no exitcode
                 else:
                     self.exit_code = None
-                    
+
                 self._logger.debug("Returning exit code %s" % self.exit_code)
                 
                 # return whatever our exit code is
@@ -1014,12 +1014,17 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
             ret, out, _ = self.js.shell.run_sync('scontrol show job %s' % pid)
             m = self.js.scontrol_jobstate_re.search(out)
             if m:
-                scontrol_state = m.group(0)
+                slurm_state = m.group(0)
             else:
                 # no jobstate found from scontrol
-                return saga.job.UNKNOWN
+                # the job may have finished a while back, use sacct to
+                # look at the full slurm history
+                slurm_state = self._sacct_jobstate_match(pid)
+                if not slurm_state:
+                    # no jobstate found in slurm
+                    return saga.job.UNKNOWN
 
-            return self.js._slurm_to_saga_jobstate(scontrol_state)
+            return self.js._slurm_to_saga_jobstate(slurm_state)
 
         except Exception, ex:
             raise saga.NoSuccess("Error getting the job state for "
@@ -1028,6 +1033,24 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         raise saga.NoSuccess._log (self._logger,
                                    "Internal SLURM adaptor error"
                                    " in _job_get_state")
+
+    def _sacct_jobstate_match (self, pid):
+        """ get the job state from the slurm accounting data """
+        ret, sacct_out, _ = self.js.shell.run_sync(
+            "sacct --format=JobID,State --parsable2 --noheader --jobs=%s" % pid)
+        # output will look like:
+        # 500723|COMPLETED
+        # 500723.batch|COMPLETED
+        # or:
+        # 500682|CANCELLED by 900369
+        # 500682.batch|CANCELLED
+
+        for line in sacct_out.strip().split('\n'):
+            (slurm_id, slurm_state) = line.split('|', 1)
+            if slurm_id == pid and slurm_state:
+                return slurm_state.split()[0].strip()
+
+        return None
 
     # ----------------------------------------------------------------
     #
