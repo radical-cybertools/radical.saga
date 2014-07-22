@@ -1,3 +1,10 @@
+Version 0.17 release 2014-07-22
+---------------------------------------------------------------------
+
+* Improved prompt-detection and small bug fixes.
+* Closed tickets:
+  - https://github.com/radical-cybertools/saga-python/issues?milestone=20&state=closed
+
 Version 0.16 release 2014-07-09
 ---------------------------------------------------------------------
 
