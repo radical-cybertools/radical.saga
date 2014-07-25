@@ -66,14 +66,18 @@ class _job_state_monitor (threading.Thread) :
 
                 line = out.strip ()
 
-                if  line == 'EXIT' or line == "Killed" :
+                if  not line :
+
+                    # just a read timeout, i.e. an opportiunity to check for
+                    if  self.stop.isSet () :
+                        self.logger.debug ("stop monitoring")
+                        return
+                    pass
+
+
+                elif line == 'EXIT' or line == "Killed" :
                     self.logger.error ("monitoring channel failed -- disable notifications")
                     return
-
-
-                if  not line :
-                    # just a read timeout...
-                    pass
 
 
                 elif not ':' in line :
@@ -512,17 +516,17 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # Well, actually, we do not use exec, as that does not give us good
         # feedback on failures (the shell just quits) -- so we replace it with
         # this poor-man's version...
-        ret, out, _ = self.shell.run_sync (" /bin/sh %s/wrapper.sh $$ 2>&1 | tee -a /tmp/log2" % base)
+        ret, out, _ = self.shell.run_sync (" /bin/sh %s/wrapper.sh $$" % base)
 
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
-        # detection, too.  Wait for 3sec max.
+        # detection, too.
         if  ret != 0 :
             raise saga.NoSuccess ("failed to run bootstrap: (%s)(%s)" % (ret, out))
 
         id_pattern = re.compile ("\s*PID:\s+(\d+)\s*$")
         id_match   = id_pattern.search (out)
 
-        if not id_match :
+        if  not id_match :
             self.shell.run_async (" exit")
             self._logger.error   ("host bootstrap failed - no pid (%s)" % out)
             raise saga.NoSuccess ("host bootstrap failed - no pid (%s)" % out)
@@ -537,14 +541,14 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         ret, out, _ = self.channel.run_sync (" /bin/sh %s/wrapper.sh $$" % base)
 
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
-        # detection, too.  Wait for 3sec max.
+        # detection, too.
         if  ret != 0 :
             raise saga.NoSuccess ("failed to run bootstrap: (%s)(%s)" % (ret, out))
 
         id_pattern = re.compile ("\s*PID:\s+(\d+)\s*$")
         id_match   = id_pattern.search (out)
 
-        if not id_match :
+        if  not id_match :
             self.channel.run_async (" exit")
             self._logger.error     ("host bootstrap failed - no pid (%s)" % out)
             raise saga.NoSuccess   ("host bootstrap failed - no pid (%s)" % out)

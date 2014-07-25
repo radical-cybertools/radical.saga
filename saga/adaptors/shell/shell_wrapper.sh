@@ -692,6 +692,8 @@ cmd_purge () {
       dir=`dirname "$d"`
       id=`basename "$dir"`
       \rm -rf "$BASE/$id" >/dev/null 2>&1
+      \rm -f  "$NOTIFICATIONS"
+      \touch  "$NOTIFICATIONS"
     done
     RETVAL="purged finished jobs"
   fi
