@@ -232,7 +232,7 @@ class PTYShellFactory (object) :
 
                 # find a prompt
                 # use a very aggressive, but portable prompt setting scheme
-              # pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
+                pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
                 n, match = pty_shell.find (prompt_patterns, delay)
 
                 # this loop will run until we finally find the shell prompt, or
@@ -264,7 +264,10 @@ class PTYShellFactory (object) :
                         if  not retry_trigger : 
                             # just waiting for the *right* trigger or prompt, 
                             # don't need new ones...
-                            continue
+                            # Check n against None, otherwise if n is None an infinite
+                            # loop will occur here
+                            if n:
+			      continue
 
                         retries += 1
 

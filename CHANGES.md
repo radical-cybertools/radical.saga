@@ -1,3 +1,24 @@
+Version 0.17 release 2014-07-22
+---------------------------------------------------------------------
+
+* Improved prompt-detection and small bug fixes.
+* Closed tickets:
+  - https://github.com/radical-cybertools/saga-python/issues?milestone=20&state=closed
+
+Version 0.16 release 2014-07-09
+---------------------------------------------------------------------
+
+* Several adaptor upddtes
+* Addressed SSH caching and prompt-detection issues
+* Closed tickets:
+  - https://github.com/radical-cybertools/saga-python/issues?milestone=19&state=closed
+
+Version 0.15 release 2014-06-18
+---------------------------------------------------------------------
+
+* Fixed issues with the shell aadaptor Directory.list() method:
+  - https://github.com/radical-cybertools/saga-python/issues/330
+
 Version 0.14 release 2014-05-07
 ---------------------------------------------------------------------
 
