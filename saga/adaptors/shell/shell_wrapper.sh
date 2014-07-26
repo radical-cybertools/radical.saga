@@ -211,8 +211,8 @@ create_monitor () {
   \\touch "\$DIR/in"
 
   (
-    \\printf  "RUNNING \\n"            >> "\$DIR/state"
-    \\printf  "\$SAGA_PID:RUNNING \\n" >> "\$NOTIFICATIONS"
+    \\printf  "RUNNING \\n"             >> "\$DIR/state"
+    \\printf  "\$SAGA_PID:RUNNING: \\n" >> "\$NOTIFICATIONS"
     \\exec /bin/sh "\$DIR/cmd"   < "\$DIR/in" > "\$DIR/out" 2> "\$DIR/err"
   ) 1> /dev/null 2>/dev/null 3</dev/null &
 
@@ -241,14 +241,14 @@ create_monitor () {
       \\rm -f "\$DIR/suspended"
       # need to wait again
       continue
-      printf "\$SAGA_PID:SUSPENDED \n" >> "$NOTIFICATIONS"
+      printf "\$SAGA_PID:SUSPENDED: \n" >> "$NOTIFICATIONS"
     fi
 
     if test -e "\$DIR/resumed"
     then
       \\rm -f "\$DIR/resumed"
       # need to wait again
-      printf "\$SAGA_PID:RESUMED \n" >> "$NOTIFICATIONS"
+      printf "\$SAGA_PID:RESUMED: \n" >> "$NOTIFICATIONS"
       continue
     fi
 
@@ -261,8 +261,8 @@ create_monitor () {
     test   "\$retv" -eq 0  && \\printf            "DONE   \\n" >> "\$DIR/state"
     test   "\$retv" -eq 0  || \\printf            "FAILED \\n" >> "\$DIR/state"
 
-    test   "\$retv" -eq 0  && \\printf "\$SAGA_PID:DONE   \\n" >> "\$NOTIFICATIONS"
-    test   "\$retv" -eq 0  || \\printf "\$SAGA_PID:FAILED \\n" >> "\$NOTIFICATIONS"
+    test   "\$retv" -eq 0  && \\printf "\$SAGA_PID:DONE:\$retv   \\n" >> "\$NOTIFICATIONS"
+    test   "\$retv" -eq 0  || \\printf "\$SAGA_PID:FAILED:\$retv \\n" >> "\$NOTIFICATIONS"
 
 
     # done waiting
