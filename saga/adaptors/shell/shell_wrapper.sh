@@ -284,8 +284,11 @@ cmd_monitor () {
 
   # 'touch' to make sure the file exists, and use '-n 0' so that we don't 
   # read old notifications'
+  # NOTE: tail complains on inotify handle shortage, and then continues 
+  #       by using pulling.  We redirect stderr to /dev/null -- lets pray 
+  #       that we don't miss any other notifications... :/
   \touch        "$NOTIFICATIONS"
-  \tail -f -n 0 "$NOTIFICATIONS"
+  \tail -f -n 0 "$NOTIFICATIONS" 2>/dev/null
 
   # if tail dies for some reason, make sure the shell goes down
   \printf "EXIT\n"
@@ -751,6 +754,21 @@ cmd_quit () {
 #
 listen() {
 
+  # report our own pid
+  if ! test -z $1; then
+    \printf "PID: $$\n" # FIXME: this should be $1
+  fi
+
+  # interprete new base dir
+  if ! test -z $2; then
+    BASE="$2"
+    NOTIFICATIONS="$BASE/notifications"
+  fi
+
+  # make sure the base has a monitor script....
+  create_monitor
+
+
   # we need our home base cleaned
   test -d "$BASE" || \mkdir -p  "$BASE"  || exit 1
   \touch  "$BASE/bulk.$$"
@@ -758,19 +776,14 @@ listen() {
   \touch  "$BASE/bulk.$$"
 
   # set up monitoring fifo
-  if ! test -f "$MONITOR"
+  if ! test -f "$NOTIFICATIONS"
   then
-    \touch "$MONITOR"
+    \touch "$NOTIFICATIONS"
   fi
 
   # make sure we get killed when idle
   idle_checker $$ 1>/dev/null 2>/dev/null 3</dev/null &
   IDLE=$!
-
-  # report our own pid
-  if ! test -z $1; then
-    \printf "PID: $$\n" # FIXME: this should be $1
-  fi
 
   # prompt for commands...
   \printf "PROMPT-0->\n"
@@ -895,8 +908,7 @@ then
   cmd_purge_tmps
 fi
 
-create_monitor
-listen $1
+listen $*
 #
 # --------------------------------------------------------------------
 

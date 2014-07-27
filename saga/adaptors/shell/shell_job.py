@@ -36,7 +36,7 @@ class _job_state_monitor (threading.Thread) :
         self.channel = channel
         self.rm      = rm 
         self.logger  = logger
-        self.stop    = threading.Event ()
+        self.stop    = False
 
         super (_job_state_monitor, self).__init__ ()
 
@@ -45,9 +45,9 @@ class _job_state_monitor (threading.Thread) :
 
     # --------------------------------------------------------------------------
     #
-    def stop (self) :
+    def finalize (self) :
 
-        self.stop.set()
+        self.stop = True
 
 
     # --------------------------------------------------------------------------
@@ -60,7 +60,7 @@ class _job_state_monitor (threading.Thread) :
 
             self.channel.run_async ("MONITOR")
 
-            while not self.stop.isSet () and self.channel.alive () :
+            while self.channel.alive () :
 
                 idx, out = self.channel.find (['\n'], timeout=MONITOR_READ_TIMEOUT)
 
@@ -69,7 +69,7 @@ class _job_state_monitor (threading.Thread) :
                 if  not line :
 
                     # just a read timeout, i.e. an opportiunity to check for
-                    if  self.stop.isSet () :
+                    if  self.stop :
                         self.logger.debug ("stop monitoring")
                         return
                     pass
@@ -464,7 +464,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     def close (self) :
 
         if  self.monitor :
-            self.monitor.stop()
+            self.monitor.finalize ()
             # we don't care about join, really
 
         if  self.shell :
