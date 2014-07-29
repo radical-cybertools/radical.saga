@@ -1909,11 +1909,8 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                 other_d['attributes'][key] = orig_d['attributes'][key]
                 continue
 
-            if        d['attributes'][key]['value'] == None :
-                other_d['attributes'][key]['value'] = None
-            else :
-                import copy
-                other_d['attributes'][key]['value'] = copy.deepcopy (d['attributes'][key]['value'])
+            import copy
+            other_d['attributes'][key]['value']  = copy.deepcopy (d['attributes'][key]['value'])
 
         # set the new dictionary as state for copied class
         _AttributesBase.__setattr__ (other, '_d', other_d)
