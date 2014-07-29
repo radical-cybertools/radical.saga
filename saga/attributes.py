@@ -1912,10 +1912,8 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             if        d['attributes'][key]['value'] == None :
                 other_d['attributes'][key]['value'] = None
             else :
-                if        d['attributes'][key]['flavor'] == VECTOR :
-                    other_d['attributes'][key]['value']  = list (d['attributes'][key]['value'])
-                else :
-                    other_d['attributes'][key]['value']  =       d['attributes'][key]['value']
+                import copy
+                other_d['attributes'][key]['value'] = copy.deepcopy (d['attributes'][key]['value'])
 
         # set the new dictionary as state for copied class
         _AttributesBase.__setattr__ (other, '_d', other_d)
