@@ -25,7 +25,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     #
     @rus.takes   ('LogicalDirectory', 
                   rus.optional ((surl.Url, basestring)), 
-                  rus.optional (int), 
+                  rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
                   rus.optional (dict), 
@@ -45,6 +45,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         '''
 
         # param checks
+        if not flags : flags = 0
         url = surl.Url (url)
 
         self._nsdirec = super  (LogicalDirectory, self)
@@ -57,7 +58,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     @classmethod
     @rus.takes   ('LogicalDirectory', 
                   rus.one_of (surl.Url, basestring), 
-                  rus.optional (int), 
+                  rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -70,6 +71,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         ret:       saga.Task
         '''
 
+        if not flags : flags = 0
         _nsdirec = super (LogicalDirectory, cls)
         return _nsdirec.create (url, flags, session, ttype=ttype)
 
@@ -92,7 +94,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
 
     @rus.takes   ('LogicalDirectory', 
                   rus.one_of (surl.Url, basestring), 
-                  rus.optional (int),
+                  rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('LogicalFile', st.Task))
     def open (self, tgt, flags=READ, ttype=None) :
@@ -104,13 +106,14 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         ttype:    saga.task.type enum
         ret:      saga.namespace.Entry / saga.Task
         '''
+        if not flags : flags = 0
         tgt_url = surl.Url (tgt)
         return self._adaptor.open (tgt_url, flags, ttype=ttype)
 
 
     @rus.takes   ('LogicalDirectory', 
                   rus.one_of (surl.Url, basestring), 
-                  rus.optional (int),
+                  rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('LogicalDirectory', st.Task))
     def open_dir (self, tgt, flags=READ, ttype=None) :
@@ -133,6 +136,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
                dir = saga.namespace.Directory("sftp://localhost/tmp/")
                data = dir.open_dir ('data/', saga.namespace.Create)
         '''
+        if not flags : flags = 0
         tgt_url = surl.Url (tgt)
         return self._adaptor.open_dir (tgt_url, flags, ttype=ttype)
 
@@ -173,7 +177,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     @rus.takes   ('LogicalDirectory', 
                   rus.optional (basestring),
                   rus.optional (basestring),
-                  rus.optional (int),
+                  rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (surl.Url), st.Task))
     def find (self, name_pattern, attr_pattern=None, flags=RECURSIVE, ttype=None) :
@@ -187,6 +191,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         ret:            list [saga.Url] / saga.Task
 
         '''
+        if not flags : flags = 0
         if attr_pattern  :  return self._adaptor.find_replicas (name_pattern, attr_pattern, flags, ttype=ttype)
         else             :  return self._nsdirec.find          (name_pattern,               flags, ttype=ttype)
 

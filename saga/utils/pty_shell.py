@@ -183,7 +183,7 @@ class PTYShell (object) :
         else         : self.logger  = rul.getLogger ('saga', 'PTYShell') 
 
         if   session : self.session = session
-        else         : self.session = saga.Session (default=True)
+        else         : self.session = ss.Session (default=True)
 
         self.logger.debug ("PTYShell init %s" % self)
 
