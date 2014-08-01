@@ -177,7 +177,7 @@ class PTYShellFactory (object) :
                 info['pty'] = supp.PTYProcess (m_cmd, logger=logger)
                 if not info['pty'].alive () :
                     raise se.NoSuccess._log (logger, \
-                	  "Shell not connected to %s" % info['host_str'])
+                          "Shell not connected to %s" % info['host_str'])
 
                 # authorization, prompt setup, etc
                 self._initialize_pty (info['pty'], info, is_shell=True)
@@ -193,7 +193,7 @@ class PTYShellFactory (object) :
 
                 if  not info['pty'].alive (recover=True) :
                     raise se.IncorrectState._log (logger, \
-                	  "Lost shell connection to %s" % info['host_str'])
+                          "Lost shell connection to %s" % info['host_str'])
 
             return info
 
@@ -261,15 +261,13 @@ class PTYShellFactory (object) :
                         if  retries > 100 :
                             raise se.NoSuccess ("Could not detect shell prompt (timeout)")
 
+                        # make sure we retry a finite time...
+                        retries += 1
+
                         if  not retry_trigger : 
                             # just waiting for the *right* trigger or prompt, 
                             # don't need new ones...
-                            # Check n against None, otherwise if n is None an infinite
-                            # loop will occur here
-                            if n:
-			      continue
-
-                        retries += 1
+                            continue
 
                         if  is_shell :
                             # use a very aggressive, but portable prompt setting scheme
@@ -652,7 +650,7 @@ class PTYShellFactory (object) :
 
             else :
                 raise se.BadParameter._log (self.logger, \
-                	  "cannot handle schema '%s://'" % url.schema)
+                          "cannot handle schema '%s://'" % url.schema)
 
 
             # depending on type, create command line (args, env etc)
