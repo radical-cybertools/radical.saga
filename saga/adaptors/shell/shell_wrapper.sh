@@ -22,6 +22,19 @@ fi
 # we always start in the user's home dir
 \cd $HOME 2>&1 > /dev/null
 
+
+# --------------------------------------------------------------------
+#
+# not all finds support the faster version of command chaining.  If its not
+# available, commands will need to be separated by ';'
+#
+if find /dev/null -exec true '{}' +
+then
+  FIND_PLUS=1
+else
+  FIND_PLUS=0
+fi
+
 # --------------------------------------------------------------------
 #
 # ERROR and RETVAL are used for return state from function calls
@@ -199,9 +212,7 @@ create_monitor () {
   #
   #   rpid: pid of shell running the job 
   #   mpid: pid of this monitor.sh instance (== pid of process group for cancel)
-  SAGA_PID=\$1
-  shift
-  DIR="\$*"
+  DIR="$BASE/STARTUP"
 
   # subscript which represents the job.  The 'exec' call will replace the
   # script's shell instance with the job executable, leaving the I/O
@@ -210,7 +221,7 @@ create_monitor () {
 
   (
     \\printf  "RUNNING \\n"     >> "\$DIR/state"  ;
-    \\exec /bin/sh "\$DIR/cmd"   < "\$DIR/in" > "\$DIR/out" 2> "\$DIR/err"
+    \\exec "$*" < "\$DIR/in" > "\$DIR/out" 2> "\$DIR/err"
   ) 1> /dev/null 2>/dev/null 3</dev/null &
 
   RPID=\$!
@@ -224,6 +235,12 @@ create_monitor () {
   # we care...
   ( \\printf "OK\\n" > "\$DIR/fifo" & )
   
+  # wait 'til main moved the STARTUP dir to its target location
+  DIR="\$BASE/\$RPID"
+  while ! test -d \$DIR
+  do
+    \sleep 0  # sleep 0 will wait for just some millisecs
+  done
 
   while true
   do
@@ -308,31 +325,51 @@ cmd_run () {
   #
   # do a double fork to avoid zombies (need to do a wait in this process)
 
+  STARTUP="$BASE/STARTUP"
 
-  cmd_run2 "$@" &
-
-  SAGA_PID=$!      # this is the (SAGA-level) job id!
-  \wait $SAGA_PID  # this will return very quickly -- look at cmd_run2... ;-)
-
-  if test "$SAGA_PID" = '0'  
+  if test -d "$STARTUP"
   then
-    # some error occured, assume RETVAL is set
-    ERROR="NOK"
+    ERROR="incorrect internal state (existing directory '$STARTUP')"
+    sleep 1
+    rm -rf "$STARTUP"
     return
   fi
 
-  # success
-  RETVAL=$SAGA_PID 
+  \mkdir -p "$STARTUP" || (ERROR="cannot create job working directory"; return 0)
+
+  timestamp
+  \printf "START : $TIMESTAMP\n"  > "$STARTUP/stats"
+  \printf "NEW \n"               >> "$STARTUP/state"
+
+  cmd_run2 "$@" &
+
+  RUN2_PID=$!
+  \wait $RUN2_PID  # this will return very quickly -- look at cmd_run2... ;-)
+
+  if ! test -f "$STARTUP/rpid"
+  then
+    # some error occured, assume RETVAL is set
+    ERROR="did not find job RPID"
+    return
+  fi
+
+  # we know that the job was started, and rpid should exist
+  SAGA_PID=`\cat "$STARTUP/rpid"`
 
   # we have to wait though 'til the job enters RUNNING (this is a sync job
   # startup)
   DIR="$BASE/$SAGA_PID"
+  if test -d '$DIR'
+  then
+    # purge old dir
+    # FIXME: check for final state
+    \rm -rf $DIR
+  fi
 
-  while true
-  do
-    \grep "RUNNING" "$DIR/state" && break
-    \sleep 0  # sleep 0 will wait for just some millisecs
-  done
+  # success
+  \mv "$STARTUP" "$DIR"
+  RETVAL="$SAGA_PID"
+
 }
 
 
@@ -345,22 +382,12 @@ cmd_run2 () {
   # the job into NEW state.
 
   # turn off debug tracing -- stdout interleaving will mess with parsing.
-  set +x 
+ #set +x 
 
-  SAGA_PID=`sh -c '\printf "$PPID"'`
-  DIR="$BASE/$SAGA_PID"
 
-  timestamp
-  START=$TIMESTAMP
-
-  test -d "$DIR"            && \rm    -rf "$DIR"     # re-use old pid if needed
-  test -d "$DIR"            || \mkdir -p  "$DIR"  || (RETVAL="cannot use job id"; return 0)
-  \printf "START : $START\n"  > "$DIR/stats"
-  \printf "NEW \n"           >> "$DIR/state"
-
-  cmd_run_process "$SAGA_PID" "$@" &
-  DAEMON_PID=$!      # this is the (SAGA-level) job id!
-  \wait $DAEMON_PID   # this will return very quickly -- look at cmd_run2... ;-)
+  cmd_run_process "$@" &
+  DAEMON_PID=$!       # this is the monitor job id!
+  \wait $DAEMON_PID   # this will return very quickly -- look at cmd_run_process ;-)
   return $!
 }
 
@@ -368,13 +395,11 @@ cmd_run2 () {
 cmd_run_process () {
   # this command runs the job.  PPID will point to the id of the spawning
   # script, which, coincidentally, we designated as job ID -- nice:
-  SAGA_PID=$1
-  shift
 
-  DIR="$BASE/$SAGA_PID"
+  STARTUP="$BASE/STARTUP"
 
-  \mkfifo "$DIR/fifo"           # to communicate with the monitor
-  \printf "$*\n" >  "$DIR/cmd"  # job to run by the monitor
+  \mkfifo "$STARTUP/fifo"           # to communicate with the monitor
+# \printf "$*\n" >  "$STARTUP/cmd"  # job to run by the monitor
 
   # start the monitor script, which makes sure
   # that the job state is properly watched and captured.
@@ -382,10 +407,12 @@ cmd_run_process () {
   # lifetime will not be bound to the manager script lifetime.  Also, it runs in
   # an interactive shell, i.e. in a new process group, so that we can signal the
   # monitor and the actual job processes all at once (think suspend, cancel).
-  ( /bin/sh -i -c "sh $BASE/monitor.sh  $SAGA_PID \"$DIR\" 2>&1 > \"$DIR/monitor.log\" & exit" )
+  ( /bin/sh -i -c "sh $BASE/monitor.sh "$@" 2>&1 > \"$STARTUP/monitor.log\" & exit" )
 
-  \read -r TEST < "$DIR/fifo"
-  \rm -rf $DIR/fifo
+  echo 'here 1'
+
+  \read -r TEST < "$STARTUP/fifo"
+  \rm -rf $STARTUP/fifo
 
   exit
 }
@@ -459,7 +486,8 @@ cmd_wait () {
       RUNNING   )        ;;
       SUSPENDED )        ;;
       UNKNOWN   )        ;;   # FIXME: should be an error?
-      *         ) ERROR="NOK - invalid state '$RETVAL'"; return ;;  
+      *         ) ERROR="NOK - invalid state '$RETVAL'"
+                  return ;;  
     esac
 
     \sleep 1
@@ -680,8 +708,8 @@ cmd_purge_tmps () {
   rm -f "$BASE"/bulk.*
   rm -f "$BASE"/idle.*
   rm -f "$BASE"/quit.*
-  find  "$BASE" -type d -mtime +30 -exec rm -rf {} \;
-  find  "$BASE" -type f -mtime +30 -exec rm -rf {} \;
+  find  "$BASE" -type d -mtime +30 -print | xargs -n 100 \rm -rf 
+  find  "$BASE" -type f -mtime +30 -print | xargs -n 100 \rm -f 
   RETVAL="purged tmp files"
 }
 
