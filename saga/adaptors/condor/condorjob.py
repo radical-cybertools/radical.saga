@@ -546,8 +546,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the Condor 'condor_q' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync("%s -long %s | \
-            egrep '(JobStatus)|(ExitStatus)|(CompletionDate)'" \
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long %s | \
+            grep -E '(JobStatus)|(ExitStatus)|(CompletionDate)'" \
             % (self._commands['condor_q']['path'], pid))
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -665,8 +665,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the Condor 'condor_q' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync("%s -long %s | \
-            egrep '(JobStatus)|(ExitStatus)|(CompletionDate)'" \
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long %s | \
+            grep -E '(JobStatus)|(ExitStatus)|(CompletionDate)'" \
             % (self._commands['condor_q']['path'], pid))
 
         if ret != 0:
@@ -674,8 +674,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
                 # run the Condor 'condor_history' command to get info about 
                 # finished jobs
-                ret, out, _ = self.shell.run_sync("%s -long -match 1 %s | \
-                    egrep '(ExitCode)|(TransferOutput)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
+                ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long -match 1 %s | \
+                    grep -E '(ExitCode)|(TransferOutput)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
                     % (self._commands['condor_history']['path'], pid))
                 
                 if ret != 0:
@@ -965,7 +965,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("%s | grep `whoami`"\
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s | grep `whoami`"\
             % self._commands['condor_q']['path'])
 
         if ret != 0 and len(out) > 0:

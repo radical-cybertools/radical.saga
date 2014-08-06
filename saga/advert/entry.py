@@ -26,7 +26,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
     #
     @rus.takes   ('Entry', 
                   rus.optional ((surl.Url, basestring)), 
-                  rus.optional (int),
+                  rus.optional (int, rus.nothing),
                   rus.optional (ss.Session), 
                   rus.optional (sab.Base),
                   rus.optional (dict),
@@ -75,7 +75,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
     @classmethod
     @rus.takes   ('Entry', 
                   rus.optional ((surl.Url, basestring)), 
-                  rus.optional (int), 
+                  rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -88,6 +88,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
         ret:       saga.Task
         '''
 
+        if not flags : flags = 0
         _nsentry = super (Entry, cls)
         return _nsentry.create (url, flags, session, ttype=ttype)
 
@@ -217,9 +218,5 @@ class Entry (nsentry.Entry, sa.Attributes) :
         ret:            None / saga.Task
         """
         return self._adaptor.delete_object (ttype=ttype)
-
-     
-  
-  
 
 

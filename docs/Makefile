@@ -46,7 +46,7 @@ clean:
 
 generate_docs:
 	mkdir -p source/adaptors/
-	python generate_adaptor_docs.py 
+	python generate_adaptor_docs.py
 
 html: generate_docs
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html

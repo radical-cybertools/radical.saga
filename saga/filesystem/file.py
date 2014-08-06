@@ -39,7 +39,7 @@ class File (nsentry.Entry) :
     #
     @rus.takes   ('File', 
                   rus.optional ((surl.Url, basestring)), 
-                  rus.optional (int), 
+                  rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
                   rus.optional (dict), 
@@ -72,6 +72,7 @@ class File (nsentry.Entry) :
         """
 
         # param checks
+        if  not flags : flags = 0
         url = surl.Url (url)
 
         self._nsentry = super  (File, self)
@@ -83,7 +84,7 @@ class File (nsentry.Entry) :
     @classmethod
     @rus.takes   ('File', 
                   rus.optional ((surl.Url, basestring)), 
-                  rus.optional (int), 
+                  rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -97,6 +98,7 @@ class File (nsentry.Entry) :
         ttype:     saga.task.type enum
         ret:       saga.Task
         """
+        if  not flags : flags = 0
         _nsentry = super (File, cls)
         return _nsentry.create (url, flags, session, ttype=ttype)
 

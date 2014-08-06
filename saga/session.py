@@ -269,6 +269,20 @@ class Session (saga.base.SimpleBase) :
         return self.contexts
 
 
+    # ----------------------------------------------------------------
+    #
+    @rus.takes   ('Session')
+    @rus.returns (dict)
+    def get_config (self, section="") :
+        """
+        ret:     radical.utils.Configuration
+        
+        Return the session configuration (optional a specific section).
+        """
+
+        return saga.engine.engine.Engine ().get_config (section)
+
+
 
 
 

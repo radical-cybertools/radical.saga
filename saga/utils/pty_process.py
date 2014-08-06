@@ -99,8 +99,6 @@ class PTYProcess (object) :
         :param logger:  logger stream to send status messages to.
         """
 
-        self._debug = False
-
         self.logger = logger
         if  not  self.logger : self.logger = rul.getLogger ('saga', 'PTYProcess') 
         self.logger.debug ("PTYProcess init %s" % self)
@@ -154,6 +152,20 @@ class PTYProcess (object) :
             except :
                 pass
     
+
+    # ----------------------------------------------------------------------
+    #
+    def _hide_data (self, data, nolog=False) :
+
+        if  nolog :
+            import re
+            return re.sub (r'([^\n])', 'X', data)
+
+        else :
+            return data
+
+
+
 
     # ----------------------------------------------------------------------
     #
@@ -647,7 +659,16 @@ class PTYProcess (object) :
         read buffers, this method can be expensive.  
 
         Note: the returned data get '\\\\r' stripped.
+
+        Note: ansi-escape sequences are also stripped before matching, but are
+        kept in the returned data.
         """
+
+        def escape (txt) :
+            pat = re.compile(r'\x1b[^m]*m')
+            return pat.sub ('', txt)
+
+        _debug = False
 
         with self.rlock :
 
@@ -669,43 +690,48 @@ class PTYProcess (object) :
                 # a pattern, or timeout passes
                 while True :
 
-                  # time.sleep (0.1)
+                    time.sleep (0.1)
 
                     # skip non-lines
                     if  not data :
                         data += self.read (timeout=_POLLDELAY)
-                  # if  self._debug : print ">>%s<<" % data
+                    if  _debug : print ">>%s<<" % data
+
+                    escaped = escape (data)
+                    if _debug : print 'data    ==%s==' % data
+                    if _debug : print 'escaped ==%s==' % escaped
 
                     # check current data for any matching pattern
                     for n in range (0, len(patts)) :
 
-                        match = patts[n].search (data)
-                     #  if self._debug : print "==%s==" % patterns[n]
+                        match = patts[n].search (escaped)
+                        if _debug : print "==%s==" % patterns[n]
+                        if _debug : print match
 
                         if match :
                             # a pattern matched the current data: return a tuple of
                             # pattern index and matching data.  The remainder of the
                             # data is cached.
-                            ret  = data[0:match.end()]
-                            self.cache = data[match.end():] 
+                            ret  = escaped[0:match.end()]
+                            self.cache = escaped[match.end():] 
 
-                     #      if self._debug : print "~~match!~~ %s" % data[match.start():match.end()]
-                     #      if self._debug : print "~~match!~~ %s" % (len(data))
-                     #      if self._debug : print "~~match!~~ %s" % (str(match.span()))
-                     #      if self._debug : print "~~match!~~ %s" % (ret)
+                            if _debug : print "~~match!~~ %s" % escaped[match.start():match.end()]
+                            if _debug : print "~~match!~~ %s" % (len(escaped))
+                            if _debug : print "~~match!~~ %s" % (str(match.span()))
+                            if _debug : print "~~match!~~ %s" % (ret)
 
                             return (n, ret.replace('\r', ''))
 
                     # if a timeout is given, and actually passed, return
                     # a non-match and a copy of the data we looked at
                     if timeout == 0 :
-                        return (None, str(data))
+                        return (None, str(escaped))
 
                     if timeout > 0 :
                         now = time.time ()
                         if (now-start) > timeout :
-                            self.cache = data
-                            return (None, str(data))
+                            self.cache = escaped
+                            return (None, str(escaped))
 
                     # no match yet, still time -- read more data
                     data += self.read (timeout=_POLLDELAY)
@@ -716,7 +742,7 @@ class PTYProcess (object) :
 
     # ----------------------------------------------------------------
     #
-    def write (self, data) :
+    def write (self, data, nolog=False) :
         """
         This method will repeatedly attempt to push the given data into the
         child's stdin pipe, until it succeeds to write all data.
@@ -730,7 +756,8 @@ class PTYProcess (object) :
 
             try :
 
-                log = data.replace ('\n', '\\n')
+                log = self._hide_data (data, nolog)
+                log =  log.replace ('\n', '\\n')
                 log =  log.replace ('\r', '')
                 if  len(log) > _DEBUG_MAX :
                     self.logger.debug ("write: [%5d] [%5d] (%s ... %s)" \
